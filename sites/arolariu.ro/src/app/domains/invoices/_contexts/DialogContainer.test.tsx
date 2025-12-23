@@ -11,6 +11,21 @@ import {describe, expect, test, vi} from "vitest";
 // Mocks - Must be declared before imports that use them
 // ============================================================================
 
+// Mock @arolariu/components to avoid path alias resolution issues in tests
+vi.mock("@arolariu/components", () => ({
+  Dialog: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogContent: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogHeader: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogTitle: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogDescription: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogFooter: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  Button: ({children}: {children: React.ReactNode}) => <button>{children}</button>,
+  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+  Label: ({children}: {children: React.ReactNode}) => <label>{children}</label>,
+  toast: vi.fn(),
+  cn: (...classes: unknown[]) => classes.filter(Boolean).join(" "),
+}));
+
 // Mock the useDialogs hook from DialogContext
 const mockUseDialogs = vi.fn();
 vi.mock("./DialogContext", () => ({
@@ -56,6 +71,14 @@ vi.mock("../edit-invoice/[id]/_components/dialogs/MetadataDialog", () => ({
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/RecipeDialog", () => ({
   default: () => <div data-testid='recipe-dialog'>InvoiceRecipeDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_components/dialogs/AddScanDialog", () => ({
+  default: () => <div data-testid='add-scan-dialog'>AddScanDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog", () => ({
+  default: () => <div data-testid='remove-scan-dialog'>RemoveScanDialog</div>,
 }));
 
 vi.mock("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog", () => ({
@@ -237,6 +260,8 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__METADATA", expectedTestId: "metadata-dialog"},
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
       {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
+      {type: "EDIT_INVOICE__SCAN_ADD", expectedTestId: "add-scan-dialog"},
+      {type: "EDIT_INVOICE__SCAN_REMOVE", expectedTestId: "remove-scan-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
       {type: "VIEW_INVOICES__IMPORT", expectedTestId: "import-dialog"},
       {type: "VIEW_INVOICES__EXPORT", expectedTestId: "export-dialog"},
@@ -263,6 +288,8 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
+        "EDIT_INVOICE__SCAN_ADD",
+        "EDIT_INVOICE__SCAN_REMOVE",
         "VIEW_INVOICE__SHARE_ANALYTICS",
         "VIEW_INVOICES__IMPORT",
         "VIEW_INVOICES__EXPORT",
