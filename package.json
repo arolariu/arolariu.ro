@@ -243,7 +243,7 @@
     "typedoc": "0.28.15",
     "typedoc-plugin-markdown": "4.9.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.50.0",
+    "typescript-eslint": "8.50.1",
     "uuid": "13.0.0",
     "vaul": "1.1.2",
     "vite": "7.3.0",
