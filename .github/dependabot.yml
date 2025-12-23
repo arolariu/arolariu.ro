@@ -4,21 +4,37 @@
 # This configuration manages automated dependency updates across the monorepo,
 # including npm packages, NuGet packages, GitHub Actions, and Docker images.
 #
+# Monorepo Structure:
+#   /                        - Root (Nx, ESLint, Prettier, Vitest, Playwright)
+#   /packages/components     - Shared React component library (RSLib, Storybook)
+#   /sites/arolariu.ro       - Next.js 16 website (frontend)
+#   /sites/api.arolariu.ro   - .NET 10 backend API (NuGet)
+#   /sites/cv.arolariu.ro    - SvelteKit CV site
+#   /sites/docs.arolariu.ro  - DocFX documentation (no npm)
+#   /infra/containers        - Docker container definitions
+#   /.github/scripts         - GitHub Actions toolkit scripts
+#   /.github/workflows       - GitHub Actions workflows
+#
+# Schedule:
+#   Sunday    - GitHub Actions
+#   Monday    - Root npm dependencies
+#   Tuesday   - Frontend (Next.js) + Components library
+#   Wednesday - CV site (SvelteKit)
+#   Thursday  - Backend (.NET/NuGet)
+#   Friday    - Docker images + CI scripts
+#
 # Documentation:
 #   https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
 # =============================================================================
 
 version: 2
 
-# Note: Registry definitions are only needed for private packages or when
-# authentication is required. Public npm and NuGet packages work without
-# explicit registry configuration.
-
 updates:
   # ===========================================================================
-  # GITHUB ACTIONS
+  # GITHUB ACTIONS WORKFLOWS
   # ===========================================================================
-  # Keep GitHub Actions workflows up to date for security and features
+  # Keep GitHub Actions workflows up to date for security and features.
+  # Scans: /.github/workflows/*.yml and /.github/actions/*/action.yml
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -27,7 +43,7 @@ updates:
       time: "06:00"
       timezone: "Europe/Bucharest"
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "ci(actions)"
       include: "scope"
     labels:
       - "dependencies"
@@ -37,17 +53,17 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 5
     groups:
-      github-actions:
+      # Group all GitHub Actions minor updates together
+      github-actions-all:
         patterns:
           - "*"
         update-types:
           - "minor"
-          - "patch"
 
   # ===========================================================================
   # ROOT NPM DEPENDENCIES
   # ===========================================================================
-  # Monorepo root dependencies (nx, eslint, prettier, etc.)
+  # Monorepo root: Nx, ESLint, Prettier, TypeScript, Vitest, Playwright
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -56,52 +72,51 @@ updates:
       time: "06:00"
       timezone: "Europe/Bucharest"
     commit-message:
-      prefix: "chore(deps)"
+      prefix: "chore(root-deps)"
       include: "scope"
     labels:
       - "dependencies"
       - "npm"
+      - "monorepo-root"
       - "automated"
     assignees:
       - "arolariu"
     open-pull-requests-limit: 10
     versioning-strategy: increase
     groups:
-      # ESLint and related plugins
+      # ESLint ecosystem (20+ plugins configured)
       eslint:
         patterns:
-          - "eslint*"
+          - "eslint"
+          - "eslint-*"
           - "@eslint/*"
           - "@typescript-eslint/*"
-          - "eslint-plugin-*"
+          - "@stylistic/*"
         update-types:
           - "minor"
-          - "patch"
-      # Prettier and formatting
+      # Prettier and formatting plugins
       prettier:
         patterns:
-          - "prettier*"
+          - "prettier"
+          - "prettier-*"
           - "@trivago/*"
         update-types:
           - "minor"
-          - "patch"
-      # Nx monorepo tools
+      # Nx monorepo tooling
       nx:
         patterns:
           - "nx"
           - "@nx/*"
         update-types:
           - "minor"
-          - "patch"
-      # TypeScript and types
+      # TypeScript and type definitions
       typescript:
         patterns:
           - "typescript"
           - "@types/*"
         update-types:
           - "minor"
-          - "patch"
-      # Testing frameworks
+      # Testing: Vitest (unit) + Playwright (E2E)
       testing:
         patterns:
           - "vitest"
@@ -110,11 +125,11 @@ updates:
           - "@playwright/*"
         update-types:
           - "minor"
-          - "patch"
 
   # ===========================================================================
-  # FRONTEND - NEXT.JS WEBSITE
+  # FRONTEND - NEXT.JS 16 WEBSITE
   # ===========================================================================
+  # Main website: Next.js 16, React 19, Tailwind CSS v4, Clerk, OpenTelemetry
   - package-ecosystem: "npm"
     directory: "/sites/arolariu.ro"
     schedule:
@@ -123,7 +138,7 @@ updates:
       time: "06:00"
       timezone: "Europe/Bucharest"
     commit-message:
-      prefix: "chore(frontend-deps)"
+      prefix: "chore(frontend)"
       include: "scope"
     labels:
       - "dependencies"
@@ -135,31 +150,29 @@ updates:
     open-pull-requests-limit: 10
     versioning-strategy: increase
     groups:
-      # Next.js and React ecosystem
+      # Next.js and React core
       nextjs-react:
         patterns:
           - "next"
+          - "next-*"
           - "react"
           - "react-dom"
           - "@next/*"
         update-types:
           - "minor"
-          - "patch"
-      # Radix UI components
+      # Radix UI primitives (shadcn/ui foundation)
       radix:
         patterns:
           - "@radix-ui/*"
         update-types:
           - "minor"
-          - "patch"
       # Clerk authentication
       clerk:
         patterns:
           - "@clerk/*"
         update-types:
           - "minor"
-          - "patch"
-      # Tailwind CSS
+      # Tailwind CSS v4 ecosystem
       tailwind:
         patterns:
           - "tailwindcss"
@@ -167,15 +180,13 @@ updates:
           - "tailwind-*"
         update-types:
           - "minor"
-          - "patch"
-      # OpenTelemetry observability
+      # OpenTelemetry observability stack
       opentelemetry:
         patterns:
           - "@opentelemetry/*"
         update-types:
           - "minor"
-          - "patch"
-      # Form and validation
+      # Forms: react-hook-form + zod validation
       forms:
         patterns:
           - "react-hook-form"
@@ -183,19 +194,30 @@ updates:
           - "@hookform/*"
         update-types:
           - "minor"
-          - "patch"
-      # Internationalization
+      # Internationalization with next-intl
       i18n:
         patterns:
           - "next-intl"
           - "@formatjs/*"
         update-types:
           - "minor"
-          - "patch"
+      # Azure SDKs for storage, config, etc.
+      azure-sdk:
+        patterns:
+          - "@azure/*"
+        update-types:
+          - "minor"
+      # State management: Zustand
+      state:
+        patterns:
+          - "zustand"
+        update-types:
+          - "minor"
 
   # ===========================================================================
   # SHARED COMPONENTS LIBRARY
   # ===========================================================================
+  # packages/components: RSLib build, Storybook docs, shadcn/ui components
   - package-ecosystem: "npm"
     directory: "/packages/components"
     schedule:
@@ -204,7 +226,7 @@ updates:
       time: "07:00"
       timezone: "Europe/Bucharest"
     commit-message:
-      prefix: "chore(components-deps)"
+      prefix: "chore(components)"
       include: "scope"
     labels:
       - "dependencies"
@@ -216,7 +238,7 @@ updates:
     open-pull-requests-limit: 5
     versioning-strategy: increase
     groups:
-      # Storybook
+      # Storybook documentation platform
       storybook:
         patterns:
           - "storybook"
@@ -224,17 +246,15 @@ updates:
           - "@chromatic-com/*"
         update-types:
           - "minor"
-          - "patch"
-      # RSLib build tools
+      # RSLib/Rsbuild build tooling
       rslib:
         patterns:
           - "@rslib/*"
           - "@rsbuild/*"
         update-types:
           - "minor"
-          - "patch"
-      # UI components
-      ui:
+      # UI utilities (CVA, clsx, tailwind-merge)
+      ui-utils:
         patterns:
           - "@radix-ui/*"
           - "class-variance-authority"
@@ -242,11 +262,11 @@ updates:
           - "tailwind-merge"
         update-types:
           - "minor"
-          - "patch"
 
   # ===========================================================================
   # CV SITE - SVELTEKIT
   # ===========================================================================
+  # Static CV/resume site built with SvelteKit + Azure SWA adapter
   - package-ecosystem: "npm"
     directory: "/sites/cv.arolariu.ro"
     schedule:
@@ -255,7 +275,7 @@ updates:
       time: "06:00"
       timezone: "Europe/Bucharest"
     commit-message:
-      prefix: "chore(cv-deps)"
+      prefix: "chore(cv)"
       include: "scope"
     labels:
       - "dependencies"
@@ -267,18 +287,19 @@ updates:
     open-pull-requests-limit: 5
     versioning-strategy: increase
     groups:
-      # SvelteKit ecosystem
+      # SvelteKit framework and adapters
       svelte:
         patterns:
           - "svelte"
           - "@sveltejs/*"
+          - "svelte-*"
         update-types:
           - "minor"
-          - "patch"
 
   # ===========================================================================
-  # BACKEND - .NET API
+  # BACKEND - .NET 10 API
   # ===========================================================================
+  # Modular monolith API: Microsoft, Azure SDK, OpenTelemetry, xUnit
   - package-ecosystem: "nuget"
     directory: "/sites/api.arolariu.ro"
     schedule:
@@ -287,7 +308,7 @@ updates:
       time: "06:00"
       timezone: "Europe/Bucharest"
     commit-message:
-      prefix: "chore(backend-deps)"
+      prefix: "chore(backend)"
       include: "scope"
     labels:
       - "dependencies"
@@ -298,29 +319,26 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 10
     groups:
-      # Microsoft packages
+      # Microsoft.Extensions.* and System.* packages
       microsoft:
         patterns:
           - "Microsoft.*"
           - "System.*"
         update-types:
           - "minor"
-          - "patch"
-      # Azure SDK
+      # Azure SDK for .NET
       azure:
         patterns:
           - "Azure.*"
         update-types:
           - "minor"
-          - "patch"
-      # OpenTelemetry
+      # OpenTelemetry for observability
       opentelemetry:
         patterns:
           - "OpenTelemetry*"
         update-types:
           - "minor"
-          - "patch"
-      # Testing packages
+      # Testing: xUnit, FluentAssertions, Coverlet
       testing:
         patterns:
           - "xunit*"
@@ -329,11 +347,11 @@ updates:
           - "coverlet*"
         update-types:
           - "minor"
-          - "patch"
 
   # ===========================================================================
-  # DOCKER IMAGES
+  # DOCKER IMAGES - INFRASTRUCTURE CONTAINERS
   # ===========================================================================
+  # Container definitions in /infra/containers (backend, frontend, cv)
   - package-ecosystem: "docker"
     directory: "/infra/containers"
     schedule:
@@ -354,16 +372,64 @@ updates:
     open-pull-requests-limit: 3
 
   # ===========================================================================
-  # GITHUB ACTIONS SCRIPTS (if using npm)
+  # DOCKER IMAGES - FRONTEND DOCKERFILE
   # ===========================================================================
+  # Standalone Dockerfile in sites/arolariu.ro
+  - package-ecosystem: "docker"
+    directory: "/sites/arolariu.ro"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "06:30"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(docker-frontend)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "frontend"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 2
+
+  # ===========================================================================
+  # DOCKER IMAGES - BACKEND DOCKERFILE
+  # ===========================================================================
+  # Standalone Dockerfile in sites/api.arolariu.ro
+  - package-ecosystem: "docker"
+    directory: "/sites/api.arolariu.ro"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "07:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(docker-backend)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "backend"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 2
+
+  # ===========================================================================
+  # GITHUB ACTIONS CI SCRIPTS
+  # ===========================================================================
+  # TypeScript scripts using @actions/* toolkit packages
   - package-ecosystem: "npm"
     directory: "/.github/scripts"
     schedule:
-      interval: "monthly"
-      time: "06:00"
+      interval: "weekly"
+      day: "friday"
+      time: "08:00"
       timezone: "Europe/Bucharest"
     commit-message:
-      prefix: "ci(scripts-deps)"
+      prefix: "ci(scripts)"
       include: "scope"
     labels:
       - "dependencies"
@@ -373,3 +439,20 @@ updates:
     assignees:
       - "arolariu"
     open-pull-requests-limit: 3
+    versioning-strategy: increase
+    groups:
+      # GitHub Actions toolkit packages
+      actions-toolkit:
+        patterns:
+          - "@actions/*"
+        update-types:
+          - "minor"
+      # TypeScript and testing
+      dev-tools:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "vitest"
+          - "@vitest/*"
+        update-types:
+          - "minor"

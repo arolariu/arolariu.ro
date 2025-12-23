@@ -10,7 +10,7 @@ import {
   setSpanAttributes,
   withSpan,
 } from "@/instrumentation.server";
-import {generateGuid} from "@/lib/utils.generic";
+import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {API_JWT, createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {auth, currentUser} from "@clerk/nextjs/server";
@@ -156,7 +156,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             logWithTrace("info", "Fetching authenticated user clerk information", {userId}, "api");
 
             const user = await currentUser();
-            const userIdentifier = generateGuid(userId);
+            const userIdentifier = generateGuid(user?.primaryEmailAddress?.emailAddress ?? userId);
             const currentTimestamp = Math.floor(Date.now() / 1000);
             // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.
             const expirationTime = currentTimestamp + 300; // 5 minute expiration
@@ -227,7 +227,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
 
             logWithTrace("info", "Generating guest user JWT token", undefined, "api");
 
-            const guestIdentifier = "00000000-0000-0000-0000-000000000000";
+            const guestIdentifier = EMPTY_GUID;
             const currentTimestamp = Math.floor(Date.now() / 1000);
             // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.
             const expirationTime = currentTimestamp + 300; // 5 minute expiration

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure;
@@ -104,13 +105,27 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
     return TransformOcrDataToInvoiceData(receipt, invoice);
   }
 
+  /// <inheritdoc/>
+  public async ValueTask<Merchant> PerformOcrAnalysisOnSingleMerchant(InvoiceScan scan, Merchant merchant, AnalysisOptions options)
+  {
+    ArgumentNullException.ThrowIfNull(merchant);
+
+    var operation = await client.AnalyzeDocumentFromUriAsync(
+     WaitUntil.Completed,
+     "prebuilt-receipt",
+     scan.Location)
+     .ConfigureAwait(false);
+
+    var result = operation.Value;
+    var receipt = result.Documents[0];
+
+    return TransformOcrDataToMerchantData(receipt, merchant);
+  }
+
   private static Invoice TransformOcrDataToInvoiceData(AnalyzedDocument ocrData, Invoice invoice)
   {
-    var merchant = IdentifyMerchant(ocrData);
     var products = IdentifyProducts(ocrData);
     var payment = IdentifyPaymentInformation(ocrData);
-
-    invoice.MerchantReference = merchant.id;
 
     #region Populate the items array:
     foreach (var product in products)
@@ -122,5 +137,15 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
     invoice.PaymentInformation = payment;
 
     return invoice;
+  }
+
+  private static Merchant TransformOcrDataToMerchantData(AnalyzedDocument ocrData, Merchant merchant)
+  {
+    var identifiedMerchant = IdentifyMerchant(ocrData);
+
+    // Overwrite the merchant fields with the identified data:
+    merchant.Name = identifiedMerchant.Name;
+    merchant.Address = identifiedMerchant.Address;
+    return merchant;
   }
 }

@@ -1,4 +1,4 @@
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components/dialog";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import Image from "next/image";
 import {useDialog} from "../../../../_contexts/DialogContext";
 

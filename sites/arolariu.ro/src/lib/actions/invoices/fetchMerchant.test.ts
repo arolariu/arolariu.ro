@@ -5,13 +5,13 @@ import fetchMerchant from "./fetchMerchant";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("../../utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -23,7 +23,7 @@ describe("fetchMerchant", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -31,10 +31,10 @@ describe("fetchMerchant", () => {
   });
 
   it("should fetch a merchant successfully", async () => {
-    const mockMerchant = new MerchantBuilder().withId("merchant-123").withName("Test Merchant").build();
+    const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockMerchant,
     });
@@ -42,7 +42,7 @@ describe("fetchMerchant", () => {
     const result = await fetchMerchant({merchantId: mockMerchant.id});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/merchants/${mockMerchant.id}`, {
+    expect(globalThis.fetch).toHaveBeenCalledWith(`https://mock-api/rest/v1/merchants/${mockMerchant.id}`, {
       headers: {
         Authorization: `Bearer ${mockToken}`,
         "Content-Type": "application/json",
@@ -52,11 +52,11 @@ describe("fetchMerchant", () => {
   });
 
   it("should throw an error if fetch fails", async () => {
-    const mockMerchant = new MerchantBuilder().withId("merchant-123").build();
+    const mockMerchant = new MerchantBuilder().build();
     const errorMessage = "Not Found";
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 404,
       statusText: "Not Found",

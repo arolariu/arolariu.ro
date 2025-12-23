@@ -6,6 +6,7 @@
 "use client";
 
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {TbCalendar} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {generateTimelineFromInvoice, getEventIcon, groupEventsByDate} from "../../_utils/timeline";
@@ -25,9 +26,10 @@ import {TimelineSharedWithList} from "./TimelineSharedWithList";
  * \`\`\`
  */
 export function InvoiceTimeline(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const events = generateTimelineFromInvoice(invoice);
-  const groupedEvents = groupEventsByDate(events);
+  const groupedEvents = groupEventsByDate(events, locale);
   const totalEvents = events.length;
 
   return (

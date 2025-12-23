@@ -10,7 +10,6 @@ import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNo
  */
 export type DialogType =
   | "EDIT_INVOICE__ANALYSIS"
-  | "EDIT_INVOICE__SHARE"
   | "EDIT_INVOICE__IMAGE"
   | "EDIT_INVOICE__MERCHANT"
   | "EDIT_INVOICE__MERCHANT_INVOICES"
@@ -19,10 +18,10 @@ export type DialogType =
   | "EDIT_INVOICE__ITEMS"
   | "EDIT_INVOICE__FEEDBACK"
   | "VIEW_INVOICE__SHARE_ANALYTICS"
-  | "VIEW_INVOICES__SHARE"
   | "VIEW_INVOICES__IMPORT"
   | "VIEW_INVOICES__EXPORT"
   | "SHARED__INVOICE_DELETE"
+  | "SHARED__INVOICE_SHARE"
   | null; // null is used to indicate no dialog is open
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;

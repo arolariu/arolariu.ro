@@ -5,13 +5,13 @@ import fetchMerchants from "./fetchMerchants";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("../../utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -23,7 +23,7 @@ describe("fetchMerchants", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -34,7 +34,7 @@ describe("fetchMerchants", () => {
     const mockMerchants = new MerchantBuilder().buildMany(3);
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockMerchants,
     });
@@ -42,7 +42,7 @@ describe("fetchMerchants", () => {
     const result = await fetchMerchants();
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith("http://mock-api/rest/v1/merchants", {
+    expect(globalThis.fetch).toHaveBeenCalledWith("https://mock-api/rest/v1/merchants", {
       headers: {
         Authorization: `Bearer ${mockToken}`,
         "Content-Type": "application/json",
@@ -55,15 +55,13 @@ describe("fetchMerchants", () => {
     const errorMessage = "Internal Server Error";
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 500,
       statusText: "Internal Server Error",
       text: async () => errorMessage,
     });
 
-    await expect(fetchMerchants()).rejects.toThrow(
-      `BFF fetch merchants request failed: 500 Internal Server Error - ${errorMessage}`,
-    );
+    await expect(fetchMerchants()).rejects.toThrow(`BFF fetch merchants request failed: 500 Internal Server Error - ${errorMessage}`);
   });
 });

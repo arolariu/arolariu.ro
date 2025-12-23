@@ -51,6 +51,7 @@ export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Ele
   const [invoiceName, setInvoiceName] = useState<string>(invoice.name);
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
   const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});
+  const canAnalyze = invoice.items.length <= 0;
 
   const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setInvoiceName(event.target.value);
@@ -93,20 +94,22 @@ export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Ele
               <p>Print this invoice with all details</p>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={openAnalysisDialog}
-                variant='outline'
-                size='sm'>
-                <TbScanEye className='mr-2 h-4 w-4' />
-                Analyze with AI
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Analyze spending patterns for this invoice</p>
-            </TooltipContent>
-          </Tooltip>
+          {Boolean(canAnalyze) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={openAnalysisDialog}
+                  variant='outline'
+                  size='sm'>
+                  <TbScanEye className='mr-2 h-4 w-4' />
+                  Analyze with AI
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Analyze spending patterns for this invoice</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

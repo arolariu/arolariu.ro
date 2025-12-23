@@ -1,14 +1,16 @@
 "use client";
 
+import {useUserInformation} from "@/hooks";
+import {useInvoicesStore, useMerchantsStore} from "@/stores";
 import type {Invoice, Merchant} from "@/types/invoices";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
+import {InvoiceGuestBanner} from "./_components/banners/InvoiceGuestBanner";
 import {BudgetImpactCard} from "./_components/cards/BudgetImpactCard";
 import {CategoryInsightsCardContainer} from "./_components/cards/insights/CategoryInsightsCardContainer";
 import {InvoiceDetailsCard} from "./_components/cards/InvoiceDetailsCard";
 import {MerchantInfoCard} from "./_components/cards/MerchantInfoCard";
-import {QuickActionsCard} from "./_components/cards/QuickActionsCard";
-import {ReceiptImageCard} from "./_components/cards/ReceiptImageCard";
+import {ReceiptScanCard} from "./_components/cards/ReceiptScanCard";
 import {SeasonalInsightsCard} from "./_components/cards/SeasonalInsightsCard";
 import {ShoppingCalendarCard} from "./_components/cards/ShoppingCalendarCard";
 import {InvoiceAnalytics} from "./_components/InvoiceAnalytics";
@@ -24,6 +26,18 @@ type Props = Readonly<{
 
 export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
   const {invoice, merchant} = props;
+  const upsertInvoice = useInvoicesStore((state) => state.upsertInvoice);
+  const upsertMerchant = useMerchantsStore((state) => state.upsertMerchant);
+  const {
+    userInformation: {userIdentifier},
+  } = useUserInformation();
+
+  const isOwner = invoice.userIdentifier === userIdentifier;
+  // We only add the invoice and the merchant to the store if the user is the owner.
+  if (isOwner) {
+    upsertInvoice(invoice);
+    upsertMerchant(merchant);
+  }
 
   return (
     <InvoiceContextProvider
@@ -33,6 +47,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
         <div className='animate-in fade-in container mx-auto px-4 py-8 duration-500 sm:py-12'>
           {/* Header */}
           <div className='animate-in slide-in-from-bottom-4 mb-8 duration-500'>
+            {Boolean(!isOwner) && <InvoiceGuestBanner />}
             <InvoiceHeader />
           </div>
 
@@ -67,22 +82,19 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
             {/* Sidebar - Right Column */}
             <div className='space-y-6 lg:col-span-3'>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-100 duration-500'>
-                <ReceiptImageCard />
+                <ReceiptScanCard />
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-150 duration-500'>
-                <ShoppingCalendarCard />
+                {Boolean(isOwner) && <ShoppingCalendarCard />}
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-200 duration-500'>
-                <BudgetImpactCard />
+                {Boolean(isOwner) && <BudgetImpactCard />}
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-250 duration-500'>
-                <SeasonalInsightsCard />
+                {Boolean(isOwner) && <SeasonalInsightsCard />}
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-300 duration-500'>
                 <MerchantInfoCard />
-              </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-350 duration-500'>
-                <QuickActionsCard />
               </div>
             </div>
           </div>

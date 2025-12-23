@@ -21,7 +21,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>Merge Strategy:</b> Uses <see cref="ApplyTo(Invoice)"/> which performs a
+/// <b>Merge Strategy:</b> Uses <see cref="ApplyTo(Invoice, Guid)"/> which performs a
 /// non-destructive merge with the following rules:
 /// <list type="bullet">
 ///   <item><description>Null values preserve the original field value.</description></item>
@@ -60,6 +60,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="IsImportant">
 /// Optional importance flag update. Null preserves the existing flag value.
 /// </param>
+/// <param name="SharedWith">
+/// Optional list of user identifiers to share the invoice with. When provided,
+/// this completely replaces the existing SharedWith list. Use an empty list to
+/// remove all shares. Null preserves the existing sharing settings.
+/// </param>
 /// <param name="AdditionalMetadata">
 /// Optional metadata entries to merge with existing metadata. Existing keys are
 /// overwritten; new keys are added. Null or empty dictionary means no metadata changes.
@@ -91,6 +96,7 @@ public readonly record struct PatchInvoiceRequestDto(
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
   bool? IsImportant,
+  ICollection<Guid>? SharedWith,
   IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>
@@ -124,6 +130,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <param name="existing">
   /// The existing invoice to apply patches to. Must not be null.
   /// </param>
+  /// <param name="updatedBy"></param>
   /// <returns>
   /// A new <see cref="Invoice"/> instance with merged values from this DTO and
   /// the existing invoice.
@@ -131,7 +138,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <exception cref="ArgumentNullException">
   /// Thrown when <paramref name="existing"/> is null.
   /// </exception>
-  public Invoice ApplyTo(Invoice existing)
+  public Invoice ApplyTo(Invoice existing, Guid updatedBy)
   {
     ArgumentNullException.ThrowIfNull(existing);
     var patched = new Invoice
@@ -164,9 +171,20 @@ public readonly record struct PatchInvoiceRequestDto(
       patched.PossibleRecipes.Add(recipe);
     }
 
-    foreach (var sharedUser in existing.SharedWith)
+    // SharedWith: Replace entirely if provided, otherwise copy from existing
+    if (SharedWith is not null)
     {
-      patched.SharedWith.Add(sharedUser);
+      foreach (var sharedUser in SharedWith)
+      {
+        patched.SharedWith.Add(sharedUser);
+      }
+    }
+    else
+    {
+      foreach (var sharedUser in existing.SharedWith)
+      {
+        patched.SharedWith.Add(sharedUser);
+      }
     }
 
     // Merge metadata (existing first, then overlay with new)
@@ -183,6 +201,7 @@ public readonly record struct PatchInvoiceRequestDto(
       }
     }
 
+    patched.PerformUpdate(updatedBy);
     return patched;
   }
 }

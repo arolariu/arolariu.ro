@@ -66,16 +66,17 @@ public sealed partial class AzureFormRecognizerBroker
   {
     ArgumentNullException.ThrowIfNull(photo);
     var photoFields = photo.Fields;
-    var paymentInformation = new PaymentInformation();
+    var paymentInformation = new PaymentInformation
+    {
+      // Step 1. Extract the transaction datetime from the analyzed document.
+      TransactionDate = ExtractTransactionDateTime(photoFields),
 
-    // Step 1. Extract the transaction datetime from the analyzed document.
-    paymentInformation.TransactionDate = ExtractTransactionDateTime(photoFields);
+      // Step 2. Extract the total amount from the analyzed document.
+      TotalCostAmount = ExtractTotalAmount(photoFields),
 
-    // Step 2. Extract the total amount from the analyzed document.
-    paymentInformation.TotalCostAmount = ExtractTotalAmount(photoFields);
-
-    // Step 3. Extract the total tax amount from the analyzed document.
-    paymentInformation.TotalTaxAmount = ExtractTotalTax(photoFields);
+      // Step 3. Extract the total tax amount from the analyzed document.
+      TotalTaxAmount = ExtractTotalTax(photoFields)
+    };
 
     // Step 4. Extract currency information from the document if available.
     var (currency, currencyAmount) = ExtractCurrencyInformation(photoFields);
@@ -163,30 +164,20 @@ public sealed partial class AzureFormRecognizerBroker
   /// </summary>
   /// <param name="photoFields">The document fields from OCR analysis.</param>
   /// <returns>The extracted total amount, or 0 if not found.</returns>
-  private static decimal ExtractTotalAmount(IReadOnlyDictionary<string, DocumentField> photoFields)
-  {
-    if (photoFields.TryGetValue("Total", out var totalField)
-        && totalField.FieldType is DocumentFieldType.Double)
-    {
-      return (decimal)totalField.Value.AsDouble();
-    }
-    return 0m;
-  }
+  private static decimal ExtractTotalAmount(IReadOnlyDictionary<string, DocumentField> photoFields) => photoFields.TryGetValue("Total", out var totalField)
+        && totalField.FieldType is DocumentFieldType.Double
+      ? (decimal)totalField.Value.AsDouble()
+      : 0m;
 
   /// <summary>
   /// Extracts the total tax amount from document fields.
   /// </summary>
   /// <param name="photoFields">The document fields from OCR analysis.</param>
   /// <returns>The extracted tax amount, or 0 if not found.</returns>
-  private static decimal ExtractTotalTax(IReadOnlyDictionary<string, DocumentField> photoFields)
-  {
-    if (photoFields.TryGetValue("TotalTax", out var taxField)
-        && taxField.FieldType is DocumentFieldType.Double)
-    {
-      return (decimal)taxField.Value.AsDouble();
-    }
-    return 0m;
-  }
+  private static decimal ExtractTotalTax(IReadOnlyDictionary<string, DocumentField> photoFields) => photoFields.TryGetValue("TotalTax", out var taxField)
+        && taxField.FieldType is DocumentFieldType.Double
+      ? (decimal)taxField.Value.AsDouble()
+      : 0m;
 
   /// <summary>
   /// Extracts currency information from document fields.
@@ -201,22 +192,15 @@ public sealed partial class AzureFormRecognizerBroker
       return (null, 0m);
     }
 
-    var currencyValue = currencySourceField.Value.AsCurrency();
-    if (string.IsNullOrEmpty(currencyValue.Code))
+    CurrencyValue currencyValue = currencySourceField.Value.AsCurrency();
+    Currency currencyObject = new Currency
     {
-      return (null, (decimal)currencyValue.Amount);
-    }
-
-    var currency = currencyValue.Code.ToUpperInvariant() switch
-    {
-      "RON" => new Currency("Romanian Leu", "RON", "lei"),
-      "EUR" => new Currency("Euro", "EUR", "€"),
-      "USD" => new Currency("US Dollar", "USD", "$"),
-      "GBP" => new Currency("British Pound", "GBP", "£"),
-      _ => new Currency(currencyValue.Code, currencyValue.Code, currencyValue.Symbol ?? currencyValue.Code)
+      Code = currencyValue.Code,
+      Name = currencyValue.Code,
+      Symbol = currencyValue.Symbol
     };
 
-    return (currency, (decimal)currencyValue.Amount);
+    return (currencyObject, (decimal)currencyValue.Amount);
   }
 
   internal static ICollection<Product> IdentifyProducts(AnalyzedDocument photo)
@@ -301,18 +285,12 @@ public sealed partial class AzureFormRecognizerBroker
   /// <param name="itemFields">Dictionary of item fields.</param>
   /// <param name="fieldName">Name of the field to extract.</param>
   /// <returns>The extracted decimal value, or 0 if not found.</returns>
-  private static decimal ExtractMonetaryValue(IReadOnlyDictionary<string, DocumentField> itemFields, string fieldName)
-  {
-    if (!itemFields.TryGetValue(fieldName, out var field))
-    {
-      return 0m;
-    }
-
-    return field.FieldType switch
-    {
-      DocumentFieldType.Double => (decimal)field.Value.AsDouble(),
-      DocumentFieldType.Currency => (decimal)field.Value.AsCurrency().Amount,
-      _ => 0m
-    };
-  }
+  private static decimal ExtractMonetaryValue(IReadOnlyDictionary<string, DocumentField> itemFields, string fieldName) => !itemFields.TryGetValue(fieldName, out var field)
+      ? 0m
+      : field.FieldType switch
+      {
+        DocumentFieldType.Double => (decimal)field.Value.AsDouble(),
+        DocumentFieldType.Currency => (decimal)field.Value.AsCurrency().Amount,
+        _ => 0m
+      };
 }

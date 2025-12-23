@@ -1,6 +1,11 @@
 import {useUserInformation} from "@/hooks";
+import patchInvoice from "@/lib/actions/invoices/patchInvoice";
+import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -16,8 +21,9 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import Image from "next/image";
-import {useCallback} from "react";
-import {TbArrowRight, TbDeselect, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
+import {useRouter} from "next/navigation";
+import {useCallback, useMemo, useState} from "react";
+import {TbArrowRight, TbDeselect, TbGlobe, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 type Props = {
@@ -63,8 +69,20 @@ type Props = {
  * @see {@link Invoice} - Invoice type with sharedWith array
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const {open} = useDialog("EDIT_INVOICE__SHARE", "edit", invoice);
+  const {open} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
   const {userInformation} = useUserInformation();
+  const router = useRouter();
+  const [isMarkingPrivate, setIsMarkingPrivate] = useState<boolean>(false);
+
+  /** Check if the invoice is currently public */
+  const isInvoicePublic = useMemo(() => {
+    return invoice.sharedWith?.includes(LAST_GUID) ?? false;
+  }, [invoice.sharedWith]);
+
+  /** Filter out the public sentinel from the shared users list */
+  const sharedUsers = useMemo(() => {
+    return invoice.sharedWith?.filter((id) => id !== LAST_GUID) ?? [];
+  }, [invoice.sharedWith]);
 
   // Placeholder handlers for features not yet implemented
   const handleManageSharing = useCallback(() => {
@@ -79,12 +97,39 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
     });
   }, []);
 
+  /**
+   * Revokes public access from the invoice by removing LAST_GUID from sharedWith.
+   * Uses toast.promise for consistent loading/success/error states.
+   * Button is disabled via `isMarkingPrivate` state until backend responds.
+   */
   const handleMarkPrivate = useCallback(() => {
-    // TODO: Implement mark as private functionality
-    toast("Mark private feature coming soon", {
-      description: "This feature is currently under development.",
-    });
-  }, []);
+    setIsMarkingPrivate(true);
+
+    const markPrivateAction = async () => {
+      const newSharedWith = (invoice.sharedWith ?? []).filter((id) => id !== LAST_GUID);
+
+      const result = await patchInvoice({
+        invoiceId: invoice.id,
+        payload: {sharedWith: newSharedWith},
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Refresh the page data to reflect the new private state
+      router.refresh();
+    };
+
+    toast.promise(
+      markPrivateAction().finally(() => setIsMarkingPrivate(false)),
+      {
+        loading: "Revoking public access...",
+        success: "Invoice is now private. Existing links will no longer work.",
+        error: (err: Error) => `Failed to mark private: ${err.message}`,
+      },
+    );
+  }, [invoice.id, invoice.sharedWith, router]);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
@@ -133,11 +178,23 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
         <Separator />
 
+        {isInvoicePublic && (
+          <Alert
+            variant='destructive'
+            className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
+            <TbGlobe className='size-4 text-orange-600 dark:text-orange-400' />
+            <AlertTitle className='text-orange-800 dark:text-orange-300'>Public Invoice</AlertTitle>
+            <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
+              This invoice is publicly accessible. Anyone with the link can view it.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div>
           <h3 className='mb-2 text-sm font-medium'>Shared With</h3>
-          {invoice.sharedWith.length > 0 ? (
+          {sharedUsers.length > 0 ? (
             <div className='space-y-2'>
-              {invoice.sharedWith.map((userId, index) => (
+              {sharedUsers.map((userId, index) => (
                 <motion.div
                   key={userId}
                   className='flex items-center'
@@ -168,7 +225,9 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
               ))}
             </div>
           ) : (
-            <p className='text-muted-foreground text-sm'>Not shared with anyone</p>
+            <p className='text-muted-foreground text-sm'>
+              {isInvoicePublic ? "No additional users have direct access" : "Not shared with anyone"}
+            </p>
           )}
         </div>
       </CardContent>
@@ -190,20 +249,23 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='destructive'
-                className='w-full cursor-pointer'
-                onClick={handleMarkPrivate}>
-                <span>Mark as Private</span>
-                <TbLock className='ml-2 h-4 w-4 transition-transform' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='bottom'>
-              <p>Mark the invoice as private</p>
-            </TooltipContent>
-          </Tooltip>
+          {isInvoicePublic && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='destructive'
+                  className='w-full cursor-pointer'
+                  disabled={isMarkingPrivate}
+                  onClick={handleMarkPrivate}>
+                  <span>{isMarkingPrivate ? "Revoking Access..." : "Mark as Private"}</span>
+                  <TbLock className='ml-2 h-4 w-4 transition-transform' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side='bottom'>
+                <p>Mark the invoice as private</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </TooltipProvider>
       </CardFooter>
     </Card>

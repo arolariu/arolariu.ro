@@ -5,13 +5,13 @@ import fetchInvoices from "./fetchInvoices";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("../../utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -23,7 +23,7 @@ describe("fetchInvoices", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -34,7 +34,7 @@ describe("fetchInvoices", () => {
     const mockInvoices = new InvoiceBuilder().buildMany(3);
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoices,
     });
@@ -42,7 +42,7 @@ describe("fetchInvoices", () => {
     const result = await fetchInvoices();
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith("http://mock-api/rest/v1/invoices/", {
+    expect(globalThis.fetch).toHaveBeenCalledWith("https://mock-api/rest/v1/invoices/", {
       headers: {
         Authorization: `Bearer ${mockToken}`,
         "Content-Type": "application/json",
@@ -55,16 +55,14 @@ describe("fetchInvoices", () => {
     const errorMessage = "Internal Server Error";
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 500,
       statusText: "Internal Server Error",
       text: async () => errorMessage,
     });
 
-    await expect(fetchInvoices()).rejects.toThrow(
-      `BFF fetch invoices request failed: 500 Internal Server Error - ${errorMessage}`,
-    );
+    await expect(fetchInvoices()).rejects.toThrow(`BFF fetch invoices request failed: 500 Internal Server Error - ${errorMessage}`);
   });
 
   it("should throw an error if fetchBFFUserFromAuthService fails", async () => {

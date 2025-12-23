@@ -5,13 +5,13 @@ import fetchInvoice from "./fetchInvoice";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("../../utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -23,7 +23,7 @@ describe("fetchInvoice", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -31,10 +31,10 @@ describe("fetchInvoice", () => {
   });
 
   it("should fetch a single invoice successfully", async () => {
-    const mockInvoice = new InvoiceBuilder().withId("test-invoice-id").build();
+    const mockInvoice = new InvoiceBuilder().build();
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoice,
     });
@@ -42,7 +42,7 @@ describe("fetchInvoice", () => {
     const result = await fetchInvoice({invoiceId: mockInvoice.id});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${mockInvoice.id}`, {
+    expect(globalThis.fetch).toHaveBeenCalledWith(`https://mock-api/rest/v1/invoices/${mockInvoice.id}`, {
       headers: {
         Authorization: `Bearer ${mockToken}`,
         "Content-Type": "application/json",
@@ -52,11 +52,11 @@ describe("fetchInvoice", () => {
   });
 
   it("should throw an error if fetch fails", async () => {
-    const mockInvoice = new InvoiceBuilder().withId("test-invoice-id").build();
+    const mockInvoice = new InvoiceBuilder().build();
     const errorMessage = "Not Found";
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 404,
       statusText: "Not Found",
@@ -69,7 +69,7 @@ describe("fetchInvoice", () => {
   });
 
   it("should throw an error if fetchBFFUserFromAuthService fails", async () => {
-    const mockInvoice = new InvoiceBuilder().withId("test-invoice-id").build();
+    const mockInvoice = new InvoiceBuilder().build();
     const error = new Error("Auth failed");
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockRejectedValue(error);

@@ -3,7 +3,7 @@ import {createInvoiceScan} from "./createInvoiceScan";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
 }));
 
 vi.mock("@/lib/utils.server", () => ({
@@ -17,7 +17,7 @@ vi.mock("@azure/identity", () => ({
 const mockUploadData = vi.fn();
 const mockGetBlockBlobClient = vi.fn(() => ({
   uploadData: mockUploadData,
-  url: "http://mock-blob-url",
+  url: "https://mock-blob-url",
 }));
 const mockGetContainerClient = vi.fn(() => ({
   getBlockBlobClient: mockGetBlockBlobClient,
@@ -66,7 +66,7 @@ describe("createInvoiceScan", () => {
     expect(mockUploadData).toHaveBeenCalled();
     expect(result).toEqual({
       status: 201,
-      blobUrl: "http://mock-blob-url",
+      blobUrl: "https://mock-blob-url",
     });
   });
 
@@ -92,7 +92,7 @@ describe("createInvoiceScan", () => {
     expect(consoleSpy).toHaveBeenCalledWith("Error uploading blob to Azure Storage", expect.anything());
     expect(result).toEqual({
       status: 500,
-      blobUrl: "http://mock-blob-url",
+      blobUrl: "https://mock-blob-url",
     });
   });
 

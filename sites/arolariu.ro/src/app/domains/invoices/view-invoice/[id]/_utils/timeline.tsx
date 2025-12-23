@@ -3,7 +3,9 @@
  * @module lib/utils/timeline-helpers
  */
 
+import {formatDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
+import {Locale} from "next-intl";
 import {TbCalendar, TbChefHat, TbDownload, TbFile, TbScan, TbShare2, TbSparkles, TbStar, TbTag} from "react-icons/tb";
 import {type TimelineEvent, type TimelineEventMetadata, TimelineEventType} from "../_types/timeline";
 
@@ -43,31 +45,6 @@ export function getEventIcon(event: TimelineEvent): React.ReactElement {
  */
 export function generateEventId(): string {
   return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
- * Formats a date for timeline display (e.g., "Dec 5, 2024").
- * @param {Date} date - The date to format
- * @returns {string} Formatted date string
- */
-export function formatTimelineDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
-/**
- * Formats a time for timeline display (e.g., "2:30 PM").
- * @param {Date} date - The date containing the time to format
- * @returns {string} Formatted time string
- */
-export function formatTimelineTime(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
 }
 
 /**
@@ -121,10 +98,10 @@ export function getEventTooltipContent(type: TimelineEventType, metadata?: Timel
  * @param {TimelineEvent[]} events - Array of timeline events
  * @returns {Record<string, TimelineEvent[]>} Events grouped by formatted date string
  */
-export function groupEventsByDate(events: TimelineEvent[]): Record<string, TimelineEvent[]> {
+export function groupEventsByDate(events: TimelineEvent[], locale: Locale): Record<string, TimelineEvent[]> {
   return events.reduce(
     (acc, event) => {
-      const dateKey = formatTimelineDate(event.date);
+      const dateKey = formatDate(event.date, {locale});
       if (!acc[dateKey]) {
         acc[dateKey] = [];
       }

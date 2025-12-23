@@ -26,6 +26,7 @@ vi.mock("@/lib/utils.server", () => ({
 // Mock generateGuid
 vi.mock("@/lib/utils.generic", () => ({
   generateGuid: mockGenerateGuid,
+  EMPTY_GUID: "00000000-0000-0000-0000-000000000000",
 }));
 
 // Mock telemetry functions
