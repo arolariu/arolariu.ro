@@ -24,7 +24,7 @@ import path from "node:path";
 const bundlerConfig = defineConfig({
   source: {
     entry: {
-      index: ["./src/**"],
+      index: ["./src/**", "!./src/**/*.test.*"],
     },
     tsconfigPath: path.resolve(__dirname, "./tsconfig.json"),
   },

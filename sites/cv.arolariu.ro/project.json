@@ -52,7 +52,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run test:unit",
+        "command": "npm run test",
         "cwd": "sites/cv.arolariu.ro"
       },
       "configurations": {
