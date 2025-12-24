@@ -22,8 +22,13 @@ import type {DayButton} from "react-day-picker";
 import {TbArrowDown, TbArrowUp, TbCalendar, TbInfoCircle, TbShoppingCart, TbTrendingUp} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
-import type {DayData, DayHistoricalComparison} from "../../_utils/analytics";
-import {computeShoppingPatterns, getSpendingIntensityClass, getWeekdayName} from "../../_utils/analytics";
+import {
+  computeShoppingPatterns,
+  getSpendingIntensityClass,
+  getWeekdayName,
+  type DayData,
+  type DayHistoricalComparison,
+} from "../../_utils/analytics";
 
 interface CustomDayButtonProps extends React.ComponentProps<typeof DayButton> {
   locale: string;
@@ -54,6 +59,7 @@ function CustomDayButton(props: Readonly<CustomDayButtonProps>): React.JSX.Eleme
 
   const button = (
     <button
+      type='button'
       {...buttonProps}
       className={`h-9 w-9 p-0 font-normal aria-selected:opacity-100 ${intensityClass} ${
         isCurrentInvoiceDate ? "ring-primary ring-2 ring-offset-1" : ""

@@ -2,8 +2,7 @@
 
 import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
 import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
-import type {Invoice} from "@/types/invoices";
-import {InvoiceScanType} from "@/types/invoices";
+import {type Invoice, InvoiceScanType} from "@/types/invoices";
 import {
   Button,
   cn,
