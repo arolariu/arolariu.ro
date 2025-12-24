@@ -53,7 +53,7 @@ import {memo} from "react";
  */
 function AuthButton(): React.JSX.Element {
   const {isSignedIn, isLoaded} = useAuth();
-  if (!isLoaded || isSignedIn == undefined) {
+  if (!isLoaded || isSignedIn === undefined) {
     return <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />;
   }
 

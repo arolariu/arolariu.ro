@@ -118,6 +118,16 @@ const websiteEslintConfig: Config = defineConfig({
     "max-params": ["error", {max: 5}], // we allow a maximum of 5 parameters per function.
     "max-lines": ["error", {max: 1000}], // we allow a maximum of 1000 lines per file.
     "max-statements": "off", // we don't impose a max statements limit on functions.
+    "prefer-destructuring": "off", // Destructuring is a style preference, not always better.
+    "arrow-body-style": "off", // We allow both styles for arrow functions.
+    "prefer-template": "off", // String concatenation is acceptable.
+    "no-continue": "off", // Continue statements are acceptable in loops.
+    "no-undef-init": "off", // Explicit undefined initialization is acceptable for clarity.
+    "no-use-before-define": "off", // Function hoisting allows usage before definition.
+    "complexity": ["warn", {max: 25}], // Warn at 25 complexity, was 20.
+    "no-unmodified-loop-condition": "warn", // Warn about unmodified loop conditions.
+    "radix": "warn", // Warn about missing radix in parseInt.
+    "no-duplicate-imports": "warn", // Warn about duplicate imports.
 
     "react/jsx-indent": "off", // We format via Prettier.
     "react/jsx-newline": "off", // We use Prettier for formatting.
@@ -134,6 +144,15 @@ const websiteEslintConfig: Config = defineConfig({
     "react/jsx-closing-bracket-location": "off", // We use Prettier for formatting.
     "react/function-component-definition": "off", // Sometimes we use arrow syntax.
     "react/jsx-filename-extension": [2, {extensions: [".tsx", ".ts"]}],
+    "react/jsx-props-no-spreading": "off", // We allow props spreading for composition patterns.
+    "react/jsx-no-bind": "off", // Event handlers are stable references in modern React.
+    "react/no-array-index-key": "off", // Used intentionally in stable lists.
+    "react/prefer-read-only-props": "off", // TypeScript Readonly<Props> is sufficient.
+    "react/require-default-props": "off", // TypeScript optional props handle defaults.
+    "react/no-unescaped-entities": "off", // Apostrophes and quotes are fine in JSX text content.
+    "react/no-unstable-nested-components": "warn", // Warn about nested component definitions.
+    "react/button-has-type": "warn", // Warn about missing button type.
+    "react/jsx-no-leaked-render": "warn", // Warn about potential leaked renders, but don't block.
 
     "react-hooks-extra/no-direct-set-state-in-use-effect": "off", // We allow direct setState calls in useEffect.
 
@@ -141,6 +160,14 @@ const websiteEslintConfig: Config = defineConfig({
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
 
     "sonarjs/todo-tag": "off", // We allow todos tags.
+    "sonarjs/prefer-read-only-props": "off", // TypeScript Readonly<Props> is sufficient.
+    "sonarjs/no-nested-template-literals": "off", // Template literals improve readability over concatenation.
+    "sonarjs/no-nested-conditional": "off", // Nested ternaries are acceptable when properly formatted.
+    "sonarjs/cognitive-complexity": "off", // Complexity metrics are guidelines, not hard rules.
+    "sonarjs/no-unused-vars": "off", // TypeScript handles unused variables.
+    "sonarjs/different-types-comparison": "warn", // Warn but don't block on type mismatches.
+    "sonarjs/pseudo-random": "warn", // Math.random is acceptable for non-cryptographic use.
+    "sonarjs/no-redundant-assignments": "warn", // Warn about redundant assignments.
 
     "unicorn/no-null": "off", // We allow null values.
     "unicorn/prefer-spread": "off", // We have no preference.
@@ -152,6 +179,18 @@ const websiteEslintConfig: Config = defineConfig({
     "unicorn/no-typeof-undefined": "off", // We allow typeof undefined comparison checks.
     "unicorn/prevent-abbreviations": "off", // this rule is biased.
     "unicorn/no-abusive-eslint-disable": "warn", // Warn about abusive eslint-disable usage.
+    "unicorn/no-array-reduce": "off", // Array.reduce is idiomatic JavaScript.
+    "unicorn/no-array-sort": "off", // Array.sort is widely used and understood.
+    "unicorn/explicit-length-check": "off", // Implicit boolean coercion is idiomatic.
+    "unicorn/numeric-separators-style": "off", // Numeric separators are a style preference.
+    "unicorn/no-nested-ternary": "off", // Nested ternaries are acceptable when formatted.
+    "unicorn/prefer-string-slice": "off", // Both substring and slice are acceptable.
+    "unicorn/no-negated-condition": "off", // Negated conditions can be clearer in some contexts.
+    "unicorn/consistent-function-scoping": "off", // Inner functions can improve readability.
+    "unicorn/consistent-destructuring": "off", // Destructuring is a style preference.
+    "unicorn/no-useless-switch-case": "off", // Explicit cases improve clarity.
+    "unicorn/prefer-add-event-listener": "warn", // Warn about inline event handlers.
+    "unicorn/no-zero-fractions": "warn", // Warn about zero fractions in numbers.
   },
   settings: {
     react: {

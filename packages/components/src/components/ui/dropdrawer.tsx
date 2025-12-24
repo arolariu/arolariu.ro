@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable */
+/* eslint-disable react/jsx-props-no-spreading, unicorn/no-null -- shadcn/ui component pattern requirements */
 
 import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
 import {AnimatePresence, motion, Transition} from "motion/react";

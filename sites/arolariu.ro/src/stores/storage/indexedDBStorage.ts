@@ -171,9 +171,7 @@ export function createIndexedDBStorage<S extends object, E extends BaseEntity>(
         if (!db) return null;
 
         const table = getTable<E>(db, tableName);
-        const entities = await db.transaction("r", table, async () => {
-          return table.toArray();
-        });
+        const entities = await db.transaction("r", table, async () => table.toArray());
 
         if (entities.length === 0) {
           return null;
@@ -275,9 +273,7 @@ export function createSharedStorage<S>(options?: CreateSharedStorageOptions): Pe
         /* v8 ignore next - Defensive guard for IndexedDB unavailability */
         if (!db) return null;
 
-        const item = await db.transaction("r", db.shared, async () => {
-          return db.shared.get(keyPrefix + name);
-        });
+        const item = await db.transaction("r", db.shared, async () => db.shared.get(keyPrefix + name));
 
         if (!item) return null;
         return JSON.parse(item.value) as StorageValue<S>;

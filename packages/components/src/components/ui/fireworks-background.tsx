@@ -252,6 +252,7 @@ const FireworksBackground = React.forwardRef<HTMLDivElement, FireworksBackground
         const size = getValueByRange(fireworkSize);
         fireworks.push(createFirework(x, y, targetY, fireworkColor, speed, size, particleSpeed, particleSize, handleExplosion));
         const timeout = rand(300, 800) / population;
+        // eslint-disable-next-line react-web-api/no-leaked-timeout -- timeout is part of animation loop, cleaned up in useEffect return
         setTimeout(launchFirework, timeout);
       };
 

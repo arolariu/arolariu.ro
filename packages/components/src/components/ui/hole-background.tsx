@@ -101,7 +101,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       clipPath.ellipse(disc.x, disc.y, disc.w, disc.h, 0, 0, Math.PI * 2);
       clipPath.rect(disc.x - disc.w, 0, disc.w * 2, disc.y);
       stateRef.current.clip.path = clipPath;
-    }, [tweenDisc]);
+    }, [tweenDisc, numberOfDiscs]);
 
     const setLines = React.useCallback(() => {
       const {width, height} = stateRef.current.rect;
@@ -150,7 +150,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
         ctx.restore();
       });
       stateRef.current.linesCanvas = offCanvas;
-    }, [strokeColor]);
+    }, [strokeColor, numberOfLines]);
 
     const initParticle = React.useCallback((start: boolean = false) => {
       const sx = stateRef.current.particleArea.sx + stateRef.current.particleArea.sw * Math.random();
@@ -169,7 +169,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
         r,
         c: `rgba(${particleRGBColor[0]}, ${particleRGBColor[1]}, ${particleRGBColor[2]}, ${Math.random()})`,
       };
-    }, []);
+    }, [particleRGBColor]);
 
     const setParticles = React.useCallback(() => {
       const {width, height} = stateRef.current.rect;

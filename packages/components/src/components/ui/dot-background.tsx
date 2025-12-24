@@ -69,6 +69,7 @@ export function DotBackground({
   const containerRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({width: 0, height: 0});
 
+  // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- setState is called within a function, not directly in useEffect
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
