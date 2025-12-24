@@ -128,21 +128,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: "standalone",
 
-  serverExternalPackages: [
-    "@azure/identity",
-    "@azure/monitor-opentelemetry-exporter",
-    "@opentelemetry/api",
-    "@opentelemetry/auto-instrumentations-node",
-    "@opentelemetry/exporter-logs-otlp-http",
-    "@opentelemetry/exporter-metrics-otlp-http",
-    "@opentelemetry/exporter-trace-otlp-http",
-    "@opentelemetry/instrumentation",
-    "@opentelemetry/resources",
-    "@opentelemetry/sdk-metrics",
-    "@opentelemetry/sdk-node",
-    "@opentelemetry/sdk-trace-node",
-    "@opentelemetry/semantic-conventions",
-  ],
+  transpilePackages: ["import-in-the-middle", "require-in-the-middle"],
 
   experimental: {
     // Enable server source maps in development for debugging
