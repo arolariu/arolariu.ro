@@ -118,6 +118,7 @@ const websiteEslintConfig: Config = defineConfig({
     "max-params": ["error", {max: 5}], // we allow a maximum of 5 parameters per function.
     "max-lines": ["error", {max: 1000}], // we allow a maximum of 1000 lines per file.
     "max-statements": "off", // we don't impose a max statements limit on functions.
+    "prefer-destructuring": "off", // Destructuring is a style preference, not always better.
 
     "react/jsx-indent": "off", // We format via Prettier.
     "react/jsx-newline": "off", // We use Prettier for formatting.
@@ -134,6 +135,11 @@ const websiteEslintConfig: Config = defineConfig({
     "react/jsx-closing-bracket-location": "off", // We use Prettier for formatting.
     "react/function-component-definition": "off", // Sometimes we use arrow syntax.
     "react/jsx-filename-extension": [2, {extensions: [".tsx", ".ts"]}],
+    "react/jsx-props-no-spreading": "off", // We allow props spreading for composition patterns.
+    "react/jsx-no-bind": "off", // Event handlers are stable references in modern React.
+    "react/no-array-index-key": "off", // Used intentionally in stable lists.
+    "react/prefer-read-only-props": "off", // TypeScript Readonly<Props> is sufficient.
+    "react/require-default-props": "off", // TypeScript optional props handle defaults.
 
     "react-hooks-extra/no-direct-set-state-in-use-effect": "off", // We allow direct setState calls in useEffect.
 
@@ -141,6 +147,9 @@ const websiteEslintConfig: Config = defineConfig({
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
 
     "sonarjs/todo-tag": "off", // We allow todos tags.
+    "sonarjs/prefer-read-only-props": "off", // TypeScript Readonly<Props> is sufficient.
+    "sonarjs/no-nested-template-literals": "off", // Template literals improve readability over concatenation.
+    "sonarjs/no-nested-conditional": "off", // Nested ternaries are acceptable when properly formatted.
 
     "unicorn/no-null": "off", // We allow null values.
     "unicorn/prefer-spread": "off", // We have no preference.
@@ -152,6 +161,11 @@ const websiteEslintConfig: Config = defineConfig({
     "unicorn/no-typeof-undefined": "off", // We allow typeof undefined comparison checks.
     "unicorn/prevent-abbreviations": "off", // this rule is biased.
     "unicorn/no-abusive-eslint-disable": "warn", // Warn about abusive eslint-disable usage.
+    "unicorn/no-array-reduce": "off", // Array.reduce is idiomatic JavaScript.
+    "unicorn/no-array-sort": "off", // Array.sort is widely used and understood.
+    "unicorn/explicit-length-check": "off", // Implicit boolean coercion is idiomatic.
+    "unicorn/numeric-separators-style": "off", // Numeric separators are a style preference.
+    "unicorn/no-nested-ternary": "off", // Nested ternaries are acceptable when formatted.
   },
   settings: {
     react: {
