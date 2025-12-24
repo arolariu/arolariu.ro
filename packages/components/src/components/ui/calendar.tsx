@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable */
+/* eslint-disable react/jsx-props-no-spreading, react/no-array-index-key, unicorn/no-null -- shadcn/ui component pattern requirements */
 
 import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
 import * as React from "react";

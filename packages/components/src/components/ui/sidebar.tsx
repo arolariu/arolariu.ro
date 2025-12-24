@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable */
+/* eslint-disable react/jsx-props-no-spreading, unicorn/no-null -- shadcn/ui component pattern requirements */
 
 import {Slot} from "@radix-ui/react-slot";
 import {VariantProps, cva} from "class-variance-authority";

@@ -52,6 +52,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     const [canScrollPrev, setCanScrollPrev] = React.useState(false);
     const [canScrollNext, setCanScrollNext] = React.useState(false);
 
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- setState calls are within a callback, not directly in useEffect
     const onSelect = React.useCallback((api: CarouselApi) => {
       if (!api) {
         return;

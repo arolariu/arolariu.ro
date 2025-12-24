@@ -86,7 +86,7 @@ export const Scratcher: React.FC<ScratcherProps> = ({
       document.removeEventListener("touchend", handleDocumentTouchEnd);
       document.removeEventListener("touchcancel", handleDocumentTouchEnd);
     };
-  }, [isScratching]);
+  }, [isScratching, checkCompletion]);
 
   const handleMouseDown = () => setIsScratching(true);
 

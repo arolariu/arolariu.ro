@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable */
+/* eslint-disable react/jsx-props-no-spreading, unicorn/no-null -- shadcn/ui component pattern requirements */
 
 import * as React from "react";
 
