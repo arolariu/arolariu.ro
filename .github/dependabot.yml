@@ -83,6 +83,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 10
     versioning-strategy: increase
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # ESLint ecosystem (20+ plugins configured)
       eslint:
@@ -149,6 +152,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 10
     versioning-strategy: increase
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # Next.js and React core
       nextjs-react:
@@ -237,6 +243,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 5
     versioning-strategy: increase
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # Storybook documentation platform
       storybook:
@@ -286,6 +295,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 5
     versioning-strategy: increase
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # SvelteKit framework and adapters
       svelte:
@@ -440,6 +452,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 3
     versioning-strategy: increase
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # GitHub Actions toolkit packages
       actions-toolkit:
