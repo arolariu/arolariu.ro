@@ -8,11 +8,10 @@ import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNo
  * The null value indicates that no dialog is currently open.
  * This is useful for managing the state of the dialog in the application.
  */
-export type DialogType =
+export type DialogType = Readonly<
   | "EDIT_INVOICE__ANALYSIS"
   | "EDIT_INVOICE__IMAGE"
-  | "EDIT_INVOICE__SCAN_ADD"
-  | "EDIT_INVOICE__SCAN_REMOVE"
+  | "EDIT_INVOICE__SCAN"
   | "EDIT_INVOICE__MERCHANT"
   | "EDIT_INVOICE__MERCHANT_INVOICES"
   | "EDIT_INVOICE__RECIPE"
@@ -24,7 +23,8 @@ export type DialogType =
   | "VIEW_INVOICES__EXPORT"
   | "SHARED__INVOICE_DELETE"
   | "SHARED__INVOICE_SHARE"
-  | null; // null is used to indicate no dialog is open
+  | null
+>; // null is used to indicate no dialog is open
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
 
@@ -158,7 +158,7 @@ export function useDialogs() {
  * @param dialogPayload Optional payload to pass (e.g., data to be displayed in the dialog)
  * @returns An object containing the current dialog state and functions to open and close dialogs
  * @example
- * const {isOpen, open, close} = useDialog("share");
+ * const {isOpen, open, close} = useDialog("EDIT_INVOICE__SCAN", "add", invoice);
  */
 export function useDialog(dialogType: Exclude<DialogType, null>, dialogMode?: Exclude<DialogMode, null>, dialogPayload?: DialogPayload) {
   const {currentDialog, isOpen, openDialog, closeDialog} = useDialogs();

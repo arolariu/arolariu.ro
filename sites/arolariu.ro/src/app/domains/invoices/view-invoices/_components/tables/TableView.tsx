@@ -162,7 +162,6 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                         asChild
                         className='cursor-pointer hover:text-blue-500'>
                         <Link
-                          target='_blank'
                           href={`/domains/invoices/view-invoice/${invoice.id}`}
                           className='h-8 w-8'>
                           <TbEye className='mt-1.5 ml-1.5 h-5 w-5' />

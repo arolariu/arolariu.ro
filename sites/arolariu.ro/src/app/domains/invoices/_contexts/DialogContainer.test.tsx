@@ -95,18 +95,18 @@ vi.mock("../view-invoices/_components/dialogs/ImportDialog", () => ({
 
 // Import the component after mocks are set up
 import DialogContainer from "./DialogContainer";
-import type {DialogType} from "./DialogContext";
+import type {DialogMode, DialogType} from "./DialogContext";
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 /**
- * Sets up the mock to return the specified dialog type.
+ * Sets up the mock to return the specified dialog type and optional mode.
  */
-function setupMockDialogType(type: DialogType): void {
+function setupMockDialogType(type: DialogType, mode: DialogMode = null): void {
   mockUseDialogs.mockReturnValue({
-    currentDialog: {type, mode: null, payload: null},
+    currentDialog: {type, mode, payload: null},
   });
 }
 
@@ -251,7 +251,7 @@ describe("DialogContainer", () => {
   });
 
   describe("dialog type coverage", () => {
-    const dialogTestCases: Array<{type: DialogType; expectedTestId: string}> = [
+    const dialogTestCases: Array<{type: DialogType; mode?: DialogMode; expectedTestId: string}> = [
       {type: "EDIT_INVOICE__ANALYSIS", expectedTestId: "analyze-dialog"},
       {type: "EDIT_INVOICE__ITEMS", expectedTestId: "items-dialog"},
       {type: "EDIT_INVOICE__FEEDBACK", expectedTestId: "feedback-dialog"},
@@ -260,8 +260,8 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__METADATA", expectedTestId: "metadata-dialog"},
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
       {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
-      {type: "EDIT_INVOICE__SCAN_ADD", expectedTestId: "add-scan-dialog"},
-      {type: "EDIT_INVOICE__SCAN_REMOVE", expectedTestId: "remove-scan-dialog"},
+      {type: "EDIT_INVOICE__SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
+      {type: "EDIT_INVOICE__SCAN", mode: "delete", expectedTestId: "remove-scan-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
       {type: "VIEW_INVOICES__IMPORT", expectedTestId: "import-dialog"},
       {type: "VIEW_INVOICES__EXPORT", expectedTestId: "export-dialog"},
@@ -269,8 +269,8 @@ describe("DialogContainer", () => {
       {type: "SHARED__INVOICE_SHARE", expectedTestId: "share-invoice-dialog"},
     ];
 
-    test.each(dialogTestCases)("renders correct dialog for type $type", ({type, expectedTestId}) => {
-      setupMockDialogType(type);
+    test.each(dialogTestCases)("renders correct dialog for type $type with mode $mode", ({type, mode, expectedTestId}) => {
+      setupMockDialogType(type, mode);
 
       render(<DialogContainer />);
 
@@ -288,8 +288,7 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
-        "EDIT_INVOICE__SCAN_ADD",
-        "EDIT_INVOICE__SCAN_REMOVE",
+        "EDIT_INVOICE__SCAN",
         "VIEW_INVOICE__SHARE_ANALYTICS",
         "VIEW_INVOICES__IMPORT",
         "VIEW_INVOICES__EXPORT",

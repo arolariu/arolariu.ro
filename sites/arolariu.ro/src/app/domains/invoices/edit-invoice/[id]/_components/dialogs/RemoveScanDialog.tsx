@@ -42,7 +42,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("EDIT_INVOICE__SCAN_REMOVE");
+  } = useDialog("EDIT_INVOICE__SCAN", "delete");
 
   const data = payload as RemoveScanPayload | null;
   const invoice = data?.invoice ?? null;

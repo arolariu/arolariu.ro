@@ -24,7 +24,7 @@ import {useDialogs} from "./DialogContext";
  */
 export default function DialogContainer(): React.JSX.Element | null {
   const {
-    currentDialog: {type},
+    currentDialog: {type, mode},
   } = useDialogs();
 
   switch (type) {
@@ -43,10 +43,9 @@ export default function DialogContainer(): React.JSX.Element | null {
       return <InvoiceMetadataDialog />;
     case "EDIT_INVOICE__IMAGE":
       return <InvoiceImageDialog />;
-    case "EDIT_INVOICE__SCAN_ADD":
-      return <AddScanDialog />;
-    case "EDIT_INVOICE__SCAN_REMOVE":
-      return <RemoveScanDialog />;
+    case "EDIT_INVOICE__SCAN":
+      // Differentiate by mode: "add" shows AddScanDialog, "delete" shows RemoveScanDialog
+      return mode === "add" ? <AddScanDialog /> : <RemoveScanDialog />;
     case "EDIT_INVOICE__RECIPE":
       return <InvoiceRecipeDialog />;
     // view-invoice/[id] Dialogs

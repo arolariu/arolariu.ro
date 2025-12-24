@@ -2,7 +2,8 @@
 
 import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
 import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
-import {InvoiceScanType, type Invoice} from "@/types/invoices";
+import type {Invoice} from "@/types/invoices";
+import {InvoiceScanType} from "@/types/invoices";
 import {
   Button,
   cn,
@@ -52,7 +53,7 @@ export default function AddScanDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("EDIT_INVOICE__SCAN_ADD");
+  } = useDialog("EDIT_INVOICE__SCAN", "add");
 
   const invoice = payload as Invoice | null;
 
