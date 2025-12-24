@@ -56,7 +56,7 @@ const InvoiceHasBeenAnalyzedEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {safeName},</Text>
 
       <Text style={EmailParagraphStyles}>
-        Great news! Our AI has finished analyzing your invoice. We've extracted all the key information, categorized your items, and
+        Great news! Our AI has finished analyzing your invoice. We’ve extracted all the key information, categorized your items, and
         generated spending insights to help you track your finances.
       </Text>
 
@@ -83,7 +83,7 @@ const InvoiceHasBeenAnalyzedEmail = (props: Readonly<Props>) => {
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        Click the button above to view the complete analysis. If anything looks off—perhaps a product was miscategorized or a price wasn't
+        Click the button above to view the complete analysis. If anything looks off—perhaps a product was miscategorized or a price wasn’t
         detected correctly—you can edit the invoice directly in your dashboard and the insights will update automatically.
       </Text>
 

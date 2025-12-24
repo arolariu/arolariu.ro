@@ -7,12 +7,38 @@ import {InvoiceStatisticsEmail, type InvoiceStatisticsEmailProps} from "./Invoic
 
 type Props = Readonly<Omit<InvoiceStatisticsEmailProps, "frequency">>;
 
-const WeeklyInvoiceStatisticsEmail = (props: Readonly<Props>) => (
-  <InvoiceStatisticsEmail
-    {...props}
-    frequency='weekly'
-  />
-);
+const WeeklyInvoiceStatisticsEmail = (props: Readonly<Props>) => {
+  const {
+    username,
+    periodStart,
+    periodEnd,
+    currency,
+    totals,
+    topMerchants,
+    topCategories,
+    categorySpendBreakdown,
+    categorySpendChartUrl,
+    invoicesUrl,
+    createInvoiceUrl,
+  } = props;
+
+  return (
+    <InvoiceStatisticsEmail
+      username={username}
+      periodStart={periodStart}
+      periodEnd={periodEnd}
+      currency={currency}
+      totals={totals}
+      topMerchants={topMerchants}
+      topCategories={topCategories}
+      categorySpendBreakdown={categorySpendBreakdown}
+      categorySpendChartUrl={categorySpendChartUrl}
+      invoicesUrl={invoicesUrl}
+      createInvoiceUrl={createInvoiceUrl}
+      frequency='weekly'
+    />
+  );
+};
 
 WeeklyInvoiceStatisticsEmail.PreviewProps = {
   username: "Test User",

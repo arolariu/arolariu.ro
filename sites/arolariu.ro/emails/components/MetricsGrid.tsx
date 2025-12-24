@@ -56,7 +56,7 @@ function chunkMetrics(metrics: readonly Metric[]): readonly (readonly [Metric | 
   const rows: Array<readonly [Metric | null, Metric | null]> = [];
 
   for (let index = 0; index < metrics.length; index += 2) {
-    rows.push([metrics[index] ?? null, metrics[index + 1] ?? null]);
+    rows.push([metrics.at(index) ?? null, metrics.at(index + 1) ?? null]);
   }
 
   return rows;

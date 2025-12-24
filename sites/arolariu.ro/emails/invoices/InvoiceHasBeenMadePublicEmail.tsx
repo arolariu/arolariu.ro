@@ -68,7 +68,7 @@ const InvoiceHasBeenMadePublicEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {safeName},</Text>
 
       <Text style={EmailParagraphStyles}>
-        You've successfully made your invoice public. Anyone with the link or QR code below can now view this invoice—no login required.
+        You’ve successfully made your invoice public. Anyone with the link or QR code below can now view this invoice—no login required.
         This is perfect for sharing receipts with colleagues, accountants, or for expense reporting.
       </Text>
 
