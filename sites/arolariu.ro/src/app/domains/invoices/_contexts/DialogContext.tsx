@@ -23,8 +23,7 @@ export type DialogType = Readonly<
   | "VIEW_INVOICES__EXPORT"
   | "SHARED__INVOICE_DELETE"
   | "SHARED__INVOICE_SHARE"
-  | null
->; // null is used to indicate no dialog is open
+> | null; // null is used to indicate no dialog is open
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
 
