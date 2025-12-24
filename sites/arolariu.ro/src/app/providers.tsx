@@ -119,6 +119,7 @@ type Props = {
  * @see RFC 1003 - Internationalization System documentation
  */
 export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
+  // eslint-disable-next-line unicorn/prefer-module -- Dynamic require for locale-based JSON loading, can't use static import
   const messages = locale === "ro" ? require("../../messages/ro.json") : require("../../messages/en.json");
   return (
     <TranslationProvider

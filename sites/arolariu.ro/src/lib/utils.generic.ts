@@ -102,7 +102,7 @@ export const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
  *
  * @see {@link https://tools.ietf.org/html/rfc4122#section-4.4} - RFC 4122 Section 4.4
  */
-const UUID_V4_REGEX = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+const UUID_V4_REGEX = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/iu;
 
 /**
  * Asserts that a given string is a valid UUID v4 format or a special sentinel GUID.
@@ -281,7 +281,7 @@ export interface FormatDateOptions extends Partial<Intl.DateTimeFormatOptions> {
  * ```
  */
 export function formatDate(possibleDate: string | Date, options: FormatDateOptions): string {
-  let date: Date | undefined;
+  let date: Date | undefined = undefined;
 
   if (typeof possibleDate === "string") {
     date = new Date(possibleDate);
