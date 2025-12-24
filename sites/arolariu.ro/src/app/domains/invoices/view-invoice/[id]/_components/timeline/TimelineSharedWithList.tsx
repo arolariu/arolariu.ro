@@ -5,6 +5,7 @@
 
 "use client";
 
+import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import {useUserInformation} from "@/hooks";
 import {LAST_GUID} from "@/lib/utils.generic";
 import {
@@ -37,19 +38,18 @@ import {getDisplayName, getInitials} from "../../_utils/timeline";
  * ```
  */
 export function TimelineSharedWithList(): React.JSX.Element | null {
-  const {
-    invoice: {sharedWith, userIdentifier: invoiceOwner},
-  } = useInvoiceContext();
+  const {invoice} = useInvoiceContext();
   const {userInformation} = useUserInformation();
+  const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
 
   // Check if current user is the invoice owner
-  const isOwner = userInformation.userIdentifier === invoiceOwner;
+  const isOwner = userInformation.userIdentifier === invoice.userIdentifier;
 
   // Check if invoice is publicly shared (contains sentinel GUID)
-  const isPublic = useMemo(() => sharedWith.includes(LAST_GUID), [sharedWith]);
+  const isPublic = useMemo(() => invoice.sharedWith.includes(LAST_GUID), [invoice.sharedWith]);
 
   // Filter out the sentinel GUID from display
-  const sharedUsers = useMemo(() => sharedWith.filter((id) => id !== LAST_GUID), [sharedWith]);
+  const sharedUsers = useMemo(() => invoice.sharedWith.filter((id) => id !== LAST_GUID), [invoice.sharedWith]);
 
   // Only owners can see the sharing list
   if (!isOwner) {
@@ -130,6 +130,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
       <Button
         variant='outline'
         size='sm'
+        onClick={openShareDialog}
         className='w-full gap-2 bg-transparent'>
         <TbExternalLink className='h-3.5 w-3.5' />
         Manage Sharing

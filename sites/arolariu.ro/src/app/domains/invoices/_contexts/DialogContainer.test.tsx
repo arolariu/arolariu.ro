@@ -11,6 +11,21 @@ import {describe, expect, test, vi} from "vitest";
 // Mocks - Must be declared before imports that use them
 // ============================================================================
 
+// Mock @arolariu/components to avoid path alias resolution issues in tests
+vi.mock("@arolariu/components", () => ({
+  Dialog: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogContent: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogHeader: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogTitle: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogDescription: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogFooter: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  Button: ({children}: {children: React.ReactNode}) => <button>{children}</button>,
+  Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+  Label: ({children}: {children: React.ReactNode}) => <label>{children}</label>,
+  toast: vi.fn(),
+  cn: (...classes: unknown[]) => classes.filter(Boolean).join(" "),
+}));
+
 // Mock the useDialogs hook from DialogContext
 const mockUseDialogs = vi.fn();
 vi.mock("./DialogContext", () => ({
@@ -58,6 +73,14 @@ vi.mock("../edit-invoice/[id]/_components/dialogs/RecipeDialog", () => ({
   default: () => <div data-testid='recipe-dialog'>InvoiceRecipeDialog</div>,
 }));
 
+vi.mock("../edit-invoice/[id]/_components/dialogs/AddScanDialog", () => ({
+  default: () => <div data-testid='add-scan-dialog'>AddScanDialog</div>,
+}));
+
+vi.mock("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog", () => ({
+  default: () => <div data-testid='remove-scan-dialog'>RemoveScanDialog</div>,
+}));
+
 vi.mock("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog", () => ({
   default: () => <div data-testid='share-analytics-dialog'>ShareAnalyticsDialog</div>,
 }));
@@ -72,18 +95,18 @@ vi.mock("../view-invoices/_components/dialogs/ImportDialog", () => ({
 
 // Import the component after mocks are set up
 import DialogContainer from "./DialogContainer";
-import type {DialogType} from "./DialogContext";
+import type {DialogMode, DialogType} from "./DialogContext";
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 /**
- * Sets up the mock to return the specified dialog type.
+ * Sets up the mock to return the specified dialog type and optional mode.
  */
-function setupMockDialogType(type: DialogType): void {
+function setupMockDialogType(type: DialogType, mode: DialogMode = null): void {
   mockUseDialogs.mockReturnValue({
-    currentDialog: {type, mode: null, payload: null},
+    currentDialog: {type, mode, payload: null},
   });
 }
 
@@ -228,7 +251,7 @@ describe("DialogContainer", () => {
   });
 
   describe("dialog type coverage", () => {
-    const dialogTestCases: Array<{type: DialogType; expectedTestId: string}> = [
+    const dialogTestCases: Array<{type: DialogType; mode?: DialogMode; expectedTestId: string}> = [
       {type: "EDIT_INVOICE__ANALYSIS", expectedTestId: "analyze-dialog"},
       {type: "EDIT_INVOICE__ITEMS", expectedTestId: "items-dialog"},
       {type: "EDIT_INVOICE__FEEDBACK", expectedTestId: "feedback-dialog"},
@@ -237,6 +260,8 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__METADATA", expectedTestId: "metadata-dialog"},
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
       {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
+      {type: "EDIT_INVOICE__SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
+      {type: "EDIT_INVOICE__SCAN", mode: "delete", expectedTestId: "remove-scan-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
       {type: "VIEW_INVOICES__IMPORT", expectedTestId: "import-dialog"},
       {type: "VIEW_INVOICES__EXPORT", expectedTestId: "export-dialog"},
@@ -244,8 +269,8 @@ describe("DialogContainer", () => {
       {type: "SHARED__INVOICE_SHARE", expectedTestId: "share-invoice-dialog"},
     ];
 
-    test.each(dialogTestCases)("renders correct dialog for type $type", ({type, expectedTestId}) => {
-      setupMockDialogType(type);
+    test.each(dialogTestCases)("renders correct dialog for type $type with mode $mode", ({type, mode, expectedTestId}) => {
+      setupMockDialogType(type, mode);
 
       render(<DialogContainer />);
 
@@ -263,6 +288,7 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
+        "EDIT_INVOICE__SCAN",
         "VIEW_INVOICE__SHARE_ANALYTICS",
         "VIEW_INVOICES__IMPORT",
         "VIEW_INVOICES__EXPORT",

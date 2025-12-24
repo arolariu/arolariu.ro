@@ -60,9 +60,16 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           <div className='space-y-1'>
             <div className='text-muted-foreground flex items-center gap-2 text-sm'>
               <TbCalendar className='h-4 w-4' />
-              <span>Date</span>
+              <span>Date (UTC)</span>
             </div>
-            <p className='font-medium'>{formatDate(invoice.paymentInformation.transactionDate, {locale})}</p>
+            <p className='font-medium'>
+              {formatDate(invoice.paymentInformation.transactionDate, {
+                timeStyle: "short",
+                dateStyle: "full",
+                timeZone: "UTC",
+                locale,
+              })}
+            </p>
           </div>
           <div className='space-y-1'>
             <p className='text-muted-foreground text-sm'>Category</p>

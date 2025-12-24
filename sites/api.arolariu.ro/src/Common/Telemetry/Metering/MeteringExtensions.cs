@@ -3,6 +3,7 @@ namespace arolariu.Backend.Common.Telemetry.Metering;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 using arolariu.Backend.Common.Options;
 
@@ -13,6 +14,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+
+#pragma warning disable CA2000 // Dispose objects before losing scope - ServiceProvider disposed after configuration
 
 /// <summary>
 /// Provides extension methods for configuring OpenTelemetry metrics collection with Azure Monitor integration.
@@ -55,8 +59,26 @@ public static class MeteringExtensions
   {
     ArgumentNullException.ThrowIfNull(builder);
 
+    // Get the connection string from IOptionsManager service
+    using var serviceProvider = builder.Services.BuildServiceProvider();
+    var connectionString = serviceProvider
+      .GetRequiredService<IOptionsManager>()
+      .GetApplicationOptions()
+      .ApplicationInsightsEndpoint ?? string.Empty;
+
     builder.Services.AddOpenTelemetry().WithMetrics(metricsOptions =>
     {
+      // Configure service resource information
+      metricsOptions.SetResourceBuilder(ResourceBuilder.CreateDefault()
+        .AddService(
+          serviceName: "arolariu.Backend.API",
+          serviceVersion: Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
+          serviceInstanceId: Environment.MachineName)
+        .AddAttributes([
+          new("deployment.environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"),
+          new("service.namespace", "arolariu.ro")
+        ]));
+
       metricsOptions.AddAspNetCoreInstrumentation();
       metricsOptions.AddHttpClientInstrumentation();
 
@@ -65,24 +87,22 @@ public static class MeteringExtensions
         metricsOptions.AddConsoleExporter();
       }
 
-      metricsOptions.AddAzureMonitorMetricExporter(monitorOptions =>
+      // Only add Azure Monitor exporter if connection string is configured
+      if (!string.IsNullOrWhiteSpace(connectionString))
       {
-        using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-        string instrumentationKey = new string(optionsManager
-          .GetRequiredService<IOptionsManager>()
-          .GetApplicationOptions()
-          .ApplicationInsightsEndpoint);
-
-        monitorOptions.ConnectionString = instrumentationKey;
-        monitorOptions.Credential = new DefaultAzureCredential(
+        metricsOptions.AddAzureMonitorMetricExporter(monitorOptions =>
+        {
+          monitorOptions.ConnectionString = connectionString;
+          monitorOptions.Credential = new DefaultAzureCredential(
 #if !DEBUG
-                    new DefaultAzureCredentialOptions
-                    {
-                        ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-                    }
+                      new DefaultAzureCredentialOptions
+                      {
+                          ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+                      }
 #endif
-        );
-      });
+          );
+        });
+      }
     });
   }
 }

@@ -29,12 +29,13 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
   const upsertInvoice = useInvoicesStore((state) => state.upsertInvoice);
   const upsertMerchant = useMerchantsStore((state) => state.upsertMerchant);
   const {
+    isLoading: isLoadingUserInformation,
     userInformation: {userIdentifier},
   } = useUserInformation();
 
   const isOwner = invoice.userIdentifier === userIdentifier;
   // We only add the invoice and the merchant to the store if the user is the owner.
-  if (isOwner) {
+  if (!isLoadingUserInformation && isOwner) {
     upsertInvoice(invoice);
     upsertMerchant(merchant);
   }
@@ -47,7 +48,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
         <div className='animate-in fade-in container mx-auto px-4 py-8 duration-500 sm:py-12'>
           {/* Header */}
           <div className='animate-in slide-in-from-bottom-4 mb-8 duration-500'>
-            {Boolean(!isOwner) && <InvoiceGuestBanner />}
+            {Boolean(!isOwner && !isLoadingUserInformation) && <InvoiceGuestBanner />}
             <InvoiceHeader />
           </div>
 
@@ -85,13 +86,13 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
                 <ReceiptScanCard />
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-150 duration-500'>
-                {Boolean(isOwner) && <ShoppingCalendarCard />}
+                {Boolean(isOwner && !isLoadingUserInformation) && <ShoppingCalendarCard />}
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-200 duration-500'>
-                {Boolean(isOwner) && <BudgetImpactCard />}
+                {Boolean(isOwner && !isLoadingUserInformation) && <BudgetImpactCard />}
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-250 duration-500'>
-                {Boolean(isOwner) && <SeasonalInsightsCard />}
+                {Boolean(isOwner && !isLoadingUserInformation) && <SeasonalInsightsCard />}
               </div>
               <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-300 duration-500'>
                 <MerchantInfoCard />

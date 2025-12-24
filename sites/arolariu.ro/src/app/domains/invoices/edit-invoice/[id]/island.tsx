@@ -13,6 +13,7 @@ import SharingCard from "./_components/cards/SharingCard";
 import InvoiceHeader from "./_components/InvoiceHeader";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
+import {EditInvoiceContextProvider} from "./_context/EditInvoiceContext";
 
 type Props = Readonly<{
   readonly invoice: Invoice;
@@ -88,85 +89,86 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
 
   return (
     <DialogProvider>
-      <section className='container mx-auto py-12'>
-        {/* Header */}
-        <InvoiceHeader invoice={invoice} />
+      <EditInvoiceContextProvider
+        invoice={invoice}
+        merchant={merchant}>
+        <section className='container mx-auto py-12'>
+          {/* Header */}
+          <InvoiceHeader />
 
-        <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-          <motion.div
-            variants={containerVariants}
-            initial='hidden'
-            animate='visible'
-            className='space-y-6 md:col-span-2'>
-            <InvoiceCard
-              invoice={invoice}
-              merchant={merchant}
-            />
-
-            {/* Tabs for Recipes and Metadata */}
-            <motion.div variants={itemVariants}>
-              <Tabs defaultValue='recipes'>
-                <TabsList className='grid w-full grid-cols-2'>
-                  <TabsTrigger
-                    value='recipes'
-                    className='cursor-pointer'>
-                    <TbToolsKitchen className='mr-2 h-4 w-4' />
-                    Possible Recipes
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value='metadata'
-                    className='cursor-pointer'>
-                    <TbShoppingCart className='mr-2 h-4 w-4' />
-                    Additional Info
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent
-                  value='recipes'
-                  className='mt-4'>
-                  <RecipesTab recipes={invoice.possibleRecipes} />
-                </TabsContent>
-
-                <TabsContent
-                  value='metadata'
-                  className='mt-4'>
-                  <MetadataTab metadata={invoice.additionalMetadata} />
-                </TabsContent>
-              </Tabs>
-            </motion.div>
-          </motion.div>
-
-          {/* Right column - Sidebar */}
-          <motion.div variants={itemVariants}>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
             <motion.div
               variants={containerVariants}
               initial='hidden'
               animate='visible'
-              className='space-y-6'>
-              <motion.div variants={itemVariants}>
-                <ImageCard invoice={invoice} />
-              </motion.div>
+              className='space-y-6 md:col-span-2'>
+              <InvoiceCard />
 
+              {/* Tabs for Recipes and Metadata */}
               <motion.div variants={itemVariants}>
-                <MerchantCard merchant={merchant} />
-              </motion.div>
+                <Tabs defaultValue='recipes'>
+                  <TabsList className='grid w-full grid-cols-2'>
+                    <TabsTrigger
+                      value='recipes'
+                      className='cursor-pointer'>
+                      <TbToolsKitchen className='mr-2 h-4 w-4' />
+                      Possible Recipes
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value='metadata'
+                      className='cursor-pointer'>
+                      <TbShoppingCart className='mr-2 h-4 w-4' />
+                      Additional Info
+                    </TabsTrigger>
+                  </TabsList>
 
-              <motion.div variants={itemVariants}>
-                <SharingCard invoice={invoice} />
-              </motion.div>
+                  <TabsContent
+                    value='recipes'
+                    className='mt-4'>
+                    <RecipesTab recipes={invoice.possibleRecipes} />
+                  </TabsContent>
 
-              <motion.div variants={itemVariants}>
-                {/* <SavingsTipsCard
+                  <TabsContent
+                    value='metadata'
+                    className='mt-4'>
+                    <MetadataTab metadata={invoice.additionalMetadata} />
+                  </TabsContent>
+                </Tabs>
+              </motion.div>
+            </motion.div>
+
+            {/* Right column - Sidebar */}
+            <motion.div variants={itemVariants}>
+              <motion.div
+                variants={containerVariants}
+                initial='hidden'
+                animate='visible'
+                className='space-y-6'>
+                <motion.div variants={itemVariants}>
+                  <ImageCard invoice={invoice} />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <MerchantCard merchant={merchant} />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <SharingCard invoice={invoice} />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  {/* <SavingsTipsCard
                       merchantName={merchantName}
                       totalSpent={totalSpent}
                       currency={currency}
                       isLoadingCurrency={isLoadingCurrency}
                     /> */}
+                </motion.div>
               </motion.div>
             </motion.div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
+      </EditInvoiceContextProvider>
       <DialogContainer />
     </DialogProvider>
   );

@@ -3,6 +3,7 @@ namespace arolariu.Backend.Common.Telemetry.Tracing;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 using arolariu.Backend.Common.Options;
 
@@ -12,7 +13,12 @@ using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+
+using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+
+#pragma warning disable CA2000 // Dispose objects before losing scope - ServiceProvider disposed after configuration
 
 /// <summary>
 /// Provides extension methods for configuring OpenTelemetry distributed tracing with Azure Monitor integration.
@@ -56,10 +62,75 @@ public static class TracingExtensions
   {
     ArgumentNullException.ThrowIfNull(builder);
 
+    // Get the connection string from IOptionsManager service
+    using var serviceProvider = builder.Services.BuildServiceProvider();
+    var connectionString = serviceProvider
+      .GetRequiredService<IOptionsManager>()
+      .GetApplicationOptions()
+      .ApplicationInsightsEndpoint ?? string.Empty;
+
     builder.Services.AddOpenTelemetry().WithTracing(tracingOptions =>
     {
-      tracingOptions.AddAspNetCoreInstrumentation();
-      tracingOptions.AddHttpClientInstrumentation();
+      // Configure service resource information for proper identification in Azure Application Insights
+      tracingOptions.SetResourceBuilder(ResourceBuilder.CreateDefault()
+        .AddService(
+          serviceName: "arolariu.Backend.API",
+          serviceVersion: Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
+          serviceInstanceId: Environment.MachineName)
+        .AddAttributes([
+          new("deployment.environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"),
+          new("service.namespace", "arolariu.ro")
+        ]));
+
+      // Register custom ActivitySources for domain-specific tracing
+      tracingOptions.AddSource(CommonPackageTracing.Name);
+      tracingOptions.AddSource(CorePackageTracing.Name);
+      tracingOptions.AddSource(AuthPackageTracing.Name);
+      tracingOptions.AddSource(InvoicePackageTracing.Name);
+
+      // Add custom processor for span enrichment (must be added before exporters)
+      tracingOptions.AddProcessor(new ActivityEnrichingProcessor());
+
+      // Add framework instrumentation with enrichment callbacks
+      tracingOptions.AddAspNetCoreInstrumentation(options =>
+      {
+        // Enrich incoming HTTP request spans with additional context
+        options.EnrichWithHttpRequest = (activity, httpRequest) =>
+        {
+          activity?.SetTag("http.request.id", httpRequest.HttpContext.TraceIdentifier);
+          activity?.SetTag("http.client.ip", httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString());
+
+          // Extract user identifier from claims if authenticated
+          var userId = httpRequest.HttpContext.User.FindFirst("sub")?.Value
+                    ?? httpRequest.HttpContext.User.FindFirst("userId")?.Value;
+          if (!string.IsNullOrEmpty(userId))
+          {
+            activity?.SetTag("enduser.id", userId);
+          }
+        };
+
+        // Enrich with response information
+        options.EnrichWithHttpResponse = (activity, httpResponse) =>
+        {
+          activity?.SetTag("http.response.content_length", httpResponse.ContentLength);
+        };
+
+        // Record unhandled exceptions on spans
+        options.RecordException = true;
+      });
+
+      tracingOptions.AddHttpClientInstrumentation(options =>
+      {
+        // Enrich outgoing HTTP client spans
+        options.EnrichWithHttpRequestMessage = (activity, httpRequest) =>
+        {
+          activity?.SetTag("http.request.uri.host", httpRequest.RequestUri?.Host);
+        };
+
+        // Record exceptions for dependency failures
+        options.RecordException = true;
+      });
+
       tracingOptions.AddEntityFrameworkCoreInstrumentation();
 
       if (Debugger.IsAttached)
@@ -67,24 +138,22 @@ public static class TracingExtensions
         tracingOptions.AddConsoleExporter();
       }
 
-      tracingOptions.AddAzureMonitorTraceExporter(monitorOptions =>
+      // Only add Azure Monitor exporter if connection string is configured
+      if (!string.IsNullOrWhiteSpace(connectionString))
       {
-        using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-        string instrumentationKey = new string(optionsManager
-          .GetRequiredService<IOptionsManager>()
-          .GetApplicationOptions()
-          .ApplicationInsightsEndpoint);
-
-        monitorOptions.ConnectionString = instrumentationKey;
-        monitorOptions.Credential = new DefaultAzureCredential(
+        tracingOptions.AddAzureMonitorTraceExporter(monitorOptions =>
+        {
+          monitorOptions.ConnectionString = connectionString;
+          monitorOptions.Credential = new DefaultAzureCredential(
 #if !DEBUG
-                    new DefaultAzureCredentialOptions
-                    {
-                        ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-                    }
+                      new DefaultAzureCredentialOptions
+                      {
+                          ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+                      }
 #endif
-        );
-      });
+          );
+        });
+      }
     });
   }
 }

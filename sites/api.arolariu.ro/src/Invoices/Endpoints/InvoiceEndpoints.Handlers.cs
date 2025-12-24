@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 
 using static arolariu.Backend.Common.GuidConstants;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+using arolariu.Backend.Common.Telemetry.Tracing;
 
 public static partial class InvoiceEndpoints
 {
@@ -28,17 +29,24 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewInvoiceAsync), ActivityKind.Server);
+      activity?
+        .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+        .SetOperationType("CRUD.Create");
+
       var invoice = invoiceDto.ToInvoice();
+      activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceProcessingService
         .CreateInvoice(invoice)
         .ConfigureAwait(false);
 
+      activity?.RecordSuccess("Invoice created successfully");
       var responseDto = InvoiceResponseDto.FromInvoice(invoice);
       return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", responseDto);
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -46,6 +54,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -53,6 +62,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -60,6 +70,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -67,6 +78,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -82,8 +94,18 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
+      activity?
+        .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+        .SetOperationType("CRUD.Read");
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       var isGuestUser = potentialUserIdentifier == EmptyGuid;
+
+      if (activity is not null)
+      {
+        activity.SetInvoiceContext(id, potentialUserIdentifier);
+        activity.SetTag("user.is_guest", isGuestUser);
+      }
 
       // Access Control Strategy:
       // 1. If authenticated user, first try point read with partition key (efficient owner lookup)
@@ -121,10 +143,24 @@ public static partial class InvoiceEndpoints
 
       var canAccess = isPublicInvoice || (!isGuestUser && (isOwner || isSharedWithUser));
 
-      return !canAccess ? TypedResults.Forbid() : TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
+      activity?
+        .SetTag("access.is_public", isPublicInvoice)
+        .SetTag("access.is_owner", isOwner)
+        .SetTag("access.is_shared", isSharedWithUser)
+        .SetTag("access.granted", canAccess);
+
+      if (!canAccess)
+      {
+        activity?.AddCustomEvent("access.denied", new Dictionary<string, object?> { ["invoice.id"] = id.ToString() });
+        return TypedResults.Forbid();
+      }
+
+      activity?.RecordSuccess("Invoice retrieved successfully");
+      return TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -168,11 +204,19 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllInvoicesAsync), ActivityKind.Server);
+      activity?
+        .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
+        .SetOperationType("CRUD.ReadAll");
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetUserContext(potentialUserIdentifier);
 
       var possibleInvoices = await invoiceProcessingService
         .ReadInvoices(potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.SetTag("result.count", possibleInvoices?.Count() ?? 0);
+      activity?.RecordSuccess();
 
       return possibleInvoices is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoices.Select(InvoiceResponseDto.FromInvoice));
     }
@@ -221,15 +265,25 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("CRUD.DeleteAll");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetUserContext(potentialUserIdentifier);
 
       await invoiceProcessingService
         .DeleteInvoices(potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("All invoices deleted successfully");
       return TypedResults.NoContent();
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -237,6 +291,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -244,6 +299,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -251,6 +307,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -258,6 +315,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -274,13 +332,21 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("CRUD.Update");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
@@ -295,10 +361,13 @@ public static partial class InvoiceEndpoints
       var updatedInvoice = await invoiceProcessingService
         .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Invoice updated successfully");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceResponseDto.FromInvoice(updatedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -306,6 +375,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -313,6 +383,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -320,6 +391,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -327,6 +399,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -343,13 +416,21 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(PatchSpecificInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("CRUD.Patch");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
@@ -380,10 +461,12 @@ public static partial class InvoiceEndpoints
         .UpdateInvoice(newInvoice, id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
+      activity?.RecordSuccess("Invoice patched successfully");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceResponseDto.FromInvoice(updatedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -391,6 +474,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -398,6 +482,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -405,6 +490,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -412,6 +498,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -427,23 +514,34 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("CRUD.Delete");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       await invoiceProcessingService
         .DeleteInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Invoice deleted successfully");
       return TypedResults.NoContent();
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -451,6 +549,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -458,6 +557,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -465,6 +565,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -472,6 +573,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -488,24 +590,37 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddProductToInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Product.Add");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       var productEntity = product.ToProduct();
+      activity?.SetTag("product.name", productEntity.RawName);
+
       await invoiceProcessingService
         .AddProduct(productEntity, id, potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Product added to invoice");
       return TypedResults.Accepted(uri: $"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(productEntity));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -513,6 +628,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -520,6 +636,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -527,6 +644,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -534,6 +652,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -549,15 +668,32 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveProductsFromInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Product.ReadAll");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoice.Items.Select(ProductResponseDto.FromProduct));
+
+      if (possibleInvoice is null)
+      {
+        activity?.SetTag("result.found", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("result.count", possibleInvoice.Items.Count);
+      activity?.RecordSuccess();
+      return TypedResults.Ok(possibleInvoice.Items.Select(ProductResponseDto.FromProduct));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -565,6 +701,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -572,6 +709,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -579,6 +717,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -586,6 +725,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -602,23 +742,35 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveProductFromInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Product.Delete");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
+      activity?.SetTag("product.name", productDto.ProductName);
 
       var possibleProduct = await invoiceProcessingService
         .GetProduct(productDto.ProductName, id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleProduct is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       await invoiceProcessingService
         .DeleteProduct(productDto.ProductName, id, potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Product removed from invoice");
       return TypedResults.NoContent();
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -626,6 +778,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -633,6 +786,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -640,6 +794,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -647,6 +802,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -663,13 +819,22 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductInInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Product.Update");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
+      activity?.SetTag("product.original_name", productInformation.OriginalProductName);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.invoice_found", false);
         return TypedResults.NotFound();
       }
 
@@ -678,6 +843,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
       if (possibleProduct is null)
       {
+        activity?.SetTag("result.product_found", false);
         return TypedResults.NotFound();
       }
 
@@ -686,14 +852,18 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
 
       var updatedProduct = productInformation.ToProduct();
+      activity?.SetTag("product.new_name", updatedProduct.RawName);
+
       await invoiceProcessingService
         .AddProduct(updatedProduct, id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
+      activity?.RecordSuccess("Product updated in invoice");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(updatedProduct));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -701,6 +871,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -708,6 +879,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -715,6 +887,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -722,6 +895,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -737,28 +911,48 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveMerchantFromInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Invoice.ReadMerchant");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.invoice_found", false);
         return TypedResults.NotFound();
       }
 
       if (possibleInvoice.MerchantReference == Guid.Empty)
       {
+        activity?.SetTag("result.has_merchant", false);
         return TypedResults.NotFound();
       }
+
+      activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(possibleInvoice.MerchantReference)
         .ConfigureAwait(false);
-      return possibleMerchant is null ? TypedResults.NotFound() : TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+
+      if (possibleMerchant is null)
+      {
+        activity?.SetTag("result.merchant_found", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.RecordSuccess();
+      return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -766,6 +960,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -773,6 +968,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -780,6 +976,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -787,6 +984,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -803,7 +1001,14 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddMerchantToInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Invoice.AddMerchant");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -811,15 +1016,20 @@ public static partial class InvoiceEndpoints
 
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.invoice_found", false);
         return TypedResults.NotFound();
       }
 
       if (possibleInvoice.MerchantReference != Guid.Empty)
       {
+        activity?.SetTag("result.conflict", "merchant_exists");
         return TypedResults.Conflict();
       }
 
       var merchant = merchantDto.ToMerchant();
+      activity?.SetMerchantContext(merchant.id, merchant.Name);
+      activity?.SetTag("merchant.parent_company_id", merchant.ParentCompanyId.ToString());
+
       possibleInvoice.MerchantReference = merchant.id;
       merchant.ReferencedInvoices.Add(possibleInvoice.id);
 
@@ -831,11 +1041,13 @@ public static partial class InvoiceEndpoints
         .CreateMerchant(merchant)
         .ConfigureAwait(false);
 
+      activity?.RecordSuccess("Merchant added to invoice");
       // Return MerchantResponseDto so the client can extract the merchant ID
       return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -843,6 +1055,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -850,6 +1063,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -857,6 +1071,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -864,6 +1079,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -879,27 +1095,38 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveMerchantFromInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Invoice.RemoveMerchant");
+      }
 
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.invoice_found", false);
         return TypedResults.NotFound();
       }
 
       if (possibleInvoice.MerchantReference == Guid.Empty)
       {
+        activity?.SetTag("result.conflict", "no_merchant");
         return TypedResults.Conflict();
       }
+
+      activity?.SetMerchantContext(possibleInvoice.MerchantReference);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(possibleInvoice.MerchantReference)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
+        activity?.SetTag("result.merchant_found", false);
         return TypedResults.NotFound();
       }
 
@@ -914,10 +1141,12 @@ public static partial class InvoiceEndpoints
         .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
         .ConfigureAwait(false);
 
+      activity?.RecordSuccess("Merchant removed from invoice");
       return TypedResults.NoContent();
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -925,6 +1154,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -932,6 +1162,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -939,6 +1170,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -946,6 +1178,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -962,27 +1195,39 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScanAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Scan.Create");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
+      activity?.SetTag("scan.location", convertedScan.Location.ToString());
+
       possibleInvoice.Scans.Add(convertedScan);
 
       await invoiceProcessingService
           .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
           .ConfigureAwait(false);
 
+      activity?.RecordSuccess("Scan added to invoice");
       return TypedResults.Created($"/rest/v1/invoices/{id}/scans", InvoiceScanResponseDto.FromInvoiceScan(convertedScan));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -990,6 +1235,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -997,6 +1243,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1004,6 +1251,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1011,6 +1259,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1026,15 +1275,32 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceScansAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Scan.ReadAll");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoice.Scans.Select(InvoiceScanResponseDto.FromInvoiceScan));
+
+      if (possibleInvoice is null)
+      {
+        activity?.SetTag("result.found", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("result.count", possibleInvoice.Scans.Count);
+      activity?.RecordSuccess();
+      return TypedResults.Ok(possibleInvoice.Scans.Select(InvoiceScanResponseDto.FromInvoiceScan));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1042,6 +1308,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1049,6 +1316,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1056,6 +1324,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1063,6 +1332,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1079,18 +1349,28 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceScanAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Scan.Delete");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       // URL-decode the scan location field to handle URL-encoded characters
       var decodedScanLocation = Uri.UnescapeDataString(scanLocationField);
+      activity?.SetTag("scan.location", decodedScanLocation);
+
       var possibleScan = possibleInvoice.Scans
          .FirstOrDefault(scan => scan.Location.ToString() == decodedScanLocation, InvoiceScan.Default());
 
@@ -1100,14 +1380,16 @@ public static partial class InvoiceEndpoints
         await invoiceProcessingService
           .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
           .ConfigureAwait(false);
+        activity?.RecordSuccess("Scan removed from invoice");
         return TypedResults.NoContent();
       }
 
+      activity?.SetTag("scan.found", false);
       return TypedResults.NotFound();
-
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1115,6 +1397,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1122,6 +1405,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1129,6 +1413,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1136,6 +1421,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1151,15 +1437,32 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceMetadataAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Metadata.Read");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(value: possibleInvoice.AdditionalMetadata);
+
+      if (possibleInvoice is null)
+      {
+        activity?.SetTag("result.found", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("metadata.count", possibleInvoice.AdditionalMetadata.Count);
+      activity?.RecordSuccess();
+      return TypedResults.Ok(value: possibleInvoice.AdditionalMetadata);
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1167,6 +1470,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1174,6 +1478,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1181,6 +1486,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1188,6 +1494,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1204,13 +1511,21 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(PatchInvoiceMetadataAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Metadata.Patch");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
@@ -1219,10 +1534,14 @@ public static partial class InvoiceEndpoints
       var updatedInvoice = await invoiceProcessingService
         .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.SetTag("metadata.count", updatedInvoice.AdditionalMetadata.Count);
+      activity?.RecordSuccess("Metadata patched");
       return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", updatedInvoice.AdditionalMetadata);
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1230,6 +1549,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1237,6 +1557,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1244,6 +1565,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1251,6 +1573,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1267,13 +1590,22 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceMetadataAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Metadata.Delete");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
+      activity?.SetTag("metadata.keys_to_delete", metadataKeys.Keys.Count());
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
@@ -1285,10 +1617,13 @@ public static partial class InvoiceEndpoints
       _ = await invoiceProcessingService
         .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Metadata keys deleted");
       return TypedResults.NoContent();
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1296,6 +1631,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1303,6 +1639,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1310,6 +1647,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1317,6 +1655,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1335,16 +1674,28 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.Create");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var merchant = merchantDto.ToMerchant();
+      activity?.SetMerchantContext(merchant.id);
+      activity?.SetTag("merchant.name", merchant.Name);
+
       await invoiceProcessingService
           .CreateMerchant(merchant)
           .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Merchant created");
       return TypedResults.Created($"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1352,6 +1703,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1359,6 +1711,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1366,6 +1719,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1373,6 +1727,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1388,7 +1743,14 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllMerchantsAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.ReadAll");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetTag("parent_company.id", parentCompanyId.ToString());
 
       var possibleMerchants = await invoiceProcessingService
           .ReadMerchants(parentCompanyId)
@@ -1396,10 +1758,13 @@ public static partial class InvoiceEndpoints
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
       var merchantDtos = possibleMerchants?.Select(MerchantResponseDto.FromMerchant) ?? [];
+      activity?.SetTag("result.count", merchantDtos.Count());
+      activity?.RecordSuccess();
       return TypedResults.Ok(merchantDtos);
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1407,6 +1772,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1414,6 +1780,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1421,6 +1788,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1428,6 +1796,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1444,17 +1813,36 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.Read");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
+      if (parentCompanyId.HasValue)
+      {
+        activity?.SetTag("parent_company.id", parentCompanyId.Value.ToString());
+      }
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, parentCompanyId)
         .ConfigureAwait(false);
-      return possibleMerchant is null
-        ? TypedResults.NotFound()
-        : TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+
+      if (possibleMerchant is null)
+      {
+        activity?.SetTag("result.found", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("merchant.name", possibleMerchant.Name);
+      activity?.RecordSuccess();
+      return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1462,6 +1850,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1469,6 +1858,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1476,6 +1866,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1483,6 +1874,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1499,24 +1891,37 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.Update");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, merchantPayload.ParentCompanyId)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       var updatedMerchant = merchantPayload.ToMerchant(id);
+      activity?.SetTag("merchant.name", updatedMerchant.Name);
+
       await invoiceProcessingService
         .UpdateMerchant(updatedMerchant, id, updatedMerchant.ParentCompanyId)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Merchant updated");
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1524,6 +1929,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1531,6 +1937,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1538,6 +1945,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1545,6 +1953,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1561,15 +1970,26 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.Delete");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
+      activity?.SetTag("parent_company.id", parentCompanyId.ToString());
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, parentCompanyId)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
+
+      activity?.SetTag("merchant.referenced_invoices_count", possibleMerchant.ReferencedInvoices.Count);
 
       // Before deleting the merchant, we need to remove the reference from all invoices that reference this merchant.
       foreach (var invoiceIdentifier in possibleMerchant.ReferencedInvoices)
@@ -1589,10 +2009,13 @@ public static partial class InvoiceEndpoints
       await invoiceProcessingService
         .DeleteMerchant(id, parentCompanyId)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Merchant deleted");
       return TypedResults.NoContent();
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1600,6 +2023,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1607,6 +2031,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1614,6 +2039,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1621,6 +2047,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1636,17 +2063,27 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoicesFromMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.ReadInvoices");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       var listOfInvoiceIdentifiers = possibleMerchant.ReferencedInvoices;
+      activity?.SetTag("merchant.referenced_invoices_count", listOfInvoiceIdentifiers.Count);
+
       var listOfConcreteInvoices = new List<Invoice>();
 
       foreach (var identifier in listOfInvoiceIdentifiers)
@@ -1660,11 +2097,14 @@ public static partial class InvoiceEndpoints
         }
       }
 
+      activity?.SetTag("result.count", listOfConcreteInvoices.Count);
+      activity?.RecordSuccess();
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
       return TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceResponseDto.FromInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1672,6 +2112,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1679,6 +2120,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1686,6 +2128,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1693,6 +2136,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1709,11 +2153,20 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddInvoiceToMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.AddInvoices");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
+      activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
       var possibleMerchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
       if (possibleMerchant is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
@@ -1726,6 +2179,8 @@ public static partial class InvoiceEndpoints
           listOfValidInvoices.Add(potentialInvoice);
         }
       }
+
+      activity?.SetTag("invoices.valid_count", listOfValidInvoices.Count);
 
       foreach (var invoice in listOfValidInvoices)
       {
@@ -1741,10 +2196,12 @@ public static partial class InvoiceEndpoints
         .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
         .ConfigureAwait(false);
 
+      activity?.RecordSuccess("Invoices added to merchant");
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(possibleMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1752,6 +2209,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1759,6 +2217,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1766,6 +2225,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1773,6 +2233,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1789,13 +2250,22 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveInvoiceFromMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.RemoveInvoices");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
+      activity?.SetTag("invoices.requested_count", invoiceIdentifiers.InvoiceIdentifiers.Count());
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
@@ -1808,6 +2278,8 @@ public static partial class InvoiceEndpoints
           listOfInvoicesToBeRemoved.Add(potentialInvoice);
         }
       }
+
+      activity?.SetTag("invoices.removed_count", listOfInvoicesToBeRemoved.Count);
 
       foreach (var invoice in listOfInvoicesToBeRemoved)
       {
@@ -1822,10 +2294,13 @@ public static partial class InvoiceEndpoints
       await invoiceProcessingService
         .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
         .ConfigureAwait(false);
+
+      activity?.RecordSuccess("Invoices removed from merchant");
       return TypedResults.NoContent();
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1833,6 +2308,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1840,6 +2316,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1847,6 +2324,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1854,6 +2332,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1869,17 +2348,27 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveProductsFromMerchantAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Merchant.ReadProducts");
+      }
+
       _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetMerchantContext(id);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
         .ConfigureAwait(false);
       if (possibleMerchant is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       var listOfInvoices = possibleMerchant.ReferencedInvoices;
+      activity?.SetTag("merchant.invoices_count", listOfInvoices.Count);
+
       var listOfProducts = new List<ProductResponseDto>();
 
       foreach (var identifier in listOfInvoices)
@@ -1897,10 +2386,13 @@ public static partial class InvoiceEndpoints
         }
       }
 
+      activity?.SetTag("result.count", listOfProducts.Count);
+      activity?.RecordSuccess();
       return TypedResults.Ok(listOfProducts);
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1908,6 +2400,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1915,6 +2408,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1922,6 +2416,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1929,6 +2424,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1947,29 +2443,49 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
+      if (activity is not null)
+      {
+        activity.SetLayerContext("Endpoint", nameof(InvoiceEndpoints));
+        activity.SetOperationType("Invoice.Analyze");
+      }
+
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      activity?.SetInvoiceContext(id, potentialUserIdentifier);
+
+      // Set analysis options on the span
+      var analysisOptions = options.ToAnalysisOptions();
+      activity?.SetTag("analysis.mode", analysisOptions.ToString());
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
       if (possibleInvoice is null)
       {
+        activity?.SetTag("result.found", false);
         return TypedResults.NotFound();
       }
 
       await invoiceProcessingService
-        .AnalyzeInvoice(options.ToAnalysisOptions(), id, potentialUserIdentifier)
+        .AnalyzeInvoice(analysisOptions, id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
       var analyzedInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return analyzedInvoice is null
-        ? TypedResults.NotFound()
-        : TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceResponseDto.FromInvoice(analyzedInvoice));
+
+      if (analyzedInvoice is null)
+      {
+        activity?.SetTag("result.analyzed", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("result.items_count", analyzedInvoice.Items.Count);
+      activity?.RecordSuccess("Invoice analyzed");
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceResponseDto.FromInvoice(analyzedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1977,6 +2493,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1984,6 +2501,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceDependencyValidationException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1991,6 +2509,7 @@ public static partial class InvoiceEndpoints
     }
     catch (InvoiceProcessingServiceException exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,
@@ -1998,6 +2517,7 @@ public static partial class InvoiceEndpoints
     }
     catch (Exception exception)
     {
+      Activity.Current?.RecordException(exception);
       return TypedResults.Problem(
         detail: exception.Message + exception.Source,
         statusCode: StatusCodes.Status500InternalServerError,

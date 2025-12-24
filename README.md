@@ -133,6 +133,8 @@
   - [🗺️ Roadmap](#️-roadmap)
   - [🤖 AI-Powered Development](#-ai-powered-development)
   - [📊 Repository Analytics](#-repository-analytics)
+    - [scc (local)](#scc-local)
+      - [Commands used](#commands-used)
   - [🤝 Contributing](#-contributing)
     - [👥 Top Contributors](#-top-contributors)
   - [📜 License](#-license)
@@ -531,6 +533,62 @@ This repository is fully configured with **GitHub Copilot instructions** for con
 [![Time period](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_badge.svg)](https://repography.com)
 
 </div>
+
+<details>
+<summary><b>📐 Static Code Statistics (cloc & scc)</b></summary>
+
+> Last updated: 2025-12-24
+
+> Repository size (excluding `node_modules`, build artifacts, and test results): **0.631 GiB**
+
+### scc (local)
+
+```text
+───────────────────────────────────────────────────────────────────────────────
+Language            Files       Lines    Blanks  Comments       Code Complexity
+───────────────────────────────────────────────────────────────────────────────
+TypeScript            489      84,263     9,479    19,446     55,338      2,626
+C#                    158      22,744     2,116     8,514     12,114        287
+Markdown               82      34,416     7,664         0     26,752          0
+JSON                   55      22,161        28         0     22,133          0
+Bicep                  45       5,120       473     1,530      3,117         21
+YAML                   32       4,491       347       501      3,643          0
+Svelte                 26       2,624       146       304      2,174         54
+SVG                    12         621         0         0        621          0
+MSBuild                10         563        60        28        475          5
+JavaScript              5         165        10        11        144         10
+Plain Text              5         343        27         0        316          0
+XML                     4       3,077         0        20      3,057          0
+CSS                     3         284        31        16        237          0
+SQL                     3          81        12        48         21          0
+Batch                   2          60        18         0         42          4
+Docker ignore           2         153        17        19        117          0
+Dockerfile              2         211        38        51        122          9
+Shell                   2          54        16        12         26          2
+HTML                    1         185         9         7        169          0
+License                 1          21         4         0         17          0
+TypeScript Typ…         1           7         2         1          4          0
+───────────────────────────────────────────────────────────────────────────────
+Total                 940     181,644    20,497    30,508    130,639      3,018
+───────────────────────────────────────────────────────────────────────────────
+Estimated Cost to Develop (organic) $4,502,687
+Estimated Schedule Effort (organic) 24.36 months
+Estimated People Required (organic) 16.42
+───────────────────────────────────────────────────────────────────────────────
+Processed 7143099 bytes, 7.143 megabytes (SI)
+───────────────────────────────────────────────────────────────────────────────
+```
+
+#### Commands used
+
+```powershell
+# Run from repository root
+scc . --exclude-dir node_modules,.next,bin,obj,artifacts,coverage,TestResults,dist
+```
+
+> Notes: `scc` counts source-like files and can differ from other tools based on exclusions, generated assets, and large/binary-like bundles.
+
+</details>
 
 <details open>
 <summary><b>📅 Activity Timeline</b></summary>
