@@ -220,7 +220,7 @@
     "react-icons": "5.5.0",
     "react-intersection-observer": "10.0.0",
     "react-qr-code": "2.0.18",
-    "react-resizable-panels": "3.0.6",
+    "react-resizable-panels": "4.0.15",
     "recharts": "3.6.0",
     "resend": "6.6.0",
     "rimraf": "6.1.2",
