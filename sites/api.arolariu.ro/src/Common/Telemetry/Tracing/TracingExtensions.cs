@@ -88,9 +88,49 @@ public static class TracingExtensions
       tracingOptions.AddSource(AuthPackageTracing.Name);
       tracingOptions.AddSource(InvoicePackageTracing.Name);
 
-      // Add framework instrumentation
-      tracingOptions.AddAspNetCoreInstrumentation();
-      tracingOptions.AddHttpClientInstrumentation();
+      // Add custom processor for span enrichment (must be added before exporters)
+      tracingOptions.AddProcessor(new ActivityEnrichingProcessor());
+
+      // Add framework instrumentation with enrichment callbacks
+      tracingOptions.AddAspNetCoreInstrumentation(options =>
+      {
+        // Enrich incoming HTTP request spans with additional context
+        options.EnrichWithHttpRequest = (activity, httpRequest) =>
+        {
+          activity?.SetTag("http.request.id", httpRequest.HttpContext.TraceIdentifier);
+          activity?.SetTag("http.client.ip", httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString());
+
+          // Extract user identifier from claims if authenticated
+          var userId = httpRequest.HttpContext.User.FindFirst("sub")?.Value
+                    ?? httpRequest.HttpContext.User.FindFirst("userId")?.Value;
+          if (!string.IsNullOrEmpty(userId))
+          {
+            activity?.SetTag("enduser.id", userId);
+          }
+        };
+
+        // Enrich with response information
+        options.EnrichWithHttpResponse = (activity, httpResponse) =>
+        {
+          activity?.SetTag("http.response.content_length", httpResponse.ContentLength);
+        };
+
+        // Record unhandled exceptions on spans
+        options.RecordException = true;
+      });
+
+      tracingOptions.AddHttpClientInstrumentation(options =>
+      {
+        // Enrich outgoing HTTP client spans
+        options.EnrichWithHttpRequestMessage = (activity, httpRequest) =>
+        {
+          activity?.SetTag("http.request.uri.host", httpRequest.RequestUri?.Host);
+        };
+
+        // Record exceptions for dependency failures
+        options.RecordException = true;
+      });
+
       tracingOptions.AddEntityFrameworkCoreInstrumentation();
 
       if (Debugger.IsAttached)
