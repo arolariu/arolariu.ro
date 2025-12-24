@@ -152,6 +152,7 @@ const websiteEslintConfig: Config = defineConfig({
     "react/no-unescaped-entities": "off", // Apostrophes and quotes are fine in JSX text content.
     "react/no-unstable-nested-components": "warn", // Warn about nested component definitions.
     "react/button-has-type": "warn", // Warn about missing button type.
+    "react/jsx-no-leaked-render": "warn", // Warn about potential leaked renders, but don't block.
 
     "react-hooks-extra/no-direct-set-state-in-use-effect": "off", // We allow direct setState calls in useEffect.
 
