@@ -93,8 +93,9 @@ Trigger (push/PR) → Lint → Format → Test → Report
 | `official-api-trigger.yml` | Trigger | Push to main/preview | Build, test, and deploy .NET API | .NET 10, Azure |
 | `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit CV site | Node.js 24, Azure SWA |
 | `official-docs-trigger.yml` | Trigger | Push to main | Generate and deploy DocFX docs | .NET 10, DocFX |
-| `official-hygiene-check.yml` | Validation | PR, Push | Code quality checks (lint, format) | Node.js 24, ESLint, Prettier |
+| `official-hygiene-check-v2.yml` | Validation | PR | Code quality checks (lint, format, tests) | Node.js 24, ESLint, Prettier |
 | `official-e2e-action.yml` | Validation | Schedule, Manual | End-to-end testing | Node.js 24, Playwright |
+| `official-components-publish.yml` | Trigger | Push to main | Publish component library to npm | Node.js 24, RSLib |
 
 ---
 
@@ -311,21 +312,27 @@ Trigger: Push to main/preview
 
 ### 4.3 Validation Pattern (Hygiene)
 
-**Hygiene Check** (`official-hygiene-check.yml`):
+**Hygiene Check** (`official-hygiene-check-v2.yml`):
 ```
-Trigger: PR, Push to main/preview
-├─ Job: stats (parallel)
+Trigger: PR
+├─ Job: setup (sequential)
 │  ├─ Setup workspace (Node.js 24)
-│  └─ Run dependency stats
+│  └─ Detect changed files
 ├─ Job: format (parallel)
 │  ├─ Setup workspace (Node.js 24)
-│  └─ Check code formatting
+│  └─ Check code formatting → format-result.json
 ├─ Job: lint (parallel)
 │  ├─ Setup workspace (Node.js 24)
-│  └─ Run ESLint
+│  └─ Run ESLint → lint-result.json
+├─ Job: test (parallel)
+│  ├─ Setup workspace (Node.js 24)
+│  └─ Run unit tests → test-result.json
+├─ Job: stats (parallel)
+│  ├─ Setup workspace (Node.js 24)
+│  └─ Run dependency stats → stats-result.json
 └─ Job: summary (depends on above)
-   ├─ Setup workspace (Node.js 24)
-   └─ Generate quality report
+   ├─ Download all result artifacts
+   └─ Generate rich PR comment
 ```
 
 **Why parallel jobs?**

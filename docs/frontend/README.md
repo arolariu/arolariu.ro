@@ -5,6 +5,7 @@ This directory contains technical documentation for the frontend components of t
 ## Overview
 
 The frontend is built using:
+
 - **Framework**: Next.js 16.0.0-beta.0 with App Router
 - **Language**: TypeScript 5.9.3 (strict mode)
 - **UI Library**: React 19.2.0 with Server Components
@@ -19,11 +20,13 @@ Frontend RFCs are numbered **1000-1999** and located in `/docs/rfc/`.
 ### Implemented RFCs
 
 | RFC # | Title | Status | Date | Description |
-|-------|-------|--------|------|-------------|
+| ----- | ----- | ------ | ---- | ----------- |
 | [1001](../rfc/1001-opentelemetry-observability-system.md) | OpenTelemetry Observability System | ✅ Implemented | 2025-10-11 | Comprehensive observability system using OpenTelemetry SDK for Next.js |
 | [1002](../rfc/1002-comprehensive-jsdoc-documentation-standard.md) | JSDoc/TSDoc Documentation Standard | ✅ Implemented | 2025-01-26 | Comprehensive JSDoc documentation standard for TypeScript/React |
 | [1003](../rfc/1003-internationalization-system.md) | next-intl Internationalization System | ✅ Implemented | 2025-10-25 | Multi-language support with next-intl and type-safe translations |
 | [1004](../rfc/1004-metadata-seo-system.md) | Metadata and SEO System | ✅ Implemented | 2025-10-25 | Centralized metadata management and SEO optimization |
+| [1005](../rfc/1005-state-management-zustand.md) | State Management with Zustand | ✅ Implemented | 2025-12-25 | Client-side state management using Zustand with IndexedDB persistence |
+| [1006](../rfc/1006-component-library-architecture.md) | Component Library Architecture | ✅ Implemented | 2025-12-25 | Shared React component library (@arolariu/components) |
 
 ### Proposed RFCs
 
@@ -45,6 +48,7 @@ Practical, developer-focused guides for implementing common patterns:
 ## Key Topics
 
 ### Architecture
+
 - Next.js App Router patterns
 - Server vs Client component patterns
 - React Server Components usage
@@ -52,12 +56,14 @@ Practical, developer-focused guides for implementing common patterns:
 - Middleware implementation
 
 ### State Management
+
 - Zustand stores for global state
 - React Context for component trees
 - Server Actions for mutations
 - Form state management
 
 ### Performance
+
 - Code splitting strategies
 - Image optimization
 - Lazy loading
@@ -65,18 +71,21 @@ Practical, developer-focused guides for implementing common patterns:
 - Bundle size optimization
 
 ### Testing
+
 - Unit testing with Jest
 - Integration testing strategies
 - E2E testing with Playwright
 - Component testing best practices
 
 ### Observability
+
 - OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md) (RFC 1001))
 - Logging strategies
 - Error tracking
 - Performance monitoring
 
 ### Security
+
 - Authentication with Clerk
 - Authorization patterns
 - Input validation

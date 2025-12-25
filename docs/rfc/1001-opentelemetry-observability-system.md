@@ -3,7 +3,7 @@
 - **Status**: Implemented
 - **Date**: 2025-10-11
 - **Authors**: arolariu
-- **Related Components**: `sites/arolariu.ro`, `src/lib/telemetry.ts`, `src/instrumentation.ts`
+- **Related Components**: `sites/arolariu.ro`, `src/instrumentation.server.ts`, `src/instrumentation.ts`
 
 ---
 
@@ -43,10 +43,10 @@ Modern Next.js applications operating in SSR-first, CSR-second, and Backend-for-
 │                      Next.js Application                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  instrumentation.ts                                             │
-│  ├─ startTelemetry() on Node.js runtime                         │
-│  └─ Initializes before application bootstrap                    │
+│  ├─ register() function                                         │
+│  └─ Dynamic import of telemetry based on runtime                │
 ├─────────────────────────────────────────────────────────────────┤
-│  telemetry.ts                                                   │
+│  instrumentation.server.ts                                      │
 │  ├─ NodeSDK Configuration                                       │
 │  │  ├─ Auto-instrumentations (HTTP, Fetch, FS, DNS, etc.)       │
 │  │  ├─ OTLP Trace Exporter (BatchSpanProcessor)                 │

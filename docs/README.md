@@ -4,7 +4,7 @@ This directory contains comprehensive technical documentation for the arolariu.r
 
 ## Directory Structure
 
-```
+```text
 docs/
 ├── README.md           # This file
 ├── RFC_TEMPLATE.md     # Template for creating new RFCs
@@ -24,27 +24,39 @@ docs/
 
 All architectural RFCs are organized by number ranges in a single directory:
 
-**Monorepo/General (0000-0999)**
+#### Monorepo/General (0000-0999)
+
+- [RFC 0001: GitHub Actions Workflows](./rfc/0001-github-actions-workflows.md) - ✅ Implemented
 - General architecture decisions
 - Cross-cutting concerns
 - Tooling and infrastructure
 
-**Frontend (1000-1999)**
+#### Frontend (1000-1999)
+
 - [RFC 1001: OpenTelemetry Observability System](./rfc/1001-opentelemetry-observability-system.md) - ✅ Implemented
+- [RFC 1002: JSDoc/TSDoc Documentation Standard](./rfc/1002-comprehensive-jsdoc-documentation-standard.md) - ✅ Implemented
+- [RFC 1003: next-intl Internationalization System](./rfc/1003-internationalization-system.md) - ✅ Implemented
+- [RFC 1004: Metadata and SEO System](./rfc/1004-metadata-seo-system.md) - ✅ Implemented
+- [RFC 1005: State Management with Zustand](./rfc/1005-state-management-zustand.md) - ✅ Implemented
+- [RFC 1006: Component Library Architecture](./rfc/1006-component-library-architecture.md) - ✅ Implemented
 - Next.js application architecture
 - React components and patterns
 - Client-side state management
 - UI/UX design decisions
 
-**Backend (2000-2999)**
+#### Backend (2000-2999)
+
 - [RFC 2001: Domain-Driven Design Architecture](./rfc/2001-domain-driven-design-architecture.md) - ✅ Implemented
 - [RFC 2002: OpenTelemetry Backend Observability](./rfc/2002-opentelemetry-backend-observability.md) - ✅ Implemented
+- [RFC 2003: The Standard Implementation](./rfc/2003-the-standard-implementation.md) - ✅ Implemented
+- [RFC 2004: XML Documentation Standard](./rfc/2004-comprehensive-xml-documentation-standard.md) - ✅ Implemented
 - .NET API architecture
 - Domain-Driven Design (DDD) patterns
 - SOLID principles implementation
 - API endpoints and contracts
 
-**Database (3000-3999)**
+#### Database (3000-3999)
+
 - Database schema and migrations
 - Data access patterns
 - Query optimization
@@ -124,6 +136,7 @@ All documentation should:
 ## Review Process
 
 RFCs should be reviewed by:
+
 - At least one team member with expertise in the relevant area
 - Repository maintainers for architectural decisions
 - Security team for security-sensitive changes
@@ -131,10 +144,11 @@ RFCs should be reviewed by:
 ## Questions?
 
 For questions about documentation:
+
 - Open an issue on GitHub
-- Contact: admin@arolariu.ro
+- Contact: `admin@arolariu.ro`
 
 ---
 
-**Last Updated**: 2025-10-12
+**Last Updated**: 2025-12-25
 **Maintained By**: arolariu team
