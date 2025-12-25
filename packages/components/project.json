@@ -24,12 +24,12 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo 'No unit tests configured for components yet'",
+        "command": "npm run test",
         "cwd": "packages/components"
       },
       "configurations": {
         "unit": {
-          "command": "echo 'No unit tests configured for components yet'"
+          "command": "npm run test:unit"
         }
       }
     }

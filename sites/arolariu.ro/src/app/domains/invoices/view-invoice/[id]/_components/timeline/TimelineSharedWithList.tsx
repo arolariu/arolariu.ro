@@ -66,7 +66,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
       <div className='flex items-center gap-2'>
         <TbUsers className='text-muted-foreground h-4 w-4' />
         <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>Shared With</p>
-        {(sharedUsers.length > 0 || isPublic) && (
+        {Boolean(sharedUsers.length > 0 || isPublic) && (
           <Badge
             variant='secondary'
             className='h-5 px-1.5 text-xs'>
@@ -76,7 +76,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
       </div>
 
       {/* Public Access Warning */}
-      {isPublic && (
+      {Boolean(isPublic) && (
         <Alert
           variant='default'
           className='border-orange-500/50 bg-orange-500/10'>
@@ -89,7 +89,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
       )}
 
       {/* Shared Users List */}
-      {sharedUsers.length > 0 && (
+      {Boolean(sharedUsers.length > 0) && (
         <div className='space-y-2'>
           {sharedUsers.map((user) => (
             <div

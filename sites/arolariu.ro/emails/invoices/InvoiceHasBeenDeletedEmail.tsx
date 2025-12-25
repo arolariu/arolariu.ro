@@ -77,13 +77,13 @@ const InvoiceHasBeenDeletedEmail = (props: Readonly<Props>) => {
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        If you didn't initiate this deletion, or if you need to recover the invoice, please contact us immediately at{" "}
+        If you didn’t initiate this deletion, or if you need to recover the invoice, please contact us immediately at{" "}
         <Link
           href={`mailto:${BRAND.supportEmail}`}
           style={EmailLinkStyles}>
           {BRAND.supportEmail}
         </Link>
-        . We're here to help.
+        . We’re here to help.
       </Text>
 
       <Text style={{...EmailParagraphStyles, margin: "0"}}>

@@ -93,6 +93,7 @@ public static class WebApplicationBuilderExtensions
     });
     services.AddIdentityApiEndpoints<AuthenticatedUser>(
       options => options.SignIn.RequireConfirmedEmail = true)
+      .AddRoles<AuthenticatedUserRole>()
       .AddEntityFrameworkStores<AuthDbContext>();
 
     // Configure cookie settings.

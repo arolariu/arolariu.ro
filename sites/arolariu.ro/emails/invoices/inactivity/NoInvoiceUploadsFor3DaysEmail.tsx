@@ -7,12 +7,19 @@ import {InvoiceUploadInactivityReminderEmail, type InvoiceUploadInactivityRemind
 
 type Props = Readonly<Omit<InvoiceUploadInactivityReminderEmailProps, "daysWithoutUpload">>;
 
-const NoInvoiceUploadsFor3DaysEmail = (props: Readonly<Props>) => (
-  <InvoiceUploadInactivityReminderEmail
-    {...props}
-    daysWithoutUpload={3}
-  />
-);
+const NoInvoiceUploadsFor3DaysEmail = (props: Readonly<Props>) => {
+  const {username, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
+
+  return (
+    <InvoiceUploadInactivityReminderEmail
+      username={username}
+      lastUploadDate={lastUploadDate}
+      createInvoiceUrl={createInvoiceUrl}
+      invoicesUrl={invoicesUrl}
+      daysWithoutUpload={3}
+    />
+  );
+};
 
 NoInvoiceUploadsFor3DaysEmail.PreviewProps = {
   username: "Test User",

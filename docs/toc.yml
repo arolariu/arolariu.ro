@@ -34,6 +34,10 @@
       href: rfc/1003-internationalization-system.md
     - name: RFC 1004 - Metadata & SEO
       href: rfc/1004-metadata-seo-system.md
+    - name: RFC 1005 - State Management
+      href: rfc/1005-state-management-zustand.md
+    - name: RFC 1006 - Component Library
+      href: rfc/1006-component-library-architecture.md
     - name: RFC 2001 - DDD Architecture
       href: rfc/2001-domain-driven-design-architecture.md
     - name: RFC 2002 - Backend Observability

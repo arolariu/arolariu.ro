@@ -85,11 +85,12 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPluginPromise.configs["flat/recommended"].rules,
 
     curly: "off", // we allow no curly braces for 1 instruction lines.
+    eqeqeq: "off", // we allow == and != operators
     "one-var": "off", // we allow multiple variable declarations.
-    "no-undef": "off", // Next.JS automatically injects React into the namespace.
     camelcase: "off", // we allow camelCase for variable names.
     "new-cap": "off", // we allow new capitalization
     "no-void": "off", // we allow void expressions
+    "no-undef": "off", // Next.JS automatically injects React into the namespace.
     "no-alert": "off", // Sometimes we raise alears in RCCs for clients.
     "id-length": "off", // we allow short variable names.
     "no-shadow": "off", // We never use var to have hoisting issues.
@@ -103,7 +104,8 @@ const websiteEslintConfig: Config = defineConfig({
     "dot-notation": "off", // we allow dot notation for property access.
     "sort-imports": "off", // this rule is biased; we use Prettier for sorting.
     "require-await": "off", // RSCs need to be async and sometimes don't have awaits.
-    "no-else-return": "off", // we allow else return
+    "no-else-return": "off", // we allow else return statements for clarity.
+    " no-undef-init": "off", // we allow initializing variables to undefined.
     "no-unused-vars": "off", // eslint can't accurately detect unused variables.
     "no-await-in-loop": "off", // we allow await in loops
     "no-magic-numbers": "off", // Magic numbers are used for prioritization of enums and fields.
@@ -118,6 +120,7 @@ const websiteEslintConfig: Config = defineConfig({
     "max-params": ["error", {max: 5}], // we allow a maximum of 5 parameters per function.
     "max-lines": ["error", {max: 1000}], // we allow a maximum of 1000 lines per file.
     "max-statements": "off", // we don't impose a max statements limit on functions.
+    "arrow-body-style": "off", // we allow both expression and block bodies for arrow functions.
 
     "react/jsx-indent": "off", // We format via Prettier.
     "react/jsx-newline": "off", // We use Prettier for formatting.

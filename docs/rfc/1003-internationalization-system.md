@@ -81,20 +81,22 @@ Modern Next.js applications with App Router and React Server Components require 
 The central configuration file that determines the user's locale and loads appropriate translations:
 
 ```typescript
-import {getCookie} from "@/lib/actions/cookies";
 import {Locale} from "next-intl";
 import {getRequestConfig} from "next-intl/server";
+import {cookies} from "next/headers";
 
 export default getRequestConfig(async () => {
-  const locale = (await getCookie("locale")) ?? "en";
+  const allCookies = await cookies();
+  const localeCookie = allCookies.get("locale");
+  const locale: Locale = (localeCookie?.value ?? "en") as Locale;
 
-  const supportedLocales = ["en", "ro"] as const;
-  if (!supportedLocales.includes(locale as Locale)) {
+  const supportedLocales: Locale[] = ["en", "ro"] as const;
+  if (!supportedLocales.includes(locale)) {
     throw new Error(`[arolariu.ro::i18n] >>> Locale "${locale}" is not supported.`);
   }
 
   return {
-    locale: locale as Locale,
+    locale,
     messages: (await import(`../../messages/${locale}.json`)).default,
   };
 });
@@ -102,7 +104,7 @@ export default getRequestConfig(async () => {
 
 **Key Features**:
 
-- **Cookie-based locale detection**: User preference persisted via HTTP cookies
+- **Cookie-based locale detection**: User preference persisted via HTTP cookies using Next.js `cookies()` API
 - **Fallback to English**: Default locale when no cookie is present
 - **Locale validation**: Compile-time type safety with runtime validation
 - **Dynamic imports**: Only load the required locale's messages

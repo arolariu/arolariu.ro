@@ -81,7 +81,9 @@
     "build:before": "node scripts/beforeBuild.ts",
     "build:after": "node scripts/afterBuild.ts",
     "build:clean": "rimraf dist",
-    "build:exports": "node scripts/generate-exports.ts"
+    "build:exports": "node scripts/generate-exports.ts",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "*",

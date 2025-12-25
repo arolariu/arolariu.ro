@@ -36,17 +36,6 @@ export default mergeConfig(
       coverage: {
         include: ["src/**/*.{ts,js,svelte}"],
         exclude: [
-          // Build artifacts
-          "**/node_modules/**",
-          "**/build/**",
-          "**/coverage/**",
-
-          // Configuration
-          "**/*.config.{js,ts}",
-          "**/vite.config.js",
-          "**/svelte.config.js",
-          "**/tailwind.config.js",
-
           // Static data that doesn't require testing
           "**/src/data/author.ts",
           "**/src/data/biography.ts",

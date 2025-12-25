@@ -5,6 +5,7 @@ This directory contains technical documentation for the backend components of th
 ## Overview
 
 The backend is built using:
+
 - **Framework**: .NET 10.0 (LTS)
 - **Language**: C# 13 with modern language features
 - **Architecture**: Modular Monolith
@@ -16,7 +17,7 @@ The backend is built using:
 
 ### Modular Monolith Structure
 
-```
+```text
 src/
 ├── Core/              # Application entry point and pipeline configuration
 ├── Core.Auth/         # Authentication domain
@@ -49,9 +50,11 @@ Backend RFCs are numbered **2000-2999** and located in `/docs/rfc/`.
 ### Implemented RFCs
 
 | RFC # | Title | Status | Date | Description |
-|-------|-------|--------|------|-------------|
+| ----- | ----- | ------ | ---- | ----------- |
 | [2001](../rfc/2001-domain-driven-design-architecture.md) | Domain-Driven Design Architecture | ✅ Implemented | 2025-10-12 | Complete DDD architecture with modular monolith, SOLID principles, and bounded contexts |
 | [2002](../rfc/2002-opentelemetry-backend-observability.md) | OpenTelemetry Backend Observability | ✅ Implemented | 2025-10-12 | Backend distributed tracing with OpenTelemetry, Activity API, and Azure Application Insights |
+| [2003](../rfc/2003-the-standard-implementation.md) | The Standard Implementation | ✅ Implemented | 2025-01-26 | Implementation of Hassan Habib's Standard with Brokers, Foundation, Processing, and Orchestration layers |
+| [2004](../rfc/2004-comprehensive-xml-documentation-standard.md) | XML Documentation Standard | ✅ Implemented | 2025-01-26 | Comprehensive XML documentation standard for C# public APIs |
 
 ### Proposed RFCs
 
@@ -70,6 +73,7 @@ Practical, concise guides for rapid development:
 ## Key Topics
 
 ### Architecture Patterns
+
 - Modular monolith organization
 - DDD aggregate design
 - Domain event handling
@@ -77,6 +81,7 @@ Practical, concise guides for rapid development:
 - Dependency injection strategies
 
 ### API Design
+
 - Minimal API patterns
 - RESTful conventions
 - GraphQL endpoints (if implemented)
@@ -84,6 +89,7 @@ Practical, concise guides for rapid development:
 - API versioning strategy
 
 ### Data Access
+
 - Entity Framework Core usage
 - Database migrations
 - Query optimization
@@ -91,12 +97,14 @@ Practical, concise guides for rapid development:
 - Caching strategies
 
 ### Authentication & Authorization
+
 - JWT token validation
 - Role-based access control
 - External identity providers
 - API key management
 
 ### Testing
+
 - Unit testing with xUnit
 - Integration testing patterns
 - Test naming conventions: `MethodName_Condition_ExpectedResult()`
@@ -104,12 +112,14 @@ Practical, concise guides for rapid development:
 - Mocking strategies
 
 ### Observability
+
 - Structured logging
 - OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md), RFC 2002)
 - Health checks
 - Metrics collection
 
 ### Security
+
 - Input validation
 - SQL injection prevention
 - XSS protection
@@ -122,6 +132,7 @@ Practical, concise guides for rapid development:
 ### General Domain (Core Infrastructure)
 
 **Responsibilities:**
+
 - Application bootstrapping
 - Middleware pipeline
 - CORS configuration
@@ -133,6 +144,7 @@ Practical, concise guides for rapid development:
 ### Invoices Domain
 
 **Responsibilities:**
+
 - Invoice CRUD operations
 - Merchant management
 - Product/line item handling
@@ -140,6 +152,7 @@ Practical, concise guides for rapid development:
 - Business rule validation
 
 **Key Aggregates:**
+
 - Invoice (root)
 - Merchant
 - Product
@@ -147,6 +160,7 @@ Practical, concise guides for rapid development:
 ### Authentication Domain (Core.Auth)
 
 **Responsibilities:**
+
 - User authentication
 - Authorization policies
 - JWT token management
@@ -198,13 +212,14 @@ All backend code must follow:
 ## Questions?
 
 For backend-specific questions:
+
 - Check existing RFCs (when available)
 - Review site README
 - Review DDD/SOLID instructions
 - Open a GitHub issue
-- Contact: admin@arolariu.ro
+- Contact: `admin@arolariu.ro`
 
 ---
 
-**Last Updated**: 2025-10-12
+**Last Updated**: 2025-12-25
 **Maintained By**: Backend team

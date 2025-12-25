@@ -138,7 +138,7 @@ const createInvoicesSlice = (
   upsertInvoice: (invoice) =>
     set((state) => {
       const existingIndex = state.invoices.findIndex((inv) => inv.id === invoice.id);
-      if (existingIndex >= 0) {
+      if (existingIndex !== -1) {
         // Update existing invoice
         const updatedInvoices = [...state.invoices];
         updatedInvoices[existingIndex] = invoice;

@@ -22,7 +22,7 @@ import {
 import {motion} from "motion/react";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
-import {useCallback, useMemo, useState} from "react";
+import {useCallback, useState} from "react";
 import {TbArrowRight, TbDeselect, TbGlobe, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
@@ -74,15 +74,8 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
   const router = useRouter();
   const [isMarkingPrivate, setIsMarkingPrivate] = useState<boolean>(false);
 
-  /** Check if the invoice is currently public */
-  const isInvoicePublic = useMemo(() => {
-    return invoice.sharedWith?.includes(LAST_GUID) ?? false;
-  }, [invoice.sharedWith]);
-
-  /** Filter out the public sentinel from the shared users list */
-  const sharedUsers = useMemo(() => {
-    return invoice.sharedWith?.filter((id) => id !== LAST_GUID) ?? [];
-  }, [invoice.sharedWith]);
+  const isInvoicePublic = invoice.sharedWith?.includes(LAST_GUID) ?? false;
+  const sharedUsers = invoice.sharedWith?.filter((id) => id !== LAST_GUID) ?? [];
 
   // Placeholder handlers for features not yet implemented
   const handleManageSharing = useCallback(() => {
@@ -139,9 +132,9 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       <CardContent className='space-y-4'>
         <div className='flex items-center'>
           <div className='bg-primary/10 mr-3 flex h-10 w-10 items-center justify-center rounded-full'>
-            {userInformation?.user?.imageUrl ? (
+            {Boolean(userInformation?.user?.imageUrl) ? (
               <Image
-                src={userInformation.user.imageUrl}
+                src={userInformation?.user?.imageUrl!}
                 alt='User'
                 width={40}
                 height={40}
@@ -178,7 +171,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
         <Separator />
 
-        {isInvoicePublic && (
+        {Boolean(isInvoicePublic) && (
           <Alert
             variant='destructive'
             className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
@@ -249,7 +242,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             </TooltipContent>
           </Tooltip>
 
-          {isInvoicePublic && (
+          {Boolean(isInvoicePublic) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

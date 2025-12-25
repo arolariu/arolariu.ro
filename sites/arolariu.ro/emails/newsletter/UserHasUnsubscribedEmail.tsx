@@ -32,15 +32,15 @@ const UserHasUnsubscribedEmail = (props: Readonly<Props>) => {
   return (
     <EmailLayout
       title={`${BRAND.name} | Unsubscribed`}
-      preview={`Hi ${name} — you've been unsubscribed.`}
+      preview={`Hi ${name} — you’ve been unsubscribed.`}
       badge='Newsletter'
-      heading="You've been unsubscribed"
+      heading='You’ve been unsubscribed'
       primaryCta={{href: effectiveManagePreferencesUrl, label: "Review preferences"}}
       secondaryCta={{href: effectiveResubscribeUrl, label: "Resubscribe"}}>
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        This email confirms you've been removed from the <strong>{BRAND.name}</strong> newsletter list. I'm sorry to see you go.
+        This email confirms you’ve been removed from the <strong>{BRAND.name}</strong> newsletter list. I’m sorry to see you go.
       </Text>
 
       <EmailCard title='What happens next'>
@@ -54,12 +54,12 @@ const UserHasUnsubscribedEmail = (props: Readonly<Props>) => {
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        I appreciate the time you spent with us. If you have feedback about why you left or how I can improve, I'd genuinely love to hear
+        I appreciate the time you spent with us. If you have feedback about why you left or how I can improve, I’d genuinely love to hear
         it—just reply to this email.
       </Text>
 
       <Text style={EmailParagraphStyles}>
-        If you didn't request this unsubscription, or you need help with anything, please contact{" "}
+        If you didn’t request this unsubscription, or you need help with anything, please contact{" "}
         <Link
           href={`mailto:${BRAND.supportEmail}`}
           style={EmailLinkStyles}>

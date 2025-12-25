@@ -66,6 +66,11 @@ function processItems(dir: string, prefix: string = "") {
   items.forEach((item) => {
     const itemName = item.name;
 
+    // Skip test files
+    if (itemName.includes(".test.") || itemName.includes(".spec.")) {
+      return;
+    }
+
     // Skip files with extensions (we only want directories or direct component files)
     if (item.isFile() && path.extname(itemName) !== ".tsx" && path.extname(itemName) !== ".ts") {
       return;

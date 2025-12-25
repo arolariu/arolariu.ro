@@ -30,10 +30,6 @@ export default defineConfig({
     include: ["**/?(*.)+(test).[tj]s?(x)"],
     exclude: [
       "**/node_modules/**",
-      "**/dist/**",
-      "**/.next/**",
-      "**/.rslib/**",
-      "**/build/**",
       "**/storybook-static/**",
       "**/*.spec.{ts,tsx,js,jsx}", // Exclude Playwright E2E tests
     ],

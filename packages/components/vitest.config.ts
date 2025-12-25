@@ -14,6 +14,11 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     plugins: [react()],
+    test: {
+      coverage: {
+        exclude: ["src/components/**"],
+      },
+    },
     resolve: {
       alias: {
         "@": resolve(__dirname, "./src"),

@@ -47,6 +47,7 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
 
       if (!isImage && !isPdf) {
         console.warn(`>>> Unsupported file type: ${file.type}`);
+        // eslint-disable-next-line no-continue -- skip unsupported files
         continue;
       }
 

@@ -44,7 +44,7 @@ const InvoiceHasBeenUnsharedWithEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {safeTo},</Text>
 
       <Text style={EmailParagraphStyles}>
-        We're writing to let you know that <strong>{safeFrom}</strong> has revoked your access to an invoice that was previously shared with
+        We’re writing to let you know that <strong>{safeFrom}</strong> has revoked your access to an invoice that was previously shared with
         you. This means you will no longer be able to view this invoice.
       </Text>
 
@@ -70,7 +70,7 @@ const InvoiceHasBeenUnsharedWithEmail = (props: Readonly<Props>) => {
 
       <Text style={EmailParagraphStyles}>
         If you believe this change was made in error, please reach out to <strong>{safeFrom}</strong> or contact our support team. Access
-        revocations are sometimes accidental, and we're happy to help facilitate communication if needed.
+        revocations are sometimes accidental, and we’re happy to help facilitate communication if needed.
       </Text>
 
       <Text style={EmailParagraphStyles}>

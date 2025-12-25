@@ -48,10 +48,3 @@ vi.mock("@clerk/nextjs", () => ({
 vi.mock("server-only", () => {
   return {};
 });
-
-// Mute console output during tests to keep the output clean
-vi.spyOn(console, "log").mockImplementation(() => {});
-vi.spyOn(console, "info").mockImplementation(() => {});
-vi.spyOn(console, "warn").mockImplementation(() => {});
-vi.spyOn(console, "error").mockImplementation(() => {});
-vi.spyOn(console, "debug").mockImplementation(() => {});

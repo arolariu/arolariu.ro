@@ -133,17 +133,14 @@ self.addEventListener("fetch", (event: FetchEvent) => {
         // Fetch in background to update cache (stale-while-revalidate)
         event.waitUntil(
           fetch(request)
-            .then((networkResponse) => {
+            .then(async (networkResponse) => {
               if (networkResponse.ok) {
-                caches
-                  .open(CACHE_NAME)
-                  .then((cache) => {
-                    cache.put(request, networkResponse);
-                    return networkResponse;
-                  })
-                  .catch(() => {
-                    // Caching failed
-                  });
+                try {
+                  const cache = await caches.open(CACHE_NAME);
+                  await cache.put(request, networkResponse);
+                } catch {
+                  // Caching failed
+                }
               }
 
               return networkResponse;

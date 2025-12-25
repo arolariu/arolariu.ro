@@ -1,3 +1,4 @@
+// eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker, not a runtime import
 import "server-only";
 
 import {addSpanEvent, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";

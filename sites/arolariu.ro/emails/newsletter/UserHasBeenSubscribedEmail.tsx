@@ -39,16 +39,16 @@ const UserHasBeenSubscribedEmail = (props: Readonly<Props>) => {
   return (
     <EmailLayout
       title={`${BRAND.name} | Newsletter subscription`}
-      preview={`Welcome, ${name} — you're subscribed.`}
+      preview={`Welcome, ${name} — you’re subscribed.`}
       badge='Newsletter'
-      heading="You're in — welcome aboard"
+      heading='You’re in — welcome aboard'
       primaryCta={{href: BRAND.url, label: "Visit arolariu.ro"}}
       showUnsubscribe
       unsubscribeUrl={`${BRAND.url}/unsubscribe`}>
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        Thanks for subscribing to the <strong>{BRAND.name}</strong> newsletter. I'm genuinely excited to have you here. I'll keep
+        Thanks for subscribing to the <strong>{BRAND.name}</strong> newsletter. I’m genuinely excited to have you here. I’ll keep
         communications lightweight, meaningful, and worth your time.
       </Text>
 
@@ -63,7 +63,7 @@ const UserHasBeenSubscribedEmail = (props: Readonly<Props>) => {
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        Your inbox is sacred—I respect that. Every email is crafted to provide genuine value, whether it's a tip that saves you hours or an
+        Your inbox is sacred—I respect that. Every email is crafted to provide genuine value, whether it’s a tip that saves you hours or an
         insight that shifts your perspective on personal finance.
       </Text>
 
