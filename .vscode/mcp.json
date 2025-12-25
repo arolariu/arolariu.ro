@@ -9,8 +9,19 @@
   ],
   "servers": {
     "nextjs-devtools": {
+      "type": "stdio",
       "command": "npx",
       "args": ["-y", "next-devtools-mcp@latest"]
+    },
+    "playwright-mcp-server": {
+        "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "eslint-mcp-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@eslint/mcp@latest"]
     },
     "github-mcp-server": {
       "type": "http",
@@ -19,16 +30,6 @@
     "microsoft-docs-server": {
       "type": "http",
       "url": "https://learn.microsoft.com/api/mcp"
-    },
-    "playwright-mcp-server": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    },
-    "eslint-mcp-server": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@eslint/mcp@latest"]
     }
   }
 }
