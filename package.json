@@ -81,7 +81,7 @@
     "@clerk/localizations": "3.32.1",
     "@clerk/nextjs": "6.36.5",
     "@eslint/js": "9.39.2",
-    "@faker-js/faker": "10.1.0",
+    "@faker-js/faker": "10.2.0",
     "@hookform/resolvers": "5.2.2",
     "@microsoft/api-extractor": "7.55.2",
     "@next/bundle-analyzer": "16.1.1",
