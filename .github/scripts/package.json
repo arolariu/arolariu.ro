@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@actions/artifact": "5.0.1",
+    "@actions/artifact": "5.0.2",
     "@actions/attest": "2.1.0",
     "@actions/cache": "5.0.1",
     "@actions/core": "2.0.1",
