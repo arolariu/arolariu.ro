@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for invoice scan creation (blob upload) action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/createInvoiceScan/tests
+ */
+
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {createInvoiceScan} from "./createInvoiceScan";
 

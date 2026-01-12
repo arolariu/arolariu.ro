@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Workspace cleanup utility for the website project.
+ * @module sites/arolariu.ro/scripts/clean
+ *
+ * @remarks
+ * Traverses the workspace to locate build/artifact folders and deletes them.
+ * Intended to be run locally and in CI for a clean slate.
+ */
+
 import {execSync} from "child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -10,7 +19,7 @@ const platform = os.platform();
  * If the folder or file is found, it will return the path to the item.
  * This function will NOT leave the current working directory given.
  * This function will SKIP the node_modules folder.
- * @param directory The directory to search in.
+ * @param directory - The directory to search in.
  * @returns The path to the folder/file, if it exists. Otherwise, it will return null.
  */
 function searchDirectory(directory: string, itemName: string, verbose: boolean = false): string | null {
@@ -43,7 +52,7 @@ function searchDirectory(directory: string, itemName: string, verbose: boolean =
 /**
  * This function will find the path to a folder, inside of the current working directory.
  * It will search recursively for the folder. If the folder is not found, it will return null.
- * @param folderName The name of the folder to search for.
+ * @param folderName - The name of the folder to search for.
  * @returns The path to the folder, if it exists. Otherwise, it will return null.
  */
 function findFolderPath(folderName: string, verbose: boolean = false): string | null {
@@ -58,7 +67,7 @@ function findFolderPath(folderName: string, verbose: boolean = false): string | 
 
 /**
  * This function will find the path to a file, inside of the current working directory.
- * @param fileName The name of the file to search for.
+ * @param fileName - The name of the file to search for.
  * @returns The path to the file, if it exists. Otherwise, it will return null.
  */
 function findFilePath(fileName: string, verbose: boolean = false): string | null {

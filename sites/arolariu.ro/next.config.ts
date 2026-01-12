@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Next.js configuration for the arolariu.ro website.
+ * @module sites/arolariu.ro/next.config
+ *
+ * @remarks
+ * Centralizes security headers (CSP), image remote patterns, build-time env injection,
+ * and plugin configuration (e.g., next-intl).
+ */
+
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";

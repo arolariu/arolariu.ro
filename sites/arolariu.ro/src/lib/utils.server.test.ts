@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for server-only utilities.
+ * @module sites/arolariu.ro/src/lib/utils.server/tests
+ */
+
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
 import {API_JWT, API_URL, CONFIG_STORE, convertBase64ToBlob, getMimeTypeFromBase64} from "./utils.server";

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Types for exporting invoices from the UI.
+ * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_types/InvoiceExport
+ */
+
 export type InvoiceExportFormat = "csv" | "pdf" | "json";
 
 export type InvoiceExportRequest = {

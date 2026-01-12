@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Server Action that coordinates invoice creation from a pending submission.
+ * @module sites/arolariu.ro/src/app/domains/invoices/create-invoice/_actions/createInvoiceAction
+ */
+
 "use server";
 
 import {addSpanEvent, createCounter, createNextJsAttributes, logWithTrace, setSpanAttributes, withSpan} from "@/instrumentation.server";
@@ -14,7 +19,7 @@ const createInvoiceRequestCounter = createCounter(
 
 /**
  * Maps a MIME type to a ScanType integer.
- * @param mimeType The MIME type to map.
+ * @param mimeType - The MIME type to map.
  * @returns The ScanType integer.
  */
 function mapMimeTypeToScanType(mimeType: string): InvoiceScanType {

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for invoice deletion action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/deleteInvoice/tests
+ */
+
 import {InvoiceBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";

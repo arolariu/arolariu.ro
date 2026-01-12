@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Server action for fetching blobs from Azure Storage.
+ * @module sites/arolariu.ro/src/lib/actions/storage/fetchBlob
+ */
+
 "use server";
 
 import {DefaultAzureCredential} from "@azure/identity";
@@ -22,8 +27,8 @@ type ServerActionOutputType = Promise<
 /**
  * This server action will fetch a blob from Azure Storage.
  * The blob will be fetched from the specified container and will be identified by the blob name.
- * @param containerName The name of the container where the blob is stored.
- * @param blobName The name of the blob to fetch.
+ * @param containerName - The name of the container where the blob is stored.
+ * @param blobName - The name of the blob to fetch.
  * @returns The response from the Azure Storage service.
  */
 export default async function fetchBlob({containerName, blobName}: ServerActionInputType): ServerActionOutputType {

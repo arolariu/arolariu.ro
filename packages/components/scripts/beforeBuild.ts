@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Pre-build script for the shared components package.
+ * @module packages/components/scripts/beforeBuild
+ *
+ * @remarks
+ * Runs local build-time housekeeping steps (e.g., clean) before the primary build.
+ */
+
 import {execSync} from "node:child_process";
 
 /**

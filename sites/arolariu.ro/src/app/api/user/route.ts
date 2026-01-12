@@ -1,3 +1,8 @@
+/**
+ * @fileoverview /api/user route handler for Clerk-derived identity and JWT issuance.
+ * @module sites/arolariu.ro/src/app/api/user/route
+ */
+
 import {
   addSpanEvent,
   createAuthAttributes,

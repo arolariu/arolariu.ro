@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for invoice patch (partial update) action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/patchInvoice/tests
+ */
+
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import patchInvoice from "./patchInvoice";

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Generic utilities and environment-derived constants.
+ * @module sites/arolariu.ro/src/lib/utils.generic
+ */
+
 import {v4, v5} from "uuid";
 
 /* v8 ignore start - Environment variables evaluated at module load time cannot be unit tested */

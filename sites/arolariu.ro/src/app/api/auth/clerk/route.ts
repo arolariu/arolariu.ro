@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Clerk webhook handler for user lifecycle events.
+ * @module sites/arolariu.ro/src/app/api/auth/clerk/route
+ *
+ * @remarks
+ * Processes Clerk webhook events and enriches user metadata.
+ */
+
 import {generateGuid} from "@/lib/utils.generic";
 import {clerkClient} from "@clerk/nextjs/server";
 import {verifyWebhook} from "@clerk/nextjs/webhooks";

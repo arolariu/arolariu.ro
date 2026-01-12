@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for environment and generic utilities.
+ * @module sites/arolariu.ro/src/lib/utils.generic/tests
+ */
+
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP, validateStringIsGuidType} from "./utils.generic";
 

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Server action for uploading blobs to Azure Storage.
+ * @module sites/arolariu.ro/src/lib/actions/storage/uploadBlob
+ */
+
 "use server";
 
 import {convertBase64ToBlob} from "@/lib/utils.server";
@@ -26,10 +31,10 @@ type ServerActionOutputType = Promise<
  * This server action will upload a blob to Azure Storage.
  * The blob will be uploaded to the specified container and will be identified by the blob name.
  * The blob will be uploaded from a base64 string representation; it can also have additional metadata.
- * @param containerName The name of the container where the blob will be stored.
- * @param base64Data The base64 data of the blob to upload.
- * @param metadata Additional metadata to attach to the blob.
- * @param blobName The name of the blob to upload.
+ * @param containerName - The name of the container where the blob will be stored.
+ * @param base64Data - The base64 data of the blob to upload.
+ * @param metadata - Additional metadata to attach to the blob.
+ * @param blobName - The name of the blob to upload.
  * @returns The response from the Azure Storage service.
  */
 export default async function uploadBlob(payload: ServerActionInputType): ServerActionOutputType {

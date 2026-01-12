@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for merchants list fetch action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/fetchMerchants/tests
+ */
+
 import {MerchantBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";

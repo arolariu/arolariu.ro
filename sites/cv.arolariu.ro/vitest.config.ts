@@ -1,6 +1,9 @@
 /**
- * Vitest configuration for cv.arolariu.ro (Svelte 5 + SvelteKit)
- * Extends the root vitest.config.ts and adapts it for Svelte testing
+ * @fileoverview Vitest configuration for cv.arolariu.ro (SvelteKit).
+ * @module sites/cv.arolariu.ro/vitest.config
+ *
+ * @remarks
+ * Extends the monorepo base Vitest configuration and adapts it for Svelte testing.
  *
  * @see https://vitest.dev/config/
  */

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for cookie helper actions.
+ * @module sites/arolariu.ro/src/lib/actions/cookies/cookies.action/tests
+ */
+
 import {cookies} from "next/headers";
 import {describe, expect, it, vi, type Mock} from "vitest";
 import {deleteCookie, getCookie, setCookie} from "./cookies.action";

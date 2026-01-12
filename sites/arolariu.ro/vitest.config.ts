@@ -1,6 +1,9 @@
 /**
- * Vitest configuration for the arolariu.ro Next.js application
- * Extends the base monorepo config with Next.js specific settings
+ * @fileoverview Vitest configuration for the arolariu.ro website.
+ * @module sites/arolariu.ro/vitest.config
+ *
+ * @remarks
+ * Extends the monorepo base config with Next.js specific settings.
  *
  * @see https://vitest.dev/config/
  */

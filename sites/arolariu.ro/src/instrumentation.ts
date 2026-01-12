@@ -1,6 +1,10 @@
 /**
- * This file is used to register the instrumentation for the application.
- * The instrumentation is called BEFORE the application is started.
+ * @fileoverview Next.js instrumentation registration entrypoint.
+ * @module sites/arolariu.ro/src/instrumentation
+ *
+ * @remarks
+ * This module is loaded before the application starts and is responsible for
+ * initializing telemetry (when applicable) based on the current runtime.
  */
 
 /**

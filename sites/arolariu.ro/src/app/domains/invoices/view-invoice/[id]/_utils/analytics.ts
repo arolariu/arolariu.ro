@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Analytics and derived data helpers for invoice views.
+ * @module sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_utils/analytics
+ */
+
 import {generateRandomInvoice, generateRandomInvoices} from "@/data/mocks";
 import {formatEnum} from "@/lib/utils.generic";
 import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";

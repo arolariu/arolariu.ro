@@ -1,26 +1,14 @@
+/**
+ * @fileoverview RSLib/Rsbuild configuration for the shared components package.
+ * @module packages/components/rslib.config
+ *
+ * @remarks
+ * Configures bundling output (ESM), declarations, source maps, and the `@` path alias.
+ */
+
 import {pluginReact} from "@rsbuild/plugin-react";
 import {defineConfig} from "@rslib/core";
 import path from "node:path";
-
-/**
- * Bundler configuration for building the component library.
- *
- * Configures the build process to output ESM format
- * with separate distribution directories for each module system.
- *
- * @remarks
- * - Generates TypeScript declaration files (.d.ts) for ESM format
- * - Outputs source maps for JavaScript and CSS files
- * - Uses React plugin for JSX transformation
- * - Sets up path alias '@' pointing to the src directory
- * - Targets web platform for the build output
- *
- * @example
- * ```typescript
- * // The configuration produces:
- * // - ESM modules in ./dist/esm/
- * ```
- */
 const bundlerConfig = defineConfig({
   source: {
     entry: {

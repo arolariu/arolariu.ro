@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for the Azure Blob upload server action.
+ * @module sites/arolariu.ro/src/lib/actions/storage/uploadBlob/tests
+ */
+
 import {BlobServiceClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 

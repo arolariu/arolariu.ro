@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Server action for reading configuration from Azure App Configuration.
+ * @module sites/arolariu.ro/src/lib/actions/storage/fetchConfig
+ */
+
 "use server";
 
 import {CONFIG_STORE} from "@/lib/utils.server";
@@ -5,7 +10,7 @@ import {AppConfigurationClient} from "@azure/app-configuration";
 
 /**
  * Server action that fetches a configuration value from Azure App Configuration.
- * @param key The key of the configuration value to fetch.
+ * @param key - The key of the configuration value to fetch.
  * @returns The value of the configuration value, if available.
  */
 export default async function fetchConfigurationValue(key: string): Promise<string> {

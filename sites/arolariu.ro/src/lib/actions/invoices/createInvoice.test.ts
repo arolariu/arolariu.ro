@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for invoice creation action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/createInvoice/tests
+ */
+
 import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
 import {InvoiceScanType} from "@/types/invoices";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
