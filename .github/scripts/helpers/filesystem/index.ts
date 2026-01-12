@@ -1,7 +1,8 @@
 /**
- * @fileoverview File system operations using @actions/io and native Node.js fs
- * @module helpers/filesystem
+ * @fileoverview File system operations using @actions/io and native Node.js fs.
+ * @module github/scripts/helpers/filesystem
  *
+ * @remarks
  * Provides a clean, unified API for file system operations in GitHub Actions.
  * Combines @actions/io for cross-platform operations with native fs for advanced features.
  * Follows Single Responsibility Principle by focusing solely on file operations.

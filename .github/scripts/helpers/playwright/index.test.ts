@@ -1,6 +1,9 @@
 /**
  * @fileoverview Comprehensive test suite for Playwright helper
- * @module helpers/playwright/index.test
+ * @module github/scripts/helpers/playwright/tests
+ *
+ * @remarks
+ * Exercises parsing and markdown generation using representative JSON shapes.
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";

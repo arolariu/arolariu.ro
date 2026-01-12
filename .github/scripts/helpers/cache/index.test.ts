@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for cache helper
+ * @fileoverview Unit tests for cache helper.
+ * @module github/scripts/helpers/cache/tests
+ *
+ * @remarks
+ * Validates cache helper behavior using mocked GitHub Actions modules.
  */
 
 import * as cache from "@actions/cache";

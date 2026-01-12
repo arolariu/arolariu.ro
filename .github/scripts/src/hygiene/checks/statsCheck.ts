@@ -1,7 +1,8 @@
 /**
- * @fileoverview Stats check module for hygiene pipeline
- * @module hygiene/checks/statsCheck
+ * @fileoverview Stats check module for hygiene pipeline.
+ * @module github/scripts/src/hygiene/checks/statsCheck
  *
+ * @remarks
  * Computes code statistics including:
  * - Diff stats vs main branch and previous commit
  * - Top file extensions and directories impacted

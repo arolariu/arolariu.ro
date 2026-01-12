@@ -1,7 +1,8 @@
 /**
- * @fileoverview Newman test report parser for E2E test analysis
- * @module helpers/newman
+ * @fileoverview Newman test report parser for E2E test analysis.
+ * @module github/scripts/helpers/newman
  *
+ * @remarks
  * Provides clean, type-safe API for parsing and analyzing Newman test reports.
  * Follows Single Responsibility Principle by focusing solely on Newman report processing.
  *

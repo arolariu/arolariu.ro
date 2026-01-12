@@ -1,3 +1,12 @@
+/**
+ * @fileoverview i18n asset generator for the monorepo.
+ * @module scripts/generate.i18n
+ *
+ * @remarks
+ * Reads translation JSON files, validates structure, and generates i18n artifacts.
+ * This script is used by `npm run generate` as part of the build toolchain.
+ */
+
 import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
@@ -21,8 +30,9 @@ type MessageFormat = {
  * The translation file should be a JSON file.
  *
  * This JSON file respects the {@link MessageFormat} structure.
- * @param filePath The path to the translation file.
- * @returns The translation file as a MessageFormat object.
+ * @param filePath - The path to the translation file.
+ * @param verbose - Enables verbose logging.
+ * @returns The translation file as a `MessageFormat` object.
  */
 function loadTranslationFile(filePath: string, verbose: boolean = false): MessageFormat {
   try {

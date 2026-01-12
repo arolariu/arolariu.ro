@@ -1,7 +1,8 @@
 /**
- * @fileoverview Artifact management using @actions/artifact
- * @module helpers/artifacts
+ * @fileoverview Artifact management using @actions/artifact.
+ * @module github/scripts/helpers/artifacts
  *
+ * @remarks
  * Provides a clean API for uploading and downloading artifacts in GitHub Actions.
  * Uses @actions/artifact for managing build outputs, test results, and other files.
  * Follows Single Responsibility Principle by focusing on artifact operations.

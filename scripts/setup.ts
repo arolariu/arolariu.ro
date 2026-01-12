@@ -7,6 +7,11 @@
  * offers to install/upgrade them to the minimum supported versions.
  *
  * It is designed to be interactive and platform-aware (Windows/macOS/Linux).
+ *
+ * @example
+ * ```bash
+ * npm run setup
+ * ```
  */
 
 import {execSync} from "child_process";

@@ -1,7 +1,8 @@
 /**
- * @fileoverview Vitest test results and coverage parser helper
- * @module helpers/vitest
+ * @fileoverview Vitest test results and coverage parser helper.
+ * @module github/scripts/helpers/vitest
  *
+ * @remarks
  * This module provides comprehensive utilities for parsing and formatting Vitest test results
  * and coverage data following SOLID principles and clean architecture patterns.
  *
@@ -314,7 +315,7 @@ export class VitestHelper implements IVitestHelper {
     for (const {filePath, coverage} of filesToShow) {
       const displayPath = workspaceRoot ? path.relative(workspaceRoot, filePath) : path.basename(filePath);
       // Normalize path and convert separators to POSIX style for cross-platform consistency
-      const normalizedPath = path.normalize(displayPath).replace(/\\/g, '/');
+      const normalizedPath = path.normalize(displayPath).replace(/\\/g, "/");
       const fileName = normalizedPath.length > 40 ? `...${normalizedPath.slice(-37)}` : normalizedPath;
 
       const formatPct = (pct: number): string => {

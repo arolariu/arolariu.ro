@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for HTTP helper
+ * @fileoverview Unit tests for HTTP helper.
+ * @module github/scripts/helpers/http/tests
+ *
+ * @remarks
+ * Validates wrapper behavior using a mocked `@actions/http-client`.
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";

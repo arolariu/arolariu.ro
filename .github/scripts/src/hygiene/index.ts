@@ -1,9 +1,10 @@
 /**
- * @fileoverview Hygiene check module entry point
- * @module hygiene
+ * @fileoverview Hygiene check module entry point.
+ * @module github/scripts/src/hygiene
  *
- * This module provides the unified entry point for all hygiene check operations.
- * It exports check modules, types, and the comment builder.
+ * @remarks
+ * This module provides a single import surface for hygiene check operations.
+ * It re-exports the check runners, shared types, and PR comment builder.
  */
 
 // Export types

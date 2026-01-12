@@ -1,7 +1,8 @@
 /**
- * @fileoverview Test check module for hygiene pipeline
- * @module hygiene/checks/testCheck
+ * @fileoverview Test check module for hygiene pipeline.
+ * @module github/scripts/src/hygiene/checks/testCheck
  *
+ * @remarks
  * Runs unit tests via `npm run test:unit` (NX runner) and produces structured results.
  * Captures test statistics from output parsing and coverage data from coverage-summary.json.
  *

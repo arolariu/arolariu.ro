@@ -1,7 +1,8 @@
 /**
- * @fileoverview Unified unit test action script for GitHub Actions workflows
- * @module src/runUnitTestAction
+ * @fileoverview Unified unit test action script for GitHub Actions workflows.
+ * @module github/scripts/src/runUnitTestAction
  *
+ * @remarks
  * This module handles all unit test-related operations for GitHub Actions CI/CD:
  * - **Test Result Collection**: Gathers Vitest and Playwright test results
  * - **Code Coverage Analysis**: Parses and formats coverage data

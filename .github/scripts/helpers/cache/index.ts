@@ -1,7 +1,8 @@
 /**
- * @fileoverview Cache management using @actions/cache
- * @module helpers/cache
+ * @fileoverview Cache management using @actions/cache.
+ * @module github/scripts/helpers/cache
  *
+ * @remarks
  * Provides a clean API for caching dependencies and build outputs.
  * Uses @actions/cache for saving and restoring cached files.
  * Follows Single Responsibility Principle by focusing on cache operations.

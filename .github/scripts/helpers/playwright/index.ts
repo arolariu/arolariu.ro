@@ -1,7 +1,8 @@
 /**
- * @fileoverview Playwright test results parser and formatter helper
- * @module helpers/playwright
+ * @fileoverview Playwright test results parser and formatter helper.
+ * @module github/scripts/helpers/playwright
  *
+ * @remarks
  * This module provides comprehensive utilities for parsing and formatting Playwright test results
  * following SOLID principles and clean architecture patterns.
  *

@@ -1,7 +1,8 @@
 /**
- * @fileoverview Unified type definitions for the hygiene check system
- * @module hygiene/types
+ * @fileoverview Unified type definitions for the hygiene check system.
+ * @module github/scripts/src/hygiene/types
  *
+ * @remarks
  * This module defines the canonical data structures used throughout the hygiene check
  * pipeline. All check modules produce `HygieneCheckResult` objects that are serialized
  * to JSON artifacts and consumed by the summary job to build rich PR comments.

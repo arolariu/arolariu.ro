@@ -1,7 +1,8 @@
 /**
- * @fileoverview Format check module for hygiene pipeline
- * @module hygiene/checks/formatCheck
+ * @fileoverview Format check module for hygiene pipeline.
+ * @module github/scripts/src/hygiene/checks/formatCheck
  *
+ * @remarks
  * Runs Prettier formatting and detects files that need changes.
  * Produces a `format-result.json` artifact with the check result.
  *

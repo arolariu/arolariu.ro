@@ -1,7 +1,8 @@
 /**
- * @fileoverview Centralized constants for GitHub Actions scripts
- * @module helpers/constants
+ * @fileoverview Centralized constants for GitHub Actions scripts.
+ * @module github/scripts/helpers/constants
  *
+ * @remarks
  * This module consolidates all configuration constants used across GitHub Actions
  * workflows and scripts into a single source of truth.
  */

@@ -1,6 +1,12 @@
 /**
- * This script will generate the `exports` property on the package.json file
- * based on every built component, so that they are properly exported.
+ * @fileoverview Generates the `exports` map for `@arolariu/components`.
+ * @module packages/components/scripts/generate-exports
+ *
+ * @remarks
+ * Scans built component entrypoints and updates `package.json#exports` so
+ * consumers can import subpaths (e.g. `@arolariu/components/button`).
+ *
+ * This is a build-time utility script; it should not be imported by runtime code.
  */
 
 import fs from "node:fs";

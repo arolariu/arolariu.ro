@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for artifacts helper
+ * @fileoverview Unit tests for artifacts helper.
+ * @module github/scripts/helpers/artifacts/tests
+ *
+ * @remarks
+ * Validates upload/download behavior using mocked GitHub Actions artifact clients.
  */
 
 import * as fs from "node:fs/promises";

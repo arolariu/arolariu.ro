@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for filesystem helper
+ * @fileoverview Unit tests for filesystem helper.
+ * @module github/scripts/helpers/filesystem/tests
+ *
+ * @remarks
+ * Exercises core operations using temporary directories.
  */
 
 import * as fs from "node:fs/promises";

@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Azure helpers used by monorepo scripts (Key Vault, App Configuration mapping).
+ * @module scripts/azure
+ *
+ * @remarks
+ * This module contains small utilities used by script entry points under `scripts/**`.
+ * It focuses on:
+ * - Detecting Key Vault reference values
+ * - Resolving secrets via Azure Key Vault
+ * - Mapping App Configuration keys to typed environment keys
+ */
+
 import {DefaultAzureCredential} from "@azure/identity";
 import {SecretClient} from "@azure/keyvault-secrets";
 import type {AllEnvironmentVariablesKeys} from "../types";
@@ -7,8 +19,8 @@ import type {AllEnvironmentVariablesKeys} from "../types";
  * A Key Vault reference is expected to be a JSON string with a "uri" field
  * that contains the Key Vault URL, typically in the format:
  * "https://<vault-name>.vault.azure.net/secrets/<secret-name>/<version>".
- * @param value The value to check.
- * @returns True if the value is a Key Vault reference, false otherwise.
+ * @param value - The value to check.
+ * @returns `true` if the value is a Key Vault reference; otherwise `false`.
  */
 
 export function isKeyVaultRef(value: string): boolean {
@@ -26,9 +38,10 @@ export function isKeyVaultRef(value: string): boolean {
  * "https://<vault-name>.vault.azure.net/secrets/<secret-name>/<version>".
  * It extracts the secret name from the URI and uses the Azure SDK to fetch the secret value.
  * If the secret is not found or has no value, it throws an error.
- * @param uri The Key Vault URI in the format "https://<vault-name>.vault.azure.net/secrets/<secret-name>/<version>".
- * @throws Error if the URI is invalid or if the secret cannot be retrieved.
- * @returns The value of the secret as a string.
+ *
+ * @param uri - The Key Vault URI in the format `https://<vault>.vault.azure.net/secrets/<secret>/<version>`.
+ * @returns The resolved secret value.
+ * @throws Error when the URI is invalid or the secret cannot be retrieved.
  * @example
  * const secretValue = await getSecretFromKeyVault("https://myvault.vault.azure.net/secrets/mysecret/1234567890abcdef");
  */
@@ -52,8 +65,8 @@ export async function getSecretFromKeyVault(uri: string): Promise<string> {
  * This function checks if a given key is a secret key.
  * It looks for common patterns in the key name that indicate it is a secret,
  * such as: "SECRET", "KEY", "JWT", "TOKEN", "PASSWORD".
- * @param key The key to check.
- * @returns True if the key is a secret key, false otherwise.
+ * @param key - The key to check.
+ * @returns `true` if the key appears to represent a secret; otherwise `false`.
  */
 export function isSecretKey(key: string): boolean {
   const secretPatternsType = ["SECRET", "KEY", "JWT", "TOKEN", "PASSWORD"];

@@ -1,7 +1,8 @@
 /**
- * @fileoverview PR comment builder utilities
- * @module helpers/comments
- * 
+ * @fileoverview PR comment builder utilities.
+ * @module github/scripts/helpers/comments
+ *
+ * @remarks
  * Provides builder patterns and utilities for constructing formatted PR comments.
  * Focuses on markdown generation and structured comment formatting.
  * Follows Builder pattern for complex comment construction.
@@ -255,7 +256,7 @@ export class CommentBuilder implements ICommentBuilder {
    * {@inheritDoc ICommentBuilder.addCollapsible}
    */
   addCollapsible(title: string, content: string, collapsed: boolean = true): ICommentBuilder {
-    const openTag = collapsed ? "<details>" : '<details open>';
+    const openTag = collapsed ? "<details>" : "<details open>";
     this.parts.push(`${openTag}\n<summary>${title}</summary>\n\n${content}\n\n</details>\n`);
     return this;
   }
@@ -288,7 +289,7 @@ export class CommentBuilder implements ICommentBuilder {
    */
   addSection(section: CommentSection): ICommentBuilder {
     this.addHeading(section.title, 3);
-    
+
     if (section.collapsible) {
       this.addCollapsible(section.title, section.content, section.collapsed);
     } else {
@@ -417,11 +418,11 @@ export class MarkdownUtils {
    */
   static formatBytes(bytes: number): string {
     if (bytes === 0) return "0 B";
-    
+
     const k = 1024;
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   }
 
@@ -478,9 +479,7 @@ export function createCommentBuilder(): ICommentBuilder {
  * @returns Formatted markdown comment
  */
 export function createSimpleComment(title: string, content: string, identifier?: string): string {
-  const builder = createCommentBuilder()
-    .addHeading(title, 2)
-    .addParagraph(content);
+  const builder = createCommentBuilder().addHeading(title, 2).addParagraph(content);
 
   if (identifier) {
     builder.addIdentifier(identifier);
@@ -497,15 +496,8 @@ export function createSimpleComment(title: string, content: string, identifier?:
  * @param identifier - Optional unique identifier
  * @returns Formatted markdown comment
  */
-export function createStatusComment(
-  status: BadgeStyle,
-  title: string,
-  message: string,
-  identifier?: string
-): string {
-  const builder = createCommentBuilder()
-    .addHeading(title, 2)
-    .addBadge(message, status);
+export function createStatusComment(status: BadgeStyle, title: string, message: string, identifier?: string): string {
+  const builder = createCommentBuilder().addHeading(title, 2).addBadge(message, status);
 
   if (identifier) {
     builder.addIdentifier(identifier);

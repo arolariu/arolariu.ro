@@ -1,10 +1,22 @@
+/**
+ * @fileoverview GraphQL types generation script (placeholder implementation).
+ * @module scripts/generate.gql
+ *
+ * @remarks
+ * Current behavior is intentionally minimal: it writes a placeholder artifact to
+ * `scripts/__generated__/gql` so the pipeline has a stable output location.
+ *
+ * Future work would likely include schema introspection + codegen.
+ */
+
 import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
 
 /**
- * GraphQL Types Generator
+ * GraphQL Types generator (placeholder).
  *
+ * @remarks
  * Placeholder implementation that can be extended to:
  *  1. Fetch remote schema (introspection)
  *  2. Generate TypeScript types via codegen

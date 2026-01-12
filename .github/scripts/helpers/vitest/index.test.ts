@@ -1,6 +1,9 @@
 /**
  * @fileoverview Comprehensive test suite for Vitest helper
- * @module helpers/vitest/index.test
+ * @module github/scripts/helpers/vitest/tests
+ *
+ * @remarks
+ * Covers coverage parsing and markdown generation for reporting.
  */
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
