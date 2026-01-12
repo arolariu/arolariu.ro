@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for git helper
+ * @fileoverview Unit tests for git helper.
+ * @module github/scripts/helpers/git/tests
+ *
+ * @remarks
+ * Verifies Git command construction via mocked `@actions/exec`.
  */
 
 import * as exec from "@actions/exec";

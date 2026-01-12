@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Types used for invoice analytics and summaries.
+ * @module sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_types/invoice
+ */
+
 import {InvoiceCategory, ProductCategory} from "@/types/invoices";
 
 // Simplified historical invoice summary for analytics

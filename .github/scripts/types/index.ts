@@ -1,6 +1,9 @@
 /**
- * @fileoverview Core type definitions for GitHub Actions scripts
- * @module types
+ * @fileoverview Core type definitions for GitHub Actions scripts.
+ * @module github/scripts/types
+ *
+ * @remarks
+ * Provides shared types consumed by `.github/scripts/src/**` action entry points.
  */
 
 /**

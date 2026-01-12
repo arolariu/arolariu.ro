@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for comments builder
+ * @fileoverview Unit tests for comments builder.
+ * @module github/scripts/helpers/comments/tests
+ *
+ * @remarks
+ * Covers the fluent builder surface and Markdown utilities.
  */
 
 import {describe, expect, it} from "vitest";

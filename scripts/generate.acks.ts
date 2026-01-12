@@ -1,3 +1,13 @@
+/**
+ * @fileoverview License acknowledgements generator for the monorepo.
+ * @module scripts/generate.acks
+ *
+ * @remarks
+ * Generates `sites/arolariu.ro/licenses.json` by traversing installed node_modules,
+ * filtering against the root manifest dependencies, and grouping results by
+ * dependency type.
+ */
+
 import fs, {globSync} from "node:fs";
 import {EOL} from "node:os";
 import path from "node:path";
@@ -18,7 +28,7 @@ function generateAcknowledgements(verbose: boolean = false) {
 
 /**
  * This function writes the package manifests to a JSON file.
- * @param packageManifests The map of package manifests.
+ * @param packageManifests - The map of package manifests.
  */
 function writeJsonFileWithManifests(packageManifests: Map<NodePackageDependencyType, NodePackageInformation[]>) {
   const rootPath = path.resolve(process.cwd()).concat("/sites/arolariu.ro/licenses.json").replaceAll("\\", "/");
@@ -154,9 +164,7 @@ function filterDependenciesManifestPathsWithDependenciesList(
   });
 
   // Normalize all paths to absolute and use forward slashes
-  const filteredAndNormalizedPackagePaths = filteredPackagePaths.map(packagePath =>
-    path.resolve(packagePath).replaceAll("\\", "/")
-  );
+  const filteredAndNormalizedPackagePaths = filteredPackagePaths.map((packagePath) => path.resolve(packagePath).replaceAll("\\", "/"));
 
   console.info(
     "[arolariu::filterDependenciesManifestPathsWithDependenciesList] After filtering node_modules folder, found ",

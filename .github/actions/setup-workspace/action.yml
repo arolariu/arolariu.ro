@@ -1,53 +1,83 @@
+#+#+#+#+############################################################
+# Setup Workspace (Composite Action)
+#
+# Summary:
+# - Bootstraps the monorepo CI environment (Node.js + optional .NET)
+# - Adds dependency caching (npm + NuGet) to speed up workflows
+# - Optionally installs Playwright browsers and generates repo artifacts
+#
+# Remarks:
+# - This action is intentionally “one stop” for workflows so callers can
+#   standardize cache keys, dependency installs, and artifact generation.
+# - Behavior is controlled entirely via inputs; leaving `dotnet-version` empty
+#   skips all .NET setup/restore steps.
+# - All commands run relative to `inputs.working-directory`.
+#+#+#+#+############################################################
+
 name: "Setup Workspace"
 description: "Sets up Node.js and .NET with optimized caching for the monorepo workspace"
 author: "arolariu.ro"
 
 inputs:
+  # Node.js version to install via actions/setup-node.
   node-version:
     description: "Node.js version to use"
     required: false
     default: "24"
 
+  # .NET SDK version to install via actions/setup-dotnet.
+  # Set to an empty string to disable .NET steps entirely.
   dotnet-version:
     description: ".NET version to use (leave empty to skip .NET setup)"
     required: false
     default: "10"
 
+  # When true, runs `npm ci` if the npm cache was not a hit.
   install-node-dependencies:
     description: "Whether to install npm dependencies"
     required: false
     default: "true"
 
+  # When true (and .NET is enabled), runs `dotnet restore` if the NuGet cache
+  # was not a hit.
   install-dotnet-dependencies:
     description: "Whether to install .NET dependencies"
     required: false
     default: "true"
 
+  # When true, runs the monorepo generators. Intended for CI workflows that
+  # require generated artifacts to exist before build/test.
   generate:
     description: "Whether to run npm run generate command"
     required: false
     default: "false"
 
+  # Workflow-specific prefix for cache keys.
+  # Use this to avoid cross-workflow cache invalidation when necessary.
   cache-key-prefix:
     description: "Prefix for cache key to allow per-workflow customization"
     required: false
     default: "default"
 
+  # Relative to repository root; used for both npm and dotnet commands.
   working-directory:
     description: "Working directory for npm  and dotnet commands (relative to repository root)"
     required: false
     default: "."
 
+  # When true, installs Playwright Chromium + OS dependencies.
   playwright:
     description: "Whether to install the Playwright browsers and dependencies"
     required: false
     default: "false"
 
 outputs:
+  # Exposes whether the Node.js cache matched the current lockfile hash.
   node-cache-hit:
     description: "Whether there was a cache hit for Node.js dependencies"
     value: ${{ steps.cache-node.outputs.cache-hit }}
 
+  # Exposes whether the NuGet cache matched the current project/sln inputs.
   dotnet-cache-hit:
     description: "Whether there was a cache hit for .NET packages"
     value: ${{ steps.cache-dotnet.outputs.cache-hit }}
@@ -66,8 +96,10 @@ runs:
 
     - name: 💾 Cache Node.js dependencies
       id: cache-node
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
+        # Cache both root and workspace node_modules to support Nx workspaces.
+        # Trade-off: broader paths can increase cache size but reduce CI time.
         path: |
           node_modules
           ~/.npm
@@ -83,8 +115,9 @@ runs:
     - name: 💾 Cache .NET packages
       id: cache-dotnet
       if: inputs.dotnet-version != ''
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
+        # Cache NuGet global packages and the dotnet SDK cache locations.
         path: |
           ~/.nuget/packages
           ~/.dotnet

@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for environment helper
+ * @fileoverview Unit tests for environment helper.
+ * @module github/scripts/helpers/environment/tests
+ *
+ * @remarks
+ * Uses test-controlled `process.env` values to validate retrieval and defaults.
  */
 
 import {afterEach, beforeEach, describe, expect, it} from "vitest";

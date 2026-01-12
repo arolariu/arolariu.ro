@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for helpers index (barrel exports)
+ * @fileoverview Unit tests for helpers index (barrel exports).
+ * @module github/scripts/helpers/tests
+ *
+ * @remarks
+ * Ensures helper exports remain stable for GitHub Actions scripts.
  */
 
 import {beforeAll, describe, expect, it} from "vitest";

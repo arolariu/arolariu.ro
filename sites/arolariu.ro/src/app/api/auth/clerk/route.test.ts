@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for the Clerk webhook handler.
+ * @module sites/arolariu.ro/src/app/api/auth/clerk/route/tests
+ */
+
 import {NextRequest} from "next/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {POST} from "./route";

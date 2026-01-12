@@ -1,6 +1,9 @@
 /**
- * @fileoverview Barrel export for hygiene check modules
- * @module hygiene/checks
+ * @fileoverview Barrel export for hygiene check runners.
+ * @module github/scripts/src/hygiene/checks
+ *
+ * @remarks
+ * Exposes the individual hygiene check runners as stable named exports.
  */
 
 export {runFormatCheck} from "./formatCheck.ts";

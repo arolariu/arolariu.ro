@@ -30,6 +30,10 @@ import {
 
 /**
  * Hidden HTML comment identifier for finding existing comments
+ *
+ * @remarks
+ * This marker is appended to the end of generated comments and used by the
+ * GitHub helper to find/replace the right PR comment.
  */
 export const HYGIENE_COMMENT_IDENTIFIER = "<!-- arolariu-hygiene-check-v2 -->";
 
@@ -56,8 +60,22 @@ const CHECK_ICONS: Record<string, string> = {
 /**
  * Builds the complete hygiene report comment
  *
- * @param report - Aggregated hygiene report from all checks
- * @returns Markdown string for the PR comment
+ * @remarks
+ * This function is intentionally pure (no I/O). It converts a structured
+ * {@link HygieneReport} into a Markdown string suitable for PR commenting.
+ *
+ * Sections are conditionally included based on which check results are present
+ * (format/lint/test/stats). The final output always includes a hidden marker
+ * ({@link HYGIENE_COMMENT_IDENTIFIER}) to support comment upsert behavior.
+ *
+ * @param report - Aggregated hygiene report from all checks.
+ * @returns Markdown string for the PR comment.
+ *
+ * @example
+ * ```ts
+ * const markdown = buildHygieneComment(report);
+ * await github.upsertComment(prNumber, markdown, "hygiene-check");
+ * ```
  */
 export function buildHygieneComment(report: HygieneReport): string {
   const lines: string[] = [];
@@ -107,6 +125,9 @@ export function buildHygieneComment(report: HygieneReport): string {
 
 /**
  * Builds the header section
+ *
+ * @param report - Hygiene report used to compute title and commit details.
+ * @returns Markdown for the report header.
  */
 function buildHeader(report: HygieneReport): string {
   const emoji = STATUS_EMOJI[report.overallStatus] ?? "❓";
@@ -128,6 +149,9 @@ function buildHeader(report: HygieneReport): string {
 
 /**
  * Builds the table of contents
+ *
+ * @param report - Hygiene report used to determine which sections exist.
+ * @returns Markdown for the table of contents.
  */
 function buildTableOfContents(report: HygieneReport): string {
   const sections: string[] = ["## 📑 Table of Contents", ""];
@@ -153,6 +177,9 @@ function buildTableOfContents(report: HygieneReport): string {
 
 /**
  * Builds the summary table
+ *
+ * @param report - Hygiene report containing check statuses and summaries.
+ * @returns Markdown for the check summary table.
  */
 function buildSummaryTable(report: HygieneReport): string {
   const lines: string[] = ["## 📋 Check Summary", ""];
@@ -180,6 +207,9 @@ function buildSummaryTable(report: HygieneReport): string {
 
 /**
  * Builds the stats section
+ *
+ * @param result - Stats check result.
+ * @returns Markdown for the statistics section.
  */
 function buildStatsSection(result: HygieneCheckResult): string {
   const lines: string[] = ["## 📊 Code Statistics", ""];
@@ -258,6 +288,9 @@ function buildStatsSection(result: HygieneCheckResult): string {
 
 /**
  * Builds the bundle size section
+ *
+ * @param bundles - Per-folder bundle comparisons against the main branch.
+ * @returns Markdown for the bundle size analysis section.
  */
 function buildBundleSizeSection(bundles: readonly BundleFolderComparison[]): string {
   const lines: string[] = ["### 📦 Bundle Size Analysis (vs Main)", ""];
@@ -300,6 +333,9 @@ function buildBundleSizeSection(bundles: readonly BundleFolderComparison[]): str
 
 /**
  * Builds the format section
+ *
+ * @param result - Format check result.
+ * @returns Markdown for the formatting section.
  */
 function buildFormatSection(result: HygieneCheckResult): string {
   const lines: string[] = ["## 🎨 Formatting", ""];

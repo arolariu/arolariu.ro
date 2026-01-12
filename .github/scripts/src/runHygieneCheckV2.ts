@@ -51,11 +51,19 @@ import {
 
 /**
  * Check mode for the hygiene script
+ *
+ * @remarks
+ * The mode is typically provided via the `CHECK_MODE` environment variable in
+ * GitHub Actions and controls which portion of the hygiene pipeline is
+ * executed.
  */
 export type CheckMode = "detect" | "format" | "lint" | "test" | "stats" | "summary";
 
 /**
  * Artifact directory for hygiene check results
+ *
+ * @remarks
+ * The workflow downloads artifacts into this folder before `summary` mode runs.
  */
 const ARTIFACT_DIR = "artifacts/hygiene";
 
@@ -65,6 +73,17 @@ const ARTIFACT_DIR = "artifacts/hygiene";
 
 /**
  * Detects file changes between two Git references
+ *
+ * @remarks
+ * This mode is used as a lightweight gate to decide whether expensive steps
+ * should run.
+ *
+ * Outputs:
+ * - `has-changes`: `true` if at least one file changed
+ * - `changed-files`: comma-separated list of changed files
+ * - `changed-files-count`: count of changed files
+ *
+ * @returns A promise that resolves when outputs are set.
  */
 async function detectChanges(): Promise<void> {
   const baseRef = env.get("BASE_REF", "origin/main") ?? "origin/main";
@@ -102,6 +121,13 @@ async function detectChanges(): Promise<void> {
 
 /**
  * Loads a check result from artifact file
+ *
+ * @remarks
+ * Returns `undefined` when the artifact is missing or unreadable so the summary
+ * report can degrade gracefully (e.g., partial results).
+ *
+ * @param checkType - The check name (e.g. `format`, `lint`, `test`, `stats`).
+ * @returns A parsed check result, or `undefined` when not available.
  */
 async function loadCheckResult(checkType: string): Promise<HygieneCheckResult | undefined> {
   const workspaceRoot = process.env["GITHUB_WORKSPACE"] ?? process.cwd();
@@ -118,6 +144,13 @@ async function loadCheckResult(checkType: string): Promise<HygieneCheckResult | 
 
 /**
  * Aggregates all check results and posts PR comment
+ *
+ * @remarks
+ * This mode reads the check artifacts produced by other workflow jobs, builds a
+ * unified report comment, and posts it to the PR when `PR_NUMBER` is present.
+ *
+ * @returns A promise that resolves when the comment is posted (or skipped) and
+ * outputs are set.
  */
 async function runSummary(): Promise<void> {
   core.info("📋 Running summary job...");
@@ -198,6 +231,14 @@ async function runSummary(): Promise<void> {
 
 /**
  * Main orchestrator function
+ *
+ * @remarks
+ * Reads `CHECK_MODE` and delegates to the appropriate sub-operation.
+ *
+ * This function is safe to call in non-PR contexts; comment posting is skipped
+ * when `PR_NUMBER` is not set.
+ *
+ * @returns A promise that resolves when the selected mode completes.
  */
 export default async function runHygieneCheck(): Promise<void> {
   const mode = (env.get("CHECK_MODE") ?? "stats") as CheckMode;

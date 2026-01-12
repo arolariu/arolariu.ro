@@ -1,7 +1,8 @@
 /**
- * @fileoverview Environment variable management utilities for GitHub Actions
- * @module helpers/environment
+ * @fileoverview Environment variable management utilities for GitHub Actions.
+ * @module github/scripts/helpers/environment
  *
+ * @remarks
  * Provides a clean, type-safe API for working with environment variables in GitHub Actions workflows.
  * Follows Single Responsibility Principle by focusing solely on environment access and validation.
  */

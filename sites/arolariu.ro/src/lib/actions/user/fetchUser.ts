@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Server actions for resolving the current user and issuing BFF tokens.
+ * @module sites/arolariu.ro/src/lib/actions/user/fetchUser
+ */
+
 "use server";
 
 import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";

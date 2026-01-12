@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for fetching Azure App Configuration values.
+ * @module sites/arolariu.ro/src/lib/actions/storage/fetchConfig/tests
+ */
+
 import {AppConfigurationClient} from "@azure/app-configuration";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import fetchConfigurationValue from "./fetchConfig";

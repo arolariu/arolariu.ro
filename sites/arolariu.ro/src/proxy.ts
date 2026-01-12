@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Clerk middleware wiring explain/entrypoint.
+ * @module sites/arolariu.ro/src/proxy
+ *
+ * @remarks
+ * Configures request matching rules and enforces authentication for protected routes.
+ */
+
 import {clerkMiddleware as authMiddleware, createRouteMatcher} from "@clerk/nextjs/server";
 
 const isProtectedRoute = createRouteMatcher(["/admin(.*)"]);

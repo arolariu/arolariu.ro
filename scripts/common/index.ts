@@ -1,15 +1,25 @@
+/**
+ * @fileoverview Shared utilities for monorepo scripts (CI detection, spinners, environment helpers).
+ * @module scripts/common
+ *
+ * @remarks
+ * These helpers are consumed by various `scripts/*.ts` entry points.
+ * They are intentionally runtime-lightweight and avoid importing heavy toolchains.
+ */
+
 import {createSpinner} from "nanospinner";
 import {spawn} from "node:child_process";
 import pc from "picocolors";
 
 /**
  * Runs a command with a spinner and captures output.
- * @param command The command to run
- * @param args Command arguments
- * @param spinnerText The text to show in the spinner
- * @param hideOutput Whether to hide the output (true for parallel execution)
- * @returns Promise with exit code and output
- * @throws Error if command or args are invalid
+ *
+ * @param command - The command to run.
+ * @param args - Command arguments.
+ * @param spinnerText - The text to show in the spinner.
+ * @param hideOutput - Whether to hide the output (useful for parallel execution).
+ * @returns A promise resolving to the exit code and captured output.
+ * @throws Error when inputs are invalid.
  */
 export async function runWithSpinner(
   command: string,

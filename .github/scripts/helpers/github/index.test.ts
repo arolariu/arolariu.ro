@@ -1,5 +1,9 @@
 /**
- * @fileoverview Unit tests for github helper
+ * @fileoverview Unit tests for github helper.
+ * @module github/scripts/helpers/github/tests
+ *
+ * @remarks
+ * Uses a mocked Octokit client to validate request shaping.
  */
 
 import * as github from "@actions/github";

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Static author/profile data for cv.arolariu.ro.
+ * @module sites/cv.arolariu.ro/src/data/author
+ */
+
 import type {PersonalInformation} from "@/types";
 
 export const author: Readonly<PersonalInformation> = {

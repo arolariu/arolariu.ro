@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for invoice analysis action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/analyzeInvoice/tests
+ */
+
 import {InvoiceBuilder} from "@/data/mocks";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";

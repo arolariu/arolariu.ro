@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Playwright E2E configuration for the arolariu.ro website.
+ * @module sites/arolariu.ro/playwright.config
+ *
+ * @remarks
+ * Defines local/CI projects and common settings (baseURL, timeouts, reporters).
+ */
+
 import {defineConfig, devices} from "@playwright/test";
 
 const weAreInCI = Boolean(process.env["CI"]);

@@ -1,7 +1,8 @@
 /**
- * @fileoverview HTTP client operations using @actions/http-client
- * @module helpers/http
+ * @fileoverview HTTP client operations using @actions/http-client.
+ * @module github/scripts/helpers/http
  *
+ * @remarks
  * Provides a clean, type-safe API for HTTP operations in GitHub Actions.
  * Uses @actions/http-client for making HTTP requests with proper error handling.
  * Follows Single Responsibility Principle by focusing on HTTP operations.

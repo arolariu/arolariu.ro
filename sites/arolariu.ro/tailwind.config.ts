@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Tailwind CSS configuration for the arolariu.ro website.
+ * @module sites/arolariu.ro/tailwind.config
+ *
+ * @remarks
+ * Defines content globs, responsive breakpoints, and theme extensions.
+ */
+
 import typography from "@tailwindcss/typography";
 import type {Config} from "tailwindcss";
 import tailwindAnimate from "tailwindcss-animate";

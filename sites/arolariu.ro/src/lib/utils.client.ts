@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Client-only browser utility helpers.
+ * @module sites/arolariu.ro/src/lib/utils.client
+ *
+ * @remarks
+ * Intended for code that relies on browser-only APIs such as `FileReader`, `window`, and `screen`.
+ */
+
 // eslint-disable-next-line n/no-extraneous-import -- client-only is a Next.js build-time marker, not a runtime import
 import "client-only";
 

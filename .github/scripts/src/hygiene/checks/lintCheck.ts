@@ -1,7 +1,8 @@
 /**
- * @fileoverview Lint check module for hygiene pipeline
- * @module hygiene/checks/lintCheck
+ * @fileoverview Lint check module for hygiene pipeline.
+ * @module github/scripts/src/hygiene/checks/lintCheck
  *
+ * @remarks
  * Runs ESLint and produces a structured result artifact.
  * Captures error/warning counts and individual file issues.
  *

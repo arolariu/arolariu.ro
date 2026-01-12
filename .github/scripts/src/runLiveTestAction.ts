@@ -1,7 +1,8 @@
 /**
- * @fileoverview Unified live test (E2E) action script for GitHub Actions workflows
- * @module src/runLiveTestAction
+ * @fileoverview Unified live test (E2E) action script for GitHub Actions workflows.
+ * @module github/scripts/src/runLiveTestAction
  *
+ * @remarks
  * This module handles all live/E2E test failure tracking and reporting:
  * - **Test Result Extraction**: Gathers frontend and backend test execution results
  * - **Artifact Discovery**: Finds and parses Newman reports, logs, and health checks

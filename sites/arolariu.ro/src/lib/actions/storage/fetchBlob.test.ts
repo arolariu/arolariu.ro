@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for the Azure Blob fetch server action.
+ * @module sites/arolariu.ro/src/lib/actions/storage/fetchBlob/tests
+ */
+
 import {BlobServiceClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import fetchBlob from "./fetchBlob";

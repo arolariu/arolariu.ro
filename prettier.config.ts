@@ -1,3 +1,22 @@
+/**
+ * @fileoverview Prettier configuration for the arolariu.ro monorepo.
+ * @module config/prettier
+ *
+ * @remarks
+ * This module exports the repository-wide Prettier configuration used by the
+ * `npm run format` script and editor integrations.
+ *
+ * The exported configuration is intentionally opinionated to ensure consistent
+ * formatting across multiple runtimes and frameworks (TypeScript/React, Svelte,
+ * and plain markup).
+ *
+ * @example
+ * ```bash
+ * npm run format
+ * ```
+ *
+ * @see {@link https://prettier.io/docs/en/configuration.html} Prettier configuration
+ */
 import type {Config} from "prettier";
 
 /**

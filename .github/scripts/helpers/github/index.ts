@@ -1,7 +1,8 @@
 /**
- * @fileoverview GitHub API operations using @actions/github
- * @module helpers/github
+ * @fileoverview GitHub API operations using @actions/github.
+ * @module github/scripts/helpers/github
  *
+ * @remarks
  * Provides a clean, type-safe API for GitHub operations in GitHub Actions.
  * Uses @actions/github (Octokit) for GitHub REST and GraphQL APIs.
  * Follows Single Responsibility Principle by focusing on GitHub API operations.

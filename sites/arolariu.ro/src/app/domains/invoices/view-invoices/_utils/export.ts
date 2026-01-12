@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Client-side helpers for exporting invoice collections.
+ * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/export
+ */
+
 import type {Invoice} from "@/types/invoices/Invoice";
 import type {InvoiceExportRequest} from "../_types/InvoiceExport";
 

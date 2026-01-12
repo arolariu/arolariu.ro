@@ -1,7 +1,8 @@
 /**
- * @fileoverview Git operations using @actions/exec
- * @module helpers/git
+ * @fileoverview Git operations using @actions/exec.
+ * @module github/scripts/helpers/git
  *
+ * @remarks
  * Provides a clean, type-safe API for Git operations in GitHub Actions.
  * Uses @actions/exec for executing Git commands with proper error handling.
  * Follows Single Responsibility Principle by focusing solely on Git operations.

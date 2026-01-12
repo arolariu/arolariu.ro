@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Server-only utilities for network and auth concerns.
+ * @module sites/arolariu.ro/src/lib/utils.server
+ */
+
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker, not a runtime import
 import "server-only";
 

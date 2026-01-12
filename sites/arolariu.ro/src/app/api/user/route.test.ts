@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for the /api/user route handler.
+ * @module sites/arolariu.ro/src/app/api/user/route/tests
+ */
+
 import type {UserInformation} from "@/types";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GET} from "./route";

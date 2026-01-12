@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for invoice scan attachment action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/attachInvoiceScan/tests
+ */
+
 import {InvoiceBuilder} from "@/data/mocks";
 import {InvoiceScanType} from "@/types/invoices";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";

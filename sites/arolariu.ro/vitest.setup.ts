@@ -1,7 +1,9 @@
 /**
- * Vitest setup file for Next.js application
- * Provides Next.js specific mocks and configurations
- * Extends the base monorepo setup
+ * @fileoverview Vitest setup for the arolariu.ro website.
+ * @module sites/arolariu.ro/vitest.setup
+ *
+ * @remarks
+ * Provides Next.js specific mocks and extends the monorepo test setup.
  */
 
 import "fake-indexeddb/auto";

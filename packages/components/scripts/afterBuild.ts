@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Post-build script for the shared components package.
+ * @module packages/components/scripts/afterBuild
+ *
+ * @remarks
+ * Runs build-time steps such as export generation after the primary build completes.
+ */
+
 export async function main() {
   console.info("[arolariu.ro::afterBuild] Running after build scripts...");
 

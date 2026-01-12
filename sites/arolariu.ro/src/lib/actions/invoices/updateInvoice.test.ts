@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for invoice update (full replacement) action.
+ * @module sites/arolariu.ro/src/lib/actions/invoices/updateInvoice/tests
+ */
+
 import {InvoiceBuilder} from "@/data/mocks";
 import {type Invoice, type PaymentType} from "@/types/invoices";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";

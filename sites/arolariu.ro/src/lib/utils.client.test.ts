@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Unit tests for client-side utilities.
+ * @module sites/arolariu.ro/src/lib/utils.client/tests
+ */
+
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {
   dumpBrowserInformation,

@@ -1,4 +1,9 @@
 /**
+ * @fileoverview Type-safe environment variable modeling for the website.
+ * @module sites/arolariu.ro/src/types/typedEnv
+ */
+
+/**
  * Infers the site name based on the environment.
  *
  * @remarks

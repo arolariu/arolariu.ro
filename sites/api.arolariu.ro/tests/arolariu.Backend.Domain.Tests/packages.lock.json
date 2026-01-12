@@ -77,11 +77,11 @@
       },
       "Azure.Storage.Common": {
         "type": "Transitive",
-        "resolved": "12.26.0-beta.1",
-        "contentHash": "JEGdvMUvNrgPwPj6gU0X2pKu9CPseqgKgE/vjenaNnClRVnnZWx/86SaOL/dJupULvUIq99MJTST2ZshmN2xVw==",
+        "resolved": "12.26.0",
+        "contentHash": "XaT6CDcSshZb7KaCTwc6m4EouZbLBg7ciOEpsJSdJCvkNsZJQCvPKw7V5TtXno19AA1NpwtsZriYque8mzbQVg==",
         "dependencies": {
           "Azure.Core": "1.50.0",
-          "System.IO.Hashing": "8.0.0"
+          "System.IO.Hashing": "10.0.1"
         }
       },
       "Castle.Core": {
@@ -499,8 +499,8 @@
       },
       "System.IO.Hashing": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "ne1843evDugl0md7Fjzy6QjJrzsjh46ZKbhf8GwBXb5f/gw97J4bxMs0NQKifDuThh/f0bZ0e62NPl1jzTuRqA=="
+        "resolved": "10.0.1",
+        "contentHash": "Dy6ULPb2S0GmNndjKrEIpfibNsc8+FTOoZnqygtFDuyun8vWboQbfMpQtKUXpgTxokR5E4zFHETpNnGfeWY6NA=="
       },
       "System.Memory.Data": {
         "type": "Transitive",
@@ -605,7 +605,7 @@
           "Azure.AI.OpenAI.Assistants": "[1.0.0-beta.4, )",
           "Azure.AI.Translation.Text": "[1.0.0, )",
           "Azure.Extensions.AspNetCore.Configuration.Secrets": "[1.4.0, )",
-          "Azure.Storage.Blobs": "[12.27.0-beta.1, )",
+          "Azure.Storage.Blobs": "[12.27.0, )",
           "Microsoft.Azure.Cosmos": "[3.56.0, )",
           "Microsoft.Extensions.Azure": "[1.13.1, )",
           "Newtonsoft.Json": "[13.0.4, )",
@@ -717,12 +717,12 @@
       },
       "Azure.Storage.Blobs": {
         "type": "CentralTransitive",
-        "requested": "[12.27.0-beta.1, )",
-        "resolved": "12.27.0-beta.1",
-        "contentHash": "pPy/WU5YYyibiW10ZWnqi6iVPJwLnszYlHzMKO0exCihPACowDcSkkpgELffgV786psIMz+6BVDswZCyovikwg==",
+        "requested": "[12.27.0, )",
+        "resolved": "12.27.0",
+        "contentHash": "zI5rg1tTtnA8T2g2/21l+1iIUdDjpEQQ0FI1BabJVEQJ1JUyTQKrc41eNabAHs0SBHprl6pu/6OqIMK9Ve+4tQ==",
         "dependencies": {
           "Azure.Core": "1.50.0",
-          "Azure.Storage.Common": "12.26.0-beta.1"
+          "Azure.Storage.Common": "12.26.0"
         }
       },
       "Microsoft.ApplicationInsights": {

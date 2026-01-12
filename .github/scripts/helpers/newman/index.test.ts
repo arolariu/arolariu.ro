@@ -1,6 +1,9 @@
 /**
  * @fileoverview Tests for Newman parser helper
- * @module helpers/newman/index.test
+ * @module github/scripts/helpers/newman/tests
+ *
+ * @remarks
+ * Uses fixture-like objects to validate parsing and categorization.
  */
 
 import {beforeEach, describe, expect, it} from "vitest";
