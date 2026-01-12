@@ -136,7 +136,7 @@
     "@react-pdf/types": "2.9.2",
     "@rsbuild/core": "1.7.2",
     "@rsbuild/plugin-react": "1.4.2",
-    "@rslib/core": "0.19.1",
+    "@rslib/core": "0.19.2",
     "@storybook/addon-a11y": "10.1.11",
     "@storybook/addon-coverage": "3.0.0",
     "@storybook/addon-docs": "10.1.11",
@@ -148,7 +148,7 @@
     "@storybook/test-runner": "0.24.2",
     "@sveltejs/adapter-auto": "7.0.0",
     "@sveltejs/kit": "2.49.4",
-    "@sveltejs/vite-plugin-svelte": "6.2.3",
+    "@sveltejs/vite-plugin-svelte": "6.2.4",
     "@tailwindcss/forms": "0.5.11",
     "@tailwindcss/postcss": "4.1.18",
     "@tailwindcss/typography": "0.5.19",
@@ -160,7 +160,7 @@
     "@types/eslint": "9.6.1",
     "@types/eslint-plugin-jsx-a11y": "6.10.1",
     "@types/node": "24.10.4",
-    "@types/react": "19.2.7",
+    "@types/react": "19.2.8",
     "@types/react-dom": "19.2.3",
     "@types/three": "0.182.0",
     "@vitejs/plugin-react": "5.1.2",
@@ -240,7 +240,7 @@
     "tailwindcss": "4.1.18",
     "tailwindcss-animate": "1.0.7",
     "three": "0.182.0",
-    "typedoc": "0.28.15",
+    "typedoc": "0.28.16",
     "typedoc-plugin-markdown": "4.9.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.52.0",
@@ -249,6 +249,6 @@
     "vite": "7.3.1",
     "vitest": "4.0.16",
     "zod": "4.3.5",
-    "zustand": "5.0.9"
+    "zustand": "5.0.10"
   }
 }
