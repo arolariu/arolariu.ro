@@ -491,7 +491,8 @@ describe("ZUSTAND_TABLES", () => {
     expect(ZUSTAND_TABLES).toContain("shared");
     expect(ZUSTAND_TABLES).toContain("invoices");
     expect(ZUSTAND_TABLES).toContain("merchants");
-    expect(ZUSTAND_TABLES).toHaveLength(3);
+    expect(ZUSTAND_TABLES).toContain("scans");
+    expect(ZUSTAND_TABLES).toHaveLength(4);
   });
 });
 
