@@ -44,14 +44,14 @@
  * ```
  */
 export enum ScanType {
-	/** JPEG image format */
-	JPEG = "JPEG",
-	/** PNG image format */
-	PNG = "PNG",
-	/** PDF document format */
-	PDF = "PDF",
-	/** Other or unsupported format */
-	OTHER = "OTHER",
+  /** JPEG image format */
+  JPEG = "JPEG",
+  /** PNG image format */
+  PNG = "PNG",
+  /** PDF document format */
+  PDF = "PDF",
+  /** Other or unsupported format */
+  OTHER = "OTHER",
 }
 
 /**
@@ -82,16 +82,16 @@ export enum ScanType {
  * ```
  */
 export enum ScanStatus {
-	/** Upload in progress */
-	UPLOADING = "uploading",
-	/** Uploaded to Azure, available for use */
-	READY = "ready",
-	/** Upload failed */
-	FAILED = "failed",
-	/** Being used to create an invoice */
-	PROCESSING = "processing",
-	/** Invoice created, scan archived */
-	ARCHIVED = "archived",
+  /** Upload in progress */
+  UPLOADING = "uploading",
+  /** Uploaded to Azure, available for use */
+  READY = "ready",
+  /** Upload failed */
+  FAILED = "failed",
+  /** Being used to create an invoice */
+  PROCESSING = "processing",
+  /** Invoice created, scan archived */
+  ARCHIVED = "archived",
 }
 
 /**
@@ -134,62 +134,62 @@ export enum ScanStatus {
  * ```
  */
 export interface Scan {
-	/**
-	 * Unique identifier for the scan (UUIDv7).
-	 * Assigned at upload time and immutable.
-	 */
-	readonly id: string;
+  /**
+   * Unique identifier for the scan (UUIDv7).
+   * Assigned at upload time and immutable.
+   */
+  readonly id: string;
 
-	/**
-	 * The user identifier of the scan owner.
-	 * Stored in Azure Blob metadata for filtering by user.
-	 */
-	readonly userIdentifier: string;
+  /**
+   * The user identifier of the scan owner.
+   * Stored in Azure Blob metadata for filtering by user.
+   */
+  readonly userIdentifier: string;
 
-	/**
-	 * Human-readable name for the scan.
-	 * Defaults to original filename, can be edited by user.
-	 */
-	name: string;
+  /**
+   * Human-readable name for the scan.
+   * Defaults to original filename, can be edited by user.
+   */
+  name: string;
 
-	/**
-	 * Full URL to the scan in Azure Blob Storage.
-	 * Format: https://cdn.arolariu.ro/scans/{userIdentifier}/{scanId}_{timestamp}.{ext}
-	 */
-	readonly blobUrl: string;
+  /**
+   * Full URL to the scan in Azure Blob Storage.
+   * Format: https://cdn.arolariu.ro/scans/{userIdentifier}/{scanId}_{timestamp}.{ext}
+   */
+  readonly blobUrl: string;
 
-	/**
-	 * MIME type of the uploaded file.
-	 * Examples: "image/jpeg", "image/png", "application/pdf"
-	 */
-	readonly mimeType: string;
+  /**
+   * MIME type of the uploaded file.
+   * Examples: "image/jpeg", "image/png", "application/pdf"
+   */
+  readonly mimeType: string;
 
-	/**
-	 * File size in bytes.
-	 */
-	readonly sizeInBytes: number;
+  /**
+   * File size in bytes.
+   */
+  readonly sizeInBytes: number;
 
-	/**
-	 * Document format classification.
-	 * Derived from mimeType during upload.
-	 */
-	readonly scanType: ScanType;
+  /**
+   * Document format classification.
+   * Derived from mimeType during upload.
+   */
+  readonly scanType: ScanType;
 
-	/**
-	 * Timestamp when the scan was uploaded.
-	 */
-	readonly uploadedAt: Date;
+  /**
+   * Timestamp when the scan was uploaded.
+   */
+  readonly uploadedAt: Date;
 
-	/**
-	 * Current lifecycle status of the scan.
-	 */
-	status: ScanStatus;
+  /**
+   * Current lifecycle status of the scan.
+   */
+  status: ScanStatus;
 
-	/**
-	 * Additional metadata stored with the blob.
-	 * Can include OCR hints, original dimensions, etc.
-	 */
-	metadata: Record<string, string>;
+  /**
+   * Additional metadata stored with the blob.
+   * Can include OCR hints, original dimensions, etc.
+   */
+  metadata: Record<string, string>;
 }
 
 /**
@@ -213,9 +213,9 @@ export interface Scan {
  * ```
  */
 export interface CachedScan extends Scan {
-	/**
-	 * Timestamp when this scan was cached in IndexedDB.
-	 * Used to determine cache freshness.
-	 */
-	cachedAt: Date;
+  /**
+   * Timestamp when this scan was cached in IndexedDB.
+   * Used to determine cache freshness.
+   */
+  cachedAt: Date;
 }

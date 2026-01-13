@@ -34,41 +34,41 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * Input parameters for uploading a standalone scan.
  */
 type UploadScanInput = Readonly<{
-	/** The base64-encoded data of the scan. */
-	base64Data: string;
-	/** Original filename from the upload. */
-	fileName: string;
-	/** MIME type of the file (e.g., "image/jpeg", "application/pdf"). */
-	mimeType: string;
+  /** The base64-encoded data of the scan. */
+  base64Data: string;
+  /** Original filename from the upload. */
+  fileName: string;
+  /** MIME type of the file (e.g., "image/jpeg", "application/pdf"). */
+  mimeType: string;
 }>;
 
 /**
  * Response from the scan upload operation.
  */
 type UploadScanOutput = Promise<
-	Readonly<{
-		/** HTTP status code from Azure (201 = success) */
-		status: number;
-		/** The created Scan entity */
-		scan: Scan;
-	}>
+  Readonly<{
+    /** HTTP status code from Azure (201 = success) */
+    status: number;
+    /** The created Scan entity */
+    scan: Scan;
+  }>
 >;
 
 /**
  * Maps MIME type to ScanType enum.
  */
 function mimeTypeToScanType(mimeType: string): ScanType {
-	switch (mimeType.toLowerCase()) {
-		case "image/jpeg":
-		case "image/jpg":
-			return ScanType.JPEG;
-		case "image/png":
-			return ScanType.PNG;
-		case "application/pdf":
-			return ScanType.PDF;
-		default:
-			return ScanType.OTHER;
-	}
+  switch (mimeType.toLowerCase()) {
+    case "image/jpeg":
+    case "image/jpg":
+      return ScanType.JPEG;
+    case "image/png":
+      return ScanType.PNG;
+    case "application/pdf":
+      return ScanType.PDF;
+    default:
+      return ScanType.OTHER;
+  }
 }
 
 /**
@@ -76,11 +76,11 @@ function mimeTypeToScanType(mimeType: string): ScanType {
  * This ensures chronological ordering while maintaining uniqueness.
  */
 function generateScanId(): string {
-	const timestamp = Date.now().toString(16).padStart(12, "0");
-	const random = Array.from(crypto.getRandomValues(new Uint8Array(10)))
-		.map((b) => b.toString(16).padStart(2, "0"))
-		.join("");
-	return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
+  const timestamp = Date.now().toString(16).padStart(12, "0");
+  const random = Array.from(crypto.getRandomValues(new Uint8Array(10)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
 }
 
 /**
@@ -122,93 +122,93 @@ function generateScanId(): string {
  * ```
  */
 export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInput): UploadScanOutput {
-	console.info(">>> Executing server action::uploadScan");
+  console.info(">>> Executing server action::uploadScan");
 
-	return withSpan("api.actions.scans.uploadScan", async () => {
-		try {
-			// Step 1. Fetch user from auth service
-			addSpanEvent("bff.user.fetch.start");
-			logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-			const {userIdentifier} = await fetchBFFUserFromAuthService();
-			addSpanEvent("bff.user.fetch.complete");
+  return withSpan("api.actions.scans.uploadScan", async () => {
+    try {
+      // Step 1. Fetch user from auth service
+      addSpanEvent("bff.user.fetch.start");
+      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
+      addSpanEvent("bff.user.fetch.complete");
 
-			if (!userIdentifier) {
-				throw new Error("User must be authenticated to upload scans");
-			}
+      if (!userIdentifier) {
+        throw new Error("User must be authenticated to upload scans");
+      }
 
-			// Step 2. Generate scan ID and blob name
-			addSpanEvent("scan.id.generate");
-			const scanId = generateScanId();
-			const timestamp = Date.now();
-			const extension = fileName.split(".").pop() ?? "bin";
-			const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
+      // Step 2. Generate scan ID and blob name
+      addSpanEvent("scan.id.generate");
+      const scanId = generateScanId();
+      const timestamp = Date.now();
+      const extension = fileName.split(".").pop() ?? "bin";
+      const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
 
-			// Step 3. Prepare for blob upload
-			const containerName = "invoices";
-			const storageCredentials = new DefaultAzureCredential();
-			// todo: fetch from config service.
-			const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
+      // Step 3. Prepare for blob upload
+      const containerName = "invoices";
+      const storageCredentials = new DefaultAzureCredential();
+      // todo: fetch from config service.
+      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
 
-			// Step 4. Upload the blob to Azure Storage
-			addSpanEvent("azure.blob.upload.start");
-			logWithTrace("info", "Uploading scan to Azure Blob Storage", {blobName}, "server");
+      // Step 4. Upload the blob to Azure Storage
+      addSpanEvent("azure.blob.upload.start");
+      logWithTrace("info", "Uploading scan to Azure Blob Storage", {blobName}, "server");
 
-			const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
-			const containerClient = storageClient.getContainerClient(containerName);
-			const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const containerClient = storageClient.getContainerClient(containerName);
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-			const originalFile = await convertBase64ToBlob(base64Data);
-			const arrayBuffer = await originalFile.arrayBuffer();
+      const originalFile = await convertBase64ToBlob(base64Data);
+      const arrayBuffer = await originalFile.arrayBuffer();
 
-			const uploadedAt = new Date().toISOString();
-			const blobMetadata = {
-				userIdentifier,
-				scanId,
-				uploadedAt,
-				originalFileName: fileName,
-				status: ScanStatus.READY,
-			};
+      const uploadedAt = new Date().toISOString();
+      const blobMetadata = {
+        userIdentifier,
+        scanId,
+        uploadedAt,
+        originalFileName: fileName,
+        status: ScanStatus.READY,
+      };
 
-			const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {
-				blobHTTPHeaders: {
-					blobContentType: mimeType,
-				},
-				metadata: blobMetadata,
-			});
-			addSpanEvent("azure.blob.upload.complete");
+      const blobUploadResponse = await blockBlobClient.uploadData(arrayBuffer, {
+        blobHTTPHeaders: {
+          blobContentType: mimeType,
+        },
+        metadata: blobMetadata,
+      });
+      addSpanEvent("azure.blob.upload.complete");
 
-			if (blobUploadResponse._response.status !== 201) {
-				addSpanEvent("azure.blob.upload.error");
-				logWithTrace("error", "Error uploading blob to Azure Storage", {status: blobUploadResponse._response.status}, "server");
-			} else {
-				logWithTrace("info", "Successfully uploaded scan to Azure", {scanId}, "server");
-			}
+      if (blobUploadResponse._response.status !== 201) {
+        addSpanEvent("azure.blob.upload.error");
+        logWithTrace("error", "Error uploading blob to Azure Storage", {status: blobUploadResponse._response.status}, "server");
+      } else {
+        logWithTrace("info", "Successfully uploaded scan to Azure", {scanId}, "server");
+      }
 
-			// Step 5. Construct and return the Scan entity
-			const scan: Scan = {
-				id: scanId,
-				userIdentifier,
-				name: fileName,
-				blobUrl: blockBlobClient.url,
-				mimeType,
-				sizeInBytes: originalFile.size,
-				scanType: mimeTypeToScanType(mimeType),
-				uploadedAt: new Date(uploadedAt),
-				status: ScanStatus.READY,
-				metadata: {
-					originalFileName: fileName,
-				},
-			};
+      // Step 5. Construct and return the Scan entity
+      const scan: Scan = {
+        id: scanId,
+        userIdentifier,
+        name: fileName,
+        blobUrl: blockBlobClient.url,
+        mimeType,
+        sizeInBytes: originalFile.size,
+        scanType: mimeTypeToScanType(mimeType),
+        uploadedAt: new Date(uploadedAt),
+        status: ScanStatus.READY,
+        metadata: {
+          originalFileName: fileName,
+        },
+      };
 
-			return {
-				status: blobUploadResponse._response.status,
-				scan,
-			} as const;
-		} catch (error) {
-			addSpanEvent("scan.upload.error");
-			logWithTrace("error", "Error uploading scan", {error}, "server");
-			console.error("Error uploading scan:", error);
-			throw error;
-		}
-	});
+      return {
+        status: blobUploadResponse._response.status,
+        scan,
+      } as const;
+    } catch (error) {
+      addSpanEvent("scan.upload.error");
+      logWithTrace("error", "Error uploading scan", {error}, "server");
+      console.error("Error uploading scan:", error);
+      throw error;
+    }
+  });
 }

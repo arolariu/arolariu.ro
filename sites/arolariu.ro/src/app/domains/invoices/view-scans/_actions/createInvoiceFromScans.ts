@@ -31,107 +31,107 @@ import {ScanType} from "@/types/scans";
  * Input parameters for creating invoices from scans.
  */
 type CreateInvoiceFromScansInput = Readonly<{
-	/** The scans to convert to invoices. */
-	scans: ReadonlyArray<Scan>;
-	/**
-	 * Creation mode:
-	 * - "single": Each scan becomes a separate invoice
-	 * - "batch": All scans combined into one invoice
-	 */
-	mode: "single" | "batch";
+  /** The scans to convert to invoices. */
+  scans: ReadonlyArray<Scan>;
+  /**
+   * Creation mode:
+   * - "single": Each scan becomes a separate invoice
+   * - "batch": All scans combined into one invoice
+   */
+  mode: "single" | "batch";
 }>;
 
 /**
  * Response from the create invoice operation.
  */
 type CreateInvoiceFromScansOutput = Promise<
-	Readonly<{
-		/** Successfully created invoices */
-		invoices: Invoice[];
-		/** IDs of scans that were successfully converted */
-		convertedScanIds: string[];
-		/** Errors encountered during creation */
-		errors: Array<{scanId: string; error: string}>;
-	}>
+  Readonly<{
+    /** Successfully created invoices */
+    invoices: Invoice[];
+    /** IDs of scans that were successfully converted */
+    convertedScanIds: string[];
+    /** Errors encountered during creation */
+    errors: Array<{scanId: string; error: string}>;
+  }>
 >;
 
 /**
  * Maps ScanType to InvoiceScanType enum.
  */
 function scanTypeToInvoiceScanType(scanType: ScanType): InvoiceScanType {
-	switch (scanType) {
-		case ScanType.JPEG:
-			return InvoiceScanType.JPEG;
-		case ScanType.PNG:
-			return InvoiceScanType.PNG;
-		case ScanType.PDF:
-			return InvoiceScanType.PDF;
-		default:
-			return InvoiceScanType.OTHER;
-	}
+  switch (scanType) {
+    case ScanType.JPEG:
+      return InvoiceScanType.JPEG;
+    case ScanType.PNG:
+      return InvoiceScanType.PNG;
+    case ScanType.PDF:
+      return InvoiceScanType.PDF;
+    default:
+      return InvoiceScanType.OTHER;
+  }
 }
 
 /**
  * Creates a single invoice from a scan.
  */
 async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken: string): Promise<Invoice> {
-	const payload: CreateInvoiceDtoPayload = {
-		userIdentifier,
-		initialScan: {
-			scanType: scanTypeToInvoiceScanType(scan.scanType),
-			location: scan.blobUrl,
-			metadata: {},
-		},
-		metadata: {
-			isImportant: "false",
-			requiresAnalysis: "true",
-			sourceScanId: scan.id,
-		},
-	};
+  const payload: CreateInvoiceDtoPayload = {
+    userIdentifier,
+    initialScan: {
+      scanType: scanTypeToInvoiceScanType(scan.scanType),
+      location: scan.blobUrl,
+      metadata: {},
+    },
+    metadata: {
+      isImportant: "false",
+      requiresAnalysis: "true",
+      sourceScanId: scan.id,
+    },
+  };
 
-	const response = await fetch(`${API_URL}/rest/v1/invoices`, {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${authToken}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(payload),
-	});
+  const response = await fetch(`${API_URL}/rest/v1/invoices`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(`Failed to create invoice: ${response.status} - ${errorText}`);
-	}
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create invoice: ${response.status} - ${errorText}`);
+  }
 
-	return response.json() as Promise<Invoice>;
+  return response.json() as Promise<Invoice>;
 }
 
 /**
  * Attaches an additional scan to an existing invoice.
  */
 async function attachScanToInvoice(invoiceId: string, scan: Scan, authToken: string): Promise<void> {
-	const payload: CreateInvoiceScanDtoPayload = {
-		type: scanTypeToInvoiceScanType(scan.scanType),
-		location: scan.blobUrl,
-		additionalMetadata: {
-			sourceScanId: scan.id,
-			attachedAt: new Date().toISOString(),
-		},
-	};
+  const payload: CreateInvoiceScanDtoPayload = {
+    type: scanTypeToInvoiceScanType(scan.scanType),
+    location: scan.blobUrl,
+    additionalMetadata: {
+      sourceScanId: scan.id,
+      attachedAt: new Date().toISOString(),
+    },
+  };
 
-	const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}/scans`, {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${authToken}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(payload),
-	});
+  const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}/scans`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(`Failed to attach scan to invoice: ${response.status} - ${errorText}`);
-	}
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to attach scan to invoice: ${response.status} - ${errorText}`);
+  }
 }
 
 /**
@@ -175,107 +175,107 @@ async function attachScanToInvoice(invoiceId: string, scan: Scan, authToken: str
  * ```
  */
 export async function createInvoiceFromScans({scans, mode}: CreateInvoiceFromScansInput): CreateInvoiceFromScansOutput {
-	console.info(">>> Executing server action::createInvoiceFromScans");
+  console.info(">>> Executing server action::createInvoiceFromScans");
 
-	return withSpan("api.actions.scans.createInvoiceFromScans", async () => {
-		const invoices: Invoice[] = [];
-		const convertedScanIds: string[] = [];
-		const errors: Array<{scanId: string; error: string}> = [];
+  return withSpan("api.actions.scans.createInvoiceFromScans", async () => {
+    const invoices: Invoice[] = [];
+    const convertedScanIds: string[] = [];
+    const errors: Array<{scanId: string; error: string}> = [];
 
-		try {
-			// Step 1. Fetch user JWT for authentication
-			addSpanEvent("bff.user.jwt.fetch.start");
-			logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
-			const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
-			addSpanEvent("bff.user.jwt.fetch.complete");
+    try {
+      // Step 1. Fetch user JWT for authentication
+      addSpanEvent("bff.user.jwt.fetch.start");
+      logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
+      const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
+      addSpanEvent("bff.user.jwt.fetch.complete");
 
-			if (!userIdentifier) {
-				throw new Error("User must be authenticated to create invoices");
-			}
+      if (!userIdentifier) {
+        throw new Error("User must be authenticated to create invoices");
+      }
 
-			if (mode === "single") {
-				// Single mode: Create one invoice per scan
-				addSpanEvent("bff.invoices.create.single.start");
-				logWithTrace("info", `Creating ${scans.length} individual invoices`, {count: scans.length}, "server");
+      if (mode === "single") {
+        // Single mode: Create one invoice per scan
+        addSpanEvent("bff.invoices.create.single.start");
+        logWithTrace("info", `Creating ${scans.length} individual invoices`, {count: scans.length}, "server");
 
-				for (const scan of scans) {
-					try {
-						const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
-						invoices.push(invoice);
-						convertedScanIds.push(scan.id);
-						logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
-					} catch (error) {
-						const errorMessage = error instanceof Error ? error.message : "Unknown error";
-						errors.push({scanId: scan.id, error: errorMessage});
-						logWithTrace("error", `Failed to create invoice from scan ${scan.id}`, {error}, "server");
-					}
-				}
+        for (const scan of scans) {
+          try {
+            const invoice = await createSingleInvoice(scan, userIdentifier, authToken);
+            invoices.push(invoice);
+            convertedScanIds.push(scan.id);
+            logWithTrace("info", `Created invoice ${invoice.id} from scan ${scan.id}`, {}, "server");
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            errors.push({scanId: scan.id, error: errorMessage});
+            logWithTrace("error", `Failed to create invoice from scan ${scan.id}`, {error}, "server");
+          }
+        }
 
-				addSpanEvent("bff.invoices.create.single.complete");
-			} else {
-				// Batch mode: Create one invoice with first scan, attach others
-				addSpanEvent("bff.invoice.create.batch.start");
-				logWithTrace("info", `Creating batch invoice from ${scans.length} scans`, {count: scans.length}, "server");
+        addSpanEvent("bff.invoices.create.single.complete");
+      } else {
+        // Batch mode: Create one invoice with first scan, attach others
+        addSpanEvent("bff.invoice.create.batch.start");
+        logWithTrace("info", `Creating batch invoice from ${scans.length} scans`, {count: scans.length}, "server");
 
-				const firstScan = scans[0];
-				if (!firstScan) {
-					throw new Error("No scans provided for batch creation");
-				}
+        const firstScan = scans[0];
+        if (!firstScan) {
+          throw new Error("No scans provided for batch creation");
+        }
 
-				try {
-					// Create invoice with first scan
-					const invoice = await createSingleInvoice(firstScan, userIdentifier, authToken);
-					invoices.push(invoice);
-					convertedScanIds.push(firstScan.id);
-					logWithTrace("info", `Created invoice ${invoice.id} with initial scan ${firstScan.id}`, {}, "server");
+        try {
+          // Create invoice with first scan
+          const invoice = await createSingleInvoice(firstScan, userIdentifier, authToken);
+          invoices.push(invoice);
+          convertedScanIds.push(firstScan.id);
+          logWithTrace("info", `Created invoice ${invoice.id} with initial scan ${firstScan.id}`, {}, "server");
 
-					// Attach remaining scans to the invoice
-					for (let i = 1; i < scans.length; i++) {
-						const scan = scans[i];
-						if (scan) {
-							try {
-								await attachScanToInvoice(invoice.id, scan, authToken);
-								convertedScanIds.push(scan.id);
-								logWithTrace("info", `Attached scan ${scan.id} to invoice ${invoice.id}`, {}, "server");
-							} catch (attachError) {
-								// Log the error but continue with other scans
-								const attachErrorMessage = attachError instanceof Error ? attachError.message : "Unknown error";
-								errors.push({scanId: scan.id, error: attachErrorMessage});
-								logWithTrace("error", `Failed to attach scan ${scan.id} to invoice ${invoice.id}`, {error: attachError}, "server");
-							}
-						}
-					}
+          // Attach remaining scans to the invoice
+          for (let i = 1; i < scans.length; i++) {
+            const scan = scans[i];
+            if (scan) {
+              try {
+                await attachScanToInvoice(invoice.id, scan, authToken);
+                convertedScanIds.push(scan.id);
+                logWithTrace("info", `Attached scan ${scan.id} to invoice ${invoice.id}`, {}, "server");
+              } catch (attachError) {
+                // Log the error but continue with other scans
+                const attachErrorMessage = attachError instanceof Error ? attachError.message : "Unknown error";
+                errors.push({scanId: scan.id, error: attachErrorMessage});
+                logWithTrace("error", `Failed to attach scan ${scan.id} to invoice ${invoice.id}`, {error: attachError}, "server");
+              }
+            }
+          }
 
-					logWithTrace(
-						"info",
-						`Created batch invoice ${invoice.id} with ${convertedScanIds.length} scans attached`,
-						{invoiceId: invoice.id, scansAttached: convertedScanIds.length},
-						"server",
-					);
-				} catch (error) {
-					const errorMessage = error instanceof Error ? error.message : "Unknown error";
-					// In batch mode, initial creation failure affects all scans
-					for (const scan of scans) {
-						errors.push({scanId: scan.id, error: errorMessage});
-					}
-					logWithTrace("error", "Failed to create batch invoice", {error}, "server");
-				}
+          logWithTrace(
+            "info",
+            `Created batch invoice ${invoice.id} with ${convertedScanIds.length} scans attached`,
+            {invoiceId: invoice.id, scansAttached: convertedScanIds.length},
+            "server",
+          );
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          // In batch mode, initial creation failure affects all scans
+          for (const scan of scans) {
+            errors.push({scanId: scan.id, error: errorMessage});
+          }
+          logWithTrace("error", "Failed to create batch invoice", {error}, "server");
+        }
 
-				addSpanEvent("bff.invoice.create.batch.complete");
-			}
+        addSpanEvent("bff.invoice.create.batch.complete");
+      }
 
-			logWithTrace(
-				"info",
-				`Completed invoice creation: ${invoices.length} created, ${errors.length} errors`,
-				{created: invoices.length, errors: errors.length},
-				"server",
-			);
-			return {invoices, convertedScanIds, errors} as const;
-		} catch (error) {
-			addSpanEvent("bff.invoices.create.error");
-			logWithTrace("error", "Error creating invoices from scans", {error}, "server");
-			console.error("Error creating invoices from scans:", error);
-			throw error;
-		}
-	});
+      logWithTrace(
+        "info",
+        `Completed invoice creation: ${invoices.length} created, ${errors.length} errors`,
+        {created: invoices.length, errors: errors.length},
+        "server",
+      );
+      return {invoices, convertedScanIds, errors} as const;
+    } catch (error) {
+      addSpanEvent("bff.invoices.create.error");
+      logWithTrace("error", "Error creating invoices from scans", {error}, "server");
+      console.error("Error creating invoices from scans:", error);
+      throw error;
+    }
+  });
 }

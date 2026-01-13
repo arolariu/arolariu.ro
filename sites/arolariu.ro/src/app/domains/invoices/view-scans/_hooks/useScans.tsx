@@ -16,26 +16,26 @@ import {useShallow} from "zustand/react/shallow";
  * Hook output type
  */
 interface UseScansOutput {
-	/** All ready scans (excluding archived) */
-	scans: ReadonlyArray<CachedScan>;
-	/** Currently selected scans */
-	selectedScans: CachedScan[];
-	/** Whether the store has been hydrated */
-	hasHydrated: boolean;
-	/** Whether a sync is in progress */
-	isSyncing: boolean;
-	/** Last sync timestamp */
-	lastSyncTimestamp: Date | null;
-	/** Toggle scan selection */
-	toggleSelection: (scan: CachedScan) => void;
-	/** Select all scans */
-	selectAll: () => void;
-	/** Clear selection */
-	clearSelection: () => void;
-	/** Sync scans with Azure */
-	syncScans: () => Promise<void>;
-	/** Remove a scan from store and optionally delete from Azure */
-	removeScan: (scanId: string) => void;
+  /** All ready scans (excluding archived) */
+  scans: ReadonlyArray<CachedScan>;
+  /** Currently selected scans */
+  selectedScans: CachedScan[];
+  /** Whether the store has been hydrated */
+  hasHydrated: boolean;
+  /** Whether a sync is in progress */
+  isSyncing: boolean;
+  /** Last sync timestamp */
+  lastSyncTimestamp: Date | null;
+  /** Toggle scan selection */
+  toggleSelection: (scan: CachedScan) => void;
+  /** Select all scans */
+  selectAll: () => void;
+  /** Clear selection */
+  clearSelection: () => void;
+  /** Sync scans with Azure */
+  syncScans: () => Promise<void>;
+  /** Remove a scan from store and optionally delete from Azure */
+  removeScan: (scanId: string) => void;
 }
 
 /**
@@ -48,86 +48,86 @@ interface UseScansOutput {
  * Authentication is handled by the server actions.
  */
 export function useScans(): UseScansOutput {
-	const {
-		scans,
-		selectedScans,
-		hasHydrated,
-		isSyncing,
-		lastSyncTimestamp,
-		setScans,
-		toggleScanSelection,
-		selectAllScans,
-		clearSelectedScans,
-		setIsSyncing,
-		setLastSyncTimestamp,
-		removeScan: removeFromStore,
-	} = useScansStore(
-		useShallow((state) => ({
-			scans: state.scans,
-			selectedScans: state.selectedScans,
-			hasHydrated: state.hasHydrated,
-			isSyncing: state.isSyncing,
-			lastSyncTimestamp: state.lastSyncTimestamp,
-			setScans: state.setScans,
-			toggleScanSelection: state.toggleScanSelection,
-			selectAllScans: state.selectAllScans,
-			clearSelectedScans: state.clearSelectedScans,
-			setIsSyncing: state.setIsSyncing,
-			setLastSyncTimestamp: state.setLastSyncTimestamp,
-			removeScan: state.removeScan,
-		})),
-	);
+  const {
+    scans,
+    selectedScans,
+    hasHydrated,
+    isSyncing,
+    lastSyncTimestamp,
+    setScans,
+    toggleScanSelection,
+    selectAllScans,
+    clearSelectedScans,
+    setIsSyncing,
+    setLastSyncTimestamp,
+    removeScan: removeFromStore,
+  } = useScansStore(
+    useShallow((state) => ({
+      scans: state.scans,
+      selectedScans: state.selectedScans,
+      hasHydrated: state.hasHydrated,
+      isSyncing: state.isSyncing,
+      lastSyncTimestamp: state.lastSyncTimestamp,
+      setScans: state.setScans,
+      toggleScanSelection: state.toggleScanSelection,
+      selectAllScans: state.selectAllScans,
+      clearSelectedScans: state.clearSelectedScans,
+      setIsSyncing: state.setIsSyncing,
+      setLastSyncTimestamp: state.setLastSyncTimestamp,
+      removeScan: state.removeScan,
+    })),
+  );
 
-	// Filter to only show ready scans (not archived)
-	const readyScans = scans.filter((s) => s.status === ScanStatus.READY);
+  // Filter to only show ready scans (not archived)
+  const readyScans = scans.filter((s) => s.status === ScanStatus.READY);
 
-	/**
-	 * Sync scans with Azure Blob Storage.
-	 * Fetches all scans for the user and merges with local cache.
-	 * Authentication is handled by the server action.
-	 */
-	const syncScans = useCallback(async (): Promise<void> => {
-		if (isSyncing) return;
+  /**
+   * Sync scans with Azure Blob Storage.
+   * Fetches all scans for the user and merges with local cache.
+   * Authentication is handled by the server action.
+   */
+  const syncScans = useCallback(async (): Promise<void> => {
+    if (isSyncing) return;
 
-		setIsSyncing(true);
+    setIsSyncing(true);
 
-		try {
-			const fetchedScans = await fetchScans({
-				includeArchived: false,
-			});
+    try {
+      const fetchedScans = await fetchScans({
+        includeArchived: false,
+      });
 
-			// Convert to cached scans with cache timestamp
-			const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
-				...scan,
-				cachedAt: new Date(),
-			}));
+      // Convert to cached scans with cache timestamp
+      const cachedScans: CachedScan[] = fetchedScans.map((scan) => ({
+        ...scan,
+        cachedAt: new Date(),
+      }));
 
-			setScans(cachedScans);
-			setLastSyncTimestamp(new Date());
-		} catch (error) {
-			console.error("Failed to sync scans:", error);
-		} finally {
-			setIsSyncing(false);
-		}
-	}, [isSyncing, setIsSyncing, setScans, setLastSyncTimestamp]);
+      setScans(cachedScans);
+      setLastSyncTimestamp(new Date());
+    } catch (error) {
+      console.error("Failed to sync scans:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing, setIsSyncing, setScans, setLastSyncTimestamp]);
 
-	// Auto-sync on mount when hydrated
-	useEffect(() => {
-		if (hasHydrated && !lastSyncTimestamp) {
-			syncScans();
-		}
-	}, [hasHydrated, lastSyncTimestamp, syncScans]);
+  // Auto-sync on mount when hydrated
+  useEffect(() => {
+    if (hasHydrated && !lastSyncTimestamp) {
+      syncScans();
+    }
+  }, [hasHydrated, lastSyncTimestamp, syncScans]);
 
-	return {
-		scans: readyScans,
-		selectedScans,
-		hasHydrated,
-		isSyncing,
-		lastSyncTimestamp,
-		toggleSelection: toggleScanSelection,
-		selectAll: selectAllScans,
-		clearSelection: clearSelectedScans,
-		syncScans,
-		removeScan: removeFromStore,
-	};
+  return {
+    scans: readyScans,
+    selectedScans,
+    hasHydrated,
+    isSyncing,
+    lastSyncTimestamp,
+    toggleSelection: toggleScanSelection,
+    selectAll: selectAllScans,
+    clearSelection: clearSelectedScans,
+    syncScans,
+    removeScan: removeFromStore,
+  };
 }

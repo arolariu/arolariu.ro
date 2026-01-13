@@ -27,8 +27,8 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * Input parameters for fetching scans.
  */
 type FetchScansInput = Readonly<{
-	/** Optional: filter by status (default: all non-archived) */
-	includeArchived?: boolean;
+  /** Optional: filter by status (default: all non-archived) */
+  includeArchived?: boolean;
 }>;
 
 /**
@@ -40,17 +40,17 @@ type FetchScansOutput = Promise<ReadonlyArray<Scan>>;
  * Maps MIME type to ScanType enum.
  */
 function mimeTypeToScanType(mimeType: string): ScanType {
-	switch (mimeType.toLowerCase()) {
-		case "image/jpeg":
-		case "image/jpg":
-			return ScanType.JPEG;
-		case "image/png":
-			return ScanType.PNG;
-		case "application/pdf":
-			return ScanType.PDF;
-		default:
-			return ScanType.OTHER;
-	}
+  switch (mimeType.toLowerCase()) {
+    case "image/jpeg":
+    case "image/jpg":
+      return ScanType.JPEG;
+    case "image/png":
+      return ScanType.PNG;
+    case "application/pdf":
+      return ScanType.PDF;
+    default:
+      return ScanType.OTHER;
+  }
 }
 
 /**
@@ -88,96 +88,96 @@ function mimeTypeToScanType(mimeType: string): ScanType {
  * ```
  */
 export async function fetchScans({includeArchived = false}: FetchScansInput = {}): FetchScansOutput {
-	console.info(">>> Executing server action::fetchScans");
+  console.info(">>> Executing server action::fetchScans");
 
-	return withSpan("api.actions.scans.fetchScans", async () => {
-		try {
-			// Step 1. Fetch user from auth service
-			addSpanEvent("bff.user.fetch.start");
-			logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
-			const {userIdentifier} = await fetchBFFUserFromAuthService();
-			addSpanEvent("bff.user.fetch.complete");
+  return withSpan("api.actions.scans.fetchScans", async () => {
+    try {
+      // Step 1. Fetch user from auth service
+      addSpanEvent("bff.user.fetch.start");
+      logWithTrace("info", "Fetching BFF user for authentication", {}, "server");
+      const {userIdentifier} = await fetchBFFUserFromAuthService();
+      addSpanEvent("bff.user.fetch.complete");
 
-			if (!userIdentifier) {
-				throw new Error("User must be authenticated to fetch scans");
-			}
+      if (!userIdentifier) {
+        throw new Error("User must be authenticated to fetch scans");
+      }
 
-			// Step 2. Connect to Azure Storage
-			addSpanEvent("azure.storage.connect.start");
-			const containerName = "invoices";
-			const storageCredentials = new DefaultAzureCredential();
-			// todo: fetch from config service.
-			const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
+      // Step 2. Connect to Azure Storage
+      addSpanEvent("azure.storage.connect.start");
+      const containerName = "invoices";
+      const storageCredentials = new DefaultAzureCredential();
+      // todo: fetch from config service.
+      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
 
-			const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
-			const containerClient = storageClient.getContainerClient(containerName);
-			addSpanEvent("azure.storage.connect.complete");
+      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const containerClient = storageClient.getContainerClient(containerName);
+      addSpanEvent("azure.storage.connect.complete");
 
-			// Step 3. List blobs with user prefix
-			addSpanEvent("azure.blob.list.start");
-			logWithTrace("info", "Listing scans from Azure Blob Storage", {userIdentifier}, "server");
-			const prefix = `scans/${userIdentifier}/`;
-			const scans: Scan[] = [];
+      // Step 3. List blobs with user prefix
+      addSpanEvent("azure.blob.list.start");
+      logWithTrace("info", "Listing scans from Azure Blob Storage", {userIdentifier}, "server");
+      const prefix = `scans/${userIdentifier}/`;
+      const scans: Scan[] = [];
 
-			for await (const blob of containerClient.listBlobsFlat({
-				prefix,
-				includeMetadata: true,
-			})) {
-				const metadata = blob.metadata ?? {};
+      for await (const blob of containerClient.listBlobsFlat({
+        prefix,
+        includeMetadata: true,
+      })) {
+        const metadata = blob.metadata ?? {};
 
-				// Skip if no scan ID in metadata (invalid scan)
-				if (!metadata["scanId"]) {
-					continue;
-				}
+        // Skip if no scan ID in metadata (invalid scan)
+        if (!metadata["scanId"]) {
+          continue;
+        }
 
-				// Parse status from metadata
-				const statusString = metadata["status"] ?? ScanStatus.READY;
-				const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
+        // Parse status from metadata
+        const statusString = metadata["status"] ?? ScanStatus.READY;
+        const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
 
-				// Skip archived scans unless requested
-				if (!includeArchived && status === ScanStatus.ARCHIVED) {
-					continue;
-				}
+        // Skip archived scans unless requested
+        if (!includeArchived && status === ScanStatus.ARCHIVED) {
+          continue;
+        }
 
-				// Construct blob URL
-				const blobUrl = containerClient.getBlockBlobClient(blob.name).url;
+        // Construct blob URL
+        const blobUrl = containerClient.getBlockBlobClient(blob.name).url;
 
-				// Parse upload timestamp
-				const uploadedAt = metadata["uploadedAt"] ? new Date(metadata["uploadedAt"]) : (blob.properties.createdOn ?? new Date());
+        // Parse upload timestamp
+        const uploadedAt = metadata["uploadedAt"] ? new Date(metadata["uploadedAt"]) : (blob.properties.createdOn ?? new Date());
 
-				// Determine MIME type
-				const mimeType = blob.properties.contentType ?? "application/octet-stream";
+        // Determine MIME type
+        const mimeType = blob.properties.contentType ?? "application/octet-stream";
 
-				const scan: Scan = {
-					id: metadata["scanId"],
-					userIdentifier: metadata["userIdentifier"] ?? userIdentifier,
-					name: metadata["originalFileName"] ?? blob.name.split("/").pop() ?? "Unknown",
-					blobUrl,
-					mimeType,
-					sizeInBytes: blob.properties.contentLength ?? 0,
-					scanType: mimeTypeToScanType(mimeType),
-					uploadedAt,
-					status,
-					metadata: {
-						originalFileName: metadata["originalFileName"] ?? "",
-						...metadata,
-					},
-				};
+        const scan: Scan = {
+          id: metadata["scanId"],
+          userIdentifier: metadata["userIdentifier"] ?? userIdentifier,
+          name: metadata["originalFileName"] ?? blob.name.split("/").pop() ?? "Unknown",
+          blobUrl,
+          mimeType,
+          sizeInBytes: blob.properties.contentLength ?? 0,
+          scanType: mimeTypeToScanType(mimeType),
+          uploadedAt,
+          status,
+          metadata: {
+            originalFileName: metadata["originalFileName"] ?? "",
+            ...metadata,
+          },
+        };
 
-				scans.push(scan);
-			}
-			addSpanEvent("azure.blob.list.complete");
+        scans.push(scan);
+      }
+      addSpanEvent("azure.blob.list.complete");
 
-			// Step 4. Sort by upload date (newest first)
-			scans.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+      // Step 4. Sort by upload date (newest first)
+      scans.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
 
-			logWithTrace("info", `Successfully fetched ${scans.length} scans`, {count: scans.length}, "server");
-			return scans;
-		} catch (error) {
-			addSpanEvent("scans.fetch.error");
-			logWithTrace("error", "Error fetching scans from Azure", {error}, "server");
-			console.error("Error fetching scans:", error);
-			throw error;
-		}
-	});
+      logWithTrace("info", `Successfully fetched ${scans.length} scans`, {count: scans.length}, "server");
+      return scans;
+    } catch (error) {
+      addSpanEvent("scans.fetch.error");
+      logWithTrace("error", "Error fetching scans from Azure", {error}, "server");
+      console.error("Error fetching scans:", error);
+      throw error;
+    }
+  });
 }
