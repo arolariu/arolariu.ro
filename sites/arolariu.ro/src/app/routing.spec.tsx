@@ -17,7 +17,8 @@ const routes = [
   // Domain routes:
   "/domains",
   "/domains/invoices",
-  "/domains/invoices/create-invoice",
+  "/domains/invoices/upload-scans",
+  "/domains/invoices/view-scans",
   "/domains/invoices/view-invoices",
 
   // TOS & Privacy routes:
