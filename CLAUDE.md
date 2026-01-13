@@ -10,6 +10,75 @@ This is the **arolariu.ro** monorepo - a full-stack platform built with:
 - **Infrastructure**: Azure Cloud, managed with Nx monorepo tooling
 - **Component Library**: @arolariu/components (shadcn/ui based, 60+ components)
 
+---
+
+## AI Agent Quick Reference
+
+### Task Navigator
+| Task | Primary Location | Related Files |
+|------|-----------------|---------------|
+| Add UI component | `packages/components/src/components/ui/` | `stories/`, `src/index.ts` |
+| Add API endpoint | `sites/api.arolariu.ro/src/Core/Endpoints/` | Domain models, `tests/` |
+| Add frontend page | `sites/arolariu.ro/src/app/` | `island.tsx`, `_components/` |
+| Add translation | `sites/arolariu.ro/messages/` | `en.json`, `ro.json` |
+| Add custom hook | `sites/arolariu.ro/src/hooks/` | `stores/`, `types/` |
+| Modify Zustand store | `sites/arolariu.ro/src/stores/` | `hooks/`, `indexedDBStorage.ts` |
+| Add CV section | `sites/cv.arolariu.ro/src/data/` | `components/`, `routes/` |
+| Update infrastructure | `infra/Azure/Bicep/` | `main.bicep`, `modules/` |
+| Add Server Action | `sites/arolariu.ro/src/lib/actions/` | Related hooks, stores |
+
+### Dependency Flow
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        arolariu.ro Monorepo                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   packages/components (@arolariu/components)                            │
+│          │ exports UI components                                        │
+│          ↓                                                              │
+│   sites/arolariu.ro (Next.js 16) ←─── API calls ───→ sites/api.arolariu.ro │
+│          │                                                   (.NET 10)  │
+│          │ shares types via @/types                                     │
+│          ↓                                                              │
+│   sites/cv.arolariu.ro (SvelteKit) [standalone - no dependencies]       │
+│                                                                         │
+│   sites/docs.arolariu.ro (DocFX) [documentation only]                   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Configuration Files
+| Config | Location | Purpose |
+|--------|----------|---------|
+| TypeScript | `sites/*/tsconfig.json` | TS compiler (strict mode) |
+| ESLint | `sites/arolariu.ro/eslint.config.js` | Linting (20+ plugins) |
+| Prettier | `.prettierrc` | Code formatting |
+| Next.js | `sites/arolariu.ro/next.config.ts` | Framework config |
+| Vitest | `sites/*/vitest.config.ts` | Unit test config |
+| Playwright | `sites/arolariu.ro/playwright.config.ts` | E2E test config |
+| MCP Servers | `.mcp.json` | Claude Code MCP servers |
+
+### Troubleshooting
+| Issue | Solution |
+|-------|----------|
+| MCP servers not starting (Windows) | Use `cmd /c npx` in `.mcp.json` |
+| Tests failing with coverage errors | Check thresholds in `vitest.config.ts` |
+| Build fails with TS errors | Run `npm run generate` first |
+| Missing translations | Check `messages/en.json` structure |
+| API connection refused | Ensure API is running: `npm run dev:api` |
+| Component not found | Check barrel export in `packages/components/src/index.ts` |
+
+### MCP Server Capabilities
+The `.mcp.json` file configures these servers for enhanced AI assistance:
+- **sequential-thinking**: Multi-step reasoning and planning
+- **playwright**: Browser automation for E2E testing
+- **eslint**: Real-time linting feedback
+- **filesystem**: Project file operations
+- **memory**: Persistent context across sessions
+- **fetch**: HTTP request capabilities
+
+---
+
 ## Common Commands
 
 ### Development
