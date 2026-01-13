@@ -4,3 +4,4 @@
 
 export {useInvoicesStore} from "./invoicesStore";
 export {useMerchantsStore} from "./merchantsStore";
+export {useScansStore} from "./scansStore";
