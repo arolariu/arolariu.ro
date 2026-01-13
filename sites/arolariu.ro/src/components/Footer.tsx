@@ -236,14 +236,14 @@ export default function Footer(): React.JSX.Element {
               href='https://github.com/arolariu'
               target='_blank'
               about='GitHub'
-              aria-label="Select this link to navigate to the author's GitHub page.">
+              aria-label={t("socialLinks.github")}>
               <TbBrandGithub className='h-7 w-7 hover:text-yellow-500' />
             </Link>
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
               target='_blank'
               about='LinkedIn'
-              aria-label="Select this link to navigate to the author's LinkedIn page.">
+              aria-label={t("socialLinks.linkedin")}>
               <TbBrandLinkedin className='h-7 w-7 hover:text-yellow-500' />
             </Link>
           </div>
@@ -261,7 +261,7 @@ export default function Footer(): React.JSX.Element {
           </TooltipProvider>
           <br />
           <span>
-            Commit SHA:{" "}
+            {t("commitSha")}{" "}
             <Link
               href={`https://github.com/arolariu/arolariu.ro/commit/${COMMIT_SHA}`}
               target='_blank'

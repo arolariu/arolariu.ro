@@ -33,6 +33,7 @@ import {
 } from "@arolariu/components";
 
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 
 import {useCallback} from "react";
 import {TbExternalLink, TbPackage} from "react-icons/tb";
@@ -49,13 +50,15 @@ type PackageType = Readonly<"all" | "production" | "development">;
  * @returns A badge indicating the type of package.
  */
 function PackageBadge({type}: Readonly<{type: PackageType}>): React.JSX.Element {
+  const t = useTranslations("Acknowledgements.packagesScreen.badge");
+
   return type === "production" ? (
     <span className='rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800 transition-colors duration-200 hover:bg-green-200 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-800'>
-      Production
+      {t("production")}
     </span>
   ) : (
     <span className='rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 transition-colors duration-200 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-100 dark:hover:bg-amber-800'>
-      Development
+      {t("development")}
     </span>
   );
 }
@@ -65,29 +68,31 @@ function PackageBadge({type}: Readonly<{type: PackageType}>): React.JSX.Element 
  * @returns A dialog with the dependencies of a package.
  */
 function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): React.JSX.Element {
+  const t = useTranslations("Acknowledgements.packagesScreen");
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button
           variant='outline'
           size='sm'>
-          View Dependencies
+          {t("card.viewDependencies")}
         </Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-[425px] md:max-w-[600px]'>
         <DialogHeader>
-          <DialogTitle>{pkg.name} Dependencies</DialogTitle>
+          <DialogTitle>{t("dialog.dependencies", {name: pkg.name})}</DialogTitle>
           <DialogDescription>
             {pkg.description} <br /> <br />
-            This package has {pkg.dependents?.length ?? "0"} dependencies.
+            {t("dialog.dependenciesCount", {count: String(pkg.dependents?.length ?? 0)})}
           </DialogDescription>
         </DialogHeader>
         <div className='max-h-[300px] overflow-y-auto'>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Package</TableHead>
-                <TableHead>Version</TableHead>
+                <TableHead>{t("table.package")}</TableHead>
+                <TableHead>{t("table.version")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -111,6 +116,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
  * @returns A table displaying package statistics by dependency type
  */
 export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Acknowledgements.packagesScreen");
   const {
     extractPackageType,
     filteredAndSortedPackages,
@@ -162,7 +168,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         <div className='relative mx-auto max-w-md'>
           <Input
             type='text'
-            placeholder='Search...'
+            placeholder={t("search.placeholder")}
             value={searchQuery}
             onChange={handleSearch}
             className='pl-10'
@@ -174,12 +180,12 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               value={packageType}
               onValueChange={handlePackageType}>
               <SelectTrigger>
-                <SelectValue placeholder='Filter by type' />
+                <SelectValue placeholder={t("filters.filterByType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>All Packages</SelectItem>
-                <SelectItem value='production'>Production Only</SelectItem>
-                <SelectItem value='development'>Development Only</SelectItem>
+                <SelectItem value='all'>{t("filters.allPackages")}</SelectItem>
+                <SelectItem value='production'>{t("filters.productionOnly")}</SelectItem>
+                <SelectItem value='development'>{t("filters.developmentOnly")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -189,12 +195,12 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               value={sortField}
               onValueChange={handleSortField}>
               <SelectTrigger>
-                <SelectValue placeholder='Sort by' />
+                <SelectValue placeholder={t("filters.sortBy")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='name'>Name</SelectItem>
-                <SelectItem value='dependencies'>Dependencies Count</SelectItem>
-                <SelectItem value='type'>Package Type</SelectItem>
+                <SelectItem value='name'>{t("filters.name")}</SelectItem>
+                <SelectItem value='dependencies'>{t("filters.dependenciesCount")}</SelectItem>
+                <SelectItem value='type'>{t("filters.packageType")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -204,11 +210,11 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               value={sortDirection}
               onValueChange={handleSortDirection}>
               <SelectTrigger>
-                <SelectValue placeholder='Sort direction' />
+                <SelectValue placeholder={t("filters.sortDirection")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='asc'>Ascending</SelectItem>
-                <SelectItem value='desc'>Descending</SelectItem>
+                <SelectItem value='asc'>{t("filters.ascending")}</SelectItem>
+                <SelectItem value='desc'>{t("filters.descending")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -219,8 +225,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         defaultValue='grid'
         className='w-full'>
         <TabsList className='mx-auto mb-8 grid w-full max-w-md grid-cols-2'>
-          <TabsTrigger value='grid'>Grid View</TabsTrigger>
-          <TabsTrigger value='table'>Table View</TabsTrigger>
+          <TabsTrigger value='grid'>{t("views.gridView")}</TabsTrigger>
+          <TabsTrigger value='table'>{t("views.tableView")}</TabsTrigger>
         </TabsList>
 
         <div className='min-h-[600px]'>
@@ -249,10 +255,10 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                       <CardContent>
                         <div className='flex flex-col space-y-2'>
                           <div className='flex items-center text-sm'>
-                            <span className='mr-2 font-medium'>License:</span> {pkg.license}
+                            <span className='mr-2 font-medium'>{t("card.license")}</span> {pkg.license}
                           </div>
                           <div className='flex items-center text-sm'>
-                            <span className='mr-2 font-medium'>Dependencies: {pkg.dependents?.length ?? "N/A"}</span>
+                            <span className='mr-2 font-medium'>{t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}</span>
                           </div>
                           <div className='mt-4 flex items-center justify-between'>
                             <a
@@ -261,7 +267,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                               rel='noopener noreferrer'
                               className='text-muted-foreground hover:text-primary flex items-center text-sm transition-colors'>
                               <TbExternalLink className='mr-1 h-4 w-4' />
-                              <span>Website</span>
+                              <span>{t("card.website")}</span>
                             </a>
                             <DependenciesDialog pkg={pkg} />
                           </div>
@@ -274,8 +280,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
             ) : (
               <div className='py-12 text-center'>
                 <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
-                <p className='text-muted-foreground'>No packages found.</p>
-                <p className='text-muted-foreground'>Try adjusting the filters above.</p>
+                <p className='text-muted-foreground'>{t("emptyState.title")}</p>
+                <p className='text-muted-foreground'>{t("emptyState.subtitle")}</p>
               </div>
             )}
           </TabsContent>
@@ -290,13 +296,13 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Package</TableHead>
-                      <TableHead className='hidden md:table-cell'>Version</TableHead>
-                      <TableHead className='hidden md:table-cell'>Type</TableHead>
-                      <TableHead className='hidden lg:table-cell'>Description</TableHead>
-                      <TableHead className='hidden xl:table-cell'>License</TableHead>
-                      <TableHead className='hidden sm:table-cell'>Depedendencies</TableHead>
-                      <TableHead>Website</TableHead>
+                      <TableHead>{t("table.package")}</TableHead>
+                      <TableHead className='hidden md:table-cell'>{t("table.version")}</TableHead>
+                      <TableHead className='hidden md:table-cell'>{t("table.type")}</TableHead>
+                      <TableHead className='hidden lg:table-cell'>{t("table.description")}</TableHead>
+                      <TableHead className='hidden xl:table-cell'>{t("table.license")}</TableHead>
+                      <TableHead className='hidden sm:table-cell'>{t("table.dependencies")}</TableHead>
+                      <TableHead>{t("table.website")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -320,9 +326,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             target='_blank'
                             rel='noopener noreferrer'
                             className='hover:bg-muted rounded-md p-2 transition-colors'
-                            title='Website'>
+                            title={t("table.website")}>
                             <TbExternalLink className='mx-auto h-4 w-4' />
-                            <span className='sr-only'>Website</span>
+                            <span className='sr-only'>{t("table.website")}</span>
                           </a>
                         </TableCell>
                       </TableRow>
@@ -333,8 +339,8 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
             ) : (
               <div className='py-12 text-center'>
                 <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
-                <p className='text-muted-foreground'>No packages found.</p>
-                <p className='text-muted-foreground'>Try adjusting the filters above.</p>
+                <p className='text-muted-foreground'>{t("emptyState.title")}</p>
+                <p className='text-muted-foreground'>{t("emptyState.subtitle")}</p>
               </div>
             )}
           </TabsContent>
@@ -348,12 +354,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         className='mt-16 text-center'>
         <div className='mb-4 flex items-center justify-center'>
           <TbPackage className='mr-2 h-6 w-6' />
-          <h2 className='text-xl font-semibold'>Open Source Matters</h2>
+          <h2 className='text-xl font-semibold'>{t("openSource.title")}</h2>
         </div>
-        <p className='text-muted-foreground mx-auto max-w-2xl'>
-          This project stands on the shoulders of giants. We&apos;re grateful for the open-source community and all the developers who have
-          contributed to these packages.
-        </p>
+        <p className='text-muted-foreground mx-auto max-w-2xl'>{t("openSource.description")}</p>
       </motion.div>
     </div>
   );

@@ -3,51 +3,62 @@
 import type {NavigationItem} from "@/types";
 
 import {Button} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
-import React, {useCallback, useState} from "react";
+import React, {useCallback, useMemo, useState} from "react";
 import {TbChevronDown, TbMenu} from "react-icons/tb";
 
-const navigationItems: ReadonlyArray<NavigationItem> = [
-  {
-    label: "Domains",
-    href: "/domains",
-    children: [
-      {
-        label: "Invoices",
-        href: "/domains/invoices",
+/**
+ * Hook to get translated navigation items.
+ * @returns Array of navigation items with translated labels.
+ */
+function useNavigationItems(): ReadonlyArray<NavigationItem> {
+  const t = useTranslations("Navigation");
 
+  return useMemo(
+    () => [
+      {
+        label: t("domains"),
+        href: "/domains",
         children: [
           {
-            label: "Upload Scans",
-            href: "/domains/invoices/upload-scans",
+            label: t("invoices"),
+            href: "/domains/invoices",
+            children: [
+              {
+                label: t("uploadScans"),
+                href: "/domains/invoices/upload-scans",
+              },
+              {
+                label: t("viewScans"),
+                href: "/domains/invoices/view-scans",
+              },
+              {
+                label: t("myInvoices"),
+                href: "/domains/invoices/view-invoices",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        label: t("about"),
+        href: "/about",
+        children: [
+          {
+            label: t("thePlatform"),
+            href: "/about/the-platform",
           },
           {
-            label: "View Scans",
-            href: "/domains/invoices/view-scans",
-          },
-          {
-            label: "My Invoices",
-            href: "/domains/invoices/view-invoices",
+            label: t("theAuthor"),
+            href: "/about/the-author",
           },
         ],
       },
     ],
-  },
-  {
-    label: "About",
-    href: "/about",
-    children: [
-      {
-        label: "The Platform",
-        href: "/about/the-platform",
-      },
-      {
-        label: "The Author",
-        href: "/about/the-author",
-      },
-    ],
-  },
-] as const;
+    [t],
+  );
+}
 
 // Desktop helper components
 const DesktopNavigationChild = ({child}: Readonly<{child: NavigationItem}>): React.JSX.Element => (
@@ -107,6 +118,8 @@ const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.
  * @returns The desktop navigation component.
  */
 export function DesktopNavigation(): React.JSX.Element {
+  const navigationItems = useNavigationItems();
+
   return (
     <div className='mx-auto px-4 dark:text-white'>
       <ul className='flex items-center gap-6'>
@@ -197,6 +210,8 @@ const MobileNavigationItem = ({
  * @returns The mobile navigation component.
  */
 export function MobileNavigation(): React.JSX.Element {
+  const t = useTranslations("Navigation.mobile");
+  const navigationItems = useNavigationItems();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 
@@ -213,7 +228,7 @@ export function MobileNavigation(): React.JSX.Element {
         aria-expanded={mobileOpen}
         aria-controls='mobile-navigation'
         className='inline-flex cursor-pointer items-center justify-center rounded-md p-2 hover:bg-gray-100 md:hidden'>
-        <span className='sr-only'>Open navigation</span>
+        <span className='sr-only'>{t("openNavigation")}</span>
         <TbMenu className='h-6 w-6' />
       </Button>
 
@@ -228,10 +243,10 @@ export function MobileNavigation(): React.JSX.Element {
             id='mobile-navigation'
             className='relative w-80 max-w-full overflow-auto rounded-r-lg bg-white p-6 shadow-xl'>
             <div className='mb-4 flex items-center justify-between'>
-              <h3 className='text-lg font-semibold tracking-tight text-black'>Navigation</h3>
+              <h3 className='text-lg font-semibold tracking-tight text-black'>{t("title")}</h3>
               <Button
                 onClick={toggleMobile}
-                aria-label='Close navigation'
+                aria-label={t("closeNavigation")}
                 className='cursor-pointer bg-white p-2 text-black'>
                 ✕
               </Button>
