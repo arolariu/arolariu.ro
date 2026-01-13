@@ -1,19 +1,400 @@
 @import 'tailwindcss';
 @config '../tailwind.config.js';
 
+/* ============================================
+   Base Performance Optimizations
+   ============================================ */
+
 html {
 	text-rendering: optimizelegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 body {
 	min-height: 100dvh;
 }
 
+/* Hardware acceleration for animated elements */
+.will-change-transform {
+	will-change: transform;
+}
+
+.will-change-opacity {
+	will-change: opacity;
+}
+
+/* GPU-accelerated animations */
+.gpu-accelerated {
+	transform: translateZ(0);
+	backface-visibility: hidden;
+}
+
+/* ============================================
+   View Transitions API Styles
+   ============================================ */
+
+/* Default cross-fade for all page transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 300ms;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-old(root) {
+	animation-name: fade-out;
+}
+
+::view-transition-new(root) {
+	animation-name: fade-in;
+}
+
+@keyframes fade-out {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ============================================
+   Enhanced Micro-Interactions
+   ============================================ */
+
+/* Interactive elements base styles */
+.hover-lift {
+	transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1),
+		0 4px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+:is(.dark) .hover-lift:hover {
+	box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3),
+		0 4px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Button micro-interactions */
+button,
+a[role='button'],
+.btn {
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		background-color 0.2s ease,
+		border-color 0.2s ease;
+}
+
+button:active,
+a[role='button']:active,
+.btn:active {
+	transform: scale(0.98);
+}
+
+/* Focus ring animation */
+:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--color-background, white),
+		0 0 0 4px var(--color-primary, #3b82f6);
+	transition: box-shadow 0.2s ease;
+}
+
+:is(.dark) :focus-visible {
+	box-shadow: 0 0 0 2px var(--color-background, black),
+		0 0 0 4px var(--color-primary, #60a5fa);
+}
+
+/* Link underline animation */
+.link-animated {
+	position: relative;
+	text-decoration: none;
+}
+
+.link-animated::after {
+	content: '';
+	position: absolute;
+	bottom: -2px;
+	left: 0;
+	width: 100%;
+	height: 2px;
+	background: currentColor;
+	transform: scaleX(0);
+	transform-origin: right;
+	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.link-animated:hover::after {
+	transform: scaleX(1);
+	transform-origin: left;
+}
+
+/* Card hover effect */
+.card-interactive {
+	transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+		border-color 0.25s ease;
+}
+
+.card-interactive:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+}
+
+:is(.dark) .card-interactive:hover {
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+	border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* ============================================
+   Skill Bar Animations
+   ============================================ */
+
+.skill-bar-fill {
+	transform-origin: left;
+	animation: skill-fill 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+	animation-play-state: paused;
+}
+
+.skill-bar-fill.animate {
+	animation-play-state: running;
+}
+
+@keyframes skill-fill {
+	from {
+		transform: scaleX(0);
+	}
+	to {
+		transform: scaleX(var(--skill-level, 1));
+	}
+}
+
+/* ============================================
+   Stagger Animation Utility
+   ============================================ */
+
+.stagger-animation {
+	opacity: 0;
+	animation: stagger-fade-in 0.5s ease forwards;
+	animation-delay: var(--delay, 0ms);
+}
+
+@keyframes stagger-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ============================================
+   Glow Effects
+   ============================================ */
+
+.hover-glow {
+	transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-glow:hover {
+	box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+}
+
+:is(.dark) .hover-glow:hover {
+	box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+}
+
+/* ============================================
+   Smooth Scrolling
+   ============================================ */
+
+html {
+	scroll-behavior: smooth;
+}
+
 @media (prefers-reduced-motion: reduce) {
-	* {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
+/* ============================================
+   Selection Styling
+   ============================================ */
+
+::selection {
+	background-color: rgba(59, 130, 246, 0.3);
+	color: inherit;
+}
+
+:is(.dark) ::selection {
+	background-color: rgba(96, 165, 250, 0.3);
+}
+
+/* ============================================
+   Reduced Motion Preferences
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none !important;
+	}
+
+	.hover-lift:hover,
+	.card-interactive:hover {
+		transform: none;
+	}
+
+	.skill-bar-fill {
+		animation: none;
+		transform: scaleX(var(--skill-level, 1));
+	}
+}
+
+/* ============================================
+   Mobile-First Touch Interactions
+   ============================================ */
+
+/* Faster transitions on mobile for snappier feel */
+@media (max-width: 768px) {
+	button,
+	a[role='button'],
+	.btn {
+		transition-duration: 0.15s;
+	}
+
+	.hover-lift:hover,
+	.card-interactive:hover {
+		/* Reduce movement on mobile for better touch UX */
+		transform: translateY(-1px);
+	}
+
+	/* Larger touch targets on mobile */
+	button,
+	a,
+	[role='button'] {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}
+
+/* Touch-specific styles (devices with touch capability) */
+@media (hover: none) and (pointer: coarse) {
+	/* Remove hover effects on touch devices */
+	.hover-lift:hover {
+		transform: none;
+		box-shadow: inherit;
+	}
+
+	/* Active state instead of hover for touch */
+	.hover-lift:active {
+		transform: scale(0.98);
+	}
+
+	.card-interactive:hover {
+		transform: none;
+	}
+
+	.card-interactive:active {
+		transform: scale(0.99);
+	}
+
+	/* Tap highlight */
+	button,
+	a,
+	[role='button'] {
+		-webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+	}
+}
+
+/* ============================================
+   Instant Navigation Feedback
+   ============================================ */
+
+/* Loading state indicator */
+.navigation-loading {
+	position: relative;
+}
+
+.navigation-loading::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 2px;
+	background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+	animation: loading-bar 1s ease-in-out infinite;
+}
+
+@keyframes loading-bar {
+	0% {
+		transform: scaleX(0);
+		transform-origin: left;
+	}
+	50% {
+		transform: scaleX(1);
+		transform-origin: left;
+	}
+	50.1% {
+		transform: scaleX(1);
+		transform-origin: right;
+	}
+	100% {
+		transform: scaleX(0);
+		transform-origin: right;
+	}
+}
+
+/* ============================================
+   Content Visibility Optimization
+   ============================================ */
+
+/* Optimize rendering of off-screen content */
+.content-visibility-auto {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 500px;
+}
+
+/* ============================================
+   Print Optimization
+   ============================================ */
+
+@media print {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+
+	.no-print {
+		display: none !important;
 	}
 }

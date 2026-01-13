@@ -132,15 +132,23 @@
 			}
 		</script>
 
-		<!-- Preload critical fonts -->
+		<!-- Resource Hints for Performance -->
 		<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="dns-prefetch" href="https://www.clarity.ms" />
+		<link rel="dns-prefetch" href="https://www.linkedin.com" />
+		<link rel="dns-prefetch" href="https://github.com" />
+
+		<!-- Preload critical fonts with display swap -->
 		<link
 			rel="preload"
 			href="https://fonts.googleapis.com/css2?family=Caudex:ital,wght@0,400;0,700;1,400;1,700&display=swap"
 			as="style"
 			onload="this.onload=null;this.rel='stylesheet'"
 		/>
+
+		<!-- Preload critical assets -->
+		<link rel="preload" href="/author.jpeg" as="image" type="image/jpeg" />
 
 		<script type="text/javascript">
 			(function (c, l, a, r, i, t, y) {
