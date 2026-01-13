@@ -393,17 +393,6 @@
           "title": "Invoice Management System"
         },
         "service": {
-          "create-page": {
-            "__metadata__": {
-              "description": "The invoice management system provides users with detailed insights into their spending habits, according to their uploaded receipts.",
-              "title": "Invoice Management System - Create Invoice"
-            },
-            "disclaimer": "In order to save your invoice, please create an account or sign in.",
-            "subtitle__after": "Review the uploaded receipt photo. If it is correct, proceed to the next step.",
-            "subtitle__before": "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.",
-            "title__after": "ARE THESE THE CORRECT PHOTOS...?!",
-            "title__before": "UPLOAD A PICTURE OF THE PAPER RECEIPT!"
-          },
           "edit-page": {
             "__metadata__": {
               "description": "View and edit your invoice details, items, recipes, and sharing settings.",
@@ -414,6 +403,208 @@
             "__metadata__": {
               "description": "View your invoice details, items, and associated merchant information.",
               "title": "Invoice Management System - View Invoice"
+            }
+          },
+          "upload-scans": {
+            "__metadata__": {
+              "description": "Upload receipt scans to your account for later processing into invoices.",
+              "title": "Invoice Management System - Upload Scans"
+            },
+            "title": "Upload Scans",
+            "subtitle": "Upload receipt images or PDFs. Create invoices from them later.",
+            "breadcrumb": "Back to Invoices",
+            "header": {
+              "title": "Upload Scans",
+              "description": "Upload receipt images or PDFs. Create invoices from them later.",
+              "tooltip": "Upload your receipts, invoices, or bills here. You can select multiple files and organize them into invoices later from the View Scans page."
+            },
+            "buttons": {
+              "viewScans": "View Your Scans",
+              "myInvoices": "My Invoices",
+              "uploadFirst": "Upload Your First Scan"
+            },
+            "stats": {
+              "added": "Added",
+              "pending": "Pending",
+              "uploading": "Uploading",
+              "completed": "Completed",
+              "failed": "Failed"
+            },
+            "sidebar": {
+              "formats": {
+                "title": "Supported Formats",
+                "images": "Images",
+                "imageExtensions": ".jpg, .jpeg, .png",
+                "documents": "Documents",
+                "documentExtensions": ".pdf",
+                "maxSize": "Maximum file size: 10MB per file"
+              },
+              "tips": {
+                "title": "Tips for Best Results",
+                "tip1": "Use good lighting when photographing receipts",
+                "tip2": "Ensure text is clear and readable",
+                "tip3": "Avoid shadows and glare",
+                "tip4": "Capture the entire receipt in frame",
+                "tip5": "PDFs work best for digital receipts"
+              },
+              "security": {
+                "title": "Secure Storage",
+                "description": "Your scans are encrypted and stored securely. Only you can access them."
+              },
+              "nextSteps": {
+                "title": "All uploads complete!",
+                "description": "Your scans are ready. Head to View Scans to organize them into invoices.",
+                "button": "Continue to View Scans"
+              }
+            },
+            "upload": {
+              "dropzone": "Drag and drop your receipt images or PDFs here",
+              "browse": "Browse files",
+              "or": "or"
+            },
+            "errors": {
+              "unsupportedType": "Unsupported file type: {type}",
+              "tooLarge": "File too large: {name} (max 10MB)"
+            }
+          },
+          "view-scans": {
+            "__metadata__": {
+              "description": "View and manage your uploaded scans. Create invoices from selected scans.",
+              "title": "Invoice Management System - View Scans"
+            },
+            "title": "Your Scans",
+            "subtitle": "Select scans to create invoices from them.",
+            "breadcrumb": "Back to Invoices",
+            "header": {
+              "title": "Your Scans",
+              "titleWithCount": "Your Scans ({count})",
+              "subtitle": "Select scans to create invoices from them",
+              "lastSynced": "Last synced: {time}",
+              "tooltip": "Select scans to create invoices from them. You can create one invoice per scan or combine multiple scans into a single invoice.",
+              "uploadMore": "Upload More",
+              "upload": "Upload",
+              "uploadTooltip": "Upload more scans to your account",
+              "myInvoices": "My Invoices",
+              "invoices": "Invoices",
+              "myInvoicesTooltip": "View your created invoices",
+              "sync": "Sync",
+              "syncing": "Syncing...",
+              "syncTooltip": "Refresh scans from server"
+            },
+            "stats": {
+              "totalScans": "Total Scans",
+              "ready": "Ready",
+              "selected": "Selected",
+              "selectHint": "Click on scans to select them for invoice creation",
+              "tapHint": "Tap to select"
+            },
+            "sidebar": {
+              "howTo": {
+                "title": "How to Create Invoices",
+                "step1Title": "Select Scans",
+                "step1Description": "Click on scans to select them",
+                "step2Title": "Choose Mode",
+                "step2Description": "One invoice per scan or combine multiple",
+                "step3Title": "Create Invoice",
+                "step3Description": "AI extracts data automatically"
+              },
+              "selectionStatus": {
+                "singular": "scan selected",
+                "plural": "scans selected",
+                "readySingular": "Ready to create an invoice",
+                "readyPlural": "Create multiple invoices or combine into one"
+              },
+              "quickUpload": {
+                "title": "Need more scans?",
+                "description": "Upload additional receipts",
+                "button": "Upload"
+              }
+            },
+            "emptyState": {
+              "title": "No scans yet",
+              "description": "Start by uploading your receipts and invoices. Here's how it works:",
+              "step1Title": "Upload your scans",
+              "step1Description": "Take photos of receipts or upload PDFs of digital invoices",
+              "step2Title": "Select and organize",
+              "step2Description": "Choose which scans to convert into invoices",
+              "step3Title": "Create invoices",
+              "step3Description": "Our AI automatically extracts all the data for you",
+              "uploadButton": "Upload Your First Scan",
+              "learnMoreButton": "Learn More"
+            },
+            "toolbar": {
+              "selected": "selected",
+              "clearSelection": "Clear",
+              "createInvoice": "Create Invoice",
+              "createInvoices": "Create Invoices"
+            },
+            "scanCard": {
+              "delete": "Delete scan",
+              "linked": "Linked",
+              "deleteDialog": {
+                "title": "Delete scan?",
+                "description": "Are you sure you want to delete \"{name}\"? This action cannot be undone and the scan will be permanently removed from storage.",
+                "linkedWarning": "This scan is linked to an invoice.",
+                "linkedDescription": "Deleting it will remove the scan from storage, but the invoice will retain a copy of the image. This action cannot be undone.",
+                "cancel": "Cancel",
+                "delete": "Delete",
+                "deleting": "Deleting...",
+                "success": "Scan deleted successfully",
+                "error": "Failed to delete scan"
+              }
+            }
+          },
+          "createInvoiceDialog": {
+            "title": "Create Invoice",
+            "titlePlural": "Create Invoices",
+            "description": "Transform your scans into structured invoice data with AI-powered extraction.",
+            "selectedScans": "Selected Scans",
+            "totalSize": "total",
+            "chooseMode": "Choose Creation Mode",
+            "singleMode": {
+              "title": "One invoice per scan",
+              "description": "Creates {count} separate invoices. Best when each scan is a different receipt."
+            },
+            "batchMode": {
+              "title": "Combine into one invoice",
+              "description": "Creates 1 invoice with all {count} scans attached. Best for multi-page receipts."
+            },
+            "singleScanInfo": {
+              "title": "What happens next?",
+              "description": "Our AI will analyze your scan and automatically extract merchant details, items, prices, and totals. You can review and edit the results afterward."
+            },
+            "buttons": {
+              "cancel": "Cancel",
+              "createSingle": "Create Invoice",
+              "createMultiple": "Create {count} Invoices"
+            },
+            "creating": {
+              "title": "Creating Your Invoice",
+              "titlePlural": "Creating Your Invoices",
+              "processing": "Processing {count} scan...",
+              "processingPlural": "Processing {count} scans...",
+              "step1Title": "Uploading scans",
+              "step1Description": "Sending your scans to our servers",
+              "step2Title": "Creating invoice records",
+              "step2Description": "Setting up invoice data structures",
+              "step3Title": "Finalizing",
+              "step3Description": "Preparing invoices for viewing"
+            },
+            "complete": {
+              "title": "{count} Invoice Created!",
+              "titlePlural": "{count} Invoices Created!",
+              "description": "Your invoice is ready for viewing and editing.",
+              "descriptionPlural": "Your invoices are ready for viewing and editing.",
+              "nextSteps": "Next steps:",
+              "nextStepsDescription": "Review your invoice, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
+              "nextStepsDescriptionPlural": "Review your invoices, verify the extracted data, and make any necessary edits. You can also request AI analysis for spending insights.",
+              "viewButton": "View Invoice",
+              "viewButtonPlural": "View Invoices"
+            },
+            "errors": {
+              "partialFail": "Failed to create {count} invoice(s)",
+              "createFailed": "Failed to create invoices: {message}",
+              "unknown": "Unknown error"
             }
           },
           "main-page": {
