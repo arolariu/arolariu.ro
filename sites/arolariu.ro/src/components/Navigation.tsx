@@ -18,11 +18,15 @@ const navigationItems: ReadonlyArray<NavigationItem> = [
 
         children: [
           {
-            label: "Create",
-            href: "/domains/invoices/create-invoice",
+            label: "Upload Scans",
+            href: "/domains/invoices/upload-scans",
           },
           {
-            label: "View",
+            label: "View Scans",
+            href: "/domains/invoices/view-scans",
+          },
+          {
+            label: "My Invoices",
             href: "/domains/invoices/view-invoices",
           },
         ],

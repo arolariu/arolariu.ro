@@ -1,197 +1,317 @@
-import {RichText} from "@/presentation/Text";
-import {useTranslations} from "next-intl";
+"use client";
+
+/**
+ * @fileoverview Invoice domain home page with workflow guide.
+ * @module app/domains/invoices/island
+ *
+ * @remarks
+ * This component serves as the main entry point for the invoices domain.
+ * It guides users through the 3-step workflow: Upload → Organize → View.
+ */
+
+import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
+import {motion} from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
-
-const Steps = () => {
-  const t = useTranslations("Domains.services.invoices.service.main-page.steps");
-
-  const steps = [
-    {
-      title: t("step-1.title"),
-      description: t("step-1.description"),
-      icon: (
-        <svg
-          fill='none'
-          stroke='currentColor'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth='2'
-          className='h-5 w-5'
-          viewBox='0 0 24 24'>
-          <path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' />
-        </svg>
-      ),
-    },
-    {
-      title: t("step-2.title"),
-      description: t("step-2.description"),
-      icon: (
-        <svg
-          fill='none'
-          stroke='currentColor'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth='2'
-          className='h-5 w-5'
-          viewBox='0 0 24 24'>
-          <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
-        </svg>
-      ),
-    },
-    {
-      title: t("step-3.title"),
-      description: t("step-3.description"),
-      icon: (
-        <svg
-          fill='none'
-          stroke='currentColor'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth='2'
-          className='h-5 w-5'
-          viewBox='0 0 24 24'>
-          <circle
-            cx='12'
-            cy='5'
-            r='3'
-          />
-          <path d='M12 22V8M5 12H2a10 10 0 0020 0h-3' />
-        </svg>
-      ),
-    },
-    {
-      title: t("step-4.title"),
-      description: t("step-4.description"),
-      icon: (
-        <svg
-          fill='none'
-          stroke='currentColor'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth='2'
-          className='h-5 w-5'
-          viewBox='0 0 24 24'>
-          <path
-            d='M20 21v-2a4 4 0 00-4-4H8a4 4 0 00
-          -4 4v2'
-          />
-          <circle
-            cx='12'
-            cy='7'
-            r='4'
-          />
-        </svg>
-      ),
-    },
-    {
-      title: t("step-5.title"),
-      description: t("step-5.description"),
-      icon: (
-        <svg
-          fill='none'
-          stroke='currentColor'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth='2'
-          className='h-5 w-5'
-          viewBox='0 0 24 24'>
-          <path d='M22 11.08V12a10 10 0 11-5.93-9.14' />
-          <path d='M22 4L12 14.01l-3-3' />
-        </svg>
-      ),
-    },
-  ];
-
-  return (
-    <>
-      {steps.map((step) => (
-        <div
-          className='relative flex pb-12'
-          key={step.title}>
-          <div className='absolute inset-0 flex h-full w-10 items-center justify-center'>
-            {step !== steps.at(-1) && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
-          </div>
-          <div className='relative z-10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-500'>
-            {step.icon}
-          </div>
-          <div className='grow pl-4'>
-            <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>{step.title}</h2>
-            <p className='leading-relaxed'>{step.description}</p>
-          </div>
-        </div>
-      ))}
-    </>
-  );
-};
+import {TbArrowRight, TbChartBar, TbEye, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
 
 type Props = {
-  isAuthenticated: boolean;
+	isAuthenticated: boolean;
 };
 
 /**
- * The invoice domain screen, which is the main page for the invoice domain.
- * It contains a description of the invoice domain, a call to action button,
- * and a section to view invoices if the user is authenticated.
- * @returns The invoice domain screen, which is the main page for the invoice domain.
+ * Workflow step card component.
+ */
+function WorkflowCard({
+	step,
+	title,
+	description,
+	icon,
+	href,
+	buttonText,
+	gradient,
+	delay,
+}: Readonly<{
+	step: number;
+	title: string;
+	description: string;
+	icon: React.ReactNode;
+	href: string;
+	buttonText: string;
+	gradient: string;
+	delay: number;
+}>): React.JSX.Element {
+	return (
+		<motion.div
+			initial={{opacity: 0, y: 20}}
+			animate={{opacity: 1, y: 0}}
+			transition={{duration: 0.5, delay}}>
+			<Card className='group relative h-full overflow-hidden border-2 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg dark:hover:border-indigo-700'>
+				{/* Step number badge */}
+				<div
+					className={`absolute -right-4 -top-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br ${gradient} text-2xl font-bold text-white opacity-20 transition-opacity group-hover:opacity-30`}>
+					{step}
+				</div>
+
+				<CardHeader className='pb-2'>
+					<div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br ${gradient} text-white shadow-md`}>
+						{icon}
+					</div>
+					<CardTitle className='text-xl'>{title}</CardTitle>
+					<CardDescription className='text-base'>{description}</CardDescription>
+				</CardHeader>
+
+				<CardContent className='pt-2'>
+					<Button
+						asChild
+						className={`w-full bg-linear-to-r ${gradient} text-white transition-transform group-hover:scale-[1.02]`}>
+						<Link
+							href={href}
+							className='flex items-center justify-center gap-2'>
+							{buttonText}
+							<TbArrowRight className='h-4 w-4 transition-transform group-hover:translate-x-1' />
+						</Link>
+					</Button>
+				</CardContent>
+			</Card>
+		</motion.div>
+	);
+}
+
+/**
+ * Feature highlight component.
+ */
+function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
+	return (
+		<div className='flex items-start gap-4'>
+			<div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400'>
+				{icon}
+			</div>
+			<div>
+				<h3 className='font-semibold text-gray-900 dark:text-white'>{title}</h3>
+				<p className='text-sm text-gray-600 dark:text-gray-400'>{description}</p>
+			</div>
+		</div>
+	);
+}
+
+/**
+ * The invoice domain home page with workflow guide.
+ *
+ * @remarks
+ * Guides users through the 3-step invoice management workflow:
+ * 1. Upload scans (receipts, invoices, bills)
+ * 2. View and organize scans, create invoices
+ * 3. View, analyze, and manage invoices
  */
 export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.main-page");
+	return (
+		<main className='min-h-screen'>
+			{/* Hero Section */}
+			<section className='relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8'>
+				<div className='mx-auto max-w-7xl'>
+					<div className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
+						{/* Left: Content */}
+						<div className='flex-1 text-center lg:text-left'>
+							<motion.div
+								initial={{opacity: 0, y: 20}}
+								animate={{opacity: 1, y: 0}}
+								transition={{duration: 0.6}}>
+								<h1 className='mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl dark:text-white'>
+									Manage Your{" "}
+									<span className='bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent'>
+										Invoices
+									</span>{" "}
+									with Ease
+								</h1>
+								<p className='mb-8 max-w-2xl text-lg text-gray-600 lg:text-xl dark:text-gray-300'>
+									Upload your receipts and bills, organize them into invoices, and gain insights into your spending habits.
+									Our AI-powered system extracts data automatically.
+								</p>
 
-  return (
-    <main className='px-5 py-24'>
-      <section className='flex flex-col items-center justify-center justify-items-center text-center'>
-        <Image
-          src='/images/domains/invoices/invoice-top.svg'
-          alt='Invoice top SVG'
-          width='500'
-          height='500'
-          className='2xsm:pt-4 object-fill object-center md:mx-auto md:h-full lg:h-1/2'
-          priority
-        />
-        <div className='mt-2 w-full lg:w-2/3'>
-          <h1 className='mb-4 bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl'>
-            {t("title")}
-          </h1>
-          <article className='mb-8 leading-relaxed'>
-            <RichText
-              sectionKey='Domains.services.invoices.service.main-page'
-              textKey='description'
-            />
-          </article>
-          <div className='flex flex-col items-center justify-center justify-items-center gap-4 md:flex-row'>
-            <Link
-              href='/domains/invoices/create-invoice'
-              className='rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
-              {t("callToAction")}
-            </Link>
+								<div className='flex flex-col items-center gap-4 sm:flex-row lg:justify-start'>
+									<Button
+										asChild
+										size='lg'
+										className='bg-linear-to-r from-indigo-600 to-purple-600 px-8 text-white hover:from-indigo-700 hover:to-purple-700'>
+										<Link href='/domains/invoices/upload-scans'>
+											<TbUpload className='mr-2 h-5 w-5' />
+											Get Started
+										</Link>
+									</Button>
+									{isAuthenticated && (
+										<Button
+											asChild
+											variant='outline'
+											size='lg'>
+											<Link href='/domains/invoices/view-invoices'>
+												<TbFileInvoice className='mr-2 h-5 w-5' />
+												View My Invoices
+											</Link>
+										</Button>
+									)}
+								</div>
+							</motion.div>
+						</div>
 
-            {/* If user is authenticated, show the `My Receipts` button too. */}
-            {Boolean(isAuthenticated) && (
-              <Link
-                href='/domains/invoices/view-invoices'
-                className='rounded border-0 bg-gray-100 px-6 py-2 text-lg text-gray-700 hover:bg-gray-200 focus:outline-hidden'>
-                {t("showInvoices")}
-              </Link>
-            )}
-          </div>
-        </div>
-      </section>
-      <section className='flex flex-col items-center justify-center justify-items-center pt-16 md:flex-row'>
-        <div className='md:w-1/2 md:py-6 md:pr-10 lg:w-2/5'>
-          <Steps />
-        </div>
-        <div>
-          <Image
-            src='/images/domains/invoices/invoice-bottom.svg'
-            alt='Invoice bottom SVG'
-            width='500'
-            height='500'
-            className='2xsm:pt-4 w-full object-fill object-center md:mx-auto md:h-full lg:h-1/2'
-          />
-        </div>
-      </section>
-    </main>
-  );
+						{/* Right: Image */}
+						<motion.div
+							className='flex-1'
+							initial={{opacity: 0, scale: 0.95}}
+							animate={{opacity: 1, scale: 1}}
+							transition={{duration: 0.6, delay: 0.2}}>
+							<Image
+								src='/images/domains/invoices/invoice-top.svg'
+								alt='Invoice management illustration'
+								width={500}
+								height={500}
+								className='mx-auto w-full max-w-md lg:max-w-lg'
+								priority
+							/>
+						</motion.div>
+					</div>
+				</div>
+			</section>
+
+			{/* Workflow Section */}
+			<section className='bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 dark:bg-gray-900/50'>
+				<div className='mx-auto max-w-7xl'>
+					<motion.div
+						className='mb-12 text-center'
+						initial={{opacity: 0, y: 20}}
+						animate={{opacity: 1, y: 0}}
+						transition={{duration: 0.5}}>
+						<h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>How It Works</h2>
+						<p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>
+							Three simple steps to digitize and organize your financial documents
+						</p>
+					</motion.div>
+
+					<div className='grid gap-8 md:grid-cols-3'>
+						<WorkflowCard
+							step={1}
+							title='Upload Scans'
+							description='Drag and drop your receipts, invoices, or bills. We support JPG, PNG, and PDF files up to 10MB each.'
+							icon={<TbUpload className='h-6 w-6' />}
+							href='/domains/invoices/upload-scans'
+							buttonText='Upload Now'
+							gradient='from-blue-500 to-cyan-500'
+							delay={0.1}
+						/>
+
+						<WorkflowCard
+							step={2}
+							title='View & Organize'
+							description='Review your uploaded scans, select the ones you want, and create invoices from them individually or in batches.'
+							icon={<TbEye className='h-6 w-6' />}
+							href='/domains/invoices/view-scans'
+							buttonText='View Scans'
+							gradient='from-purple-500 to-pink-500'
+							delay={0.2}
+						/>
+
+						<WorkflowCard
+							step={3}
+							title='Manage Invoices'
+							description='View your invoices, analyze spending patterns, and get AI-powered insights into your financial habits.'
+							icon={<TbFileInvoice className='h-6 w-6' />}
+							href='/domains/invoices/view-invoices'
+							buttonText='View Invoices'
+							gradient='from-green-500 to-emerald-500'
+							delay={0.3}
+						/>
+					</div>
+				</div>
+			</section>
+
+			{/* Features Section */}
+			<section className='px-4 py-16 sm:px-6 lg:px-8'>
+				<div className='mx-auto max-w-7xl'>
+					<div className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
+						{/* Left: Image */}
+						<motion.div
+							className='flex-1'
+							initial={{opacity: 0, x: -20}}
+							animate={{opacity: 1, x: 0}}
+							transition={{duration: 0.6}}>
+							<Image
+								src='/images/domains/invoices/invoice-bottom.svg'
+								alt='Invoice features illustration'
+								width={500}
+								height={500}
+								className='mx-auto w-full max-w-md lg:max-w-lg'
+							/>
+						</motion.div>
+
+						{/* Right: Features */}
+						<motion.div
+							className='flex-1 space-y-8'
+							initial={{opacity: 0, x: 20}}
+							animate={{opacity: 1, x: 0}}
+							transition={{duration: 0.6, delay: 0.2}}>
+							<div>
+								<h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>
+									Powerful Features
+								</h2>
+								<p className='text-lg text-gray-600 dark:text-gray-400'>
+									Everything you need to manage your invoices efficiently
+								</p>
+							</div>
+
+							<div className='space-y-6'>
+								<FeatureItem
+									icon={<TbPhoto className='h-5 w-5' />}
+									title='Smart OCR Extraction'
+									description='Our AI automatically extracts merchant names, dates, amounts, and line items from your scans.'
+								/>
+								<FeatureItem
+									icon={<TbChartBar className='h-5 w-5' />}
+									title='Spending Analytics'
+									description='Get detailed insights into your spending patterns with charts and reports.'
+								/>
+								<FeatureItem
+									icon={<TbFileInvoice className='h-5 w-5' />}
+									title='Batch Processing'
+									description='Process multiple scans at once - create individual invoices or combine them into one.'
+								/>
+							</div>
+
+							{!isAuthenticated && (
+								<div className='rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-900/30'>
+									<p className='text-sm text-indigo-800 dark:text-indigo-200'>
+										<strong>Sign in</strong> to save your invoices permanently and access them from any device.
+									</p>
+								</div>
+							)}
+						</motion.div>
+					</div>
+				</div>
+			</section>
+
+			{/* CTA Section */}
+			<section className='bg-linear-to-r from-indigo-600 to-purple-600 px-4 py-16 sm:px-6 lg:px-8'>
+				<div className='mx-auto max-w-4xl text-center'>
+					<motion.div
+						initial={{opacity: 0, y: 20}}
+						animate={{opacity: 1, y: 0}}
+						transition={{duration: 0.5}}>
+						<h2 className='mb-4 text-3xl font-bold text-white sm:text-4xl'>Ready to Get Started?</h2>
+						<p className='mb-8 text-lg text-indigo-100'>
+							Upload your first scan and see how easy invoice management can be.
+						</p>
+						<Button
+							asChild
+							size='lg'
+							variant='secondary'
+							className='bg-white px-8 text-indigo-600 hover:bg-gray-100'>
+							<Link href='/domains/invoices/upload-scans'>
+								<TbUpload className='mr-2 h-5 w-5' />
+								Upload Your First Scan
+							</Link>
+						</Button>
+					</motion.div>
+				</div>
+			</section>
+		</main>
+	);
 }
