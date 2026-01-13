@@ -393,17 +393,6 @@
           "title": "Sistem de management al bonurilor fiscale"
         },
         "service": {
-          "create-page": {
-            "__metadata__": {
-              "description": "Sistemul de gestionare a facturilor oferă utilizatorilor informații detaliate despre obiceiurile lor de cheltuieli, în funcție de chitanțele încărcate.",
-              "title": "Creați factură"
-            },
-            "disclaimer": "Pentru a vă salva bonul fiscal, vă rugăm să creați un cont sau să vă conectați.",
-            "subtitle__after": "Examinați ce s-a încărcat. \nDacă este corect, treceți la pasul următor.",
-            "subtitle__before": "Fotografiați sau scanați cu atenție chitanța de hârtie. \nAtașați imaginea digitală de pe dispozitivul dvs., aici.",
-            "title__after": "SUNT ACESTE FOTOGRAFII CORECTE...?!",
-            "title__before": "ÎNCĂRCĂ O POZĂ CU CHITANȚA DE HÂRTIE!"
-          },
           "edit-page": {
             "__metadata__": {
               "description": "Vizualizați și editați detaliile facturii, articolele, rețetele și setările de partajare.",
@@ -414,6 +403,208 @@
             "__metadata__": {
               "description": "Vizualizați detaliile facturii, articolele și informațiile despre comerciant.",
               "title": "Vizualizare factură"
+            }
+          },
+          "upload-scans": {
+            "__metadata__": {
+              "description": "Încărcați scanări de chitanțe în contul dvs. pentru procesare ulterioară în facturi.",
+              "title": "Sistem de gestionare a facturilor - Încărcare scanări"
+            },
+            "title": "Încărcare Scanări",
+            "subtitle": "Încărcați imagini sau PDF-uri cu chitanțe. Creați facturi din ele mai târziu.",
+            "breadcrumb": "Înapoi la Facturi",
+            "header": {
+              "title": "Încărcare Scanări",
+              "description": "Încărcați imagini sau PDF-uri cu chitanțe. Creați facturi din ele mai târziu.",
+              "tooltip": "Încărcați chitanțele, facturile sau bonurile dvs. aici. Puteți selecta mai multe fișiere și le puteți organiza în facturi mai târziu din pagina Vizualizare Scanări."
+            },
+            "buttons": {
+              "viewScans": "Vizualizați Scanările",
+              "myInvoices": "Facturile Mele",
+              "uploadFirst": "Încărcați Prima Scanare"
+            },
+            "stats": {
+              "added": "Adăugate",
+              "pending": "În așteptare",
+              "uploading": "Se încarcă",
+              "completed": "Finalizate",
+              "failed": "Eșuate"
+            },
+            "sidebar": {
+              "formats": {
+                "title": "Formate Acceptate",
+                "images": "Imagini",
+                "imageExtensions": ".jpg, .jpeg, .png",
+                "documents": "Documente",
+                "documentExtensions": ".pdf",
+                "maxSize": "Dimensiune maximă: 10MB per fișier"
+              },
+              "tips": {
+                "title": "Sfaturi pentru Rezultate Optime",
+                "tip1": "Folosiți iluminare bună când fotografiați chitanțele",
+                "tip2": "Asigurați-vă că textul este clar și lizibil",
+                "tip3": "Evitați umbrele și reflexiile",
+                "tip4": "Capturați întreaga chitanță în cadru",
+                "tip5": "PDF-urile funcționează cel mai bine pentru chitanțele digitale"
+              },
+              "security": {
+                "title": "Stocare Securizată",
+                "description": "Scanările dvs. sunt criptate și stocate în siguranță. Doar dvs. le puteți accesa."
+              },
+              "nextSteps": {
+                "title": "Toate încărcările sunt complete!",
+                "description": "Scanările dvs. sunt gata. Mergeți la Vizualizare Scanări pentru a le organiza în facturi.",
+                "button": "Continuați la Vizualizare Scanări"
+              }
+            },
+            "upload": {
+              "dropzone": "Trageți și plasați imaginile sau PDF-urile cu chitanțe aici",
+              "browse": "Răsfoiți fișiere",
+              "or": "sau"
+            },
+            "errors": {
+              "unsupportedType": "Tip de fișier neacceptat: {type}",
+              "tooLarge": "Fișier prea mare: {name} (max 10MB)"
+            }
+          },
+          "view-scans": {
+            "__metadata__": {
+              "description": "Vizualizați și gestionați scanările încărcate. Creați facturi din scanările selectate.",
+              "title": "Sistem de gestionare a facturilor - Vizualizare Scanări"
+            },
+            "title": "Scanările Tale",
+            "subtitle": "Selectați scanări pentru a crea facturi din ele.",
+            "breadcrumb": "Înapoi la Facturi",
+            "header": {
+              "title": "Scanările Tale",
+              "titleWithCount": "Scanările Tale ({count})",
+              "subtitle": "Selectați scanări pentru a crea facturi din ele",
+              "lastSynced": "Ultima sincronizare: {time}",
+              "tooltip": "Selectați scanări pentru a crea facturi din ele. Puteți crea o factură per scanare sau combina mai multe scanări într-o singură factură.",
+              "uploadMore": "Încărcați Mai Multe",
+              "upload": "Încărcați",
+              "uploadTooltip": "Încărcați mai multe scanări în contul dvs.",
+              "myInvoices": "Facturile Mele",
+              "invoices": "Facturi",
+              "myInvoicesTooltip": "Vizualizați facturile create",
+              "sync": "Sincronizare",
+              "syncing": "Se sincronizează...",
+              "syncTooltip": "Reîmprospătați scanările de pe server"
+            },
+            "stats": {
+              "totalScans": "Total Scanări",
+              "ready": "Pregătite",
+              "selected": "Selectate",
+              "selectHint": "Faceți clic pe scanări pentru a le selecta pentru crearea facturilor",
+              "tapHint": "Atingeți pentru a selecta"
+            },
+            "sidebar": {
+              "howTo": {
+                "title": "Cum să Creați Facturi",
+                "step1Title": "Selectați Scanări",
+                "step1Description": "Faceți clic pe scanări pentru a le selecta",
+                "step2Title": "Alegeți Modul",
+                "step2Description": "O factură per scanare sau combinați mai multe",
+                "step3Title": "Creați Factura",
+                "step3Description": "AI extrage datele automat"
+              },
+              "selectionStatus": {
+                "singular": "scanare selectată",
+                "plural": "scanări selectate",
+                "readySingular": "Pregătit pentru a crea o factură",
+                "readyPlural": "Creați mai multe facturi sau combinați-le într-una singură"
+              },
+              "quickUpload": {
+                "title": "Aveți nevoie de mai multe scanări?",
+                "description": "Încărcați chitanțe suplimentare",
+                "button": "Încărcare"
+              }
+            },
+            "emptyState": {
+              "title": "Nicio scanare încă",
+              "description": "Începeți prin a încărca chitanțele și facturile dvs. Iată cum funcționează:",
+              "step1Title": "Încărcați scanările",
+              "step1Description": "Fotografiați chitanțele sau încărcați PDF-uri cu facturi digitale",
+              "step2Title": "Selectați și organizați",
+              "step2Description": "Alegeți care scanări să fie convertite în facturi",
+              "step3Title": "Creați facturi",
+              "step3Description": "AI-ul nostru extrage automat toate datele pentru dvs.",
+              "uploadButton": "Încărcați Prima Scanare",
+              "learnMoreButton": "Aflați Mai Multe"
+            },
+            "toolbar": {
+              "selected": "selectat(e)",
+              "clearSelection": "Ștergeți",
+              "createInvoice": "Creați Factură",
+              "createInvoices": "Creați Facturi"
+            },
+            "scanCard": {
+              "delete": "Ștergeți scanarea",
+              "linked": "Asociată",
+              "deleteDialog": {
+                "title": "Ștergeți scanarea?",
+                "description": "Sigur doriți să ștergeți \"{name}\"? Această acțiune nu poate fi anulată și scanarea va fi eliminată permanent din stocare.",
+                "linkedWarning": "Această scanare este asociată cu o factură.",
+                "linkedDescription": "Ștergerea acesteia va elimina scanarea din stocare, dar factura va păstra o copie a imaginii. Această acțiune nu poate fi anulată.",
+                "cancel": "Anulare",
+                "delete": "Ștergere",
+                "deleting": "Se șterge...",
+                "success": "Scanarea a fost ștearsă cu succes",
+                "error": "Nu s-a putut șterge scanarea"
+              }
+            }
+          },
+          "createInvoiceDialog": {
+            "title": "Creați Factură",
+            "titlePlural": "Creați Facturi",
+            "description": "Transformați scanările în date structurate de factură cu extracție bazată pe AI.",
+            "selectedScans": "Scanări Selectate",
+            "totalSize": "total",
+            "chooseMode": "Alegeți Modul de Creare",
+            "singleMode": {
+              "title": "O factură per scanare",
+              "description": "Creează {count} facturi separate. Ideal când fiecare scanare este o chitanță diferită."
+            },
+            "batchMode": {
+              "title": "Combinați într-o singură factură",
+              "description": "Creează 1 factură cu toate cele {count} scanări atașate. Ideal pentru chitanțe cu mai multe pagini."
+            },
+            "singleScanInfo": {
+              "title": "Ce se întâmplă în continuare?",
+              "description": "AI-ul nostru va analiza scanarea dvs. și va extrage automat detaliile comerciantului, articolele, prețurile și totalurile. Puteți revizui și edita rezultatele ulterior."
+            },
+            "buttons": {
+              "cancel": "Anulare",
+              "createSingle": "Creați Factură",
+              "createMultiple": "Creați {count} Facturi"
+            },
+            "creating": {
+              "title": "Se creează Factura",
+              "titlePlural": "Se creează Facturile",
+              "processing": "Se procesează {count} scanare...",
+              "processingPlural": "Se procesează {count} scanări...",
+              "step1Title": "Se încarcă scanările",
+              "step1Description": "Se trimit scanările către serverele noastre",
+              "step2Title": "Se creează înregistrările facturilor",
+              "step2Description": "Se configurează structurile de date ale facturilor",
+              "step3Title": "Finalizare",
+              "step3Description": "Se pregătesc facturile pentru vizualizare"
+            },
+            "complete": {
+              "title": "{count} Factură Creată!",
+              "titlePlural": "{count} Facturi Create!",
+              "description": "Factura dvs. este gata pentru vizualizare și editare.",
+              "descriptionPlural": "Facturile dvs. sunt gata pentru vizualizare și editare.",
+              "nextSteps": "Pași următori:",
+              "nextStepsDescription": "Revizuiți factura, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
+              "nextStepsDescriptionPlural": "Revizuiți facturile, verificați datele extrase și faceți orice modificări necesare. Puteți solicita și analiza AI pentru informații despre cheltuieli.",
+              "viewButton": "Vizualizați Factura",
+              "viewButtonPlural": "Vizualizați Facturile"
+            },
+            "errors": {
+              "partialFail": "Nu s-au putut crea {count} facturi",
+              "createFailed": "Nu s-au putut crea facturile: {message}",
+              "unknown": "Eroare necunoscută"
             }
           },
           "main-page": {

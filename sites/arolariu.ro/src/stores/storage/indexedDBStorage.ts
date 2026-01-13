@@ -10,7 +10,7 @@ import type {PersistStorage, StorageValue} from "zustand/middleware";
 /**
  * Available tables for segregating persisted data by domain
  */
-export const ZUSTAND_TABLES = ["shared", "invoices", "merchants"] as const;
+export const ZUSTAND_TABLES = ["shared", "invoices", "merchants", "scans"] as const;
 
 /**
  * Table name type derived from ZUSTAND_TABLES
@@ -56,6 +56,17 @@ interface MerchantItem extends BaseEntity {
 }
 
 /**
+ * Scan entity structure in IndexedDB.
+ * Note: userIdentifier is not indexed as each user only sees their own scans.
+ */
+type ScanItem = BaseEntity & {
+  /** Scan lifecycle status */
+  status: string;
+  /** Full serialized scan data */
+  [key: string]: unknown;
+};
+
+/**
  * Dexie database class for Zustand state persistence.
  * Stores each entity as an individual row for efficient querying and updates.
  */
@@ -66,10 +77,14 @@ class ZustandDB extends Dexie {
   invoices!: Table<InvoiceItem, string>;
   /** Merchants table with entity-level storage */
   merchants!: Table<MerchantItem, string>;
+  /** Scans table with entity-level storage */
+  scans!: Table<ScanItem, string>;
 
   /**
    * Creates a new ZustandDB instance and configures the schema.
-   * Uses a single version with no backwards compatibility migrations.
+   * Version history:
+   * - v1: Initial schema with shared, invoices, merchants
+   * - v2: Added scans table for standalone scan storage
    */
   constructor() {
     super("zustand-store");
@@ -78,10 +93,12 @@ class ZustandDB extends Dexie {
     // - shared: key-value pairs for general storage
     // - invoices: PK on id, index on merchantReference
     // - merchants: PK on id, index on parentCompanyId
-    this.version(1).stores({
+    // - scans: PK on id, index on status (no userIdentifier since each user only sees their own)
+    this.version(2).stores({
       shared: "key",
       invoices: "id,merchantReference",
       merchants: "id,parentCompanyId",
+      scans: "id,status",
     });
   }
 }
@@ -130,6 +147,8 @@ function getTable<E extends BaseEntity>(db: ZustandDB, tableName: EntityTableNam
       return db.invoices as unknown as Table<E, string>;
     case "merchants":
       return db.merchants as unknown as Table<E, string>;
+    case "scans":
+      return db.scans as unknown as Table<E, string>;
     default:
       throw new Error(`Unsupported table name: ${tableName}`);
   }

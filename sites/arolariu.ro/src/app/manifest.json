@@ -22,7 +22,7 @@
   },
   "file_handlers": [
     {
-      "action": "/domains/invoices/create-invoice/",
+      "action": "/domains/invoices/upload-scans/",
       "accept": {
         "application/pdf": [
           ".pdf"
