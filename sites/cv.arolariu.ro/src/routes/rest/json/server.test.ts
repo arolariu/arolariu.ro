@@ -5,7 +5,7 @@
 
 import type {RequestEvent} from "@sveltejs/kit";
 import {describe, expect, it, vi} from "vitest";
-import {GET} from "./+server";
+import {GET, OPTIONS} from "./+server";
 
 // Mock the data import
 vi.mock("@/data/json", () => ({
@@ -20,9 +20,23 @@ vi.mock("@/data/json", () => ({
   },
 }));
 
+/**
+ * Creates a mock RequestEvent with proper url and request objects.
+ */
+function createMockEvent(queryParams: Record<string, string> = {}): RequestEvent {
+  const url = new URL("http://localhost/rest/json");
+  for (const [key, value] of Object.entries(queryParams)) {
+    url.searchParams.set(key, value);
+  }
+
+  return {
+    request: new Request(url.toString()),
+    url,
+  } as RequestEvent;
+}
+
 describe("CV JSON API Endpoint", () => {
-  // Mock RequestEvent - the GET handler doesn't use it, but it's required by the type
-  const mockEvent = {} as RequestEvent;
+  const mockEvent = createMockEvent();
 
   describe("GET /rest/json", () => {
     it("should return JSON response with CV data", async () => {
@@ -91,7 +105,7 @@ describe("CV JSON API Endpoint", () => {
     it("should set Cache-Control headers", async () => {
       const response = await GET(mockEvent);
 
-      expect(response.headers.get("Cache-Control")).toBe("public, max-age=300");
+      expect(response.headers.get("Cache-Control")).toBe("public, max-age=300, stale-while-revalidate=3600");
     });
 
     it("should return Content-Type as application/json", async () => {
@@ -99,6 +113,105 @@ describe("CV JSON API Endpoint", () => {
 
       const contentType = response.headers.get("Content-Type");
       expect(contentType).toContain("application/json");
+    });
+  });
+
+  describe("GET /rest/json?format=resume", () => {
+    it("should return raw resume data when format=resume", async () => {
+      const event = createMockEvent({format: "resume"});
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toHaveProperty("$schema");
+      expect(data).toHaveProperty("basics");
+      expect(data).not.toHaveProperty("meta");
+    });
+  });
+
+  describe("GET /rest/json?format=minimal", () => {
+    it("should return minimal data with basics and work only", async () => {
+      const event = createMockEvent({format: "minimal"});
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toHaveProperty("basics");
+      expect(data).toHaveProperty("work");
+      expect(data).toHaveProperty("meta");
+      expect(data.meta.format).toBe("cv.minimal");
+    });
+  });
+
+  describe("GET /rest/json?section=", () => {
+    it("should return specific section when section param is valid", async () => {
+      const event = createMockEvent({section: "basics"});
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toHaveProperty("section", "basics");
+      expect(data).toHaveProperty("data");
+      expect(data).toHaveProperty("meta");
+    });
+
+    it("should return 404 for invalid section", async () => {
+      const event = createMockEvent({section: "invalid"});
+      const response = await GET(event);
+      const data = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(data).toHaveProperty("error");
+      expect(data).toHaveProperty("availableSections");
+    });
+  });
+
+  describe("GET /rest/json?pretty=true", () => {
+    it("should return pretty-printed JSON when pretty=true", async () => {
+      const event = createMockEvent({pretty: "true"});
+      const response = await GET(event);
+      const text = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(text).toContain("\n");
+    });
+  });
+
+  describe("ETag caching", () => {
+    it("should return 304 when If-None-Match matches ETag", async () => {
+      // Mock Date to ensure consistent timestamps for ETag generation
+      const fixedDate = new Date("2024-01-01T00:00:00.000Z");
+      vi.useFakeTimers();
+      vi.setSystemTime(fixedDate);
+
+      try {
+        const firstResponse = await GET(createMockEvent());
+        const etag = firstResponse.headers.get("ETag");
+
+        const url = new URL("http://localhost/rest/json");
+        const eventWithEtag = {
+          request: new Request(url.toString(), {
+            headers: {"If-None-Match": etag!},
+          }),
+          url,
+        } as RequestEvent;
+
+        const secondResponse = await GET(eventWithEtag);
+        expect(secondResponse.status).toBe(304);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe("OPTIONS /rest/json", () => {
+    it("should return 204 with CORS headers", async () => {
+      const response = await OPTIONS(mockEvent);
+
+      expect(response.status).toBe(204);
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+      expect(response.headers.get("Access-Control-Allow-Methods")).toBe("GET, OPTIONS");
+      expect(response.headers.get("Access-Control-Max-Age")).toBe("86400");
     });
   });
 });
