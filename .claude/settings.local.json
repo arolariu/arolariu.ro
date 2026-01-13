@@ -1,4 +1,5 @@
 {
+  "enableAllProjectMcpServers": true,
   "permissions": {
     "allow": [
       "Bash(git add:*)",
@@ -7,7 +8,13 @@
       "Bash(npx tsc:*)",
       "Bash(cat:*)",
       "Bash(find:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "mcp__sequential-thinking__*",
+      "mcp__playwright__*",
+      "mcp__eslint__*",
+      "mcp__filesystem__*",
+      "mcp__memory__*",
+      "mcp__fetch__*"
     ]
   }
 }
