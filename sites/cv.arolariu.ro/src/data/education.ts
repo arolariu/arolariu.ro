@@ -1,6 +1,6 @@
 import type {Education} from "@/types";
 
-type EducationKeys = Readonly<"aseBucharest" | "malmoSweden">;
+type EducationKeys = Readonly<"aseBucharest" | "malmoSweden" | "portsmouthUK">;
 type Educations = Readonly<Record<EducationKeys, Education>>;
 
 /**
@@ -9,6 +9,16 @@ type Educations = Readonly<Record<EducationKeys, Education>>;
  * The values are objects containing details about the degree, institution, location, period, status, and description.
  */
 export const education: Readonly<Educations> = {
+  portsmouthUK: {
+    degree: "MSc. Data Science",
+    institution: "University of Portsmouth",
+    location: "Online (United Kingdom)",
+    period: "2024 - 2024",
+    status: "Interrupted",
+    eduUrl: "https://www.port.ac.uk",
+    description:
+      "Enrolled in the online MSc. Data Science program at the University of Portsmouth, UK. Interrupted due to professional commitments and career priorities in 2024.",
+  },
   malmoSweden: {
     degree: "MSc. Internet of Things & Network Engineering",
     institution: "Malmö University",

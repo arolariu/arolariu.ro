@@ -282,6 +282,59 @@
       "subtitle": "This website could not have been possible without the following third-party packages. I would like to thank the authors of these packages for their hard work and dedication to the open-source community.",
       "title": "Third-party packages"
     },
+    "packagesScreen": {
+      "search": {
+        "placeholder": "Search..."
+      },
+      "filters": {
+        "filterByType": "Filter by type",
+        "allPackages": "All Packages",
+        "productionOnly": "Production Only",
+        "developmentOnly": "Development Only",
+        "sortBy": "Sort by",
+        "name": "Name",
+        "dependenciesCount": "Dependencies Count",
+        "packageType": "Package Type",
+        "sortDirection": "Sort direction",
+        "ascending": "Ascending",
+        "descending": "Descending"
+      },
+      "views": {
+        "gridView": "Grid View",
+        "tableView": "Table View"
+      },
+      "badge": {
+        "production": "Production",
+        "development": "Development"
+      },
+      "card": {
+        "license": "License:",
+        "dependencies": "Dependencies:",
+        "website": "Website",
+        "viewDependencies": "View Dependencies"
+      },
+      "table": {
+        "package": "Package",
+        "version": "Version",
+        "type": "Type",
+        "description": "Description",
+        "license": "License",
+        "dependencies": "Dependencies",
+        "website": "Website"
+      },
+      "dialog": {
+        "dependencies": "{name} Dependencies",
+        "dependenciesCount": "This package has {count} dependencies."
+      },
+      "emptyState": {
+        "title": "No packages found.",
+        "subtitle": "Try adjusting the filters above."
+      },
+      "openSource": {
+        "title": "Open Source Matters",
+        "description": "This project stands on the shoulders of giants. We're grateful for the open-source community and all the developers who have contributed to these packages."
+      }
+    },
     "title": "Acknowledgements"
   },
   "Authentication": {
@@ -393,6 +446,16 @@
           "title": "Invoice Management System"
         },
         "service": {
+          "states": {
+            "notFound": {
+              "title": "Invoice Not Found",
+              "description": "The invoice with the identifier {invoiceIdentifier} was not found."
+            },
+            "loading": {
+              "title": "Loading Invoice",
+              "description": "Loading the invoice with the identifier {invoiceIdentifier}."
+            }
+          },
           "edit-page": {
             "__metadata__": {
               "description": "View and edit your invoice details, items, recipes, and sharing settings.",
@@ -696,6 +759,7 @@
   },
   "Footer": {
     "builtOn": "Built on ",
+    "commitSha": "Commit SHA:",
     "copyright": "Copyright",
     "navigation": {
       "about": "About",
@@ -705,9 +769,28 @@
       "termsOfService": "Terms of Service",
       "what": "What is this?"
     },
+    "socialLinks": {
+      "github": "Select this link to navigate to the author's GitHub page.",
+      "linkedin": "Select this link to navigate to the author's LinkedIn page."
+    },
     "sourceCode": "Source code is available ",
     "sourceCodeAnchor": "here (GitHub repo)",
     "subtitle": "The platform is built using the latest stable, state-of-the-art technologies and with enterprise-grade experience. <br></br> <br></br> We hope that you have a great experience when exploring this platform."
+  },
+  "Navigation": {
+    "domains": "Domains",
+    "invoices": "Invoices",
+    "uploadScans": "Upload Scans",
+    "viewScans": "View Scans",
+    "myInvoices": "My Invoices",
+    "about": "About",
+    "thePlatform": "The Platform",
+    "theAuthor": "The Author",
+    "mobile": {
+      "openNavigation": "Open navigation",
+      "closeNavigation": "Close navigation",
+      "title": "Navigation"
+    }
   },
   "Forbidden": {
     "Screen": {

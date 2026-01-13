@@ -1,7 +1,7 @@
 <!--
 @component MainView
 
-Landing page presenting CV format options as an interactive panel grid.
+Landing page presenting CV format options as an interactive panel grid with animated background.
 
 @remarks
 **Rendering Context**: SvelteKit page component (SSR + hydration).
@@ -9,10 +9,10 @@ Landing page presenting CV format options as an interactive panel grid.
 **Purpose**: Serves as the entry point for the CV site, allowing visitors
 to choose their preferred CV format (Human-readable, PDF, or JSON).
 
-**Layout**:
-- Centered content with maximum width constraint (6xl)
-- 2-column responsive grid on medium+ screens
-- Full-width panels on mobile
+**Visual Features**:
+- Animated floating gradient blobs in the background
+- Smooth panel hover animations
+- Dark/light mode support
 
 **Panels**:
 1. **Human** - Interactive web-based CV with animations
@@ -20,25 +20,10 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
 3. **JSON** - Structured data for developers/APIs
 4. **Help** - Opens help dialog modal
 
-**Theming**: Supports light/dark mode with smooth color transitions.
-Theme toggle fixed in top-right corner.
-
-**Navigation**: Uses SvelteKit's `goto()` for client-side navigation
-to respective format routes.
-
-**Accessibility**:
-- All panels are `<button>` elements with proper `aria-label`
-- Focus rings visible on keyboard navigation
-- Gradient overlays are decorative (don't affect readability)
-
 @example
 ```svelte
 <MainView />
 ```
-
-@see {@link HumanView} for the human-readable CV
-@see {@link PdfView} for the PDF viewer
-@see {@link JsonView} for the JSON data view
 -->
 <script lang="ts">
   import {landing} from "@/data";
@@ -53,15 +38,6 @@ to respective format routes.
 
   /**
    * Panel configuration for the landing page grid.
-   *
-   * @remarks
-   * Each panel represents a CV format option with:
-   * - `id` - Unique identifier for tracking/styling
-   * - `title` - Display title shown on the panel
-   * - `description` - Explanatory text below the title
-   * - `gradient` - Tailwind gradient classes for visual distinction
-   * - `icon` - Icon name for the panel's visual indicator
-   * - `action` - Click handler (navigation or modal trigger)
    */
   const panels = [
     {
@@ -101,7 +77,41 @@ to respective format routes.
 </script>
 
 <div
-  class="min-h-screen bg-white dark:bg-black text-black dark:text-white transition-all duration-300 flex items-center justify-center p-6">
+  class="min-h-screen bg-white dark:bg-black text-black dark:text-white transition-all duration-300 flex items-center justify-center p-6 overflow-hidden relative">
+
+  <!-- Animated Background Blobs -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+    <!-- Blob 1 - Blue -->
+    <div
+      class="absolute w-[500px] h-[500px] rounded-full opacity-20 dark:opacity-10 blur-3xl animate-blob-1"
+      style="background: radial-gradient(circle, #3b82f6 0%, transparent 70%); top: -10%; left: -10%;">
+    </div>
+
+    <!-- Blob 2 - Purple -->
+    <div
+      class="absolute w-[400px] h-[400px] rounded-full opacity-20 dark:opacity-10 blur-3xl animate-blob-2"
+      style="background: radial-gradient(circle, #8b5cf6 0%, transparent 70%); top: 50%; right: -5%;">
+    </div>
+
+    <!-- Blob 3 - Pink -->
+    <div
+      class="absolute w-[350px] h-[350px] rounded-full opacity-15 dark:opacity-10 blur-3xl animate-blob-3"
+      style="background: radial-gradient(circle, #ec4899 0%, transparent 70%); bottom: -5%; left: 30%;">
+    </div>
+
+    <!-- Blob 4 - Cyan (smaller accent) -->
+    <div
+      class="absolute w-[250px] h-[250px] rounded-full opacity-15 dark:opacity-5 blur-2xl animate-blob-4"
+      style="background: radial-gradient(circle, #06b6d4 0%, transparent 70%); top: 20%; right: 20%;">
+    </div>
+
+    <!-- Subtle grid pattern overlay -->
+    <div
+      class="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
+      style="background-image: radial-gradient(circle, currentColor 1px, transparent 1px); background-size: 40px 40px;">
+    </div>
+  </div>
+
   <div class="fixed top-6 right-6 z-50">
     <ThemeToggle />
   </div>
@@ -119,10 +129,11 @@ to respective format routes.
     </div>
 
     <div class="grid md:grid-cols-2 gap-6 lg:gap-8">
-      {#each panels as panel}
+      {#each panels as panel, i}
         <button
           type="button"
-          class={"panel-fade-in group relative backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-900/90 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl text-left cursor-pointer transform focus:outline-none focus:ring-4 focus:ring-blue-500/40"}
+          class="panel-card group relative backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl text-left cursor-pointer transform focus:outline-none focus:ring-4 focus:ring-blue-500/40"
+          style="animation: panelFadeIn 0.5s ease-out {i * 100}ms both;"
           aria-label={panel.title}
           onclick={panel.action}
           data-panel={panel.id}>
@@ -165,3 +176,101 @@ to respective format routes.
 
   <HelpDialog bind:open={showHelpDialog} />
 </div>
+
+<style>
+  @keyframes panelFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes blob-float-1 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    25% {
+      transform: translate(30px, -30px) scale(1.05);
+    }
+    50% {
+      transform: translate(60px, 20px) scale(0.95);
+    }
+    75% {
+      transform: translate(20px, 40px) scale(1.02);
+    }
+  }
+
+  @keyframes blob-float-2 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(-40px, 30px) scale(1.1);
+    }
+    66% {
+      transform: translate(-20px, -40px) scale(0.9);
+    }
+  }
+
+  @keyframes blob-float-3 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+    }
+    20% {
+      transform: translate(50px, -20px) scale(1.05);
+    }
+    40% {
+      transform: translate(30px, 30px) scale(0.95);
+    }
+    60% {
+      transform: translate(-20px, 20px) scale(1.08);
+    }
+    80% {
+      transform: translate(-40px, -10px) scale(0.98);
+    }
+  }
+
+  @keyframes blob-float-4 {
+    0%, 100% {
+      transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+    50% {
+      transform: translate(-30px, 30px) scale(1.15) rotate(180deg);
+    }
+  }
+
+  .animate-blob-1 {
+    animation: blob-float-1 20s ease-in-out infinite;
+  }
+
+  .animate-blob-2 {
+    animation: blob-float-2 25s ease-in-out infinite;
+  }
+
+  .animate-blob-3 {
+    animation: blob-float-3 22s ease-in-out infinite;
+  }
+
+  .animate-blob-4 {
+    animation: blob-float-4 18s ease-in-out infinite;
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-blob-1,
+    .animate-blob-2,
+    .animate-blob-3,
+    .animate-blob-4 {
+      animation: none;
+    }
+
+    .panel-card {
+      animation: none !important;
+      opacity: 1;
+    }
+  }
+</style>

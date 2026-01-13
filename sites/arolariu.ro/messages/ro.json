@@ -282,6 +282,59 @@
       "subtitle": "Acest site web nu ar fi putut fi posibil fără următoarele pachete terțe. \nAș dori să le mulțumesc autorilor acestor pachete pentru munca grea și dăruirea lor pentru comunitatea open-source.",
       "title": "Pachete terțe"
     },
+    "packagesScreen": {
+      "search": {
+        "placeholder": "Caută..."
+      },
+      "filters": {
+        "filterByType": "Filtrează după tip",
+        "allPackages": "Toate pachetele",
+        "productionOnly": "Doar producție",
+        "developmentOnly": "Doar dezvoltare",
+        "sortBy": "Sortează după",
+        "name": "Nume",
+        "dependenciesCount": "Număr dependențe",
+        "packageType": "Tip pachet",
+        "sortDirection": "Direcție sortare",
+        "ascending": "Crescător",
+        "descending": "Descrescător"
+      },
+      "views": {
+        "gridView": "Vizualizare grilă",
+        "tableView": "Vizualizare tabel"
+      },
+      "badge": {
+        "production": "Producție",
+        "development": "Dezvoltare"
+      },
+      "card": {
+        "license": "Licență:",
+        "dependencies": "Dependențe:",
+        "website": "Website",
+        "viewDependencies": "Vezi dependențele"
+      },
+      "table": {
+        "package": "Pachet",
+        "version": "Versiune",
+        "type": "Tip",
+        "description": "Descriere",
+        "license": "Licență",
+        "dependencies": "Dependențe",
+        "website": "Website"
+      },
+      "dialog": {
+        "dependencies": "Dependențele {name}",
+        "dependenciesCount": "Acest pachet are {count} dependențe."
+      },
+      "emptyState": {
+        "title": "Nu s-au găsit pachete.",
+        "subtitle": "Încercați să ajustați filtrele de mai sus."
+      },
+      "openSource": {
+        "title": "Open Source contează",
+        "description": "Acest proiect stă pe umerii unor giganți. Suntem recunoscători comunității open-source și tuturor dezvoltatorilor care au contribuit la aceste pachete."
+      }
+    },
     "title": "Mulțumiri"
   },
   "Authentication": {
@@ -393,6 +446,16 @@
           "title": "Sistem de management al bonurilor fiscale"
         },
         "service": {
+          "states": {
+            "notFound": {
+              "title": "Factură negăsită",
+              "description": "Factura cu identificatorul {invoiceIdentifier} nu a fost găsită."
+            },
+            "loading": {
+              "title": "Se încarcă factura",
+              "description": "Se încarcă factura cu identificatorul {invoiceIdentifier}."
+            }
+          },
           "edit-page": {
             "__metadata__": {
               "description": "Vizualizați și editați detaliile facturii, articolele, rețetele și setările de partajare.",
@@ -696,6 +759,7 @@
   },
   "Footer": {
     "builtOn": "Construit pe ",
+    "commitSha": "Commit SHA:",
     "copyright": "Drepturi de autor",
     "navigation": {
       "about": "Despre",
@@ -705,9 +769,28 @@
       "termsOfService": "Termeni și condiții",
       "what": "Ce este asta?"
     },
+    "socialLinks": {
+      "github": "Selectați acest link pentru a naviga la pagina GitHub a autorului.",
+      "linkedin": "Selectați acest link pentru a naviga la pagina LinkedIn a autorului."
+    },
     "sourceCode": "Codul sursă este disponibil ",
     "sourceCodeAnchor": "aici (GitHub)",
     "subtitle": "Platforma este construită folosind cele mai recente tehnologii stabile, de ultimă generație și cu experiență de nivel enterprise. \n<br></br> <br></br> Sperăm că aveți o experiență grozavă când explorați această platformă."
+  },
+  "Navigation": {
+    "domains": "Domenii",
+    "invoices": "Facturi",
+    "uploadScans": "Încarcă scanări",
+    "viewScans": "Vezi scanările",
+    "myInvoices": "Facturile mele",
+    "about": "Despre",
+    "thePlatform": "Platforma",
+    "theAuthor": "Autorul",
+    "mobile": {
+      "openNavigation": "Deschide navigarea",
+      "closeNavigation": "Închide navigarea",
+      "title": "Navigare"
+    }
   },
   "Forbidden": {
     "Screen": {

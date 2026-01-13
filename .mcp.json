@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/.mcp.schema.json",
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Sequential thinking for complex multi-step reasoning and planning"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "description": "Browser automation for E2E testing with Playwright"
+    },
+    "eslint": {
+      "command": "npx",
+      "args": ["-y", "@eslint/mcp@latest"],
+      "description": "ESLint integration for linting JavaScript/TypeScript"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropics/mcp-server-filesystem",
+        "C:\\Users\\aolariu\\source\\repos\\arolariu\\arolariu.ro"
+      ],
+      "description": "Filesystem operations within the project directory"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persistent memory for storing and retrieving context across sessions"
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/mcp-server-fetch"],
+      "description": "HTTP fetch operations for API calls and web content retrieval"
+    }
+  }
+}

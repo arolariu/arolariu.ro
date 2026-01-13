@@ -138,6 +138,30 @@ export const jsonCVData = {
   ],
   education: [
     {
+      institution: "University of Portsmouth",
+      url: "https://www.port.ac.uk",
+      area: "Data Science",
+      studyType: "Master of Science",
+      startDate: "2024",
+      endDate: "2024",
+      score: "",
+      courses: [
+        "Data Science Fundamentals",
+        "Machine Learning",
+        "Statistical Analysis",
+        "Big Data Technologies",
+        "Data Visualization",
+        "Python for Data Science",
+      ],
+      location: "Online (United Kingdom)",
+      status: "Interrupted due to professional commitments",
+      highlights: [
+        "Online distance learning program",
+        "Focus on applied data science methodologies",
+        "Interrupted to prioritize career growth at Microsoft",
+      ],
+    },
+    {
       institution: "Malmö University",
       url: "https://mau.se",
       area: "Internet of Things & Network Engineering",
