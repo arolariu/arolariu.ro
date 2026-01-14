@@ -23,7 +23,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
-import {API_URL} from "../../utils.server";
+import {API_URL, createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -36,9 +36,9 @@ type ServerActionInputType = Readonly<{
   readonly invoiceId: string;
 }>;
 /**
- * Returns the complete Invoice entity with all nested data.
+ * Returns a result with Invoice entity or error details.
  */
-type ServerActionOutputType = Promise<Readonly<Invoice>>;
+type ServerActionOutputType = Promise<ServerActionResult<Readonly<Invoice>>>;
 
 /**
  * Fetches a single invoice by its unique identifier.
@@ -87,7 +87,14 @@ export default async function fetchInvoice({invoiceId}: ServerActionInputType): 
     try {
       // Step 0. Validate input is correct
       logWithTrace("info", "Validating input for fetchInvoice", {invoiceId}, "server");
-      validateStringIsGuidType(invoiceId, "invoiceId");
+      try {
+        validateStringIsGuidType(invoiceId, "invoiceId");
+      } catch {
+        return {
+          success: false,
+          error: {code: "VALIDATION_ERROR", message: `Invalid invoice ID: ${invoiceId}`},
+        };
+      }
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
@@ -95,10 +102,10 @@ export default async function fetchInvoice({invoiceId}: ServerActionInputType): 
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
-      // Step 2. Make the API request to fetch the invoice
+      // Step 2. Make the API request to fetch the invoice (with timeout)
       addSpanEvent("bff.request.fetch-invoice.start");
       logWithTrace("info", "Making API request to fetch invoice", {invoiceId}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}`, {
+      const response = await fetchWithTimeout(`${API_URL}/rest/v1/invoices/${invoiceId}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
@@ -108,16 +115,28 @@ export default async function fetchInvoice({invoiceId}: ServerActionInputType): 
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched invoice", {invoiceId}, "server");
-        return response.json() as ServerActionOutputType;
+        const data = (await response.json()) as Readonly<Invoice>;
+        return {success: true, data};
       }
 
+      // Handle HTTP errors with standardized error codes
       const errorText = await response.text();
-      throw new Error(`BFF fetch invoice request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorCode = mapHttpStatusToErrorCode(response.status);
+      logWithTrace("error", "API returned error status", {status: response.status, errorText, invoiceId}, "server");
+
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: `Failed to fetch invoice: ${response.status} ${response.statusText}`,
+          status: response.status,
+        },
+      };
     } catch (error) {
       addSpanEvent("bff.request.fetch-invoice.error");
       logWithTrace("error", "Error fetching the invoice from the server", {error, invoiceId}, "server");
       console.error("Error fetching the invoice from the server:", error);
-      throw error;
+      return createErrorResult<Readonly<Invoice>>(error, "Failed to fetch invoice");
     }
   });
 }

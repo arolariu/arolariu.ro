@@ -21,7 +21,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import type {Invoice} from "@/types/invoices";
-import {API_URL} from "../../utils.server";
+import {API_URL, createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -30,9 +30,9 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 type ServerActionInputType = Readonly<{}>;
 
 /**
- * Returns an array of Invoice entities.
+ * Returns a result with array of Invoice entities or error details.
  */
-type ServerActionOutputType = Promise<ReadonlyArray<Invoice>>;
+type ServerActionOutputType = Promise<ServerActionResult<ReadonlyArray<Invoice>>>;
 
 /**
  * Fetches all invoices accessible to the authenticated user.
@@ -50,13 +50,12 @@ type ServerActionOutputType = Promise<ReadonlyArray<Invoice>>;
  * **Performance**:
  * - Returns complete entities; use with caution for large datasets
  * - Consider client-side caching via Zustand store
+ * - Includes 30-second timeout for network resilience
  *
  * **Side Effects**: Emits OpenTelemetry spans for tracing.
  *
  * @param _void - Reserved parameter for future filter/pagination options
- * @returns Promise resolving to array of Invoice entities
- * @throws {Error} When authentication fails
- * @throws {Error} When API returns non-OK status
+ * @returns Promise resolving to ServerActionResult with Invoice array or error
  *
  * @example
  * ```typescript
@@ -87,10 +86,10 @@ export default async function fetchInvoices(_void?: ServerActionInputType): Serv
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
-      // Step 2. Make the API request to fetch invoices
+      // Step 2. Make the API request to fetch invoices (with timeout)
       addSpanEvent("bff.request.fetch-invoices.start");
       logWithTrace("info", "Making API request to fetch invoices", {}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices/`, {
+      const response = await fetchWithTimeout(`${API_URL}/rest/v1/invoices/`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
@@ -100,16 +99,28 @@ export default async function fetchInvoices(_void?: ServerActionInputType): Serv
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched invoices", {}, "server");
-        return response.json() as ServerActionOutputType;
+        const data = (await response.json()) as ReadonlyArray<Invoice>;
+        return {success: true, data};
       }
 
+      // Handle HTTP errors with standardized error codes
       const errorText = await response.text();
-      throw new Error(`BFF fetch invoices request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorCode = mapHttpStatusToErrorCode(response.status);
+      logWithTrace("error", "API returned error status", {status: response.status, errorText}, "server");
+
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: `Failed to fetch invoices: ${response.status} ${response.statusText}`,
+          status: response.status,
+        },
+      };
     } catch (error) {
       addSpanEvent("bff.request.fetch-invoices.error");
       logWithTrace("error", "Error fetching the invoices from the server", {error}, "server");
       console.error("Error fetching the invoices from the server:", error);
-      throw error;
+      return createErrorResult<ReadonlyArray<Invoice>>(error, "Failed to fetch invoices");
     }
   });
 }
