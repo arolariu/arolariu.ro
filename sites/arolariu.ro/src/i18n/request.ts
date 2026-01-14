@@ -10,7 +10,7 @@
  *
  * **Execution Context**: Server-side only (Next.js request configuration)
  *
- * **Supported Locales**: English (en), Romanian (ro)
+ * **Supported Locales**: English (en), Romanian (ro), French (fr)
  *
  * @see {@link https://next-intl-docs.vercel.app/docs/getting-started/app-router Next-intl Documentation}
  * @see RFC 1003 - Internationalization System
@@ -25,7 +25,7 @@ export default getRequestConfig(async () => {
   const localeCookie = allCookies.get("locale");
   const locale: Locale = (localeCookie?.value ?? "en") as Locale;
 
-  const supportedLocales: Locale[] = ["en", "ro"] as const;
+  const supportedLocales: Locale[] = ["en", "ro", "fr"] as const;
   if (!supportedLocales.includes(locale)) {
     throw new Error(`[arolariu.ro::i18n] >>> Locale "${locale}" is not supported.`);
   }

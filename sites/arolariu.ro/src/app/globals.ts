@@ -8,7 +8,7 @@
 
 import en from "../../messages/en.json";
 
-const locales = ["en", "ro"] as const;
+const locales = ["en", "ro", "fr"] as const;
 
 declare module "next-intl" {
   interface AppConfig {

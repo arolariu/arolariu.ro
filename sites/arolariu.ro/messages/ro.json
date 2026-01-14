@@ -751,6 +751,29 @@
       "illustrationAlt": "Ilustrație pentru pagina de înregistrare"
     }
   },
+  "Commander": {
+    "placeholder": "Tastați o comandă sau căutați...",
+    "noResults": "Niciun rezultat găsit.",
+    "groups": {
+      "navigation": "Navigare",
+      "theme": "Temă",
+      "language": "Limbă",
+      "accessibility": "Accesibilitate",
+      "fun": "Distracție",
+      "links": "Linkuri"
+    },
+    "items": {
+      "homepage": "Pagina principală",
+      "light": "Luminos",
+      "dark": "Întunecat",
+      "system": "Sistem",
+      "fontNormal": "Font standard",
+      "fontDyslexic": "Font pentru dislexie",
+      "rainbow": "Mod curcubeu",
+      "disco": "Mod disco",
+      "matrix": "Mod Matrix"
+    }
+  },
   "Domains": {
     "__metadata__": {
       "description": "Serviciile de spațiu din domeniu sunt servicii care sunt oferite vizitatorilor și membrilor spațiului de domeniu `arolariu.ro`",

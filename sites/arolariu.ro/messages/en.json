@@ -751,6 +751,29 @@
       "illustrationAlt": "Illustration for the sign-up page"
     }
   },
+  "Commander": {
+    "placeholder": "Type a command or search...",
+    "noResults": "No results found.",
+    "groups": {
+      "navigation": "Navigation",
+      "theme": "Theme",
+      "language": "Language",
+      "accessibility": "Accessibility",
+      "fun": "Fun",
+      "links": "Links"
+    },
+    "items": {
+      "homepage": "Homepage",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "fontNormal": "Standard Font",
+      "fontDyslexic": "Dyslexic-Friendly Font",
+      "rainbow": "Rainbow Mode",
+      "disco": "Disco Mode",
+      "matrix": "Matrix Mode"
+    }
+  },
   "Domains": {
     "__metadata__": {
       "description": "Domain Space Services are services that are offered to visitors and members of the `arolariu.ro` domain space",

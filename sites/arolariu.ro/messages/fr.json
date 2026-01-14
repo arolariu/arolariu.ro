@@ -1,0 +1,1394 @@
+{
+  "About": {
+    "__metadata__": {
+      "description": "En savoir plus sur l'auteur et la plateforme.",
+      "title": "À propos de nous"
+    },
+    "Author": {
+      "__metadata__": {
+        "description": "En savoir plus sur l'auteur, Alexandru-Razvan Olariu.",
+        "title": "Alexandru-Razvan Olariu"
+      },
+      "Biography": {
+        "FifthPoint": "Alexandru est ouvert à la collaboration dans des projets impliquant l'Internet des objets, l'ingénierie logicielle et l'ingénierie réseau. Il a fait ses preuves en fournissant des solutions de haute qualité à des problèmes complexes et est toujours à la recherche de nouveaux défis.",
+        "FirstPoint": "Alexandru est un ingénieur logiciel et architecte de solutions de {age} ans. Il travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI FAST, développant des solutions utilisées par des millions d'utilisateurs dans le monde entier.",
+        "FourthPoint": "Alexandru aime lire des livres techniques et expérimenter de nouvelles technologies. Il a construit cette plateforme comme un \"banc d'essai\" pour les nouvelles technologies et comme un moyen d'apprendre de nouvelles choses. Il est également un grand partisan du mouvement \"open-source\" et a contribué aux dépôts OSS de Microsoft (dotnet/core, dotnet/docs, azure/docs).",
+        "SecondPoint": "Alexandru est né le 8 janvier 2000 dans une petite ville appelée Curtea de Argeș en Roumanie. Il a eu son premier ordinateur à l'âge de 5 ans - un Pentium 4 E2200 2,2 GHz Dual-Core avec 512 Mo de RAM. Depuis lors, il a utilisé différentes versions de Windows (en commençant par Windows 98 !), bricolant son ordinateur personnel et développant ses compétences informatiques en jouant à des jeux vidéo. Il a également appris beaucoup d'anglais et était capable de lire, écrire et parler couramment l'anglais à l'âge de 12 ans !",
+        "ThirdPoint": "Alexandru est un passionné de jeux vidéo. Il était autrefois joueur professionnel, classé n°70 en Roumanie pour le jeu vidéo \"DotA 2\". Il aime les jeux de stratégie axés sur la mécanique et l'aspect technique comme Age of Empires, Age of Mythology, etc. Il apprécie également les jeux tels que Red Alert, StarCraft et d'autres jeux RTS.",
+        "title": "À propos d'Alexandru"
+      },
+      "Certifications": {
+        "certificates": {
+          "ai900": {
+            "code": "AI-900",
+            "coreSkills": "# Machine Learning # Vision par ordinateur # Traitement du langage naturel # IA conversationnelle # IA responsable",
+            "description": "Démontre la connaissance des charges de travail courantes en IA et en apprentissage automatique et comment les implémenter sur Azure. Cette certification est destinée aux candidats ayant des antécédents techniques et non techniques.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
+            "name": "Microsoft Certified: Azure AI Fundamentals"
+          },
+          "az900": {
+            "code": "AZ-900",
+            "coreSkills": "# Concepts Cloud # Services Azure principaux # Sécurité, confidentialité, conformité et confiance # Tarification Azure, SLA et cycle de vie",
+            "description": "Valide les connaissances fondamentales des services cloud et la manière dont ces services sont fournis avec Microsoft Azure. Cette certification est destinée aux candidats qui commencent à travailler avec des solutions et services basés sur le cloud.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
+            "name": "Microsoft Certified: Azure Fundamentals"
+          }
+        },
+        "subtitle": "Certifications professionnelles et accréditations qu'Alexandru a obtenues tout au long de sa carrière.",
+        "title": "Certifications",
+        "coreSkillsLabel": "Compétences clés démontrées :",
+        "viewCertification": "Voir la certification"
+      },
+      "Competencies": {
+        "competences": {
+          "agileMethodologies": {
+            "description": "Alexandru a appris le travail agile et les méthodologies agiles depuis qu'il était étudiant en licence. Il suit le manifeste agile et est un grand adepte de la technique Kanban pour la planification.",
+            "title": "Méthodologies Agiles"
+          },
+          "algorithmicSkills": {
+            "description": "Alexandru a complété de nombreux défis Hacker Rank, Hacker Earth et Leet Code publiés de 2019 à 2021. Il possède une forte pensée algorithmique et est capable de construire des algorithmes complexes avec facilité.",
+            "title": "Compétences Algorithmiques"
+          },
+          "customerCentric": {
+            "description": "Alexandru travaille avec des clients depuis de nombreuses années chez Microsoft. Il a acquis beaucoup de connaissances et est capable de se mettre à la place du client. Il est capable de comprendre les besoins du client et de fournir des solutions exactement adaptées à leurs besoins.",
+            "title": "Orienté Client"
+          },
+          "domainDrivenDesign": {
+            "description": "Alexandru suit fortement les principes de conception pilotée par le domaine. Il est capable de combiner DDD avec TDD pour créer des solutions complexes faciles à maintenir et à étendre. Il est également un grand adepte des approches \"architecture en oignon\" et \"architecture propre\".",
+            "title": "Domain-Driven Design (DDD)"
+          },
+          "engineeringExcellence": {
+            "description": "Alexandru est passionné par la fourniture des meilleures solutions pour le problème et pour le client. Il s'efforce toujours de livrer le meilleur logiciel et de suivre les pratiques d'excellence en ingénierie reconnues. Une solution parfaite est une solution facile à maintenir, étendre et comprendre, pas celle qui est la plus complexe.",
+            "title": "Excellence en Ingénierie"
+          },
+          "testDrivenDevelopment": {
+            "description": "Alexandru croit fermement au développement piloté par les tests. Il applique constamment cette approche à ses projets et essaie toujours d'améliorer ses compétences en test. Il est également un grand adepte de l'approche \"red-green-refactor\".",
+            "title": "Test-Driven Development (TDD)"
+          }
+        },
+        "subtitle": "Une vitrine des compétences techniques et professionnelles d'Alexandru.",
+        "title": "Les Compétences d'Alexandru"
+      },
+      "Contact": {
+        "collaborate": {
+          "discipline1": "Ingénierie Logicielle",
+          "discipline2": "Internet des Objets",
+          "discipline3": "Applications Cloud Native",
+          "discipline4": "Ingénierie Réseau",
+          "footer": " Si vous avez un projet ou une opportunité intéressante qui correspond à l'expertise d'Alexandru, n'hésitez pas à le contacter. Il est toujours désireux d'explorer de nouveaux défis et collaborations.",
+          "subtitle": "Alexandru est ouvert à la collaboration dans des projets impliquant l'un des domaines suivants :",
+          "title": "Collaborons ensemble !"
+        },
+        "footer": "Merci.",
+        "socials": {
+          "footer": "Pour le contacter, utilisez l'une des méthodes de contact ci-dessus.",
+          "subtitle": "N'hésitez pas à nous contacter pour des collaborations, des questions, ou simplement pour dire bonjour !",
+          "title": "Entrer en contact"
+        },
+        "subtitle": "Si vous souhaitez contacter Alexandru, veuillez utiliser les moyens de contact ci-dessous.",
+        "title": "Contactez Alexandru"
+      },
+      "Education": {
+        "subtitle": "Le parcours académique et d'apprentissage d'Alexandru.",
+        "title": "Formation",
+        "university": {
+          "aseBucharest": {
+            "aboutTheProgram_cta": "Voir plus de détails",
+            "aboutTheProgram_description": "La licence en informatique à l'Université de Bucarest est un programme rigoureux qui fournit aux étudiants une base solide en informatique théorique et en développement logiciel pratique. Le programme met l'accent sur les compétences en résolution de problèmes, la pensée algorithmique et les principes d'ingénierie logicielle.",
+            "aboutTheProgram_learnings": "# Concevoir et analyser des algorithmes et des structures de données # Développer des logiciels utilisant différents paradigmes de programmation # Implémenter des systèmes de bases de données et gérer les données # Comprendre les réseaux informatiques et les systèmes distribués # Appliquer les principes d'ingénierie logicielle aux problèmes du monde réel",
+            "aboutTheProgram_learnings_title": "Résultats d'apprentissage clés",
+            "aboutTheProgram_title": "À propos du programme",
+            "degree": "Licence en Informatique et Économie",
+            "description": "Licence en informatique et économie de l'Université des Études Économiques de Bucarest, Roumanie. Diplômé dans le top 1% selon les statistiques de notation des thèses.",
+            "institution": "Academia de Studii Economice",
+            "keyCourses": "# Ingénierie Logicielle # Réseaux Informatiques # Systèmes d'Exploitation # Algorithmes et Structures de Données # Systèmes de Gestion de Bases de Données # Développement Web # Développement Mobile",
+            "keyCourses_title": "Cours principaux",
+            "location": "Bucarest, Roumanie",
+            "period": "2019 - 2022",
+            "status": "Terminé"
+          },
+          "malmoSweden": {
+            "aboutTheProgram_cta": "Voir plus de détails",
+            "aboutTheProgram_description": "Le Master en Internet des Objets à l'Université de Malmö est un programme de pointe qui prépare les étudiants aux défis et opportunités de la révolution IoT. Le programme met l'accent sur l'apprentissage pratique, la collaboration interdisciplinaire et les applications du monde réel.",
+            "aboutTheProgram_learnings": "# Concevoir et implémenter des systèmes IoT utilisant diverses plateformes matérielles et logicielles # Analyser et gérer les données générées par les appareils IoT # Appliquer les techniques d'apprentissage automatique et d'intelligence artificielle aux applications IoT # Comprendre les implications de sécurité et de confidentialité des systèmes IoT # Collaborer avec des partenaires industriels sur des projets réels",
+            "aboutTheProgram_learnings_title": "Résultats d'apprentissage clés",
+            "aboutTheProgram_title": "À propos du programme",
+            "degree": "Master en Internet des Objets",
+            "description": "Précédemment inscrit au programme de Master Internet des Objets à l'Université de Malmö, Suède. Interrompu en raison de circonstances personnelles et imprévues en 2024.",
+            "institution": "Malmö University",
+            "keyCourses": "# Internet des Objets # Cloud Computing # Science des Données # Apprentissage Automatique # Intelligence Artificielle # Vision par Ordinateur # Robotique",
+            "keyCourses_title": "Cours principaux",
+            "location": "Malmö, Suède",
+            "period": "2023 - 2024",
+            "status": "Interrompu"
+          }
+        }
+      },
+      "Experiences": {
+        "intel": {
+          "achievements": "# Développement de convertisseurs d'espace colorimétrique (CSC) en C et Assembly x8086 (YUV->RGB, Niveaux de gris).# Création de plus de 10 types de filtres d'image tels que Fish Eye, Sobel, Détection de contours, Flou de boîte, etc.# Refactorisation du code .ASM pour de meilleures performances sur les appareils IoT et Systèmes Embarqués.",
+          "company": "Intel",
+          "description": "Le site de Timisoara aborde plusieurs domaines où des logiciels pour divers composants matériels, des algorithmes de traitement d'image et des implémentations de bas niveau et de haut niveau de parties de réseaux neuronaux sont activement développés.",
+          "location": "Télétravail (Roumanie - Timisoara)",
+          "period": "2021 (6 Mois)",
+          "responsibilites": "#Maîtriser les compétences dans le monde du traitement d'image. #Acquérir une compréhension du domaine de l'apprentissage automatique (ML). #Mettre en pratique les connaissances acquises en développant différents convertisseurs d'espace colorimétrique.",
+          "techAndSkills": "# C # C++ #Intel x8086 Assembly # Convertisseurs d'espace colorimétrique # Python # Calcul embarqué # Internet des Objets",
+          "title": "Ingénieur Systèmes Embarqués"
+        },
+        "microsoft1": {
+          "achievements": "# Me suis constamment poussé pour obtenir les meilleurs retours clients. (Score actuel : 4,94 / 5,00) # Création de guides de dépannage pour la solution Azure Virtual Desktop (AVD). # Travail actuel avec des clients Fortune 500 et des professionnels leaders du secteur. # Fourniture de retours continus au groupe produit (PG) pour Azure Virtual Desktop (AVD) concernant l'implémentation de certaines fonctionnalités et services.",
+          "company": "Microsoft",
+          "description": "Avec plus de 12 000 employés dans le monde, l'organisation Microsoft Customer Experience & Success (CE&S) est responsable de la stratégie, de la conception et de la mise en œuvre de l'expérience client de bout en bout de Microsoft.",
+          "location": "Télétravail (EMEA)",
+          "period": "2021 - 2023",
+          "responsibilites": "#Fournir le partage de connaissances, le coaching technique et le mentorat aux collègues ; #Résolution de problèmes par un dépannage approfondi, débogage, analyse de logs, tests A/B ; #Identifier et répondre aux problèmes critiques des clients spécifiques aux services Azure tels qu'Azure Virtual Desktop ; #Travailler exclusivement avec des clients Fortune 500 pour comprendre leurs besoins techniques et définir un plan d'action pour y répondre, en collaborant régulièrement avec des pairs ou d'autres équipes.",
+          "techAndSkills": "# Analyse du trafic réseau # Azure # Approche centrée client # Relations commerciales # Gestionnaire d'incidents",
+          "title": "Ingénieur Support Technique"
+        },
+        "microsoft2": {
+          "achievements": "# Orchestration et implémentation des trois piliers de l'observabilité (3PO) dans notre architecture microservices utilisant les standards Open Telemetry ; création de déclencheurs de surveillance et d'alerte automatisés basés sur les statistiques p95/p99 (métriques, spans, flux E2E). # Contributions majeures au développement d'une bibliothèque .NET interne implémentant le protocole de consommation de données ODataV4 pour les moteurs de bases de données NoSQL tels qu'Azure Data Explorer (ADX). # Prise de leadership sur deux domaines clés pour la DX : documentation et adoption produit. Construction d'une documentation exceptionnelle et utilisation d'outils de génération de sites statiques (DocFX) pour générer automatiquement la documentation API à partir du code ; offre de couches de consommation API sous forme de micro-frontends, Cmdlets PowerShell et fichiers de spécification OpenAPI (Swagger / Postman).",
+          "company": "Microsoft",
+          "description": "Alors que les gouvernements d'aujourd'hui envisagent l'innovation technologique, il est nécessaire de répondre aux demandes en rapide évolution de leurs citoyens tout en protégeant les données les plus sensibles et en tenant les promesses de confiance et de sécurité. La modernisation des services gouvernementaux sans compromettre la sécurité, la numérisation des processus manuels et l'amélioration des expériences utilisateur pour les citoyens et les employés gouvernementaux sont tous des avantages de la transformation numérique, et les bonnes plateformes technologiques peuvent créer encore plus d'opportunités de croissance sociale et économique.",
+          "location": "Télétravail (Roumanie)",
+          "period": "2023 - 2024",
+          "responsibilites": "# Livrer une plateforme de données E+C capable de fonctionner multi-cloud et multi-tenant dans des environnements souverains et des scénarios air-gap. # Gérer et assurer le bon fonctionnement des opérations de la plateforme de données Runtime in Sovereign Environments (RISE). # Construire une architecture d'entreprise data mesh innovante utilisant des concepts d'ingénierie de données, des outils comme Azure Data Factory et d'autres notions d'entrepôt de données.",
+          "techAndSkills": "# .NET # Azure # Microservices # Applications Cloud-Native # Méthodologies Agiles # DevOps # Domain-Driven Design #Test-Driven Development #Gestion de Projet",
+          "title": "Ingénieur Logiciel"
+        },
+        "microsoft3": {
+          "achievements": " ",
+          "company": "Microsoft",
+          "description": "Alexandru travaille actuellement chez Microsoft en tant qu'ingénieur logiciel dans l'organisation E+D MSAI FAST.",
+          "location": "Télétravail (Norvège)",
+          "period": "2024 - Présent",
+          "responsibilites": " ",
+          "techAndSkills": " # React # GraphQL # Développement à grande échelle # Applications Cloud-Native # Méthodologies Agiles # Excellence en Ingénierie # Leadership",
+          "title": "Ingénieur Logiciel Fullstack"
+        },
+        "subtitle": "Un parcours à travers la carrière professionnelle d'Alexandru et les entreprises avec lesquelles il a travaillé.",
+        "title": "Expérience Professionnelle",
+        "responsibilitiesLabel": "Responsabilités",
+        "achievementsLabel": "Réalisations",
+        "techSkillsLabel": "Technologies et Compétences",
+        "ubisoft": {
+          "achievements": "# J'ai constamment dépassé le quota de bugs, glitches et artefacts signalés, me classant n°1 des rapporteurs pendant 5 mois solides sur les 6 travaillés. # Découverte et signalement de défauts de code majeurs allant des conditions de concurrence aux défauts d'allocation de ressources mémoire. # Augmentation de l'efficacité des rapports quotidiens en exploitant les capacités de filtrage SQL et JQL.",
+          "company": "Ubisoft",
+          "description": "J'ai travaillé sur Avatar: Frontiers of Pandora™, un jeu d'action-aventure à la première personne construit avec la dernière version du moteur Snowdrop (C++) par Massive Entertainment - un studio UBISOFT, et testé par UBISOFT Roumanie.",
+          "location": "Hybride - Bucarest, Roumanie",
+          "period": "2020 - 2021",
+          "responsibilites": "# Gestion des tests de régression, d'intégration et unitaires avec des logiciels tels que XRAY, TestRail, Bugzilla. # Création de suites de tests et de plans de tests de haute qualité utilisant les produits Atlassian (JIRA / Confluence). # Assurer des communications stables et claires entre les équipes de production et de test.",
+          "techAndSkills": "# Tests Unitaires # Tests d'Intégration # Tests A/B # Tests de Performance # Tests Automatiques # Tests E2E",
+          "title": "Ingénieur QA/QC"
+        }
+      },
+      "Perspectives": {
+        "perspectiveFromX": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur Logiciel Senior",
+          "quote": "Ce que j'apprécie beaucoup chez vous, c'est votre recherche incessante de l'amélioration et votre volonté de remettre en question le statu quo. Votre engagement envers le développement personnel continu est évident dans la façon dont vous abordez chaque tâche avec un état d'esprit orienté vers l'innovation et l'excellence. Votre capacité à questionner les méthodes existantes et à proposer de meilleures alternatives a été déterminante pour faire avancer nos projets. Cette attitude proactive améliore non seulement la qualité de notre travail mais inspire également l'équipe à viser des standards plus élevés. Je suis heureux d'avoir travaillé avec vous et j'espère que nos chemins se croiseront à nouveau à l'avenir."
+        },
+        "perspectiveFromXX": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur Logiciel Senior",
+          "quote": "Alex est un ingénieur intelligent dont les capacités ont brillé durant notre collaboration sur nos projets. Il démontre constamment son empressement à aider l'équipe avec toute demande, montrant son dévouement au succès collectif. Son approche proactive de la résolution de problèmes et son dévouement à la stabilité du système bénéficient grandement au flux de travail de notre équipe. De plus, la disponibilité d'Alex et sa volonté de soutenir les autres pendant notre flux de release soulignent sa valeur en tant que collègue qui priorise le travail d'équipe et la collaboration."
+        },
+        "perspectiveFromXY": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur d'Escalade Senior",
+          "quote": "Alex, si je devais choisir une chose que j'apprécie le plus dans le travail avec vous, ce serait votre état d'esprit - car il englobe plusieurs aspects. Travailler avec vous est authentique, amusant, sage et pertinent en même temps. Il est facile de remarquer que vos moteurs quotidiens sont l'engagement, le raisonnement et l'apprentissage continu. J'admire votre approche, votre désir sincère d'aider, de construire sur le succès des autres et de soutenir chacun dans sa croissance, ce qui est une valeur si rare. En plus de cela, j'apprécie votre patience, ainsi que la grande quantité de connaissances que vous apportez dans nos interactions. La façon dont vous gérez les situations stressantes et votre approche globale ont le pouvoir de façonner un résultat positif pour toute question ou sujet."
+        },
+        "perspectiveFromXZ": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur Logiciel Senior",
+          "quote": "J'ai été constamment impressionné par votre production de travail. Vous livrez toujours un travail de haute qualité, en accordant une attention particulière aux détails et en vous assurant que tout est fait au mieux de vos capacités. De plus, vous avez une compréhension approfondie des aspects techniques de notre travail, ce qui a été un atout précieux pour l'équipe. Votre volonté de partager vos connaissances et votre expérience avec les autres a été inestimable et il est clair que vous êtes fier de mentorer les autres et de les aider à grandir."
+        },
+        "perspectiveFromY": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur Logiciel II",
+          "quote": "J'apprécie vraiment votre approche proactive et votre esprit collaboratif, et votre soutien et style de communication amical ont été très positifs pour mon expérience d'intégration et pour apprendre les tenants et aboutissants de notre projet. Votre capacité à communiquer efficacement et à tenir tout le monde informé est quelque chose que j'admire, vous avez de l'expérience dans les relations avec les équipes transversales, en particulier avec nos équipes partenaires, en apprenant leurs besoins et en résolvant leurs problèmes. Vos compétences techniques sont impressionnantes et votre attention aux détails est louable."
+        },
+        "perspectiveFromYX": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Chef de Produit Senior",
+          "quote": "La profondeur de caractère d'Alexandru est évidente dans sa passion et son engagement à aider les autres à réussir et nulle part cela n'est plus clair que dans son mentorat. Je tiens Alexandru en haute estime - j'ai peut-être quelques années de plus que lui, mais il ne devrait pas hésiter à me défier s'il croit qu'il y a une meilleure façon d'aborder un problème."
+        },
+        "perspectiveFromYY": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur Logiciel Staff",
+          "quote": "J'aime votre attitude et votre ouverture d'esprit, je trouve facile de travailler et de parler avec vous. Je n'ai pas grand-chose à vous dire pour exploiter davantage ces forces : restez vous-même et vous faites déjà un excellent travail !"
+        },
+        "perspectiveFromYZ": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur Logiciel Staff",
+          "quote": "Alexandru est un excellent ingénieur logiciel. Il est incroyablement vif et je le classerais dans le top 1% pour son âge - à 25 ans, la plupart des gens ont du mal à trouver un emploi, tandis qu'Alexandru délivre un impact qui se traduit en millions de dollars. Il est extrêmement talentueux."
+        },
+        "perspectiveFromZ": {
+          "author": "Anonyme",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Ingénieur Logiciel Senior",
+          "quote": "Vous êtes toujours prêt à aider, partageant généreusement votre temps, même lorsque vous avez vos propres tâches urgentes. Vos réponses rapides et utiles à toutes les questions sont grandement appréciées. Vous adoptez une approche priorisée et méticuleuse, fournissant des solutions instantanées qui non seulement nous débloquent à court terme mais décrivent également les corrections à long terme et leurs calendriers de mise en œuvre. Votre état d'esprit orienté solutions est un véritable atout pour notre équipe. Votre expertise, votre volonté d'aider et votre personnalité agréable font de vous un excellent collègue. Continuez votre excellent travail !"
+        },
+        "subtitle": "Perspectives de collègues qui ont travaillé avec ou aux côtés d'Alexandru.",
+        "title": "Perspectives"
+      },
+      "subtitle": "Alexandru-Razvan Olariu est l'auteur de la plateforme que vous consultez actuellement.",
+      "title": "Rencontrez l'auteur."
+    },
+    "cards": {
+      "author": {
+        "cta": "En savoir plus sur l'auteur...",
+        "subtitle": "arolariu est l'alias/pseudo de l'auteur : Alexandru-Razvan Olariu. Alexandru est un ingénieur logiciel expérimenté, architecte de solutions et apprenant perpétuel. Pour en savoir plus sur Alexandru, cliquez sur le bouton ci-dessous.",
+        "title": "Qui est arolariu ?"
+      },
+      "platform": {
+        "cta": "En savoir plus sur la plateforme...",
+        "subtitle": "La plateforme arolariu.ro est une collection d'applications hébergées sous le domaine arolariu.ro. La plateforme a été construite dans le but de fournir une expérience unifiée pour toutes les applications et projets OSS sur lesquels l'auteur (Alexandru-Razvan Olariu) travaille. Pour en savoir plus sur les technologies utilisées et comment elles interagissent entre elles, cliquez sur le bouton ci-dessous.",
+        "title": "Qu'est-ce que arolariu.ro ?"
+      }
+    },
+    "footer": "Merci !",
+    "Platform": {
+      "__metadata__": {
+        "description": "En savoir plus sur la plateforme, arolariu.ro.",
+        "title": "La plateforme"
+      },
+      "hero": {
+        "statusBadge": "Plateforme Technologique Open Source",
+        "subtitle": "Moderne • Évolutive • Open Source",
+        "title": "Bienvenue sur",
+        "description": "Une plateforme full-stack complète combinant Next.js, .NET et les services cloud Azure. Construite avec une architecture de niveau entreprise, une conception pilotée par le domaine et un accent sur l'expérience développeur.",
+        "stats": {
+          "projects": "Projets",
+          "techStack": "Stack Technologique",
+          "linesOfCode": "Lignes de Code",
+          "countries": "Pays"
+        },
+        "cta": {
+          "exploreFeatures": "Explorer les Fonctionnalités",
+          "viewSource": "Voir le Code Source"
+        },
+        "trust": {
+          "openSource": "Open Source",
+          "privacyFirst": "Confidentialité d'Abord",
+          "freeForever": "Gratuit pour Toujours"
+        },
+        "scrollIndicator": "Faites défiler pour explorer"
+      },
+      "features": {
+        "badge": "Fonctionnalités de la Plateforme",
+        "title": "Tout ce dont vous avez besoin,",
+        "titleHighlight": "magnifiquement conçu",
+        "description": "Une suite complète d'outils conçus pour la gestion moderne des finances personnelles, l'organisation des recettes et plus encore. Construite avec des technologies de pointe et un accent sur l'expérience utilisateur.",
+        "items": {
+          "invoices": {
+            "title": "Traitement des Factures",
+            "description": "Analyse et gestion des factures alimentées par l'IA",
+            "longDescription": "Téléchargez des photos de reçus et laissez l'IA extraire les détails du commerçant, les articles, les prix et plus encore. La catégorisation automatique, le suivi des dépenses et les analyses détaillées vous aident à comprendre vos habitudes de consommation.",
+            "tags": "IA,OCR,Analytique"
+          },
+          "merchants": {
+            "title": "Intelligence Commerçants",
+            "description": "Détection automatique des commerçants et aperçus",
+            "longDescription": "Notre IA identifie les commerçants à partir des données de reçus, construisant une base de données complète de vos habitudes d'achat. Obtenez des aperçus sur vos lieux d'achat, les tendances de dépenses et les comparaisons de commerçants.",
+            "tags": "ML,Aperçus,Suivi"
+          },
+          "budgets": {
+            "title": "Gestion du Budget",
+            "description": "Suivi intelligent du budget et alertes",
+            "longDescription": "Définissez des budgets par catégorie et recevez des alertes intelligentes à l'approche des limites. Visualisez vos dépenses avec des graphiques interactifs et identifiez les domaines à optimiser.",
+            "tags": "Budgets,Alertes,Planification"
+          },
+          "analytics": {
+            "title": "Analytique des Dépenses",
+            "description": "Aperçus approfondis de vos dépenses",
+            "longDescription": "Tableau de bord analytique complet avec les tendances de dépenses, les répartitions par catégorie, les comparaisons mensuelles et les aperçus prédictifs alimentés par des algorithmes d'apprentissage automatique.",
+            "tags": "Graphiques,Tendances,Rapports"
+          },
+          "recipes": {
+            "title": "Gestion des Recettes",
+            "description": "Organisez et découvrez des créations culinaires",
+            "longDescription": "Stockez vos recettes préférées, découvrez-en de nouvelles et planifiez vos repas efficacement. Suggestions alimentées par l'IA basées sur les ingrédients, les préférences alimentaires et l'historique de cuisine.",
+            "tags": "Cuisine,Planification Repas,IA"
+          },
+          "ai": {
+            "title": "Assistant IA",
+            "description": "Automatisation intelligente à portée de main",
+            "longDescription": "Alimenté par Azure OpenAI, notre assistant IA aide à la compréhension de documents, l'extraction de données, la catégorisation intelligente et les requêtes en langage naturel sur vos données.",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "security": {
+            "title": "Sécurité Entreprise",
+            "description": "Sécurité de niveau bancaire pour vos données",
+            "longDescription": "Vos données sont protégées par un chiffrement de niveau entreprise, une authentification sécurisée via Azure AD B2C et la conformité au RGPD. Nous ne vendons ni ne partageons jamais vos informations personnelles.",
+            "tags": "Chiffrement,RGPD,SSO"
+          },
+          "i18n": {
+            "title": "Multi-Langue",
+            "description": "Expérience entièrement internationalisée",
+            "longDescription": "La plateforme prend en charge plusieurs langues avec un support RTL complet. Actuellement disponible en anglais et en roumain, avec d'autres langues prévues pour les versions futures.",
+            "tags": "i18n,Anglais,Roumain"
+          },
+          "auth": {
+            "title": "Authentification Sécurisée",
+            "description": "Options de connexion flexibles et sécurisées",
+            "longDescription": "Connectez-vous avec Microsoft, Google, GitHub ou email. Azure AD B2C fournit une gestion d'identité de niveau entreprise avec support MFA et une expérience SSO transparente.",
+            "tags": "OAuth,MFA,SSO"
+          }
+        },
+        "modal": {
+          "exploreFeature": "Explorer la Fonctionnalité",
+          "close": "Fermer"
+        }
+      },
+      "architecture": {
+        "badge": "Architecture Technique",
+        "title": "Conçue pour",
+        "titleHighlight": "l'évolutivité et la fiabilité",
+        "description": "Une architecture cloud-native moderne suivant les principes de conception pilotée par le domaine, la méthodologie The Standard et les meilleures pratiques de l'industrie.",
+        "layers": {
+          "client": {
+            "name": "Couche Client",
+            "description": "Frontends modernes basés sur React avec capacités SSR et SSG",
+            "technologies": "Next.js 16,React 19,TypeScript,Tailwind CSS"
+          },
+          "cdn": {
+            "name": "Edge et CDN",
+            "description": "Distribution de contenu mondiale avec mise en cache edge et optimisation",
+            "technologies": "Azure CDN,Vercel Edge,Static Assets"
+          },
+          "api": {
+            "name": "Passerelle API",
+            "description": "APIs RESTful avec documentation OpenAPI et limitation de débit",
+            "technologies": ".NET 10,Minimal APIs,OpenAPI,GraphQL"
+          },
+          "services": {
+            "name": "Microservices",
+            "description": "Conception pilotée par le domaine avec contextes délimités et architecture propre",
+            "technologies": "DDD,CQRS,Event Sourcing,The Standard"
+          },
+          "auth": {
+            "name": "Identité et Sécurité",
+            "description": "Authentification de niveau entreprise avec plusieurs fournisseurs",
+            "technologies": "Azure AD B2C,OAuth 2.0,OIDC,MFA"
+          },
+          "data": {
+            "name": "Couche Données",
+            "description": "Stratégie de base de données multi-modèle pour des performances optimales",
+            "technologies": "CosmosDB,Azure SQL,Redis Cache,Blob Storage"
+          },
+          "ai": {
+            "name": "Services IA",
+            "description": "Traitement intelligent de documents et compréhension du langage naturel",
+            "technologies": "Azure OpenAI,Document Intelligence,Computer Vision"
+          },
+          "infra": {
+            "name": "Infrastructure Cloud",
+            "description": "Infrastructure Azure entièrement gérée avec déploiement IaC",
+            "technologies": "Azure,Bicep IaC,Container Apps,Key Vault"
+          }
+        },
+        "principles": {
+          "rsc": {
+            "title": "React Server Components",
+            "description": "Exploitation des RSC pour des performances optimales avec rendu côté serveur et streaming"
+          },
+          "appRouter": {
+            "title": "Architecture App Router",
+            "description": "Routage basé sur les fichiers avec layouts, états de chargement et limites d'erreur"
+          },
+          "cloudNative": {
+            "title": "Conception Cloud Native",
+            "description": "Microservices conteneurisés avec auto-scaling et capacités d'auto-réparation"
+          }
+        }
+      },
+      "techStack": {
+        "badge": "Stack Technologique",
+        "title": "Alimentée par",
+        "titleHighlight": "des technologies modernes",
+        "description": "Un stack technologique soigneusement sélectionné pour la performance, l'expérience développeur et la maintenabilité à long terme.",
+        "categories": {
+          "frontend": {
+            "name": "Frontend",
+            "description": "Technologies web modernes pour des expériences utilisateur ultra-rapides"
+          },
+          "backend": {
+            "name": "Backend",
+            "description": "Technologies côté serveur évolutives et APIs"
+          },
+          "cloud": {
+            "name": "Cloud et DevOps",
+            "description": "Infrastructure et automatisation du déploiement"
+          },
+          "tooling": {
+            "name": "Outils de Développement",
+            "description": "Outils et frameworks pour l'excellence en développement"
+          }
+        },
+        "technologies": {
+          "react": { "name": "React", "description": "Bibliothèque UI pour construire des interfaces interactives" },
+          "nextjs": { "name": "Next.js", "description": "Framework React full-stack avec SSR/SSG" },
+          "typescript": { "name": "TypeScript", "description": "JavaScript typé pour un code robuste" },
+          "tailwind": { "name": "Tailwind CSS", "description": "Framework CSS utilitaire" },
+          "zustand": { "name": "Zustand", "description": "Gestion d'état légère" },
+          "motion": { "name": "Motion", "description": "Animations prêtes pour la production" },
+          "dotnet": { "name": ".NET", "description": "Framework backend principal" },
+          "aspnet": { "name": "ASP.NET Core", "description": "APIs web haute performance" },
+          "nodejs": { "name": "Node.js", "description": "BFF et fonctions serverless" },
+          "cosmosdb": { "name": "CosmosDB", "description": "Base de données NoSQL distribuée globalement" },
+          "azuresql": { "name": "Azure SQL", "description": "Base de données relationnelle gérée" },
+          "redis": { "name": "Redis", "description": "Cache en mémoire pour la performance" },
+          "azure": { "name": "Azure", "description": "Fournisseur cloud principal" },
+          "vercel": { "name": "Vercel", "description": "Plateforme de déploiement frontend" },
+          "docker": { "name": "Docker", "description": "Plateforme de conteneurisation" },
+          "githubActions": { "name": "GitHub Actions", "description": "Automatisation CI/CD" },
+          "bicep": { "name": "Bicep", "description": "Infrastructure as Code" },
+          "azureDevops": { "name": "Azure DevOps", "description": "Gestion de projet et pipelines" },
+          "git": { "name": "Git", "description": "Système de contrôle de version" },
+          "eslint": { "name": "ESLint", "description": "Linting JavaScript avec plus de 20 plugins" },
+          "prettier": { "name": "Prettier", "description": "Formatage de code" },
+          "vitest": { "name": "Vitest", "description": "Framework de tests unitaires" },
+          "playwright": { "name": "Playwright", "description": "Framework de tests E2E" },
+          "pnpm": { "name": "pnpm/npm", "description": "Gestion des paquets" }
+        },
+        "stats": {
+          "technologies": { "value": "24+", "label": "Technologies", "description": "Dans notre stack" },
+          "coverage": { "value": "90%+", "label": "Couverture de Tests", "description": "Tests unitaires et E2E" },
+          "typescript": { "value": "100%", "label": "TypeScript", "description": "Typage complet" },
+          "security": { "value": "A+", "label": "Note de Sécurité", "description": "Meilleures pratiques" }
+        }
+      },
+      "statistics": {
+        "badge": "Statistiques de la Plateforme",
+        "title": "Des chiffres qui",
+        "titleHighlight": "parlent d'eux-mêmes",
+        "description": "Un aperçu de l'échelle et de l'impact de la plateforme arolariu.ro, des lignes de code à la portée mondiale.",
+        "items": {
+          "projects": { "value": "15", "suffix": "+", "label": "Projets", "description": "Dépôts actifs" },
+          "commits": { "value": "2500", "suffix": "+", "label": "Commits", "description": "Contributions de code" },
+          "linesOfCode": { "value": "150", "suffix": "K+", "label": "Lignes de Code", "description": "Sur tous les projets" },
+          "apis": { "value": "8", "suffix": "+", "label": "APIs", "description": "Microservices" },
+          "users": { "value": "1000", "suffix": "+", "label": "Utilisateurs", "description": "Actifs mensuellement" },
+          "countries": { "value": "25", "suffix": "+", "label": "Pays", "description": "Portée mondiale" },
+          "stars": { "value": "50", "suffix": "+", "label": "Étoiles", "description": "Étoiles GitHub" },
+          "contributors": { "value": "5", "suffix": "+", "label": "Contributeurs", "description": "Open source" }
+        }
+      },
+      "timeline": {
+        "badge": "Parcours de Développement",
+        "title": "De l'idée à",
+        "titleHighlight": "la réalité",
+        "description": "Le parcours d'arolariu.ro d'une simple idée à une plateforme complète, avec les jalons clés en chemin.",
+        "futureIndicator": "Le voyage continue...",
+        "expandHint": "Cliquez pour développer",
+        "collapseHint": "Cliquez pour réduire",
+        "keyAchievements": "Réalisations clés :",
+        "events": {
+          "inception": {
+            "date": "Mars 2022",
+            "title": "Lancement du Projet",
+            "description": "La plateforme arolariu.ro a été conçue comme un projet d'apprentissage personnel pour explorer le développement web moderne.",
+            "details": "Phase initiale de concept et planification,Recherche sur les technologies web modernes,Premier dépôt créé sur GitHub,Prototype HTML/CSS de base développé",
+            "tags": "Planification,Recherche"
+          },
+          "prototype": {
+            "date": "Juin 2022",
+            "title": "Premier Prototype",
+            "description": "Le premier prototype fonctionnel de la plateforme a été développé en utilisant React et des services backend de base.",
+            "details": "Implémentation du frontend React,Flux d'authentification de base,Design UI/UX initial,Configuration de l'environnement de développement local",
+            "tags": "React,Frontend"
+          },
+          "backend": {
+            "date": "Septembre 2022",
+            "title": "Infrastructure Backend",
+            "description": "Refonte complète du backend avec implémentation de .NET et architecture cloud-native.",
+            "details": "Développement API .NET 6,Configuration de l'infrastructure cloud Azure,Conception de base de données avec CosmosDB,Implémentation du pipeline CI/CD",
+            "tags": ".NET,Azure,API"
+          },
+          "expansion": {
+            "date": "Janvier 2023",
+            "title": "Expansion de la Plateforme",
+            "description": "Ajouts majeurs de fonctionnalités incluant le traitement des factures et les capacités d'analyse alimentées par l'IA.",
+            "details": "Téléchargement de factures et intégration OCR,Intégration Azure Document Intelligence,Algorithmes de détection de commerçants,Fonctionnalités de suivi de budget",
+            "tags": "IA,OCR,Factures"
+          },
+          "launch": {
+            "date": "Juin 2023",
+            "title": "Lancement Public",
+            "description": "Lancement public officiel avec un ensemble complet de fonctionnalités et une infrastructure prête pour la production.",
+            "details": "Déploiement en production sur Azure,Configuration de domaine personnalisé,Implémentation de la sécurité SSL/TLS,Optimisation des performances",
+            "tags": "Lancement,Production"
+          },
+          "nextjs": {
+            "date": "Décembre 2023",
+            "title": "Migration Next.js",
+            "description": "Réécriture complète du frontend vers Next.js App Router avec React Server Components.",
+            "details": "Migration vers Next.js 14+,Adoption des React Server Components,SEO amélioré avec génération statique,Métriques de performance améliorées",
+            "tags": "Next.js,RSC,Migration"
+          },
+          "ai": {
+            "date": "Juin 2024",
+            "title": "Intégration IA",
+            "description": "Intégration profonde avec Azure OpenAI pour le traitement intelligent de documents et les requêtes en langage naturel.",
+            "details": "Intégration Azure OpenAI GPT-4,Requêtes de factures en langage naturel,Algorithmes de catégorisation intelligente,Fonctionnalités d'analytique prédictive",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "present": {
+            "date": "Présent",
+            "title": "Évolution Continue",
+            "description": "Développement en cours avec de nouvelles fonctionnalités, optimisations et contributions de la communauté.",
+            "details": "Mises à jour régulières des fonctionnalités,Améliorations de performance,Intégration des retours de la communauté,Planification de la feuille de route future",
+            "tags": "Actif,En croissance"
+          }
+        }
+      },
+      "callToAction": {
+        "title": "Prêt à",
+        "titleHighlight": "commencer",
+        "description": "Explorez la plateforme, essayez les fonctionnalités et rejoignez la communauté. Que vous soyez ici pour gérer des factures, découvrir des recettes ou simplement explorer, il y a quelque chose pour tout le monde.",
+        "cta": {
+          "exploreApplications": "Explorer les Applications",
+          "createAccount": "Créer un Compte"
+        },
+        "links": {
+          "viewSource": "Voir le Code Source",
+          "meetAuthor": "Rencontrer l'Auteur",
+          "getInTouch": "Nous Contacter"
+        },
+        "trust": {
+          "openSource": { "title": "Open Source", "description": "100% open source avec licence MIT" },
+          "privacyFirst": { "title": "Confidentialité d'Abord", "description": "Vos données restent les vôtres, toujours" },
+          "freeToUse": { "title": "Gratuit", "description": "Pas de frais cachés ni d'abonnements" }
+        },
+        "footer": "Construit avec passion par",
+        "footerRole": ", un ingénieur logiciel chez Microsoft."
+      }
+    },
+    "subtitle": " L'histoire d'arolariu.ro a commencé en 2022, lorsque l'auteur - Alexandru-Razvan Olariu, voulait comprendre comment fonctionnent les sites web. Toute la plateforme et les intégrations sous-jacentes ont été développées uniquement par l'auteur, à partir de ce qu'il a appris au fil des années. Alexandru travaille actuellement comme ingénieur logiciel chez Microsoft. Pour en savoir plus sur lui, consultez la section de droite de cette page. La plateforme est construite en utilisant les dernières technologies de pointe. Pour en savoir plus, consultez la section de gauche de cette page.",
+    "title": "À propos de nous"
+  },
+  "Acknowledgements": {
+    "__metadata__": {
+      "description": "Page de remerciements pour les packages tiers utilisés dans ce projet et les collaborateurs.",
+      "title": "Remerciements"
+    },
+    "lastUpdate": "Dernière mise à jour le : {date}",
+    "packages": {
+      "subtitle": "Ce site web n'aurait pas été possible sans les packages tiers suivants. Je tiens à remercier les auteurs de ces packages pour leur travail acharné et leur dévouement à la communauté open-source.",
+      "title": "Packages tiers"
+    },
+    "packagesScreen": {
+      "search": {
+        "placeholder": "Rechercher..."
+      },
+      "filters": {
+        "filterByType": "Filtrer par type",
+        "allPackages": "Tous les Packages",
+        "productionOnly": "Production Uniquement",
+        "developmentOnly": "Développement Uniquement",
+        "sortBy": "Trier par",
+        "name": "Nom",
+        "dependenciesCount": "Nombre de Dépendances",
+        "packageType": "Type de Package",
+        "sortDirection": "Direction du tri",
+        "ascending": "Croissant",
+        "descending": "Décroissant"
+      },
+      "views": {
+        "gridView": "Vue Grille",
+        "tableView": "Vue Tableau"
+      },
+      "badge": {
+        "production": "Production",
+        "development": "Développement"
+      },
+      "card": {
+        "license": "Licence :",
+        "dependencies": "Dépendances :",
+        "website": "Site Web",
+        "viewDependencies": "Voir les Dépendances"
+      },
+      "table": {
+        "package": "Package",
+        "version": "Version",
+        "type": "Type",
+        "description": "Description",
+        "license": "Licence",
+        "dependencies": "Dépendances",
+        "website": "Site Web"
+      },
+      "dialog": {
+        "dependencies": "Dépendances de {name}",
+        "dependenciesCount": "Ce package a {count} dépendances."
+      },
+      "emptyState": {
+        "title": "Aucun package trouvé.",
+        "subtitle": "Essayez d'ajuster les filtres ci-dessus."
+      },
+      "openSource": {
+        "title": "L'Open Source Compte",
+        "description": "Ce projet repose sur les épaules de géants. Nous sommes reconnaissants envers la communauté open-source et tous les développeurs qui ont contribué à ces packages."
+      }
+    },
+    "title": "Remerciements"
+  },
+  "Authentication": {
+    "__metadata__": {
+      "description": "La page d'authentification pour la plateforme arolariu.ro.",
+      "title": "Authentification"
+    },
+    "Button": {
+      "login": "Connexion",
+      "logout": "Déconnexion"
+    },
+    "Island": {
+      "callToAction": "S'authentifier",
+      "description": "Connectez-vous en utilisant notre serveur d'authentification OAuth 2.0 sécurisé. Votre profil sera synchronisé pendant cette session de navigation. Vous pouvez utiliser vos comptes de réseaux sociaux pour vous connecter.",
+      "footer": "Vous pouvez changer de fournisseur à tout moment. L'authentification est gérée par notre fournisseur d'identité de confiance.",
+      "hero": {
+        "badge": "Authentification Sécurisée",
+        "subtitle": "Choisissez un chemin et continuez avec votre fournisseur préféré. Tout reste rapide, sécurisé et localisé.",
+        "title": "Bienvenue au point d'entrée sécurisé"
+      },
+      "signIn": {
+        "bullets": {
+          "first": "Continuez avec le fournisseur d'identité que vous utilisez déjà.",
+          "second": "Reprenez là où vous vous êtes arrêté sur n'importe quel appareil.",
+          "third": "La session reste synchronisée pendant votre navigation."
+        },
+        "cta": "Se connecter",
+        "description": "Accédez à votre compte et gardez votre session synchronisée pendant cette session de navigation.",
+        "illustrationAlt": "Illustration pour la connexion",
+        "secondaryAction": "En créer un",
+        "secondaryPrompt": "Vous n'avez pas de compte ?",
+        "title": "Se connecter"
+      },
+      "signUp": {
+        "bullets": {
+          "first": "Créez un compte en quelques secondes avec les fournisseurs OAuth.",
+          "second": "Pas de mots de passe à retenir.",
+          "third": "Commencez à utiliser la plateforme immédiatement."
+        },
+        "cta": "Créer un compte",
+        "description": "Rejoignez la plateforme et débloquez les expériences réservées aux membres dans l'espace du domaine.",
+        "illustrationAlt": "Illustration pour l'inscription",
+        "secondaryAction": "Se connecter",
+        "secondaryPrompt": "Vous avez déjà un compte ?",
+        "title": "S'inscrire"
+      },
+      "title": "Authentifiez-vous avec notre serveur d'authentification OAuth 2.0 sécurisé.",
+      "trust": {
+        "oauth": "OAuth 2.0",
+        "privacy": "Confidentialité d'abord",
+        "session": "Synchronisation de session"
+      },
+      "step1": "Étape 1",
+      "step2": "Étape 2"
+    },
+    "SignIn": {
+      "__metadata__": {
+        "description": "Connectez-vous pour continuer votre session sur arolariu.ro.",
+        "title": "Connexion"
+      },
+      "bullets": {
+        "first": "Connexion rapide avec des fournisseurs de confiance.",
+        "second": "Votre session reste cohérente dans toute l'application.",
+        "third": "Conçu pour fonctionner parfaitement sur mobile et ordinateur."
+      },
+      "footer": "Protégé par une sécurité de niveau entreprise.",
+      "form": {
+        "kicker": "Connectez-vous avec votre fournisseur préféré",
+        "secondaryAction": "Créer un compte",
+        "secondaryPrompt": "Nouveau ici ?"
+      },
+      "hero": {
+        "subtitle": "Utilisez le fournisseur en qui vous avez confiance et continuez instantanément.",
+        "title": "Bon retour"
+      },
+      "illustrationAlt": "Illustration pour la page de connexion"
+    },
+    "SignUp": {
+      "__metadata__": {
+        "description": "Créez un compte et commencez à utiliser arolariu.ro.",
+        "title": "Inscription"
+      },
+      "bullets": {
+        "first": "Intégration rapide avec les fournisseurs OAuth.",
+        "second": "Pas de carte de crédit requise.",
+        "third": "Commencez à explorer la plateforme immédiatement."
+      },
+      "footer": "Inscription rapide et sécurisée.",
+      "form": {
+        "kicker": "Créez votre compte avec votre fournisseur préféré",
+        "secondaryAction": "Se connecter",
+        "secondaryPrompt": "Vous avez déjà un compte ?"
+      },
+      "hero": {
+        "subtitle": "Créez votre compte en quelques secondes et commencez.",
+        "title": "Rejoignez-nous aujourd'hui"
+      },
+      "illustrationAlt": "Illustration pour la page d'inscription"
+    }
+  },
+  "Commander": {
+    "placeholder": "Tapez une commande ou recherchez...",
+    "noResults": "Aucun résultat trouvé.",
+    "groups": {
+      "navigation": "Navigation",
+      "theme": "Thème",
+      "language": "Langue",
+      "accessibility": "Accessibilité",
+      "fun": "Amusement",
+      "links": "Liens"
+    },
+    "items": {
+      "homepage": "Page d'accueil",
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système",
+      "fontNormal": "Police standard",
+      "fontDyslexic": "Police adaptée à la dyslexie",
+      "rainbow": "Mode arc-en-ciel",
+      "disco": "Mode disco",
+      "matrix": "Mode Matrix"
+    }
+  },
+  "Domains": {
+    "__metadata__": {
+      "description": "Les services de l'espace de domaine sont des services offerts aux visiteurs et membres de l'espace de domaine `arolariu.ro`",
+      "title": "Services de l'Espace de Domaine"
+    },
+    "services": {
+      "callToAction": "Visiter ce service de domaine",
+      "invoices": {
+        "card": {
+          "description": "Ce service de l'espace de domaine aide à la transformation numérique des reçus physiques. Il permet aux utilisateurs de télécharger des reçus et d'obtenir des informations soigneusement élaborées sur leurs habitudes de dépenses.",
+          "title": "Système de Gestion des Factures",
+          "imageAlt": "Illustration du système de gestion des factures montrant la numérisation des reçus"
+        },
+        "service": {
+          "states": {
+            "notFound": {
+              "title": "Facture Non Trouvée",
+              "description": "La facture avec l'identifiant {invoiceIdentifier} n'a pas été trouvée."
+            },
+            "loading": {
+              "title": "Chargement de la Facture",
+              "description": "Chargement de la facture avec l'identifiant {invoiceIdentifier}."
+            }
+          },
+          "edit-page": {
+            "__metadata__": {
+              "description": "Consultez et modifiez les détails de votre facture, les articles, les recettes et les paramètres de partage.",
+              "title": "Système de Gestion des Factures - Modifier la Facture"
+            }
+          },
+          "view-page": {
+            "__metadata__": {
+              "description": "Consultez les détails de votre facture, les articles et les informations du commerçant associé.",
+              "title": "Système de Gestion des Factures - Voir la Facture"
+            }
+          },
+          "upload-scans": {
+            "__metadata__": {
+              "description": "Téléchargez des scans de reçus sur votre compte pour un traitement ultérieur en factures.",
+              "title": "Système de Gestion des Factures - Télécharger des Scans"
+            },
+            "title": "Télécharger des Scans",
+            "subtitle": "Téléchargez des images de reçus ou des PDF. Créez des factures à partir de ceux-ci plus tard.",
+            "breadcrumb": "Retour aux Factures",
+            "header": {
+              "title": "Télécharger des Scans",
+              "description": "Téléchargez des images de reçus ou des PDF. Créez des factures à partir de ceux-ci plus tard.",
+              "tooltip": "Téléchargez vos reçus, factures ou notes ici. Vous pouvez sélectionner plusieurs fichiers et les organiser en factures plus tard depuis la page Voir les Scans."
+            },
+            "buttons": {
+              "viewScans": "Voir Vos Scans",
+              "myInvoices": "Mes Factures",
+              "uploadFirst": "Télécharger Votre Premier Scan"
+            },
+            "stats": {
+              "added": "Ajouté",
+              "pending": "En attente",
+              "uploading": "Téléchargement",
+              "completed": "Terminé",
+              "failed": "Échoué"
+            },
+            "sidebar": {
+              "formats": {
+                "title": "Formats Pris en Charge",
+                "images": "Images",
+                "imageExtensions": ".jpg, .jpeg, .png",
+                "documents": "Documents",
+                "documentExtensions": ".pdf",
+                "maxSize": "Taille maximale du fichier : 10 Mo par fichier"
+              },
+              "tips": {
+                "title": "Conseils pour de Meilleurs Résultats",
+                "tip1": "Utilisez un bon éclairage lors de la photographie des reçus",
+                "tip2": "Assurez-vous que le texte est clair et lisible",
+                "tip3": "Évitez les ombres et les reflets",
+                "tip4": "Capturez tout le reçu dans le cadre",
+                "tip5": "Les PDF fonctionnent mieux pour les reçus numériques"
+              },
+              "security": {
+                "title": "Stockage Sécurisé",
+                "description": "Vos scans sont chiffrés et stockés en toute sécurité. Vous seul pouvez y accéder."
+              },
+              "nextSteps": {
+                "title": "Tous les téléchargements terminés !",
+                "description": "Vos scans sont prêts. Allez sur Voir les Scans pour les organiser en factures.",
+                "button": "Continuer vers Voir les Scans"
+              }
+            },
+            "upload": {
+              "dropzone": "Glissez et déposez vos images de reçus ou PDF ici",
+              "browse": "Parcourir les fichiers",
+              "or": "ou"
+            },
+            "errors": {
+              "unsupportedType": "Type de fichier non pris en charge : {type}",
+              "tooLarge": "Fichier trop volumineux : {name} (max 10 Mo)"
+            }
+          },
+          "view-scans": {
+            "__metadata__": {
+              "description": "Consultez et gérez vos scans téléchargés. Créez des factures à partir des scans sélectionnés.",
+              "title": "Système de Gestion des Factures - Voir les Scans"
+            },
+            "title": "Vos Scans",
+            "subtitle": "Sélectionnez des scans pour créer des factures à partir de ceux-ci.",
+            "breadcrumb": "Retour aux Factures",
+            "header": {
+              "title": "Vos Scans",
+              "titleWithCount": "Vos Scans ({count})",
+              "subtitle": "Sélectionnez des scans pour créer des factures à partir de ceux-ci",
+              "lastSynced": "Dernière synchronisation : {time}",
+              "tooltip": "Sélectionnez des scans pour créer des factures. Vous pouvez créer une facture par scan ou combiner plusieurs scans en une seule facture.",
+              "uploadMore": "Télécharger Plus",
+              "upload": "Télécharger",
+              "uploadTooltip": "Téléchargez plus de scans sur votre compte",
+              "myInvoices": "Mes Factures",
+              "invoices": "Factures",
+              "myInvoicesTooltip": "Voir vos factures créées",
+              "sync": "Synchroniser",
+              "syncing": "Synchronisation...",
+              "syncTooltip": "Actualiser les scans depuis le serveur"
+            },
+            "stats": {
+              "totalScans": "Total des Scans",
+              "ready": "Prêt",
+              "selected": "Sélectionné",
+              "selectHint": "Cliquez sur les scans pour les sélectionner pour la création de factures",
+              "tapHint": "Appuyez pour sélectionner"
+            },
+            "sidebar": {
+              "howTo": {
+                "title": "Comment Créer des Factures",
+                "step1Title": "Sélectionner des Scans",
+                "step1Description": "Cliquez sur les scans pour les sélectionner",
+                "step2Title": "Choisir le Mode",
+                "step2Description": "Une facture par scan ou combiner plusieurs",
+                "step3Title": "Créer la Facture",
+                "step3Description": "L'IA extrait les données automatiquement"
+              },
+              "selectionStatus": {
+                "singular": "scan sélectionné",
+                "plural": "scans sélectionnés",
+                "readySingular": "Prêt à créer une facture",
+                "readyPlural": "Créez plusieurs factures ou combinez en une seule"
+              },
+              "quickUpload": {
+                "title": "Besoin de plus de scans ?",
+                "description": "Téléchargez des reçus supplémentaires",
+                "button": "Télécharger"
+              }
+            },
+            "emptyState": {
+              "title": "Pas encore de scans",
+              "description": "Commencez par télécharger vos reçus et factures. Voici comment cela fonctionne :",
+              "step1Title": "Téléchargez vos scans",
+              "step1Description": "Prenez des photos de reçus ou téléchargez des PDF de factures numériques",
+              "step2Title": "Sélectionnez et organisez",
+              "step2Description": "Choisissez quels scans convertir en factures",
+              "step3Title": "Créez des factures",
+              "step3Description": "Notre IA extrait automatiquement toutes les données pour vous",
+              "uploadButton": "Télécharger Votre Premier Scan",
+              "learnMoreButton": "En Savoir Plus"
+            },
+            "toolbar": {
+              "selected": "sélectionné",
+              "clearSelection": "Effacer",
+              "createInvoice": "Créer une Facture",
+              "createInvoices": "Créer des Factures"
+            },
+            "scanCard": {
+              "delete": "Supprimer le scan",
+              "linked": "Lié",
+              "deleteDialog": {
+                "title": "Supprimer le scan ?",
+                "description": "Êtes-vous sûr de vouloir supprimer \"{name}\" ? Cette action ne peut pas être annulée et le scan sera définitivement supprimé du stockage.",
+                "linkedWarning": "Ce scan est lié à une facture.",
+                "linkedDescription": "Le supprimer retirera le scan du stockage, mais la facture conservera une copie de l'image. Cette action ne peut pas être annulée.",
+                "cancel": "Annuler",
+                "delete": "Supprimer",
+                "deleting": "Suppression...",
+                "success": "Scan supprimé avec succès",
+                "error": "Échec de la suppression du scan"
+              }
+            }
+          },
+          "createInvoiceDialog": {
+            "title": "Créer une Facture",
+            "titlePlural": "Créer des Factures",
+            "description": "Transformez vos scans en données de facture structurées grâce à l'extraction alimentée par l'IA.",
+            "selectedScans": "Scans Sélectionnés",
+            "totalSize": "total",
+            "chooseMode": "Choisir le Mode de Création",
+            "singleMode": {
+              "title": "Une facture par scan",
+              "description": "Crée {count} factures séparées. Idéal lorsque chaque scan est un reçu différent."
+            },
+            "batchMode": {
+              "title": "Combiner en une seule facture",
+              "description": "Crée 1 facture avec les {count} scans attachés. Idéal pour les reçus multi-pages."
+            },
+            "singleScanInfo": {
+              "title": "Que se passe-t-il ensuite ?",
+              "description": "Notre IA analysera votre scan et extraira automatiquement les détails du commerçant, les articles, les prix et les totaux. Vous pourrez examiner et modifier les résultats par la suite."
+            },
+            "buttons": {
+              "cancel": "Annuler",
+              "createSingle": "Créer une Facture",
+              "createMultiple": "Créer {count} Factures"
+            },
+            "creating": {
+              "title": "Création de Votre Facture",
+              "titlePlural": "Création de Vos Factures",
+              "processing": "Traitement de {count} scan...",
+              "processingPlural": "Traitement de {count} scans...",
+              "step1Title": "Téléchargement des scans",
+              "step1Description": "Envoi de vos scans vers nos serveurs",
+              "step2Title": "Création des enregistrements de factures",
+              "step2Description": "Configuration des structures de données de factures",
+              "step3Title": "Finalisation",
+              "step3Description": "Préparation des factures pour la visualisation"
+            },
+            "complete": {
+              "title": "{count} Facture Créée !",
+              "titlePlural": "{count} Factures Créées !",
+              "description": "Votre facture est prête à être consultée et modifiée.",
+              "descriptionPlural": "Vos factures sont prêtes à être consultées et modifiées.",
+              "nextSteps": "Prochaines étapes :",
+              "nextStepsDescription": "Examinez votre facture, vérifiez les données extraites et effectuez les modifications nécessaires. Vous pouvez également demander une analyse IA pour des informations sur vos dépenses.",
+              "nextStepsDescriptionPlural": "Examinez vos factures, vérifiez les données extraites et effectuez les modifications nécessaires. Vous pouvez également demander une analyse IA pour des informations sur vos dépenses.",
+              "viewButton": "Voir la Facture",
+              "viewButtonPlural": "Voir les Factures"
+            },
+            "errors": {
+              "partialFail": "Échec de la création de {count} facture(s)",
+              "createFailed": "Échec de la création des factures : {message}",
+              "unknown": "Erreur inconnue"
+            }
+          },
+          "main-page": {
+            "callToAction": "Télécharger un reçu",
+            "description": "Les reçus sont parfaits pour tenir votre propre comptabilité. Cependant, et si vous pouviez télécharger ces reçus quelque part et obtenir des informations puissantes sur vos habitudes ? Et si vous pouviez automatiquement obtenir une liste de tous les produits que vous avez achetés au cours de la dernière année ? <br></br> <br></br> Libérez la puissance de notre plateforme ! <br></br> Jetez les tableaux Excel et montez dans le train numérique maintenant !",
+            "showInvoices": "Mes reçus",
+            "steps": {
+              "step-1": {
+                "description": "Créez un compte sur notre plateforme, afin de pouvoir stocker et gérer vos propres reçus en toute sécurité. Nous adhérons aux meilleures normes de l'industrie en matière de sécurité. Vos informations de reçu sont en sécurité.",
+                "title": "ÉTAPE 1 - Inscrivez-vous"
+              },
+              "step-2": {
+                "description": "Téléchargez votre reçu papier. Le système effectuera ensuite l'analyse complète. Nous essayons autant que possible d'avoir un processus entièrement automatisé, mais parfois nous pouvons avoir besoin de votre aide.",
+                "title": "ÉTAPE 2 - Commencez votre parcours"
+              },
+              "step-3": {
+                "description": "Plongez dans l'analyse que nous vous fournissons. Vous pouvez télécharger le rapport d'analyse complet au format PDF pour vos propres archives.",
+                "title": "ÉTAPE 3 - Explorez le reçu numérique"
+              },
+              "step-4": {
+                "description": "Enrichissez votre analyse avec nos informations alimentées par l'IA. Collectez des connaissances sur vos habitudes d'achat et découvrez de nouvelles recettes spécialement élaborées à partir de votre liste de courses quotidienne.",
+                "title": "ÉTAPE 4 - Rassemblez des connaissances puissantes"
+              },
+              "step-5": {
+                "description": "Nous visons à créer l'une des meilleures plateformes de numérisation de reçus open-source. Nous serions ravis d'entendre vos commentaires sur la façon dont nous pouvons améliorer notre plateforme.",
+                "title": "ÉTAPE 5 - Donnez vos commentaires"
+              }
+            },
+            "title": "Transformez vos reçus papier en connaissances numériques puissantes."
+          },
+          "view-invoices": {
+            "__metadata__": {
+              "description": "Lister toutes les factures du système de gestion des factures.",
+              "title": "Système de Gestion des Factures - Liste des Factures"
+            },
+            "subtitle": "Ceci est votre inventaire de reçus numériques. <br></br> Ici vous pouvez trouver les reçus que vous avez téléchargés jusqu'à présent. <br></br> En cliquant sur un reçu, vous serez redirigé vers la page de ce reçu spécifique.",
+            "title": "Bienvenue, {name} !"
+          }
+        }
+      }
+    },
+    "subtitle": "La plateforme <code>arolariu.ro</code> offre une large gamme de services sous son parapluie. <br></br> La plupart des services nécessitent que vous ayez un compte créé sur cette plateforme, afin que vos données puissent être synchronisées en toute sécurité entre tous les services du domaine. <br></br> <br></br> Ici vous pouvez voir une vitrine de tous les services de domaine disponibles pour l'exploration.",
+    "title": "Services de l'Espace de Domaine"
+  },
+  "errors": {
+    "404": {
+      "additionalInfo": "Informations supplémentaires :",
+      "buttons": {
+        "returnButton": "Retourner à la page d'accueil.",
+        "submitErrorButton": "Signaler une fausse erreur."
+      },
+      "falsePositive": "Si vous pensez que cette page devrait exister et que vous rencontrez une erreur, veuillez le signaler à l'administrateur du site.",
+      "subtitle": "Il semble que la page sur laquelle vous avez atterri n'est pas présente sur le site web. Si cette page devrait exister, veuillez le signaler à l'administrateur du site.",
+      "title": "404 - Page non trouvée."
+    }
+  },
+  "EULA": {
+    "accept": "Accepter le CLUF",
+    "content": "En utilisant ce site web, vous acceptez les termes et conditions et la politique de confidentialité du Contrat de Licence Utilisateur Final (CLUF). Veuillez lire attentivement les documents suivants avant d'utiliser le site web :",
+    "cookiesPolicy": {
+      "cookies": {
+        "analytics": {
+          "checkbox": "Activer les cookies analytiques nous aide à améliorer notre site web.",
+          "description": "Ces cookies nous permettent de compter les visites et les sources de trafic, afin que nous puissions mesurer et améliorer les performances de notre site. Ils nous aident à savoir quelles pages sont les plus et les moins populaires et à voir comment les visiteurs naviguent sur le site. Toutes les informations que ces cookies collectent sont agrégées et peuvent donc être considérées comme anonymes.",
+          "title": "Cookies Analytiques"
+        },
+        "cta": "Enregistrer la configuration des cookies",
+        "essential": {
+          "checkbox": "Cette option ne peut pas être désactivée. Les cookies essentiels sont toujours activés.",
+          "description": "Les cookies essentiels sont nécessaires au bon fonctionnement du site web. Cette catégorie n'inclut que les cookies qui assurent les fonctionnalités de base et les caractéristiques de sécurité du site web.",
+          "title": "Cookies Essentiels"
+        }
+      },
+      "subtitle": "Gérez vos paramètres de cookies. Vous pouvez activer ou désactiver différents types de cookies ci-dessous.",
+      "title": "Préférences de Cookies"
+    },
+    "privacyPolicy": {
+      "cta": "Voir la Politique",
+      "subtitle": "Notre Politique de Confidentialité explique comment nous collectons, utilisons et protégeons vos informations personnelles lorsque vous utilisez nos services.",
+      "title": "Politique de Confidentialité"
+    },
+    "subtitle": "Veuillez consulter nos termes et conditions avant d'utiliser le site web.",
+    "termsOfService": {
+      "cta": "Voir les Conditions",
+      "subtitle": "Nos Conditions de Service décrivent les règles et directives pour l'utilisation de notre plateforme, y compris les responsabilités de l'utilisateur et nos obligations.",
+      "title": "Conditions de Service"
+    },
+    "title": "Contrat de Licence Utilisateur Final (CLUF)"
+  },
+  "Footer": {
+    "builtOn": "Construit le ",
+    "commitSha": "SHA du Commit :",
+    "copyright": "Droits d'auteur",
+    "navigation": {
+      "about": "À propos",
+      "acknowledgements": "Remerciements",
+      "privacyPolicy": "Politique de Confidentialité",
+      "subdomains": "Sous-domaines",
+      "termsOfService": "Conditions de Service",
+      "what": "Qu'est-ce que c'est ?"
+    },
+    "socialLinks": {
+      "github": "Sélectionnez ce lien pour accéder à la page GitHub de l'auteur.",
+      "linkedin": "Sélectionnez ce lien pour accéder à la page LinkedIn de l'auteur."
+    },
+    "sourceCode": "Le code source est disponible ",
+    "sourceCodeAnchor": "ici (dépôt GitHub)",
+    "subtitle": "La plateforme est construite en utilisant les dernières technologies stables et de pointe avec une expérience de niveau entreprise. <br></br> <br></br> Nous espérons que vous aurez une excellente expérience en explorant cette plateforme."
+  },
+  "Navigation": {
+    "domains": "Domaines",
+    "invoices": "Factures",
+    "uploadScans": "Télécharger des Scans",
+    "viewScans": "Voir les Scans",
+    "myInvoices": "Mes Factures",
+    "about": "À propos",
+    "thePlatform": "La Plateforme",
+    "theAuthor": "L'Auteur",
+    "mobile": {
+      "openNavigation": "Ouvrir la navigation",
+      "closeNavigation": "Fermer la navigation",
+      "title": "Navigation"
+    }
+  },
+  "Forbidden": {
+    "Screen": {
+      "callToAction": "Rejoignez le domaine arolariu.ro.",
+      "description": "Malheureusement, cette fonctionnalité nécessite que vous ayez un compte sur notre domaine. En créant un compte sur notre plateforme ou en vous connectant avec un compte existant, vous pourrez accéder à tout notre arsenal de services, y compris celui-ci.",
+      "title": "Vous manquez quelque chose d'amusant !"
+    }
+  },
+  "Home": {
+    "appreciation": "MERCI POUR LE TEMPS PASSÉ SUR LE SITE WEB.",
+    "cta": "Commencer l'Exploration",
+    "featuresTab": {
+      "azure": {
+        "description": "Le cloud Microsoft Azure est utilisé pour héberger la plateforme et tous ses services. Cela garantit que la plateforme est toujours disponible et qu'elle peut évoluer à la demande.",
+        "title": "Microsoft Azure"
+      },
+      "csharp": {
+        "description": "La plateforme est construite avec .NET 8 LTS - la dernière version stable de .NET. Cela garantit que la plateforme est rapide, fiable et facile à utiliser. La plateforme est construite avec C# et F#.",
+        "title": ".NET 8 LTS"
+      },
+      "description": "La plateforme `arolariu.ro` est construite avec les dernières technologies stables.",
+      "githubActions": {
+        "description": "L'expérience DevOps est alimentée par GitHub Actions. (CI/CD, Tests, etc.)",
+        "title": "GitHub Actions"
+      },
+      "learnMoreBtn": "Intéressant ? Cliquez ici pour en savoir plus...",
+      "nextJs": {
+        "description": "La plateforme est construite avec NextJS - le framework React le plus populaire pour la production. Il est conçu pour des applications React de niveau production. NextJS est le framework React le plus populaire pour une bonne raison : il est rapide, fiable et facile à utiliser.",
+        "title": "Next.JS 15"
+      },
+      "otel": {
+        "description": "Observabilité complète avec métriques, traces et logs intégrés. Tout est instrumenté avec OpenTelemetry. Cela permet une expérience de télémétrie unifiée sur toute la ligne. (3PO : métriques, logs, traces)",
+        "title": "Open Telemetry"
+      },
+      "svelte": {
+        "description": "Utilisation de Svelte pour des composants UI réactifs ultra-rapides. La plateforme `cv.arolariu.ro` est construite exclusivement avec Svelte et SvelteKit (v5)",
+        "title": "Svelte"
+      },
+      "title": "Fonctionnalités Clés"
+    },
+    "subtitle": "Cette plateforme a été construite par Alexandru-Razvan Olariu comme terrain de jeu pour les nouvelles technologies. La plateforme est construite avec des technologies de pointe et de niveau entreprise. <br> </br> <br> </br> Vous êtes invité à explorer toutes les applications et services hébergés sur cet espace de domaine.",
+    "technologyTab": {
+      "badgeTitle": "Architecture Moderne",
+      "description": "Cette plateforme exploite les dernières technologies web, combinant Next.js pour le frontend avec .NET pour des services backend robustes, le tout déployé sur Microsoft Azure.",
+      "learnMoreBtn": "Explorer l'Architecture",
+      "points": {
+        "point1": "Architecture serverless pour une mise à l'échelle et des performances optimales",
+        "point2": "TypeScript full-stack pour la sécurité des types dans toute l'application",
+        "point3": "Télémétrie et surveillance complètes avec OpenTelemetry"
+      },
+      "title": "Construit pour l'Avenir."
+    },
+    "title": "Bienvenue sur arolariu.ro"
+  },
+  "privacyPolicy": {
+    "__metadata__": {
+      "description": "La page de politique de confidentialité de la plateforme `arolariu.ro`.",
+      "title": "Politique de Confidentialité"
+    },
+    "contactInformation": {
+      "content": "Si vous avez des questions concernant notre Politique de Confidentialité, veuillez nous contacter à admin@arolariu.ro",
+      "title": "Informations de Contact"
+    },
+    "last_updated": "Dernière mise à jour : 2024-01-01",
+    "terms": {
+      "childrenPrivacy": {
+        "content": "Notre site web n'est pas destiné aux enfants de moins de 13 ans. Nous ne collectons pas sciemment de données personnelles auprès d'enfants de moins de 13 ans. Si vous êtes un parent ou un tuteur et que vous savez que votre enfant nous a fourni des données personnelles, veuillez nous contacter. Si nous apprenons que nous avons collecté des données personnelles d'enfants sans vérification du consentement parental, nous prendrons des mesures pour supprimer ces informations de nos serveurs.",
+        "title": "Confidentialité des Enfants"
+      },
+      "cookiesDefinition": {
+        "content": "Les cookies sont de petits fichiers de données stockés sur votre appareil (ordinateur ou appareil mobile). Les cookies sont utilisés pour améliorer votre expérience sur notre site web et pour vous fournir un contenu pertinent. Pour plus d'informations sur les cookies, veuillez visiter https://www.allaboutcookies.org/ <br></br><br></br><br></br> Nous utilisons des cookies pour collecter des informations sur votre appareil et votre utilisation de notre site web. Notre fournisseur d'analyses de site web utilise des cookies pour générer des informations statistiques et autres sur l'utilisation du site web au moyen de cookies. <br></br><br></br><br></br> Vous pouvez refuser les cookies en utilisant les paramètres de votre navigateur. Veuillez noter que si vous désactivez les cookies, vous ne pourrez peut-être pas utiliser toutes les fonctionnalités de notre site web. <br></br><br></br><br></br> Nous ne conserverons vos données personnelles que le temps nécessaire à la finalité pour laquelle ces données ont été collectées et dans la mesure requise par la loi applicable. Lorsque nous n'avons plus besoin de données personnelles, nous les supprimons de nos systèmes et/ou prenons des mesures pour les anonymiser.",
+        "title": "Que sont les Cookies ?"
+      },
+      "dataCollectionTerms": {
+        "content": "a) Lorsque vous effectuez un achat ou tentez d'effectuer un achat, nous collectons les types de données personnelles suivants : <ul> <li> Informations de paiement telles que votre adresse de facturation, numéro de téléphone, carte de crédit, carte de débit et/ou autres informations de méthode de paiement ; </li><li> Informations de compte telles que votre nom, nom d'utilisateur, adresse e-mail ; </li><li> Informations d'achat spécifiquement si personnalisées ou uniques ;</li> <li>Données démographiques ;</li> <li>Données de localisation.</li> </ul> <br></br><br></br> b) Lorsque vous visitez et utilisez notre site web, nous collectons automatiquement les types de données personnelles suivants : <ul> <li> Informations de paiement telles que votre adresse de facturation, numéro de téléphone, carte de crédit, carte de débit et/ou autres informations de méthode de paiement ; </li> <li>Données d'appareil, telles que votre ordinateur, téléphone, tablette ou autre appareil que vous utilisez pour accéder à notre site web ;</li> <li>Données de communication, telles que vos préférences pour recevoir des communications de notre part ;</li> <li>Commentaires, tels que le support client, les avis sur les produits, les sondages et/ou autres commentaires ;</li> <li>Données de contenu, telles que le contenu que vous nous soumettez : publications, documents, audio, images, etc. ;</li> <li>Données d'utilisation, telles que la façon dont vous utilisez notre site web, produits et services ;</li> <li>Informations de compte telles que votre nom, nom d'utilisateur, adresse e-mail ;</li> <li>Informations d'achat spécifiquement si personnalisées ou uniques ;</li> <li>Données démographiques ;</li> <li>Données de localisation ;</li></ul>",
+        "title": "Quelles Données Personnelles Nous Collectons"
+      },
+      "dataTransferTerms": {
+        "content": "Dans la mesure du possible, nous stockons et traitons les données sur des serveurs situés dans la région géographique générale où vous résidez (remarque : cela peut ne pas être dans le pays dans lequel vous résidez). <span> Plus précisément, pour les utilisateurs, entreprises et clients basés en Europe, nous avons des serveurs dans l'Espace économique européen (EEE). </span> Vos données personnelles peuvent également être transférées vers des serveurs situés en dehors de votre état, province, pays ou autre juridiction gouvernementale où les lois sur les données peuvent différer de celles de votre juridiction, et y être conservées. Nous prendrons les mesures appropriées pour garantir que vos données personnelles sont traitées de manière sécurisée et conformément à cette politique ainsi qu'à la législation applicable en matière de protection des données. Les données peuvent être conservées dans d'autres pays considérés comme adéquats en vertu de vos lois. <br></br><br></br><br></br><br></br> Plus d'informations sur ces clauses peuvent être trouvées ici : https://eur-lex.europa.eu/legal-content/en/TXT/?uri=CELEX:32021D0914",
+        "title": "Transfert et Stockage International des Données"
+      },
+      "deviceUsageTerms": {
+        "content": "Lorsque vous visitez un site web <code>AROLARIU.RO</code> et/ou une application mobile, nous collectons et stockons automatiquement des informations sur votre visite en utilisant des cookies de navigateur (fichiers que nous envoyons à votre ordinateur), ou des technologies similaires. Vous pouvez configurer votre navigateur pour refuser tous les cookies ou pour indiquer quand un cookie est envoyé. La fonction `Aide` de la plupart des navigateurs fournira des informations sur la façon d'accepter les cookies, de désactiver les cookies ou de vous notifier lors de la réception d'un nouveau cookie. Si vous n'acceptez pas les cookies, vous ne pourrez peut-être pas utiliser certaines fonctionnalités de notre Service et nous vous recommandons de les laisser activés. <br></br><br></br><br></br> Nous traitons également des informations lorsque vous utilisez nos services et produits. Ces informations peuvent inclure : <ul> <li>   Des informations sur vos interactions avec nos services, y compris l'heure et la date de vos interactions,   et vos interactions avec nos e-mails ; </li> <li>   Des informations sur votre utilisation de nos services, y compris le type de navigateur que vous utilisez, les heures d'accès, les pages   consultées, votre adresse IP ; </li> <li>   Des informations sur vos achats, y compris les articles que vous achetez, la date d'achat et la méthode de paiement   que vous utilisez ; </li> <li>   Des informations sur votre appareil, y compris le type d'appareil, son système d'exploitation et les informations sur le réseau   mobile ; </li> <li>   D'autres informations que vous nous fournissez, y compris vos commentaires, remarques et autres informations que vous nous fournissez ; </li> <li>Des informations sur votre localisation, y compris votre localisation générale basée sur votre adresse IP ;</li> <li>D'autres informations que nous collectons avec votre consentement ou comme permis ou requis par la loi ;</li> <li>Des informations sur vos préférences, y compris vos préférences linguistiques.</li> </ul>",
+        "title": "Données d'Appareil et d'Utilisation"
+      },
+      "exerciseRights": {
+        "content": "Pour exercer vos droits, veuillez nous contacter en utilisant les coordonnées fournies dans la section « Nous Contacter » ci-dessous. Nous répondrons à votre demande dans un délai raisonnable et conformément à la loi applicable. <br></br><br></br> Pour votre propre sécurité, nous pouvons avoir besoin de vérifier votre identité avant de répondre à votre demande. Nous ferons des efforts raisonnables pour vérifier votre identité en demandant des informations que nous avons dans nos dossiers à votre sujet.",
+        "title": "Comment Exercer Vos Droits"
+      },
+      "howWeCollectDataTerms": {
+        "content": "Nous collectons des données personnelles de la manière suivante : <br></br><br></br> <span>1. Directement de vous.</span> <br></br> Nous collectons des données personnelles de votre part lorsque vous nous les fournissez directement ou indirectement, en utilisant notre site web, nos produits ou nos services. Cela inclut : <br></br> <ul> <li>Lorsque vous créez un compte ou achetez des produits sur notre site web ;</li> <li>Lorsque vous téléchargez des logiciels et/ou notre application mobile ;</li> <li>Lorsque vous participez à nos sondages, concours ou promotions ;</li> <li>Lorsque vous créez du contenu à travers nos produits et services ;</li> <li>Lorsque vous nous contactez avec une demande ou pour signaler un problème ;</li> <li>Lorsque vous exprimez un intérêt pour nos produits et services ;</li> <li>Lorsque vous utilisez notre site web, nos produits ou nos services ;</li> <li>Lorsque vous interagissez avec nous sur les réseaux sociaux ;</li> <li>Lorsque vous vous abonnez à notre newsletter ;</li> <li>Lorsque vous nous les fournissez directement ;</li> <li>Lorsque vous communiquez avec nous.</li> </ul> <br></br><br></br><br></br><br></br> <span>2. Technologies automatisées ou interactions.</span> <br></br> <br></br> Lorsque vous interagissez avec notre site web, nous pouvons automatiquement collecter les types de données suivants (tous décrits ci-dessus) : Données d'appareil concernant votre équipement, Données d'utilisation concernant vos actions et modèles de navigation, et Données de contact lorsque des tâches effectuées via notre site web restent inachevées, comme des commandes incomplètes ou des paniers abandonnés. Nous collectons ces données en utilisant des cookies, des journaux de serveur et d'autres technologies similaires. Veuillez consulter notre section Cookies (ci-dessous) pour plus de détails. <br></br><br></br><br></br><br></br> <span>3. Tiers ou sources accessibles au public.</span> <br></br><br></br> Nous pouvons recevoir des données personnelles vous concernant de divers tiers, notamment : <ul> <li>   Informations de compte et données de paiement de tiers, y compris des organisations (telles que les forces de l'ordre),   des associations et des groupes, qui partagent des données à des fins de prévention et de détection de la fraude et   de réduction du risque de crédit </li> <li>Données de contact, financières et de transaction des fournisseurs de services techniques, de paiement et de livraison</li> <li>Données techniques des fournisseurs d'analyses tels que Google Analytics</li> <li>Données d'identité et de contact des courtiers ou agrégateurs de données</li> <li>Données d'identité et de contact provenant de sources accessibles au public</li> </ul> <br></br><br></br><br></br><br></br><span> Si vous nous fournissez, ou fournissez à nos prestataires de services, des données personnelles relatives à d'autres personnes, vous déclarez avoir l'autorité de le faire et reconnaissez qu'elles seront utilisées conformément à cette politique. Si vous pensez que vos données personnelles nous ont été fournies de manière inappropriée, ou pour exercer autrement vos droits relatifs à vos données personnelles, veuillez nous contacter en utilisant les informations indiquées dans la section « Nous Contacter » ci-dessous.</span>",
+        "title": "Comment Nous Collectons les Données Personnelles"
+      },
+      "legalTerms": {
+        "content": "Nous pouvons utiliser ou divulguer vos données personnelles afin de nous conformer à une obligation légale, en relation avec une demande d'une autorité publique ou gouvernementale, ou en relation avec des procédures judiciaires ou tribunales, pour prévenir la perte de vie ou les blessures, ou pour protéger nos droits ou notre propriété. Dans la mesure du possible et pratique, nous vous informerons à l'avance d'une telle divulgation.",
+        "title": "Exigences Légales"
+      },
+      "personalDataRights": {
+        "content": "Vous avez le droit d'accéder, de corriger, de mettre à jour ou de supprimer vos données personnelles. Vous avez également le droit de vous opposer au traitement de vos données personnelles, de nous demander de restreindre le traitement de vos données personnelles ou de demander la portabilité de vos données personnelles. Vous pouvez exercer ces droits en nous contactant en utilisant les coordonnées fournies dans la section « Nous Contacter » ci-dessous. <br></br><br></br><br></br> Selon votre situation géographique et votre citoyenneté, vos droits sont soumis aux réglementations locales sur la confidentialité des données. Ces droits peuvent inclure : <ul> <li>   Droit à l'oubli (droit à l'effacement) (RGPD Article 17, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD,   POPIA) </li> <li>Droit d'accès (PIPEDA, RGPD Article 15, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD, POPIA)</li> <li>Droit de rectification (PIPEDA, RGPD Article 16, CPRA, CPA, VCDPA, CTDPA, LGPD, POPIA)</li> <li>Non-discrimination et non-représailles (CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Droit à la limitation du traitement (RGPD Article 18, LGPD)</li> <li>Droit de retrait (CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Droit à la portabilité (PIPEDA, RGPD Article 20, LGPD)</li> <li>Droit d'opposition (RGPD Article 21, LGPD, POPIA)</li> </ul> <br></br><br></br><br></br> Si vous souhaitez faire appel ou déposer une plainte concernant la façon dont nous traitons vos données personnelles, vous pouvez nous contacter en utilisant les coordonnées fournies dans la section « Nous Contacter » ci-dessous. Vous avez également le droit de déposer une plainte auprès de l'autorité de protection des données de votre juridiction. <br></br> Dans le cas où vous nous avez contactés et que vous n'êtes pas satisfait de notre réponse, vous avez le droit de faire appel auprès du procureur général situé ici : <ul> <li>   Si vous êtes basé dans l'EEE, veuillez visiter le site https://edpb.europa.eu/about-edpb/about-edpb/members_en pour une liste des autorités locales de protection des données. </li> <li>   Si vous êtes basé dans le Connecticut, veuillez visiter le site https://portal.ct.gov/AG/Common/Complaint-Form-Landing-page pour déposer une plainte. </li> <li> Si vous êtes basé dans le Colorado, veuillez visiter le site https://complaints.coag.gov/s/contact-us pour déposer une plainte. </li> <li> Si vous êtes basé en Virginie, veuillez visiter le site https://www.oag.state.va.us/consumer-protection/index.php/file-a-complaint pour déposer une plainte. </li></ul>",
+        "title": "Vos Droits Concernant Vos Données Personnelles"
+      },
+      "policyChanges": {
+        "content": "Nous pouvons mettre à jour cette politique de temps à autre. Si nous apportons des modifications importantes, nous vous en informerons, mais veuillez vérifier régulièrement cette politique pour vous assurer que vous êtes au courant de la version la plus récente.",
+        "title": "Modifications de Cette Politique"
+      },
+      "processingDataTerms": {
+        "content": "Nous collectons et utilisons vos données personnelles avec votre consentement pour fournir, maintenir et développer nos produits et services et comprendre comment les améliorer davantage. <br></br><br></br><br></br> Ces finalités incluent : <ul> <li>Construire un environnement sûr et sécurisé pour nos utilisateurs et notre communauté ;</li> <li>Mener des recherches et des analyses pour améliorer nos produits et services ;</li> <li>Communiquer avec vous concernant votre compte, vos achats ou vos demandes ;</li> <li>Enquêter et prévenir les incidents de sécurité et autres activités illégales ;</li> <li>Personnaliser votre expérience avec nos produits et services ;</li> <li>Fournir, maintenir et améliorer nos produits et services ;</li> <li>Vous fournir les produits et services que vous demandez ;</li> <li>Vous fournir des communications marketing ;</li> <li>Vous fournir un support client ;</li> <li>Protéger nos produits et services ;</li> <li>Autres finalités avec votre consentement ;</li> <li>Se conformer aux obligations légales.</li> </ul> <br></br><br></br><br></br><br></br> Lorsque nous traitons vos données personnelles pour fournir un produit ou un service, nous le faisons parce que c'est nécessaire pour exécuter des obligations contractuelles. Tout le traitement ci-dessus est nécessaire dans nos intérêts légitimes pour fournir des produits et services et pour maintenir notre relation avec vous et pour protéger notre entreprise par exemple contre la fraude. Le consentement sera requis pour initier les services avec vous. Un nouveau consentement sera requis si des modifications sont apportées au type de données collectées. Dans le cadre de notre contrat, si vous ne fournissez pas votre consentement, certains services peuvent ne pas vous être disponibles.",
+        "title": "Finalité et Base Légale du Traitement des Données Personnelles"
+      },
+      "processingTerms": {
+        "content": "Cette politique s'applique lorsque vous visitez notre site web, utilisez nos produits ou services, ou interagissez avec nous. <br></br> De plus, cette politique s'applique lorsque vous : <ul> <li> Utilisez notre application et nos services en tant qu'utilisateur autorisé ;</li> <li>Visitez l'un de nos sites web liés à cette Politique de Confidentialité ;</li> <li>Recevez toute communication de notre part, y compris les e-mails.</li></ul>",
+        "title": "Activités de Traitement"
+      },
+      "safeDataTerms": {
+        "content": "Nous avons mis en place des mesures de sécurité techniques et organisationnelles appropriées conçues pour protéger la sécurité de toute donnée personnelle que nous traitons. Cependant, veuillez également vous rappeler que nous ne pouvons pas garantir que l'internet lui-même est 100% sécurisé. Bien que nous fassions de notre mieux pour protéger vos données personnelles, la transmission de données personnelles vers et depuis notre site web se fait à vos propres risques. Vous ne devez accéder aux services que dans un environnement sécurisé. <br></br><br></br><br></br> Nous avons mis en place des garanties organisationnelles et des mesures de sécurité appropriées pour protéger vos données personnelles contre la perte accidentelle, l'utilisation ou l'accès non autorisé, la modification ou la divulgation. <br></br><br></br><br></br> La communication entre votre navigateur et notre site web utilise une connexion chiffrée sécurisée partout où vos données personnelles sont impliquées. <br></br><br></br><br></br> Nous exigeons que tout tiers contracté pour traiter vos données personnelles en notre nom ait des mesures de sécurité en place pour protéger vos données et traiter ces données conformément à la loi. <br></br><br></br><br></br> Dans le cas malheureux d'une violation de données personnelles, nous vous informerons ainsi que tout régulateur applicable lorsque nous sommes légalement tenus de le faire.",
+        "title": "Comment Nous Gardons Vos Données en Sécurité"
+      },
+      "scopeTerms": {
+        "content": "Cette politique s'applique au site web <code> AROLARIU.RO </code>, aux produits et aux services. Elle s'applique également à l'utilisation de notre site web, de nos produits et de nos services par nos clients, partenaires et visiteurs. <br></br><br></br> Cette politique ne s'applique pas aux applications, sites web, produits, services ou plateformes tiers qui peuvent être accessibles via des liens (non-<code>AROLARIU.RO</code>) que nous pouvons vous fournir. Ces sites sont détenus et exploités indépendamment de nous, et ils ont leurs propres pratiques distinctes en matière de confidentialité et de collecte de données. Toute donnée personnelle que vous fournissez à ces sites web sera régie par la propre politique de confidentialité du tiers. Nous ne pouvons pas accepter de responsabilité pour les actions ou les politiques de ces sites indépendants, et nous ne sommes pas responsables du contenu ou des pratiques de confidentialité de ces sites.",
+        "title": "Portée de la Politique"
+      },
+      "serviceProviderTerms": {
+        "content": "Nous pouvons utiliser des prestataires de services tiers, des entrepreneurs indépendants, des agences ou des consultants pour fournir et nous aider à améliorer nos produits et services. Nous pouvons partager vos données personnelles avec des agences de marketing, des fournisseurs de services de bases de données, des fournisseurs de services de sauvegarde et de reprise après sinistre, des fournisseurs de services de messagerie et d'autres, mais uniquement pour maintenir et améliorer nos produits et services. <br></br><br></br> Pour plus d'informations sur les destinataires de vos données personnelles, veuillez nous contacter en utilisant les informations de la section « Nous Contacter » ci-dessous.",
+        "title": "Prestataires de Services et Autres Tiers"
+      },
+      "sharingAndDisclosureTerms": {
+        "content": "Nous partagerons vos données personnelles avec des tiers uniquement de la manière indiquée dans cette politique ou au moment où les données personnelles sont collectées. <br></br><br></br><br></br> Nous utilisons également Google Analytics pour nous aider à comprendre comment nos clients utilisent le site. Vous pouvez en savoir plus sur la façon dont Google utilise vos données personnelles ici : https://www.google.com/intl/en/policies/privacy/ <br></br><br></br><br></br> Vous pouvez également vous désinscrire de Google Analytics ici : https://tools.google.com/dlpage/gaoptout <br></br><br></br><br></br> Nous pouvons également partager vos données personnelles avec des tiers lorsque la loi l'exige, lorsqu'il est nécessaire d'administrer la relation entre nous ou lorsque nous avons un autre intérêt légitime à le faire. Nous pouvons également partager vos données personnelles avec des tiers à qui nous pouvons choisir de vendre, transférer ou fusionner des parties de notre entreprise ou de nos actifs. Alternativement, nous pouvons chercher à acquérir d'autres entreprises ou à fusionner avec elles. <br></br><br></br><br></br> Pour plus d'informations sur le fonctionnement de la publicité ciblée, vous pouvez visiter la page éducative de la Network Advertising Initiative (NAI) à : https://www.networkadvertising.org/understanding-online-advertising/how-does-it-work <br></br><br></br><br></br> De plus, vous pouvez vous désinscrire de certains de ces services en visitant la page de désinscription de la Digital Advertising Alliance : https: //optout.aboutads.info/",
+        "title": "Partage et Divulgation des Données Personnelles"
+      },
+      "thirdPartyData": {
+        "content": "Nous pouvons recevoir vos données personnelles de tiers tels que des entreprises abonnées aux services <code>AROLARIU.RO</code>, des partenaires et d'autres sources. Ces données personnelles ne sont pas collectées par nous mais par un tiers et sont soumises aux politiques distinctes de confidentialité et de collecte de données de ce tiers. Nous n'avons aucun contrôle ou influence sur la façon dont vos données personnelles sont traitées par des tiers. Comme toujours, vous avez le droit de consulter et de rectifier ces informations. Si vous avez des questions, vous devez d'abord contacter le tiers concerné pour plus d'informations sur vos données personnelles. Lorsque ce tiers ne répond pas à vos droits, vous pouvez contacter le Délégué à la Protection des Données chez <code> AROLARIU.RO </code> (coordonnées ci-dessous). <br></br><br></br><br></br> Nos sites web et services peuvent contenir des liens vers d'autres sites web, applications et services maintenus par des tiers. Les pratiques d'information de ces autres services, ou des réseaux de médias sociaux qui hébergent nos pages de médias sociaux de marque, sont régies par les déclarations de confidentialité de ces tiers, que vous devriez consulter pour mieux comprendre les pratiques de confidentialité de ces tiers.",
+        "title": "Données que nous collectons auprès de tiers"
+      },
+      "whatIsTerms": {
+        "content": "Chez <code> AROLARIU.RO </code> (« nous », « notre » ou la « Société »), nous accordons de l'importance à votre vie privée et à l'importance de protéger vos données. Cette Politique de Confidentialité (la « Politique ») décrit nos pratiques de confidentialité pour les activités décrites ci-dessous. <br></br> <br></br> Conformément à vos droits, nous vous informons de la manière dont nous collectons, stockons, accédons et traitons autrement les informations relatives aux individus. Dans cette Politique, les données personnelles (« Données Personnelles ») désignent toute information qui, seule ou en combinaison avec d'autres informations disponibles, peut identifier un individu. <br></br> <br></br> Nous nous engageons à protéger votre vie privée conformément au plus haut niveau de réglementation en matière de confidentialité. En tant que tel, nous respectons les obligations des réglementations suivantes : <ul> <li> Le California Consumer Privacy Act (CCPA) / California Privacy Rights Act (CPRA) et le California Online Privacy Protection Act (CalOPPA) </li> <li> Le Personal Information Protection and Electronic Documents Act (PIPEDA) du Canada et les législations provinciales applicables </li> <li> Le Règlement Général sur la Protection des Données (RGPD) de l'Union Européenne </li> <li> Le Protection of Personal Information Act (POPIA) d'Afrique du Sud </li> <li> Le Virginia Consumer Data Protection Act (VCDPA) </li> <li> La législation brésilienne sur la protection des données (LGPD) </li> <li> Le Connecticut Data Privacy Act (CTDPA) </li> <li> Le Utah Consumer Privacy Act (UCPA) et le Colorado Privacy Act (CPA) </li> </ul>",
+        "title": "Qu'est-ce que AROLARIU.RO ?"
+      },
+      "withdrawingConsent": {
+        "content": "Si vous avez donné votre consentement au traitement de vos données personnelles, vous avez le droit de retirer votre consentement à tout moment. Pour retirer votre consentement, veuillez nous contacter en utilisant les coordonnées fournies dans la section « Nous Contacter » ci-dessous.",
+        "title": "Retrait du Consentement"
+      }
+    },
+    "title": "Politique de Confidentialité"
+  },
+  "termsOfService": {
+    "__metadata__": {
+      "description": "Les conditions de service pour arolariu.ro",
+      "title": "Conditions de Service"
+    },
+    "contactInformation": {
+      "content": "Si vous avez des questions concernant nos Conditions de Service, veuillez nous contacter à admin@arolariu.ro",
+      "title": "Informations de Contact"
+    },
+    "last_updated": "Dernière mise à jour : 2024-01-01",
+    "terms": {
+      "amendmentsTerms": {
+        "content": "Nous nous réservons le droit de modifier, compléter ou remplacer les termes de l'Accord, prenant effet dès la publication sur www.arolariu.ro ou en vous en informant autrement. Si vous ne souhaitez pas accepter les modifications de l'Accord, vous pouvez résilier l'Accord à tout moment conformément aux termes des présentes. Si une révision est importante, nous fournirons un préavis d'au moins 30 jours avant l'entrée en vigueur de nouveaux termes. Ce qui constitue un changement important sera déterminé à notre seule discrétion. En continuant à accéder ou à utiliser notre service après que les révisions deviennent effectives, vous acceptez d'être lié par les termes révisés. Si vous n'acceptez pas les nouveaux termes, vous n'êtes plus autorisé à utiliser notre service.",
+        "title": "Modifications de l'Accord"
+      },
+      "arbitrateTerms": {
+        "content": "Cet Accord et tout litige ou réclamation découlant de, ou lié à, celui-ci, son interprétation, ou la violation, résiliation ou validité de celui-ci, les relations qui résultent de cet Accord, y compris l'exécution, la violation ou la validité de cet Accord, seront régis par les lois de la Roumanie. La juridiction et le lieu exclusifs pour toute action en vertu de cet Accord seront les tribunaux situés en Roumanie et vous vous soumettez par les présentes à la juridiction personnelle de ces tribunaux. Vous renoncez par les présentes à tout droit à un procès devant jury dans toute procédure découlant de ou liée à cet Accord. La Convention des Nations Unies sur les Contrats de Vente Internationale de Marchandises ne s'applique pas à cet Accord. Le terme « litige » désigne tout litige, action ou autre controverse entre vous et nous concernant les Services ou cet accord, que ce soit en matière de contrat, garantie, délit, loi, règlement, ordonnance ou toute autre base légale ou équitable. « Litige » aura le sens le plus large possible autorisé par la loi.",
+        "title": "Arbitrage"
+      },
+      "changesToTos": {
+        "content": "AROLARIU.RO se réserve le droit de modifier ces Conditions de Service à tout moment. Nous vous recommandons cependant de lire cette page régulièrement pour vous assurer que vous êtes au courant de tout changement. Votre utilisation continue du site web suite à la publication de modifications signifiera que vous acceptez et êtes d'accord avec les modifications. Vous reconnaissez et acceptez que nous pouvons arrêter (de façon permanente ou temporaire) de fournir le Service (ou toute fonctionnalité au sein du Service) à vous ou aux utilisateurs en général à notre seule discrétion, sans préavis. Vous pouvez cesser d'utiliser le Service à tout moment. Vous n'avez pas besoin de nous informer spécifiquement lorsque vous cessez d'utiliser le Service. Vous reconnaissez et acceptez que si nous désactivons l'accès à votre compte, vous pouvez être empêché d'accéder au Service, aux détails de votre compte ou à tout fichier ou autre matériel contenu dans votre compte",
+        "title": "Modifications des Conditions de Service"
+      },
+      "consentTerms": {
+        "content": "Nous avons mis à jour nos Termes et Conditions pour vous fournir une transparence complète sur ce qui est défini lorsque vous visitez notre site et comment il est utilisé. En utilisant notre site web, vous consentez par les présentes à nos Conditions de Service et acceptez les Termes et Conditions.",
+        "title": "Votre Consentement"
+      },
+      "cookiesTerms": {
+        "content": "Nous utilisons des 'Cookies' pour identifier les zones de notre site web que vous avez visitées. Un Cookie est un petit fichier de données stocké sur votre ordinateur ou appareil mobile par votre navigateur web. Nous utilisons des Cookies pour améliorer les performances et la fonctionnalité de notre service mais ils ne sont pas essentiels à leur utilisation. Cependant, sans ces cookies, certaines fonctionnalités comme les vidéos peuvent devenir indisponibles ou vous seriez obligé de saisir vos identifiants de connexion chaque fois que vous visitez notre plateforme car nous ne pourrions pas nous souvenir que vous vous étiez connecté précédemment. La plupart des navigateurs web peuvent être configurés pour désactiver l'utilisation des Cookies. Cependant, si vous désactivez les Cookies, vous pourriez ne pas être en mesure d'accéder correctement ou pas du tout aux fonctionnalités de notre site web. Nous ne plaçons jamais d'informations personnellement identifiables dans les Cookies.",
+        "title": "Cookies"
+      },
+      "copyrightTerms": {
+        "content": "Si vous êtes titulaire de droits d'auteur ou l'agent de ce titulaire et que vous croyez qu'un matériel de notre part constitue une violation de vos droits d'auteur, veuillez nous contacter en fournissant les informations suivantes : (a) une signature physique ou électronique du titulaire des droits d'auteur ou d'une personne autorisée à agir en son nom ; (b) l'identification du matériel présumé contrefaisant ; (c) vos coordonnées, y compris votre adresse, numéro de téléphone et email ; (d) une déclaration de votre part indiquant que vous croyez de bonne foi que l'utilisation du matériel n'est pas autorisée par les titulaires des droits d'auteur ; et (e) une déclaration que les informations dans la notification sont exactes, et, sous peine de parjure, que vous êtes autorisé à agir au nom du titulaire.",
+        "title": "Protection des Droits d'Auteur"
+      },
+      "definitionTerms": {
+        "content": "Les termes 'nous' ou 'notre' font référence à AROLARIU.RO, le propriétaire du site web. Un client est la personne ou l'organisation qui achète ou accepte d'acheter le produit. Notre 'produit' fait référence au site web, aux produits ou aux services proposés à la vente sur notre site web. Un 'utilisateur' est une personne qui utilise notre site web ou nos services. Le terme 'vous' fait référence à l'utilisateur ou au visiteur de notre site web.",
+        "title": "Définitions"
+      },
+      "disclaimerTerms": {
+        "content": "Dans la mesure maximale permise par la loi applicable, nous excluons toutes les déclarations, garanties et conditions relatives à notre site web et à l'utilisation de ce site web. Nous ne serons pas responsables des dommages résultant de l'utilisation ou de l'incapacité d'utiliser les matériaux sur le site web d'AROLARIU.RO, même si AROLARIU.RO ou un représentant autorisé d'AROLARIU.RO a été informé, oralement ou par écrit, de la possibilité de tels dommages. Parce que certaines juridictions n'autorisent pas les limitations sur les garanties implicites, ou les limitations de responsabilité pour les dommages consécutifs ou accessoires, ces limitations peuvent ne pas s'appliquer à vous. Nous ne sommes pas responsables du contenu, du code ou de toute autre imprécision. Nous ne fournissons pas de garanties. En aucun cas, nous ne serons responsables de dommages spéciaux, directs, indirects, consécutifs ou accessoires ou de tout dommage quel qu'il soit, que ce soit dans une action contractuelle, par négligence ou autre délit, découlant de ou en relation avec l'utilisation du Service ou du contenu du Service. Nous nous réservons le droit d'effectuer des ajouts, des suppressions ou des modifications au contenu du Service à tout moment sans préavis. Notre Service et son contenu sont fournis 'EN L'ÉTAT' et 'SELON DISPONIBILITÉ' sans aucune garantie ou représentation d'aucune sorte, qu'elle soit expresse ou implicite. Nous sommes un distributeur et non un éditeur du contenu fourni par des tiers ; en tant que tel, nous n'exerçons aucun contrôle éditorial sur ce contenu et ne faisons aucune garantie ou représentation quant à l'exactitude, la fiabilité ou l'actualité de toute information, contenu, service ou marchandise fourni par ou accessible via notre Service. Sans limiter ce qui précède, nous déclinons spécifiquement toutes les garanties et représentations dans tout contenu transmis sur ou en relation avec notre Service ou sur des sites qui peuvent apparaître comme des liens sur notre Service, ou dans les produits fournis dans le cadre de, ou autrement en relation avec, notre Service, y compris sans limitation toute garantie de qualité marchande, d'adéquation à un usage particulier ou de non-violation des droits de tiers. Aucun conseil oral ou information écrite donnée par nous ou par l'un de ses affiliés, employés, dirigeants, directeurs, agents, ou similaires ne créera une garantie. Les informations sur les prix et la disponibilité sont sujettes à modification sans préavis. Sans limiter ce qui précède, nous ne garantissons pas que notre Service sera ininterrompu, non corrompu, opportun ou sans erreur.",
+        "title": "Avertissement"
+      },
+      "disputeNoticeTerms": {
+        "content": "En cas de litige, vous ou AROLARIU.RO devez donner à l'autre un Avis de Litige, qui est une déclaration écrite indiquant le nom, l'adresse et les coordonnées de la partie qui le donne, les faits donnant lieu au litige et le recours demandé. Vous devez envoyer tout Avis de Litige par email à : admin@arolariu.ro. AROLARIU.RO vous enverra tout Avis de Litige par courrier à votre adresse si nous l'avons, ou sinon à votre adresse email. Vous et AROLARIU.RO tenterez de résoudre tout litige par négociation informelle dans les soixante (60) jours à compter de la date d'envoi de l'Avis de Litige. Après soixante (60) jours, vous ou AROLARIU.RO pouvez engager un arbitrage.",
+        "title": "Avis de Litige"
+      },
+      "entireAgreementTerms": {
+        "content": "Les Conditions de Service constituent l'intégralité de l'accord entre vous et AROLARIU.RO concernant votre utilisation du service et remplacent tous les accords écrits ou oraux antérieurs et contemporains entre vous et AROLARIU.RO. Vous pouvez être soumis à des termes et conditions supplémentaires qui s'appliquent lorsque vous utilisez ou achetez d'autres services d'AROLARIU.RO, qu'AROLARIU.RO vous fournira au moment d'une telle utilisation ou d'un tel achat.",
+        "title": "Accord Intégral"
+      },
+      "generalTerms": {
+        "content": "En accédant et en passant une commande auprès d'AROLARIU.RO, vous confirmez que vous êtes en accord avec et lié par les conditions de service contenues dans les Termes et Conditions décrits ci-dessous. Ces termes s'appliquent à l'ensemble du site web et à tout email ou autre type de communication entre vous et AROLARIU.RO. En aucun cas l'équipe AROLARIU.RO ne sera responsable de dommages directs, indirects, spéciaux, accessoires ou consécutifs, y compris, mais sans s'y limiter, la perte de données ou de profit, découlant de l'utilisation, ou de l'incapacité d'utiliser, les matériaux sur ce site, même si l'équipe AROLARIU.RO ou un représentant autorisé a été informé de la possibilité de tels dommages. Si votre utilisation des matériaux de ce site entraîne le besoin d'entretien, de réparation ou de correction d'équipement ou de données, vous assumez tous les coûts y afférents. AROLARIU.RO ne sera pas responsable de tout résultat qui pourrait survenir au cours de l'utilisation de nos ressources. Nous nous réservons le droit de modifier les prix et de réviser la politique d'utilisation des ressources à tout moment.",
+        "title": "Conditions Générales"
+      },
+      "liabilityTerms": {
+        "content": "Dans la mesure la plus complète permise par la loi applicable, en aucun cas AROLARIU.RO ne sera responsable envers vous sur quelque théorie juridique que ce soit pour tout dommage accessoire, direct, indirect, punitif, réel, consécutif, spécial, exemplaire ou autre, y compris sans limitation, la perte de revenus ou de bénéfices, les profits perdus, la douleur et la souffrance, la détresse émotionnelle, le coût des biens ou services de substitution, ou des dommages similaires subis ou encourus par vous ou tout tiers qui surviennent en relation avec le service (ou sa résiliation pour quelque raison que ce soit), même si AROLARIU.RO a été informé de la possibilité de tels dommages. AROLARIU.RO ne sera pas responsable de tout dommage, responsabilité ou perte découlant de : (i) votre utilisation ou votre confiance dans le service ou votre incapacité à accéder ou à utiliser le service ; ou (ii) toute transaction ou relation entre vous et tout fournisseur tiers, même si AROLARIU.RO a été informé de la possibilité de tels dommages. AROLARIU.RO ne sera pas responsable de tout retard ou défaut d'exécution résultant de causes échappant au contrôle raisonnable d'AROLARIU.RO. Vous reconnaissez que le service peut être soumis à des limitations, des retards et d'autres problèmes inhérents à l'utilisation d'internet et des communications électroniques. AROLARIU.RO n'est pas responsable des retards, des échecs de livraison ou d'autres dommages résultant de tels problèmes. Dans la mesure maximale permise par la loi applicable, en aucun cas nous ou nos fournisseurs ne serons responsables de dommages spéciaux, accessoires, indirects ou consécutifs quels qu'ils soient (y compris, mais sans s'y limiter, les dommages pour perte de profits, pour perte de données ou d'autres informations, pour interruption d'activité, pour blessure personnelle, pour perte de vie privée découlant de ou de quelque manière que ce soit liée à l'utilisation ou à l'incapacité d'utiliser le service, les logiciels tiers et/ou le matériel tiers utilisé avec le service, ou autrement en relation avec toute disposition du présent Accord), même si nous ou tout fournisseur avons été informés de la possibilité de tels dommages et même si le recours échoue dans son objectif essentiel. Certains états/juridictions n'autorisent pas l'exclusion ou la limitation des dommages accessoires ou consécutifs, de sorte que la limitation ou l'exclusion ci-dessus peut ne pas s'appliquer à vous.",
+        "title": "Limitation de Responsabilité"
+      },
+      "licenseTerms": {
+        "content": "En achetant un produit d'AROLARIU.RO, vous recevez une licence non exclusive et non transférable pour accéder au produit. Le produit est destiné à un usage personnel et commercial. Vous êtes autorisé à installer le produit sur plus d'un ordinateur ou appareil, mais vous n'êtes pas autorisé à partager le produit avec d'autres personnes. Vous ne pouvez pas modifier, adapter, traduire, rétro-concevoir, décompiler, désassembler ou créer des œuvres dérivées basées sur le produit sans le consentement écrit préalable d'AROLARIU.RO. Vous ne pouvez pas vendre, louer, donner en location ou sous-licencier le produit. Vous ne pouvez pas rendre le produit disponible sur un réseau où il pourrait être utilisé par plusieurs appareils en même temps. Vous ne pouvez pas utiliser le produit pour enfreindre tout droit d'auteur ou marque de commerce. Vous ne pouvez pas utiliser le produit pour créer tout matériel qui est illégal, nuisible, menaçant, abusif, harcelant, délictueux, diffamatoire, vulgaire, obscène, calomnieux, envahissant la vie privée d'autrui, haineux, ou racialement, ethniquement ou autrement répréhensible.",
+        "title": "Conditions de Licence"
+      },
+      "linksToOtherSitesTerms": {
+        "content": "Notre service peut contenir des liens vers d'autres sites web qui ne sont pas exploités par nous. Si vous cliquez sur un lien tiers, vous serez dirigé vers le site de ce tiers. Nous vous conseillons fortement de consulter les Termes et Conditions de chaque site que vous visitez. Nous n'avons aucun contrôle sur et n'assumons aucune responsabilité pour le contenu, les Termes et Conditions ou les pratiques de tout site ou service tiers.",
+        "title": "Liens vers d'Autres Sites Web"
+      },
+      "miscellaneousTerms": {
+        "content": "Si, pour quelque raison que ce soit, un tribunal compétent juge qu'une disposition ou une partie de ces Termes et Conditions est inapplicable, le reste de ces Termes et Conditions continuera de s'appliquer pleinement. Toute renonciation à une disposition de ces Termes et Conditions ne sera effective que si elle est écrite et signée par un représentant autorisé de notre part. Nous aurons droit à une injonction ou à une autre réparation équitable (sans obligation de fournir une caution ou une garantie) en cas de violation ou de violation anticipée de votre part. Nous exploitons et contrôlons notre Service depuis nos bureaux en Roumanie. Le Service n'est pas destiné à être distribué ou utilisé par toute personne ou entité dans une juridiction ou un pays où une telle distribution ou utilisation serait contraire à la loi ou à la réglementation. En conséquence, les personnes qui choisissent d'accéder à notre Service depuis d'autres emplacements le font de leur propre initiative et sont seules responsables de la conformité aux lois locales, si et dans la mesure où les lois locales sont applicables. Ces Termes et Conditions (qui incluent et incorporent notre Politique de Confidentialité) contiennent l'intégralité de l'accord, et remplacent tous les accords antérieurs, entre vous et nous concernant son objet, et ne peuvent pas être modifiés par vous. Les titres de section utilisés dans cet Accord sont à des fins de commodité uniquement et n'auront aucune portée juridique. Le fait qu'une partie n'exerce pas à quelque égard que ce soit tout droit prévu aux présentes ne sera pas considéré comme une renonciation à d'autres droits en vertu des présentes. AROLARIU.RO ne sera pas responsable de tout manquement à l'exécution de ses obligations en vertu des présentes lorsqu'un tel manquement résulte d'une cause",
+        "title": "Divers"
+      },
+      "noWarrantiesTerms": {
+        "content": "Ce site web est fourni 'tel quel', avec tous ses défauts, et AROLARIU.RO ne fait aucune déclaration ou garantie expresse ou implicite, de quelque nature que ce soit, liée à ce site web ou aux matériaux contenus sur ce site web. De plus, rien de ce qui est contenu sur ce site web ne doit être interprété comme vous fournissant des conseils ou un avis. Le service vous est fourni 'EN L'ÉTAT' et 'SELON DISPONIBILITÉ' et avec tous les défauts et imperfections sans garantie d'aucune sorte. Dans la mesure maximale permise par la loi applicable, nous, en notre propre nom et au nom de nos affiliés et de nos concédants de licence et prestataires de services respectifs, déclinons expressément toutes les garanties, qu'elles soient expresses, implicites, statutaires ou autres, concernant le service, y compris toutes les garanties implicites de qualité marchande, d'adéquation à un usage particulier, de titre et de non-contrefaçon, et les garanties qui peuvent découler des usages commerciaux, de l'exécution, de l'utilisation ou de la pratique commerciale. Sans limitation de ce qui précède, nous ne fournissons aucune garantie ou engagement, et ne faisons aucune déclaration d'aucune sorte que le service répondra à vos exigences, atteindra les résultats prévus, sera compatible ou fonctionnera avec tout autre logiciel, site web, système ou service, fonctionnera sans interruption, répondra à toute norme de performance ou de fiabilité ou sera exempt d'erreurs ou que toute erreur ou défaut puisse ou sera corrigé. Sans limiter ce qui précède, ni nous ni aucun fournisseur ne faisons de déclaration ou de garantie d'aucune sorte, expresse ou implicite : (i) quant au fonctionnement ou à la disponibilité du service, ou aux informations, contenus et matériaux ou produits qui y sont inclus ; (ii) que le service sera ininterrompu ou sans erreur ; (iii) quant à l'exactitude, la fiabilité ou l'actualité de toute information ou contenu fourni par le service ; ou (iv) que le service, ses serveurs, le contenu ou les e-mails envoyés par nous ou en notre nom sont exempts de virus, scripts, chevaux de Troie, vers, logiciels malveillants, bombes à retardement ou autres composants nuisibles. Certaines juridictions n'autorisent pas l'exclusion ou les limitations sur les garanties implicites ou les limitations sur les droits statutaires applicables d'un consommateur, de sorte que certaines ou toutes les exclusions et limitations ci-dessus peuvent ne pas s'appliquer à vous.",
+        "title": "Absence de Garanties"
+      },
+      "promotionTerms": {
+        "content": "Nous pouvons, de temps à autre, inclure des concours, des promotions, des tirages au sort ou d'autres activités (« Promotions ») qui vous obligent à soumettre du matériel ou des informations vous concernant. Veuillez noter que toutes les Promotions peuvent être régies par des règles distinctes qui peuvent contenir certaines conditions d'éligibilité, telles que des restrictions d'âge et de situation géographique. Vous êtes responsable de lire toutes les règles des Promotions pour déterminer si vous êtes éligible ou non à participer. Si vous participez à une Promotion, vous acceptez de respecter et de vous conformer à toutes les Règles des Promotions. Des termes et conditions supplémentaires peuvent s'appliquer aux achats de biens ou de services sur ou via les Services, ces termes et conditions faisant partie intégrante du présent Accord par cette référence. Toute promotion rendue disponible via le service peut être régie par des règles distinctes de ces Termes. Si vous participez à des promotions, veuillez consulter les règles applicables ainsi que notre Politique de Confidentialité. Si les règles d'une promotion entrent en conflit avec ces Termes, les règles de la promotion s'appliqueront.",
+        "title": "Promotions"
+      },
+      "restrictionTerms": {
+        "content": "Il vous est spécifiquement interdit de publier, vendre, sous-licencier ou autrement commercialiser tout matériel du site web ; d'utiliser ce site web de toute manière qui est ou pourrait être préjudiciable à ce site web ; d'utiliser ce site web de toute manière qui affecte l'accès des utilisateurs à ce site web ; d'utiliser ce site web contrairement aux lois et réglementations applicables, ou de toute manière susceptible de causer un préjudice au site web, ou à toute personne ou entité commerciale ; de s'engager dans toute exploration de données, récolte de données, extraction de données ou toute autre activité similaire en relation avec ce site web ; d'utiliser ce site web pour s'engager dans toute publicité ou marketing.",
+        "title": "Restrictions"
+      },
+      "severabilityTerms": {
+        "content": "Si une disposition de ces Termes est jugée inapplicable ou invalide, cette disposition sera modifiée et interprétée pour accomplir les objectifs de cette disposition dans la mesure la plus large possible en vertu de la loi applicable et les dispositions restantes continueront de s'appliquer pleinement. Cet Accord, avec la Politique de Confidentialité et tout autre avis juridique publié par nous sur les Services, constituera l'intégralité de l'accord entre vous et nous concernant les Services. Si une disposition du présent Accord est jugée invalide par un tribunal compétent, l'invalidité de cette disposition n'affectera pas la validité des dispositions restantes du présent Accord, qui resteront pleinement en vigueur. Aucune renonciation à un terme de cet Accord ne sera considérée comme une renonciation supplémentaire ou continue à ce terme ou à tout autre terme, et notre défaut de faire valoir tout droit ou disposition en vertu du présent Accord ne constituera pas une renonciation à ce droit ou à cette disposition. VOUS ET NOUS CONVENONS QUE TOUTE CAUSE D'ACTION DÉCOULANT DE OU LIÉE AUX SERVICES DOIT COMMENCER DANS L'ANNÉE (1) SUIVANT L'ACCUMULATION DE LA CAUSE D'ACTION. SINON, UNE TELLE CAUSE D'ACTION EST DÉFINITIVEMENT IRRECEVABLE.",
+        "title": "Divisibilité"
+      },
+      "submissionsAndPrivacyTerms": {
+        "content": "Lorsque vous visitez le site web ou nous envoyez des e-mails, vous communiquez avec nous électroniquement. Vous consentez à recevoir des communications de notre part par voie électronique. Nous communiquerons avec vous par e-mail ou en publiant des avis sur le site web. Vous acceptez que tous les accords, avis, divulgations et autres communications que nous fournissons électroniquement satisfont toute exigence légale que ces communications soient par écrit. AROLARIU.RO peut, mais n'est pas obligé de, surveiller, examiner ou modifier le Contenu Utilisateur. Dans tous les cas, AROLARIU.RO se réserve le droit de supprimer ou de désactiver l'accès à tout Contenu Utilisateur pour quelque raison que ce soit ou sans raison, y compris, mais sans s'y limiter, le Contenu Utilisateur qui, à la seule discrétion d'AROLARIU.RO, viole les Accords. AROLARIU.RO peut prendre ces mesures sans notification préalable à vous ou à un tiers. La suppression ou la désactivation de l'accès au Contenu Utilisateur sera à notre seule discrétion, et nous ne promettons pas de supprimer ou de désactiver l'accès à tout Contenu Utilisateur spécifique. Dans le cas où vous soumettez ou publiez des idées, suggestions créatives, designs, photographies, informations, publicités, données ou propositions, y compris des idées pour des produits, services, fonctionnalités, technologies ou promotions nouveaux ou améliorés, vous acceptez expressément que ces soumissions seront automatiquement traitées comme non confidentielles et non propriétaires et deviendront notre propriété exclusive sans aucune compensation ni crédit à vous. Nous et nos affiliés n'aurons aucune obligation concernant ces soumissions ou publications et pourrons utiliser les idées contenues dans ces soumissions ou publications à toutes fins dans tout média à perpétuité, y compris, mais sans s'y limiter, le développement, la fabrication et la commercialisation de produits et services utilisant ces idées.",
+        "title": "Soumissions et Confidentialité"
+      },
+      "terminationTerms": {
+        "content": "Nous pouvons résilier ou suspendre votre compte et interdire l'accès au service immédiatement, sans préavis ni responsabilité, à notre seule discrétion, pour quelque raison que ce soit et sans limitation, y compris, mais sans s'y limiter, une violation des Termes. Si vous souhaitez résilier votre compte, vous pouvez simplement cesser d'utiliser le service. Toutes les dispositions des Termes qui par leur nature devraient survivre à la résiliation survivront à la résiliation, y compris, sans limitation, les dispositions relatives à la propriété, les exclusions de garantie, l'indemnisation et les limitations de responsabilité.",
+        "title": "Résiliation"
+      },
+      "thirdPartyTerms": {
+        "content": "En utilisant le service, vous pouvez utiliser des services, produits, logiciels, intégrations ou applications tiers développés par un tiers ('Services Tiers'). Toute utilisation d'un Service Tiers est à vos propres risques, et nous ne serons pas responsables envers quiconque pour les sites web ou Services Tiers. Vous reconnaissez et acceptez que nous ne serons pas responsables de tout dommage ou perte causé ou prétendument causé par ou en relation avec l'utilisation de tout contenu, bien ou service disponible sur ou via de tels sites web ou services. Nous n'assumons et n'aurons aucune responsabilité envers vous ou toute autre personne ou entité pour tout Service Tiers. Les Services Tiers et les liens sont donc fournis uniquement pour votre commodité et vous y accédez et les utilisez entièrement à vos propres risques et sous réserve des termes et conditions de ces tiers.",
+        "title": "Services Tiers"
+      },
+      "typographyErrorsTerms": {
+        "content": "Dans le cas où un produit AROLARIU.RO est par erreur affiché à un prix incorrect, AROLARIU.RO se réserve le droit de refuser ou d'annuler toute commande passée pour le produit affiché au prix incorrect. AROLARIU.RO se réserve le droit de refuser ou d'annuler toute commande de ce type, que la commande ait été confirmée ou non et que votre carte de crédit ait été débitée ou non. Si votre carte de crédit a déjà été débitée pour l'achat et que votre commande est annulée, AROLARIU.RO émettra un crédit sur votre compte de carte de crédit du montant du prix incorrect.",
+        "title": "Erreurs Typographiques"
+      },
+      "updateOfServicesTerms": {
+        "content": "AROLARIU.RO met constamment à jour ses services, ce qui signifie que nous pouvons ajouter ou supprimer des fonctionnalités, des produits ou des fonctionnalités, et nous pouvons également suspendre ou arrêter complètement le service. Nous pouvons prendre n'importe laquelle de ces mesures à tout moment, et lorsque nous le faisons, nous pouvons ne pas vous fournir de préavis. Vous reconnaissez qu'AROLARIU.RO peut établir des pratiques générales et des limites concernant l'utilisation du service, y compris sans limitation la période maximale pendant laquelle les données ou autres contenus seront conservés par le service et l'espace de stockage maximal qui sera alloué sur les serveurs d'AROLARIU.RO en votre nom. Vous acceptez qu'AROLARIU.RO n'a aucune responsabilité pour la suppression ou l'échec de stockage de toute donnée ou autre contenu maintenu ou téléchargé par le service. Vous reconnaissez qu'AROLARIU.RO se réserve le droit de résilier les comptes inactifs pendant une période prolongée. Vous acceptez que nous n'avons aucune obligation de (i) fournir des Mises à jour, ou (ii) continuer à fournir ou activer des fonctionnalités et/ou fonctionnalités particulières du service pour vous. Vous acceptez en outre que toutes les Mises à jour seront (i) considérées comme faisant partie intégrante du service, et (ii) soumises aux termes et conditions du présent Accord.",
+        "title": "Mises à Jour du Service"
+      },
+      "waiverTerms": {
+        "content": "Sauf disposition contraire des présentes, le fait de ne pas exercer un droit ou d'exiger l'exécution d'une obligation en vertu du présent Accord n'affectera pas la capacité d'une partie à exercer ce droit ou à exiger cette exécution à tout moment par la suite, et la renonciation à une violation ne constituera pas une renonciation à toute violation ultérieure. Aucun manquement à exercer, et aucun retard dans l'exercice, de la part de l'une ou l'autre partie, de tout droit ou pouvoir en vertu du présent Accord ne fonctionnera comme une renonciation à ce droit ou pouvoir. L'exercice unique ou partiel d'un droit ou d'un pouvoir en vertu du présent Accord n'empêchera pas non plus l'exercice ultérieur de ce droit ou de tout autre droit accordé aux présentes. En cas de conflit entre le présent Accord et tout achat applicable ou d'autres conditions, les termes du présent Accord prévaudront.",
+        "title": "Renonciation"
+      }
+    },
+    "title": "Conditions de Service"
+  }
+}

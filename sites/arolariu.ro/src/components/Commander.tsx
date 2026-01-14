@@ -10,19 +10,21 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
+  CommandShortcut,
 } from "@arolariu/components/command";
+import {useTranslations} from "next-intl";
 import {useTheme} from "next-themes";
 import {useRouter} from "next/navigation";
 import {memo, useCallback, useEffect, useState} from "react";
 import {
   TbAccessible,
   TbBrandGithub,
-  TbCalculator,
-  TbCalendar,
-  TbCpu,
+  TbCode,
+  TbConfetti,
   TbHome,
   TbLanguage,
   TbMoon,
+  TbPalette,
   TbSettings,
   TbSun,
   TbTypeface,
@@ -38,6 +40,7 @@ function Commander(): React.JSX.Element {
   const {setTheme} = useTheme();
   const {setFont} = useFontContext();
   const [open, setOpen] = useState<boolean>(false);
+  const t = useTranslations("Commander");
 
   // Helper to close the palette and run a command action
   const runCommand = useCallback((command: () => void) => {
@@ -229,6 +232,15 @@ function Commander(): React.JSX.Element {
     [runCommand],
   );
 
+  const onSelectLangFrench = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        void setCookie("locale", "fr");
+      });
+    },
+    [runCommand],
+  );
+
   const onSelectFontNormal = useCallback(
     (_: string) => {
       runCommand(() => {
@@ -282,74 +294,148 @@ function Commander(): React.JSX.Element {
       open={open}
       onOpenChange={setOpen}>
       <CommandInput
-        placeholder='Type a command or search...'
-        className='border-none focus-visible:ring-0 focus-visible:ring-blue-500 focus-visible:outline-hidden'
+        placeholder={t("placeholder")}
+        className='h-12 border-none text-base focus-visible:ring-0 focus-visible:outline-hidden'
       />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading='Navigation'>
-          <CommandItem onSelect={onSelectHome}>
-            <TbHome className='mr-2 h-4 w-4' />
-            <span>Homepage</span>
+      <CommandList className='max-h-[400px]'>
+        <CommandEmpty className='py-6 text-center text-sm'>{t("noResults")}</CommandEmpty>
+
+        <CommandGroup heading={t("groups.navigation")}>
+          <CommandItem
+            onSelect={onSelectHome}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbHome className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.homepage")}</span>
+            </div>
+            <CommandShortcut>H</CommandShortcut>
           </CommandItem>
         </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='Set Theme'>
-          <CommandItem onSelect={onSelectThemeLight}>
-            <TbSun className='mr-2 h-4 w-4' />
-            <span>Light</span>
+
+        <CommandSeparator className='my-2' />
+
+        <CommandGroup heading={t("groups.theme")}>
+          <CommandItem
+            onSelect={onSelectThemeLight}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbSun className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.light")}</span>
+            </div>
+            <CommandShortcut>L</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={onSelectThemeDark}>
-            <TbMoon className='mr-2 h-4 w-4' />
-            <span>Dark</span>
+          <CommandItem
+            onSelect={onSelectThemeDark}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbMoon className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.dark")}</span>
+            </div>
+            <CommandShortcut>D</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={onSelectThemeSystem}>
-            <TbSettings className='mr-2 h-4 w-4' />
-            <span>System</span>
-          </CommandItem>
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='Set Language'>
-          <CommandItem onSelect={onSelectLangEnglish}>
-            <TbLanguage className='mr-2 h-4 w-4' />
-            <span>English</span>
-          </CommandItem>
-          <CommandItem onSelect={onSelectLangRomanian}>
-            <TbLanguage className='mr-2 h-4 w-4' />
-            <span>Romanian</span>
-          </CommandItem>
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='Set Font'>
-          <CommandItem onSelect={onSelectFontNormal}>
-            <TbTypeface className='mr-2 h-4 w-4' />
-            <span>Normal</span>
-          </CommandItem>
-          <CommandItem onSelect={onSelectFontDyslexic}>
-            <TbAccessible className='mr-2 h-4 w-4' />
-            <span>Dyslexic</span>
+          <CommandItem
+            onSelect={onSelectThemeSystem}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbSettings className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.system")}</span>
+            </div>
           </CommandItem>
         </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='Easter Eggs'>
-          <CommandItem onSelect={onSelectRainbow}>
-            <TbCpu className='mr-2 h-4 w-4' />
-            <span>Rainbow Mode</span>
+
+        <CommandSeparator className='my-2' />
+
+        <CommandGroup heading={t("groups.language")}>
+          <CommandItem
+            onSelect={onSelectLangEnglish}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
+              <span>English</span>
+            </div>
+            <CommandShortcut>EN</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={onSelectDisco}>
-            <TbCalculator className='mr-2 h-4 w-4' />
-            <span>Disco Mode</span>
+          <CommandItem
+            onSelect={onSelectLangRomanian}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
+              <span>Română</span>
+            </div>
+            <CommandShortcut>RO</CommandShortcut>
           </CommandItem>
-          <CommandItem onSelect={onSelectMatrix}>
-            <TbCalendar className='mr-2 h-4 w-4' />
-            <span>Matrix Mode</span>
+          <CommandItem
+            onSelect={onSelectLangFrench}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
+              <span>Français</span>
+            </div>
+            <CommandShortcut>FR</CommandShortcut>
           </CommandItem>
         </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading='Links'>
-          <CommandItem onSelect={onSelectGithub}>
-            <TbBrandGithub className='mr-2 h-4 w-4' />
-            <span>GitHub</span>
+
+        <CommandSeparator className='my-2' />
+
+        <CommandGroup heading={t("groups.accessibility")}>
+          <CommandItem
+            onSelect={onSelectFontNormal}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbTypeface className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.fontNormal")}</span>
+            </div>
+          </CommandItem>
+          <CommandItem
+            onSelect={onSelectFontDyslexic}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbAccessible className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.fontDyslexic")}</span>
+            </div>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator className='my-2' />
+
+        <CommandGroup heading={t("groups.fun")}>
+          <CommandItem
+            onSelect={onSelectRainbow}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbPalette className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.rainbow")}</span>
+            </div>
+          </CommandItem>
+          <CommandItem
+            onSelect={onSelectDisco}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbConfetti className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.disco")}</span>
+            </div>
+          </CommandItem>
+          <CommandItem
+            onSelect={onSelectMatrix}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbCode className='mr-3 h-4 w-4 opacity-70' />
+              <span>{t("items.matrix")}</span>
+            </div>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator className='my-2' />
+
+        <CommandGroup heading={t("groups.links")}>
+          <CommandItem
+            onSelect={onSelectGithub}
+            className='flex items-center justify-between'>
+            <div className='flex items-center'>
+              <TbBrandGithub className='mr-3 h-4 w-4 opacity-70' />
+              <span>GitHub</span>
+            </div>
+            <CommandShortcut>G</CommandShortcut>
           </CommandItem>
         </CommandGroup>
       </CommandList>
