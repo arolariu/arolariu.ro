@@ -21,7 +21,7 @@ import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolari
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, {memo} from "react";
 import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
 
 /**
@@ -96,7 +96,7 @@ import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
  * @see {@link TIMESTAMP} - Build timestamp for deployment tracking
  * @see {@link https://next-intl.com/docs/usage/messages | next-intl useTranslations}
  */
-export default function Footer(): React.JSX.Element {
+function FooterComponent(): React.JSX.Element {
   const t = useTranslations("Footer");
   const siteName = SITE_NAME.toUpperCase();
 
@@ -274,3 +274,12 @@ export default function Footer(): React.JSX.Element {
     </footer>
   );
 }
+
+/**
+ * Memoized Footer component to prevent unnecessary re-renders.
+ * The footer content is mostly static, so memoization provides performance benefits.
+ */
+const Footer = memo(FooterComponent);
+Footer.displayName = "Footer";
+
+export default Footer;
