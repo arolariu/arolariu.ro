@@ -124,8 +124,13 @@ export function useInvoices(_void?: HookInputType): HookOutputType {
   useEffect(() => {
     const fetchInvoicesForUser = async () => {
       try {
-        const fetchedInvoices = await fetchInvoices();
-        setInvoices([...fetchedInvoices]);
+        const result = await fetchInvoices();
+        if (result.success) {
+          setInvoices([...result.data]);
+        } else {
+          console.error(">>> Error fetching invoices:", result.error.code, result.error.message);
+          setIsError(true);
+        }
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoices hook:", error as Error);
         setIsError(true);

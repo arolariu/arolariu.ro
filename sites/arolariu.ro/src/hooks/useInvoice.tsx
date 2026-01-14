@@ -102,8 +102,13 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
   useEffect(() => {
     const fetchInvoiceForUser = async () => {
       try {
-        const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
-        upsertInvoice(invoice);
+        const result = await fetchInvoice({invoiceId: invoiceIdentifier});
+        if (result.success) {
+          upsertInvoice(result.data);
+        } else {
+          console.error(">>> Error fetching invoice:", result.error.code, result.error.message);
+          setIsError(true);
+        }
       } catch (error: unknown) {
         console.error(">>> Error fetching invoice in useInvoice hook:", error as Error);
         setIsError(true);

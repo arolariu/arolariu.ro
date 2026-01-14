@@ -132,8 +132,13 @@ export function useMerchants(_void?: HookInputType): HookOutputType {
   useEffect(() => {
     const fetchMerchantsForUser = async () => {
       try {
-        const merchants = await fetchMerchants();
-        setMerchants([...merchants]);
+        const result = await fetchMerchants();
+        if (result.success) {
+          setMerchants([...result.data]);
+        } else {
+          console.error(">>> Error fetching merchants:", result.error.code, result.error.message);
+          setIsError(true);
+        }
       } catch (error: unknown) {
         console.error(">>> Error fetching merchants in useMerchants hook:", error as Error);
         setIsError(true);
