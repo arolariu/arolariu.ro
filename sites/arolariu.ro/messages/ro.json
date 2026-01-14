@@ -761,7 +761,8 @@
       "invoices": {
         "card": {
           "description": "Acest serviciu de domeniu ajută la transformarea digitală a chitanțelor fizice. \nPermite utilizatorilor să încarce chitanțe și să obțină informații bine elaborate despre obiceiurile lor de cheltuieli.",
-          "title": "Sistem de management al bonurilor fiscale"
+          "title": "Sistem de management al bonurilor fiscale",
+          "imageAlt": "Ilustrație a Sistemului de Management al Facturilor care prezintă digitalizarea chitanțelor"
         },
         "service": {
           "states": {

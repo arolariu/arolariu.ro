@@ -761,7 +761,8 @@
       "invoices": {
         "card": {
           "description": "This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits.",
-          "title": "Invoice Management System"
+          "title": "Invoice Management System",
+          "imageAlt": "Illustration of the Invoice Management System showing receipt digitization"
         },
         "service": {
           "states": {
