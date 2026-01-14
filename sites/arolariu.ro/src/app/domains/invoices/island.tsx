@@ -10,10 +10,26 @@
  */
 
 import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
-import {motion} from "motion/react";
+import {motion, useInView} from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import {TbArrowRight, TbChartBar, TbEye, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
+import {useRef} from "react";
+import {
+  TbArrowRight,
+  TbBrain,
+  TbChartBar,
+  TbChartPie,
+  TbCloud,
+  TbDeviceMobile,
+  TbEye,
+  TbFileInvoice,
+  TbLock,
+  TbPhoto,
+  TbReceipt,
+  TbShare,
+  TbSparkles,
+  TbUpload,
+} from "react-icons/tb";
 
 type Props = {
   isAuthenticated: boolean;
@@ -92,6 +108,265 @@ function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode
         <p className='text-sm text-gray-600 dark:text-gray-400'>{description}</p>
       </div>
     </div>
+  );
+}
+
+/**
+ * Bento grid item data.
+ */
+const bentoItems = [
+  {
+    key: "ai",
+    icon: TbBrain,
+    title: "AI-Powered",
+    desc: "GPT-4 extraction",
+    gradient: "from-purple-600 to-indigo-600",
+    span: "col-span-2 row-span-1",
+  },
+  {
+    key: "analytics",
+    icon: TbChartPie,
+    title: "Analytics",
+    desc: "Spending insights",
+    gradient: "from-emerald-500 to-teal-500",
+    span: "col-span-1 row-span-1",
+  },
+  {
+    key: "cloud",
+    icon: TbCloud,
+    title: "Cloud Sync",
+    desc: "Access anywhere",
+    gradient: "from-blue-500 to-cyan-500",
+    span: "col-span-1 row-span-2",
+  },
+  {
+    key: "ocr",
+    icon: TbReceipt,
+    title: "Smart OCR",
+    desc: "Auto data capture",
+    gradient: "from-orange-500 to-amber-500",
+    span: "col-span-1 row-span-1",
+  },
+  {
+    key: "secure",
+    icon: TbLock,
+    title: "Secure",
+    desc: "Bank-grade encryption",
+    gradient: "from-slate-600 to-slate-800",
+    span: "col-span-1 row-span-1",
+  },
+  {
+    key: "share",
+    icon: TbShare,
+    title: "Share",
+    desc: "Collaborate easily",
+    gradient: "from-pink-500 to-rose-500",
+    span: "col-span-1 row-span-1",
+  },
+] as const;
+
+/**
+ * Bento grid section showcasing capabilities.
+ */
+function BentoSection(): React.JSX.Element {
+  const ref = useRef<HTMLElement>(null);
+  const isInView = useInView(ref, {once: true, margin: "-100px"});
+
+  return (
+    <section
+      ref={ref}
+      className='bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 dark:bg-gray-900/50'>
+      <div className='mx-auto max-w-5xl'>
+        {/* Section header */}
+        <motion.div
+          className='mb-12 text-center'
+          initial={{opacity: 0, y: 20}}
+          animate={isInView ? {opacity: 1, y: 0} : {}}
+          transition={{duration: 0.5}}>
+          <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>
+            Everything You Need
+          </h2>
+          <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>
+            Powerful features designed to make invoice management effortless
+          </p>
+        </motion.div>
+
+        {/* Bento grid */}
+        <div className='grid auto-rows-[120px] grid-cols-2 gap-4 md:grid-cols-3'>
+          {bentoItems.map((item, index) => (
+            <motion.div
+              key={item.key}
+              className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${item.gradient} ${item.span} cursor-default`}
+              initial={{opacity: 0, y: 30, scale: 0.95}}
+              animate={isInView ? {opacity: 1, y: 0, scale: 1} : {}}
+              transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
+              whileHover={{scale: 1.02}}>
+              {/* Shimmer effect on hover */}
+              <div className='absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full' />
+
+              {/* Floating particles */}
+              <motion.div
+                className='absolute top-2 right-2 h-2 w-2 rounded-full bg-white/30'
+                animate={{y: [0, -8, 0], opacity: [0.3, 0.6, 0.3]}}
+                transition={{duration: 3, repeat: Infinity, delay: index * 0.2}}
+              />
+              <motion.div
+                className='absolute bottom-4 left-4 h-1.5 w-1.5 rounded-full bg-white/20'
+                animate={{y: [0, -6, 0], opacity: [0.2, 0.5, 0.2]}}
+                transition={{duration: 2.5, repeat: Infinity, delay: index * 0.3}}
+              />
+
+              {/* Content */}
+              <div className='relative flex h-full flex-col justify-between p-4'>
+                <motion.div
+                  whileHover={{scale: 1.1, rotate: 5}}
+                  transition={{duration: 0.3}}>
+                  <item.icon className='h-8 w-8 text-white' />
+                </motion.div>
+                <div>
+                  <h3 className='text-base font-bold text-white'>{item.title}</h3>
+                  <p className='text-sm text-white/80'>{item.desc}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Mobile highlight */}
+        <motion.div
+          className='mt-8 flex items-center justify-center gap-3 text-gray-600 dark:text-gray-400'
+          initial={{opacity: 0}}
+          animate={isInView ? {opacity: 1} : {}}
+          transition={{delay: 0.8, duration: 0.5}}>
+          <TbDeviceMobile className='h-5 w-5' />
+          <span className='text-sm'>Works beautifully on mobile devices</span>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Enhanced CTA section with animations.
+ */
+function EnhancedCTA(): React.JSX.Element {
+  const ref = useRef<HTMLElement>(null);
+  const isInView = useInView(ref, {once: true, margin: "-50px"});
+
+  return (
+    <section
+      ref={ref}
+      className='relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8'>
+      {/* Animated background */}
+      <div className='absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500'>
+        {/* Floating orbs */}
+        <motion.div
+          className='absolute top-10 left-10 h-32 w-32 rounded-full bg-white/10 blur-2xl'
+          animate={{
+            x: [0, 30, 0],
+            y: [0, -20, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{duration: 8, repeat: Infinity, ease: "easeInOut"}}
+        />
+        <motion.div
+          className='absolute right-20 bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl'
+          animate={{
+            x: [0, -20, 0],
+            y: [0, 20, 0],
+            scale: [1.2, 1, 1.2],
+          }}
+          transition={{duration: 10, repeat: Infinity, ease: "easeInOut"}}
+        />
+        <motion.div
+          className='absolute top-1/2 left-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/5 blur-3xl'
+          animate={{scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3]}}
+          transition={{duration: 6, repeat: Infinity, ease: "easeInOut"}}
+        />
+
+        {/* Grid pattern overlay */}
+        <div className='absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]' />
+      </div>
+
+      {/* Content */}
+      <div className='relative mx-auto max-w-4xl text-center'>
+        {/* Sparkle icon */}
+        <motion.div
+          className='mb-6 inline-flex items-center justify-center'
+          initial={{opacity: 0, scale: 0}}
+          animate={isInView ? {opacity: 1, scale: 1} : {}}
+          transition={{duration: 0.5, type: "spring"}}>
+          <motion.div
+            animate={{rotate: [0, 10, -10, 0]}}
+            transition={{duration: 2, repeat: Infinity, ease: "easeInOut"}}>
+            <TbSparkles className='h-12 w-12 text-yellow-300' />
+          </motion.div>
+        </motion.div>
+
+        <motion.h2
+          className='mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl'
+          initial={{opacity: 0, y: 20}}
+          animate={isInView ? {opacity: 1, y: 0} : {}}
+          transition={{delay: 0.1, duration: 0.5}}>
+          Ready to Get Started?
+        </motion.h2>
+
+        <motion.p
+          className='mb-8 text-lg text-indigo-100 sm:text-xl'
+          initial={{opacity: 0, y: 20}}
+          animate={isInView ? {opacity: 1, y: 0} : {}}
+          transition={{delay: 0.2, duration: 0.5}}>
+          Upload your first scan and experience the magic of AI-powered invoice management.
+        </motion.p>
+
+        {/* Buttons */}
+        <motion.div
+          className='flex flex-col items-center justify-center gap-4 sm:flex-row'
+          initial={{opacity: 0, y: 20}}
+          animate={isInView ? {opacity: 1, y: 0} : {}}
+          transition={{delay: 0.3, duration: 0.5}}>
+          <Button
+            asChild
+            size='lg'
+            className='group bg-white px-8 text-indigo-600 hover:bg-gray-100'>
+            <Link href='/domains/invoices/upload-scans'>
+              <TbUpload className='mr-2 h-5 w-5 transition-transform group-hover:-translate-y-0.5' />
+              Upload Your First Scan
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size='lg'
+            variant='outline'
+            className='border-white/30 bg-white/10 px-8 text-white backdrop-blur-sm hover:bg-white/20'>
+            <Link href='/about/the-platform'>
+              Learn More
+              <TbArrowRight className='ml-2 h-5 w-5' />
+            </Link>
+          </Button>
+        </motion.div>
+
+        {/* Trust badges */}
+        <motion.div
+          className='mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-indigo-200'
+          initial={{opacity: 0}}
+          animate={isInView ? {opacity: 1} : {}}
+          transition={{delay: 0.5, duration: 0.5}}>
+          <div className='flex items-center gap-2'>
+            <TbLock className='h-4 w-4' />
+            <span>Secure & Private</span>
+          </div>
+          <div className='flex items-center gap-2'>
+            <TbCloud className='h-4 w-4' />
+            <span>Cloud Synced</span>
+          </div>
+          <div className='flex items-center gap-2'>
+            <TbBrain className='h-4 w-4' />
+            <span>AI-Powered</span>
+          </div>
+        </motion.div>
+      </div>
+    </section>
   );
 }
 
@@ -281,28 +556,11 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className='bg-linear-to-r from-indigo-600 to-purple-600 px-4 py-16 sm:px-6 lg:px-8'>
-        <div className='mx-auto max-w-4xl text-center'>
-          <motion.div
-            initial={{opacity: 0, y: 20}}
-            animate={{opacity: 1, y: 0}}
-            transition={{duration: 0.5}}>
-            <h2 className='mb-4 text-3xl font-bold text-white sm:text-4xl'>Ready to Get Started?</h2>
-            <p className='mb-8 text-lg text-indigo-100'>Upload your first scan and see how easy invoice management can be.</p>
-            <Button
-              asChild
-              size='lg'
-              variant='secondary'
-              className='bg-white px-8 text-indigo-600 hover:bg-gray-100'>
-              <Link href='/domains/invoices/upload-scans'>
-                <TbUpload className='mr-2 h-5 w-5' />
-                Upload Your First Scan
-              </Link>
-            </Button>
-          </motion.div>
-        </div>
-      </section>
+      {/* Bento Grid Section */}
+      <BentoSection />
+
+      {/* Enhanced CTA Section */}
+      <EnhancedCTA />
     </main>
   );
 }
