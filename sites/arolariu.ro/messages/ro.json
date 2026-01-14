@@ -702,7 +702,9 @@
         "oauth": "OAuth 2.0",
         "privacy": "Confidențialitate",
         "session": "Sesiune sincronizată"
-      }
+      },
+      "step1": "Pasul 1",
+      "step2": "Pasul 2"
     },
     "SignIn": {
       "__metadata__": {

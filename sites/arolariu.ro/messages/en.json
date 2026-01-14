@@ -702,7 +702,9 @@
         "oauth": "OAuth 2.0",
         "privacy": "Privacy-first",
         "session": "Session sync"
-      }
+      },
+      "step1": "Step 1",
+      "step2": "Step 2"
     },
     "SignIn": {
       "__metadata__": {
