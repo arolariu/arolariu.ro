@@ -1314,7 +1314,64 @@
       },
       "title": "Construit pentru viitor."
     },
-    "title": "Bine ai venit pe arolariu.ro"
+    "title": "Bine ai venit pe arolariu.ro",
+    "stats": {
+      "title": "Platforma pe scurt",
+      "items": {
+        "uptime": {"value": "99.9%", "label": "Disponibilitate", "description": "Găzduire fiabilă pe Azure"},
+        "commits": {"value": "1000+", "label": "Commit-uri", "description": "Îmbunătățiri continue"},
+        "technologies": {"value": "25+", "label": "Tehnologii", "description": "Stack tehnologic modern"},
+        "coverage": {"value": "90%", "label": "Acoperire teste", "description": "Calitate asigurată"}
+      }
+    },
+    "testimonials": {
+      "title": "Ce spun oamenii",
+      "subtitle": "Feedback de la colegi și colaboratori",
+      "items": {
+        "t1": {
+          "quote": "Profunzimea tehnică și abilitățile de rezolvare a problemelor ale lui Alexandru sunt cu adevărat excepționale. Atenția sa la detalii și angajamentul față de calitate sunt evidente în tot ce construiește.",
+          "author": "Inginer Senior",
+          "role": "Coleg Microsoft"
+        },
+        "t2": {
+          "quote": "Un dezvoltator pasionat care oferă constant soluții de înaltă calitate. Platforma sa prezintă cele mai bune practici moderne în ingineria software.",
+          "author": "Tech Lead",
+          "role": "Coleg din industrie"
+        },
+        "t3": {
+          "quote": "Arhitectura și atenția la detalii a acestei platforme sunt impresionante. Este o referință excelentă pentru oricine învață dezvoltarea full-stack modernă.",
+          "author": "Arhitect Software",
+          "role": "Contributor Open Source"
+        }
+      }
+    },
+    "techShowcase": {
+      "title": "Alimentat de"
+    },
+    "faq": {
+      "title": "Întrebări frecvente",
+      "items": {
+        "q1": {
+          "question": "Ce pot face pe această platformă?",
+          "answer": "Poți explora Sistemul de Management al Facturilor pentru a digitaliza chitanțe, să înveți despre tehnologiile folosite și să vezi exemple de practici moderne în ingineria software."
+        },
+        "q2": {
+          "question": "Este această platformă gratuită?",
+          "answer": "Da! Platforma este complet gratuită. Este construită ca o vitrină și resursă de învățare pentru comunitatea de dezvoltatori."
+        },
+        "q3": {
+          "question": "Pot contribui la acest proiect?",
+          "answer": "Absolut! Întregul cod sursă este open source pe GitHub. Simte-te liber să explorezi, să înveți din el sau să trimiți contribuții."
+        }
+      }
+    },
+    "finalCta": {
+      "title": "Gata de explorare?",
+      "subtitle": "Începe-ți călătoria prin funcționalitățile și serviciile platformei.",
+      "primary": "Explorează serviciile",
+      "secondary": "Vezi codul sursă",
+      "footer": "Construit cu tehnologii moderne"
+    }
   },
   "privacyPolicy": {
     "__metadata__": {

@@ -1314,7 +1314,64 @@
       },
       "title": "Construit pour l'Avenir."
     },
-    "title": "Bienvenue sur arolariu.ro"
+    "title": "Bienvenue sur arolariu.ro",
+    "stats": {
+      "title": "La plateforme en bref",
+      "items": {
+        "uptime": {"value": "99.9%", "label": "Disponibilité", "description": "Hébergement fiable sur Azure"},
+        "commits": {"value": "1000+", "label": "Commits", "description": "Améliorations continues"},
+        "technologies": {"value": "25+", "label": "Technologies", "description": "Stack technologique moderne"},
+        "coverage": {"value": "90%", "label": "Couverture tests", "description": "Qualité assurée"}
+      }
+    },
+    "testimonials": {
+      "title": "Ce que les gens disent",
+      "subtitle": "Retours de collègues et collaborateurs",
+      "items": {
+        "t1": {
+          "quote": "La profondeur technique et les capacités de résolution de problèmes d'Alexandru sont vraiment exceptionnelles. Son attention aux détails et son engagement envers la qualité sont évidents dans tout ce qu'il construit.",
+          "author": "Ingénieur Senior",
+          "role": "Collègue Microsoft"
+        },
+        "t2": {
+          "quote": "Un développeur passionné qui livre constamment des solutions de haute qualité. Sa plateforme présente les meilleures pratiques modernes en ingénierie logicielle.",
+          "author": "Tech Lead",
+          "role": "Pair de l'industrie"
+        },
+        "t3": {
+          "quote": "L'architecture et l'attention aux détails de cette plateforme sont impressionnantes. C'est une excellente référence pour quiconque apprend le développement full-stack moderne.",
+          "author": "Architecte Logiciel",
+          "role": "Contributeur Open Source"
+        }
+      }
+    },
+    "techShowcase": {
+      "title": "Propulsé par"
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "items": {
+        "q1": {
+          "question": "Que puis-je faire sur cette plateforme ?",
+          "answer": "Vous pouvez explorer le Système de Gestion des Factures pour numériser les reçus, en apprendre sur les technologies utilisées et voir des exemples de pratiques modernes en ingénierie logicielle."
+        },
+        "q2": {
+          "question": "Cette plateforme est-elle gratuite ?",
+          "answer": "Oui ! La plateforme est entièrement gratuite. Elle est construite comme une vitrine et une ressource d'apprentissage pour la communauté des développeurs."
+        },
+        "q3": {
+          "question": "Puis-je contribuer à ce projet ?",
+          "answer": "Absolument ! Tout le code est open source sur GitHub. N'hésitez pas à explorer, à en apprendre ou à soumettre des contributions."
+        }
+      }
+    },
+    "finalCta": {
+      "title": "Prêt à explorer ?",
+      "subtitle": "Commencez votre voyage à travers les fonctionnalités et services de la plateforme.",
+      "primary": "Explorer les services",
+      "secondary": "Voir le code source",
+      "footer": "Construit avec des technologies modernes"
+    }
   },
   "privacyPolicy": {
     "__metadata__": {

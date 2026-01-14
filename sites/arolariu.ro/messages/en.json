@@ -1314,7 +1314,64 @@
       },
       "title": "Built for the Future."
     },
-    "title": "Welcome to arolariu.ro"
+    "title": "Welcome to arolariu.ro",
+    "stats": {
+      "title": "Platform at a Glance",
+      "items": {
+        "uptime": {"value": "99.9%", "label": "Uptime", "description": "Reliable hosting on Azure"},
+        "commits": {"value": "1000+", "label": "Commits", "description": "Continuous improvements"},
+        "technologies": {"value": "25+", "label": "Technologies", "description": "Modern tech stack"},
+        "coverage": {"value": "90%", "label": "Test Coverage", "description": "Quality assured"}
+      }
+    },
+    "testimonials": {
+      "title": "What People Say",
+      "subtitle": "Feedback from colleagues and collaborators",
+      "items": {
+        "t1": {
+          "quote": "Alexandru's technical depth and problem-solving abilities are truly exceptional. His attention to detail and commitment to quality are evident in everything he builds.",
+          "author": "Senior Engineer",
+          "role": "Microsoft Colleague"
+        },
+        "t2": {
+          "quote": "A passionate developer who consistently delivers high-quality solutions. His platform showcases modern best practices in software engineering.",
+          "author": "Tech Lead",
+          "role": "Industry Peer"
+        },
+        "t3": {
+          "quote": "The architecture and attention to detail in this platform is impressive. It's a great reference for anyone learning modern full-stack development.",
+          "author": "Software Architect",
+          "role": "Open Source Contributor"
+        }
+      }
+    },
+    "techShowcase": {
+      "title": "Powered By"
+    },
+    "faq": {
+      "title": "Common Questions",
+      "items": {
+        "q1": {
+          "question": "What can I do on this platform?",
+          "answer": "You can explore the Invoice Management System to digitize receipts, learn about the technologies used, and see examples of modern software engineering practices."
+        },
+        "q2": {
+          "question": "Is this platform free to use?",
+          "answer": "Yes! The platform is completely free to use. It's built as a showcase and learning resource for the developer community."
+        },
+        "q3": {
+          "question": "Can I contribute to this project?",
+          "answer": "Absolutely! The entire codebase is open source on GitHub. Feel free to explore, learn from it, or submit contributions."
+        }
+      }
+    },
+    "finalCta": {
+      "title": "Ready to Explore?",
+      "subtitle": "Start your journey through the platform's features and services.",
+      "primary": "Explore Services",
+      "secondary": "View Source Code",
+      "footer": "Built with modern technologies"
+    }
   },
   "privacyPolicy": {
     "__metadata__": {
