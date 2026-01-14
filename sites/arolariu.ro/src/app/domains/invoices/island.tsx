@@ -11,6 +11,7 @@
 
 import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import {useRef} from "react";
@@ -112,63 +113,32 @@ function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode
 }
 
 /**
- * Bento grid item data.
+ * Bento grid item configuration.
  */
-const bentoItems = [
-  {
-    key: "ai",
-    icon: TbBrain,
-    title: "AI-Powered",
-    desc: "GPT-4 extraction",
-    gradient: "from-purple-600 to-indigo-600",
-    span: "col-span-2 row-span-1",
-  },
-  {
-    key: "analytics",
-    icon: TbChartPie,
-    title: "Analytics",
-    desc: "Spending insights",
-    gradient: "from-emerald-500 to-teal-500",
-    span: "col-span-1 row-span-1",
-  },
-  {
-    key: "cloud",
-    icon: TbCloud,
-    title: "Cloud Sync",
-    desc: "Access anywhere",
-    gradient: "from-blue-500 to-cyan-500",
-    span: "col-span-1 row-span-2",
-  },
-  {
-    key: "ocr",
-    icon: TbReceipt,
-    title: "Smart OCR",
-    desc: "Auto data capture",
-    gradient: "from-orange-500 to-amber-500",
-    span: "col-span-1 row-span-1",
-  },
-  {
-    key: "secure",
-    icon: TbLock,
-    title: "Secure",
-    desc: "Bank-grade encryption",
-    gradient: "from-slate-600 to-slate-800",
-    span: "col-span-1 row-span-1",
-  },
-  {
-    key: "share",
-    icon: TbShare,
-    title: "Share",
-    desc: "Collaborate easily",
-    gradient: "from-pink-500 to-rose-500",
-    span: "col-span-1 row-span-1",
-  },
+const bentoItemsConfig = [
+  {key: "ai", icon: TbBrain, gradient: "from-purple-600 to-indigo-600", span: "col-span-2 row-span-1"},
+  {key: "analyticsCard", icon: TbChartPie, gradient: "from-emerald-500 to-teal-500", span: "col-span-1 row-span-1"},
+  {key: "cloud", icon: TbCloud, gradient: "from-blue-500 to-cyan-500", span: "col-span-1 row-span-2"},
+  {key: "ocr", icon: TbReceipt, gradient: "from-orange-500 to-amber-500", span: "col-span-1 row-span-1"},
+  {key: "secure", icon: TbLock, gradient: "from-slate-600 to-slate-800", span: "col-span-1 row-span-1"},
+  {key: "share", icon: TbShare, gradient: "from-pink-500 to-rose-500", span: "col-span-1 row-span-1"},
 ] as const;
+
+type BentoKey = (typeof bentoItemsConfig)[number]["key"];
 
 /**
  * Bento grid section showcasing capabilities.
  */
-function BentoSection(): React.JSX.Element {
+function BentoSection({
+  translations,
+}: Readonly<{
+  translations: {
+    title: string;
+    description: string;
+    mobile: string;
+    items: Record<BentoKey, {title: string; description: string}>;
+  };
+}>): React.JSX.Element {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -183,17 +153,13 @@ function BentoSection(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.5}}>
-          <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>
-            Everything You Need
-          </h2>
-          <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>
-            Powerful features designed to make invoice management effortless
-          </p>
+          <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>{translations.title}</h2>
+          <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>{translations.description}</p>
         </motion.div>
 
         {/* Bento grid */}
         <div className='grid auto-rows-[120px] grid-cols-2 gap-4 md:grid-cols-3'>
-          {bentoItems.map((item, index) => (
+          {bentoItemsConfig.map((item, index) => (
             <motion.div
               key={item.key}
               className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${item.gradient} ${item.span} cursor-default`}
@@ -224,8 +190,8 @@ function BentoSection(): React.JSX.Element {
                   <item.icon className='h-8 w-8 text-white' />
                 </motion.div>
                 <div>
-                  <h3 className='text-base font-bold text-white'>{item.title}</h3>
-                  <p className='text-sm text-white/80'>{item.desc}</p>
+                  <h3 className='text-base font-bold text-white'>{translations.items[item.key].title}</h3>
+                  <p className='text-sm text-white/80'>{translations.items[item.key].description}</p>
                 </div>
               </div>
             </motion.div>
@@ -239,7 +205,7 @@ function BentoSection(): React.JSX.Element {
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.8, duration: 0.5}}>
           <TbDeviceMobile className='h-5 w-5' />
-          <span className='text-sm'>Works beautifully on mobile devices</span>
+          <span className='text-sm'>{translations.mobile}</span>
         </motion.div>
       </div>
     </section>
@@ -249,7 +215,17 @@ function BentoSection(): React.JSX.Element {
 /**
  * Enhanced CTA section with animations.
  */
-function EnhancedCTA(): React.JSX.Element {
+function EnhancedCTA({
+  translations,
+}: Readonly<{
+  translations: {
+    title: string;
+    description: string;
+    uploadButton: string;
+    learnMore: string;
+    badges: {secure: string; cloud: string; ai: string};
+  };
+}>): React.JSX.Element {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-50px"});
 
@@ -308,7 +284,7 @@ function EnhancedCTA(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.1, duration: 0.5}}>
-          Ready to Get Started?
+          {translations.title}
         </motion.h2>
 
         <motion.p
@@ -316,7 +292,7 @@ function EnhancedCTA(): React.JSX.Element {
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.2, duration: 0.5}}>
-          Upload your first scan and experience the magic of AI-powered invoice management.
+          {translations.description}
         </motion.p>
 
         {/* Buttons */}
@@ -331,7 +307,7 @@ function EnhancedCTA(): React.JSX.Element {
             className='group bg-white px-8 text-indigo-600 hover:bg-gray-100'>
             <Link href='/domains/invoices/upload-scans'>
               <TbUpload className='mr-2 h-5 w-5 transition-transform group-hover:-translate-y-0.5' />
-              Upload Your First Scan
+              {translations.uploadButton}
             </Link>
           </Button>
           <Button
@@ -340,7 +316,7 @@ function EnhancedCTA(): React.JSX.Element {
             variant='outline'
             className='border-white/30 bg-white/10 px-8 text-white backdrop-blur-sm hover:bg-white/20'>
             <Link href='/about/the-platform'>
-              Learn More
+              {translations.learnMore}
               <TbArrowRight className='ml-2 h-5 w-5' />
             </Link>
           </Button>
@@ -354,15 +330,15 @@ function EnhancedCTA(): React.JSX.Element {
           transition={{delay: 0.5, duration: 0.5}}>
           <div className='flex items-center gap-2'>
             <TbLock className='h-4 w-4' />
-            <span>Secure & Private</span>
+            <span>{translations.badges.secure}</span>
           </div>
           <div className='flex items-center gap-2'>
             <TbCloud className='h-4 w-4' />
-            <span>Cloud Synced</span>
+            <span>{translations.badges.cloud}</span>
           </div>
           <div className='flex items-center gap-2'>
             <TbBrain className='h-4 w-4' />
-            <span>AI-Powered</span>
+            <span>{translations.badges.ai}</span>
           </div>
         </motion.div>
       </div>
@@ -380,6 +356,36 @@ function EnhancedCTA(): React.JSX.Element {
  * 3. View, analyze, and manage invoices
  */
 export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Domains.services.invoices.service.homepage");
+
+  // Prepare bento section translations
+  const bentoTranslations = {
+    title: t("bento.title"),
+    description: t("bento.description"),
+    mobile: t("bento.mobile"),
+    items: {
+      ai: {title: t("bento.ai.title"), description: t("bento.ai.description")},
+      analyticsCard: {title: t("bento.analyticsCard.title"), description: t("bento.analyticsCard.description")},
+      cloud: {title: t("bento.cloud.title"), description: t("bento.cloud.description")},
+      ocr: {title: t("bento.ocr.title"), description: t("bento.ocr.description")},
+      secure: {title: t("bento.secure.title"), description: t("bento.secure.description")},
+      share: {title: t("bento.share.title"), description: t("bento.share.description")},
+    },
+  };
+
+  // Prepare CTA section translations
+  const ctaTranslations = {
+    title: t("cta.title"),
+    description: t("cta.description"),
+    uploadButton: t("cta.uploadButton"),
+    learnMore: t("cta.learnMore"),
+    badges: {
+      secure: t("cta.badges.secure"),
+      cloud: t("cta.badges.cloud"),
+      ai: t("cta.badges.ai"),
+    },
+  };
+
   return (
     <main className='min-h-screen'>
       {/* Hero Section */}
@@ -393,13 +399,13 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 animate={{opacity: 1, y: 0}}
                 transition={{duration: 0.6}}>
                 <h1 className='mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl dark:text-white'>
-                  Manage Your <span className='bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent'>Invoices</span>{" "}
-                  with Ease
+                  {t("hero.title")}{" "}
+                  <span className='bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent'>
+                    {t("hero.titleHighlight")}
+                  </span>{" "}
+                  {t("hero.titleSuffix")}
                 </h1>
-                <p className='mb-8 max-w-2xl text-lg text-gray-600 lg:text-xl dark:text-gray-300'>
-                  Upload your receipts and bills, organize them into invoices, and gain insights into your spending habits. Our AI-powered
-                  system extracts data automatically.
-                </p>
+                <p className='mb-8 max-w-2xl text-lg text-gray-600 lg:text-xl dark:text-gray-300'>{t("hero.description")}</p>
 
                 <div className='flex flex-col items-center gap-4 sm:flex-row lg:justify-start'>
                   <Button
@@ -408,7 +414,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                     className='bg-linear-to-r from-indigo-600 to-purple-600 px-8 text-white hover:from-indigo-700 hover:to-purple-700'>
                     <Link href='/domains/invoices/upload-scans'>
                       <TbUpload className='mr-2 h-5 w-5' />
-                      Get Started
+                      {t("hero.getStarted")}
                     </Link>
                   </Button>
                   {isAuthenticated && (
@@ -418,7 +424,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                       size='lg'>
                       <Link href='/domains/invoices/view-invoices'>
                         <TbFileInvoice className='mr-2 h-5 w-5' />
-                        View My Invoices
+                        {t("hero.viewMyInvoices")}
                       </Link>
                     </Button>
                   )}
@@ -453,42 +459,40 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
             initial={{opacity: 0, y: 20}}
             animate={{opacity: 1, y: 0}}
             transition={{duration: 0.5}}>
-            <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>How It Works</h2>
-            <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>
-              Three simple steps to digitize and organize your financial documents
-            </p>
+            <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>{t("workflow.title")}</h2>
+            <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>{t("workflow.description")}</p>
           </motion.div>
 
           <div className='grid gap-8 md:grid-cols-3'>
             <WorkflowCard
               step={1}
-              title='Upload Scans'
-              description='Drag and drop your receipts, invoices, or bills. We support JPG, PNG, and PDF files up to 10MB each.'
+              title={t("workflow.step1.title")}
+              description={t("workflow.step1.description")}
               icon={<TbUpload className='h-6 w-6' />}
               href='/domains/invoices/upload-scans'
-              buttonText='Upload Now'
+              buttonText={t("workflow.step1.button")}
               gradient='from-blue-500 to-cyan-500'
               delay={0.1}
             />
 
             <WorkflowCard
               step={2}
-              title='View & Organize'
-              description='Review your uploaded scans, select the ones you want, and create invoices from them individually or in batches.'
+              title={t("workflow.step2.title")}
+              description={t("workflow.step2.description")}
               icon={<TbEye className='h-6 w-6' />}
               href='/domains/invoices/view-scans'
-              buttonText='View Scans'
+              buttonText={t("workflow.step2.button")}
               gradient='from-purple-500 to-pink-500'
               delay={0.2}
             />
 
             <WorkflowCard
               step={3}
-              title='Manage Invoices'
-              description='View your invoices, analyze spending patterns, and get AI-powered insights into your financial habits.'
+              title={t("workflow.step3.title")}
+              description={t("workflow.step3.description")}
               icon={<TbFileInvoice className='h-6 w-6' />}
               href='/domains/invoices/view-invoices'
-              buttonText='View Invoices'
+              buttonText={t("workflow.step3.button")}
               gradient='from-green-500 to-emerald-500'
               delay={0.3}
             />
@@ -522,32 +526,32 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               animate={{opacity: 1, x: 0}}
               transition={{duration: 0.6, delay: 0.2}}>
               <div>
-                <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>Powerful Features</h2>
-                <p className='text-lg text-gray-600 dark:text-gray-400'>Everything you need to manage your invoices efficiently</p>
+                <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>{t("features.title")}</h2>
+                <p className='text-lg text-gray-600 dark:text-gray-400'>{t("features.description")}</p>
               </div>
 
               <div className='space-y-6'>
                 <FeatureItem
                   icon={<TbPhoto className='h-5 w-5' />}
-                  title='Smart OCR Extraction'
-                  description='Our AI automatically extracts merchant names, dates, amounts, and line items from your scans.'
+                  title={t("features.ocr.title")}
+                  description={t("features.ocr.description")}
                 />
                 <FeatureItem
                   icon={<TbChartBar className='h-5 w-5' />}
-                  title='Spending Analytics'
-                  description='Get detailed insights into your spending patterns with charts and reports.'
+                  title={t("features.analytics.title")}
+                  description={t("features.analytics.description")}
                 />
                 <FeatureItem
                   icon={<TbFileInvoice className='h-5 w-5' />}
-                  title='Batch Processing'
-                  description='Process multiple scans at once - create individual invoices or combine them into one.'
+                  title={t("features.batch.title")}
+                  description={t("features.batch.description")}
                 />
               </div>
 
               {!isAuthenticated && (
                 <div className='rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-900/30'>
                   <p className='text-sm text-indigo-800 dark:text-indigo-200'>
-                    <strong>Sign in</strong> to save your invoices permanently and access them from any device.
+                    <strong>Sign in</strong> {t("features.signInPrompt")}
                   </p>
                 </div>
               )}
@@ -557,10 +561,13 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       </section>
 
       {/* Bento Grid Section */}
-      <BentoSection />
+      <BentoSection translations={bentoTranslations} />
 
       {/* Enhanced CTA Section */}
-      <EnhancedCTA />
+      <EnhancedCTA translations={ctaTranslations} />
+
+      {/* Footer spacing */}
+      <div className='h-16 bg-gradient-to-b from-pink-500/10 to-transparent dark:from-purple-900/20' />
     </main>
   );
 }

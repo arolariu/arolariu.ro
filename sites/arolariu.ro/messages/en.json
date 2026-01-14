@@ -1135,6 +1135,96 @@
               "description": "Loading the invoice with the identifier {invoiceIdentifier}."
             }
           },
+          "homepage": {
+            "__metadata__": {
+              "description": "The main landing page for the Invoice Management System domain service.",
+              "title": "Invoice Management System - Home"
+            },
+            "hero": {
+              "title": "Manage Your",
+              "titleHighlight": "Invoices",
+              "titleSuffix": "with Ease",
+              "description": "Upload your receipts and bills, organize them into invoices, and gain insights into your spending habits. Our AI-powered system extracts data automatically.",
+              "getStarted": "Get Started",
+              "viewMyInvoices": "View My Invoices"
+            },
+            "workflow": {
+              "title": "How It Works",
+              "description": "Three simple steps to digitize and organize your financial documents",
+              "step1": {
+                "title": "Upload Scans",
+                "description": "Drag and drop your receipts, invoices, or bills. We support JPG, PNG, and PDF files up to 10MB each.",
+                "button": "Upload Now"
+              },
+              "step2": {
+                "title": "View & Organize",
+                "description": "Review your uploaded scans, select the ones you want, and create invoices from them individually or in batches.",
+                "button": "View Scans"
+              },
+              "step3": {
+                "title": "Manage Invoices",
+                "description": "View your invoices, analyze spending patterns, and get AI-powered insights into your financial habits.",
+                "button": "View Invoices"
+              }
+            },
+            "features": {
+              "title": "Powerful Features",
+              "description": "Everything you need to manage your invoices efficiently",
+              "ocr": {
+                "title": "Smart OCR Extraction",
+                "description": "Our AI automatically extracts merchant names, dates, amounts, and line items from your scans."
+              },
+              "analytics": {
+                "title": "Spending Analytics",
+                "description": "Get detailed insights into your spending patterns with charts and reports."
+              },
+              "batch": {
+                "title": "Batch Processing",
+                "description": "Process multiple scans at once - create individual invoices or combine them into one."
+              },
+              "signInPrompt": "Sign in to save your invoices permanently and access them from any device."
+            },
+            "bento": {
+              "title": "Everything You Need",
+              "description": "Powerful features designed to make invoice management effortless",
+              "ai": {
+                "title": "AI-Powered",
+                "description": "GPT-4 extraction"
+              },
+              "analyticsCard": {
+                "title": "Analytics",
+                "description": "Spending insights"
+              },
+              "cloud": {
+                "title": "Cloud Sync",
+                "description": "Access anywhere"
+              },
+              "ocr": {
+                "title": "Smart OCR",
+                "description": "Auto data capture"
+              },
+              "secure": {
+                "title": "Secure",
+                "description": "Bank-grade encryption"
+              },
+              "share": {
+                "title": "Share",
+                "description": "Collaborate easily"
+              },
+              "mobile": "Works beautifully on mobile devices"
+            },
+            "cta": {
+              "title": "Ready to Get Started?",
+              "description": "Upload your first scan and experience the magic of AI-powered invoice management.",
+              "uploadButton": "Upload Your First Scan",
+              "learnMore": "Learn More",
+              "badges": {
+                "secure": "Secure & Private",
+                "cloud": "Cloud Synced",
+                "ai": "AI-Powered"
+              }
+            }
+          },
           "edit-page": {
             "__metadata__": {
               "description": "View and edit your invoice details, items, recipes, and sharing settings.",

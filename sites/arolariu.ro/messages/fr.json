@@ -1135,6 +1135,96 @@
               "description": "Chargement de la facture avec l'identifiant {invoiceIdentifier}."
             }
           },
+          "homepage": {
+            "__metadata__": {
+              "description": "La page d'accueil principale du service de domaine Système de Gestion des Factures.",
+              "title": "Système de Gestion des Factures - Accueil"
+            },
+            "hero": {
+              "title": "Gérez Vos",
+              "titleHighlight": "Factures",
+              "titleSuffix": "Facilement",
+              "description": "Téléchargez vos reçus et factures, organisez-les et obtenez des informations sur vos habitudes de dépenses. Notre système alimenté par l'IA extrait les données automatiquement.",
+              "getStarted": "Commencer",
+              "viewMyInvoices": "Voir Mes Factures"
+            },
+            "workflow": {
+              "title": "Comment Ça Marche",
+              "description": "Trois étapes simples pour numériser et organiser vos documents financiers",
+              "step1": {
+                "title": "Télécharger des Scans",
+                "description": "Glissez-déposez vos reçus, factures ou notes. Nous acceptons les fichiers JPG, PNG et PDF jusqu'à 10 Mo chacun.",
+                "button": "Télécharger"
+              },
+              "step2": {
+                "title": "Voir et Organiser",
+                "description": "Examinez vos scans téléchargés, sélectionnez ceux que vous voulez et créez des factures individuellement ou par lots.",
+                "button": "Voir les Scans"
+              },
+              "step3": {
+                "title": "Gérer les Factures",
+                "description": "Consultez vos factures, analysez les habitudes de dépenses et obtenez des informations alimentées par l'IA sur vos habitudes financières.",
+                "button": "Voir les Factures"
+              }
+            },
+            "features": {
+              "title": "Fonctionnalités Puissantes",
+              "description": "Tout ce dont vous avez besoin pour gérer vos factures efficacement",
+              "ocr": {
+                "title": "Extraction OCR Intelligente",
+                "description": "Notre IA extrait automatiquement les noms des commerçants, dates, montants et articles de vos scans."
+              },
+              "analytics": {
+                "title": "Analyse des Dépenses",
+                "description": "Obtenez des informations détaillées sur vos habitudes de dépenses avec des graphiques et rapports."
+              },
+              "batch": {
+                "title": "Traitement par Lots",
+                "description": "Traitez plusieurs scans à la fois - créez des factures individuelles ou combinez-les en une seule."
+              },
+              "signInPrompt": "Connectez-vous pour sauvegarder vos factures de façon permanente et y accéder depuis n'importe quel appareil."
+            },
+            "bento": {
+              "title": "Tout Ce Dont Vous Avez Besoin",
+              "description": "Des fonctionnalités puissantes conçues pour rendre la gestion des factures sans effort",
+              "ai": {
+                "title": "Alimenté par l'IA",
+                "description": "Extraction GPT-4"
+              },
+              "analyticsCard": {
+                "title": "Analyse",
+                "description": "Aperçu des dépenses"
+              },
+              "cloud": {
+                "title": "Sync Cloud",
+                "description": "Accès partout"
+              },
+              "ocr": {
+                "title": "OCR Intelligent",
+                "description": "Capture auto des données"
+              },
+              "secure": {
+                "title": "Sécurisé",
+                "description": "Chiffrement bancaire"
+              },
+              "share": {
+                "title": "Partager",
+                "description": "Collaboration facile"
+              },
+              "mobile": "Fonctionne parfaitement sur mobile"
+            },
+            "cta": {
+              "title": "Prêt à Commencer?",
+              "description": "Téléchargez votre premier scan et découvrez la magie de la gestion des factures alimentée par l'IA.",
+              "uploadButton": "Télécharger Votre Premier Scan",
+              "learnMore": "En Savoir Plus",
+              "badges": {
+                "secure": "Sécurisé et Privé",
+                "cloud": "Synchronisé dans le Cloud",
+                "ai": "Alimenté par l'IA"
+              }
+            }
+          },
           "edit-page": {
             "__metadata__": {
               "description": "Consultez et modifiez les détails de votre facture, les articles, les recettes et les paramètres de partage.",

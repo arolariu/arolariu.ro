@@ -1135,6 +1135,96 @@
               "description": "Se încarcă factura cu identificatorul {invoiceIdentifier}."
             }
           },
+          "homepage": {
+            "__metadata__": {
+              "description": "Pagina principală pentru serviciul de domeniu Sistemul de Management al Facturilor.",
+              "title": "Sistemul de Management al Facturilor - Acasă"
+            },
+            "hero": {
+              "title": "Gestionează-ți",
+              "titleHighlight": "Facturile",
+              "titleSuffix": "cu Ușurință",
+              "description": "Încarcă chitanțele și facturile tale, organizează-le și obține informații despre obiceiurile tale de cheltuieli. Sistemul nostru bazat pe AI extrage datele automat.",
+              "getStarted": "Începe Acum",
+              "viewMyInvoices": "Vezi Facturile Mele"
+            },
+            "workflow": {
+              "title": "Cum Funcționează",
+              "description": "Trei pași simpli pentru a digitaliza și organiza documentele tale financiare",
+              "step1": {
+                "title": "Încarcă Scanări",
+                "description": "Trage și lasă chitanțele, facturile sau bonurile tale. Acceptăm fișiere JPG, PNG și PDF de până la 10MB fiecare.",
+                "button": "Încarcă Acum"
+              },
+              "step2": {
+                "title": "Vizualizează și Organizează",
+                "description": "Revizuiește scanările încărcate, selectează-le pe cele dorite și creează facturi din ele individual sau în loturi.",
+                "button": "Vezi Scanările"
+              },
+              "step3": {
+                "title": "Gestionează Facturile",
+                "description": "Vizualizează facturile, analizează tiparele de cheltuieli și obține perspective bazate pe AI despre obiceiurile tale financiare.",
+                "button": "Vezi Facturile"
+              }
+            },
+            "features": {
+              "title": "Funcționalități Puternice",
+              "description": "Tot ce ai nevoie pentru a gestiona facturile eficient",
+              "ocr": {
+                "title": "Extracție OCR Inteligentă",
+                "description": "AI-ul nostru extrage automat numele comercianților, datele, sumele și articolele din scanări."
+              },
+              "analytics": {
+                "title": "Analiză Cheltuieli",
+                "description": "Obține informații detaliate despre tiparele tale de cheltuieli cu grafice și rapoarte."
+              },
+              "batch": {
+                "title": "Procesare în Loturi",
+                "description": "Procesează mai multe scanări simultan - creează facturi individuale sau combină-le într-una singură."
+              },
+              "signInPrompt": "Conectează-te pentru a salva facturile permanent și a le accesa de pe orice dispozitiv."
+            },
+            "bento": {
+              "title": "Tot Ce Ai Nevoie",
+              "description": "Funcționalități puternice concepute pentru a face gestionarea facturilor fără efort",
+              "ai": {
+                "title": "Bazat pe AI",
+                "description": "Extracție GPT-4"
+              },
+              "analyticsCard": {
+                "title": "Analiză",
+                "description": "Perspective cheltuieli"
+              },
+              "cloud": {
+                "title": "Sincronizare Cloud",
+                "description": "Acces de oriunde"
+              },
+              "ocr": {
+                "title": "OCR Inteligent",
+                "description": "Captură automată date"
+              },
+              "secure": {
+                "title": "Securizat",
+                "description": "Criptare de nivel bancar"
+              },
+              "share": {
+                "title": "Partajare",
+                "description": "Colaborare ușoară"
+              },
+              "mobile": "Funcționează excelent pe dispozitive mobile"
+            },
+            "cta": {
+              "title": "Gata să Începi?",
+              "description": "Încarcă prima ta scanare și experimentează magia gestionării facturilor bazată pe AI.",
+              "uploadButton": "Încarcă Prima Scanare",
+              "learnMore": "Află Mai Multe",
+              "badges": {
+                "secure": "Securizat și Privat",
+                "cloud": "Sincronizat în Cloud",
+                "ai": "Bazat pe AI"
+              }
+            }
+          },
           "edit-page": {
             "__metadata__": {
               "description": "Vizualizați și editați detaliile facturii, articolele, rețetele și setările de partajare.",
