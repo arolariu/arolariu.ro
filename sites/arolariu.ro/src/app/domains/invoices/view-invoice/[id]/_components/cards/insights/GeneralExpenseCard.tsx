@@ -63,6 +63,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
+                aria-label='Confirm category detection is correct'
                 className='gap-1 bg-transparent'>
                 <TbCheck className='h-3 w-3' />
                 Correct
@@ -70,6 +71,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Button
                 variant='ghost'
                 size='sm'
+                aria-label='Change detected category'
                 className='gap-1'>
                 <TbRefresh className='h-3 w-3' />
                 Change
@@ -105,8 +107,11 @@ export function GeneralExpenseCard(): React.JSX.Element {
             })}
           </div>
           {nearLimitBudget && (
-            <p className='flex items-center gap-1 text-xs text-amber-600'>
-              <span>!</span>
+            <p
+              className='flex items-center gap-1 text-xs text-amber-600'
+              role='alert'
+              aria-live='polite'>
+              <span aria-hidden='true'>!</span>
               {nearLimitBudget.name}: {Math.round((nearLimitBudget.spent / nearLimitBudget.limit) * 100)}% used (10 days left in month)
             </p>
           )}
@@ -187,6 +192,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           <Button
             variant='outline'
             size='sm'
+            aria-label='Organize this expense into categories'
             className='flex-1 gap-1 bg-transparent'>
             <TbFolderOpen className='h-3 w-3' />
             Organize
@@ -194,6 +200,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           <Button
             variant='outline'
             size='sm'
+            aria-label='Export expense data'
             className='flex-1 gap-1 bg-transparent'>
             <TbDownload className='h-3 w-3' />
             Export

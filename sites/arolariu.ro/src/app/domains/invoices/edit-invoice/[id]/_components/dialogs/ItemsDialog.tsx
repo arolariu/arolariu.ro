@@ -247,6 +247,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
+                        aria-label={`Delete item: ${item.rawName || "unnamed item"}`}
                         onClick={handleDeleteItem(item)}>
                         <TbTrash className='h-4 w-4 text-red-500' />
                       </Button>
@@ -259,12 +260,22 @@ export default function ItemsDialog(): React.JSX.Element {
                   <TableHead
                     className='text-muted-foreground px-4 py-3 text-sm font-medium'
                     colSpan={2}>
-                    {editableItems.length} items found (showing {paginatedItems.length})
+                    <span
+                      role='status'
+                      aria-live='polite'
+                      aria-atomic='true'>
+                      {editableItems.length} items found (showing {paginatedItems.length})
+                    </span>
                   </TableHead>
                   <TableHead
                     className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
                     colSpan={2}>
-                    Page {currentPage} of {totalPages}
+                    <span
+                      role='status'
+                      aria-live='polite'
+                      aria-atomic='true'>
+                      Page {currentPage} of {totalPages}
+                    </span>
                   </TableHead>
                   <TableHead
                     className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
@@ -272,6 +283,7 @@ export default function ItemsDialog(): React.JSX.Element {
                     <Button
                       variant='ghost'
                       size='sm'
+                      aria-label={`Go to previous page (page ${currentPage - 1})`}
                       // eslint-disable-next-line -- inputs always change - ok usage.
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}>
@@ -280,6 +292,7 @@ export default function ItemsDialog(): React.JSX.Element {
                     <Button
                       variant='ghost'
                       size='sm'
+                      aria-label={`Go to next page (page ${currentPage + 1})`}
                       // eslint-disable-next-line -- inputs always change - ok usage.
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}>
@@ -296,11 +309,15 @@ export default function ItemsDialog(): React.JSX.Element {
             <Button
               type='button'
               variant='outline'
+              aria-label='Add a new item to the invoice'
               onClick={handleAddNewItem}>
               <TbPlus className='mr-2 h-4 w-4' />
               Add Item
             </Button>
-            <div className='text-muted-foreground text-sm'>
+            <div
+              className='text-muted-foreground text-sm'
+              role='status'
+              aria-live='polite'>
               {items.length} {items.length === 1 ? "item" : "items"} in total
             </div>
           </div>
@@ -309,10 +326,13 @@ export default function ItemsDialog(): React.JSX.Element {
         <DialogFooter>
           <Button
             variant='outline'
+            aria-label='Cancel editing and close dialog'
             onClick={close}>
             Cancel
           </Button>
-          <Button onClick={handleSaveChanges}>
+          <Button
+            aria-label='Save changes to invoice items'
+            onClick={handleSaveChanges}>
             <TbDisc className='mr-2 h-4 w-4' />
             Save Changes
           </Button>
