@@ -39,7 +39,9 @@
           }
         },
         "subtitle": "Professional certifications and credentials that Alexandru has earned throughout his career.",
-        "title": "Certifications"
+        "title": "Certifications",
+        "coreSkillsLabel": "Core Skills Demonstrated:",
+        "viewCertification": "View certification"
       },
       "Competencies": {
         "competences": {
@@ -169,6 +171,9 @@
         },
         "subtitle": "A journey through Alexandru's professional career and the companies he's worked with.",
         "title": "Professional Experience",
+        "responsibilitiesLabel": "Responsibilities",
+        "achievementsLabel": "Achievements",
+        "techSkillsLabel": "Technologies & Skills",
         "ubisoft": {
           "achievements": "#  I've consistently over-exceeded the quota of reported bugs, glitches and artefacts, ranking as the #1 reporter for a solid 5 months out of the 6 worked. #  Found and reported major code defects that ranged from race conditions to memory resource allocation defects. #  Increased the daily report efficiency by leveraging SQL and JQL filtering capabilities.",
           "company": "Ubisoft",

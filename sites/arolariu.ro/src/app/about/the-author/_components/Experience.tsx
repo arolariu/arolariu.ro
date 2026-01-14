@@ -218,7 +218,7 @@ export default function Experience(): React.JSX.Element {
                 <p className='text-muted-foreground mb-6'>{currentExperience.description}</p>
 
                 <div className='mb-6'>
-                  <h4 className='mb-3 text-lg font-semibold'>Responsibilites</h4>
+                  <h4 className='mb-3 text-lg font-semibold'>{t("responsibilitiesLabel")}</h4>
                   <ul className='space-y-2'>
                     {currentExperience.responsibilities.map((responsability, i) => (
                       <motion.li
@@ -235,7 +235,7 @@ export default function Experience(): React.JSX.Element {
                 </div>
 
                 <div className='mb-6'>
-                  <h4 className='mb-3 text-lg font-semibold'>Achievements</h4>
+                  <h4 className='mb-3 text-lg font-semibold'>{t("achievementsLabel")}</h4>
                   <ul className='space-y-2'>
                     {currentExperience.achievements.map((achievement, i) => (
                       <motion.li
@@ -252,7 +252,7 @@ export default function Experience(): React.JSX.Element {
                 </div>
 
                 <div>
-                  <h4 className='mb-3 text-lg font-semibold'>Technologies & Skills</h4>
+                  <h4 className='mb-3 text-lg font-semibold'>{t("techSkillsLabel")}</h4>
                   <div className='flex flex-wrap gap-2'>
                     {currentExperience.skills.map((skill, i) => (
                       <motion.div

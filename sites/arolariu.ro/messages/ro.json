@@ -39,7 +39,9 @@
           }
         },
         "subtitle": "Certificări și acreditări profesionale pe care Alexandru le-a obținut de-a lungul carierei sale.",
-        "title": "Certificări"
+        "title": "Certificări",
+        "coreSkillsLabel": "Competențe Demonstrate:",
+        "viewCertification": "Vezi certificarea"
       },
       "Competencies": {
         "competences": {
@@ -169,6 +171,9 @@
         },
         "subtitle": "O călătorie prin cariera profesională a lui Alexandru și prin companiile cu care a lucrat.",
         "title": "Experiență profesională",
+        "responsibilitiesLabel": "Responsabilități",
+        "achievementsLabel": "Realizări",
+        "techSkillsLabel": "Tehnologii și Competențe",
         "ubisoft": {
           "achievements": "# A contribuit la dezvoltarea de aplicații cloud-native folosind .NET și Azure, # A implementat arhitectura microserviciilor pentru sisteme scalabile și rezistente, # A colaborat cu echipe interfuncționale pentru a furniza soluții software de înaltă calitate, # A participat la revizuiri de cod și a îndrumat dezvoltatorii juniori",
           "company": "Ubisoft",

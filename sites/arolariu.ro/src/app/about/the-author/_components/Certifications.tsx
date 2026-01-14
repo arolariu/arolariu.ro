@@ -75,9 +75,9 @@ export default function Certifications(): React.JSX.Element {
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.6}}
           className='mb-16 text-center'>
-          <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>Certifications</h2>
+          <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
           <p className='text-muted-foreground mx-auto max-w-2xl'>
-            Professional certifications and credentials that Alexandru has earned throughout his career.
+            {t("subtitle")}
           </p>
         </motion.div>
 
@@ -119,7 +119,7 @@ export default function Certifications(): React.JSX.Element {
                   <p className='text-muted-foreground mb-4 text-sm'>{cert.description}</p>
 
                   <div className='mt-4'>
-                    <h4 className='mb-2 text-sm font-semibold'>Core Skills Demonstrated:</h4>
+                    <h4 className='mb-2 text-sm font-semibold'>{t("coreSkillsLabel")}</h4>
                     <div className='space-y-2'>
                       {cert.coreSkills.map((skill, i) => (
                         <motion.div
@@ -143,7 +143,7 @@ export default function Certifications(): React.JSX.Element {
                     rel='noopener noreferrer'
                     className='text-primary inline-flex items-center text-sm hover:underline'
                     whileHover={{x: 5}}>
-                    View certification
+                    {t("viewCertification")}
                     <TbExternalLink className='ml-1 h-3 w-3' />
                   </motion.a>
                 </div>
