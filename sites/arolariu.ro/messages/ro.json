@@ -722,6 +722,37 @@
       "description": "Pagina de mulțumire pentru pachetele terțe utilizate în acest proiect și colaboratori.",
       "title": "Mulțumiri"
     },
+    "hero": {
+      "badge": "Open Source",
+      "title": "Mulțumiri",
+      "subtitle": "Această platformă este construită pe umerii unor proiecte open-source incredibile. Suntem recunoscători întreținătorilor și contributorilor care își fac munca disponibilă gratuit.",
+      "lastUpdate": "Ultima actualizare: {date}"
+    },
+    "stats": {
+      "title": "Prezentare Generală a Dependențelor",
+      "subtitle": "O privire asupra ecosistemului open-source care alimentează această platformă",
+      "total": {"value": "86", "label": "Total Pachete", "description": "Dependențe utilizate"},
+      "production": {"value": "38", "label": "Producție", "description": "Dependențe runtime"},
+      "development": {"value": "48", "label": "Dezvoltare", "description": "Instrumente de build"},
+      "mitLicense": {"value": "69", "label": "Licență MIT", "description": "Cea mai comună licență"}
+    },
+    "contributors": {
+      "title": "Contributori Principali",
+      "subtitle": "Organizații și indivizi pe ale căror pachete ne bazăm cel mai mult",
+      "items": {
+        "c1": {"name": "OpenTelemetry Authors", "packages": "12", "description": "Instrumentație pentru observabilitate"},
+        "c2": {"name": "Microsoft Corporation", "packages": "5", "description": "SDK-uri Azure și unelte"},
+        "c3": {"name": "Clerk", "packages": "2", "description": "Soluții de autentificare"},
+        "c4": {"name": "Kent C. Dodds", "packages": "3", "description": "Utilități pentru testare"}
+      }
+    },
+    "licenses": {
+      "title": "Distribuția Licențelor",
+      "mit": "Licență MIT",
+      "apache": "Apache 2.0",
+      "mitDescription": "Licență permisivă care permite utilizare largă",
+      "apacheDescription": "Licență open-source prietenoasă pentru întreprinderi"
+    },
     "lastUpdate": "Ultima actualizare pe:",
     "packages": {
       "subtitle": "Acest site web nu ar fi putut fi posibil fără următoarele pachete terțe. \nAș dori să le mulțumesc autorilor acestor pachete pentru munca grea și dăruirea lor pentru comunitatea open-source.",

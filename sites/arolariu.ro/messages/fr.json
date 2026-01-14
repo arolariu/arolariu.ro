@@ -722,6 +722,37 @@
       "description": "Page de remerciements pour les packages tiers utilisés dans ce projet et les collaborateurs.",
       "title": "Remerciements"
     },
+    "hero": {
+      "badge": "Open Source",
+      "title": "Remerciements",
+      "subtitle": "Cette plateforme est construite sur les épaules de projets open-source incroyables. Nous sommes reconnaissants envers les mainteneurs et contributeurs qui rendent leur travail librement disponible.",
+      "lastUpdate": "Dernière mise à jour : {date}"
+    },
+    "stats": {
+      "title": "Aperçu des Dépendances",
+      "subtitle": "Un aperçu de l'écosystème open-source qui alimente cette plateforme",
+      "total": {"value": "86", "label": "Total des Packages", "description": "Dépendances utilisées"},
+      "production": {"value": "38", "label": "Production", "description": "Dépendances d'exécution"},
+      "development": {"value": "48", "label": "Développement", "description": "Outils de build"},
+      "mitLicense": {"value": "69", "label": "Licence MIT", "description": "Licence la plus courante"}
+    },
+    "contributors": {
+      "title": "Principaux Contributeurs",
+      "subtitle": "Organisations et individus dont nous dépendons le plus",
+      "items": {
+        "c1": {"name": "OpenTelemetry Authors", "packages": "12", "description": "Instrumentation d'observabilité"},
+        "c2": {"name": "Microsoft Corporation", "packages": "5", "description": "SDKs Azure et outils"},
+        "c3": {"name": "Clerk", "packages": "2", "description": "Solutions d'authentification"},
+        "c4": {"name": "Kent C. Dodds", "packages": "3", "description": "Utilitaires de test"}
+      }
+    },
+    "licenses": {
+      "title": "Distribution des Licences",
+      "mit": "Licence MIT",
+      "apache": "Apache 2.0",
+      "mitDescription": "Licence permissive permettant une utilisation large",
+      "apacheDescription": "Licence open-source adaptée aux entreprises"
+    },
     "lastUpdate": "Dernière mise à jour le : {date}",
     "packages": {
       "subtitle": "Ce site web n'aurait pas été possible sans les packages tiers suivants. Je tiens à remercier les auteurs de ces packages pour leur travail acharné et leur dévouement à la communauté open-source.",

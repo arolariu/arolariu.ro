@@ -722,6 +722,37 @@
       "description": "Acknowledgements page for the third-party packages used in this project and collaborators.",
       "title": "Acknowledgements"
     },
+    "hero": {
+      "badge": "Open Source",
+      "title": "Acknowledgements",
+      "subtitle": "This platform is built on the shoulders of incredible open-source projects. We're grateful to the maintainers and contributors who make their work freely available.",
+      "lastUpdate": "Last updated: {date}"
+    },
+    "stats": {
+      "title": "Dependency Overview",
+      "subtitle": "A snapshot of the open-source ecosystem powering this platform",
+      "total": {"value": "86", "label": "Total Packages", "description": "Dependencies used"},
+      "production": {"value": "38", "label": "Production", "description": "Runtime dependencies"},
+      "development": {"value": "48", "label": "Development", "description": "Build-time tools"},
+      "mitLicense": {"value": "69", "label": "MIT Licensed", "description": "Most common license"}
+    },
+    "contributors": {
+      "title": "Top Contributors",
+      "subtitle": "Organizations and individuals whose packages we rely on most",
+      "items": {
+        "c1": {"name": "OpenTelemetry Authors", "packages": "12", "description": "Observability instrumentation"},
+        "c2": {"name": "Microsoft Corporation", "packages": "5", "description": "Azure SDKs and tooling"},
+        "c3": {"name": "Clerk", "packages": "2", "description": "Authentication solutions"},
+        "c4": {"name": "Kent C. Dodds", "packages": "3", "description": "Testing utilities"}
+      }
+    },
+    "licenses": {
+      "title": "License Distribution",
+      "mit": "MIT License",
+      "apache": "Apache 2.0",
+      "mitDescription": "Permissive license allowing broad use",
+      "apacheDescription": "Enterprise-friendly open-source license"
+    },
     "lastUpdate": "Last updated on: {date}",
     "packages": {
       "subtitle": "This website could not have been possible without the following third-party packages. I would like to thank the authors of these packages for their hard work and dedication to the open-source community.",
