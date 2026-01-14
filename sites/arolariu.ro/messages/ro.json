@@ -357,13 +357,21 @@
         "platform": {
           "title": "Platforma",
           "subtitle": "Descoperă arhitectura, stack-ul tehnologic și funcționalitățile care alimentează arolariu.ro.",
-          "features": ["Frontend Next.js 16", "Backend .NET 10", "Infrastructură Azure Cloud"],
+          "features": [
+            "Frontend Next.js 16",
+            "Backend .NET 10",
+            "Infrastructură Azure Cloud"
+          ],
           "cta": "Explorează platforma"
         },
         "author": {
           "title": "Autorul",
           "subtitle": "Cunoaște-l pe Alexandru-Răzvan Olariu, inginerul software din spatele acestei platforme.",
-          "features": ["Inginer Microsoft", "Arhitect de soluții", "Entuziast tehnologie"],
+          "features": [
+            "Inginer Microsoft",
+            "Arhitect de soluții",
+            "Entuziast tehnologie"
+          ],
           "cta": "Cunoaște-l pe Alexandru"
         }
       },
@@ -576,36 +584,124 @@
           }
         },
         "technologies": {
-          "react": { "name": "React", "description": "Bibliotecă UI pentru construirea de interfețe interactive" },
-          "nextjs": { "name": "Next.js", "description": "Framework React full-stack cu SSR/SSG" },
-          "typescript": { "name": "TypeScript", "description": "JavaScript cu tipuri pentru cod robust" },
-          "tailwind": { "name": "Tailwind CSS", "description": "Framework CSS bazat pe utilități" },
-          "zustand": { "name": "Zustand", "description": "Gestionare ușoară a stării" },
-          "motion": { "name": "Motion", "description": "Animații gata de producție" },
-          "dotnet": { "name": ".NET", "description": "Framework backend principal" },
-          "aspnet": { "name": "ASP.NET Core", "description": "API-uri web de înaltă performanță" },
-          "nodejs": { "name": "Node.js", "description": "BFF și funcții serverless" },
-          "cosmosdb": { "name": "CosmosDB", "description": "Bază de date NoSQL distribuită global" },
-          "azuresql": { "name": "Azure SQL", "description": "Bază de date relațională gestionată" },
-          "redis": { "name": "Redis", "description": "Cache în memorie pentru performanță" },
-          "azure": { "name": "Azure", "description": "Furnizor cloud principal" },
-          "vercel": { "name": "Vercel", "description": "Platformă de implementare frontend" },
-          "docker": { "name": "Docker", "description": "Platformă de containerizare" },
-          "githubActions": { "name": "GitHub Actions", "description": "Automatizare CI/CD" },
-          "bicep": { "name": "Bicep", "description": "Infrastructură ca și cod" },
-          "azureDevops": { "name": "Azure DevOps", "description": "Gestionare proiecte și pipeline-uri" },
-          "git": { "name": "Git", "description": "Sistem de control al versiunilor" },
-          "eslint": { "name": "ESLint", "description": "Linting JavaScript cu 20+ plugin-uri" },
-          "prettier": { "name": "Prettier", "description": "Formatare cod" },
-          "vitest": { "name": "Vitest", "description": "Framework de testare unitară" },
-          "playwright": { "name": "Playwright", "description": "Framework de testare E2E" },
-          "pnpm": { "name": "pnpm/npm", "description": "Gestionare pachete" }
+          "react": {
+            "name": "React",
+            "description": "Bibliotecă UI pentru construirea de interfețe interactive"
+          },
+          "nextjs": {
+            "name": "Next.js",
+            "description": "Framework React full-stack cu SSR/SSG"
+          },
+          "typescript": {
+            "name": "TypeScript",
+            "description": "JavaScript cu tipuri pentru cod robust"
+          },
+          "tailwind": {
+            "name": "Tailwind CSS",
+            "description": "Framework CSS bazat pe utilități"
+          },
+          "zustand": {
+            "name": "Zustand",
+            "description": "Gestionare ușoară a stării"
+          },
+          "motion": {
+            "name": "Motion",
+            "description": "Animații gata de producție"
+          },
+          "dotnet": {
+            "name": ".NET",
+            "description": "Framework backend principal"
+          },
+          "aspnet": {
+            "name": "ASP.NET Core",
+            "description": "API-uri web de înaltă performanță"
+          },
+          "nodejs": {
+            "name": "Node.js",
+            "description": "BFF și funcții serverless"
+          },
+          "cosmosdb": {
+            "name": "CosmosDB",
+            "description": "Bază de date NoSQL distribuită global"
+          },
+          "azuresql": {
+            "name": "Azure SQL",
+            "description": "Bază de date relațională gestionată"
+          },
+          "redis": {
+            "name": "Redis",
+            "description": "Cache în memorie pentru performanță"
+          },
+          "azure": {
+            "name": "Azure",
+            "description": "Furnizor cloud principal"
+          },
+          "vercel": {
+            "name": "Vercel",
+            "description": "Platformă de implementare frontend"
+          },
+          "docker": {
+            "name": "Docker",
+            "description": "Platformă de containerizare"
+          },
+          "githubActions": {
+            "name": "GitHub Actions",
+            "description": "Automatizare CI/CD"
+          },
+          "bicep": {
+            "name": "Bicep",
+            "description": "Infrastructură ca și cod"
+          },
+          "azureDevops": {
+            "name": "Azure DevOps",
+            "description": "Gestionare proiecte și pipeline-uri"
+          },
+          "git": {
+            "name": "Git",
+            "description": "Sistem de control al versiunilor"
+          },
+          "eslint": {
+            "name": "ESLint",
+            "description": "Linting JavaScript cu 20+ plugin-uri"
+          },
+          "prettier": {
+            "name": "Prettier",
+            "description": "Formatare cod"
+          },
+          "vitest": {
+            "name": "Vitest",
+            "description": "Framework de testare unitară"
+          },
+          "playwright": {
+            "name": "Playwright",
+            "description": "Framework de testare E2E"
+          },
+          "pnpm": {
+            "name": "pnpm/npm",
+            "description": "Gestionare pachete"
+          }
         },
         "stats": {
-          "technologies": { "value": "24+", "label": "Tehnologii", "description": "În stack-ul nostru" },
-          "coverage": { "value": "90%+", "label": "Acoperire teste", "description": "Teste unitare și E2E" },
-          "typescript": { "value": "100%", "label": "TypeScript", "description": "Siguranță completă a tipurilor" },
-          "security": { "value": "A+", "label": "Grad de securitate", "description": "Cele mai bune practici" }
+          "technologies": {
+            "value": "24+",
+            "label": "Tehnologii",
+            "description": "În stack-ul nostru"
+          },
+          "coverage": {
+            "value": "90%+",
+            "label": "Acoperire teste",
+            "description": "Teste unitare și E2E"
+          },
+          "typescript": {
+            "value": "100%",
+            "label": "TypeScript",
+            "description": "Siguranță completă a tipurilor"
+          },
+          "security": {
+            "value": "A+",
+            "label": "Grad de securitate",
+            "description": "Cele mai bune practici"
+          }
         }
       },
       "statistics": {
@@ -614,14 +710,54 @@
         "titleHighlight": "vorbesc de la sine",
         "description": "O privire asupra dimensiunii și impactului platformei arolariu.ro, de la linii de cod la acoperire globală.",
         "items": {
-          "projects": { "value": "15", "suffix": "+", "label": "Proiecte", "description": "Repozitorii active" },
-          "commits": { "value": "2500", "suffix": "+", "label": "Commit-uri", "description": "Contribuții de cod" },
-          "linesOfCode": { "value": "150", "suffix": "K+", "label": "Linii de cod", "description": "În toate proiectele" },
-          "apis": { "value": "8", "suffix": "+", "label": "API-uri", "description": "Microservicii" },
-          "users": { "value": "1000", "suffix": "+", "label": "Utilizatori", "description": "Activi lunar" },
-          "countries": { "value": "25", "suffix": "+", "label": "Țări", "description": "Acoperire globală" },
-          "stars": { "value": "50", "suffix": "+", "label": "Stele", "description": "Stele GitHub" },
-          "contributors": { "value": "5", "suffix": "+", "label": "Contribuitori", "description": "Open source" }
+          "projects": {
+            "value": "15",
+            "suffix": "+",
+            "label": "Proiecte",
+            "description": "Repozitorii active"
+          },
+          "commits": {
+            "value": "2500",
+            "suffix": "+",
+            "label": "Commit-uri",
+            "description": "Contribuții de cod"
+          },
+          "linesOfCode": {
+            "value": "150",
+            "suffix": "K+",
+            "label": "Linii de cod",
+            "description": "În toate proiectele"
+          },
+          "apis": {
+            "value": "8",
+            "suffix": "+",
+            "label": "API-uri",
+            "description": "Microservicii"
+          },
+          "users": {
+            "value": "1000",
+            "suffix": "+",
+            "label": "Utilizatori",
+            "description": "Activi lunar"
+          },
+          "countries": {
+            "value": "25",
+            "suffix": "+",
+            "label": "Țări",
+            "description": "Acoperire globală"
+          },
+          "stars": {
+            "value": "50",
+            "suffix": "+",
+            "label": "Stele",
+            "description": "Stele GitHub"
+          },
+          "contributors": {
+            "value": "5",
+            "suffix": "+",
+            "label": "Contribuitori",
+            "description": "Open source"
+          }
         }
       },
       "timeline": {
@@ -706,9 +842,18 @@
           "getInTouch": "Ia legătura"
         },
         "trust": {
-          "openSource": { "title": "Open Source", "description": "100% open source cu licență MIT" },
-          "privacyFirst": { "title": "Confidențialitate în prim-plan", "description": "Datele tale rămân ale tale, mereu" },
-          "freeToUse": { "title": "Gratuit de folosit", "description": "Fără taxe ascunse sau abonamente" }
+          "openSource": {
+            "title": "Open Source",
+            "description": "100% open source cu licență MIT"
+          },
+          "privacyFirst": {
+            "title": "Confidențialitate în prim-plan",
+            "description": "Datele tale rămân ale tale, mereu"
+          },
+          "freeToUse": {
+            "title": "Gratuit de folosit",
+            "description": "Fără taxe ascunse sau abonamente"
+          }
         },
         "footer": "Construit cu pasiune de",
         "footerRole": ", un inginer software la Microsoft."
@@ -731,19 +876,51 @@
     "stats": {
       "title": "Prezentare Generală a Dependențelor",
       "subtitle": "O privire asupra ecosistemului open-source care alimentează această platformă",
-      "total": {"value": "86", "label": "Total Pachete", "description": "Dependențe utilizate"},
-      "production": {"value": "38", "label": "Producție", "description": "Dependențe runtime"},
-      "development": {"value": "48", "label": "Dezvoltare", "description": "Instrumente de build"},
-      "mitLicense": {"value": "69", "label": "Licență MIT", "description": "Cea mai comună licență"}
+      "total": {
+        "value": "86",
+        "label": "Total Pachete",
+        "description": "Dependențe utilizate"
+      },
+      "production": {
+        "value": "38",
+        "label": "Producție",
+        "description": "Dependențe runtime"
+      },
+      "development": {
+        "value": "48",
+        "label": "Dezvoltare",
+        "description": "Instrumente de build"
+      },
+      "mitLicense": {
+        "value": "69",
+        "label": "Licență MIT",
+        "description": "Cea mai comună licență"
+      }
     },
     "contributors": {
       "title": "Contributori Principali",
       "subtitle": "Organizații și indivizi pe ale căror pachete ne bazăm cel mai mult",
       "items": {
-        "c1": {"name": "OpenTelemetry Authors", "packages": "12", "description": "Instrumentație pentru observabilitate"},
-        "c2": {"name": "Microsoft Corporation", "packages": "5", "description": "SDK-uri Azure și unelte"},
-        "c3": {"name": "Clerk", "packages": "2", "description": "Soluții de autentificare"},
-        "c4": {"name": "Kent C. Dodds", "packages": "3", "description": "Utilități pentru testare"}
+        "c1": {
+          "name": "OpenTelemetry Authors",
+          "packages": "12",
+          "description": "Instrumentație pentru observabilitate"
+        },
+        "c2": {
+          "name": "Microsoft Corporation",
+          "packages": "5",
+          "description": "SDK-uri Azure și unelte"
+        },
+        "c3": {
+          "name": "Clerk",
+          "packages": "2",
+          "description": "Soluții de autentificare"
+        },
+        "c4": {
+          "name": "Kent C. Dodds",
+          "packages": "3",
+          "description": "Utilități pentru testare"
+        }
       }
     },
     "licenses": {
@@ -1302,34 +1479,50 @@
     }
   },
   "Home": {
-    "hero": {
-      "title": "arolariu.ro",
-      "tagline": "Platformă Full-Stack Modernă",
-      "cta": "Explorează",
-      "github": "GitHub"
+    "appreciation": "MULȚUMESC PENTRU TIMPUL PETRECUT PE SITE.",
+    "cta": "Începeți să explorați",
+    "featuresTab": {
+      "azure": {
+        "description": "Cloud-ul Microsoft Azure este utilizat pentru a găzdui platforma și toate serviciile sale. Acest lucru asigură faptul că platforma este întotdeauna disponibilă și că poate fi extinsă la cerere.",
+        "title": "Microsoft Azure"
+      },
+      "csharp": {
+        "description": "Platforma este construită folosind .NET 8 LTS - cea mai recentă versiune stabilă a .NET. Acest lucru asigură faptul că platforma este rapidă, fiabilă și ușor de utilizat. Platforma este construită folosind C# și F#.",
+        "title": ".NET 8 LTS"
+      },
+      "description": "Platforma `arolariu.ro` este construita folosind cele mai noi tehnologii stabile.",
+      "githubActions": {
+        "description": "Experiența DevOps este alimentată de acțiuni Github. \n(CI/CD, testare etc.)",
+        "title": "GitHub Actions"
+      },
+      "learnMoreBtn": "Interesant? \nFaceți clic aici pentru a afla mai multe ...",
+      "nextJs": {
+        "description": "Platforma este construită folosind NextJS - cel mai popular cadru React pentru producție.  Este proiectat pentru aplicații React de nivel de producție. NextJS este cel mai popular cadru React pentru un motiv: este rapid, fiabil și ușor de utilizat.",
+        "title": "Next.JS 15"
+      },
+      "otel": {
+        "description": "Observabilitate completă cu metrici, urme și jurnale integrate. Totul este instrumentat utilizând OpenTelemetry. Acest lucru permite o experiență de telemetrie unificată pe toată linia. (3PO: metrici, jurnale, urme)",
+        "title": "Open Telemetry"
+      },
+      "svelte": {
+        "description": "Folosim Svelte pentru componente UI reactive, rapide, reactive. \nPlatforma `cv.arolariu.ro` este construită doar folosind Svelte și SvelteKit (v5)",
+        "title": "Svelte"
+      },
+      "title": "Caracteristici cheie"
     },
-    "bento": {
-      "nextjs": {"title": "Next.js 16", "desc": "Framework React"},
-      "dotnet": {"title": ".NET 10", "desc": "API-uri Backend"},
-      "azure": {"title": "Azure", "desc": "Platformă Cloud"},
-      "otel": {"title": "OpenTelemetry", "desc": "Observabilitate"},
-      "typescript": {"title": "TypeScript", "desc": "Siguranța Tipurilor"},
-      "opensource": {"title": "Open Source", "desc": "Licență MIT"}
+    "subtitle": "Această platformă a fost construită de Alexandru-Răzvan Olariu ca loc de joacă pentru noile tehnologii. Platforma este construită folosind tehnologii de ultimă oră, de nivel enterprise. <br> </br> <br> </br> Sunteți binevenit să explorați toate aplicațiile și serviciile care sunt găzduite pe acest spațiu de domeniu.",
+    "technologyTab": {
+      "badgeTitle": "Arhitectură modernă",
+      "description": "Această platformă utilizează cele mai recente tehnologii web, combinând Next.js pentru frontend cu .NET pentru servicii backend robuste, toate implementate pe Microsoft Azure.",
+      "learnMoreBtn": "Explorați arhitectura",
+      "points": {
+        "point1": "Arhitectură fără server pentru o scalare și performanță optimă",
+        "point2": "TypeScript full-stack pentru siguranța tipurilor în întreaga aplicație",
+        "point3": "Telemetrie și monitorizare cuprinzătoare cu OpenTelemetry"
+      },
+      "title": "Construit pentru viitor."
     },
-    "stats": {
-      "uptime": {"value": "99.9", "suffix": "%", "label": "Disponibilitate"},
-      "commits": {"value": "1000", "suffix": "+", "label": "Commit-uri"},
-      "tech": {"value": "25", "suffix": "+", "label": "Tehnologii"},
-      "coverage": {"value": "90", "suffix": "%", "label": "Acoperire"}
-    },
-    "techShowcase": {
-      "title": "Alimentat de"
-    },
-    "cta": {
-      "title": "Gata de explorare?",
-      "explore": "Începe",
-      "source": "Vezi codul"
-    }
+    "title": "Bine ai venit pe arolariu.ro"
   },
   "privacyPolicy": {
     "__metadata__": {

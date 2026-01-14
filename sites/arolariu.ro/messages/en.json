@@ -357,13 +357,21 @@
         "platform": {
           "title": "The Platform",
           "subtitle": "Discover the architecture, technology stack, and features that power arolariu.ro.",
-          "features": ["Next.js 16 Frontend", ".NET 10 Backend", "Azure Cloud Infrastructure"],
+          "features": [
+            "Next.js 16 Frontend",
+            ".NET 10 Backend",
+            "Azure Cloud Infrastructure"
+          ],
           "cta": "Explore Platform"
         },
         "author": {
           "title": "The Author",
           "subtitle": "Meet Alexandru-Razvan Olariu, the software engineer behind this platform.",
-          "features": ["Microsoft Engineer", "Solution Architect", "Tech Enthusiast"],
+          "features": [
+            "Microsoft Engineer",
+            "Solution Architect",
+            "Tech Enthusiast"
+          ],
           "cta": "Meet Alexandru"
         }
       },
@@ -576,36 +584,124 @@
           }
         },
         "technologies": {
-          "react": { "name": "React", "description": "UI library for building interactive interfaces" },
-          "nextjs": { "name": "Next.js", "description": "Full-stack React framework with SSR/SSG" },
-          "typescript": { "name": "TypeScript", "description": "Type-safe JavaScript for robust code" },
-          "tailwind": { "name": "Tailwind CSS", "description": "Utility-first CSS framework" },
-          "zustand": { "name": "Zustand", "description": "Lightweight state management" },
-          "motion": { "name": "Motion", "description": "Production-ready animations" },
-          "dotnet": { "name": ".NET", "description": "Primary backend framework" },
-          "aspnet": { "name": "ASP.NET Core", "description": "High-performance web APIs" },
-          "nodejs": { "name": "Node.js", "description": "BFF and serverless functions" },
-          "cosmosdb": { "name": "CosmosDB", "description": "Globally distributed NoSQL database" },
-          "azuresql": { "name": "Azure SQL", "description": "Managed relational database" },
-          "redis": { "name": "Redis", "description": "In-memory cache for performance" },
-          "azure": { "name": "Azure", "description": "Primary cloud provider" },
-          "vercel": { "name": "Vercel", "description": "Frontend deployment platform" },
-          "docker": { "name": "Docker", "description": "Containerization platform" },
-          "githubActions": { "name": "GitHub Actions", "description": "CI/CD automation" },
-          "bicep": { "name": "Bicep", "description": "Infrastructure as Code" },
-          "azureDevops": { "name": "Azure DevOps", "description": "Project management & pipelines" },
-          "git": { "name": "Git", "description": "Version control system" },
-          "eslint": { "name": "ESLint", "description": "JavaScript linting with 20+ plugins" },
-          "prettier": { "name": "Prettier", "description": "Code formatting" },
-          "vitest": { "name": "Vitest", "description": "Unit testing framework" },
-          "playwright": { "name": "Playwright", "description": "E2E testing framework" },
-          "pnpm": { "name": "pnpm/npm", "description": "Package management" }
+          "react": {
+            "name": "React",
+            "description": "UI library for building interactive interfaces"
+          },
+          "nextjs": {
+            "name": "Next.js",
+            "description": "Full-stack React framework with SSR/SSG"
+          },
+          "typescript": {
+            "name": "TypeScript",
+            "description": "Type-safe JavaScript for robust code"
+          },
+          "tailwind": {
+            "name": "Tailwind CSS",
+            "description": "Utility-first CSS framework"
+          },
+          "zustand": {
+            "name": "Zustand",
+            "description": "Lightweight state management"
+          },
+          "motion": {
+            "name": "Motion",
+            "description": "Production-ready animations"
+          },
+          "dotnet": {
+            "name": ".NET",
+            "description": "Primary backend framework"
+          },
+          "aspnet": {
+            "name": "ASP.NET Core",
+            "description": "High-performance web APIs"
+          },
+          "nodejs": {
+            "name": "Node.js",
+            "description": "BFF and serverless functions"
+          },
+          "cosmosdb": {
+            "name": "CosmosDB",
+            "description": "Globally distributed NoSQL database"
+          },
+          "azuresql": {
+            "name": "Azure SQL",
+            "description": "Managed relational database"
+          },
+          "redis": {
+            "name": "Redis",
+            "description": "In-memory cache for performance"
+          },
+          "azure": {
+            "name": "Azure",
+            "description": "Primary cloud provider"
+          },
+          "vercel": {
+            "name": "Vercel",
+            "description": "Frontend deployment platform"
+          },
+          "docker": {
+            "name": "Docker",
+            "description": "Containerization platform"
+          },
+          "githubActions": {
+            "name": "GitHub Actions",
+            "description": "CI/CD automation"
+          },
+          "bicep": {
+            "name": "Bicep",
+            "description": "Infrastructure as Code"
+          },
+          "azureDevops": {
+            "name": "Azure DevOps",
+            "description": "Project management & pipelines"
+          },
+          "git": {
+            "name": "Git",
+            "description": "Version control system"
+          },
+          "eslint": {
+            "name": "ESLint",
+            "description": "JavaScript linting with 20+ plugins"
+          },
+          "prettier": {
+            "name": "Prettier",
+            "description": "Code formatting"
+          },
+          "vitest": {
+            "name": "Vitest",
+            "description": "Unit testing framework"
+          },
+          "playwright": {
+            "name": "Playwright",
+            "description": "E2E testing framework"
+          },
+          "pnpm": {
+            "name": "pnpm/npm",
+            "description": "Package management"
+          }
         },
         "stats": {
-          "technologies": { "value": "24+", "label": "Technologies", "description": "In our stack" },
-          "coverage": { "value": "90%+", "label": "Test Coverage", "description": "Unit & E2E tests" },
-          "typescript": { "value": "100%", "label": "TypeScript", "description": "Full type safety" },
-          "security": { "value": "A+", "label": "Security Grade", "description": "Best practices" }
+          "technologies": {
+            "value": "24+",
+            "label": "Technologies",
+            "description": "In our stack"
+          },
+          "coverage": {
+            "value": "90%+",
+            "label": "Test Coverage",
+            "description": "Unit & E2E tests"
+          },
+          "typescript": {
+            "value": "100%",
+            "label": "TypeScript",
+            "description": "Full type safety"
+          },
+          "security": {
+            "value": "A+",
+            "label": "Security Grade",
+            "description": "Best practices"
+          }
         }
       },
       "statistics": {
@@ -614,14 +710,54 @@
         "titleHighlight": "speak for themselves",
         "description": "A glimpse into the scale and impact of the arolariu.ro platform, from lines of code to global reach.",
         "items": {
-          "projects": { "value": "15", "suffix": "+", "label": "Projects", "description": "Active repositories" },
-          "commits": { "value": "2500", "suffix": "+", "label": "Commits", "description": "Code contributions" },
-          "linesOfCode": { "value": "150", "suffix": "K+", "label": "Lines of Code", "description": "Across all projects" },
-          "apis": { "value": "8", "suffix": "+", "label": "APIs", "description": "Microservices" },
-          "users": { "value": "1000", "suffix": "+", "label": "Users", "description": "Active monthly" },
-          "countries": { "value": "25", "suffix": "+", "label": "Countries", "description": "Global reach" },
-          "stars": { "value": "50", "suffix": "+", "label": "Stars", "description": "GitHub stars" },
-          "contributors": { "value": "5", "suffix": "+", "label": "Contributors", "description": "Open source" }
+          "projects": {
+            "value": "15",
+            "suffix": "+",
+            "label": "Projects",
+            "description": "Active repositories"
+          },
+          "commits": {
+            "value": "2500",
+            "suffix": "+",
+            "label": "Commits",
+            "description": "Code contributions"
+          },
+          "linesOfCode": {
+            "value": "150",
+            "suffix": "K+",
+            "label": "Lines of Code",
+            "description": "Across all projects"
+          },
+          "apis": {
+            "value": "8",
+            "suffix": "+",
+            "label": "APIs",
+            "description": "Microservices"
+          },
+          "users": {
+            "value": "1000",
+            "suffix": "+",
+            "label": "Users",
+            "description": "Active monthly"
+          },
+          "countries": {
+            "value": "25",
+            "suffix": "+",
+            "label": "Countries",
+            "description": "Global reach"
+          },
+          "stars": {
+            "value": "50",
+            "suffix": "+",
+            "label": "Stars",
+            "description": "GitHub stars"
+          },
+          "contributors": {
+            "value": "5",
+            "suffix": "+",
+            "label": "Contributors",
+            "description": "Open source"
+          }
         }
       },
       "timeline": {
@@ -706,9 +842,18 @@
           "getInTouch": "Get in Touch"
         },
         "trust": {
-          "openSource": { "title": "Open Source", "description": "100% open source with MIT license" },
-          "privacyFirst": { "title": "Privacy First", "description": "Your data stays yours, always" },
-          "freeToUse": { "title": "Free to Use", "description": "No hidden fees or subscriptions" }
+          "openSource": {
+            "title": "Open Source",
+            "description": "100% open source with MIT license"
+          },
+          "privacyFirst": {
+            "title": "Privacy First",
+            "description": "Your data stays yours, always"
+          },
+          "freeToUse": {
+            "title": "Free to Use",
+            "description": "No hidden fees or subscriptions"
+          }
         },
         "footer": "Built with passion by",
         "footerRole": ", a software engineer at Microsoft."
@@ -731,19 +876,51 @@
     "stats": {
       "title": "Dependency Overview",
       "subtitle": "A snapshot of the open-source ecosystem powering this platform",
-      "total": {"value": "86", "label": "Total Packages", "description": "Dependencies used"},
-      "production": {"value": "38", "label": "Production", "description": "Runtime dependencies"},
-      "development": {"value": "48", "label": "Development", "description": "Build-time tools"},
-      "mitLicense": {"value": "69", "label": "MIT Licensed", "description": "Most common license"}
+      "total": {
+        "value": "86",
+        "label": "Total Packages",
+        "description": "Dependencies used"
+      },
+      "production": {
+        "value": "38",
+        "label": "Production",
+        "description": "Runtime dependencies"
+      },
+      "development": {
+        "value": "48",
+        "label": "Development",
+        "description": "Build-time tools"
+      },
+      "mitLicense": {
+        "value": "69",
+        "label": "MIT Licensed",
+        "description": "Most common license"
+      }
     },
     "contributors": {
       "title": "Top Contributors",
       "subtitle": "Organizations and individuals whose packages we rely on most",
       "items": {
-        "c1": {"name": "OpenTelemetry Authors", "packages": "12", "description": "Observability instrumentation"},
-        "c2": {"name": "Microsoft Corporation", "packages": "5", "description": "Azure SDKs and tooling"},
-        "c3": {"name": "Clerk", "packages": "2", "description": "Authentication solutions"},
-        "c4": {"name": "Kent C. Dodds", "packages": "3", "description": "Testing utilities"}
+        "c1": {
+          "name": "OpenTelemetry Authors",
+          "packages": "12",
+          "description": "Observability instrumentation"
+        },
+        "c2": {
+          "name": "Microsoft Corporation",
+          "packages": "5",
+          "description": "Azure SDKs and tooling"
+        },
+        "c3": {
+          "name": "Clerk",
+          "packages": "2",
+          "description": "Authentication solutions"
+        },
+        "c4": {
+          "name": "Kent C. Dodds",
+          "packages": "3",
+          "description": "Testing utilities"
+        }
       }
     },
     "licenses": {
@@ -1302,34 +1479,50 @@
     }
   },
   "Home": {
-    "hero": {
-      "title": "arolariu.ro",
-      "tagline": "Modern Full-Stack Platform",
-      "cta": "Explore",
-      "github": "GitHub"
+    "appreciation": "THANK YOU FOR THE TIME SPENT ON THE WEBSITE.",
+    "cta": "Start Exploring",
+    "featuresTab": {
+      "azure": {
+        "description": "The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand.",
+        "title": "Microsoft Azure"
+      },
+      "csharp": {
+        "description": "The platform is built using .NET 8 LTS - the latest stable version of .NET. This ensures that the platform is fast, reliable, and easy to use. The platform is built using C# and F#.",
+        "title": ".NET 8 LTS"
+      },
+      "description": "The `arolariu.ro` platform is built using the latest stable technologies.",
+      "githubActions": {
+        "description": "The DevOps experience is powered by GitHub Actions. (CI/CD, Testing, etc.)",
+        "title": "GitHub Actions"
+      },
+      "learnMoreBtn": "Interesting? Click here to learn more...",
+      "nextJs": {
+        "description": "The platform is built using NextJS - the most popular React framework for production.  It is designed for production-grade React applications. NextJS is the most popular React framework for a reason: it is fast, reliable, and easy to use.",
+        "title": "Next.JS 15"
+      },
+      "otel": {
+        "description": "Complete observability with integrated metrics, traces, and logs. Everything is instrumented using OpenTelemetry. This allows for a unified telemetry experience across the board. (3PO: metrics, logs, traces)",
+        "title": "Open Telemetry"
+      },
+      "svelte": {
+        "description": "Utilizing Svelte for lightning-fast, reactive UI components. The `cv.arolariu.ro` platform is built exclusively using Svelte and SvelteKit (v5)",
+        "title": "Svelte"
+      },
+      "title": "Key Features"
     },
-    "bento": {
-      "nextjs": {"title": "Next.js 16", "desc": "React Framework"},
-      "dotnet": {"title": ".NET 10", "desc": "Backend APIs"},
-      "azure": {"title": "Azure", "desc": "Cloud Platform"},
-      "otel": {"title": "OpenTelemetry", "desc": "Observability"},
-      "typescript": {"title": "TypeScript", "desc": "Type Safety"},
-      "opensource": {"title": "Open Source", "desc": "MIT License"}
+    "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br> </br> <br> </br> You are welcome to explore all of the applications and services that are hosted on this domain space.",
+    "technologyTab": {
+      "badgeTitle": "Modern Architecture",
+      "description": "This platform leverages the latest in web technology, combining Next.js for the frontend with .NET for robust backend services, all deployed on Microsoft Azure.",
+      "learnMoreBtn": "Explore the Architecture",
+      "points": {
+        "point1": "Serverless architecture for optimal scaling and performance",
+        "point2": "Full-stack TypeScript for type safety across the entire application",
+        "point3": "Comprehensive telemetry and monitoring with OpenTelemetry"
+      },
+      "title": "Built for the Future."
     },
-    "stats": {
-      "uptime": {"value": "99.9", "suffix": "%", "label": "Uptime"},
-      "commits": {"value": "1000", "suffix": "+", "label": "Commits"},
-      "tech": {"value": "25", "suffix": "+", "label": "Technologies"},
-      "coverage": {"value": "90", "suffix": "%", "label": "Coverage"}
-    },
-    "techShowcase": {
-      "title": "Powered By"
-    },
-    "cta": {
-      "title": "Ready to Explore?",
-      "explore": "Get Started",
-      "source": "View Source"
-    }
+    "title": "Welcome to arolariu.ro"
   },
   "privacyPolicy": {
     "__metadata__": {
