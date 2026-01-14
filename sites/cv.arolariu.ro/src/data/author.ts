@@ -14,7 +14,7 @@ export const author: Readonly<PersonalInformation> = {
   location: "Bucharest, Romania",
   title: "Software Engineer | Solution Architect | Mentor",
   email: "admin@arolariu.ro",
-  website: "arolariu.ro",
+  website: "https://arolariu.ro",
   linkedin: "https://www.linkedin.com/in/olariu-alexandru/",
   github: "https://www.github.com/arolariu",
   region: "Romania / European Union",
