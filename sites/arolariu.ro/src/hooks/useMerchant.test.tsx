@@ -64,8 +64,8 @@ describe("useMerchant", () => {
 
   it("should initialize with null merchant and loading state", () => {
     mockFetchMerchant.mockResolvedValue({
-      id: "merchant-123",
-      name: "Test Merchant",
+      success: true,
+      data: {id: "merchant-123", name: "Test Merchant"},
     });
 
     const {result} = renderHook(() => useMerchant({merchantIdentifier: "merchant-123"}));
@@ -81,7 +81,7 @@ describe("useMerchant", () => {
       name: "Test Merchant",
     } as Merchant;
 
-    mockFetchMerchant.mockResolvedValue(mockMerchant);
+    mockFetchMerchant.mockResolvedValue({success: true, data: mockMerchant});
 
     // Update mock to return the merchant after fetch and set hasHydrated to true
     let storeMerchants: Merchant[] = [];
@@ -121,7 +121,10 @@ describe("useMerchant", () => {
   });
 
   it("should handle fetch errors", async () => {
-    mockFetchMerchant.mockRejectedValue(new Error("Failed to fetch"));
+    mockFetchMerchant.mockResolvedValue({
+      success: false,
+      error: {code: "NETWORK_ERROR", message: "Failed to fetch"},
+    });
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
@@ -148,8 +151,8 @@ describe("useMerchant", () => {
   });
 
   it("should set loading state during fetch", async () => {
-    let resolvePromise: (value: Merchant) => void;
-    const promise = new Promise<Merchant>((resolve) => {
+    let resolvePromise: (value: {success: true; data: Merchant}) => void;
+    const promise = new Promise<{success: true; data: Merchant}>((resolve) => {
       resolvePromise = resolve;
     });
 
@@ -173,7 +176,7 @@ describe("useMerchant", () => {
     expect(result.current.merchant).toBeNull();
 
     // Resolve the promise
-    resolvePromise!({id: "merchant-123", name: "Test"} as Merchant);
+    resolvePromise!({success: true, data: {id: "merchant-123", name: "Test"} as Merchant});
 
     // Simulate hydration completing
     hasHydrated = true;

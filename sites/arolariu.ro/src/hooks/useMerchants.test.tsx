@@ -63,7 +63,7 @@ describe("useMerchants", () => {
   });
 
   it("should return empty merchants array initially", async () => {
-    mockFetchMerchants.mockResolvedValue([]);
+    mockFetchMerchants.mockResolvedValue({success: true, data: []});
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
@@ -92,7 +92,7 @@ describe("useMerchants", () => {
       {id: "merchant-2", name: "Merchant 2"},
     ];
 
-    mockFetchMerchants.mockResolvedValue(mockMerchants);
+    mockFetchMerchants.mockResolvedValue({success: true, data: mockMerchants});
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
@@ -123,7 +123,7 @@ describe("useMerchants", () => {
     mockFetchMerchants.mockImplementation(
       () =>
         new Promise((resolve) => {
-          setTimeout(() => resolve([]), 100);
+          setTimeout(() => resolve({success: true, data: []}), 100);
         }),
     );
 
@@ -191,7 +191,7 @@ describe("useMerchants", () => {
   });
 
   it("should always fetch regardless of userInformation state", async () => {
-    mockFetchMerchants.mockResolvedValue([]);
+    mockFetchMerchants.mockResolvedValue({success: true, data: []});
 
     renderHook(() => useMerchants());
 

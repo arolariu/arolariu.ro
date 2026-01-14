@@ -58,7 +58,7 @@ describe("useInvoices", () => {
   });
 
   it("should return empty invoices array initially", async () => {
-    mockFetchInvoices.mockResolvedValue([]);
+    mockFetchInvoices.mockResolvedValue({success: true, data: []});
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation(
@@ -89,7 +89,7 @@ describe("useInvoices", () => {
       {id: "invoice-2", name: "Invoice 2"},
     ];
 
-    mockFetchInvoices.mockResolvedValue(mockInvoices);
+    mockFetchInvoices.mockResolvedValue({success: true, data: mockInvoices});
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation(
@@ -120,8 +120,8 @@ describe("useInvoices", () => {
 
   it("should set loading state during fetch", async () => {
     // Use a controlled promise to test loading states
-    let resolveFunc: (value: never[]) => void;
-    const promise = new Promise<never[]>((resolve) => {
+    let resolveFunc: (value: {success: true; data: never[]}) => void;
+    const promise = new Promise<{success: true; data: never[]}>((resolve) => {
       resolveFunc = resolve;
     });
 
@@ -147,7 +147,7 @@ describe("useInvoices", () => {
       expect(result.current.isLoading).toBe(true);
 
       // Resolve the promise
-      resolveFunc!([]);
+      resolveFunc!({success: true, data: []});
 
       // Simulate hydration completing
       hasHydrated = true;
@@ -203,7 +203,7 @@ describe("useInvoices", () => {
   });
 
   it("should always fetch regardless of userInformation state", async () => {
-    mockFetchInvoices.mockResolvedValue([]);
+    mockFetchInvoices.mockResolvedValue({success: true, data: []});
 
     renderHook(() => useInvoices());
 
