@@ -3,9 +3,13 @@
 import {BackgroundBeams} from "@arolariu/components/background-beams";
 import {Button} from "@arolariu/components/button";
 import {motion, useInView} from "motion/react";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbArrowRight, TbBrandGithub, TbMail, TbRocket, TbUser} from "react-icons/tb";
+
+const trustGradients = ["from-blue-500 to-cyan-500", "from-purple-500 to-pink-500", "from-orange-500 to-amber-500"];
+const trustIds = ["openSource", "privacyFirst", "freeToUse"];
 
 /**
  * Call-to-Action component for the Platform page footer.
@@ -13,6 +17,7 @@ import {TbArrowRight, TbBrandGithub, TbMail, TbRocket, TbUser} from "react-icons
  * @returns The CallToAction component, CSR'ed.
  */
 export default function CallToAction(): React.JSX.Element {
+  const t = useTranslations("About.Platform.callToAction");
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
 
@@ -74,8 +79,8 @@ export default function CallToAction(): React.JSX.Element {
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6}}>
             <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl'>
-              Ready to{" "}
-              <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>get started</span>?
+              {t("title")}{" "}
+              <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>{t("titleHighlight")}</span>?
             </h2>
           </motion.div>
 
@@ -85,8 +90,7 @@ export default function CallToAction(): React.JSX.Element {
             initial={{opacity: 0, y: 30}}
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6, delay: 0.1}}>
-            Explore the platform, try out the features, and join the community. Whether you&apos;re here to manage invoices, discover recipes, or just
-            explore, there&apos;s something for everyone.
+            {t("description")}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -105,7 +109,7 @@ export default function CallToAction(): React.JSX.Element {
                 className='group relative h-14 cursor-pointer gap-3 overflow-hidden px-8 text-lg font-semibold'>
                 <Link href='/domains'>
                   <TbRocket className='h-5 w-5 transition-transform group-hover:rotate-12' />
-                  <span>Explore Applications</span>
+                  <span>{t("cta.exploreApplications")}</span>
                   <TbArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
                   <motion.span
                     className='from-primary/20 to-primary/5 absolute inset-0 bg-gradient-to-r'
@@ -128,7 +132,7 @@ export default function CallToAction(): React.JSX.Element {
                 className='group relative h-14 gap-3 overflow-hidden px-8 text-lg font-semibold'>
                 <Link href='/auth/sign-up'>
                   <TbUser className='h-5 w-5 transition-transform group-hover:rotate-12' />
-                  <span>Create Account</span>
+                  <span>{t("cta.createAccount")}</span>
                   <motion.span
                     className='bg-primary/5 absolute inset-0'
                     initial={{x: "-100%", opacity: 0}}
@@ -152,21 +156,21 @@ export default function CallToAction(): React.JSX.Element {
               rel='noopener noreferrer'
               className='text-muted-foreground hover:text-primary flex items-center gap-2 transition-colors'>
               <TbBrandGithub className='h-5 w-5' />
-              <span>View Source Code</span>
+              <span>{t("links.viewSource")}</span>
             </Link>
             <span className='text-muted-foreground/30'>|</span>
             <Link
               href='/about/the-author'
               className='text-muted-foreground hover:text-primary flex items-center gap-2 transition-colors'>
               <TbUser className='h-5 w-5' />
-              <span>Meet the Author</span>
+              <span>{t("links.meetAuthor")}</span>
             </Link>
             <span className='text-muted-foreground/30'>|</span>
             <Link
               href='mailto:contact@arolariu.ro'
               className='text-muted-foreground hover:text-primary flex items-center gap-2 transition-colors'>
               <TbMail className='h-5 w-5' />
-              <span>Get in Touch</span>
+              <span>{t("links.getInTouch")}</span>
             </Link>
           </motion.div>
 
@@ -176,33 +180,17 @@ export default function CallToAction(): React.JSX.Element {
             initial={{opacity: 0, y: 30}}
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6, delay: 0.5}}>
-            {[
-              {
-                title: "Open Source",
-                description: "100% open source with MIT license",
-                gradient: "from-blue-500 to-cyan-500",
-              },
-              {
-                title: "Privacy First",
-                description: "Your data stays yours, always",
-                gradient: "from-purple-500 to-pink-500",
-              },
-              {
-                title: "Free to Use",
-                description: "No hidden fees or subscriptions",
-                gradient: "from-orange-500 to-amber-500",
-              },
-            ].map((item, index) => (
+            {trustIds.map((trustId, index) => (
               <motion.div
-                key={item.title}
+                key={trustId}
                 className='bg-muted/30 rounded-xl p-6 backdrop-blur-sm'
                 initial={{opacity: 0, y: 20}}
                 animate={isInView ? {opacity: 1, y: 0} : {}}
                 transition={{duration: 0.5, delay: 0.6 + index * 0.1}}
                 whileHover={{scale: 1.05, transition: {duration: 0.2}}}>
-                <div className={`mb-3 h-1 w-12 rounded-full bg-gradient-to-r ${item.gradient}`} />
-                <h3 className='mb-2 font-semibold'>{item.title}</h3>
-                <p className='text-muted-foreground text-sm'>{item.description}</p>
+                <div className={`mb-3 h-1 w-12 rounded-full bg-gradient-to-r ${trustGradients[index]}`} />
+                <h3 className='mb-2 font-semibold'>{t(`trust.${trustId}.title` as Parameters<typeof t>[0])}</h3>
+                <p className='text-muted-foreground text-sm'>{t(`trust.${trustId}.description` as Parameters<typeof t>[0])}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -214,13 +202,13 @@ export default function CallToAction(): React.JSX.Element {
             animate={isInView ? {opacity: 1} : {}}
             transition={{duration: 0.6, delay: 0.8}}>
             <p className='text-muted-foreground text-sm'>
-              Built with passion by{" "}
+              {t("footer")}{" "}
               <Link
                 href='/about/the-author'
                 className='text-primary hover:underline'>
                 Alexandru-Razvan Olariu
               </Link>
-              , a software engineer at Microsoft.
+              {t("footerRole")}
             </p>
           </motion.div>
         </div>

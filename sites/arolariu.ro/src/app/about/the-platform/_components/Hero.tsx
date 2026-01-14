@@ -4,6 +4,7 @@ import {BackgroundBeams} from "@arolariu/components/background-beams";
 import {Button} from "@arolariu/components/button";
 import {GradientText} from "@arolariu/components/gradient-text";
 import {motion, useScroll, useTransform} from "motion/react";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbArrowRight, TbBrandGithub, TbCode, TbRocket, TbSparkles} from "react-icons/tb";
@@ -15,6 +16,7 @@ import {TbArrowRight, TbBrandGithub, TbCode, TbRocket, TbSparkles} from "react-i
  * @returns The Hero component, CSR'ed.
  */
 export default function Hero(): React.JSX.Element {
+  const t = useTranslations("About.Platform.hero");
   const ref = useRef<HTMLElement>(null);
   const {scrollYProgress} = useScroll({
     target: ref,
@@ -121,7 +123,7 @@ export default function Hero(): React.JSX.Element {
                 <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75' />
                 <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500' />
               </motion.span>
-              <span>Open Source Technology Platform</span>
+              <span>{t("statusBadge")}</span>
               <TbSparkles className='h-4 w-4' />
             </motion.span>
           </motion.div>
@@ -139,7 +141,7 @@ export default function Hero(): React.JSX.Element {
                   color: ["hsl(var(--foreground))", "hsl(var(--primary))", "hsl(var(--foreground))"],
                 }}
                 transition={{duration: 6, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}>
-                Welcome to
+                {t("title")}
               </motion.span>
               <GradientText
                 text='arolariu.ro'
@@ -156,9 +158,7 @@ export default function Hero(): React.JSX.Element {
             initial={{opacity: 0, y: 30}}
             animate={{opacity: 1, y: 0}}
             transition={{duration: 0.6, delay: 0.3}}>
-            A modern, cloud-native platform built as a{" "}
-            <span className='text-primary font-semibold'>playground for cutting-edge technologies</span>. Explore innovative solutions for invoice
-            processing, recipe management, and more — all crafted with engineering excellence.
+            {t("description")}
           </motion.p>
 
           {/* Feature Pills */}
@@ -168,9 +168,9 @@ export default function Hero(): React.JSX.Element {
             animate={{opacity: 1, y: 0}}
             transition={{duration: 0.6, delay: 0.4}}>
             {[
-              {icon: TbCode, label: "Open Source"},
-              {icon: TbRocket, label: "Cloud Native"},
-              {icon: TbSparkles, label: "AI Powered"},
+              {icon: TbCode, label: t("trust.openSource")},
+              {icon: TbRocket, label: t("trust.privacyFirst")},
+              {icon: TbSparkles, label: t("trust.freeForever")},
             ].map((pill, index) => (
               <motion.span
                 key={pill.label}
@@ -203,7 +203,7 @@ export default function Hero(): React.JSX.Element {
                 className='group relative h-14 cursor-pointer gap-3 overflow-hidden px-8 text-lg font-semibold'>
                 <Link href='/domains'>
                   <TbRocket className='h-5 w-5 transition-transform group-hover:rotate-12' />
-                  <span>Explore Applications</span>
+                  <span>{t("cta.exploreFeatures")}</span>
                   <TbArrowRight className='h-5 w-5 transition-transform group-hover:translate-x-1' />
                   <motion.span
                     className='from-primary/20 to-primary/5 absolute inset-0 bg-gradient-to-r'
@@ -228,7 +228,7 @@ export default function Hero(): React.JSX.Element {
                   target='_blank'
                   rel='noopener noreferrer'>
                   <TbBrandGithub className='h-5 w-5 transition-transform group-hover:rotate-12' />
-                  <span>View on GitHub</span>
+                  <span>{t("cta.viewSource")}</span>
                   <motion.span
                     className='bg-primary/5 absolute inset-0'
                     initial={{x: "-100%", opacity: 0}}
@@ -250,7 +250,7 @@ export default function Hero(): React.JSX.Element {
               className='mx-auto flex flex-col items-center gap-2'
               animate={{y: [0, 10, 0]}}
               transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}>
-              <span className='text-muted-foreground text-xs uppercase tracking-widest'>Scroll to explore</span>
+              <span className='text-muted-foreground text-xs uppercase tracking-widest'>{t("scrollIndicator")}</span>
               <div className='border-muted-foreground/30 h-10 w-6 rounded-full border-2 p-1'>
                 <motion.div
                   className='bg-primary h-2 w-2 rounded-full'

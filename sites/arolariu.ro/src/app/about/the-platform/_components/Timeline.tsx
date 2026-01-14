@@ -3,161 +3,26 @@
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useCallback, useRef, useState} from "react";
-import {
-  TbBrandReact,
-  TbCalendar,
-  TbCheck,
-  TbCloud,
-  TbCode,
-  TbFileInvoice,
-  TbRocket,
-  TbServer,
-  TbSparkles,
-  TbTools,
-} from "react-icons/tb";
+import {TbBrandReact, TbCalendar, TbCheck, TbCloud, TbCode, TbFileInvoice, TbRocket, TbServer, TbSparkles, TbTools} from "react-icons/tb";
 
-interface TimelineEvent {
+interface EventConfig {
   id: string;
-  date: string;
-  title: string;
-  description: string;
-  details: string[];
   icon: React.ComponentType<{className?: string}>;
   color: string;
   gradient: string;
-  tags: string[];
 }
 
-const timelineEvents: TimelineEvent[] = [
-  {
-    id: "inception",
-    date: "March 2022",
-    title: "Project Inception",
-    description: "The arolariu.ro platform was conceived as a personal learning project to explore modern web development.",
-    details: [
-      "Initial concept and planning phase",
-      "Research into modern web technologies",
-      "First repository created on GitHub",
-      "Basic HTML/CSS prototype developed",
-    ],
-    icon: TbCode,
-    color: "text-blue-500",
-    gradient: "from-blue-500 to-cyan-500",
-    tags: ["Planning", "Research"],
-  },
-  {
-    id: "prototype",
-    date: "June 2022",
-    title: "First Prototype",
-    description: "The first working prototype of the platform was developed using React and basic backend services.",
-    details: [
-      "React frontend implementation",
-      "Basic authentication flow",
-      "Initial UI/UX design",
-      "Local development environment setup",
-    ],
-    icon: TbRocket,
-    color: "text-green-500",
-    gradient: "from-green-500 to-emerald-500",
-    tags: ["React", "Frontend"],
-  },
-  {
-    id: "backend",
-    date: "September 2022",
-    title: "Backend Infrastructure",
-    description: "Complete backend overhaul with .NET and cloud-native architecture implementation.",
-    details: [
-      ".NET 6 API development",
-      "Azure cloud infrastructure setup",
-      "Database design with CosmosDB",
-      "CI/CD pipeline implementation",
-    ],
-    icon: TbServer,
-    color: "text-purple-500",
-    gradient: "from-purple-500 to-violet-500",
-    tags: [".NET", "Azure", "API"],
-  },
-  {
-    id: "expansion",
-    date: "January 2023",
-    title: "Platform Expansion",
-    description: "Major feature additions including invoice processing and AI-powered analysis capabilities.",
-    details: [
-      "Invoice upload and OCR integration",
-      "Azure Document Intelligence integration",
-      "Merchant detection algorithms",
-      "Budget tracking features",
-    ],
-    icon: TbFileInvoice,
-    color: "text-orange-500",
-    gradient: "from-orange-500 to-amber-500",
-    tags: ["AI", "OCR", "Invoices"],
-  },
-  {
-    id: "launch",
-    date: "June 2023",
-    title: "Public Launch",
-    description: "Official public launch with a complete set of features and production-ready infrastructure.",
-    details: [
-      "Production deployment to Azure",
-      "Custom domain configuration",
-      "SSL/TLS security implementation",
-      "Performance optimization",
-    ],
-    icon: TbCloud,
-    color: "text-red-500",
-    gradient: "from-red-500 to-pink-500",
-    tags: ["Launch", "Production"],
-  },
-  {
-    id: "nextjs",
-    date: "December 2023",
-    title: "Next.js Migration",
-    description: "Complete frontend rewrite to Next.js App Router with React Server Components.",
-    details: [
-      "Migration to Next.js 14+",
-      "React Server Components adoption",
-      "Improved SEO with static generation",
-      "Enhanced performance metrics",
-    ],
-    icon: TbBrandReact,
-    color: "text-cyan-500",
-    gradient: "from-cyan-500 to-teal-500",
-    tags: ["Next.js", "RSC", "Migration"],
-  },
-  {
-    id: "ai",
-    date: "June 2024",
-    title: "AI Integration",
-    description: "Deep integration with Azure OpenAI for intelligent document processing and natural language queries.",
-    details: [
-      "Azure OpenAI GPT-4 integration",
-      "Natural language invoice queries",
-      "Smart categorization algorithms",
-      "Predictive analytics features",
-    ],
-    icon: TbSparkles,
-    color: "text-indigo-500",
-    gradient: "from-indigo-500 to-purple-500",
-    tags: ["GPT-4", "Azure AI", "NLP"],
-  },
-  {
-    id: "present",
-    date: "Present",
-    title: "Continuous Evolution",
-    description: "Ongoing development with new features, optimizations, and community contributions.",
-    details: [
-      "Regular feature updates",
-      "Performance improvements",
-      "Community feedback integration",
-      "Future roadmap planning",
-    ],
-    icon: TbTools,
-    color: "text-teal-500",
-    gradient: "from-teal-500 to-green-500",
-    tags: ["Active", "Growing"],
-  },
+const eventConfigs: EventConfig[] = [
+  {id: "inception", icon: TbCode, color: "text-blue-500", gradient: "from-blue-500 to-cyan-500"},
+  {id: "prototype", icon: TbRocket, color: "text-green-500", gradient: "from-green-500 to-emerald-500"},
+  {id: "backend", icon: TbServer, color: "text-purple-500", gradient: "from-purple-500 to-violet-500"},
+  {id: "expansion", icon: TbFileInvoice, color: "text-orange-500", gradient: "from-orange-500 to-amber-500"},
+  {id: "launch", icon: TbCloud, color: "text-red-500", gradient: "from-red-500 to-pink-500"},
+  {id: "nextjs", icon: TbBrandReact, color: "text-cyan-500", gradient: "from-cyan-500 to-teal-500"},
+  {id: "ai", icon: TbSparkles, color: "text-indigo-500", gradient: "from-indigo-500 to-purple-500"},
+  {id: "present", icon: TbTools, color: "text-teal-500", gradient: "from-teal-500 to-green-500"},
 ];
 
 /**
@@ -166,6 +31,7 @@ const timelineEvents: TimelineEvent[] = [
  * @returns The Timeline component, CSR'ed.
  */
 export default function Timeline(): React.JSX.Element {
+  const t = useTranslations("About.Platform.timeline");
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
   const [hoveredEvent, setHoveredEvent] = useState<string | null>(null);
@@ -198,16 +64,14 @@ export default function Timeline(): React.JSX.Element {
             <Badge
               variant='outline'
               className='mb-4 px-4 py-1 text-sm'>
-              Development Journey
+              {t("badge")}
             </Badge>
           </motion.div>
           <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
-            From idea to{" "}
-            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>reality</span>
+            {t("title")}{" "}
+            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>{t("titleHighlight")}</span>
           </h2>
-          <p className='text-muted-foreground text-lg md:text-xl'>
-            The journey of arolariu.ro from a simple idea to a full-featured platform, with key milestones along the way.
-          </p>
+          <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
         </motion.div>
 
         {/* Timeline */}
@@ -223,7 +87,7 @@ export default function Timeline(): React.JSX.Element {
 
           {/* Timeline Events */}
           <div className='space-y-16'>
-            {timelineEvents.map((event, index) => {
+            {eventConfigs.map((event, index) => {
               const isLeft = index % 2 === 0;
               const isExpanded = expandedEvent === event.id;
 
@@ -272,23 +136,25 @@ export default function Timeline(): React.JSX.Element {
                           variant='outline'
                           className='mb-2 flex w-fit items-center gap-1'>
                           <TbCalendar className='h-3 w-3' />
-                          {event.date}
+                          {t(`events.${event.id}.date` as Parameters<typeof t>[0])}
                         </Badge>
-                        <CardTitle className='text-xl'>{event.title}</CardTitle>
-                        <CardDescription className='text-base'>{event.description}</CardDescription>
+                        <CardTitle className='text-xl'>{t(`events.${event.id}.title` as Parameters<typeof t>[0])}</CardTitle>
+                        <CardDescription className='text-base'>{t(`events.${event.id}.description` as Parameters<typeof t>[0])}</CardDescription>
                       </CardHeader>
 
                       <CardContent className='relative'>
                         {/* Tags */}
                         <div className='mb-4 flex flex-wrap gap-2'>
-                          {event.tags.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant='secondary'
-                              className='text-xs'>
-                              {tag}
-                            </Badge>
-                          ))}
+                          {t(`events.${event.id}.tags` as Parameters<typeof t>[0])
+                            .split(",")
+                            .map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant='secondary'
+                                className='text-xs'>
+                                {tag}
+                              </Badge>
+                            ))}
                         </div>
 
                         {/* Expandable Details */}
@@ -301,25 +167,29 @@ export default function Timeline(): React.JSX.Element {
                           transition={{duration: 0.3}}
                           className='overflow-hidden'>
                           <div className='border-primary/20 border-t pt-4'>
-                            <h4 className='mb-3 text-sm font-semibold'>Key Achievements:</h4>
+                            <h4 className='mb-3 text-sm font-semibold'>{t("keyAchievements")}</h4>
                             <ul className='space-y-2'>
-                              {event.details.map((detail) => (
-                                <motion.li
-                                  key={detail}
-                                  className='text-muted-foreground flex items-start gap-2 text-sm'
-                                  initial={{opacity: 0, x: -10}}
-                                  animate={isExpanded ? {opacity: 1, x: 0} : {}}
-                                  transition={{duration: 0.2}}>
-                                  <TbCheck className={`mt-0.5 h-4 w-4 shrink-0 ${event.color}`} />
-                                  {detail}
-                                </motion.li>
-                              ))}
+                              {t(`events.${event.id}.details` as Parameters<typeof t>[0])
+                                .split(",")
+                                .map((detail) => (
+                                  <motion.li
+                                    key={detail}
+                                    className='text-muted-foreground flex items-start gap-2 text-sm'
+                                    initial={{opacity: 0, x: -10}}
+                                    animate={isExpanded ? {opacity: 1, x: 0} : {}}
+                                    transition={{duration: 0.2}}>
+                                    <TbCheck className={`mt-0.5 h-4 w-4 shrink-0 ${event.color}`} />
+                                    {detail}
+                                  </motion.li>
+                                ))}
                             </ul>
                           </div>
                         </motion.div>
 
                         {/* Expand/Collapse indicator */}
-                        <div className='text-muted-foreground mt-2 text-center text-xs'>{isExpanded ? "Click to collapse" : "Click to expand"}</div>
+                        <div className='text-muted-foreground mt-2 text-center text-xs'>
+                          {isExpanded ? t("collapseHint") : t("expandHint")}
+                        </div>
                       </CardContent>
 
                       {/* Animated border */}
@@ -352,7 +222,7 @@ export default function Timeline(): React.JSX.Element {
               transition={{duration: 2, repeat: Number.POSITIVE_INFINITY}}>
               <TbRocket className='h-10 w-10' />
             </motion.div>
-            <p className='text-muted-foreground mt-4'>The journey continues...</p>
+            <p className='text-muted-foreground mt-4'>{t("futureIndicator")}</p>
           </motion.div>
         </div>
       </div>

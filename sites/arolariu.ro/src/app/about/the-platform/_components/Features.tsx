@@ -3,6 +3,7 @@
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {AnimatePresence, motion, useInView} from "motion/react";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useRef, useState} from "react";
 import {
@@ -18,126 +19,77 @@ import {
   TbToolsKitchen2,
 } from "react-icons/tb";
 
-interface Feature {
+interface FeatureConfig {
   id: string;
-  title: string;
-  description: string;
-  longDescription: string;
   icon: React.ComponentType<{className?: string}>;
   color: string;
   gradient: string;
   link: string;
-  tags: string[];
 }
 
-const features: Feature[] = [
+const featureConfigs: FeatureConfig[] = [
   {
     id: "invoices",
-    title: "Invoice Processing",
-    description: "AI-powered invoice analysis and management",
-    longDescription:
-      "Upload receipt photos and let AI extract merchant details, items, prices, and more. Automatic categorization, expense tracking, and detailed analytics help you understand your spending patterns.",
     icon: TbFileInvoice,
     color: "text-blue-500",
     gradient: "from-blue-500/20 via-blue-500/10 to-transparent",
     link: "/domains/invoices",
-    tags: ["AI", "OCR", "Analytics"],
   },
   {
     id: "merchants",
-    title: "Merchant Intelligence",
-    description: "Automatic merchant detection and insights",
-    longDescription:
-      "Our AI identifies merchants from receipt data, building a comprehensive database of your shopping patterns. Get insights into where you shop, spending trends, and merchant comparisons.",
     icon: TbReceipt,
     color: "text-purple-500",
     gradient: "from-purple-500/20 via-purple-500/10 to-transparent",
     link: "/domains/invoices/view-merchants",
-    tags: ["ML", "Insights", "Tracking"],
   },
   {
     id: "budgets",
-    title: "Budget Management",
-    description: "Smart budget tracking and alerts",
-    longDescription:
-      "Set budgets by category and receive intelligent alerts when approaching limits. Visualize your spending with interactive charts and identify areas for optimization.",
     icon: TbCurrencyDollar,
     color: "text-green-500",
     gradient: "from-green-500/20 via-green-500/10 to-transparent",
     link: "/domains/invoices",
-    tags: ["Budgets", "Alerts", "Planning"],
   },
   {
     id: "analytics",
-    title: "Expense Analytics",
-    description: "Deep insights into your spending",
-    longDescription:
-      "Comprehensive analytics dashboard with spending trends, category breakdowns, monthly comparisons, and predictive insights powered by machine learning algorithms.",
     icon: TbChartBar,
     color: "text-orange-500",
     gradient: "from-orange-500/20 via-orange-500/10 to-transparent",
     link: "/domains/invoices",
-    tags: ["Charts", "Trends", "Reports"],
   },
   {
     id: "recipes",
-    title: "Recipe Management",
-    description: "Organize and discover culinary creations",
-    longDescription:
-      "Store your favorite recipes, discover new ones, and plan meals efficiently. AI-powered suggestions based on ingredients, dietary preferences, and past cooking history.",
     icon: TbToolsKitchen2,
     color: "text-pink-500",
     gradient: "from-pink-500/20 via-pink-500/10 to-transparent",
     link: "/domains/recipes",
-    tags: ["Cooking", "Meal Planning", "AI"],
   },
   {
     id: "ai",
-    title: "AI Assistant",
-    description: "Intelligent automation at your fingertips",
-    longDescription:
-      "Powered by Azure OpenAI, our AI assistant helps with document understanding, data extraction, smart categorization, and natural language queries about your data.",
     icon: TbBrain,
     color: "text-cyan-500",
     gradient: "from-cyan-500/20 via-cyan-500/10 to-transparent",
     link: "/domains",
-    tags: ["GPT-4", "Azure AI", "NLP"],
   },
   {
     id: "security",
-    title: "Enterprise Security",
-    description: "Bank-grade security for your data",
-    longDescription:
-      "Your data is protected with enterprise-grade encryption, secure authentication via Azure AD B2C, and compliance with GDPR. We never sell or share your personal information.",
     icon: TbShieldCheck,
     color: "text-red-500",
     gradient: "from-red-500/20 via-red-500/10 to-transparent",
     link: "/about/the-platform",
-    tags: ["Encryption", "GDPR", "SSO"],
   },
   {
     id: "i18n",
-    title: "Multi-Language",
-    description: "Fully internationalized experience",
-    longDescription:
-      "The platform supports multiple languages with full RTL support. Currently available in English and Romanian, with more languages planned for future releases.",
     icon: TbLanguage,
     color: "text-indigo-500",
     gradient: "from-indigo-500/20 via-indigo-500/10 to-transparent",
     link: "/about/the-platform",
-    tags: ["i18n", "English", "Romanian"],
   },
   {
     id: "auth",
-    title: "Secure Authentication",
-    description: "Flexible and secure sign-in options",
-    longDescription:
-      "Sign in with Microsoft, Google, GitHub, or email. Azure AD B2C provides enterprise-grade identity management with MFA support and seamless SSO experience.",
     icon: TbLock,
     color: "text-amber-500",
     gradient: "from-amber-500/20 via-amber-500/10 to-transparent",
     link: "/auth/sign-in",
-    tags: ["OAuth", "MFA", "SSO"],
   },
 ];
 
@@ -147,10 +99,11 @@ const features: Feature[] = [
  * @returns The Features component, CSR'ed.
  */
 export default function Features(): React.JSX.Element {
+  const t = useTranslations("About.Platform.features");
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
-  const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<FeatureConfig | null>(null);
 
   return (
     <section
@@ -175,22 +128,19 @@ export default function Features(): React.JSX.Element {
             <Badge
               variant='outline'
               className='mb-4 px-4 py-1 text-sm'>
-              Platform Features
+              {t("badge")}
             </Badge>
           </motion.div>
           <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
-            Everything you need,{" "}
-            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>beautifully crafted</span>
+            {t("title")}{" "}
+            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>{t("titleHighlight")}</span>
           </h2>
-          <p className='text-muted-foreground text-lg md:text-xl'>
-            A comprehensive suite of tools designed for modern personal finance management, recipe organization, and more. Built with cutting-edge
-            technologies and a focus on user experience.
-          </p>
+          <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
         </motion.div>
 
         {/* Features Grid */}
         <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
-          {features.map((feature, index) => (
+          {featureConfigs.map((feature, index) => (
             <motion.div
               key={feature.id}
               initial={{opacity: 0, y: 30}}
@@ -232,20 +182,22 @@ export default function Features(): React.JSX.Element {
                       <TbArrowRight className={`h-5 w-5 ${feature.color}`} />
                     </motion.div>
                   </div>
-                  <CardTitle className='text-xl'>{feature.title}</CardTitle>
-                  <CardDescription className='text-base'>{feature.description}</CardDescription>
+                  <CardTitle className='text-xl'>{t(`items.${feature.id}.title` as Parameters<typeof t>[0])}</CardTitle>
+                  <CardDescription className='text-base'>{t(`items.${feature.id}.description` as Parameters<typeof t>[0])}</CardDescription>
                 </CardHeader>
 
                 <CardContent className='relative'>
                   <div className='flex flex-wrap gap-2'>
-                    {feature.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant='secondary'
-                        className='text-xs'>
-                        {tag}
-                      </Badge>
-                    ))}
+                    {t(`items.${feature.id}.tags` as Parameters<typeof t>[0])
+                      .split(",")
+                      .map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant='secondary'
+                          className='text-xs'>
+                          {tag}
+                        </Badge>
+                      ))}
                   </div>
                 </CardContent>
               </Card>
@@ -276,28 +228,30 @@ export default function Features(): React.JSX.Element {
                   <selectedFeature.icon className={`h-8 w-8 ${selectedFeature.color}`} />
                 </div>
                 <div>
-                  <h3 className='text-2xl font-bold'>{selectedFeature.title}</h3>
-                  <p className='text-muted-foreground'>{selectedFeature.description}</p>
+                  <h3 className='text-2xl font-bold'>{t(`items.${selectedFeature.id}.title` as Parameters<typeof t>[0])}</h3>
+                  <p className='text-muted-foreground'>{t(`items.${selectedFeature.id}.description` as Parameters<typeof t>[0])}</p>
                 </div>
               </div>
 
-              <p className='text-muted-foreground mb-6 text-lg leading-relaxed'>{selectedFeature.longDescription}</p>
+              <p className='text-muted-foreground mb-6 text-lg leading-relaxed'>{t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}</p>
 
               <div className='mb-6 flex flex-wrap gap-2'>
-                {selectedFeature.tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant='secondary'>
-                    {tag}
-                  </Badge>
-                ))}
+                {t(`items.${selectedFeature.id}.tags` as Parameters<typeof t>[0])
+                  .split(",")
+                  .map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant='secondary'>
+                      {tag}
+                    </Badge>
+                  ))}
               </div>
 
               <div className='flex gap-4'>
                 <Link
                   href={selectedFeature.link}
                   className={`inline-flex items-center gap-2 rounded-lg bg-gradient-to-r ${selectedFeature.gradient} px-6 py-3 font-medium transition-transform hover:scale-105`}>
-                  Explore Feature
+                  {t("modal.exploreFeature")}
                   <TbArrowRight className='h-5 w-5' />
                 </Link>
                 <button
@@ -305,7 +259,7 @@ export default function Features(): React.JSX.Element {
                   // eslint-disable-next-line react/jsx-no-bind -- simple modal
                   onClick={() => setSelectedFeature(null)}
                   className='text-muted-foreground hover:text-foreground px-6 py-3 transition-colors'>
-                  Close
+                  {t("modal.close")}
                 </button>
               </div>
             </motion.div>

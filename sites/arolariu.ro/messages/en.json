@@ -267,6 +267,317 @@
       "__metadata__": {
         "description": "Learn more about the platform, arolariu.ro.",
         "title": "The platform"
+      },
+      "hero": {
+        "statusBadge": "Open Source Technology Platform",
+        "subtitle": "Modern • Scalable • Open Source",
+        "title": "Welcome to",
+        "description": "A comprehensive full-stack platform combining Next.js, .NET, and Azure cloud services. Built with enterprise-grade architecture, domain-driven design, and a focus on developer experience.",
+        "stats": {
+          "projects": "Projects",
+          "techStack": "Tech Stack",
+          "linesOfCode": "Lines of Code",
+          "countries": "Countries"
+        },
+        "cta": {
+          "exploreFeatures": "Explore Features",
+          "viewSource": "View Source"
+        },
+        "trust": {
+          "openSource": "Open Source",
+          "privacyFirst": "Privacy First",
+          "freeForever": "Free Forever"
+        },
+        "scrollIndicator": "Scroll to explore"
+      },
+      "features": {
+        "badge": "Platform Features",
+        "title": "Everything you need,",
+        "titleHighlight": "beautifully crafted",
+        "description": "A comprehensive suite of tools designed for modern personal finance management, recipe organization, and more. Built with cutting-edge technologies and a focus on user experience.",
+        "items": {
+          "invoices": {
+            "title": "Invoice Processing",
+            "description": "AI-powered invoice analysis and management",
+            "longDescription": "Upload receipt photos and let AI extract merchant details, items, prices, and more. Automatic categorization, expense tracking, and detailed analytics help you understand your spending patterns.",
+            "tags": "AI,OCR,Analytics"
+          },
+          "merchants": {
+            "title": "Merchant Intelligence",
+            "description": "Automatic merchant detection and insights",
+            "longDescription": "Our AI identifies merchants from receipt data, building a comprehensive database of your shopping patterns. Get insights into where you shop, spending trends, and merchant comparisons.",
+            "tags": "ML,Insights,Tracking"
+          },
+          "budgets": {
+            "title": "Budget Management",
+            "description": "Smart budget tracking and alerts",
+            "longDescription": "Set budgets by category and receive intelligent alerts when approaching limits. Visualize your spending with interactive charts and identify areas for optimization.",
+            "tags": "Budgets,Alerts,Planning"
+          },
+          "analytics": {
+            "title": "Expense Analytics",
+            "description": "Deep insights into your spending",
+            "longDescription": "Comprehensive analytics dashboard with spending trends, category breakdowns, monthly comparisons, and predictive insights powered by machine learning algorithms.",
+            "tags": "Charts,Trends,Reports"
+          },
+          "recipes": {
+            "title": "Recipe Management",
+            "description": "Organize and discover culinary creations",
+            "longDescription": "Store your favorite recipes, discover new ones, and plan meals efficiently. AI-powered suggestions based on ingredients, dietary preferences, and past cooking history.",
+            "tags": "Cooking,Meal Planning,AI"
+          },
+          "ai": {
+            "title": "AI Assistant",
+            "description": "Intelligent automation at your fingertips",
+            "longDescription": "Powered by Azure OpenAI, our AI assistant helps with document understanding, data extraction, smart categorization, and natural language queries about your data.",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "security": {
+            "title": "Enterprise Security",
+            "description": "Bank-grade security for your data",
+            "longDescription": "Your data is protected with enterprise-grade encryption, secure authentication via Azure AD B2C, and compliance with GDPR. We never sell or share your personal information.",
+            "tags": "Encryption,GDPR,SSO"
+          },
+          "i18n": {
+            "title": "Multi-Language",
+            "description": "Fully internationalized experience",
+            "longDescription": "The platform supports multiple languages with full RTL support. Currently available in English and Romanian, with more languages planned for future releases.",
+            "tags": "i18n,English,Romanian"
+          },
+          "auth": {
+            "title": "Secure Authentication",
+            "description": "Flexible and secure sign-in options",
+            "longDescription": "Sign in with Microsoft, Google, GitHub, or email. Azure AD B2C provides enterprise-grade identity management with MFA support and seamless SSO experience.",
+            "tags": "OAuth,MFA,SSO"
+          }
+        },
+        "modal": {
+          "exploreFeature": "Explore Feature",
+          "close": "Close"
+        }
+      },
+      "architecture": {
+        "badge": "Technical Architecture",
+        "title": "Built for",
+        "titleHighlight": "scale and reliability",
+        "description": "A modern cloud-native architecture following domain-driven design principles, The Standard methodology, and industry best practices.",
+        "layers": {
+          "client": {
+            "name": "Client Layer",
+            "description": "Modern React-based frontends with SSR and SSG capabilities",
+            "technologies": "Next.js 16,React 19,TypeScript,Tailwind CSS"
+          },
+          "cdn": {
+            "name": "Edge & CDN",
+            "description": "Global content delivery with edge caching and optimization",
+            "technologies": "Azure CDN,Vercel Edge,Static Assets"
+          },
+          "api": {
+            "name": "API Gateway",
+            "description": "RESTful APIs with OpenAPI documentation and rate limiting",
+            "technologies": ".NET 10,Minimal APIs,OpenAPI,GraphQL"
+          },
+          "services": {
+            "name": "Microservices",
+            "description": "Domain-driven design with bounded contexts and clean architecture",
+            "technologies": "DDD,CQRS,Event Sourcing,The Standard"
+          },
+          "auth": {
+            "name": "Identity & Security",
+            "description": "Enterprise-grade authentication with multiple providers",
+            "technologies": "Azure AD B2C,OAuth 2.0,OIDC,MFA"
+          },
+          "data": {
+            "name": "Data Layer",
+            "description": "Multi-model database strategy for optimal performance",
+            "technologies": "CosmosDB,Azure SQL,Redis Cache,Blob Storage"
+          },
+          "ai": {
+            "name": "AI Services",
+            "description": "Intelligent document processing and natural language understanding",
+            "technologies": "Azure OpenAI,Document Intelligence,Computer Vision"
+          },
+          "infra": {
+            "name": "Cloud Infrastructure",
+            "description": "Fully managed Azure infrastructure with IaC deployment",
+            "technologies": "Azure,Bicep IaC,Container Apps,Key Vault"
+          }
+        },
+        "principles": {
+          "rsc": {
+            "title": "React Server Components",
+            "description": "Leveraging RSC for optimal performance with server-side rendering and streaming"
+          },
+          "appRouter": {
+            "title": "App Router Architecture",
+            "description": "File-based routing with layouts, loading states, and error boundaries"
+          },
+          "cloudNative": {
+            "title": "Cloud Native Design",
+            "description": "Containerized microservices with auto-scaling and self-healing capabilities"
+          }
+        }
+      },
+      "techStack": {
+        "badge": "Technology Stack",
+        "title": "Powered by",
+        "titleHighlight": "modern technologies",
+        "description": "A carefully curated technology stack chosen for performance, developer experience, and long-term maintainability.",
+        "categories": {
+          "frontend": {
+            "name": "Frontend",
+            "description": "Modern web technologies for blazing-fast user experiences"
+          },
+          "backend": {
+            "name": "Backend",
+            "description": "Scalable server-side technologies and APIs"
+          },
+          "cloud": {
+            "name": "Cloud & DevOps",
+            "description": "Infrastructure and deployment automation"
+          },
+          "tooling": {
+            "name": "Developer Tools",
+            "description": "Tools and frameworks for development excellence"
+          }
+        },
+        "technologies": {
+          "react": { "name": "React", "description": "UI library for building interactive interfaces" },
+          "nextjs": { "name": "Next.js", "description": "Full-stack React framework with SSR/SSG" },
+          "typescript": { "name": "TypeScript", "description": "Type-safe JavaScript for robust code" },
+          "tailwind": { "name": "Tailwind CSS", "description": "Utility-first CSS framework" },
+          "zustand": { "name": "Zustand", "description": "Lightweight state management" },
+          "motion": { "name": "Motion", "description": "Production-ready animations" },
+          "dotnet": { "name": ".NET", "description": "Primary backend framework" },
+          "aspnet": { "name": "ASP.NET Core", "description": "High-performance web APIs" },
+          "nodejs": { "name": "Node.js", "description": "BFF and serverless functions" },
+          "cosmosdb": { "name": "CosmosDB", "description": "Globally distributed NoSQL database" },
+          "azuresql": { "name": "Azure SQL", "description": "Managed relational database" },
+          "redis": { "name": "Redis", "description": "In-memory cache for performance" },
+          "azure": { "name": "Azure", "description": "Primary cloud provider" },
+          "vercel": { "name": "Vercel", "description": "Frontend deployment platform" },
+          "docker": { "name": "Docker", "description": "Containerization platform" },
+          "githubActions": { "name": "GitHub Actions", "description": "CI/CD automation" },
+          "bicep": { "name": "Bicep", "description": "Infrastructure as Code" },
+          "azureDevops": { "name": "Azure DevOps", "description": "Project management & pipelines" },
+          "git": { "name": "Git", "description": "Version control system" },
+          "eslint": { "name": "ESLint", "description": "JavaScript linting with 20+ plugins" },
+          "prettier": { "name": "Prettier", "description": "Code formatting" },
+          "vitest": { "name": "Vitest", "description": "Unit testing framework" },
+          "playwright": { "name": "Playwright", "description": "E2E testing framework" },
+          "pnpm": { "name": "pnpm/npm", "description": "Package management" }
+        },
+        "stats": {
+          "technologies": { "value": "24+", "label": "Technologies", "description": "In our stack" },
+          "coverage": { "value": "90%+", "label": "Test Coverage", "description": "Unit & E2E tests" },
+          "typescript": { "value": "100%", "label": "TypeScript", "description": "Full type safety" },
+          "security": { "value": "A+", "label": "Security Grade", "description": "Best practices" }
+        }
+      },
+      "statistics": {
+        "badge": "Platform Statistics",
+        "title": "Numbers that",
+        "titleHighlight": "speak for themselves",
+        "description": "A glimpse into the scale and impact of the arolariu.ro platform, from lines of code to global reach.",
+        "items": {
+          "projects": { "value": "15", "suffix": "+", "label": "Projects", "description": "Active repositories" },
+          "commits": { "value": "2500", "suffix": "+", "label": "Commits", "description": "Code contributions" },
+          "linesOfCode": { "value": "150", "suffix": "K+", "label": "Lines of Code", "description": "Across all projects" },
+          "apis": { "value": "8", "suffix": "+", "label": "APIs", "description": "Microservices" },
+          "users": { "value": "1000", "suffix": "+", "label": "Users", "description": "Active monthly" },
+          "countries": { "value": "25", "suffix": "+", "label": "Countries", "description": "Global reach" },
+          "stars": { "value": "50", "suffix": "+", "label": "Stars", "description": "GitHub stars" },
+          "contributors": { "value": "5", "suffix": "+", "label": "Contributors", "description": "Open source" }
+        }
+      },
+      "timeline": {
+        "badge": "Development Journey",
+        "title": "From idea to",
+        "titleHighlight": "reality",
+        "description": "The journey of arolariu.ro from a simple idea to a full-featured platform, with key milestones along the way.",
+        "futureIndicator": "The journey continues...",
+        "expandHint": "Click to expand",
+        "collapseHint": "Click to collapse",
+        "keyAchievements": "Key Achievements:",
+        "events": {
+          "inception": {
+            "date": "March 2022",
+            "title": "Project Inception",
+            "description": "The arolariu.ro platform was conceived as a personal learning project to explore modern web development.",
+            "details": "Initial concept and planning phase,Research into modern web technologies,First repository created on GitHub,Basic HTML/CSS prototype developed",
+            "tags": "Planning,Research"
+          },
+          "prototype": {
+            "date": "June 2022",
+            "title": "First Prototype",
+            "description": "The first working prototype of the platform was developed using React and basic backend services.",
+            "details": "React frontend implementation,Basic authentication flow,Initial UI/UX design,Local development environment setup",
+            "tags": "React,Frontend"
+          },
+          "backend": {
+            "date": "September 2022",
+            "title": "Backend Infrastructure",
+            "description": "Complete backend overhaul with .NET and cloud-native architecture implementation.",
+            "details": ".NET 6 API development,Azure cloud infrastructure setup,Database design with CosmosDB,CI/CD pipeline implementation",
+            "tags": ".NET,Azure,API"
+          },
+          "expansion": {
+            "date": "January 2023",
+            "title": "Platform Expansion",
+            "description": "Major feature additions including invoice processing and AI-powered analysis capabilities.",
+            "details": "Invoice upload and OCR integration,Azure Document Intelligence integration,Merchant detection algorithms,Budget tracking features",
+            "tags": "AI,OCR,Invoices"
+          },
+          "launch": {
+            "date": "June 2023",
+            "title": "Public Launch",
+            "description": "Official public launch with a complete set of features and production-ready infrastructure.",
+            "details": "Production deployment to Azure,Custom domain configuration,SSL/TLS security implementation,Performance optimization",
+            "tags": "Launch,Production"
+          },
+          "nextjs": {
+            "date": "December 2023",
+            "title": "Next.js Migration",
+            "description": "Complete frontend rewrite to Next.js App Router with React Server Components.",
+            "details": "Migration to Next.js 14+,React Server Components adoption,Improved SEO with static generation,Enhanced performance metrics",
+            "tags": "Next.js,RSC,Migration"
+          },
+          "ai": {
+            "date": "June 2024",
+            "title": "AI Integration",
+            "description": "Deep integration with Azure OpenAI for intelligent document processing and natural language queries.",
+            "details": "Azure OpenAI GPT-4 integration,Natural language invoice queries,Smart categorization algorithms,Predictive analytics features",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "present": {
+            "date": "Present",
+            "title": "Continuous Evolution",
+            "description": "Ongoing development with new features, optimizations, and community contributions.",
+            "details": "Regular feature updates,Performance improvements,Community feedback integration,Future roadmap planning",
+            "tags": "Active,Growing"
+          }
+        }
+      },
+      "callToAction": {
+        "title": "Ready to",
+        "titleHighlight": "get started",
+        "description": "Explore the platform, try out the features, and join the community. Whether you're here to manage invoices, discover recipes, or just explore, there's something for everyone.",
+        "cta": {
+          "exploreApplications": "Explore Applications",
+          "createAccount": "Create Account"
+        },
+        "links": {
+          "viewSource": "View Source Code",
+          "meetAuthor": "Meet the Author",
+          "getInTouch": "Get in Touch"
+        },
+        "trust": {
+          "openSource": { "title": "Open Source", "description": "100% open source with MIT license" },
+          "privacyFirst": { "title": "Privacy First", "description": "Your data stays yours, always" },
+          "freeToUse": { "title": "Free to Use", "description": "No hidden fees or subscriptions" }
+        },
+        "footer": "Built with passion by",
+        "footerRole": ", a software engineer at Microsoft."
       }
     },
     "subtitle": " The arolariu.ro story began in 2022, when the author - Alexandru-Razvan Olariu, wanted to understand how websites work. The whole platform and underlying integrations have been developed solely by the author, from what he has learnt along the years. Alexandru currently works as a software engineer at Microsoft. To learn more about him, check the right section of this page. The platform is built using the latest state-of-the-art technologies. To learn more about it, check the left section of this page.",

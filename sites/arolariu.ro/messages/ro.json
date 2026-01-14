@@ -267,6 +267,317 @@
       "__metadata__": {
         "description": "Aflați mai multe despre platformă, Arolariu.ro.",
         "title": "Platforma"
+      },
+      "hero": {
+        "statusBadge": "Platformă Open Source",
+        "subtitle": "Modern • Scalabil • Open Source",
+        "title": "Bine ai venit pe",
+        "description": "O platformă full-stack completă care combină Next.js, .NET și servicii cloud Azure. Construită cu arhitectură de nivel enterprise, design bazat pe domeniu și un accent pe experiența dezvoltatorului.",
+        "stats": {
+          "projects": "Proiecte",
+          "techStack": "Stack tehnologic",
+          "linesOfCode": "Linii de cod",
+          "countries": "Țări"
+        },
+        "cta": {
+          "exploreFeatures": "Explorează funcționalități",
+          "viewSource": "Vezi codul sursă"
+        },
+        "trust": {
+          "openSource": "Open Source",
+          "privacyFirst": "Confidențialitate în prim-plan",
+          "freeForever": "Gratuit pentru totdeauna"
+        },
+        "scrollIndicator": "Derulează pentru a explora"
+      },
+      "features": {
+        "badge": "Funcționalități ale platformei",
+        "title": "Tot ce ai nevoie,",
+        "titleHighlight": "frumos realizat",
+        "description": "O suită completă de instrumente concepute pentru gestionarea modernă a finanțelor personale, organizarea rețetelor și multe altele. Construite cu tehnologii de ultimă generație și un accent pe experiența utilizatorului.",
+        "items": {
+          "invoices": {
+            "title": "Procesare facturi",
+            "description": "Analiză și gestionare a facturilor cu ajutorul AI",
+            "longDescription": "Încărcați fotografii cu bonuri și lăsați AI să extragă detaliile comerciantului, articolele, prețurile și multe altele. Categorizarea automată, urmărirea cheltuielilor și analizele detaliate vă ajută să vă înțelegeți tiparele de cheltuieli.",
+            "tags": "AI,OCR,Analize"
+          },
+          "merchants": {
+            "title": "Inteligență comercianți",
+            "description": "Detectare automată a comercianților și perspective",
+            "longDescription": "AI-ul nostru identifică comercianții din datele bonurilor, construind o bază de date completă a tiparelor dvs. de cumpărături. Obțineți informații despre unde faceți cumpărături, tendințele cheltuielilor și comparații între comercianți.",
+            "tags": "ML,Perspective,Urmărire"
+          },
+          "budgets": {
+            "title": "Gestionare buget",
+            "description": "Urmărire inteligentă a bugetului și alerte",
+            "longDescription": "Setați bugete pe categorii și primiți alerte inteligente când vă apropiați de limite. Vizualizați cheltuielile cu grafice interactive și identificați zonele pentru optimizare.",
+            "tags": "Bugete,Alerte,Planificare"
+          },
+          "analytics": {
+            "title": "Analize cheltuieli",
+            "description": "Perspective profunde în cheltuielile dvs.",
+            "longDescription": "Tablou de bord analitic complet cu tendințe de cheltuieli, defalcări pe categorii, comparații lunare și perspective predictive alimentate de algoritmi de învățare automată.",
+            "tags": "Grafice,Tendințe,Rapoarte"
+          },
+          "recipes": {
+            "title": "Gestionare rețete",
+            "description": "Organizați și descoperiți creații culinare",
+            "longDescription": "Stocați rețetele preferate, descoperiți unele noi și planificați mesele eficient. Sugestii bazate pe AI în funcție de ingrediente, preferințe dietetice și istoricul de gătit.",
+            "tags": "Gătit,Planificare mese,AI"
+          },
+          "ai": {
+            "title": "Asistent AI",
+            "description": "Automatizare inteligentă la îndemână",
+            "longDescription": "Alimentat de Azure OpenAI, asistentul nostru AI ajută la înțelegerea documentelor, extragerea datelor, categorizarea inteligentă și interogări în limbaj natural despre datele dvs.",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "security": {
+            "title": "Securitate enterprise",
+            "description": "Securitate de nivel bancar pentru datele dvs.",
+            "longDescription": "Datele dvs. sunt protejate cu criptare de nivel enterprise, autentificare securizată prin Azure AD B2C și conformitate cu GDPR. Nu vindem și nu împărtășim niciodată informațiile dvs. personale.",
+            "tags": "Criptare,GDPR,SSO"
+          },
+          "i18n": {
+            "title": "Multi-limbă",
+            "description": "Experiență complet internaționalizată",
+            "longDescription": "Platforma suportă mai multe limbi cu suport RTL complet. Disponibilă în prezent în engleză și română, cu mai multe limbi planificate pentru versiunile viitoare.",
+            "tags": "i18n,Engleză,Română"
+          },
+          "auth": {
+            "title": "Autentificare securizată",
+            "description": "Opțiuni de conectare flexibile și sigure",
+            "longDescription": "Conectați-vă cu Microsoft, Google, GitHub sau email. Azure AD B2C oferă gestionarea identității de nivel enterprise cu suport MFA și experiență SSO fără întreruperi.",
+            "tags": "OAuth,MFA,SSO"
+          }
+        },
+        "modal": {
+          "exploreFeature": "Explorează funcționalitatea",
+          "close": "Închide"
+        }
+      },
+      "architecture": {
+        "badge": "Arhitectură tehnică",
+        "title": "Construit pentru",
+        "titleHighlight": "scalabilitate și fiabilitate",
+        "description": "O arhitectură modernă nativă cloud care urmează principiile de design bazat pe domeniu, metodologia The Standard și cele mai bune practici din industrie.",
+        "layers": {
+          "client": {
+            "name": "Nivelul client",
+            "description": "Frontend-uri moderne bazate pe React cu capacități SSR și SSG",
+            "technologies": "Next.js 16,React 19,TypeScript,Tailwind CSS"
+          },
+          "cdn": {
+            "name": "Edge și CDN",
+            "description": "Livrare globală de conținut cu cache la margine și optimizare",
+            "technologies": "Azure CDN,Vercel Edge,Active statice"
+          },
+          "api": {
+            "name": "Gateway API",
+            "description": "API-uri RESTful cu documentație OpenAPI și limitare a ratei",
+            "technologies": ".NET 10,Minimal APIs,OpenAPI,GraphQL"
+          },
+          "services": {
+            "name": "Microservicii",
+            "description": "Design bazat pe domeniu cu contexte delimitate și arhitectură curată",
+            "technologies": "DDD,CQRS,Event Sourcing,The Standard"
+          },
+          "auth": {
+            "name": "Identitate și securitate",
+            "description": "Autentificare de nivel enterprise cu furnizori multipli",
+            "technologies": "Azure AD B2C,OAuth 2.0,OIDC,MFA"
+          },
+          "data": {
+            "name": "Nivelul de date",
+            "description": "Strategie de baze de date multi-model pentru performanță optimă",
+            "technologies": "CosmosDB,Azure SQL,Redis Cache,Blob Storage"
+          },
+          "ai": {
+            "name": "Servicii AI",
+            "description": "Procesare inteligentă a documentelor și înțelegere a limbajului natural",
+            "technologies": "Azure OpenAI,Document Intelligence,Computer Vision"
+          },
+          "infra": {
+            "name": "Infrastructură cloud",
+            "description": "Infrastructură Azure complet gestionată cu implementare IaC",
+            "technologies": "Azure,Bicep IaC,Container Apps,Key Vault"
+          }
+        },
+        "principles": {
+          "rsc": {
+            "title": "React Server Components",
+            "description": "Utilizarea RSC pentru performanță optimă cu randare server-side și streaming"
+          },
+          "appRouter": {
+            "title": "Arhitectură App Router",
+            "description": "Rutare bazată pe fișiere cu layout-uri, stări de încărcare și limite de erori"
+          },
+          "cloudNative": {
+            "title": "Design nativ cloud",
+            "description": "Microservicii containerizate cu auto-scalare și capacități de auto-vindecare"
+          }
+        }
+      },
+      "techStack": {
+        "badge": "Stack tehnologic",
+        "title": "Alimentat de",
+        "titleHighlight": "tehnologii moderne",
+        "description": "Un stack tehnologic atent ales pentru performanță, experiența dezvoltatorului și mentenabilitate pe termen lung.",
+        "categories": {
+          "frontend": {
+            "name": "Frontend",
+            "description": "Tehnologii web moderne pentru experiențe de utilizator ultra-rapide"
+          },
+          "backend": {
+            "name": "Backend",
+            "description": "Tehnologii server-side scalabile și API-uri"
+          },
+          "cloud": {
+            "name": "Cloud și DevOps",
+            "description": "Automatizarea infrastructurii și implementării"
+          },
+          "tooling": {
+            "name": "Unelte pentru dezvoltatori",
+            "description": "Unelte și framework-uri pentru excelență în dezvoltare"
+          }
+        },
+        "technologies": {
+          "react": { "name": "React", "description": "Bibliotecă UI pentru construirea de interfețe interactive" },
+          "nextjs": { "name": "Next.js", "description": "Framework React full-stack cu SSR/SSG" },
+          "typescript": { "name": "TypeScript", "description": "JavaScript cu tipuri pentru cod robust" },
+          "tailwind": { "name": "Tailwind CSS", "description": "Framework CSS bazat pe utilități" },
+          "zustand": { "name": "Zustand", "description": "Gestionare ușoară a stării" },
+          "motion": { "name": "Motion", "description": "Animații gata de producție" },
+          "dotnet": { "name": ".NET", "description": "Framework backend principal" },
+          "aspnet": { "name": "ASP.NET Core", "description": "API-uri web de înaltă performanță" },
+          "nodejs": { "name": "Node.js", "description": "BFF și funcții serverless" },
+          "cosmosdb": { "name": "CosmosDB", "description": "Bază de date NoSQL distribuită global" },
+          "azuresql": { "name": "Azure SQL", "description": "Bază de date relațională gestionată" },
+          "redis": { "name": "Redis", "description": "Cache în memorie pentru performanță" },
+          "azure": { "name": "Azure", "description": "Furnizor cloud principal" },
+          "vercel": { "name": "Vercel", "description": "Platformă de implementare frontend" },
+          "docker": { "name": "Docker", "description": "Platformă de containerizare" },
+          "githubActions": { "name": "GitHub Actions", "description": "Automatizare CI/CD" },
+          "bicep": { "name": "Bicep", "description": "Infrastructură ca și cod" },
+          "azureDevops": { "name": "Azure DevOps", "description": "Gestionare proiecte și pipeline-uri" },
+          "git": { "name": "Git", "description": "Sistem de control al versiunilor" },
+          "eslint": { "name": "ESLint", "description": "Linting JavaScript cu 20+ plugin-uri" },
+          "prettier": { "name": "Prettier", "description": "Formatare cod" },
+          "vitest": { "name": "Vitest", "description": "Framework de testare unitară" },
+          "playwright": { "name": "Playwright", "description": "Framework de testare E2E" },
+          "pnpm": { "name": "pnpm/npm", "description": "Gestionare pachete" }
+        },
+        "stats": {
+          "technologies": { "value": "24+", "label": "Tehnologii", "description": "În stack-ul nostru" },
+          "coverage": { "value": "90%+", "label": "Acoperire teste", "description": "Teste unitare și E2E" },
+          "typescript": { "value": "100%", "label": "TypeScript", "description": "Siguranță completă a tipurilor" },
+          "security": { "value": "A+", "label": "Grad de securitate", "description": "Cele mai bune practici" }
+        }
+      },
+      "statistics": {
+        "badge": "Statistici ale platformei",
+        "title": "Numere care",
+        "titleHighlight": "vorbesc de la sine",
+        "description": "O privire asupra dimensiunii și impactului platformei arolariu.ro, de la linii de cod la acoperire globală.",
+        "items": {
+          "projects": { "value": "15", "suffix": "+", "label": "Proiecte", "description": "Repozitorii active" },
+          "commits": { "value": "2500", "suffix": "+", "label": "Commit-uri", "description": "Contribuții de cod" },
+          "linesOfCode": { "value": "150", "suffix": "K+", "label": "Linii de cod", "description": "În toate proiectele" },
+          "apis": { "value": "8", "suffix": "+", "label": "API-uri", "description": "Microservicii" },
+          "users": { "value": "1000", "suffix": "+", "label": "Utilizatori", "description": "Activi lunar" },
+          "countries": { "value": "25", "suffix": "+", "label": "Țări", "description": "Acoperire globală" },
+          "stars": { "value": "50", "suffix": "+", "label": "Stele", "description": "Stele GitHub" },
+          "contributors": { "value": "5", "suffix": "+", "label": "Contribuitori", "description": "Open source" }
+        }
+      },
+      "timeline": {
+        "badge": "Călătoria de dezvoltare",
+        "title": "De la idee la",
+        "titleHighlight": "realitate",
+        "description": "Călătoria arolariu.ro de la o simplă idee la o platformă completă, cu etape cheie pe parcurs.",
+        "futureIndicator": "Călătoria continuă...",
+        "expandHint": "Click pentru a extinde",
+        "collapseHint": "Click pentru a restrânge",
+        "keyAchievements": "Realizări cheie:",
+        "events": {
+          "inception": {
+            "date": "Martie 2022",
+            "title": "Începutul proiectului",
+            "description": "Platforma arolariu.ro a fost concepută ca un proiect personal de învățare pentru a explora dezvoltarea web modernă.",
+            "details": "Faza inițială de concept și planificare,Cercetare în tehnologii web moderne,Primul repozitoriu creat pe GitHub,Prototip HTML/CSS de bază dezvoltat",
+            "tags": "Planificare,Cercetare"
+          },
+          "prototype": {
+            "date": "Iunie 2022",
+            "title": "Primul prototip",
+            "description": "Primul prototip funcțional al platformei a fost dezvoltat folosind React și servicii backend de bază.",
+            "details": "Implementare frontend React,Flux de autentificare de bază,Design UI/UX inițial,Configurare mediu de dezvoltare locală",
+            "tags": "React,Frontend"
+          },
+          "backend": {
+            "date": "Septembrie 2022",
+            "title": "Infrastructură backend",
+            "description": "Refacerea completă a backend-ului cu .NET și implementarea arhitecturii native cloud.",
+            "details": "Dezvoltare API .NET 6,Configurare infrastructură cloud Azure,Design bază de date cu CosmosDB,Implementare pipeline CI/CD",
+            "tags": ".NET,Azure,API"
+          },
+          "expansion": {
+            "date": "Ianuarie 2023",
+            "title": "Extinderea platformei",
+            "description": "Adăugări majore de funcționalități incluzând procesarea facturilor și capabilități de analiză alimentate de AI.",
+            "details": "Încărcare facturi și integrare OCR,Integrare Azure Document Intelligence,Algoritmi de detectare a comercianților,Funcționalități de urmărire a bugetului",
+            "tags": "AI,OCR,Facturi"
+          },
+          "launch": {
+            "date": "Iunie 2023",
+            "title": "Lansare publică",
+            "description": "Lansare publică oficială cu un set complet de funcționalități și infrastructură gata de producție.",
+            "details": "Implementare în producție pe Azure,Configurare domeniu personalizat,Implementare securitate SSL/TLS,Optimizare performanță",
+            "tags": "Lansare,Producție"
+          },
+          "nextjs": {
+            "date": "Decembrie 2023",
+            "title": "Migrare la Next.js",
+            "description": "Rescrierea completă a frontend-ului la Next.js App Router cu React Server Components.",
+            "details": "Migrare la Next.js 14+,Adoptarea React Server Components,SEO îmbunătățit cu generare statică,Metrici de performanță îmbunătățite",
+            "tags": "Next.js,RSC,Migrare"
+          },
+          "ai": {
+            "date": "Iunie 2024",
+            "title": "Integrare AI",
+            "description": "Integrare profundă cu Azure OpenAI pentru procesarea inteligentă a documentelor și interogări în limbaj natural.",
+            "details": "Integrare Azure OpenAI GPT-4,Interogări facturi în limbaj natural,Algoritmi de categorizare inteligentă,Funcționalități de analiză predictivă",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "present": {
+            "date": "Prezent",
+            "title": "Evoluție continuă",
+            "description": "Dezvoltare continuă cu funcționalități noi, optimizări și contribuții din comunitate.",
+            "details": "Actualizări regulate de funcționalități,Îmbunătățiri de performanță,Integrare feedback din comunitate,Planificare roadmap viitor",
+            "tags": "Activ,În creștere"
+          }
+        }
+      },
+      "callToAction": {
+        "title": "Gata să",
+        "titleHighlight": "începi",
+        "description": "Explorează platforma, încearcă funcționalitățile și alătură-te comunității. Fie că ești aici să gestionezi facturi, să descoperi rețete sau doar să explorezi, există ceva pentru toată lumea.",
+        "cta": {
+          "exploreApplications": "Explorează aplicațiile",
+          "createAccount": "Creează cont"
+        },
+        "links": {
+          "viewSource": "Vezi codul sursă",
+          "meetAuthor": "Cunoaște autorul",
+          "getInTouch": "Ia legătura"
+        },
+        "trust": {
+          "openSource": { "title": "Open Source", "description": "100% open source cu licență MIT" },
+          "privacyFirst": { "title": "Confidențialitate în prim-plan", "description": "Datele tale rămân ale tale, mereu" },
+          "freeToUse": { "title": "Gratuit de folosit", "description": "Fără taxe ascunse sau abonamente" }
+        },
+        "footer": "Construit cu pasiune de",
+        "footerRole": ", un inginer software la Microsoft."
       }
     },
     "subtitle": " Povestea arolariu.ro a început în 2022, când autorul - Alexandru-Răzvan Olariu, a vrut să înțeleagă cum funcționează site-urile. Întreaga platformă și integrările subiacente au fost dezvoltate exclusiv de autor, din ceea ce a învățat de-a lungul anilor. Alexandru lucrează în prezent ca inginer software la Microsoft. Pentru a afla mai multe despre el, consultați secțiunea din dreapta a acestei pagini. Platforma este construită folosind cele mai noi tehnologii de ultimă oră. Pentru a afla mai multe despre el, consultați secțiunea din stânga a acestei pagini.",
