@@ -75,9 +75,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.3, duration: 0.6}}>
-          <span className='bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>
-            {t("title")}
-          </span>
+          <span className='bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>{t("title")}</span>
         </motion.h1>
 
         {/* Subtitle */}

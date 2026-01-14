@@ -9,7 +9,12 @@ import {TbPackage} from "react-icons/tb";
 
 const contributors = ["c1", "c2", "c3", "c4"] as const;
 
-const gradients = ["from-cyan-500 to-blue-500", "from-blue-600 to-purple-600", "from-purple-500 to-pink-500", "from-amber-500 to-orange-500"];
+const gradients = [
+  "from-cyan-500 to-blue-500",
+  "from-blue-600 to-purple-600",
+  "from-purple-500 to-pink-500",
+  "from-amber-500 to-orange-500",
+];
 
 /**
  * Top contributors section showing major package authors.

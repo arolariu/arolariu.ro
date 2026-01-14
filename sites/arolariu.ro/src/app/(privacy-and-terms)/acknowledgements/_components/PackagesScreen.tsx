@@ -258,7 +258,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             <span className='mr-2 font-medium'>{t("card.license")}</span> {pkg.license}
                           </div>
                           <div className='flex items-center text-sm'>
-                            <span className='mr-2 font-medium'>{t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}</span>
+                            <span className='mr-2 font-medium'>
+                              {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
+                            </span>
                           </div>
                           <div className='mt-4 flex items-center justify-between'>
                             <a

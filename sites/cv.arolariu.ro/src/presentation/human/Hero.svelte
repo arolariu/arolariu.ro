@@ -15,7 +15,9 @@
   }
 </script>
 
-<section class="pt-24 pb-16 px-6 relative overflow-hidden" style="view-transition-name: hero-section;">
+<section
+  class="pt-24 pb-16 px-6 relative overflow-hidden"
+  style="view-transition-name: hero-section;">
   <!-- Theme-aware animated gradient background elements -->
   <div class="absolute inset-0 overflow-hidden pointer-events-none">
     <div
@@ -70,17 +72,26 @@
       <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-6 relative inline-block">
         <span class="relative">
           Software Engineer
-          <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500/30 dark:bg-blue-400/30 transform origin-left transition-transform duration-700 delay-700" class:scale-x-100={heroVisible} class:scale-x-0={!heroVisible}></span>
+          <span
+            class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500/30 dark:bg-blue-400/30 transform origin-left transition-transform duration-700 delay-700"
+            class:scale-x-100={heroVisible}
+            class:scale-x-0={!heroVisible}></span>
         </span>
         <span class="text-gray-400 dark:text-gray-500 mx-2">|</span>
         <span class="relative">
           Solution Architect
-          <span class="absolute bottom-0 left-0 w-full h-0.5 bg-purple-500/30 dark:bg-purple-400/30 transform origin-left transition-transform duration-700 delay-800" class:scale-x-100={heroVisible} class:scale-x-0={!heroVisible}></span>
+          <span
+            class="absolute bottom-0 left-0 w-full h-0.5 bg-purple-500/30 dark:bg-purple-400/30 transform origin-left transition-transform duration-700 delay-800"
+            class:scale-x-100={heroVisible}
+            class:scale-x-0={!heroVisible}></span>
         </span>
         <span class="text-gray-400 dark:text-gray-500 mx-2">|</span>
         <span class="relative">
           Mentor
-          <span class="absolute bottom-0 left-0 w-full h-0.5 bg-pink-500/30 dark:bg-pink-400/30 transform origin-left transition-transform duration-700 delay-900" class:scale-x-100={heroVisible} class:scale-x-0={!heroVisible}></span>
+          <span
+            class="absolute bottom-0 left-0 w-full h-0.5 bg-pink-500/30 dark:bg-pink-400/30 transform origin-left transition-transform duration-700 delay-900"
+            class:scale-x-100={heroVisible}
+            class:scale-x-0={!heroVisible}></span>
         </span>
       </p>
     </div>
@@ -112,8 +123,16 @@
         class="group bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 dark:hover:shadow-blue-400/25 hover:-translate-y-0.5 active:translate-y-0">
         <span class="flex items-center justify-center gap-2">
           Get In Touch
-          <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          <svg
+            class="w-4 h-4 transition-transform group-hover:translate-x-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>
         </span>
       </a>
@@ -122,8 +141,16 @@
         class="group border-2 border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-400 dark:hover:text-gray-900 px-8 py-3 rounded-xl font-semibold transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0">
         <span class="flex items-center justify-center gap-2">
           View My Work
-          <svg class="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          <svg
+            class="w-4 h-4 transition-transform group-hover:translate-y-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 14l-7 7m0 0l-7-7m7 7V3" />
           </svg>
         </span>
       </a>
@@ -133,7 +160,8 @@
 
 <style>
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0) scale(1);
     }
     50% {

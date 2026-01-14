@@ -71,7 +71,7 @@ export default function CallToAction(): React.JSX.Element {
         <BackgroundBeams className='opacity-30' />
       </div>
 
-      <div className='container relative z-10 mx-auto px-4'>
+      <div className='relative z-10 container mx-auto px-4'>
         <div className='mx-auto max-w-4xl text-center'>
           {/* Heading */}
           <motion.div
@@ -80,7 +80,10 @@ export default function CallToAction(): React.JSX.Element {
             transition={{duration: 0.6}}>
             <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl'>
               {t("title")}{" "}
-              <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>{t("titleHighlight")}</span>?
+              <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>
+                {t("titleHighlight")}
+              </span>
+              ?
             </h2>
           </motion.div>
 

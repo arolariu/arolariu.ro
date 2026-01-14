@@ -250,7 +250,7 @@ export default function Hero(): React.JSX.Element {
               className='mx-auto flex flex-col items-center gap-2'
               animate={{y: [0, 10, 0]}}
               transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}>
-              <span className='text-muted-foreground text-xs uppercase tracking-widest'>{t("scrollIndicator")}</span>
+              <span className='text-muted-foreground text-xs tracking-widest uppercase'>{t("scrollIndicator")}</span>
               <div className='border-muted-foreground/30 h-10 w-6 rounded-full border-2 p-1'>
                 <motion.div
                   className='bg-primary h-2 w-2 rounded-full'

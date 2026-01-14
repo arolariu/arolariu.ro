@@ -78,9 +78,10 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
 
 <div
   class="min-h-screen bg-white dark:bg-black text-black dark:text-white transition-all duration-300 flex items-center justify-center p-6 overflow-hidden relative">
-
   <!-- Animated Background Blobs -->
-  <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+  <div
+    class="absolute inset-0 overflow-hidden pointer-events-none"
+    aria-hidden="true">
     <!-- Blob 1 - Blue -->
     <div
       class="absolute w-[500px] h-[500px] rounded-full opacity-20 dark:opacity-10 blur-3xl animate-blob-1"
@@ -190,7 +191,8 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
   }
 
   @keyframes blob-float-1 {
-    0%, 100% {
+    0%,
+    100% {
       transform: translate(0, 0) scale(1);
     }
     25% {
@@ -205,7 +207,8 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
   }
 
   @keyframes blob-float-2 {
-    0%, 100% {
+    0%,
+    100% {
       transform: translate(0, 0) scale(1);
     }
     33% {
@@ -217,7 +220,8 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
   }
 
   @keyframes blob-float-3 {
-    0%, 100% {
+    0%,
+    100% {
       transform: translate(0, 0) scale(1);
     }
     20% {
@@ -235,7 +239,8 @@ to choose their preferred CV format (Human-readable, PDF, or JSON).
   }
 
   @keyframes blob-float-4 {
-    0%, 100% {
+    0%,
+    100% {
       transform: translate(0, 0) scale(1) rotate(0deg);
     }
     50% {

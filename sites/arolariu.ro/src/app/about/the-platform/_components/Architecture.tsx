@@ -80,7 +80,9 @@ export default function Architecture(): React.JSX.Element {
           </motion.div>
           <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
             {t("title")}{" "}
-            <span className='bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 bg-clip-text text-transparent'>{t("titleHighlight")}</span>
+            <span className='bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 bg-clip-text text-transparent'>
+              {t("titleHighlight")}
+            </span>
           </h2>
           <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
         </motion.div>
@@ -143,7 +145,7 @@ export default function Architecture(): React.JSX.Element {
                   onHoverEnd={() => setHoveredLayer(null)}>
                   <Card
                     className={`group relative overflow-hidden transition-all duration-300 ${
-                      hoveredLayer === layer.id ? "border-primary shadow-lg shadow-primary/10 scale-105" : "hover:border-primary/30"
+                      hoveredLayer === layer.id ? "border-primary shadow-primary/10 scale-105 shadow-lg" : "hover:border-primary/30"
                     }`}>
                     {/* Gradient overlay */}
                     <motion.div

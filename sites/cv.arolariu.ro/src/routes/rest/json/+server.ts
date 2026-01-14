@@ -2,9 +2,35 @@ import {jsonCVData as resume} from "@/data/json";
 import {json, type RequestHandler} from "@sveltejs/kit";
 
 // Type-safe section keys
-type SectionKey = "basics" | "work" | "education" | "skills" | "certificates" | "awards" | "volunteer" | "projects" | "languages" | "interests" | "references" | "technical" | "meta";
+type SectionKey =
+  | "basics"
+  | "work"
+  | "education"
+  | "skills"
+  | "certificates"
+  | "awards"
+  | "volunteer"
+  | "projects"
+  | "languages"
+  | "interests"
+  | "references"
+  | "technical"
+  | "meta";
 
-const AVAILABLE_SECTIONS: SectionKey[] = ["basics", "work", "education", "skills", "certificates", "awards", "volunteer", "projects", "languages", "interests", "references", "technical"];
+const AVAILABLE_SECTIONS: SectionKey[] = [
+  "basics",
+  "work",
+  "education",
+  "skills",
+  "certificates",
+  "awards",
+  "volunteer",
+  "projects",
+  "languages",
+  "interests",
+  "references",
+  "technical",
+];
 
 /**
  * Creates a deterministic ETag from the resume data.
@@ -55,7 +81,7 @@ export const GET: RequestHandler = ({request, url}) => {
           error: `Section '${section}' not found`,
           availableSections: AVAILABLE_SECTIONS,
         },
-        {status: 404}
+        {status: 404},
       );
     }
     responseData = {

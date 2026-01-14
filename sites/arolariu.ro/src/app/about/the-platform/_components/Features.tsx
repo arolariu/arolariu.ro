@@ -133,7 +133,9 @@ export default function Features(): React.JSX.Element {
           </motion.div>
           <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
             {t("title")}{" "}
-            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>{t("titleHighlight")}</span>
+            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>
+              {t("titleHighlight")}
+            </span>
           </h2>
           <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
         </motion.div>
@@ -154,7 +156,7 @@ export default function Features(): React.JSX.Element {
               onClick={() => setSelectedFeature(feature)}>
               <Card
                 className={`group relative h-full cursor-pointer overflow-hidden transition-all duration-300 ${
-                  hoveredFeature === feature.id ? "border-primary shadow-lg shadow-primary/10" : "hover:border-primary/30"
+                  hoveredFeature === feature.id ? "border-primary shadow-primary/10 shadow-lg" : "hover:border-primary/30"
                 }`}>
                 {/* Gradient background on hover */}
                 <motion.div
@@ -233,7 +235,9 @@ export default function Features(): React.JSX.Element {
                 </div>
               </div>
 
-              <p className='text-muted-foreground mb-6 text-lg leading-relaxed'>{t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}</p>
+              <p className='text-muted-foreground mb-6 text-lg leading-relaxed'>
+                {t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}
+              </p>
 
               <div className='mb-6 flex flex-wrap gap-2'>
                 {t(`items.${selectedFeature.id}.tags` as Parameters<typeof t>[0])

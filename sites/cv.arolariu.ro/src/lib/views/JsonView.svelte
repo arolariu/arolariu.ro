@@ -236,7 +236,8 @@ for maximum compatibility with resume processing tools.
           </div>
           <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
             <span>{activeTab === "formatted" ? formattedJSON.length.toLocaleString() : rawJSON.length.toLocaleString()} chars</span>
-            <span class="hidden sm:inline">{(activeTab === "formatted" ? formattedJSON.length / 1024 : rawJSON.length / 1024).toFixed(1)} KB</span>
+            <span class="hidden sm:inline"
+              >{(activeTab === "formatted" ? formattedJSON.length / 1024 : rawJSON.length / 1024).toFixed(1)} KB</span>
           </div>
         </div>
       </div>
@@ -251,21 +252,29 @@ for maximum compatibility with resume processing tools.
     </div>
 
     <!-- API Endpoints Documentation -->
-    <div class="mt-6 rounded-lg border overflow-hidden transition-all duration-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div
+      class="mt-6 rounded-lg border overflow-hidden transition-all duration-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
           </svg>
           API Endpoints
         </h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Access this CV programmatically via the REST API
-        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1"> Access this CV programmatically via the REST API </p>
       </div>
       <div class="divide-y divide-gray-200 dark:divide-gray-700">
         {#each apiEndpoints as endpoint}
-          <div class="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+          <div
+            class="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
             <span class="px-2 py-0.5 text-xs font-mono rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 w-fit">
               {endpoint.method}
             </span>
@@ -295,16 +304,20 @@ for maximum compatibility with resume processing tools.
         systems that support this format.
       </p>
       <div class="flex flex-wrap gap-2">
-        <span class="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+        <span
+          class="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs transition-colors duration-300">
           JSON Resume Compatible
         </span>
-        <span class="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+        <span
+          class="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs transition-colors duration-300">
           ATS Friendly
         </span>
-        <span class="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+        <span
+          class="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs transition-colors duration-300">
           ETag Caching
         </span>
-        <span class="bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200 px-2 py-1 rounded text-xs transition-colors duration-300">
+        <span
+          class="bg-orange-100 dark:bg-orange-800 text-orange-800 dark:text-orange-200 px-2 py-1 rounded text-xs transition-colors duration-300">
           CORS Enabled
         </span>
       </div>

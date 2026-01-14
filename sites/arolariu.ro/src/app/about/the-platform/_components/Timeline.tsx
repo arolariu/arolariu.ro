@@ -69,7 +69,9 @@ export default function Timeline(): React.JSX.Element {
           </motion.div>
           <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
             {t("title")}{" "}
-            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>{t("titleHighlight")}</span>
+            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>
+              {t("titleHighlight")}
+            </span>
           </h2>
           <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
         </motion.div>
@@ -78,7 +80,7 @@ export default function Timeline(): React.JSX.Element {
         <div className='relative mx-auto max-w-5xl'>
           {/* Center Line */}
           <motion.div
-            className='bg-gradient-to-b from-primary/50 via-primary/30 to-primary/10 absolute left-1/2 h-full w-1 -translate-x-1/2 transform rounded-full'
+            className='from-primary/50 via-primary/30 to-primary/10 absolute left-1/2 h-full w-1 -translate-x-1/2 transform rounded-full bg-gradient-to-b'
             initial={{scaleY: 0}}
             animate={isInView ? {scaleY: 1} : {}}
             transition={{duration: 1.5, ease: "easeOut"}}
@@ -120,7 +122,7 @@ export default function Timeline(): React.JSX.Element {
                     transition={{duration: 0.2}}>
                     <Card
                       className={`cursor-pointer overflow-hidden transition-all duration-300 ${
-                        hoveredEvent === event.id ? "border-primary shadow-lg shadow-primary/10" : "hover:border-primary/30"
+                        hoveredEvent === event.id ? "border-primary shadow-primary/10 shadow-lg" : "hover:border-primary/30"
                       }`}
                       // eslint-disable-next-line react/jsx-no-bind -- simple page
                       onClick={() => handleEventClick(event.id)}>
@@ -139,7 +141,9 @@ export default function Timeline(): React.JSX.Element {
                           {t(`events.${event.id}.date` as Parameters<typeof t>[0])}
                         </Badge>
                         <CardTitle className='text-xl'>{t(`events.${event.id}.title` as Parameters<typeof t>[0])}</CardTitle>
-                        <CardDescription className='text-base'>{t(`events.${event.id}.description` as Parameters<typeof t>[0])}</CardDescription>
+                        <CardDescription className='text-base'>
+                          {t(`events.${event.id}.description` as Parameters<typeof t>[0])}
+                        </CardDescription>
                       </CardHeader>
 
                       <CardContent className='relative'>
@@ -217,7 +221,11 @@ export default function Timeline(): React.JSX.Element {
               className='bg-primary/10 text-primary mx-auto flex h-20 w-20 items-center justify-center rounded-full'
               animate={{
                 scale: [1, 1.1, 1],
-                boxShadow: ["0 0 0 0 rgba(var(--primary-rgb), 0)", "0 0 0 20px rgba(var(--primary-rgb), 0.1)", "0 0 0 0 rgba(var(--primary-rgb), 0)"],
+                boxShadow: [
+                  "0 0 0 0 rgba(var(--primary-rgb), 0)",
+                  "0 0 0 20px rgba(var(--primary-rgb), 0.1)",
+                  "0 0 0 0 rgba(var(--primary-rgb), 0)",
+                ],
               }}
               transition={{duration: 2, repeat: Number.POSITIVE_INFINITY}}>
               <TbRocket className='h-10 w-10' />

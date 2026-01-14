@@ -36,7 +36,9 @@
       <!-- Timeline container -->
       <div class="relative">
         <!-- Timeline line -->
-        <div class="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 transform md:-translate-x-1/2 hidden md:block"></div>
+        <div
+          class="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 transform md:-translate-x-1/2 hidden md:block"
+        ></div>
 
         <div class="space-y-8 md:space-y-0">
           {#each experiencesAsArray as experience, index}
@@ -48,11 +50,14 @@
               delay={index * 150}>
               <div class="relative md:flex md:items-start {isEven ? 'md:flex-row' : 'md:flex-row-reverse'} md:mb-12">
                 <!-- Timeline dot -->
-                <div class="absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 border-4 border-white dark:border-gray-900 transform md:-translate-x-1/2 -translate-y-1/2 top-8 hidden md:block z-10 transition-transform duration-300 hover:scale-125"></div>
+                <div
+                  class="absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 border-4 border-white dark:border-gray-900 transform md:-translate-x-1/2 -translate-y-1/2 top-8 hidden md:block z-10 transition-transform duration-300 hover:scale-125"
+                ></div>
 
                 <!-- Date badge (mobile) -->
                 <div class="md:hidden mb-3">
-                  <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                  <span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white">
                     {experience.period}
                   </span>
                 </div>
@@ -63,8 +68,8 @@
                     onclick={() => toggleExpanded(index)}
                     class="w-full text-left backdrop-blur-sm rounded-xl p-6 md:p-8 shadow-lg border transition-all duration-300 cursor-pointer
                       {isExpanded
-                        ? 'bg-white dark:bg-gray-800/90 border-blue-500/50 dark:border-blue-400/50 shadow-blue-500/10'
-                        : 'bg-white/80 dark:bg-black/40 border-gray-200 dark:border-gray-700 hover:border-blue-500/30 dark:hover:border-blue-400/30'}
+                      ? 'bg-white dark:bg-gray-800/90 border-blue-500/50 dark:border-blue-400/50 shadow-blue-500/10'
+                      : 'bg-white/80 dark:bg-black/40 border-gray-200 dark:border-gray-700 hover:border-blue-500/30 dark:hover:border-blue-400/30'}
                       hover:shadow-xl hover:-translate-y-1 active:translate-y-0"
                     aria-expanded={isExpanded}>
                     <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4">
@@ -77,9 +82,20 @@
                             <p class="text-lg text-gray-800 dark:text-gray-200 font-medium">{experience.company}</p>
                           </div>
                           <!-- Expand icon -->
-                          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center transition-transform duration-300 {isExpanded ? 'rotate-180' : ''}">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                          <div
+                            class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center transition-transform duration-300 {isExpanded
+                              ? 'rotate-180'
+                              : ''}">
+                            <svg
+                              class="w-4 h-4 text-gray-500 dark:text-gray-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 9l-7 7-7-7" />
                             </svg>
                           </div>
                         </div>
@@ -87,7 +103,8 @@
                       </div>
                       <!-- Date badge (desktop) -->
                       <div class="hidden md:block lg:ml-4 mt-2 lg:mt-0 flex-shrink-0">
-                        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white whitespace-nowrap">
+                        <span
+                          class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white whitespace-nowrap">
                           {experience.period}
                         </span>
                       </div>
@@ -114,7 +131,9 @@
                                 class="flex items-start stagger-animation"
                                 style={`--delay:${i * 50}ms`}>
                                 <span class="mr-3 mt-1.5 text-xs text-blue-500 dark:text-blue-400">▶</span>
-                                <span class="text-gray-700 dark:text-gray-300 text-sm hover:text-gray-900 dark:hover:text-white transition-colors">{item}</span>
+                                <span
+                                  class="text-gray-700 dark:text-gray-300 text-sm hover:text-gray-900 dark:hover:text-white transition-colors"
+                                  >{item}</span>
                               </li>
                             {/each}
                           </ul>
@@ -133,7 +152,9 @@
                                 class="flex items-start stagger-animation"
                                 style={`--delay:${i * 50 + 100}ms`}>
                                 <span class="mr-3 mt-1.5 text-xs text-green-500 dark:text-green-400">✓</span>
-                                <span class="text-gray-700 dark:text-gray-300 text-sm hover:text-gray-900 dark:hover:text-white transition-colors">{item}</span>
+                                <span
+                                  class="text-gray-700 dark:text-gray-300 text-sm hover:text-gray-900 dark:hover:text-white transition-colors"
+                                  >{item}</span>
                               </li>
                             {/each}
                           </ul>

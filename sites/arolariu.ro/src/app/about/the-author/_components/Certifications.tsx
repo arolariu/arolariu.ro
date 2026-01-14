@@ -76,9 +76,7 @@ export default function Certifications(): React.JSX.Element {
           transition={{duration: 0.6}}
           className='mb-16 text-center'>
           <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-          <p className='text-muted-foreground mx-auto max-w-2xl'>
-            {t("subtitle")}
-          </p>
+          <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
         </motion.div>
 
         <motion.div

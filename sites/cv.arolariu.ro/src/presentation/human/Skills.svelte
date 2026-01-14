@@ -18,7 +18,7 @@
           }
         });
       },
-      {threshold: 0.2}
+      {threshold: 0.2},
     );
 
     observer.observe(sectionRef);
@@ -27,12 +27,42 @@
 
   // Color palette for skill categories
   const categoryColors = [
-    {bg: "bg-blue-500", light: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-600 dark:text-blue-400", border: "border-blue-200 dark:border-blue-800"},
-    {bg: "bg-purple-500", light: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-600 dark:text-purple-400", border: "border-purple-200 dark:border-purple-800"},
-    {bg: "bg-emerald-500", light: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-800"},
-    {bg: "bg-orange-500", light: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-600 dark:text-orange-400", border: "border-orange-200 dark:border-orange-800"},
-    {bg: "bg-pink-500", light: "bg-pink-100 dark:bg-pink-900/30", text: "text-pink-600 dark:text-pink-400", border: "border-pink-200 dark:border-pink-800"},
-    {bg: "bg-cyan-500", light: "bg-cyan-100 dark:bg-cyan-900/30", text: "text-cyan-600 dark:text-cyan-400", border: "border-cyan-200 dark:border-cyan-800"},
+    {
+      bg: "bg-blue-500",
+      light: "bg-blue-100 dark:bg-blue-900/30",
+      text: "text-blue-600 dark:text-blue-400",
+      border: "border-blue-200 dark:border-blue-800",
+    },
+    {
+      bg: "bg-purple-500",
+      light: "bg-purple-100 dark:bg-purple-900/30",
+      text: "text-purple-600 dark:text-purple-400",
+      border: "border-purple-200 dark:border-purple-800",
+    },
+    {
+      bg: "bg-emerald-500",
+      light: "bg-emerald-100 dark:bg-emerald-900/30",
+      text: "text-emerald-600 dark:text-emerald-400",
+      border: "border-emerald-200 dark:border-emerald-800",
+    },
+    {
+      bg: "bg-orange-500",
+      light: "bg-orange-100 dark:bg-orange-900/30",
+      text: "text-orange-600 dark:text-orange-400",
+      border: "border-orange-200 dark:border-orange-800",
+    },
+    {
+      bg: "bg-pink-500",
+      light: "bg-pink-100 dark:bg-pink-900/30",
+      text: "text-pink-600 dark:text-pink-400",
+      border: "border-pink-200 dark:border-pink-800",
+    },
+    {
+      bg: "bg-cyan-500",
+      light: "bg-cyan-100 dark:bg-cyan-900/30",
+      text: "text-cyan-600 dark:text-cyan-400",
+      border: "border-cyan-200 dark:border-cyan-800",
+    },
   ];
 </script>
 
@@ -68,15 +98,21 @@
           <div
             class="group relative bg-white dark:bg-gray-900 rounded-2xl p-6 border {colors.border} hover:border-opacity-60 transition-all duration-300 hover:shadow-lg dark:hover:shadow-gray-900/50 overflow-hidden">
             <!-- Subtle gradient background on hover -->
-            <div
-              class="absolute inset-0 {colors.light} opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            ></div>
+            <div class="absolute inset-0 {colors.light} opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
             <!-- Category Header -->
             <div class="relative flex items-center gap-3 mb-5">
               <div class="w-10 h-10 rounded-xl {colors.bg} flex items-center justify-center shadow-sm">
-                <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
               </div>
               <div>
@@ -96,7 +132,8 @@
                     <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">
                       {skill.name}
                     </span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400 font-mono tabular-nums opacity-0 group-hover/skill:opacity-100 transition-opacity">
+                    <span
+                      class="text-xs text-gray-500 dark:text-gray-400 font-mono tabular-nums opacity-0 group-hover/skill:opacity-100 transition-opacity">
                       {level}%
                     </span>
                   </div>
@@ -109,7 +146,9 @@
                     aria-valuemax={100}>
                     <div
                       class="h-full rounded-full {colors.bg} transition-transform duration-700 ease-out"
-                      style="transform-origin: left; transform: scaleX({skillBarsVisible ? level / 100 : 0}); transition-delay: {categoryIndex * 100 + skillIndex * 50}ms;">
+                      style="transform-origin: left; transform: scaleX({skillBarsVisible
+                        ? level / 100
+                        : 0}); transition-delay: {categoryIndex * 100 + skillIndex * 50}ms;">
                     </div>
                   </div>
                 </div>
