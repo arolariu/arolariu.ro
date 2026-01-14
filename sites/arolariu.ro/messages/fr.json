@@ -268,6 +268,135 @@
       }
     },
     "footer": "Merci !",
+    "Hub": {
+      "hero": {
+        "badge": "À propos",
+        "title": "Découvrez arolariu.ro",
+        "subtitle": "Une plateforme full-stack moderne construite avec passion, conçue pour l'innovation et créée avec attention aux détails.",
+        "ctaPrimary": "Explorer la plateforme",
+        "ctaSecondary": "Rencontrer l'auteur"
+      },
+      "mission": {
+        "title": "Notre mission",
+        "statement": "Construire des logiciels qui font la différence.",
+        "description": "arolariu.ro est plus qu'un simple site web - c'est un terrain de jeu pour les technologies modernes, une vitrine des meilleures pratiques et une plateforme qui démontre ce qui est possible quand l'excellence en ingénierie rencontre la vision créative.",
+        "pillars": {
+          "innovation": {
+            "title": "Innovation",
+            "description": "Adopter les technologies de pointe et les modèles architecturaux modernes"
+          },
+          "quality": {
+            "title": "Qualité",
+            "description": "Maintenir des standards élevés avec plus de 90% de couverture de tests"
+          },
+          "openness": {
+            "title": "Ouverture",
+            "description": "Open source, transparent et orienté communauté"
+          }
+        }
+      },
+      "values": {
+        "title": "Valeurs fondamentales",
+        "subtitle": "Les principes qui guident chaque ligne de code",
+        "items": {
+          "engineering": {
+            "title": "Excellence en ingénierie",
+            "description": "Chaque fonctionnalité est construite avec une architecture propre, des tests appropriés et la maintenabilité à l'esprit."
+          },
+          "learning": {
+            "title": "Apprentissage continu",
+            "description": "Cette plateforme sert de terrain d'essai pour les nouvelles technologies et approches."
+          },
+          "community": {
+            "title": "Communauté d'abord",
+            "description": "Open source dans l'âme, contribuant à la communauté des développeurs."
+          },
+          "privacy": {
+            "title": "Axé sur la confidentialité",
+            "description": "La protection des données et la vie privée sont fondamentales, pas des réflexions après coup."
+          },
+          "performance": {
+            "title": "Orienté performance",
+            "description": "Optimisé pour la vitesse avec rendu côté serveur et déploiements edge."
+          },
+          "accessibility": {
+            "title": "Design accessible",
+            "description": "Conçu pour tous avec navigation clavier et support lecteur d'écran."
+          }
+        }
+      },
+      "stats": {
+        "title": "En chiffres",
+        "subtitle": "Métriques clés qui démontrent notre engagement envers la qualité",
+        "items": {
+          "yearsActive": {
+            "value": "3+",
+            "label": "Années actives",
+            "description": "En évolution continue depuis 2022"
+          },
+          "linesOfCode": {
+            "value": "50K+",
+            "label": "Lignes de code",
+            "description": "Entre frontend et backend"
+          },
+          "technologies": {
+            "value": "25+",
+            "label": "Technologies",
+            "description": "Stack technologique moderne"
+          },
+          "testCoverage": {
+            "value": "90%",
+            "label": "Couverture tests",
+            "description": "Standard d'assurance qualité"
+          }
+        }
+      },
+      "navigation": {
+        "title": "Explorer davantage",
+        "subtitle": "Plongez plus profondément dans ce qui rend arolariu.ro unique",
+        "platform": {
+          "title": "La plateforme",
+          "subtitle": "Découvrez l'architecture, le stack technologique et les fonctionnalités qui alimentent arolariu.ro.",
+          "features": ["Frontend Next.js 16", "Backend .NET 10", "Infrastructure Azure Cloud"],
+          "cta": "Explorer la plateforme"
+        },
+        "author": {
+          "title": "L'auteur",
+          "subtitle": "Rencontrez Alexandru-Razvan Olariu, l'ingénieur logiciel derrière cette plateforme.",
+          "features": ["Ingénieur Microsoft", "Architecte de solutions", "Passionné de technologie"],
+          "cta": "Rencontrer Alexandru"
+        }
+      },
+      "faq": {
+        "title": "Questions fréquentes",
+        "subtitle": "Questions courantes sur la plateforme et son objectif",
+        "questions": {
+          "q1": {
+            "question": "Qu'est-ce que arolariu.ro ?",
+            "answer": "arolariu.ro est une plateforme full-stack complète qui sert à la fois de portfolio personnel et de vitrine technologique. Elle démontre les pratiques modernes de développement web utilisant Next.js, .NET et les services cloud Azure."
+          },
+          "q2": {
+            "question": "Cette plateforme est-elle open source ?",
+            "answer": "Oui ! Toute la plateforme est open source et disponible sur GitHub. Vous pouvez explorer le code, en apprendre et même contribuer à son développement."
+          },
+          "q3": {
+            "question": "Quelles technologies sont utilisées ?",
+            "answer": "La plateforme utilise Next.js 16 avec React 19 pour le frontend, .NET 10 avec ASP.NET Core pour le backend et Azure pour l'infrastructure cloud. Elle comprend également une bibliothèque de composants complète et des tests extensifs."
+          },
+          "q4": {
+            "question": "Puis-je utiliser ceci comme référence pour mes propres projets ?",
+            "answer": "Absolument ! La plateforme est conçue pour présenter les meilleures pratiques en ingénierie logicielle. N'hésitez pas à l'utiliser comme référence pour l'architecture, les modèles et les détails d'implémentation."
+          }
+        }
+      },
+      "cta": {
+        "title": "Prêt à explorer ?",
+        "subtitle": "Commencez votre voyage à travers la plateforme ou connectez-vous avec l'auteur.",
+        "primary": "Voir sur GitHub",
+        "secondary": "Prendre contact",
+        "footer": "Construit avec passion en Roumanie"
+      }
+    },
     "Platform": {
       "__metadata__": {
         "description": "En savoir plus sur la plateforme, arolariu.ro.",

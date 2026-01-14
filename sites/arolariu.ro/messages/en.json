@@ -268,6 +268,135 @@
       }
     },
     "footer": "Thank you!",
+    "Hub": {
+      "hero": {
+        "badge": "About Us",
+        "title": "Discover arolariu.ro",
+        "subtitle": "A modern full-stack platform built with passion, designed for innovation, and crafted with attention to detail.",
+        "ctaPrimary": "Explore the Platform",
+        "ctaSecondary": "Meet the Author"
+      },
+      "mission": {
+        "title": "Our Mission",
+        "statement": "To build software that makes a difference.",
+        "description": "arolariu.ro is more than just a website - it's a playground for modern technologies, a showcase of best practices, and a platform that demonstrates what's possible when engineering excellence meets creative vision.",
+        "pillars": {
+          "innovation": {
+            "title": "Innovation",
+            "description": "Embracing cutting-edge technologies and architectural patterns"
+          },
+          "quality": {
+            "title": "Quality",
+            "description": "Maintaining high standards with 90%+ test coverage"
+          },
+          "openness": {
+            "title": "Openness",
+            "description": "Open source, transparent, and community-driven"
+          }
+        }
+      },
+      "values": {
+        "title": "Core Values",
+        "subtitle": "The principles that guide every line of code",
+        "items": {
+          "engineering": {
+            "title": "Engineering Excellence",
+            "description": "Every feature is built with clean architecture, proper testing, and maintainability in mind."
+          },
+          "learning": {
+            "title": "Continuous Learning",
+            "description": "This platform serves as a testing ground for new technologies and approaches."
+          },
+          "community": {
+            "title": "Community First",
+            "description": "Open source at heart, contributing back to the developer community."
+          },
+          "privacy": {
+            "title": "Privacy Focused",
+            "description": "User data protection and privacy are fundamental, not afterthoughts."
+          },
+          "performance": {
+            "title": "Performance Driven",
+            "description": "Optimized for speed with server-side rendering and edge deployments."
+          },
+          "accessibility": {
+            "title": "Accessible Design",
+            "description": "Built for everyone with keyboard navigation and screen reader support."
+          }
+        }
+      },
+      "stats": {
+        "title": "By the Numbers",
+        "subtitle": "Key metrics that showcase our commitment to quality",
+        "items": {
+          "yearsActive": {
+            "value": "3+",
+            "label": "Years Active",
+            "description": "Continuously evolving since 2022"
+          },
+          "linesOfCode": {
+            "value": "50K+",
+            "label": "Lines of Code",
+            "description": "Across frontend and backend"
+          },
+          "technologies": {
+            "value": "25+",
+            "label": "Technologies",
+            "description": "Modern tech stack"
+          },
+          "testCoverage": {
+            "value": "90%",
+            "label": "Test Coverage",
+            "description": "Quality assurance standard"
+          }
+        }
+      },
+      "navigation": {
+        "title": "Explore Further",
+        "subtitle": "Dive deeper into what makes arolariu.ro unique",
+        "platform": {
+          "title": "The Platform",
+          "subtitle": "Discover the architecture, technology stack, and features that power arolariu.ro.",
+          "features": ["Next.js 16 Frontend", ".NET 10 Backend", "Azure Cloud Infrastructure"],
+          "cta": "Explore Platform"
+        },
+        "author": {
+          "title": "The Author",
+          "subtitle": "Meet Alexandru-Razvan Olariu, the software engineer behind this platform.",
+          "features": ["Microsoft Engineer", "Solution Architect", "Tech Enthusiast"],
+          "cta": "Meet Alexandru"
+        }
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "subtitle": "Common questions about the platform and its purpose",
+        "questions": {
+          "q1": {
+            "question": "What is arolariu.ro?",
+            "answer": "arolariu.ro is a comprehensive full-stack platform that serves as both a personal portfolio and a technology showcase. It demonstrates modern web development practices using Next.js, .NET, and Azure cloud services."
+          },
+          "q2": {
+            "question": "Is this platform open source?",
+            "answer": "Yes! The entire platform is open source and available on GitHub. You can explore the codebase, learn from it, or even contribute to its development."
+          },
+          "q3": {
+            "question": "What technologies are used?",
+            "answer": "The platform uses Next.js 16 with React 19 for the frontend, .NET 10 with ASP.NET Core for the backend, and Azure for cloud infrastructure. It also features a comprehensive component library and extensive testing."
+          },
+          "q4": {
+            "question": "Can I use this as a reference for my own projects?",
+            "answer": "Absolutely! The platform is designed to showcase best practices in software engineering. Feel free to use it as a reference for architecture, patterns, and implementation details."
+          }
+        }
+      },
+      "cta": {
+        "title": "Ready to Explore?",
+        "subtitle": "Start your journey through the platform or connect with the author.",
+        "primary": "View on GitHub",
+        "secondary": "Get in Touch",
+        "footer": "Built with passion in Romania"
+      }
+    },
     "Platform": {
       "__metadata__": {
         "description": "Learn more about the platform, arolariu.ro.",

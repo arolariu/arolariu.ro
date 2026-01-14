@@ -268,6 +268,135 @@
       }
     },
     "footer": "Vă mulțumesc!",
+    "Hub": {
+      "hero": {
+        "badge": "Despre noi",
+        "title": "Descoperă arolariu.ro",
+        "subtitle": "O platformă full-stack modernă construită cu pasiune, proiectată pentru inovație și creată cu atenție la detalii.",
+        "ctaPrimary": "Explorează platforma",
+        "ctaSecondary": "Cunoaște autorul"
+      },
+      "mission": {
+        "title": "Misiunea noastră",
+        "statement": "Să construim software care face diferența.",
+        "description": "arolariu.ro este mai mult decât un simplu site web - este un teren de joacă pentru tehnologii moderne, o vitrină de bune practici și o platformă care demonstrează ce este posibil atunci când excelența în inginerie întâlnește viziunea creativă.",
+        "pillars": {
+          "innovation": {
+            "title": "Inovație",
+            "description": "Adoptăm tehnologii de ultimă oră și modele arhitecturale moderne"
+          },
+          "quality": {
+            "title": "Calitate",
+            "description": "Menținem standarde înalte cu acoperire de teste de peste 90%"
+          },
+          "openness": {
+            "title": "Deschidere",
+            "description": "Open source, transparent și orientat spre comunitate"
+          }
+        }
+      },
+      "values": {
+        "title": "Valori fundamentale",
+        "subtitle": "Principiile care ghidează fiecare linie de cod",
+        "items": {
+          "engineering": {
+            "title": "Excelență în inginerie",
+            "description": "Fiecare funcționalitate este construită cu arhitectură curată, testare adecvată și mentenabilitate în minte."
+          },
+          "learning": {
+            "title": "Învățare continuă",
+            "description": "Această platformă servește ca teren de testare pentru noi tehnologii și abordări."
+          },
+          "community": {
+            "title": "Comunitatea pe primul loc",
+            "description": "Open source din suflet, contribuind înapoi la comunitatea de dezvoltatori."
+          },
+          "privacy": {
+            "title": "Axat pe confidențialitate",
+            "description": "Protecția datelor utilizatorilor și confidențialitatea sunt fundamentale, nu gânduri secundare."
+          },
+          "performance": {
+            "title": "Orientat spre performanță",
+            "description": "Optimizat pentru viteză cu randare pe server și implementări pe edge."
+          },
+          "accessibility": {
+            "title": "Design accesibil",
+            "description": "Construit pentru toți, cu navigare prin tastatură și suport pentru cititoare de ecran."
+          }
+        }
+      },
+      "stats": {
+        "title": "În cifre",
+        "subtitle": "Metrici cheie care demonstrează angajamentul nostru față de calitate",
+        "items": {
+          "yearsActive": {
+            "value": "3+",
+            "label": "Ani activi",
+            "description": "În continuă evoluție din 2022"
+          },
+          "linesOfCode": {
+            "value": "50K+",
+            "label": "Linii de cod",
+            "description": "Între frontend și backend"
+          },
+          "technologies": {
+            "value": "25+",
+            "label": "Tehnologii",
+            "description": "Stack tehnologic modern"
+          },
+          "testCoverage": {
+            "value": "90%",
+            "label": "Acoperire teste",
+            "description": "Standard de asigurare a calității"
+          }
+        }
+      },
+      "navigation": {
+        "title": "Explorează mai departe",
+        "subtitle": "Aprofundează ce face arolariu.ro unic",
+        "platform": {
+          "title": "Platforma",
+          "subtitle": "Descoperă arhitectura, stack-ul tehnologic și funcționalitățile care alimentează arolariu.ro.",
+          "features": ["Frontend Next.js 16", "Backend .NET 10", "Infrastructură Azure Cloud"],
+          "cta": "Explorează platforma"
+        },
+        "author": {
+          "title": "Autorul",
+          "subtitle": "Cunoaște-l pe Alexandru-Răzvan Olariu, inginerul software din spatele acestei platforme.",
+          "features": ["Inginer Microsoft", "Arhitect de soluții", "Entuziast tehnologie"],
+          "cta": "Cunoaște-l pe Alexandru"
+        }
+      },
+      "faq": {
+        "title": "Întrebări frecvente",
+        "subtitle": "Întrebări comune despre platformă și scopul ei",
+        "questions": {
+          "q1": {
+            "question": "Ce este arolariu.ro?",
+            "answer": "arolariu.ro este o platformă full-stack cuprinzătoare care servește atât ca portofoliu personal, cât și ca vitrină tehnologică. Demonstrează practici moderne de dezvoltare web folosind Next.js, .NET și servicii cloud Azure."
+          },
+          "q2": {
+            "question": "Este această platformă open source?",
+            "answer": "Da! Întreaga platformă este open source și disponibilă pe GitHub. Poți explora codul sursă, să înveți din el sau chiar să contribui la dezvoltarea lui."
+          },
+          "q3": {
+            "question": "Ce tehnologii sunt folosite?",
+            "answer": "Platforma folosește Next.js 16 cu React 19 pentru frontend, .NET 10 cu ASP.NET Core pentru backend și Azure pentru infrastructura cloud. Include și o bibliotecă de componente cuprinzătoare și testare extensivă."
+          },
+          "q4": {
+            "question": "Pot folosi aceasta ca referință pentru propriile mele proiecte?",
+            "answer": "Absolut! Platforma este proiectată să prezinte cele mai bune practici în ingineria software. Simte-te liber să o folosești ca referință pentru arhitectură, modele și detalii de implementare."
+          }
+        }
+      },
+      "cta": {
+        "title": "Gata de explorare?",
+        "subtitle": "Începe-ți călătoria prin platformă sau conectează-te cu autorul.",
+        "primary": "Vezi pe GitHub",
+        "secondary": "Ia legătura",
+        "footer": "Construit cu pasiune în România"
+      }
+    },
     "Platform": {
       "__metadata__": {
         "description": "Aflați mai multe despre platformă, Arolariu.ro.",

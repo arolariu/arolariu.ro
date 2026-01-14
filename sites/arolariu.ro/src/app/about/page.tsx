@@ -135,7 +135,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AboutPage(): Promise<React.JSX.Element> {
   return (
-    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center pt-24 text-center'>
+    <main className='flex w-full flex-col items-center'>
       <RenderAboutScreen />
     </main>
   );
