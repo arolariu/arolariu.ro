@@ -1302,106 +1302,33 @@
     }
   },
   "Home": {
-    "appreciation": "MERCI POUR LE TEMPS PASSÉ SUR LE SITE WEB.",
-    "cta": "Commencer l'Exploration",
-    "featuresTab": {
-      "azure": {
-        "description": "Le cloud Microsoft Azure est utilisé pour héberger la plateforme et tous ses services. Cela garantit que la plateforme est toujours disponible et qu'elle peut évoluer à la demande.",
-        "title": "Microsoft Azure"
-      },
-      "csharp": {
-        "description": "La plateforme est construite avec .NET 8 LTS - la dernière version stable de .NET. Cela garantit que la plateforme est rapide, fiable et facile à utiliser. La plateforme est construite avec C# et F#.",
-        "title": ".NET 8 LTS"
-      },
-      "description": "La plateforme `arolariu.ro` est construite avec les dernières technologies stables.",
-      "githubActions": {
-        "description": "L'expérience DevOps est alimentée par GitHub Actions. (CI/CD, Tests, etc.)",
-        "title": "GitHub Actions"
-      },
-      "learnMoreBtn": "Intéressant ? Cliquez ici pour en savoir plus...",
-      "nextJs": {
-        "description": "La plateforme est construite avec NextJS - le framework React le plus populaire pour la production. Il est conçu pour des applications React de niveau production. NextJS est le framework React le plus populaire pour une bonne raison : il est rapide, fiable et facile à utiliser.",
-        "title": "Next.JS 15"
-      },
-      "otel": {
-        "description": "Observabilité complète avec métriques, traces et logs intégrés. Tout est instrumenté avec OpenTelemetry. Cela permet une expérience de télémétrie unifiée sur toute la ligne. (3PO : métriques, logs, traces)",
-        "title": "Open Telemetry"
-      },
-      "svelte": {
-        "description": "Utilisation de Svelte pour des composants UI réactifs ultra-rapides. La plateforme `cv.arolariu.ro` est construite exclusivement avec Svelte et SvelteKit (v5)",
-        "title": "Svelte"
-      },
-      "title": "Fonctionnalités Clés"
+    "hero": {
+      "title": "arolariu.ro",
+      "tagline": "Plateforme Full-Stack Moderne",
+      "cta": "Explorer",
+      "github": "GitHub"
     },
-    "subtitle": "Cette plateforme a été construite par Alexandru-Razvan Olariu comme terrain de jeu pour les nouvelles technologies. La plateforme est construite avec des technologies de pointe et de niveau entreprise. <br> </br> <br> </br> Vous êtes invité à explorer toutes les applications et services hébergés sur cet espace de domaine.",
-    "technologyTab": {
-      "badgeTitle": "Architecture Moderne",
-      "description": "Cette plateforme exploite les dernières technologies web, combinant Next.js pour le frontend avec .NET pour des services backend robustes, le tout déployé sur Microsoft Azure.",
-      "learnMoreBtn": "Explorer l'Architecture",
-      "points": {
-        "point1": "Architecture serverless pour une mise à l'échelle et des performances optimales",
-        "point2": "TypeScript full-stack pour la sécurité des types dans toute l'application",
-        "point3": "Télémétrie et surveillance complètes avec OpenTelemetry"
-      },
-      "title": "Construit pour l'Avenir."
+    "bento": {
+      "nextjs": {"title": "Next.js 16", "desc": "Framework React"},
+      "dotnet": {"title": ".NET 10", "desc": "APIs Backend"},
+      "azure": {"title": "Azure", "desc": "Plateforme Cloud"},
+      "otel": {"title": "OpenTelemetry", "desc": "Observabilité"},
+      "typescript": {"title": "TypeScript", "desc": "Sécurité des Types"},
+      "opensource": {"title": "Open Source", "desc": "Licence MIT"}
     },
-    "title": "Bienvenue sur arolariu.ro",
     "stats": {
-      "title": "La plateforme en bref",
-      "items": {
-        "uptime": {"value": "99.9%", "label": "Disponibilité", "description": "Hébergement fiable sur Azure"},
-        "commits": {"value": "1000+", "label": "Commits", "description": "Améliorations continues"},
-        "technologies": {"value": "25+", "label": "Technologies", "description": "Stack technologique moderne"},
-        "coverage": {"value": "90%", "label": "Couverture tests", "description": "Qualité assurée"}
-      }
-    },
-    "testimonials": {
-      "title": "Ce que les gens disent",
-      "subtitle": "Retours de collègues et collaborateurs",
-      "items": {
-        "t1": {
-          "quote": "La profondeur technique et les capacités de résolution de problèmes d'Alexandru sont vraiment exceptionnelles. Son attention aux détails et son engagement envers la qualité sont évidents dans tout ce qu'il construit.",
-          "author": "Ingénieur Senior",
-          "role": "Collègue Microsoft"
-        },
-        "t2": {
-          "quote": "Un développeur passionné qui livre constamment des solutions de haute qualité. Sa plateforme présente les meilleures pratiques modernes en ingénierie logicielle.",
-          "author": "Tech Lead",
-          "role": "Pair de l'industrie"
-        },
-        "t3": {
-          "quote": "L'architecture et l'attention aux détails de cette plateforme sont impressionnantes. C'est une excellente référence pour quiconque apprend le développement full-stack moderne.",
-          "author": "Architecte Logiciel",
-          "role": "Contributeur Open Source"
-        }
-      }
+      "uptime": {"value": "99.9", "suffix": "%", "label": "Disponibilité"},
+      "commits": {"value": "1000", "suffix": "+", "label": "Commits"},
+      "tech": {"value": "25", "suffix": "+", "label": "Technologies"},
+      "coverage": {"value": "90", "suffix": "%", "label": "Couverture"}
     },
     "techShowcase": {
       "title": "Propulsé par"
     },
-    "faq": {
-      "title": "Questions fréquentes",
-      "items": {
-        "q1": {
-          "question": "Que puis-je faire sur cette plateforme ?",
-          "answer": "Vous pouvez explorer le Système de Gestion des Factures pour numériser les reçus, en apprendre sur les technologies utilisées et voir des exemples de pratiques modernes en ingénierie logicielle."
-        },
-        "q2": {
-          "question": "Cette plateforme est-elle gratuite ?",
-          "answer": "Oui ! La plateforme est entièrement gratuite. Elle est construite comme une vitrine et une ressource d'apprentissage pour la communauté des développeurs."
-        },
-        "q3": {
-          "question": "Puis-je contribuer à ce projet ?",
-          "answer": "Absolument ! Tout le code est open source sur GitHub. N'hésitez pas à explorer, à en apprendre ou à soumettre des contributions."
-        }
-      }
-    },
-    "finalCta": {
+    "cta": {
       "title": "Prêt à explorer ?",
-      "subtitle": "Commencez votre voyage à travers les fonctionnalités et services de la plateforme.",
-      "primary": "Explorer les services",
-      "secondary": "Voir le code source",
-      "footer": "Construit avec des technologies modernes"
+      "explore": "Commencer",
+      "source": "Voir le code"
     }
   },
   "privacyPolicy": {

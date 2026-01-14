@@ -1,30 +1,24 @@
 "use client";
 
 import {BackgroundBeams} from "@arolariu/components/background-beams";
-import FeaturesSection from "./_components/Features";
+import BentoGrid from "./_components/BentoGrid";
 import FinalCTA from "./_components/FinalCTA";
 import HeroSection from "./_components/Hero";
-import HomeFAQ from "./_components/HomeFAQ";
 import Stats from "./_components/Stats";
 import TechShowcase from "./_components/TechShowcase";
-import TechnologiesSection from "./_components/Technologies";
-import Testimonials from "./_components/Testimonials";
 
 /**
- * Homepage with comprehensive sections showcasing the platform.
+ * Clean, visual-first homepage with minimal text and smooth animations.
  *
  * @remarks
  * **Rendering Context**: Client Component with interactive animations.
  *
  * **Sections**:
- * - **Hero**: Full-screen intro with animated tech sphere
- * - **Stats**: Key platform metrics (uptime, commits, technologies, coverage)
- * - **Technologies**: Architecture overview and code snippet
- * - **Features**: Grid of 6 key features with icons
- * - **TechShowcase**: Scrolling technology logos
- * - **Testimonials**: Social proof from colleagues
- * - **HomeFAQ**: Common questions accordion
- * - **FinalCTA**: Call-to-action with links to explore
+ * - **Hero**: Full-screen intro with TechSphere and gradient text
+ * - **BentoGrid**: Visual technology showcase in bento layout
+ * - **TechShowcase**: Scrolling technology logo marquee
+ * - **Stats**: Animated counting numbers for key metrics
+ * - **FinalCTA**: Simple call-to-action with buttons
  *
  * @returns The rendered home screen component, CSR'ed.
  */
@@ -33,12 +27,9 @@ export default function RenderHomeScreen(): React.JSX.Element {
     <main className='relative'>
       <BackgroundBeams className='pointer-events-none' />
       <HeroSection />
-      <Stats />
-      <TechnologiesSection />
-      <FeaturesSection />
+      <BentoGrid />
       <TechShowcase />
-      <Testimonials />
-      <HomeFAQ />
+      <Stats />
       <FinalCTA />
     </main>
   );

@@ -1302,106 +1302,33 @@
     }
   },
   "Home": {
-    "appreciation": "MULȚUMESC PENTRU TIMPUL PETRECUT PE SITE.",
-    "cta": "Începeți să explorați",
-    "featuresTab": {
-      "azure": {
-        "description": "Cloud-ul Microsoft Azure este utilizat pentru a găzdui platforma și toate serviciile sale. Acest lucru asigură faptul că platforma este întotdeauna disponibilă și că poate fi extinsă la cerere.",
-        "title": "Microsoft Azure"
-      },
-      "csharp": {
-        "description": "Platforma este construită folosind .NET 8 LTS - cea mai recentă versiune stabilă a .NET. Acest lucru asigură faptul că platforma este rapidă, fiabilă și ușor de utilizat. Platforma este construită folosind C# și F#.",
-        "title": ".NET 8 LTS"
-      },
-      "description": "Platforma `arolariu.ro` este construita folosind cele mai noi tehnologii stabile.",
-      "githubActions": {
-        "description": "Experiența DevOps este alimentată de acțiuni Github. \n(CI/CD, testare etc.)",
-        "title": "GitHub Actions"
-      },
-      "learnMoreBtn": "Interesant? \nFaceți clic aici pentru a afla mai multe ...",
-      "nextJs": {
-        "description": "Platforma este construită folosind NextJS - cel mai popular cadru React pentru producție.  Este proiectat pentru aplicații React de nivel de producție. NextJS este cel mai popular cadru React pentru un motiv: este rapid, fiabil și ușor de utilizat.",
-        "title": "Next.JS 15"
-      },
-      "otel": {
-        "description": "Observabilitate completă cu metrici, urme și jurnale integrate. Totul este instrumentat utilizând OpenTelemetry. Acest lucru permite o experiență de telemetrie unificată pe toată linia. (3PO: metrici, jurnale, urme)",
-        "title": "Open Telemetry"
-      },
-      "svelte": {
-        "description": "Folosim Svelte pentru componente UI reactive, rapide, reactive. \nPlatforma `cv.arolariu.ro` este construită doar folosind Svelte și SvelteKit (v5)",
-        "title": "Svelte"
-      },
-      "title": "Caracteristici cheie"
+    "hero": {
+      "title": "arolariu.ro",
+      "tagline": "Platformă Full-Stack Modernă",
+      "cta": "Explorează",
+      "github": "GitHub"
     },
-    "subtitle": "Această platformă a fost construită de Alexandru-Răzvan Olariu ca loc de joacă pentru noile tehnologii. Platforma este construită folosind tehnologii de ultimă oră, de nivel enterprise. <br> </br> <br> </br> Sunteți binevenit să explorați toate aplicațiile și serviciile care sunt găzduite pe acest spațiu de domeniu.",
-    "technologyTab": {
-      "badgeTitle": "Arhitectură modernă",
-      "description": "Această platformă utilizează cele mai recente tehnologii web, combinând Next.js pentru frontend cu .NET pentru servicii backend robuste, toate implementate pe Microsoft Azure.",
-      "learnMoreBtn": "Explorați arhitectura",
-      "points": {
-        "point1": "Arhitectură fără server pentru o scalare și performanță optimă",
-        "point2": "TypeScript full-stack pentru siguranța tipurilor în întreaga aplicație",
-        "point3": "Telemetrie și monitorizare cuprinzătoare cu OpenTelemetry"
-      },
-      "title": "Construit pentru viitor."
+    "bento": {
+      "nextjs": {"title": "Next.js 16", "desc": "Framework React"},
+      "dotnet": {"title": ".NET 10", "desc": "API-uri Backend"},
+      "azure": {"title": "Azure", "desc": "Platformă Cloud"},
+      "otel": {"title": "OpenTelemetry", "desc": "Observabilitate"},
+      "typescript": {"title": "TypeScript", "desc": "Siguranța Tipurilor"},
+      "opensource": {"title": "Open Source", "desc": "Licență MIT"}
     },
-    "title": "Bine ai venit pe arolariu.ro",
     "stats": {
-      "title": "Platforma pe scurt",
-      "items": {
-        "uptime": {"value": "99.9%", "label": "Disponibilitate", "description": "Găzduire fiabilă pe Azure"},
-        "commits": {"value": "1000+", "label": "Commit-uri", "description": "Îmbunătățiri continue"},
-        "technologies": {"value": "25+", "label": "Tehnologii", "description": "Stack tehnologic modern"},
-        "coverage": {"value": "90%", "label": "Acoperire teste", "description": "Calitate asigurată"}
-      }
-    },
-    "testimonials": {
-      "title": "Ce spun oamenii",
-      "subtitle": "Feedback de la colegi și colaboratori",
-      "items": {
-        "t1": {
-          "quote": "Profunzimea tehnică și abilitățile de rezolvare a problemelor ale lui Alexandru sunt cu adevărat excepționale. Atenția sa la detalii și angajamentul față de calitate sunt evidente în tot ce construiește.",
-          "author": "Inginer Senior",
-          "role": "Coleg Microsoft"
-        },
-        "t2": {
-          "quote": "Un dezvoltator pasionat care oferă constant soluții de înaltă calitate. Platforma sa prezintă cele mai bune practici moderne în ingineria software.",
-          "author": "Tech Lead",
-          "role": "Coleg din industrie"
-        },
-        "t3": {
-          "quote": "Arhitectura și atenția la detalii a acestei platforme sunt impresionante. Este o referință excelentă pentru oricine învață dezvoltarea full-stack modernă.",
-          "author": "Arhitect Software",
-          "role": "Contributor Open Source"
-        }
-      }
+      "uptime": {"value": "99.9", "suffix": "%", "label": "Disponibilitate"},
+      "commits": {"value": "1000", "suffix": "+", "label": "Commit-uri"},
+      "tech": {"value": "25", "suffix": "+", "label": "Tehnologii"},
+      "coverage": {"value": "90", "suffix": "%", "label": "Acoperire"}
     },
     "techShowcase": {
       "title": "Alimentat de"
     },
-    "faq": {
-      "title": "Întrebări frecvente",
-      "items": {
-        "q1": {
-          "question": "Ce pot face pe această platformă?",
-          "answer": "Poți explora Sistemul de Management al Facturilor pentru a digitaliza chitanțe, să înveți despre tehnologiile folosite și să vezi exemple de practici moderne în ingineria software."
-        },
-        "q2": {
-          "question": "Este această platformă gratuită?",
-          "answer": "Da! Platforma este complet gratuită. Este construită ca o vitrină și resursă de învățare pentru comunitatea de dezvoltatori."
-        },
-        "q3": {
-          "question": "Pot contribui la acest proiect?",
-          "answer": "Absolut! Întregul cod sursă este open source pe GitHub. Simte-te liber să explorezi, să înveți din el sau să trimiți contribuții."
-        }
-      }
-    },
-    "finalCta": {
+    "cta": {
       "title": "Gata de explorare?",
-      "subtitle": "Începe-ți călătoria prin funcționalitățile și serviciile platformei.",
-      "primary": "Explorează serviciile",
-      "secondary": "Vezi codul sursă",
-      "footer": "Construit cu tehnologii moderne"
+      "explore": "Începe",
+      "source": "Vezi codul"
     }
   },
   "privacyPolicy": {

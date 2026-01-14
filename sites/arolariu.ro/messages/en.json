@@ -1302,106 +1302,33 @@
     }
   },
   "Home": {
-    "appreciation": "THANK YOU FOR THE TIME SPENT ON THE WEBSITE.",
-    "cta": "Start Exploring",
-    "featuresTab": {
-      "azure": {
-        "description": "The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand.",
-        "title": "Microsoft Azure"
-      },
-      "csharp": {
-        "description": "The platform is built using .NET 8 LTS - the latest stable version of .NET. This ensures that the platform is fast, reliable, and easy to use. The platform is built using C# and F#.",
-        "title": ".NET 8 LTS"
-      },
-      "description": "The `arolariu.ro` platform is built using the latest stable technologies.",
-      "githubActions": {
-        "description": "The DevOps experience is powered by GitHub Actions. (CI/CD, Testing, etc.)",
-        "title": "GitHub Actions"
-      },
-      "learnMoreBtn": "Interesting? Click here to learn more...",
-      "nextJs": {
-        "description": "The platform is built using NextJS - the most popular React framework for production.  It is designed for production-grade React applications. NextJS is the most popular React framework for a reason: it is fast, reliable, and easy to use.",
-        "title": "Next.JS 15"
-      },
-      "otel": {
-        "description": "Complete observability with integrated metrics, traces, and logs. Everything is instrumented using OpenTelemetry. This allows for a unified telemetry experience across the board. (3PO: metrics, logs, traces)",
-        "title": "Open Telemetry"
-      },
-      "svelte": {
-        "description": "Utilizing Svelte for lightning-fast, reactive UI components. The `cv.arolariu.ro` platform is built exclusively using Svelte and SvelteKit (v5)",
-        "title": "Svelte"
-      },
-      "title": "Key Features"
+    "hero": {
+      "title": "arolariu.ro",
+      "tagline": "Modern Full-Stack Platform",
+      "cta": "Explore",
+      "github": "GitHub"
     },
-    "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br> </br> <br> </br> You are welcome to explore all of the applications and services that are hosted on this domain space.",
-    "technologyTab": {
-      "badgeTitle": "Modern Architecture",
-      "description": "This platform leverages the latest in web technology, combining Next.js for the frontend with .NET for robust backend services, all deployed on Microsoft Azure.",
-      "learnMoreBtn": "Explore the Architecture",
-      "points": {
-        "point1": "Serverless architecture for optimal scaling and performance",
-        "point2": "Full-stack TypeScript for type safety across the entire application",
-        "point3": "Comprehensive telemetry and monitoring with OpenTelemetry"
-      },
-      "title": "Built for the Future."
+    "bento": {
+      "nextjs": {"title": "Next.js 16", "desc": "React Framework"},
+      "dotnet": {"title": ".NET 10", "desc": "Backend APIs"},
+      "azure": {"title": "Azure", "desc": "Cloud Platform"},
+      "otel": {"title": "OpenTelemetry", "desc": "Observability"},
+      "typescript": {"title": "TypeScript", "desc": "Type Safety"},
+      "opensource": {"title": "Open Source", "desc": "MIT License"}
     },
-    "title": "Welcome to arolariu.ro",
     "stats": {
-      "title": "Platform at a Glance",
-      "items": {
-        "uptime": {"value": "99.9%", "label": "Uptime", "description": "Reliable hosting on Azure"},
-        "commits": {"value": "1000+", "label": "Commits", "description": "Continuous improvements"},
-        "technologies": {"value": "25+", "label": "Technologies", "description": "Modern tech stack"},
-        "coverage": {"value": "90%", "label": "Test Coverage", "description": "Quality assured"}
-      }
-    },
-    "testimonials": {
-      "title": "What People Say",
-      "subtitle": "Feedback from colleagues and collaborators",
-      "items": {
-        "t1": {
-          "quote": "Alexandru's technical depth and problem-solving abilities are truly exceptional. His attention to detail and commitment to quality are evident in everything he builds.",
-          "author": "Senior Engineer",
-          "role": "Microsoft Colleague"
-        },
-        "t2": {
-          "quote": "A passionate developer who consistently delivers high-quality solutions. His platform showcases modern best practices in software engineering.",
-          "author": "Tech Lead",
-          "role": "Industry Peer"
-        },
-        "t3": {
-          "quote": "The architecture and attention to detail in this platform is impressive. It's a great reference for anyone learning modern full-stack development.",
-          "author": "Software Architect",
-          "role": "Open Source Contributor"
-        }
-      }
+      "uptime": {"value": "99.9", "suffix": "%", "label": "Uptime"},
+      "commits": {"value": "1000", "suffix": "+", "label": "Commits"},
+      "tech": {"value": "25", "suffix": "+", "label": "Technologies"},
+      "coverage": {"value": "90", "suffix": "%", "label": "Coverage"}
     },
     "techShowcase": {
       "title": "Powered By"
     },
-    "faq": {
-      "title": "Common Questions",
-      "items": {
-        "q1": {
-          "question": "What can I do on this platform?",
-          "answer": "You can explore the Invoice Management System to digitize receipts, learn about the technologies used, and see examples of modern software engineering practices."
-        },
-        "q2": {
-          "question": "Is this platform free to use?",
-          "answer": "Yes! The platform is completely free to use. It's built as a showcase and learning resource for the developer community."
-        },
-        "q3": {
-          "question": "Can I contribute to this project?",
-          "answer": "Absolutely! The entire codebase is open source on GitHub. Feel free to explore, learn from it, or submit contributions."
-        }
-      }
-    },
-    "finalCta": {
+    "cta": {
       "title": "Ready to Explore?",
-      "subtitle": "Start your journey through the platform's features and services.",
-      "primary": "Explore Services",
-      "secondary": "View Source Code",
-      "footer": "Built with modern technologies"
+      "explore": "Get Started",
+      "source": "View Source"
     }
   },
   "privacyPolicy": {
