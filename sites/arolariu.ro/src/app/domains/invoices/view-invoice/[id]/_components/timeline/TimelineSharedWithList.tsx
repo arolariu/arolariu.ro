@@ -89,7 +89,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
       )}
 
       {/* Shared Users List */}
-      {Boolean(sharedUsers.length > 0) && (
+      {sharedUsers.length > 0 && (
         <div className='space-y-2'>
           {sharedUsers.map((user) => (
             <div
