@@ -7,6 +7,9 @@ import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import React from "react";
+import enMessages from "../../messages/en.json";
+import frMessages from "../../messages/fr.json";
+import roMessages from "../../messages/ro.json";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
 
@@ -120,11 +123,7 @@ type Props = {
  * @see RFC 1003 - Internationalization System documentation
  */
 export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
-  const messageMap = {
-    en: require("../../messages/en.json"),
-    ro: require("../../messages/ro.json"),
-    fr: require("../../messages/fr.json"),
-  } as const;
+  const messageMap = {en: enMessages, ro: roMessages, fr: frMessages} as const;
   const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
   const messages = messageMap[locale];
   const localization = localizationMap[locale];
