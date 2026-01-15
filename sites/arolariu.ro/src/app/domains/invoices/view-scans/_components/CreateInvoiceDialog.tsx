@@ -29,6 +29,9 @@ import {useCallback, useMemo, useState} from "react";
 import {TbArrowRight, TbCheck, TbFileInvoice, TbFileTypePdf, TbLoader2, TbPhoto, TbSparkles, TbStack2} from "react-icons/tb";
 import {createInvoiceFromScans} from "../_actions/createInvoiceFromScans";
 
+/** Shared translation namespace for all dialog components */
+const TRANSLATION_NAMESPACE = "Domains.services.invoices.service.createInvoiceDialog" as const;
+
 type CreateInvoiceDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -111,7 +114,6 @@ function ProcessStep({
   );
 }
 
-/** Props for the select step content component */
 /** Props for mode selection option component */
 type ModeOptionProps = {
   readonly mode: CreationMode;
@@ -171,13 +173,13 @@ function ModeOption({
 function ScansPreviewSection({
   selectedScans,
   totalSize,
-  t,
 }: Readonly<{
   selectedScans: CachedScan[];
   totalSize: number;
-  t: ReturnType<typeof useTranslations>;
 }>): React.JSX.Element {
+  const t = useTranslations(TRANSLATION_NAMESPACE);
   const hasOverflow = selectedScans.length > 6;
+
   return (
     <div className='mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50'>
       <div className='mb-3 flex items-center justify-between'>
@@ -206,7 +208,9 @@ function ScansPreviewSection({
 }
 
 /** Single scan info banner component */
-function SingleScanInfoBanner({t}: Readonly<{t: ReturnType<typeof useTranslations>}>): React.JSX.Element {
+function SingleScanInfoBanner(): React.JSX.Element {
+  const t = useTranslations(TRANSLATION_NAMESPACE);
+
   return (
     <div className='mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20'>
       <div className='flex items-start gap-3'>
@@ -231,7 +235,6 @@ type SelectStepContentProps = {
   readonly handleBatchModeKeyDown: (e: React.KeyboardEvent) => void;
   readonly handleCreate: () => Promise<void>;
   readonly handleClose: () => void;
-  readonly t: ReturnType<typeof useTranslations>;
 };
 
 /** Renders the mode selection step content */
@@ -246,8 +249,9 @@ function SelectStepContent({
   handleBatchModeKeyDown,
   handleCreate,
   handleClose,
-  t,
 }: SelectStepContentProps): React.JSX.Element {
+  const t = useTranslations(TRANSLATION_NAMESPACE);
+
   return (
     <motion.div
       key='select'
@@ -266,7 +270,6 @@ function SelectStepContent({
       <ScansPreviewSection
         selectedScans={selectedScans}
         totalSize={totalSize}
-        t={t}
       />
 
       {/* Mode Selection */}
@@ -303,7 +306,7 @@ function SelectStepContent({
       ) : null}
 
       {/* Single scan explanation */}
-      {selectedScans.length === 1 ? <SingleScanInfoBanner t={t} /> : null}
+      {selectedScans.length === 1 ? <SingleScanInfoBanner /> : null}
 
       <DialogFooter className='mt-6'>
         <Button
@@ -329,11 +332,11 @@ type CreatingStepContentProps = {
   readonly mode: CreationMode;
   readonly selectedScans: CachedScan[];
   readonly progress: number;
-  readonly t: ReturnType<typeof useTranslations>;
 };
 
 /** Renders the creating step content */
-function CreatingStepContent({mode, selectedScans, progress, t}: CreatingStepContentProps): React.JSX.Element {
+function CreatingStepContent({mode, selectedScans, progress}: CreatingStepContentProps): React.JSX.Element {
+  const t = useTranslations(TRANSLATION_NAMESPACE);
   const showPluralTitle = mode === "single" && selectedScans.length > 1;
   const showPluralProcessing = selectedScans.length > 1;
 
@@ -397,11 +400,11 @@ function CreatingStepContent({mode, selectedScans, progress, t}: CreatingStepCon
 type CompleteStepContentProps = {
   readonly createdCount: number;
   readonly handleClose: () => void;
-  readonly t: ReturnType<typeof useTranslations>;
 };
 
 /** Renders the complete step content */
-function CompleteStepContent({createdCount, handleClose, t}: CompleteStepContentProps): React.JSX.Element {
+function CompleteStepContent({createdCount, handleClose}: CompleteStepContentProps): React.JSX.Element {
+  const t = useTranslations(TRANSLATION_NAMESPACE);
   const isPlural = createdCount > 1;
 
   return (
@@ -443,7 +446,7 @@ function CompleteStepContent({createdCount, handleClose, t}: CompleteStepContent
  * Dialog for choosing between single and batch invoice creation modes.
  */
 export default function CreateInvoiceDialog({open, onOpenChange, selectedScans}: Readonly<CreateInvoiceDialogProps>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.createInvoiceDialog");
+  const t = useTranslations(TRANSLATION_NAMESPACE);
   const [mode, setMode] = useState<CreationMode>("single");
   const [step, setStep] = useState<CreationStep>("select");
   const [progress, setProgress] = useState(0);
@@ -569,7 +572,6 @@ export default function CreateInvoiceDialog({open, onOpenChange, selectedScans}:
               handleBatchModeKeyDown={handleBatchModeKeyDown}
               handleCreate={handleCreate}
               handleClose={handleClose}
-              t={t}
             />
           ) : null}
 
@@ -578,7 +580,6 @@ export default function CreateInvoiceDialog({open, onOpenChange, selectedScans}:
               mode={mode}
               selectedScans={selectedScans}
               progress={progress}
-              t={t}
             />
           ) : null}
 
@@ -586,7 +587,6 @@ export default function CreateInvoiceDialog({open, onOpenChange, selectedScans}:
             <CompleteStepContent
               createdCount={createdCount}
               handleClose={handleClose}
-              t={t}
             />
           ) : null}
         </AnimatePresence>
