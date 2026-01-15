@@ -1817,5 +1817,133 @@
       }
     },
     "title": "Terms of Service"
+  },
+  "Profile": {
+    "__metadata__": {
+      "title": "User Profile",
+      "description": "Manage your account settings, preferences, and personalization options."
+    },
+    "header": {
+      "title": "Profile Settings",
+      "subtitle": "Manage your account and personalize your experience",
+      "memberSince": "Member since {date}",
+      "userId": "User ID"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize how the application looks and feels",
+      "theme": {
+        "title": "Theme",
+        "description": "Choose your preferred color scheme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "font": {
+        "title": "Font",
+        "description": "Select a font that's comfortable for you",
+        "normal": "Standard",
+        "normalDescription": "Classic serif font for elegant reading",
+        "dyslexic": "Dyslexic-friendly",
+        "dyslexicDescription": "Optimized for easier reading"
+      },
+      "customColors": {
+        "title": "Custom Colors",
+        "description": "Personalize your color scheme",
+        "primary": "Primary Color",
+        "secondary": "Secondary Color",
+        "preview": "Preview",
+        "reset": "Reset to Default",
+        "apply": "Apply Colors",
+        "comingSoon": "Coming Soon",
+        "comingSoonDescription": "Custom color themes will be available in a future update"
+      }
+    },
+    "locale": {
+      "title": "Language & Region",
+      "description": "Set your preferred language for the interface",
+      "language": {
+        "title": "Language",
+        "description": "Select your preferred language",
+        "en": "English",
+        "ro": "Romanian",
+        "fr": "French"
+      },
+      "changeNote": "Page will refresh to apply language changes"
+    },
+    "account": {
+      "title": "Account",
+      "description": "View and manage your account information",
+      "email": "Email Address",
+      "emailVerified": "Verified",
+      "emailUnverified": "Not verified",
+      "createdAt": "Account Created",
+      "lastSignIn": "Last Sign In",
+      "manageAccount": "Manage Account",
+      "manageAccountDescription": "Update your profile, security settings, and more in Clerk"
+    },
+    "statistics": {
+      "title": "Account Statistics",
+      "description": "Overview of your activity on the platform",
+      "totalInvoices": "Total Invoices",
+      "totalMerchants": "Merchants Tracked",
+      "totalScans": "Scans Uploaded",
+      "accountAge": "Account Age",
+      "accountAgeDays": "{days} days",
+      "lastActivity": "Last Activity",
+      "storageUsed": "Storage Used",
+      "dataPoints": "Data Points Analyzed"
+    },
+    "dataManagement": {
+      "title": "Data Management",
+      "description": "Export or delete your data",
+      "export": {
+        "title": "Export Data",
+        "description": "Download a copy of all your data in JSON format",
+        "button": "Export All Data",
+        "processing": "Preparing export...",
+        "comingSoon": "Export feature coming soon"
+      },
+      "delete": {
+        "title": "Delete Account",
+        "description": "Permanently delete your account and all associated data",
+        "warning": "This action cannot be undone. All your invoices, scans, and preferences will be permanently deleted.",
+        "button": "Delete Account",
+        "confirmTitle": "Are you absolutely sure?",
+        "confirmDescription": "This will permanently delete your account and remove all your data from our servers. This action cannot be undone.",
+        "confirmButton": "Yes, delete my account",
+        "cancelButton": "Cancel",
+        "typeToConfirm": "Type DELETE to confirm",
+        "deleting": "Deleting account..."
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Manage your notification preferences",
+      "email": {
+        "title": "Email Notifications",
+        "description": "Receive updates about your account via email"
+      },
+      "marketing": {
+        "title": "Marketing Emails",
+        "description": "Receive news about new features and updates"
+      },
+      "comingSoon": "Notification settings coming soon"
+    },
+    "errors": {
+      "notFound": "User profile not found",
+      "notFoundDescription": "The profile you're looking for doesn't exist or you don't have permission to view it.",
+      "unauthorized": "Access Denied",
+      "unauthorizedDescription": "You can only view your own profile.",
+      "loadFailed": "Failed to load profile",
+      "saveFailed": "Failed to save changes"
+    },
+    "actions": {
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "saved": "Changes saved successfully",
+      "cancel": "Cancel",
+      "back": "Back to Home"
+    }
   }
 }

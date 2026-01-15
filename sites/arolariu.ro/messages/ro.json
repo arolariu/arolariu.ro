@@ -1817,5 +1817,133 @@
       }
     },
     "title": "Termenii serviciului"
+  },
+  "Profile": {
+    "__metadata__": {
+      "title": "Profilul Utilizatorului",
+      "description": "Gestionați setările contului, preferințele și opțiunile de personalizare."
+    },
+    "header": {
+      "title": "Setări Profil",
+      "subtitle": "Gestionați contul și personalizați experiența",
+      "memberSince": "Membru din {date}",
+      "userId": "ID Utilizator"
+    },
+    "appearance": {
+      "title": "Aspect",
+      "description": "Personalizați cum arată și se simte aplicația",
+      "theme": {
+        "title": "Temă",
+        "description": "Alegeți schema de culori preferată",
+        "light": "Luminos",
+        "dark": "Întunecat",
+        "system": "Sistem"
+      },
+      "font": {
+        "title": "Font",
+        "description": "Selectați un font confortabil pentru dvs.",
+        "normal": "Standard",
+        "normalDescription": "Font serif clasic pentru citire elegantă",
+        "dyslexic": "Prietenos pentru dislexie",
+        "dyslexicDescription": "Optimizat pentru citire mai ușoară"
+      },
+      "customColors": {
+        "title": "Culori Personalizate",
+        "description": "Personalizați schema de culori",
+        "primary": "Culoare Primară",
+        "secondary": "Culoare Secundară",
+        "preview": "Previzualizare",
+        "reset": "Resetare la Implicit",
+        "apply": "Aplică Culorile",
+        "comingSoon": "În Curând",
+        "comingSoonDescription": "Temele de culori personalizate vor fi disponibile într-o actualizare viitoare"
+      }
+    },
+    "locale": {
+      "title": "Limbă și Regiune",
+      "description": "Setați limba preferată pentru interfață",
+      "language": {
+        "title": "Limbă",
+        "description": "Selectați limba preferată",
+        "en": "Engleză",
+        "ro": "Română",
+        "fr": "Franceză"
+      },
+      "changeNote": "Pagina se va reîncărca pentru a aplica modificările de limbă"
+    },
+    "account": {
+      "title": "Cont",
+      "description": "Vizualizați și gestionați informațiile contului",
+      "email": "Adresa de Email",
+      "emailVerified": "Verificat",
+      "emailUnverified": "Neverificat",
+      "createdAt": "Cont Creat",
+      "lastSignIn": "Ultima Autentificare",
+      "manageAccount": "Gestionează Contul",
+      "manageAccountDescription": "Actualizați profilul, setările de securitate și mai mult în Clerk"
+    },
+    "statistics": {
+      "title": "Statistici Cont",
+      "description": "Prezentare generală a activității pe platformă",
+      "totalInvoices": "Total Facturi",
+      "totalMerchants": "Comercianți Urmăriți",
+      "totalScans": "Scanări Încărcate",
+      "accountAge": "Vechime Cont",
+      "accountAgeDays": "{days} zile",
+      "lastActivity": "Ultima Activitate",
+      "storageUsed": "Spațiu Utilizat",
+      "dataPoints": "Puncte de Date Analizate"
+    },
+    "dataManagement": {
+      "title": "Gestionarea Datelor",
+      "description": "Exportați sau ștergeți datele",
+      "export": {
+        "title": "Exportă Datele",
+        "description": "Descărcați o copie a tuturor datelor în format JSON",
+        "button": "Exportă Toate Datele",
+        "processing": "Se pregătește exportul...",
+        "comingSoon": "Funcția de export va fi disponibilă în curând"
+      },
+      "delete": {
+        "title": "Șterge Contul",
+        "description": "Ștergeți permanent contul și toate datele asociate",
+        "warning": "Această acțiune nu poate fi anulată. Toate facturile, scanările și preferințele vor fi șterse permanent.",
+        "button": "Șterge Contul",
+        "confirmTitle": "Sunteți absolut sigur?",
+        "confirmDescription": "Aceasta va șterge permanent contul și va elimina toate datele de pe serverele noastre. Această acțiune nu poate fi anulată.",
+        "confirmButton": "Da, șterge contul meu",
+        "cancelButton": "Anulează",
+        "typeToConfirm": "Tastați DELETE pentru confirmare",
+        "deleting": "Se șterge contul..."
+      }
+    },
+    "notifications": {
+      "title": "Notificări",
+      "description": "Gestionați preferințele de notificare",
+      "email": {
+        "title": "Notificări Email",
+        "description": "Primiți actualizări despre cont prin email"
+      },
+      "marketing": {
+        "title": "Emailuri de Marketing",
+        "description": "Primiți noutăți despre funcții noi și actualizări"
+      },
+      "comingSoon": "Setările de notificare vor fi disponibile în curând"
+    },
+    "errors": {
+      "notFound": "Profilul utilizatorului nu a fost găsit",
+      "notFoundDescription": "Profilul pe care îl căutați nu există sau nu aveți permisiunea să îl vizualizați.",
+      "unauthorized": "Acces Refuzat",
+      "unauthorizedDescription": "Puteți vizualiza doar propriul profil.",
+      "loadFailed": "Nu s-a putut încărca profilul",
+      "saveFailed": "Nu s-au putut salva modificările"
+    },
+    "actions": {
+      "save": "Salvează Modificările",
+      "saving": "Se salvează...",
+      "saved": "Modificările au fost salvate cu succes",
+      "cancel": "Anulează",
+      "back": "Înapoi la Acasă"
+    }
   }
 }

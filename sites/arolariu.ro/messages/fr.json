@@ -1817,5 +1817,133 @@
       }
     },
     "title": "Conditions de Service"
+  },
+  "Profile": {
+    "__metadata__": {
+      "title": "Profil Utilisateur",
+      "description": "Gérez les paramètres de votre compte, vos préférences et vos options de personnalisation."
+    },
+    "header": {
+      "title": "Paramètres du Profil",
+      "subtitle": "Gérez votre compte et personnalisez votre expérience",
+      "memberSince": "Membre depuis {date}",
+      "userId": "ID Utilisateur"
+    },
+    "appearance": {
+      "title": "Apparence",
+      "description": "Personnalisez l'apparence de l'application",
+      "theme": {
+        "title": "Thème",
+        "description": "Choisissez votre palette de couleurs préférée",
+        "light": "Clair",
+        "dark": "Sombre",
+        "system": "Système"
+      },
+      "font": {
+        "title": "Police",
+        "description": "Sélectionnez une police confortable pour vous",
+        "normal": "Standard",
+        "normalDescription": "Police serif classique pour une lecture élégante",
+        "dyslexic": "Adapté à la dyslexie",
+        "dyslexicDescription": "Optimisé pour une lecture plus facile"
+      },
+      "customColors": {
+        "title": "Couleurs Personnalisées",
+        "description": "Personnalisez votre palette de couleurs",
+        "primary": "Couleur Primaire",
+        "secondary": "Couleur Secondaire",
+        "preview": "Aperçu",
+        "reset": "Réinitialiser par Défaut",
+        "apply": "Appliquer les Couleurs",
+        "comingSoon": "Bientôt Disponible",
+        "comingSoonDescription": "Les thèmes de couleurs personnalisés seront disponibles dans une mise à jour future"
+      }
+    },
+    "locale": {
+      "title": "Langue et Région",
+      "description": "Définissez votre langue préférée pour l'interface",
+      "language": {
+        "title": "Langue",
+        "description": "Sélectionnez votre langue préférée",
+        "en": "Anglais",
+        "ro": "Roumain",
+        "fr": "Français"
+      },
+      "changeNote": "La page sera actualisée pour appliquer les changements de langue"
+    },
+    "account": {
+      "title": "Compte",
+      "description": "Consultez et gérez les informations de votre compte",
+      "email": "Adresse Email",
+      "emailVerified": "Vérifié",
+      "emailUnverified": "Non vérifié",
+      "createdAt": "Compte Créé",
+      "lastSignIn": "Dernière Connexion",
+      "manageAccount": "Gérer le Compte",
+      "manageAccountDescription": "Mettez à jour votre profil, paramètres de sécurité et plus dans Clerk"
+    },
+    "statistics": {
+      "title": "Statistiques du Compte",
+      "description": "Aperçu de votre activité sur la plateforme",
+      "totalInvoices": "Total des Factures",
+      "totalMerchants": "Marchands Suivis",
+      "totalScans": "Scans Téléchargés",
+      "accountAge": "Ancienneté du Compte",
+      "accountAgeDays": "{days} jours",
+      "lastActivity": "Dernière Activité",
+      "storageUsed": "Stockage Utilisé",
+      "dataPoints": "Points de Données Analysés"
+    },
+    "dataManagement": {
+      "title": "Gestion des Données",
+      "description": "Exportez ou supprimez vos données",
+      "export": {
+        "title": "Exporter les Données",
+        "description": "Téléchargez une copie de toutes vos données au format JSON",
+        "button": "Exporter Toutes les Données",
+        "processing": "Préparation de l'export...",
+        "comingSoon": "Fonction d'export bientôt disponible"
+      },
+      "delete": {
+        "title": "Supprimer le Compte",
+        "description": "Supprimez définitivement votre compte et toutes les données associées",
+        "warning": "Cette action ne peut pas être annulée. Toutes vos factures, scans et préférences seront définitivement supprimés.",
+        "button": "Supprimer le Compte",
+        "confirmTitle": "Êtes-vous absolument sûr ?",
+        "confirmDescription": "Cela supprimera définitivement votre compte et supprimera toutes vos données de nos serveurs. Cette action ne peut pas être annulée.",
+        "confirmButton": "Oui, supprimer mon compte",
+        "cancelButton": "Annuler",
+        "typeToConfirm": "Tapez DELETE pour confirmer",
+        "deleting": "Suppression du compte..."
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Gérez vos préférences de notification",
+      "email": {
+        "title": "Notifications par Email",
+        "description": "Recevez des mises à jour sur votre compte par email"
+      },
+      "marketing": {
+        "title": "Emails Marketing",
+        "description": "Recevez des nouvelles sur les nouvelles fonctionnalités et mises à jour"
+      },
+      "comingSoon": "Paramètres de notification bientôt disponibles"
+    },
+    "errors": {
+      "notFound": "Profil utilisateur non trouvé",
+      "notFoundDescription": "Le profil que vous recherchez n'existe pas ou vous n'avez pas la permission de le voir.",
+      "unauthorized": "Accès Refusé",
+      "unauthorizedDescription": "Vous ne pouvez voir que votre propre profil.",
+      "loadFailed": "Échec du chargement du profil",
+      "saveFailed": "Échec de l'enregistrement des modifications"
+    },
+    "actions": {
+      "save": "Enregistrer les Modifications",
+      "saving": "Enregistrement...",
+      "saved": "Modifications enregistrées avec succès",
+      "cancel": "Annuler",
+      "back": "Retour à l'Accueil"
+    }
   }
 }
