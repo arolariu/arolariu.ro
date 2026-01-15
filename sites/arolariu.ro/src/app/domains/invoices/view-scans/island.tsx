@@ -9,9 +9,10 @@ import {Button, Card, CardContent} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
-import {useCallback, useState} from "react";
+import {useCallback} from "react";
 import {TbArrowLeft, TbCheck, TbClick, TbFileInvoice, TbPhoto, TbStack2} from "react-icons/tb";
-import CreateInvoiceDialog from "./_components/dialogs/CreateInvoiceDialog";
+import {DialogProvider, useDialogs} from "../_contexts/DialogContext";
+import DialogContainer from "../_contexts/DialogContainer";
 import ScanSelectionToolbar from "./_components/ScanSelectionToolbar";
 import ScansGrid from "./_components/ScansGrid";
 import ScansHeader from "./_components/ScansHeader";
@@ -178,20 +179,16 @@ function Sidebar(): React.JSX.Element | null {
 }
 
 /**
- * Client-side island for the view scans workflow.
- *
- * @remarks
- * This component serves as the hydration boundary for the view scans page.
- * It manages the dialog state and renders the scan viewing UI.
+ * Inner content component that uses the dialog context.
  */
-export default function RenderViewScansScreen(): React.JSX.Element {
+function ViewScansContent(): React.JSX.Element {
   const t = useTranslations("Domains.services.invoices.service.view-scans");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const {scans, selectedScans} = useScans();
+  const {openDialog} = useDialogs();
 
   const handleOpenCreateInvoice = useCallback(() => {
-    setDialogOpen(true);
-  }, []);
+    openDialog("VIEW_SCANS__CREATE_INVOICE", "add", {selectedScans});
+  }, [openDialog, selectedScans]);
 
   return (
     <section className='mx-auto max-w-7xl'>
@@ -222,13 +219,24 @@ export default function RenderViewScansScreen(): React.JSX.Element {
       </div>
 
       <ScanSelectionToolbar onCreateInvoice={handleOpenCreateInvoice} />
-      <CreateInvoiceDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        selectedScans={selectedScans}
-      />
+      <DialogContainer />
       {/* Add padding at bottom when toolbar is visible */}
-      {selectedScans.length > 0 && <div className='h-24' />}
+      {selectedScans.length > 0 ? <div className='h-24' /> : null}
     </section>
+  );
+}
+
+/**
+ * Client-side island for the view scans workflow.
+ *
+ * @remarks
+ * This component serves as the hydration boundary for the view scans page.
+ * It manages the dialog state via DialogProvider and renders the scan viewing UI.
+ */
+export default function RenderViewScansScreen(): React.JSX.Element {
+  return (
+    <DialogProvider>
+      <ViewScansContent />
+    </DialogProvider>
   );
 }
