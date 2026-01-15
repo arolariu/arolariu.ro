@@ -26,11 +26,54 @@ type FoodGroup = {
   categories: ProductCategory[];
 };
 
+/** Get the label for a balance score */
+function getScoreLabel(score: number): string {
+  if (score >= 80) return "Excellent";
+  if (score >= 60) return "Good";
+  if (score >= 40) return "Fair";
+  return "Needs Work";
+}
+
+/** Get the color class for a balance score */
+function getScoreColorClass(score: number): string {
+  if (score >= 80) return "text-green-600";
+  if (score >= 60) return "text-emerald-600";
+  if (score >= 40) return "text-yellow-600";
+  return "text-red-600";
+}
+
+/** Calculate the balance score based on food group presence */
+function calculateBalanceScore(hasVeggies: boolean, hasFruits: boolean, hasProtein: boolean, wholeFoodPct: number): number {
+  let score = 50;
+  if (hasVeggies) score += 15;
+  if (hasFruits) score += 15;
+  if (hasProtein) score += 10;
+  if (wholeFoodPct >= 50) score += 10;
+  return Math.min(100, score);
+}
+
+/** Generate a nutrition suggestion based on basket composition */
+function generateSuggestion(hasVeggies: boolean, hasFruits: boolean, processedPct: number): string {
+  if (!hasVeggies && !hasFruits) {
+    return "Add more fruits and vegetables to balance your basket";
+  }
+  if (!hasVeggies) {
+    return "Consider adding vegetables for a more balanced diet";
+  }
+  if (!hasFruits) {
+    return "Adding some fruits would improve nutritional balance";
+  }
+  if (processedPct > 40) {
+    return "Try swapping some processed items for whole foods";
+  }
+  return "Great balanced shopping!";
+}
+
 export function NutritionCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
-  const currency = paymentInformation.currency;
+  const {currency} = paymentInformation;
 
   // Define food groups
   const foodGroups: FoodGroup[] = [
@@ -92,22 +135,9 @@ export function NutritionCard(): React.JSX.Element {
   const hasVeggies = foodGroups.find((g) => g.name === "Vegetables")!.items > 0;
   const hasFruits = foodGroups.find((g) => g.name === "Fruits")!.items > 0;
   const hasProtein = foodGroups.find((g) => g.name === "Protein")!.items > 0;
-  let balanceScore = 50;
-  if (hasVeggies) balanceScore += 15;
-  if (hasFruits) balanceScore += 15;
-  if (hasProtein) balanceScore += 10;
-  if (wholeFoodPct >= 50) balanceScore += 10;
-  balanceScore = Math.min(100, balanceScore);
-
-  const scoreLabel = balanceScore >= 80 ? "Excellent" : balanceScore >= 60 ? "Good" : balanceScore >= 40 ? "Fair" : "Needs Work";
-  const scoreColor =
-    balanceScore >= 80
-      ? "text-green-600"
-      : balanceScore >= 60
-        ? "text-emerald-600"
-        : balanceScore >= 40
-          ? "text-yellow-600"
-          : "text-red-600";
+  const balanceScore = calculateBalanceScore(hasVeggies, hasFruits, hasProtein, wholeFoodPct);
+  const scoreLabel = getScoreLabel(balanceScore);
+  const scoreColor = getScoreColorClass(balanceScore);
 
   // Collect allergens
   const allergenMap = new Map<string, number>();
@@ -119,16 +149,7 @@ export function NutritionCard(): React.JSX.Element {
   const allergens = Array.from(allergenMap.entries());
 
   // Generate suggestion
-  let suggestion = "Great balanced shopping!";
-  if (!hasVeggies && !hasFruits) {
-    suggestion = "Add more fruits and vegetables to balance your basket";
-  } else if (!hasVeggies) {
-    suggestion = "Consider adding vegetables for a more balanced diet";
-  } else if (!hasFruits) {
-    suggestion = "Adding some fruits would improve nutritional balance";
-  } else if (processedPct > 40) {
-    suggestion = "Try swapping some processed items for whole foods";
-  }
+  const suggestion = generateSuggestion(hasVeggies, hasFruits, processedPct);
 
   return (
     <Card>

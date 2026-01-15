@@ -3,7 +3,7 @@
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Progress} from "@arolariu/components";
 import {useLocale} from "next-intl";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbBriefcase, TbChartBar, TbCheck, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbRefresh, TbTag} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 
@@ -29,12 +29,24 @@ export function GeneralExpenseCard(): React.JSX.Element {
   const [trackWarranty, setTrackWarranty] = useState(false);
   const [insuranceInventory, setInsuranceInventory] = useState(false);
 
+  const handleBusinessExpenseChange = useCallback((checked: boolean | "indeterminate") => {
+    setBusinessExpense(checked === true);
+  }, []);
+
+  const handleTrackWarrantyChange = useCallback((checked: boolean | "indeterminate") => {
+    setTrackWarranty(checked === true);
+  }, []);
+
+  const handleInsuranceInventoryChange = useCallback((checked: boolean | "indeterminate") => {
+    setInsuranceInventory(checked === true);
+  }, []);
+
   const vatReclaimable = totalAmount * 0.19;
 
   // Similar past purchases (mock)
   const pastPurchases = [
-    {store: "Altex", date: new Date("2024-11-15"), amount: 320, item: "Headphones"},
-    {store: "eMAG", date: new Date("2024-09-22"), amount: 890, item: "Monitor"},
+    {id: "altex-2024-11-15", store: "Altex", date: new Date("2024-11-15"), amount: 320, item: "Headphones"},
+    {id: "emag-2024-09-22", store: "eMAG", date: new Date("2024-09-22"), amount: 890, item: "Monitor"},
   ];
 
   const nearLimitBudget = budgets.find((b) => b.spent / b.limit >= 0.9);
@@ -106,15 +118,13 @@ export function GeneralExpenseCard(): React.JSX.Element {
               );
             })}
           </div>
-          {nearLimitBudget && (
-            <p
+          {nearLimitBudget ? <p
               className='flex items-center gap-1 text-xs text-amber-600'
               role='alert'
               aria-live='polite'>
               <span aria-hidden='true'>!</span>
               {nearLimitBudget.name}: {Math.round((nearLimitBudget.spent / nearLimitBudget.limit) * 100)}% used (10 days left in month)
-            </p>
-          )}
+                             </p> : null}
         </div>
 
         {/* Tax & Business Options */}
@@ -128,7 +138,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Checkbox
                 id='business'
                 checked={businessExpense}
-                onCheckedChange={(c) => setBusinessExpense(c === true)}
+                onCheckedChange={handleBusinessExpenseChange}
               />
               <label
                 htmlFor='business'
@@ -140,7 +150,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Checkbox
                 id='warranty'
                 checked={trackWarranty}
-                onCheckedChange={(c) => setTrackWarranty(c === true)}
+                onCheckedChange={handleTrackWarrantyChange}
               />
               <label
                 htmlFor='warranty'
@@ -152,7 +162,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Checkbox
                 id='insurance'
                 checked={insuranceInventory}
-                onCheckedChange={(c) => setInsuranceInventory(c === true)}
+                onCheckedChange={handleInsuranceInventoryChange}
               />
               <label
                 htmlFor='insurance'
@@ -161,12 +171,10 @@ export function GeneralExpenseCard(): React.JSX.Element {
               </label>
             </div>
           </div>
-          {businessExpense && (
-            <p className='flex items-center gap-1 text-sm text-green-600'>
+          {businessExpense ? <p className='flex items-center gap-1 text-sm text-green-600'>
               <TbBriefcase className='h-3 w-3' />
               VAT Reclaimable: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
-            </p>
-          )}
+                             </p> : null}
         </div>
 
         {/* Similar Past Purchases */}
@@ -176,9 +184,9 @@ export function GeneralExpenseCard(): React.JSX.Element {
             <h4 className='text-sm font-medium'>Similar Past Purchases</h4>
           </div>
           <ul className='text-muted-foreground space-y-1.5 text-sm'>
-            {pastPurchases.map((p, i) => (
+            {pastPurchases.map((p) => (
               <li
-                key={i}
+                key={p.id}
                 className='flex items-center gap-2'>
                 <span className='text-muted-foreground'>•</span>
                 {p.store} - {formatDate(p.date, {locale})}: {formatCurrency(p.amount, {currencyCode: currency.code, locale})} ({p.item})
