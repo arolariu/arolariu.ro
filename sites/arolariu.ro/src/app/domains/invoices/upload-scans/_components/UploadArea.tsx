@@ -7,46 +7,173 @@
  * @remarks
  * Adapted from the create-invoice UploadArea component.
  * Uploads scans to Azure without creating invoices.
+ * Uses native HTML5 drag-and-drop APIs instead of react-dropzone to avoid ESLint issues.
  */
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useCallback} from "react";
-import {useDropzone} from "react-dropzone";
+import {useCallback, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
 
+/** Accepted MIME types for file uploads */
+const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
+
+/** Accepted file extensions */
+const ACCEPTED_EXTENSIONS = ".jpg,.jpeg,.png,.pdf";
+
+/** Maximum file size in bytes (10MB) */
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+/**
+ * Checks if a file is valid based on type and size constraints.
+ * @param file - The file to validate
+ * @returns True if the file is valid
+ */
+function isValidFile(file: File): boolean {
+  return ACCEPTED_TYPES.has(file.type) && file.size <= MAX_FILE_SIZE;
+}
+
+/**
+ * Extracts a file from a DataTransferItem.
+ * @param item - The DataTransferItem
+ * @returns The file if valid, null otherwise
+ */
+function extractFileFromDataTransferItem(item: DataTransferItem): File | null {
+  const file = item.getAsFile();
+  if (file && isValidFile(file)) {
+    return file;
+  }
+  return null;
+}
+
+/**
+ * Filters and validates files from a DataTransferItemList.
+ * @param items - The DataTransferItemList to filter
+ * @returns An array of valid files
+ */
+function filterValidFilesFromDataTransfer(items: DataTransferItemList): File[] {
+  const validFiles: File[] = [];
+  // Convert DataTransferItemList to array for iteration
+  const itemsArray = Array.from({length: items.length}, (_, index) => items[index]);
+
+  for (const item of itemsArray) {
+    if (item) {
+      const file = extractFileFromDataTransferItem(item);
+      if (file) {
+        validFiles.push(file);
+      }
+    }
+  }
+
+  return validFiles;
+}
+
 /**
  * Upload area component for standalone scans.
- * Uses react-dropzone for file handling.
+ * Uses native HTML5 drag-and-drop APIs for file handling.
  */
 export default function UploadArea(): React.JSX.Element {
   const {pendingUploads, isUploading, addFiles, clearAll, uploadAll} = useScanUpload();
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
 
-  const onDrop = useCallback(
-    (acceptedFiles: FileList | File[]) => {
-      if (acceptedFiles.length > 0) {
-        const fileList = new DataTransfer();
-        for (const file of acceptedFiles) {
-          fileList.items.add(file);
-        }
-        addFiles(fileList.files);
+  /**
+   * Handle file selection from input element.
+   */
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const {files} = event.target;
+      if (files && files.length > 0) {
+        addFiles(files);
       }
+      // Reset input value to allow re-selecting same files
+      event.target.value = "";
     },
     [addFiles],
   );
 
-  const {getRootProps, getInputProps, isDragActive} = useDropzone({
-    onDrop,
-    accept: {
-      "image/jpeg": [".jpg", ".jpeg"],
-      "image/png": [".png"],
-      "application/pdf": [".pdf"],
+  /**
+   * Handle click on the dropzone to trigger file input.
+   */
+  const handleClick = useCallback(() => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  }, [isUploading]);
+
+  /**
+   * Handle keyboard interaction for accessibility.
+   */
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if ((event.key === "Enter" || event.key === " ") && !isUploading) {
+        event.preventDefault();
+        fileInputRef.current?.click();
+      }
     },
-    multiple: true,
-    maxSize: 10 * 1024 * 1024, // 10MB
-    disabled: isUploading,
-  });
+    [isUploading],
+  );
+
+  /**
+   * Handle drag enter event.
+   */
+  const handleDragEnter = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragCounterRef.current += 1;
+      if (event.dataTransfer.items.length > 0 && !isUploading) {
+        setIsDragActive(true);
+      }
+    },
+    [isUploading],
+  );
+
+  /**
+   * Handle drag leave event.
+   */
+  const handleDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDragActive(false);
+    }
+  }, []);
+
+  /**
+   * Handle drag over event.
+   */
+  const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  /**
+   * Handle drop event.
+   */
+  const handleDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragCounterRef.current = 0;
+      setIsDragActive(false);
+
+      if (isUploading) return;
+
+      const droppedFiles = filterValidFilesFromDataTransfer(event.dataTransfer.items);
+      if (droppedFiles.length > 0) {
+        const dataTransfer = new DataTransfer();
+        for (const file of droppedFiles) {
+          dataTransfer.items.add(file);
+        }
+        addFiles(dataTransfer.files);
+      }
+    },
+    [isUploading, addFiles],
+  );
 
   if (pendingUploads.length === 0) {
     return (
@@ -56,7 +183,14 @@ export default function UploadArea(): React.JSX.Element {
             ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
             : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-purple-900/20"
         } cursor-pointer`}
-        {...getRootProps()}>
+        role='button'
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}>
         <motion.div
           animate={isDragActive ? {scale: 1.05} : {scale: 1}}
           transition={{duration: 0.2}}>
@@ -71,7 +205,15 @@ export default function UploadArea(): React.JSX.Element {
           <p className='mb-8 text-xs text-gray-400 dark:text-gray-500'>
             Scans will be stored for later use. Create invoices from the View Scans page.
           </p>
-          <input {...getInputProps()} />
+          <input
+            ref={fileInputRef}
+            type='file'
+            accept={ACCEPTED_EXTENSIONS}
+            multiple
+            onChange={handleFileChange}
+            className='hidden'
+            aria-label='Upload files'
+          />
           <Button
             type='button'
             className='cursor-pointer bg-linear-to-r from-blue-600 to-cyan-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-cyan-700 hover:shadow-xl'>
@@ -90,8 +232,23 @@ export default function UploadArea(): React.JSX.Element {
             ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
             : "border-gray-300 bg-transparent hover:border-blue-400 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-900/20"
         } ${isUploading ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
-        {...getRootProps()}>
-        <input {...getInputProps()} />
+        role='button'
+        tabIndex={isUploading ? -1 : 0}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}>
+        <input
+          ref={fileInputRef}
+          type='file'
+          accept={ACCEPTED_EXTENSIONS}
+          multiple
+          onChange={handleFileChange}
+          className='hidden'
+          aria-label='Upload files'
+        />
         <div className='flex items-center justify-center gap-4'>
           <div className='flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
             <TbUpload className='h-6 w-6 text-gray-500 dark:text-gray-400' />

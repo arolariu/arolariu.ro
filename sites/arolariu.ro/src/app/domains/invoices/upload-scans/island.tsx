@@ -62,7 +62,7 @@ function TipItem({children}: Readonly<{children: React.ReactNode}>): React.JSX.E
 /**
  * Upload statistics component.
  */
-function UploadStats(): React.JSX.Element {
+function UploadStats(): React.JSX.Element | null {
   const t = useTranslations("Domains.services.invoices.service.upload-scans");
   const {pendingUploads, sessionStats} = useScanUpload();
 
@@ -75,7 +75,7 @@ function UploadStats(): React.JSX.Element {
   const {totalAdded, totalCompleted, totalFailed} = sessionStats;
 
   // Don't show if no activity this session
-  if (totalAdded === 0 && pendingUploads.length === 0) return <></>;
+  if (totalAdded === 0 && pendingUploads.length === 0) return null;
 
   // Show "View Scans" button when all uploads are done (nothing pending or uploading)
   const allDone = totalCompleted > 0 && pending === 0 && uploading === 0;
@@ -122,16 +122,14 @@ function UploadStats(): React.JSX.Element {
           )}
         </div>
 
-        {allDone && (
-          <Button
+        {allDone ? <Button
             asChild
             className='bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
             <Link href='/domains/invoices/view-scans'>
               {t("buttons.viewScans")}
               <TbArrowRight className='ml-2 h-4 w-4' />
             </Link>
-          </Button>
-        )}
+                   </Button> : null}
       </div>
     </motion.div>
   );
