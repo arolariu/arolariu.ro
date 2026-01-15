@@ -17,6 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Card,
   CardContent,
   Checkbox,
@@ -149,11 +150,12 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
               onKeyDown={handleKeyDown}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button
-                    type='button'
-                    className='flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow-sm transition-colors hover:bg-white dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800'>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='h-7 w-7 rounded-full bg-white/80 text-gray-700 shadow-sm hover:bg-white dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800'>
                     <TbDotsVertical className='h-4 w-4' />
-                  </button>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem
