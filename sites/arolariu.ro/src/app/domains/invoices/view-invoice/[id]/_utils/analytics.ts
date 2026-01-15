@@ -47,7 +47,7 @@ export function getCategorySpending(items: Product[]): CategorySpending[] {
       count: data.count,
       fill: CATEGORY_COLORS[category] || "var(--chart-1)",
     }))
-    .sort((a, b) => b.amount - a.amount);
+    .toSorted((a, b) => b.amount - a.amount);
 }
 
 // Price distribution data - simplified ranges
@@ -85,13 +85,13 @@ export type QuantityData = {
 export function getQuantityAnalysis(items: Product[]): QuantityData[] {
   return items
     .map((item) => ({
-      name: item.genericName.length > 15 ? item.genericName.substring(0, 12) + "..." : item.genericName,
+      name: item.genericName.length > 15 ? `${item.genericName.slice(0, 12)  }...` : item.genericName,
       fullName: item.genericName,
       quantity: item.quantity,
       unit: item.quantityUnit,
       price: item.totalPrice,
     }))
-    .sort((a, b) => b.price - a.price)
+    .toSorted((a, b) => b.price - a.price)
     .slice(0, 5); // Only top 5 items
 }
 
@@ -108,14 +108,15 @@ export type InvoiceSummary = {
 };
 
 export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
-  const items = invoice.items;
+  const {items, paymentInformation} = invoice;
+  const {totalCostAmount, totalTaxAmount} = paymentInformation;
   const categories = new Set(items.map((item) => item.category));
-  const sortedByPrice = [...items].sort((a, b) => b.totalPrice - a.totalPrice);
+  const sortedByPrice = items.toSorted((a, b) => b.totalPrice - a.totalPrice);
 
   return {
     totalItems: items.length,
     uniqueCategories: categories.size,
-    averageItemPrice: items.length > 0 ? Math.round((invoice.paymentInformation.totalCostAmount / items.length) * 100) / 100 : 0,
+    averageItemPrice: items.length > 0 ? Math.round((totalCostAmount / items.length) * 100) / 100 : 0,
     highestItem: sortedByPrice[0] ? {name: sortedByPrice[0].genericName, price: sortedByPrice[0].totalPrice} : {name: "N/A", price: 0},
     lowestItem: sortedByPrice.at(-1)
       ? {
@@ -123,12 +124,9 @@ export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
           price: sortedByPrice.at(-1)!.totalPrice,
         }
       : {name: "N/A", price: 0},
-    taxPercentage:
-      invoice.paymentInformation.totalCostAmount > 0
-        ? Math.round((invoice.paymentInformation.totalTaxAmount / invoice.paymentInformation.totalCostAmount) * 10000) / 100
-        : 0,
-    totalAmount: invoice.paymentInformation.totalCostAmount,
-    taxAmount: invoice.paymentInformation.totalTaxAmount,
+    taxPercentage: totalCostAmount > 0 ? Math.round((totalTaxAmount / totalCostAmount) * 10_000) / 100 : 0,
+    totalAmount: totalCostAmount,
+    taxAmount: totalTaxAmount,
   };
 }
 
@@ -231,7 +229,7 @@ export function getMerchantBreakdown(): MerchantBreakdown[] {
       total: Math.round(data.total * 100) / 100,
       average: Math.round((data.total / data.count) * 100) / 100,
     }))
-    .sort((a, b) => b.total - a.total);
+    .toSorted((a, b) => b.total - a.total);
 }
 
 export type CategoryTrendData = {
@@ -255,7 +253,7 @@ export function getCategoryComparison(): CategoryTrendData[] {
       average: 0, // Historical averages not yet implemented
     }))
     .filter((d) => d.current > 0)
-    .sort((a, b) => b.current - a.current);
+    .toSorted((a, b) => b.current - a.current);
 }
 
 // Unit price analysis
@@ -269,12 +267,12 @@ export type UnitPriceData = {
 export function getUnitPriceAnalysis(items: Product[]): UnitPriceData[] {
   return items
     .map((item) => ({
-      name: item.genericName.length > 18 ? item.genericName.substring(0, 15) + "..." : item.genericName,
+      name: item.genericName.length > 18 ? `${item.genericName.slice(0, 15)  }...` : item.genericName,
       unitPrice: Math.round((item.totalPrice / item.quantity) * 100) / 100,
       quantity: item.quantity,
       unit: item.quantityUnit,
     }))
-    .sort((a, b) => b.unitPrice - a.unitPrice);
+    .toSorted((a, b) => b.unitPrice - a.unitPrice);
 }
 
 export type BudgetImpact = {
@@ -383,68 +381,6 @@ export type ShoppingPatterns = {
 };
 
 /**
- * Computes shopping patterns from cached invoices for a specific month.
- *
- * @param invoices - All cached invoices from the store
- * @param targetMonth - The month to compute patterns for
- * @returns Complete shopping patterns with historical comparison
- */
-export function computeShoppingPatterns(invoices: ReadonlyArray<Invoice>, targetMonth: Date): ShoppingPatterns {
-  const targetYear = targetMonth.getFullYear();
-  const targetMonthIndex = targetMonth.getMonth();
-
-  // Filter invoices for the target month
-  const monthInvoices = invoices.filter((inv) => {
-    const invDate = new Date(inv.paymentInformation.transactionDate);
-    return invDate.getMonth() === targetMonthIndex && invDate.getFullYear() === targetYear;
-  });
-
-  // Create spending map by day
-  const spendingByDay: Record<number, DayData> = {};
-  let monthTotal = 0;
-
-  for (const inv of monthInvoices) {
-    const day = new Date(inv.paymentInformation.transactionDate).getDate();
-    spendingByDay[day] ??= {amount: 0, count: 0, invoiceIds: [], invoiceNames: []};
-    const dayData = spendingByDay[day];
-    if (dayData) {
-      dayData.amount += inv.paymentInformation.totalCostAmount;
-      dayData.count += 1;
-      dayData.invoiceIds.push(inv.id);
-      dayData.invoiceNames.push(inv.name);
-    }
-    monthTotal += inv.paymentInformation.totalCostAmount;
-  }
-
-  // Calculate average days between shopping trips
-  const shoppingDays = Object.keys(spendingByDay)
-    .map(Number)
-    .sort((a, b) => a - b);
-  let totalGap = 0;
-  for (let i = 1; i < shoppingDays.length; i++) {
-    totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;
-  }
-  const avgDaysBetween = shoppingDays.length > 1 ? totalGap / (shoppingDays.length - 1) : 0;
-
-  // Compute historical comparison for each day
-  const historicalByDay = computeHistoricalComparison(invoices, targetMonthIndex, targetYear, spendingByDay);
-
-  // Compute weekday activity
-  const weekdayActivity = computeWeekdayActivity(invoices);
-
-  return {
-    spendingByDay,
-    avgDaysBetween,
-    monthTotal: Math.round(monthTotal * 100) / 100,
-    shoppingDaysCount: shoppingDays.length,
-    avgPerTrip: shoppingDays.length > 0 ? Math.round((monthTotal / shoppingDays.length) * 100) / 100 : 0,
-    historicalByDay,
-    mostActiveWeekday: weekdayActivity.mostActive,
-    leastActiveWeekday: weekdayActivity.leastActive,
-  };
-}
-
-/**
  * Computes historical comparison for spending by day of month.
  */
 function computeHistoricalComparison(
@@ -530,6 +466,68 @@ function computeWeekdayActivity(invoices: ReadonlyArray<Invoice>): {mostActive: 
 }
 
 /**
+ * Computes shopping patterns from cached invoices for a specific month.
+ *
+ * @param invoices - All cached invoices from the store
+ * @param targetMonth - The month to compute patterns for
+ * @returns Complete shopping patterns with historical comparison
+ */
+export function computeShoppingPatterns(invoices: ReadonlyArray<Invoice>, targetMonth: Date): ShoppingPatterns {
+  const targetYear = targetMonth.getFullYear();
+  const targetMonthIndex = targetMonth.getMonth();
+
+  // Filter invoices for the target month
+  const monthInvoices = invoices.filter((inv) => {
+    const invDate = new Date(inv.paymentInformation.transactionDate);
+    return invDate.getMonth() === targetMonthIndex && invDate.getFullYear() === targetYear;
+  });
+
+  // Create spending map by day
+  const spendingByDay: Record<number, DayData> = {};
+  let monthTotal = 0;
+
+  for (const inv of monthInvoices) {
+    const day = new Date(inv.paymentInformation.transactionDate).getDate();
+    spendingByDay[day] ??= {amount: 0, count: 0, invoiceIds: [], invoiceNames: []};
+    const dayData = spendingByDay[day];
+    if (dayData) {
+      dayData.amount += inv.paymentInformation.totalCostAmount;
+      dayData.count += 1;
+      dayData.invoiceIds.push(inv.id);
+      dayData.invoiceNames.push(inv.name);
+    }
+    monthTotal += inv.paymentInformation.totalCostAmount;
+  }
+
+  // Calculate average days between shopping trips
+  const shoppingDays = Object.keys(spendingByDay)
+    .map(Number)
+    .toSorted((a, b) => a - b);
+  let totalGap = 0;
+  for (let i = 1; i < shoppingDays.length; i++) {
+    totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;
+  }
+  const avgDaysBetween = shoppingDays.length > 1 ? totalGap / (shoppingDays.length - 1) : 0;
+
+  // Compute historical comparison for each day
+  const historicalByDay = computeHistoricalComparison(invoices, targetMonthIndex, targetYear, spendingByDay);
+
+  // Compute weekday activity
+  const weekdayActivity = computeWeekdayActivity(invoices);
+
+  return {
+    spendingByDay,
+    avgDaysBetween,
+    monthTotal: Math.round(monthTotal * 100) / 100,
+    shoppingDaysCount: shoppingDays.length,
+    avgPerTrip: shoppingDays.length > 0 ? Math.round((monthTotal / shoppingDays.length) * 100) / 100 : 0,
+    historicalByDay,
+    mostActiveWeekday: weekdayActivity.mostActive,
+    leastActiveWeekday: weekdayActivity.leastActive,
+  };
+}
+
+/**
  * Gets the intensity class for calendar day coloring based on spending amount.
  *
  * @param amount - The spending amount for the day
@@ -575,25 +573,23 @@ export function getShoppingPatterns(month: Date): ShoppingPatterns {
   });
 
   // Create spending map by day
-  const spending = monthInvoices.reduce(
-    (acc, inv) => {
-      const day = new Date(inv.createdAt).getDate();
-      if (!acc[day]) {
-        acc[day] = {amount: 0, count: 0, invoiceIds: [], invoiceNames: []};
-      }
-      acc[day].amount += inv.paymentInformation.totalCostAmount;
-      acc[day].count += 1;
-      acc[day].invoiceIds.push(inv.id);
-      acc[day].invoiceNames.push(inv.name);
-      return acc;
-    },
-    {} as Record<number, DayData>,
-  );
+  const spending: Record<number, DayData> = {};
+  for (const inv of monthInvoices) {
+    const day = new Date(inv.createdAt).getDate();
+    spending[day] ??= {amount: 0, count: 0, invoiceIds: [], invoiceNames: []};
+    const dayData = spending[day];
+    if (dayData) {
+      dayData.amount += inv.paymentInformation.totalCostAmount;
+      dayData.count += 1;
+      dayData.invoiceIds.push(inv.id);
+      dayData.invoiceNames.push(inv.name);
+    }
+  }
 
   // Calculate average days between shopping trips
   const shoppingDays = Object.keys(spending)
     .map(Number)
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
   let totalGap = 0;
   for (let i = 1; i < shoppingDays.length; i++) {
     totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;
