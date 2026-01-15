@@ -9,16 +9,26 @@ type Props = {
   currency: string;
 };
 
-function CustomTooltip({active, payload}: {active?: boolean; payload?: any[]}) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
+type TooltipPayloadItem = {
+  payload: {range: string; count: number; currency: string};
+};
+
+type CustomTooltipProps = {
+  readonly active: boolean;
+  readonly payload: TooltipPayloadItem[];
+};
+
+function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
+  const [firstItem] = payload;
+  if (!active || payload.length === 0 || !firstItem) return null;
+  const data = firstItem.payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='font-medium'>
-        {data.range} {payload[0].payload.currency}
+        {data.range} {data.currency}
       </p>
       <p className='text-muted-foreground text-sm'>
-        {data.count} item{data.count !== 1 ? "s" : ""}
+        {data.count} item{data.count === 1 ? "" : "s"}
       </p>
     </div>
   );
@@ -64,15 +74,22 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
                 allowDecimals={false}
                 width={24}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    active={false}
+                    payload={[]}
+                  />
+                }
+              />
               <Bar
                 dataKey='count'
                 radius={[4, 4, 0, 0]}
                 maxBarSize={48}>
-                {data.map((_, index) => (
+                {data.map((item) => (
                   <Cell
-                    key={`cell-${index}`}
-                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
+                    key={`cell-${item.range}`}
+                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
                   />
                 ))}
               </Bar>

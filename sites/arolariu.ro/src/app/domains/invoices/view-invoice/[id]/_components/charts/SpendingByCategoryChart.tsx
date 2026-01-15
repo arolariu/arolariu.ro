@@ -2,16 +2,36 @@
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
-import {CategorySpending} from "../../_utils/analytics";
+import type {CategorySpending} from "../../_utils/analytics";
 
 type Props = {
-  data: CategorySpending[];
-  currency: string;
+  readonly data: CategorySpending[];
+  readonly currency: string;
 };
 
-function CustomTooltip({active, payload, currency}: {active?: boolean; payload?: any[]; currency: string}) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
+type LegendEntry = {
+  color: string;
+  value: string;
+};
+
+type TooltipPayloadItem = {
+  payload: {category: string; amount: number; count: number};
+};
+
+type CustomTooltipProps = {
+  readonly active: boolean;
+  readonly payload: TooltipPayloadItem[];
+  readonly currency: string;
+};
+
+type CustomLegendProps = {
+  readonly payload: LegendEntry[];
+};
+
+function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+  const [firstItem] = payload;
+  if (!active || payload.length === 0 || !firstItem) return null;
+  const data = firstItem.payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='font-medium'>{data.category}</p>
@@ -19,18 +39,18 @@ function CustomTooltip({active, payload, currency}: {active?: boolean; payload?:
         {data.amount.toFixed(2)} {currency}
       </p>
       <p className='text-muted-foreground text-xs'>
-        {data.count} item{data.count !== 1 ? "s" : ""}
+        {data.count} item{data.count === 1 ? "" : "s"}
       </p>
     </div>
   );
 }
 
-function CustomLegend({payload}: any) {
+function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
   return (
     <div className='mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1'>
-      {payload?.map((entry: any, index: number) => (
+      {payload.map((entry) => (
         <div
-          key={`legend-${index}`}
+          key={`legend-${entry.value}`}
           className='flex items-center gap-1'>
           <div
             className='h-2.5 w-2.5 rounded-full'
@@ -44,18 +64,18 @@ function CustomLegend({payload}: any) {
 }
 
 export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Element {
-  const chartConfig = data.reduce(
-    (acc, item, index) => {
-      acc[item.category] = {
-        label: item.category,
-        color: `hsl(var(--chart-${(index % 5) + 1}))`,
-      };
-      return acc;
-    },
-    {} as Record<string, {label: string; color: string}>,
-  );
+  const chartConfig: Record<string, {label: string; color: string}> = {};
+  for (const [index, item] of data.entries()) {
+    chartConfig[item.category] = {
+      label: item.category,
+      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+    };
+  }
 
-  const total = data.reduce((sum, item) => sum + item.amount, 0);
+  let total = 0;
+  for (const item of data) {
+    total += item.amount;
+  }
 
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
@@ -80,16 +100,24 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
                 innerRadius={40}
                 outerRadius={70}
                 paddingAngle={2}>
-                {data.map((_, index) => (
+                {data.map((item) => (
                   <Cell
-                    key={`cell-${index}`}
-                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
+                    key={`cell-${item.category}`}
+                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
                     className='stroke-background stroke-2'
                   />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip currency={currency} />} />
-              <Legend content={<CustomLegend />} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    active={false}
+                    payload={[]}
+                    currency={currency}
+                  />
+                }
+              />
+              <Legend content={<CustomLegend payload={[]} />} />
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
