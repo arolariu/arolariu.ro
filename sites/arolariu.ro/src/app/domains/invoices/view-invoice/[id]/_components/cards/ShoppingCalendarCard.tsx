@@ -20,6 +20,15 @@ import {
 import {useLocale} from "next-intl";
 import {createContext, useContext, useMemo} from "react";
 import {TbArrowDown, TbArrowUp, TbCalendar, TbInfoCircle, TbShoppingCart, TbTrendingUp} from "react-icons/tb";
+import {useShallow} from "zustand/react/shallow";
+import {useInvoiceContext} from "../../_context/InvoiceContext";
+import {
+  computeShoppingPatterns,
+  getSpendingIntensityClass,
+  getWeekdayName,
+  type DayData,
+  type DayHistoricalComparison,
+} from "../../_utils/analytics";
 
 /** Props type for the Calendar's DayButton slot component */
 type DayButtonProps = {
@@ -30,15 +39,6 @@ type DayButtonProps = {
   readonly "aria-pressed"?: boolean | "false" | "true" | "mixed";
   readonly tabIndex?: number;
 };
-import {useShallow} from "zustand/react/shallow";
-import {useInvoiceContext} from "../../_context/InvoiceContext";
-import {
-  computeShoppingPatterns,
-  getSpendingIntensityClass,
-  getWeekdayName,
-  type DayData,
-  type DayHistoricalComparison,
-} from "../../_utils/analytics";
 
 /** Context for sharing calendar data with CustomDayButton */
 type CalendarDataContextType = {
@@ -127,9 +127,7 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
 
 /** Checks if two dates are the same day */
 function isSameDay(date1: Date, date2: Date): boolean {
-  return (
-    date1.getDate() === date2.getDate() && date1.getMonth() === date2.getMonth() && date1.getFullYear() === date2.getFullYear()
-  );
+  return date1.getDate() === date2.getDate() && date1.getMonth() === date2.getMonth() && date1.getFullYear() === date2.getFullYear();
 }
 
 /** Custom day button component that renders spending data from context */
@@ -180,14 +178,8 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
 export function ShoppingCalendarCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
-  const transactionDate = useMemo(
-    () => new Date(invoice.paymentInformation.transactionDate),
-    [invoice.paymentInformation.transactionDate],
-  );
-  const month = useMemo(
-    () => new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1),
-    [transactionDate],
-  );
+  const transactionDate = useMemo(() => new Date(invoice.paymentInformation.transactionDate), [invoice.paymentInformation.transactionDate]);
+  const month = useMemo(() => new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1), [transactionDate]);
   const {currency} = invoice.paymentInformation;
 
   // Get cached invoices from Zustand store

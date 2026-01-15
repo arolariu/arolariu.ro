@@ -60,10 +60,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
   );
 
   const handleToggle = useCallback(
-    (key: keyof Pick<AISettings, "autoSuggestEnabled" | "contextAwareness" | "memoryEnabled" | "voiceEnabled">) =>
-      (checked: boolean) => {
-        onSettingsChange({[key]: checked});
-      },
+    (key: keyof Pick<AISettings, "autoSuggestEnabled" | "contextAwareness" | "memoryEnabled" | "voiceEnabled">) => (checked: boolean) => {
+      onSettingsChange({[key]: checked});
+    },
     [onSettingsChange],
   );
 

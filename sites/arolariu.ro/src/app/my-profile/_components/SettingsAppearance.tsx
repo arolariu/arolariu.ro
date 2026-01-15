@@ -25,8 +25,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTheme} from "next-themes";
 import {useTranslations} from "next-intl";
+import {useTheme} from "next-themes";
 import {useCallback} from "react";
 import {TbBrush, TbCheck, TbGlobe, TbMoon, TbPalette, TbSettings, TbSun, TbTypography} from "react-icons/tb";
 import {COLOR_PALETTE} from "../_utils/constants";
@@ -210,9 +210,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                                   className='h-6 w-6 rounded-full'
                                   style={{backgroundColor: color.value}}
                                 />
-                                {settings.primaryColor === color.value && (
-                                  <TbCheck className='absolute h-4 w-4 text-white' />
-                                )}
+                                {settings.primaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>{color.name}</TooltipContent>
@@ -255,9 +253,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                                   className='h-6 w-6 rounded-full'
                                   style={{backgroundColor: color.value}}
                                 />
-                                {settings.secondaryColor === color.value && (
-                                  <TbCheck className='absolute h-4 w-4 text-white' />
-                                )}
+                                {settings.secondaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>{color.name}</TooltipContent>

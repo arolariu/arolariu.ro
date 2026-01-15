@@ -37,8 +37,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useTheme} from "next-themes";
 import {useTranslations} from "next-intl";
+import {useTheme} from "next-themes";
 import Link from "next/link";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {
@@ -286,10 +286,7 @@ export default function RenderProfileScreen(): React.JSX.Element {
   const accountAgeDays = user?.createdAt ? Math.floor((PAGE_LOAD_TIME - user.createdAt) / (1000 * 60 * 60 * 24)) : 0;
 
   // Mock statistics (memoized to prevent dependency changes)
-  const statistics = useMemo(
-    () => ({totalInvoices: 42, totalMerchants: 15, totalScans: 87, totalSaved: 156.5, monthlyAverage: 320}),
-    [],
-  );
+  const statistics = useMemo(() => ({totalInvoices: 42, totalMerchants: 15, totalScans: 87, totalSaved: 156.5, monthlyAverage: 320}), []);
 
   // Load preferences from cookies
   useEffect(() => {
@@ -381,18 +378,18 @@ export default function RenderProfileScreen(): React.JSX.Element {
   return (
     <div className='container mx-auto max-w-6xl space-y-8'>
       {/* Profile Header */}
-      <div className='relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 sm:p-8'>
-        <div className='absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl' />
+      <div className='from-primary/10 via-primary/5 relative overflow-hidden rounded-2xl bg-gradient-to-r to-transparent p-6 sm:p-8'>
+        <div className='bg-primary/5 absolute -top-20 -right-20 h-64 w-64 rounded-full blur-3xl' />
         <div className='relative flex flex-col items-center gap-6 sm:flex-row sm:items-start'>
           <div className='relative'>
-            <Avatar className='h-28 w-28 border-4 border-background shadow-xl ring-2 ring-primary/20'>
+            <Avatar className='border-background ring-primary/20 h-28 w-28 border-4 shadow-xl ring-2'>
               <AvatarImage
                 src={user.imageUrl}
                 alt={`${user.firstName ?? "User"}'s avatar`}
               />
               <AvatarFallback className='text-3xl'>{getInitials(user.firstName, user.lastName)}</AvatarFallback>
             </Avatar>
-            <div className='absolute -bottom-1 -right-1 rounded-full bg-green-500 p-1.5 ring-2 ring-background'>
+            <div className='ring-background absolute -right-1 -bottom-1 rounded-full bg-green-500 p-1.5 ring-2'>
               <TbCheck className='h-3 w-3 text-white' />
             </div>
           </div>
@@ -444,21 +441,23 @@ export default function RenderProfileScreen(): React.JSX.Element {
       {/* Quick Actions */}
       <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
         <Link href='/domains/invoices/view-invoices'>
-          <Card className='group cursor-pointer transition-all hover:border-primary hover:shadow-md'>
+          <Card className='group hover:border-primary cursor-pointer transition-all hover:shadow-md'>
             <CardContent className='flex items-center gap-3 p-4'>
-              <div className='rounded-lg bg-primary/10 p-2 transition-colors group-hover:bg-primary/20'>
-                <TbFileInvoice className='h-5 w-5 text-primary' />
+              <div className='bg-primary/10 group-hover:bg-primary/20 rounded-lg p-2 transition-colors'>
+                <TbFileInvoice className='text-primary h-5 w-5' />
               </div>
               <div>
                 <p className='font-medium'>{t("quickActions.viewInvoices")}</p>
-                <p className='text-muted-foreground text-xs'>{statistics.totalInvoices} {t("quickActions.total")}</p>
+                <p className='text-muted-foreground text-xs'>
+                  {statistics.totalInvoices} {t("quickActions.total")}
+                </p>
               </div>
-              <TbChevronRight className='ml-auto h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1' />
+              <TbChevronRight className='text-muted-foreground ml-auto h-4 w-4 transition-transform group-hover:translate-x-1' />
             </CardContent>
           </Card>
         </Link>
         <Link href='/domains/invoices/upload-scans'>
-          <Card className='group cursor-pointer transition-all hover:border-primary hover:shadow-md'>
+          <Card className='group hover:border-primary cursor-pointer transition-all hover:shadow-md'>
             <CardContent className='flex items-center gap-3 p-4'>
               <div className='rounded-lg bg-green-500/10 p-2 transition-colors group-hover:bg-green-500/20'>
                 <TbUpload className='h-5 w-5 text-green-500' />
@@ -467,25 +466,27 @@ export default function RenderProfileScreen(): React.JSX.Element {
                 <p className='font-medium'>{t("quickActions.uploadScan")}</p>
                 <p className='text-muted-foreground text-xs'>{t("quickActions.newReceipt")}</p>
               </div>
-              <TbChevronRight className='ml-auto h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1' />
+              <TbChevronRight className='text-muted-foreground ml-auto h-4 w-4 transition-transform group-hover:translate-x-1' />
             </CardContent>
           </Card>
         </Link>
         <Link href='/domains/invoices/view-merchants'>
-          <Card className='group cursor-pointer transition-all hover:border-primary hover:shadow-md'>
+          <Card className='group hover:border-primary cursor-pointer transition-all hover:shadow-md'>
             <CardContent className='flex items-center gap-3 p-4'>
               <div className='rounded-lg bg-purple-500/10 p-2 transition-colors group-hover:bg-purple-500/20'>
                 <TbShoppingCart className='h-5 w-5 text-purple-500' />
               </div>
               <div>
                 <p className='font-medium'>{t("quickActions.merchants")}</p>
-                <p className='text-muted-foreground text-xs'>{statistics.totalMerchants} {t("quickActions.discovered")}</p>
+                <p className='text-muted-foreground text-xs'>
+                  {statistics.totalMerchants} {t("quickActions.discovered")}
+                </p>
               </div>
-              <TbChevronRight className='ml-auto h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1' />
+              <TbChevronRight className='text-muted-foreground ml-auto h-4 w-4 transition-transform group-hover:translate-x-1' />
             </CardContent>
           </Card>
         </Link>
-        <Card className='group cursor-pointer transition-all hover:border-primary hover:shadow-md'>
+        <Card className='group hover:border-primary cursor-pointer transition-all hover:shadow-md'>
           <CardContent
             className='flex items-center gap-3 p-4'
             onClick={handleExportData}>
@@ -496,7 +497,7 @@ export default function RenderProfileScreen(): React.JSX.Element {
               <p className='font-medium'>{t("quickActions.exportData")}</p>
               <p className='text-muted-foreground text-xs'>{t("quickActions.downloadBackup")}</p>
             </div>
-            <TbChevronRight className='ml-auto h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1' />
+            <TbChevronRight className='text-muted-foreground ml-auto h-4 w-4 transition-transform group-hover:translate-x-1' />
           </CardContent>
         </Card>
       </div>
@@ -866,7 +867,7 @@ export default function RenderProfileScreen(): React.JSX.Element {
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-1 text-center'>
                   <div className='flex items-center justify-center gap-1'>
-                    <TbReceipt className='h-4 w-4 text-primary' />
+                    <TbReceipt className='text-primary h-4 w-4' />
                     <span className='text-2xl font-bold'>{statistics.totalScans}</span>
                   </div>
                   <p className='text-muted-foreground text-xs'>{t("statistics.totalScans")}</p>
@@ -946,9 +947,9 @@ export default function RenderProfileScreen(): React.JSX.Element {
                   {RECENT_ACTIVITY.map((activity) => (
                     <div
                       key={activity.id}
-                      className='flex items-start gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50'>
-                      <div className='mt-0.5 rounded-full bg-primary/10 p-1.5'>
-                        {activity.type === "scan" && <TbUpload className='h-3 w-3 text-primary' />}
+                      className='hover:bg-muted/50 flex items-start gap-3 rounded-lg p-2 transition-colors'>
+                      <div className='bg-primary/10 mt-0.5 rounded-full p-1.5'>
+                        {activity.type === "scan" && <TbUpload className='text-primary h-3 w-3' />}
                         {activity.type === "invoice" && <TbFileInvoice className='h-3 w-3 text-blue-500' />}
                         {activity.type === "settings" && <TbSettings className='h-3 w-3 text-purple-500' />}
                       </div>

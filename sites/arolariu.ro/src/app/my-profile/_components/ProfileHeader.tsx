@@ -33,21 +33,21 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
 
   return (
     <Card className='overflow-hidden'>
-      <div className='relative h-32 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent'>
-        <div className='absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl' />
+      <div className='from-primary/20 via-primary/10 relative h-32 bg-gradient-to-r to-transparent'>
+        <div className='bg-primary/10 absolute -top-10 -right-10 h-40 w-40 rounded-full blur-3xl' />
       </div>
       <CardContent className='relative -mt-16 px-6 pb-6'>
         <div className='flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'>
           <div className='flex flex-col items-center gap-4 sm:flex-row sm:items-end'>
             <div className='relative'>
-              <Avatar className='h-24 w-24 border-4 border-background shadow-xl ring-2 ring-primary/20'>
+              <Avatar className='border-background ring-primary/20 h-24 w-24 border-4 shadow-xl ring-2'>
                 <AvatarImage
                   src={user?.imageUrl}
                   alt={`${user?.firstName ?? "User"}'s avatar`}
                 />
                 <AvatarFallback className='text-2xl'>{getInitials(user?.firstName, user?.lastName)}</AvatarFallback>
               </Avatar>
-              <div className='absolute -bottom-1 -right-1 rounded-full bg-green-500 p-1.5 ring-2 ring-background'>
+              <div className='ring-background absolute -right-1 -bottom-1 rounded-full bg-green-500 p-1.5 ring-2'>
                 <TbCheck className='h-3 w-3 text-white' />
               </div>
             </div>
@@ -126,9 +126,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
             value={profileCompletion}
             className='h-2'
           />
-          {profileCompletion < 100 && (
-            <p className='text-muted-foreground mt-2 text-xs'>{t("header.completionHint")}</p>
-          )}
+          {profileCompletion < 100 && <p className='text-muted-foreground mt-2 text-xs'>{t("header.completionHint")}</p>}
         </div>
       </CardContent>
     </Card>

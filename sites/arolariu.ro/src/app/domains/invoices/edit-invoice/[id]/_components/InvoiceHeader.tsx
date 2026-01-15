@@ -91,7 +91,8 @@ export default function InvoiceHeader(): React.JSX.Element {
       <div className='flex flex-wrap items-center gap-2'>
         <TooltipProvider>
           {/* Save & Discard buttons - only show when there are changes */}
-          {hasChanges ? <>
+          {hasChanges ? (
+            <>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -122,7 +123,8 @@ export default function InvoiceHeader(): React.JSX.Element {
                   <p>Discard all pending changes</p>
                 </TooltipContent>
               </Tooltip>
-                        </> : null}
+            </>
+          ) : null}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

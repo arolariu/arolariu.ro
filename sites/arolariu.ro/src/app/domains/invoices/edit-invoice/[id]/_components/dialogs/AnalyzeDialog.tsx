@@ -201,10 +201,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
       const animateSteps = async (): Promise<void> => {
         for (let i = 0; i < steps.length; i++) {
           // Check if analysis has completed
-          const settled = await Promise.race([
-            analysisSettledPromise,
-            delay(0).then(() => false),
-          ]);
+          const settled = await Promise.race([analysisSettledPromise, delay(0).then(() => false)]);
           if (settled) return;
 
           setCurrentStep(steps[i] ?? "Processing...");
@@ -319,11 +316,13 @@ export default function AnalyzeDialog(): React.JSX.Element {
                             {option.icon}
                           </div>
                           <div className='flex items-center gap-2'>
-                            {option.recommended ? <Badge
+                            {option.recommended ? (
+                              <Badge
                                 variant='secondary'
                                 className='bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'>
                                 Recommended
-                                                  </Badge> : null}
+                              </Badge>
+                            ) : null}
                             {selectedOption === option.id && <TbCheck className='h-5 w-5 text-purple-500' />}
                           </div>
                         </div>
@@ -342,7 +341,8 @@ export default function AnalyzeDialog(): React.JSX.Element {
               </div>
 
               {/* Selected Option Features */}
-              {selectedConfig ? <motion.div
+              {selectedConfig ? (
+                <motion.div
                   initial={{opacity: 0, height: 0}}
                   animate={{opacity: 1, height: "auto"}}
                   className='space-y-2'>
@@ -358,7 +358,8 @@ export default function AnalyzeDialog(): React.JSX.Element {
                       </Badge>
                     ))}
                   </div>
-                                </motion.div> : null}
+                </motion.div>
+              ) : null}
 
               <Separator />
 

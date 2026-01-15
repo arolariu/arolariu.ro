@@ -15,7 +15,7 @@ export function VehicleCard(): React.JSX.Element {
   const {currency, totalCostAmount: totalAmount} = paymentInformation;
 
   const tooltipFormatter = useCallback(
-    (value: number | string | (readonly (string | number)[]) | undefined) => {
+    (value: number | string | readonly (string | number)[] | undefined) => {
       if (value === undefined || Array.isArray(value)) return null;
       return formatCurrency(Number(value), {currencyCode: currency.code, locale});
     },

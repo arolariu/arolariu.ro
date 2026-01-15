@@ -95,7 +95,7 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
       {/* Bento Grid Header Section */}
       <div className='mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {/* Profile Card - spans 2 columns on large screens */}
-        <div className='rounded-xl border bg-gradient-to-br from-background to-muted/50 p-6 shadow-sm md:col-span-2 lg:col-span-2'>
+        <div className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm md:col-span-2 lg:col-span-2'>
           <ProfileHeader
             user={user}
             userIdentifier={user.id}
@@ -103,11 +103,11 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
         </div>
 
         {/* Quick Stats Summary Card */}
-        <div className='rounded-xl border bg-gradient-to-br from-background to-muted/50 p-6 shadow-sm'>
+        <div className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm'>
           <div className='flex flex-col items-center justify-center space-y-2 text-center'>
-            <div className='text-4xl font-bold text-primary'>{statistics.totalInvoices}</div>
+            <div className='text-primary text-4xl font-bold'>{statistics.totalInvoices}</div>
             <p className='text-muted-foreground text-sm'>Total Invoices</p>
-            <div className='mt-2 flex gap-4 text-xs text-muted-foreground'>
+            <div className='text-muted-foreground mt-2 flex gap-4 text-xs'>
               <span>{statistics.totalMerchants} merchants</span>
               <span>{statistics.totalScans} scans</span>
             </div>
@@ -126,7 +126,7 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
             <TabsTrigger
               key={id}
               value={id}
-              className='inline-flex cursor-pointer items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm font-medium transition-all data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground md:px-4'>
+              className='bg-background data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all md:px-4'>
               <Icon
                 className='h-4 w-4'
                 aria-hidden='true'
@@ -137,16 +137,16 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
         </TabsList>
 
         {/* Tab Content - All content panels */}
-        <div className='rounded-xl border bg-background p-4 shadow-sm md:p-6'>
+        <div className='bg-background rounded-xl border p-4 shadow-sm md:p-6'>
           <TabsContent
             value='profile'
-            className='mt-0 focus-visible:outline-none focus-visible:ring-0'>
+            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
             <QuickStats statistics={statistics} />
           </TabsContent>
 
           <TabsContent
             value='appearance'
-            className='mt-0 focus-visible:outline-none focus-visible:ring-0'>
+            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
             <SettingsAppearance
               settings={settings.appearance}
               onSettingsChange={handleAppearanceChange}
@@ -155,7 +155,7 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
 
           <TabsContent
             value='ai'
-            className='mt-0 focus-visible:outline-none focus-visible:ring-0'>
+            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
             <SettingsAI
               settings={settings.ai}
               onSettingsChange={handleAIChange}
@@ -164,7 +164,7 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
 
           <TabsContent
             value='analytics'
-            className='mt-0 focus-visible:outline-none focus-visible:ring-0'>
+            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
             <SettingsAnalytics
               settings={settings.analytics}
               onSettingsChange={handleAnalyticsChange}
@@ -173,7 +173,7 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
 
           <TabsContent
             value='notifications'
-            className='mt-0 focus-visible:outline-none focus-visible:ring-0'>
+            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
             <SettingsNotifications
               settings={settings.notifications}
               onSettingsChange={handleNotificationsChange}
@@ -182,7 +182,7 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
 
           <TabsContent
             value='security'
-            className='mt-0 focus-visible:outline-none focus-visible:ring-0'>
+            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
             <SettingsSecurity
               settings={settings.security}
               onSettingsChange={handleSecurityChange}
@@ -191,7 +191,7 @@ export default function ProfileIsland({user}: Props): React.JSX.Element {
 
           <TabsContent
             value='data'
-            className='mt-0 focus-visible:outline-none focus-visible:ring-0'>
+            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
             <SettingsData
               settings={settings.data}
               onSettingsChange={handleDataChange}

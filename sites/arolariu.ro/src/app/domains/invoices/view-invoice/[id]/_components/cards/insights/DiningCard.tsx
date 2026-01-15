@@ -144,9 +144,11 @@ export function DiningCard(): React.JSX.Element {
                 <span className='text-muted-foreground'>•</span>
                 <span>
                   {s.swap}: <span className='font-medium text-green-600'>-{s.calSaved} cal</span>
-                  {s.moneySaved ? <span className='font-medium text-green-600'>
+                  {s.moneySaved ? (
+                    <span className='font-medium text-green-600'>
                       , saves {formatCurrency(s.moneySaved, {currencyCode: currency.code, locale})}
-                                  </span> : null}
+                    </span>
+                  ) : null}
                 </span>
               </li>
             ))}

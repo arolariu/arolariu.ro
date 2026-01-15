@@ -3,18 +3,7 @@
  * @module my-profile/_utils/constants
  */
 
-import {
-  TbBell,
-  TbBrain,
-  TbBrush,
-  TbChartBar,
-  TbDatabase,
-  TbFileInvoice,
-  TbShield,
-  TbShoppingCart,
-  TbUpload,
-  TbUser,
-} from "react-icons/tb";
+import {TbBell, TbBrain, TbBrush, TbChartBar, TbDatabase, TbFileInvoice, TbShield, TbShoppingCart, TbUpload, TbUser} from "react-icons/tb";
 
 /** Color palette for theme customization */
 export const COLOR_PALETTE = [

@@ -417,7 +417,8 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                       {t("hero.getStarted")}
                     </Link>
                   </Button>
-                  {isAuthenticated ? <Button
+                  {isAuthenticated ? (
+                    <Button
                       asChild
                       variant='outline'
                       size='lg'>
@@ -425,7 +426,8 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                         <TbFileInvoice className='mr-2 h-5 w-5' />
                         {t("hero.viewMyInvoices")}
                       </Link>
-                                     </Button> : null}
+                    </Button>
+                  ) : null}
                 </div>
               </motion.div>
             </div>

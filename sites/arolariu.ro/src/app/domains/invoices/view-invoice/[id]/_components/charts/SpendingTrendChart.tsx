@@ -112,14 +112,16 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                 strokeWidth={2}
                 fill='url(#colorAmount)'
               />
-              {currentPoint ? <ReferenceDot
+              {currentPoint ? (
+                <ReferenceDot
                   x={currentPoint.date}
                   y={currentPoint.amount}
                   r={6}
                   fill='hsl(var(--primary))'
                   stroke='hsl(var(--background))'
                   strokeWidth={2}
-                /> : null}
+                />
+              ) : null}
             </AreaChart>
           </ResponsiveContainer>
         </ChartContainer>

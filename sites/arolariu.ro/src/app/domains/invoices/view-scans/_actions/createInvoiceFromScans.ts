@@ -162,11 +162,7 @@ async function processSingleScan(
 /**
  * Creates invoices in single mode - one invoice per scan.
  */
-async function createInvoicesInSingleMode(
-  scans: ReadonlyArray<Scan>,
-  userIdentifier: string,
-  authToken: string,
-): Promise<CreationResult> {
+async function createInvoicesInSingleMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
   addSpanEvent("bff.invoices.create.single.start");
   logWithTrace("info", `Creating ${scans.length} individual invoices`, {count: scans.length}, "server");
 
@@ -220,11 +216,7 @@ async function attachRemainingScans(
 /**
  * Creates a single invoice with multiple scans in batch mode.
  */
-async function createInvoicesInBatchMode(
-  scans: ReadonlyArray<Scan>,
-  userIdentifier: string,
-  authToken: string,
-): Promise<CreationResult> {
+async function createInvoicesInBatchMode(scans: ReadonlyArray<Scan>, userIdentifier: string, authToken: string): Promise<CreationResult> {
   addSpanEvent("bff.invoice.create.batch.start");
   logWithTrace("info", `Creating batch invoice from ${scans.length} scans`, {count: scans.length}, "server");
 

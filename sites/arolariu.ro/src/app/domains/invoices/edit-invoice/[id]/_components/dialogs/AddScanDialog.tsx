@@ -114,8 +114,8 @@ export default function AddScanDialog(): React.JSX.Element {
       // Step 1: Convert file to base64
       const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.addEventListener('load', () => resolve(reader.result as string));
-        reader.addEventListener('error', () => reject(reader.error));
+        reader.addEventListener("load", () => resolve(reader.result as string));
+        reader.addEventListener("error", () => reject(reader.error));
         reader.readAsDataURL(file);
       });
 
@@ -217,7 +217,8 @@ export default function AddScanDialog(): React.JSX.Element {
           </div>
 
           {/* Selected file preview */}
-          {file ? <div className='bg-muted flex items-center justify-between rounded-md p-3'>
+          {file ? (
+            <div className='bg-muted flex items-center justify-between rounded-md p-3'>
               <div className='flex items-center gap-3'>
                 <TbFile className='h-8 w-8 shrink-0' />
                 <div className='min-w-0'>
@@ -234,10 +235,12 @@ export default function AddScanDialog(): React.JSX.Element {
                 className='h-8 w-8 shrink-0'>
                 <TbX className='h-4 w-4' />
               </Button>
-                  </div> : null}
+            </div>
+          ) : null}
 
           {/* Scan type selector */}
-          {file ? <div className='grid gap-2'>
+          {file ? (
+            <div className='grid gap-2'>
               <Label htmlFor='scan-type'>Scan Type</Label>
               <Select
                 value={String(scanType)}
@@ -253,7 +256,8 @@ export default function AddScanDialog(): React.JSX.Element {
                   <SelectItem value={String(InvoiceScanType.OTHER)}>Other</SelectItem>
                 </SelectContent>
               </Select>
-                  </div> : null}
+            </div>
+          ) : null}
         </div>
         {/* eslint-enable react/jsx-props-no-spreading, react/jsx-handler-names */}
 

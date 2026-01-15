@@ -7,7 +7,7 @@ export function ProfileSkeleton(): React.JSX.Element {
     <div className='space-y-6'>
       {/* Header Skeleton */}
       <Card>
-        <div className='h-32 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent' />
+        <div className='from-primary/20 via-primary/10 h-32 bg-gradient-to-r to-transparent' />
         <CardContent className='-mt-16 px-6 pb-6'>
           <div className='flex flex-col gap-4 sm:flex-row sm:items-end'>
             <Skeleton className='h-24 w-24 rounded-full' />

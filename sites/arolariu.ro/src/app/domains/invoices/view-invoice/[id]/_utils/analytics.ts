@@ -85,7 +85,7 @@ export type QuantityData = {
 export function getQuantityAnalysis(items: Product[]): QuantityData[] {
   return items
     .map((item) => ({
-      name: item.genericName.length > 15 ? `${item.genericName.slice(0, 12)  }...` : item.genericName,
+      name: item.genericName.length > 15 ? `${item.genericName.slice(0, 12)}...` : item.genericName,
       fullName: item.genericName,
       quantity: item.quantity,
       unit: item.quantityUnit,
@@ -267,7 +267,7 @@ export type UnitPriceData = {
 export function getUnitPriceAnalysis(items: Product[]): UnitPriceData[] {
   return items
     .map((item) => ({
-      name: item.genericName.length > 18 ? `${item.genericName.slice(0, 15)  }...` : item.genericName,
+      name: item.genericName.length > 18 ? `${item.genericName.slice(0, 15)}...` : item.genericName,
       unitPrice: Math.round((item.totalPrice / item.quantity) * 100) / 100,
       quantity: item.quantity,
       unit: item.quantityUnit,

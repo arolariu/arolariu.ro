@@ -82,7 +82,8 @@ export default function CallToAction(): React.JSX.Element {
               {t("title")}{" "}
               <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>
                 {t("titleHighlight")}
-              </span>?
+              </span>
+              ?
             </h2>
           </motion.div>
 

@@ -41,7 +41,9 @@ export default function ScansHeader(): React.JSX.Element {
           <h1 className='text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white'>
             {t("titleWithCount", {count: String(scans.length)})}
           </h1>
-          {lastSyncTimestamp ? <p className='text-sm text-gray-500 dark:text-gray-400'>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p> : null}
+          {lastSyncTimestamp ? (
+            <p className='text-sm text-gray-500 dark:text-gray-400'>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p>
+          ) : null}
         </div>
         <TooltipProvider>
           <Tooltip>

@@ -122,14 +122,16 @@ function UploadStats(): React.JSX.Element | null {
           )}
         </div>
 
-        {allDone ? <Button
+        {allDone ? (
+          <Button
             asChild
             className='bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
             <Link href='/domains/invoices/view-scans'>
               {t("buttons.viewScans")}
               <TbArrowRight className='ml-2 h-4 w-4' />
             </Link>
-                   </Button> : null}
+          </Button>
+        ) : null}
       </div>
     </motion.div>
   );

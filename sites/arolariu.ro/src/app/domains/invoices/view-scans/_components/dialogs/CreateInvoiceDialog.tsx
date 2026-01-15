@@ -88,7 +88,8 @@ function ProcessStep({
 
   return (
     <div className={`flex items-start gap-3 ${isActive ? "opacity-100" : "opacity-50"}`}>
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors ${getClasses()}`}>
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors ${getClasses()}`}>
         {isComplete ? <TbCheck className='h-4 w-4' /> : step}
       </div>
       <div className='flex-1'>

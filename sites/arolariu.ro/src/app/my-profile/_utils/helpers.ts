@@ -4,8 +4,8 @@
  */
 
 import type {User} from "@clerk/nextjs/server";
-import type {UserSettings, UserStatistics} from "./types";
 import {PAGE_LOAD_TIME} from "./constants";
+import type {UserSettings, UserStatistics} from "./types";
 
 /**
  * Extracts user initials from first and last name.
@@ -138,10 +138,7 @@ export function isValidEmail(email: string): boolean {
 /**
  * Debounce function for settings updates.
  */
-export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void {
+export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(func: T, wait: number): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
@@ -163,10 +160,7 @@ export function deepMerge<T extends Record<string, unknown>>(target: T, source: 
       const sourceValue = source[key as keyof typeof source];
       const targetValue = result[key as keyof T];
       if (isObject(sourceValue) && isObject(targetValue)) {
-        result[key as keyof T] = deepMerge(
-          targetValue as Record<string, unknown>,
-          sourceValue as Record<string, unknown>,
-        ) as T[keyof T];
+        result[key as keyof T] = deepMerge(targetValue as Record<string, unknown>, sourceValue as Record<string, unknown>) as T[keyof T];
       } else if (sourceValue !== undefined) {
         result[key as keyof T] = sourceValue as T[keyof T];
       }

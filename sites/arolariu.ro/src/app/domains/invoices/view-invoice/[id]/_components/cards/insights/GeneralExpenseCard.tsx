@@ -118,13 +118,15 @@ export function GeneralExpenseCard(): React.JSX.Element {
               );
             })}
           </div>
-          {nearLimitBudget ? <p
+          {nearLimitBudget ? (
+            <p
               className='flex items-center gap-1 text-xs text-amber-600'
               role='alert'
               aria-live='polite'>
               <span aria-hidden='true'>!</span>
               {nearLimitBudget.name}: {Math.round((nearLimitBudget.spent / nearLimitBudget.limit) * 100)}% used (10 days left in month)
-                             </p> : null}
+            </p>
+          ) : null}
         </div>
 
         {/* Tax & Business Options */}
@@ -171,10 +173,12 @@ export function GeneralExpenseCard(): React.JSX.Element {
               </Label>
             </div>
           </div>
-          {businessExpense ? <p className='flex items-center gap-1 text-sm text-green-600'>
+          {businessExpense ? (
+            <p className='flex items-center gap-1 text-sm text-green-600'>
               <TbBriefcase className='h-3 w-3' />
               VAT Reclaimable: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
-                             </p> : null}
+            </p>
+          ) : null}
         </div>
 
         {/* Similar Past Purchases */}
