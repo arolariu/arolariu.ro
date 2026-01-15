@@ -1555,6 +1555,7 @@
     "about": "Despre",
     "thePlatform": "Platforma",
     "theAuthor": "Autorul",
+    "myProfile": "Profilul meu",
     "mobile": {
       "openNavigation": "Deschide navigarea",
       "closeNavigation": "Închide navigarea",
@@ -1980,6 +1981,304 @@
       "cancel": "Anulează",
       "back": "Înapoi la Acasă",
       "retry": "Încearcă din nou"
+    }
+  },
+  "MyProfile": {
+    "meta": {
+      "title": "Profilul Meu",
+      "description": "Gestionați setările și preferințele contului"
+    },
+    "header": {
+      "premium": "Premium",
+      "memberSince": "Membru din {date}",
+      "userId": "ID Utilizator",
+      "daysActive": "zile active",
+      "editProfile": "Editează Profilul",
+      "editProfileTitle": "Editează Profilul",
+      "editProfileDescription": "Actualizați informațiile profilului",
+      "editProfileClerkNote": "Informațiile profilului sunt gestionate prin Clerk. Faceți clic mai jos pentru a actualiza detaliile.",
+      "manageOnClerk": "Gestionează pe Clerk",
+      "profileCompletion": "Completare Profil",
+      "completionHint": "Completați profilul pentru a debloca toate funcțiile"
+    },
+    "sidebar": {
+      "premium": "Premium",
+      "daysActive": "zile active",
+      "profileCompletion": "Completare Profil",
+      "account": "Cont",
+      "preferences": "Preferințe",
+      "manageClerk": "Gestionează Contul pe Clerk",
+      "nav": {
+        "profile": "Profil",
+        "appearance": "Aspect",
+        "ai": "Asistent AI",
+        "analytics": "Analize",
+        "notifications": "Notificări",
+        "security": "Securitate",
+        "data": "Date"
+      }
+    },
+    "stats": {
+      "title": "Statistici Rapide",
+      "description": "Prezentare generală a activității contului",
+      "invoices": {
+        "title": "Total Facturi",
+        "description": "Facturi procesate și stocate"
+      },
+      "merchants": {
+        "title": "Comercianți",
+        "description": "Comercianți unici urmăriți"
+      },
+      "scans": {
+        "title": "Total Scanări",
+        "description": "Scanări de bonuri încărcate"
+      },
+      "saved": {
+        "title": "Total Economisit",
+        "description": "Economii estimate din urmărire"
+      },
+      "monthly": {
+        "title": "Medie Lunară",
+        "description": "Cheltuieli medii lunare"
+      },
+      "aiQueries": {
+        "title": "Interogări AI",
+        "description": "Interacțiuni cu asistentul AI"
+      },
+      "storage": {
+        "title": "Utilizare Stocare",
+        "description": "Alocarea spațiului de stocare",
+        "used": "utilizat"
+      }
+    },
+    "settings": {
+      "appearance": {
+        "title": "Setări Aspect",
+        "description": "Personalizați aspectul și senzația experienței",
+        "theme": {
+          "title": "Temă",
+          "description": "Alegeți schema de culori preferată",
+          "light": "Deschis",
+          "dark": "Întunecat",
+          "system": "Sistem"
+        },
+        "font": {
+          "title": "Font",
+          "description": "Selectați un font confortabil",
+          "normal": "Standard",
+          "dyslexic": "Prietenos pentru dislexici",
+          "dyslexicHint": "Font OpenDyslexic pentru lizibilitate îmbunătățită"
+        },
+        "colors": {
+          "title": "Culori Personalizate",
+          "description": "Personalizați schema de culori",
+          "primary": "Culoare Primară",
+          "secondary": "Culoare Secundară"
+        },
+        "locale": {
+          "title": "Limbă",
+          "description": "Setați limba preferată"
+        },
+        "advanced": {
+          "title": "Opțiuni Avansate",
+          "description": "Opțiuni suplimentare de personalizare",
+          "compactMode": "Mod Compact",
+          "compactModeHint": "Reduceți spațierea pentru mai mult conținut",
+          "animations": "Animații",
+          "animationsHint": "Activați animațiile interfeței"
+        }
+      },
+      "ai": {
+        "title": "Setări Asistent AI",
+        "description": "Configurați comportamentul și preferințele asistentului AI",
+        "model": {
+          "title": "Model AI",
+          "description": "Selectați modelul AI pentru asistent"
+        },
+        "behavior": {
+          "title": "Presetare Comportament",
+          "description": "Alegeți cum răspunde AI-ul"
+        },
+        "temperature": {
+          "title": "Stil Răspuns",
+          "description": "Echilibru între precizie și creativitate",
+          "precise": "Precis",
+          "creative": "Creativ"
+        },
+        "maxTokens": {
+          "title": "Lungime Răspuns",
+          "description": "Maximum tokeni per răspuns"
+        },
+        "features": {
+          "title": "Funcții AI",
+          "description": "Activați sau dezactivați capabilitățile AI",
+          "autoSuggest": "Auto-Sugestie",
+          "autoSuggestHint": "Primiți sugestii automate în timp ce lucrați",
+          "contextAwareness": "Conștientizare Context",
+          "contextAwarenessHint": "AI folosește context din facturile dvs.",
+          "memory": "Memorie Conversație",
+          "memoryHint": "AI își amintește conversațiile anterioare"
+        },
+        "voice": {
+          "title": "Setări Voce",
+          "description": "Configurați interacțiunea vocală",
+          "enabled": "Intrare Vocală",
+          "enabledHint": "Utilizați comenzi vocale cu AI"
+        }
+      },
+      "analytics": {
+        "title": "Setări Analize",
+        "description": "Configurați cum sunt analizate și raportate datele",
+        "enabled": {
+          "title": "Analize",
+          "description": "Activați sau dezactivați funcțiile de analiză",
+          "label": "Activează Analize",
+          "hint": "Urmăriți și analizați tiparele de cheltuieli"
+        },
+        "granularity": {
+          "title": "Granularitate Date",
+          "description": "Cât de detaliate să fie analizele"
+        },
+        "export": {
+          "title": "Format Export",
+          "description": "Format implicit pentru exporturi de date"
+        },
+        "tracking": {
+          "title": "Opțiuni Urmărire",
+          "description": "Alegeți ce să urmăriți",
+          "spending": "Urmărește Cheltuieli",
+          "spendingHint": "Monitorizați cheltuielile generale",
+          "categories": "Urmărește Categorii",
+          "categoriesHint": "Analizați cheltuielile pe categorii",
+          "merchants": "Urmărește Comercianți",
+          "merchantsHint": "Monitorizați date specifice comercianților"
+        },
+        "advanced": {
+          "title": "Analize Avansate",
+          "description": "Funcții premium de analiză",
+          "benchmarking": "Comparație",
+          "benchmarkingHint": "Comparați cu utilizatori similari",
+          "predictive": "Analiză Predictivă",
+          "predictiveHint": "Predicții de cheltuieli bazate pe AI"
+        },
+        "dataUsage": {
+          "title": "Utilizare Date",
+          "info": "Datele dvs. de analiză sunt procesate local și nu sunt partajate niciodată fără consimțământul explicit."
+        }
+      },
+      "notifications": {
+        "title": "Setări Notificări",
+        "description": "Gestionați cum și când primiți notificări",
+        "email": {
+          "title": "Notificări Email",
+          "description": "Configurați preferințele de comunicare prin email",
+          "enabled": "Activează Notificările Email",
+          "enabledHint": "Primiți actualizări prin email"
+        },
+        "reports": {
+          "title": "Rapoarte",
+          "description": "Livrare programată a rapoartelor",
+          "weeklyDigest": "Rezumat Săptămânal",
+          "weeklyDigestHint": "Rezumatul activității săptămânale",
+          "monthlyReport": "Raport Lunar",
+          "monthlyReportHint": "Analiză detaliată a cheltuielilor lunare"
+        },
+        "financial": {
+          "title": "Alerte Financiare",
+          "description": "Fiți notificat despre cheltuieli",
+          "spendingAlerts": "Alerte Cheltuieli",
+          "spendingAlertsHint": "Notificare când cheltuielile depășesc pragul",
+          "budgetAlerts": "Alerte Buget",
+          "budgetAlertsHint": "Alertă când vă apropiați de limitele bugetare"
+        },
+        "updates": {
+          "title": "Actualizări Produs",
+          "description": "Rămâneți informat despre funcții noi",
+          "newFeatures": "Funcții Noi",
+          "newFeaturesHint": "Fiți notificat despre funcționalități noi",
+          "marketing": "Emailuri Marketing",
+          "marketingHint": "Conținut promoțional și oferte"
+        },
+        "security": {
+          "title": "Notificări Securitate",
+          "description": "Alerte critice de securitate",
+          "securityAlerts": "Alerte Securitate",
+          "securityAlertsHint": "Notificări importante de securitate",
+          "alwaysOnNote": "Alertele de securitate nu pot fi complet dezactivate pentru protecția dvs."
+        }
+      },
+      "security": {
+        "title": "Setări Securitate",
+        "description": "Protejați-vă contul cu măsuri de securitate îmbunătățite",
+        "twoFactor": {
+          "title": "Autentificare în Doi Pași",
+          "description": "Adăugați un nivel suplimentar de securitate contului",
+          "enabled": "Activează 2FA",
+          "enabledHint": "Necesită un al doilea factor la autentificare",
+          "activeMessage": "Autentificarea în doi pași este activă"
+        },
+        "session": {
+          "title": "Setări Sesiune",
+          "description": "Gestionați sesiunile de conectare",
+          "timeout": "Expirare Sesiune",
+          "minutes": "minute",
+          "hour": "oră",
+          "hours": "ore",
+          "loginNotifications": "Notificări Conectare",
+          "loginNotificationsHint": "Fiți notificat de conectări noi"
+        },
+        "password": {
+          "title": "Parolă și Acces",
+          "description": "Gestionați credențialele contului",
+          "changePassword": "Schimbă Parola",
+          "clerkNote": "Gestionarea parolei se face prin Clerk"
+        },
+        "devices": {
+          "title": "Dispozitive de Încredere",
+          "description": "Gestionați dispozitivele care pot accesa contul",
+          "lastUsed": "Ultima utilizare",
+          "current": "Actual",
+          "empty": "Niciun dispozitiv de încredere configurat"
+        }
+      },
+      "data": {
+        "title": "Gestionare Date",
+        "description": "Controlați stocarea datelor și setările de confidențialitate",
+        "retention": {
+          "title": "Retenție Date",
+          "description": "Cât timp să păstrați datele",
+          "hint": "Datele mai vechi vor fi arhivate automat"
+        },
+        "backup": {
+          "title": "Setări Backup",
+          "description": "Configurare backup automat",
+          "autoBackup": "Backup Automat",
+          "autoBackupHint": "Backup automat al datelor",
+          "frequency": "Frecvență Backup"
+        },
+        "privacy": {
+          "title": "Setări Confidențialitate",
+          "description": "Controlați cum sunt folosite datele",
+          "shareAnonymous": "Partajare Date Anonime",
+          "shareAnonymousHint": "Ajutați la îmbunătățirea serviciului cu date anonimizate"
+        },
+        "export": {
+          "title": "Export Date",
+          "description": "Descărcați o copie a datelor",
+          "downloadAll": "Descarcă Toate Datele",
+          "hint": "Exportul va include toate facturile, scanările și setările"
+        },
+        "danger": {
+          "title": "Zonă Periculoasă",
+          "description": "Acțiuni ireversibile",
+          "deleteData": "Șterge Toate Datele",
+          "deleteDataHint": "Eliminați permanent toate facturile și scanările",
+          "deleteButton": "Șterge Date",
+          "deleteAccount": "Șterge Cont",
+          "deleteAccountHint": "Ștergeți permanent contul",
+          "manageAccount": "Gestionează pe Clerk"
+        }
+      }
     }
   }
 }

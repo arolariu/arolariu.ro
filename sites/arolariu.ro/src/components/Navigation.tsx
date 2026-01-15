@@ -3,6 +3,7 @@
 import type {NavigationItem} from "@/types";
 
 import {Button} from "@arolariu/components";
+import {useAuth} from "@clerk/nextjs";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import React, {memo, useCallback, useMemo, useState} from "react";
@@ -10,13 +11,14 @@ import {TbChevronDown, TbMenu} from "react-icons/tb";
 
 /**
  * Hook to get translated navigation items.
+ * @param isSignedIn - Whether the user is signed in.
  * @returns Array of navigation items with translated labels.
  */
-function useNavigationItems(): ReadonlyArray<NavigationItem> {
+function useNavigationItems(isSignedIn: boolean): ReadonlyArray<NavigationItem> {
   const t = useTranslations("Navigation");
 
-  return useMemo(
-    () => [
+  return useMemo(() => {
+    const items: NavigationItem[] = [
       {
         label: t("domains"),
         href: "/domains",
@@ -55,9 +57,18 @@ function useNavigationItems(): ReadonlyArray<NavigationItem> {
           },
         ],
       },
-    ],
-    [t],
-  );
+    ];
+
+    // Add My Profile when signed in
+    if (isSignedIn) {
+      items.push({
+        label: t("myProfile"),
+        href: "/my-profile",
+      });
+    }
+
+    return items;
+  }, [t, isSignedIn]);
 }
 
 // Desktop helper components
@@ -118,7 +129,8 @@ const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.
  * @returns The desktop navigation component.
  */
 function DesktopNavigationComponent(): React.JSX.Element {
-  const navigationItems = useNavigationItems();
+  const {isSignedIn} = useAuth();
+  const navigationItems = useNavigationItems(Boolean(isSignedIn));
 
   return (
     <div className='mx-auto px-4 dark:text-white'>
@@ -217,7 +229,8 @@ const MobileNavigationItem = ({
  */
 function MobileNavigationComponent(): React.JSX.Element {
   const t = useTranslations("Navigation.mobile");
-  const navigationItems = useNavigationItems();
+  const {isSignedIn} = useAuth();
+  const navigationItems = useNavigationItems(Boolean(isSignedIn));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 

@@ -1555,6 +1555,7 @@
     "about": "À propos",
     "thePlatform": "La Plateforme",
     "theAuthor": "L'Auteur",
+    "myProfile": "Mon Profil",
     "mobile": {
       "openNavigation": "Ouvrir la navigation",
       "closeNavigation": "Fermer la navigation",
@@ -1980,6 +1981,304 @@
       "cancel": "Annuler",
       "back": "Retour à l'Accueil",
       "retry": "Réessayer"
+    }
+  },
+  "MyProfile": {
+    "meta": {
+      "title": "Mon Profil",
+      "description": "Gérez les paramètres et préférences de votre compte"
+    },
+    "header": {
+      "premium": "Premium",
+      "memberSince": "Membre depuis {date}",
+      "userId": "ID Utilisateur",
+      "daysActive": "jours actifs",
+      "editProfile": "Modifier le Profil",
+      "editProfileTitle": "Modifier le Profil",
+      "editProfileDescription": "Mettez à jour vos informations de profil",
+      "editProfileClerkNote": "Les informations du profil sont gérées via Clerk. Cliquez ci-dessous pour mettre à jour vos détails.",
+      "manageOnClerk": "Gérer sur Clerk",
+      "profileCompletion": "Complétion du Profil",
+      "completionHint": "Complétez votre profil pour débloquer toutes les fonctionnalités"
+    },
+    "sidebar": {
+      "premium": "Premium",
+      "daysActive": "jours actifs",
+      "profileCompletion": "Complétion du Profil",
+      "account": "Compte",
+      "preferences": "Préférences",
+      "manageClerk": "Gérer le Compte sur Clerk",
+      "nav": {
+        "profile": "Profil",
+        "appearance": "Apparence",
+        "ai": "Assistant IA",
+        "analytics": "Analyses",
+        "notifications": "Notifications",
+        "security": "Sécurité",
+        "data": "Données"
+      }
+    },
+    "stats": {
+      "title": "Statistiques Rapides",
+      "description": "Aperçu de l'activité de votre compte",
+      "invoices": {
+        "title": "Total des Factures",
+        "description": "Factures traitées et stockées"
+      },
+      "merchants": {
+        "title": "Commerçants",
+        "description": "Commerçants uniques suivis"
+      },
+      "scans": {
+        "title": "Total des Scans",
+        "description": "Scans de reçus téléchargés"
+      },
+      "saved": {
+        "title": "Total Économisé",
+        "description": "Économies estimées grâce au suivi"
+      },
+      "monthly": {
+        "title": "Moyenne Mensuelle",
+        "description": "Dépenses mensuelles moyennes"
+      },
+      "aiQueries": {
+        "title": "Requêtes IA",
+        "description": "Interactions avec l'assistant IA"
+      },
+      "storage": {
+        "title": "Utilisation du Stockage",
+        "description": "Allocation de votre espace de stockage",
+        "used": "utilisé"
+      }
+    },
+    "settings": {
+      "appearance": {
+        "title": "Paramètres d'Apparence",
+        "description": "Personnalisez l'apparence de votre expérience",
+        "theme": {
+          "title": "Thème",
+          "description": "Choisissez votre palette de couleurs préférée",
+          "light": "Clair",
+          "dark": "Sombre",
+          "system": "Système"
+        },
+        "font": {
+          "title": "Police",
+          "description": "Sélectionnez une police confortable",
+          "normal": "Standard",
+          "dyslexic": "Adapté aux dyslexiques",
+          "dyslexicHint": "Police OpenDyslexic pour une meilleure lisibilité"
+        },
+        "colors": {
+          "title": "Couleurs Personnalisées",
+          "description": "Personnalisez votre palette de couleurs",
+          "primary": "Couleur Principale",
+          "secondary": "Couleur Secondaire"
+        },
+        "locale": {
+          "title": "Langue",
+          "description": "Définissez votre langue préférée"
+        },
+        "advanced": {
+          "title": "Options Avancées",
+          "description": "Options de personnalisation supplémentaires",
+          "compactMode": "Mode Compact",
+          "compactModeHint": "Réduire l'espacement pour plus de contenu",
+          "animations": "Animations",
+          "animationsHint": "Activer les animations de l'interface"
+        }
+      },
+      "ai": {
+        "title": "Paramètres de l'Assistant IA",
+        "description": "Configurez le comportement et les préférences de votre assistant IA",
+        "model": {
+          "title": "Modèle IA",
+          "description": "Sélectionnez le modèle IA pour votre assistant"
+        },
+        "behavior": {
+          "title": "Préréglage de Comportement",
+          "description": "Choisissez comment l'IA répond"
+        },
+        "temperature": {
+          "title": "Style de Réponse",
+          "description": "Équilibre entre précision et créativité",
+          "precise": "Précis",
+          "creative": "Créatif"
+        },
+        "maxTokens": {
+          "title": "Longueur de Réponse",
+          "description": "Tokens maximum par réponse"
+        },
+        "features": {
+          "title": "Fonctionnalités IA",
+          "description": "Activer ou désactiver les capacités IA",
+          "autoSuggest": "Auto-Suggestion",
+          "autoSuggestHint": "Obtenez des suggestions automatiques pendant que vous travaillez",
+          "contextAwareness": "Conscience du Contexte",
+          "contextAwarenessHint": "L'IA utilise le contexte de vos factures",
+          "memory": "Mémoire de Conversation",
+          "memoryHint": "L'IA se souvient des conversations précédentes"
+        },
+        "voice": {
+          "title": "Paramètres Vocaux",
+          "description": "Configurer l'interaction vocale",
+          "enabled": "Entrée Vocale",
+          "enabledHint": "Utiliser des commandes vocales avec l'IA"
+        }
+      },
+      "analytics": {
+        "title": "Paramètres d'Analyse",
+        "description": "Configurez comment vos données sont analysées et rapportées",
+        "enabled": {
+          "title": "Analyses",
+          "description": "Activer ou désactiver les fonctionnalités d'analyse",
+          "label": "Activer les Analyses",
+          "hint": "Suivre et analyser vos habitudes de dépenses"
+        },
+        "granularity": {
+          "title": "Granularité des Données",
+          "description": "Niveau de détail de vos analyses"
+        },
+        "export": {
+          "title": "Format d'Export",
+          "description": "Format par défaut pour les exports de données"
+        },
+        "tracking": {
+          "title": "Options de Suivi",
+          "description": "Choisissez ce qu'il faut suivre",
+          "spending": "Suivre les Dépenses",
+          "spendingHint": "Surveiller vos dépenses globales",
+          "categories": "Suivre les Catégories",
+          "categoriesHint": "Analyser les dépenses par catégorie",
+          "merchants": "Suivre les Commerçants",
+          "merchantsHint": "Surveiller les données spécifiques aux commerçants"
+        },
+        "advanced": {
+          "title": "Analyses Avancées",
+          "description": "Fonctionnalités d'analyse premium",
+          "benchmarking": "Comparaison",
+          "benchmarkingHint": "Comparer avec des utilisateurs similaires",
+          "predictive": "Analyse Prédictive",
+          "predictiveHint": "Prédictions de dépenses basées sur l'IA"
+        },
+        "dataUsage": {
+          "title": "Utilisation des Données",
+          "info": "Vos données d'analyse sont traitées localement et ne sont jamais partagées sans votre consentement explicite."
+        }
+      },
+      "notifications": {
+        "title": "Paramètres de Notification",
+        "description": "Gérez comment et quand vous recevez des notifications",
+        "email": {
+          "title": "Notifications par Email",
+          "description": "Configurer les préférences de communication par email",
+          "enabled": "Activer les Notifications par Email",
+          "enabledHint": "Recevoir des mises à jour par email"
+        },
+        "reports": {
+          "title": "Rapports",
+          "description": "Livraison programmée des rapports",
+          "weeklyDigest": "Résumé Hebdomadaire",
+          "weeklyDigestHint": "Résumé de votre activité hebdomadaire",
+          "monthlyReport": "Rapport Mensuel",
+          "monthlyReportHint": "Analyse détaillée des dépenses mensuelles"
+        },
+        "financial": {
+          "title": "Alertes Financières",
+          "description": "Être notifié concernant les dépenses",
+          "spendingAlerts": "Alertes de Dépenses",
+          "spendingAlertsHint": "Notification quand les dépenses dépassent le seuil",
+          "budgetAlerts": "Alertes de Budget",
+          "budgetAlertsHint": "Alerte lorsque vous approchez des limites budgétaires"
+        },
+        "updates": {
+          "title": "Mises à Jour Produit",
+          "description": "Restez informé des nouvelles fonctionnalités",
+          "newFeatures": "Nouvelles Fonctionnalités",
+          "newFeaturesHint": "Être notifié des nouvelles fonctionnalités",
+          "marketing": "Emails Marketing",
+          "marketingHint": "Contenu promotionnel et offres"
+        },
+        "security": {
+          "title": "Notifications de Sécurité",
+          "description": "Alertes de sécurité critiques",
+          "securityAlerts": "Alertes de Sécurité",
+          "securityAlertsHint": "Notifications importantes de sécurité",
+          "alwaysOnNote": "Les alertes de sécurité ne peuvent pas être entièrement désactivées pour votre protection"
+        }
+      },
+      "security": {
+        "title": "Paramètres de Sécurité",
+        "description": "Protégez votre compte avec des mesures de sécurité renforcées",
+        "twoFactor": {
+          "title": "Authentification à Deux Facteurs",
+          "description": "Ajoutez une couche de sécurité supplémentaire à votre compte",
+          "enabled": "Activer 2FA",
+          "enabledHint": "Exiger un second facteur lors de la connexion",
+          "activeMessage": "L'authentification à deux facteurs est active"
+        },
+        "session": {
+          "title": "Paramètres de Session",
+          "description": "Gérez vos sessions de connexion",
+          "timeout": "Expiration de Session",
+          "minutes": "minutes",
+          "hour": "heure",
+          "hours": "heures",
+          "loginNotifications": "Notifications de Connexion",
+          "loginNotificationsHint": "Être notifié des nouvelles connexions"
+        },
+        "password": {
+          "title": "Mot de Passe et Accès",
+          "description": "Gérez vos identifiants de compte",
+          "changePassword": "Changer le Mot de Passe",
+          "clerkNote": "La gestion du mot de passe se fait via Clerk"
+        },
+        "devices": {
+          "title": "Appareils de Confiance",
+          "description": "Gérez les appareils pouvant accéder à votre compte",
+          "lastUsed": "Dernière utilisation",
+          "current": "Actuel",
+          "empty": "Aucun appareil de confiance configuré"
+        }
+      },
+      "data": {
+        "title": "Gestion des Données",
+        "description": "Contrôlez le stockage de vos données et les paramètres de confidentialité",
+        "retention": {
+          "title": "Conservation des Données",
+          "description": "Durée de conservation de vos données",
+          "hint": "Les données plus anciennes seront automatiquement archivées"
+        },
+        "backup": {
+          "title": "Paramètres de Sauvegarde",
+          "description": "Configuration de la sauvegarde automatique",
+          "autoBackup": "Sauvegarde Automatique",
+          "autoBackupHint": "Sauvegarder automatiquement vos données",
+          "frequency": "Fréquence de Sauvegarde"
+        },
+        "privacy": {
+          "title": "Paramètres de Confidentialité",
+          "description": "Contrôlez comment vos données sont utilisées",
+          "shareAnonymous": "Partager des Données Anonymes",
+          "shareAnonymousHint": "Aidez à améliorer le service avec des données anonymisées"
+        },
+        "export": {
+          "title": "Exporter les Données",
+          "description": "Téléchargez une copie de vos données",
+          "downloadAll": "Télécharger Toutes les Données",
+          "hint": "L'export inclura toutes les factures, scans et paramètres"
+        },
+        "danger": {
+          "title": "Zone de Danger",
+          "description": "Actions irréversibles",
+          "deleteData": "Supprimer Toutes les Données",
+          "deleteDataHint": "Supprimez définitivement toutes vos factures et scans",
+          "deleteButton": "Supprimer les Données",
+          "deleteAccount": "Supprimer le Compte",
+          "deleteAccountHint": "Supprimez définitivement votre compte",
+          "manageAccount": "Gérer sur Clerk"
+        }
+      }
     }
   }
 }
