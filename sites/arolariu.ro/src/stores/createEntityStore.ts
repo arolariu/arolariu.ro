@@ -232,6 +232,16 @@ function createEntitySlice<E extends BaseEntity>(
  * @see {@link EntityStore} for the full store interface
  * @see {@link createIndexedDBStorage} for persistence implementation
  */
+/**
+ * Rehydration callback that sets the hydration status.
+ * Moved to module scope per unicorn/consistent-function-scoping.
+ */
+function createRehydrationCallback<E extends BaseEntity>() {
+  return (state: EntityStore<E> | undefined) => {
+    state?.setHasHydrated(true);
+  };
+}
+
 export function createEntityStore<E extends BaseEntity>(options: CreateEntityStoreOptions) {
   const {tableName, storeName, persistName} = options;
 
@@ -248,9 +258,7 @@ export function createEntityStore<E extends BaseEntity>(options: CreateEntitySto
     partialize: (state): EntityPersistedState<E> => ({
       entities: [...state.entities],
     }),
-    onRehydrateStorage: () => (state) => {
-      state?.setHasHydrated(true);
-    },
+    onRehydrateStorage: createRehydrationCallback<E>,
   };
 
   // Store creator with proper typing

@@ -4,8 +4,7 @@
  * @module stores/scansStore
  */
 
-import type {CachedScan} from "@/types/scans";
-import {ScanStatus} from "@/types/scans";
+import {type CachedScan, ScanStatus} from "@/types/scans";
 import {create} from "zustand";
 import {devtools, persist} from "zustand/middleware";
 import {createIndexedDBStorage} from "./storage/indexedDBStorage";
@@ -163,6 +162,14 @@ const indexedDBStorage = createIndexedDBStorage<ScansPersistedState, CachedScan>
 });
 
 /**
+ * Rehydration callback that sets the hydration status.
+ * Moved to module scope per unicorn/consistent-function-scoping.
+ */
+function handleRehydration(state: ScansStore | undefined) {
+  state?.setHasHydrated(true);
+}
+
+/**
  * Persist middleware configuration
  */
 const persistConfig = {
@@ -171,9 +178,7 @@ const persistConfig = {
   partialize: (state: ScansStore): ScansPersistedState => ({
     scans: [...state.scans],
   }),
-  onRehydrateStorage: () => (state: ScansStore | undefined) => {
-    state?.setHasHydrated(true);
-  },
+  onRehydrateStorage: () => handleRehydration,
 } as const;
 
 /**

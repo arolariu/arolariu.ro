@@ -103,8 +103,13 @@ const indexedDBStorage = createIndexedDBStorage<InvoicesPersistedState, Invoice>
 });
 
 /**
- * Persist middleware configuration
+ * Rehydration callback that sets the hydration status.
+ * Moved to module scope per unicorn/consistent-function-scoping.
  */
+function handleRehydration(state: InvoicesStore | undefined) {
+  state?.setHasHydrated(true);
+}
+
 /**
  * Persist middleware configuration
  */
@@ -114,9 +119,7 @@ const persistConfig = {
   partialize: (state: InvoicesStore): InvoicesPersistedState => ({
     invoices: [...state.invoices],
   }),
-  onRehydrateStorage: () => (state: InvoicesStore | undefined) => {
-    state?.setHasHydrated(true);
-  },
+  onRehydrateStorage: () => handleRehydration,
 } as const;
 
 /**
