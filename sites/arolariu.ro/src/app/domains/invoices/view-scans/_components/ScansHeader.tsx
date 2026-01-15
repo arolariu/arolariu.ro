@@ -17,7 +17,7 @@ import {useScans} from "../_hooks/useScans";
 function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
+  const diffMins = Math.floor(diffMs / 60_000);
 
   if (diffMins < 1) return "just now";
   if (diffMins < 60) return `${diffMins}m ago`;
@@ -41,9 +41,7 @@ export default function ScansHeader(): React.JSX.Element {
           <h1 className='text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white'>
             {t("titleWithCount", {count: String(scans.length)})}
           </h1>
-          {lastSyncTimestamp && (
-            <p className='text-sm text-gray-500 dark:text-gray-400'>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p>
-          )}
+          {lastSyncTimestamp ? <p className='text-sm text-gray-500 dark:text-gray-400'>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p> : null}
         </div>
         <TooltipProvider>
           <Tooltip>

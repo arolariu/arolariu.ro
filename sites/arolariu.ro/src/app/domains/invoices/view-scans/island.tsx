@@ -9,7 +9,7 @@ import {Button, Card, CardContent} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbArrowLeft, TbCheck, TbClick, TbFileInvoice, TbPhoto, TbStack2} from "react-icons/tb";
 import CreateInvoiceDialog from "./_components/CreateInvoiceDialog";
 import ScanSelectionToolbar from "./_components/ScanSelectionToolbar";
@@ -49,12 +49,12 @@ function StatsCard({value, label, color}: Readonly<{value: number; label: string
 /**
  * Scan statistics component.
  */
-function ScanStats(): React.JSX.Element {
+function ScanStats(): React.JSX.Element | null {
   const t = useTranslations("Domains.services.invoices.service.view-scans");
   const {scans, selectedScans} = useScans();
   const readyScans = scans.filter((s) => s.status === "ready").length;
 
-  if (scans.length === 0) return <></>;
+  if (scans.length === 0) return null;
 
   return (
     <motion.div
@@ -94,12 +94,12 @@ function ScanStats(): React.JSX.Element {
 /**
  * Sidebar with tips and guidance.
  */
-function Sidebar(): React.JSX.Element {
+function Sidebar(): React.JSX.Element | null {
   const t = useTranslations("Domains.services.invoices.service.view-scans");
   const {scans, selectedScans} = useScans();
 
   // Don't show sidebar if no scans
-  if (scans.length === 0) return <></>;
+  if (scans.length === 0) return null;
 
   return (
     <div className='space-y-6'>
@@ -189,6 +189,10 @@ export default function RenderViewScansScreen(): React.JSX.Element {
   const [dialogOpen, setDialogOpen] = useState(false);
   const {scans, selectedScans} = useScans();
 
+  const handleOpenCreateInvoice = useCallback(() => {
+    setDialogOpen(true);
+  }, []);
+
   return (
     <section className='mx-auto max-w-7xl'>
       {/* Breadcrumb */}
@@ -217,7 +221,7 @@ export default function RenderViewScansScreen(): React.JSX.Element {
         <Sidebar />
       </div>
 
-      <ScanSelectionToolbar onCreateInvoice={() => setDialogOpen(true)} />
+      <ScanSelectionToolbar onCreateInvoice={handleOpenCreateInvoice} />
       <CreateInvoiceDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

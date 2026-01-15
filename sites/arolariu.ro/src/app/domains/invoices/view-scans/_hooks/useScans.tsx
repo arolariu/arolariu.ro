@@ -7,8 +7,7 @@
 
 import {fetchScans} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
-import type {CachedScan} from "@/types/scans";
-import {ScanStatus} from "@/types/scans";
+import {type CachedScan, ScanStatus} from "@/types/scans";
 import {useCallback, useEffect} from "react";
 import {useShallow} from "zustand/react/shallow";
 
