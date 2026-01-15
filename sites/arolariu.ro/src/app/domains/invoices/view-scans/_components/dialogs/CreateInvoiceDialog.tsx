@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview Dialog for choosing invoice creation mode.
- * @module app/domains/invoices/view-scans/_components/CreateInvoiceDialog
+ * @module app/domains/invoices/view-scans/_components/dialogs/CreateInvoiceDialog
  */
 
 import {useInvoicesStore, useScansStore} from "@/stores";
@@ -27,7 +27,7 @@ import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useMemo, useState} from "react";
 import {TbArrowRight, TbCheck, TbFileInvoice, TbFileTypePdf, TbLoader2, TbPhoto, TbSparkles, TbStack2} from "react-icons/tb";
-import {createInvoiceFromScans} from "../_actions/createInvoiceFromScans";
+import {createInvoiceFromScans} from "../../_actions/createInvoiceFromScans";
 
 /** Shared translation namespace for all dialog components */
 const TRANSLATION_NAMESPACE = "Domains.services.invoices.service.createInvoiceDialog" as const;

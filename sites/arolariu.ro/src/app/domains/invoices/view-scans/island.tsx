@@ -11,7 +11,7 @@ import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useCallback, useState} from "react";
 import {TbArrowLeft, TbCheck, TbClick, TbFileInvoice, TbPhoto, TbStack2} from "react-icons/tb";
-import CreateInvoiceDialog from "./_components/CreateInvoiceDialog";
+import CreateInvoiceDialog from "./_components/dialogs/CreateInvoiceDialog";
 import ScanSelectionToolbar from "./_components/ScanSelectionToolbar";
 import ScansGrid from "./_components/ScansGrid";
 import ScansHeader from "./_components/ScansHeader";
