@@ -1,6 +1,7 @@
 "use client";
 
 import {Badge} from "@arolariu/components/badge";
+import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {AnimatePresence, motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -258,13 +259,13 @@ export default function Features(): React.JSX.Element {
                   {t("modal.exploreFeature")}
                   <TbArrowRight className='h-5 w-5' />
                 </Link>
-                <button
-                  type='button'
-                  // eslint-disable-next-line react/jsx-no-bind -- simple modal
+                <Button
+                  variant='ghost'
+                  // eslint-disable-next-line react/jsx-no-bind -- simple modal close
                   onClick={() => setSelectedFeature(null)}
-                  className='text-muted-foreground hover:text-foreground px-6 py-3 transition-colors'>
+                  className='text-muted-foreground hover:text-foreground px-6 py-3'>
                   {t("modal.close")}
-                </button>
+                </Button>
               </div>
             </motion.div>
           </motion.div>
