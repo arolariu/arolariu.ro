@@ -15,7 +15,10 @@ export function VehicleCard(): React.JSX.Element {
   const {currency, totalCostAmount: totalAmount} = paymentInformation;
 
   const tooltipFormatter = useCallback(
-    (value: number | string) => formatCurrency(Number(value), {currencyCode: currency.code, locale}),
+    (value: number | string | (readonly (string | number)[]) | undefined) => {
+      if (value === undefined || Array.isArray(value)) return null;
+      return formatCurrency(Number(value), {currencyCode: currency.code, locale});
+    },
     [currency.code, locale],
   );
 
@@ -138,10 +141,7 @@ export function VehicleCard(): React.JSX.Element {
                   tickLine={false}
                   axisLine={false}
                 />
-                <ChartTooltip
-                  content={ChartTooltipContent}
-                  formatter={tooltipFormatter}
-                />
+                <ChartTooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
                 <Area
                   type='monotone'
                   dataKey='amount'

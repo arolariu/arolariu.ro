@@ -24,11 +24,11 @@ import {TbArrowDown, TbArrowUp, TbCalendar, TbInfoCircle, TbShoppingCart, TbTren
 /** Props type for the Calendar's DayButton slot component */
 type DayButtonProps = {
   readonly day: {date: Date};
-  readonly className: string;
-  readonly disabled: boolean;
-  readonly "aria-label": string;
-  readonly "aria-pressed": boolean;
-  readonly tabIndex: number;
+  readonly className?: string;
+  readonly disabled?: boolean;
+  readonly "aria-label"?: string;
+  readonly "aria-pressed"?: boolean | "false" | "true" | "mixed";
+  readonly tabIndex?: number;
 };
 import {useShallow} from "zustand/react/shallow";
 import {useInvoiceContext} from "../../_context/InvoiceContext";

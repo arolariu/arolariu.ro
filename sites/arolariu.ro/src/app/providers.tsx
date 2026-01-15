@@ -123,9 +123,9 @@ type Props = {
  * @see RFC 1003 - Internationalization System documentation
  */
 export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
-  const messageMap = {en: enMessages, ro: roMessages, fr: frMessages} as const;
+  const messageMap = {en: enMessages, ro: roMessages, fr: frMessages};
   const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
-  const messages = messageMap[locale];
+  const messages = messageMap[locale] as typeof enMessages;
   const localization = localizationMap[locale];
   return (
     <TranslationProvider

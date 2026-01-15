@@ -333,7 +333,7 @@ export async function createInvoiceFromScans({scans, mode}: CreateInvoiceFromSca
         "server",
       );
 
-      return result as const;
+      return result;
     } catch (error) {
       addSpanEvent("bff.invoices.create.error");
       logWithTrace("error", "Error creating invoices from scans", {error}, "server");
