@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Label,
   Separator,
   Switch,
   Tabs,
@@ -300,11 +301,11 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           checked
                           disabled
                         />
-                        <label
+                        <Label
                           htmlFor='essential'
                           className='text-sm font-medium'>
                           {t("cookiesPolicy.cookies.essential.checkbox")}
-                        </label>
+                        </Label>
                       </div>
                     </div>
                   </AccordionContent>
@@ -331,11 +332,11 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           checked={cookieState.analytics}
                           onCheckedChange={handleAnalyticsCheckedChange}
                         />
-                        <label
+                        <Label
                           htmlFor='analytics'
                           className='text-sm font-medium'>
                           {t("cookiesPolicy.cookies.analytics.checkbox")}
-                        </label>
+                        </Label>
                       </div>
                     </div>
                   </AccordionContent>

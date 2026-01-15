@@ -5,6 +5,11 @@ import {
   Badge,
   Button,
   Checkbox,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -182,20 +187,25 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             <TableCell colSpan={4}>
               <div className='flex items-center gap-2'>
                 <span className='text-muted-foreground text-sm'>Rows per page:</span>
-                <select
-                  value={pageSize}
+                <Select
+                  value={String(pageSize)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
-                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                  aria-label='Rows per page'
-                  className='border-muted bg-background h-8 w-16 cursor-pointer rounded-md border p-1 text-sm'>
-                  {[5, 10, 20, 50, 100, 500, 1000].map((size) => (
-                    <option
-                      key={size}
-                      value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(value) => handlePageSizeChange(Number(value))}>
+                  <SelectTrigger
+                    className='h-8 w-20 cursor-pointer'
+                    aria-label='Rows per page'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[5, 10, 20, 50, 100, 500, 1000].map((size) => (
+                      <SelectItem
+                        key={size}
+                        value={String(size)}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <span className='text-muted-foreground text-sm'>
                   Page {currentPage} of {totalPages}
                 </span>

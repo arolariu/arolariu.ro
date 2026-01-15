@@ -164,11 +164,12 @@ function UploadContent(): React.JSX.Element {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  type='button'
-                  className='mt-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='mt-1 h-auto w-auto p-0 text-gray-400 hover:bg-transparent hover:text-gray-600 dark:text-gray-500 dark:hover:bg-transparent dark:hover:text-gray-300'>
                   <TbInfoCircle className='h-5 w-5' />
-                </button>
+                </Button>
               </TooltipTrigger>
               <TooltipContent
                 side='right'

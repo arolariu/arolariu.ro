@@ -1,7 +1,7 @@
 "use client";
 
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Progress} from "@arolariu/components";
+import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Label, Progress} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbBriefcase, TbChartBar, TbCheck, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbRefresh, TbTag} from "react-icons/tb";
@@ -140,11 +140,11 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 checked={businessExpense}
                 onCheckedChange={handleBusinessExpenseChange}
               />
-              <label
+              <Label
                 htmlFor='business'
-                className='cursor-pointer text-sm'>
+                className='cursor-pointer text-sm font-normal'>
                 Mark as business expense
-              </label>
+              </Label>
             </div>
             <div className='flex items-center gap-2'>
               <Checkbox
@@ -152,11 +152,11 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 checked={trackWarranty}
                 onCheckedChange={handleTrackWarrantyChange}
               />
-              <label
+              <Label
                 htmlFor='warranty'
-                className='cursor-pointer text-sm'>
+                className='cursor-pointer text-sm font-normal'>
                 Track warranty (24 months standard)
-              </label>
+              </Label>
             </div>
             <div className='flex items-center gap-2'>
               <Checkbox
@@ -164,11 +164,11 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 checked={insuranceInventory}
                 onCheckedChange={handleInsuranceInventoryChange}
               />
-              <label
+              <Label
                 htmlFor='insurance'
-                className='cursor-pointer text-sm'>
+                className='cursor-pointer text-sm font-normal'>
                 Add to insurance inventory
-              </label>
+              </Label>
             </div>
           </div>
           {businessExpense ? <p className='flex items-center gap-1 text-sm text-green-600'>

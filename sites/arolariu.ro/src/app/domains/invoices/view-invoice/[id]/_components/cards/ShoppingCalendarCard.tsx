@@ -5,6 +5,7 @@ import {useInvoicesStore} from "@/stores";
 import type {Currency} from "@/types/DDD";
 import {
   Badge,
+  Button,
   Calendar,
   Card,
   CardContent,
@@ -147,15 +148,15 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
   const ringClass = isCurrentInvoiceDate ? "ring-primary ring-2 ring-offset-1" : "";
 
   const button = (
-    <button
-      type='button'
+    <Button
+      variant='ghost'
       disabled={rest.disabled}
       aria-label={rest["aria-label"]}
       aria-pressed={rest["aria-pressed"]}
       tabIndex={rest.tabIndex}
       className={`h-9 w-9 p-0 font-normal aria-selected:opacity-100 ${intensityClass} ${ringClass} flex items-center justify-center rounded-md transition-all ${className}`}>
       <time dateTime={date.toISOString()}>{date.getDate()}</time>
-    </button>
+    </Button>
   );
 
   if (amount === 0) return button;
