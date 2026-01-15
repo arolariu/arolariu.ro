@@ -5,6 +5,8 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(npx tsc:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
       "Bash(cat:*)",
       "Bash(find:*)",
       "Bash(tree:*)",
@@ -13,8 +15,7 @@
       "mcp__eslint__*",
       "mcp__filesystem__*",
       "mcp__memory__*",
-      "mcp__fetch__*",
-      "Bash(dir:*)"
+      "mcp__fetch__*"
     ]
   },
   "enableAllProjectMcpServers": true
