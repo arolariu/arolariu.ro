@@ -1827,7 +1827,9 @@
       "title": "Setări Profil",
       "subtitle": "Gestionați contul și personalizați experiența",
       "memberSince": "Membru din {date}",
-      "userId": "ID Utilizator"
+      "userId": "ID Utilizator",
+      "premiumMember": "Membru Premium",
+      "profileCompletion": "Completare Profil"
     },
     "appearance": {
       "title": "Aspect",
@@ -1888,11 +1890,43 @@
       "totalInvoices": "Total Facturi",
       "totalMerchants": "Comercianți Urmăriți",
       "totalScans": "Scanări Încărcate",
+      "totalSaved": "Total Economisit",
+      "daysActive": "zile active",
       "accountAge": "Vechime Cont",
       "accountAgeDays": "{days} zile",
       "lastActivity": "Ultima Activitate",
       "storageUsed": "Spațiu Utilizat",
       "dataPoints": "Puncte de Date Analizate"
+    },
+    "quickActions": {
+      "viewInvoices": "Vezi Facturile",
+      "uploadScan": "Încarcă Scanare",
+      "merchants": "Comercianți",
+      "exportData": "Exportă Date",
+      "total": "total",
+      "newReceipt": "Bon nou",
+      "discovered": "descoperit",
+      "downloadBackup": "Descarcă backup"
+    },
+    "achievements": {
+      "title": "Realizări",
+      "earned": "câștigate"
+    },
+    "activity": {
+      "title": "Activitate Recentă"
+    },
+    "security": {
+      "title": "Securitate",
+      "description": "Gestionați setările de securitate ale contului",
+      "password": "Parolă",
+      "passwordDescription": "Parola dvs. este sigură și criptată",
+      "secure": "Securizat",
+      "sessions": "Sesiuni Active",
+      "sessionsDescription": "Gestionați dispozitivele conectate la cont",
+      "manage": "Gestionează",
+      "twoFactor": "Autentificare în Doi Pași",
+      "twoFactorDescription": "Adăugați un nivel suplimentar de securitate",
+      "enable": "Activează"
     },
     "dataManagement": {
       "title": "Gestionarea Datelor",
@@ -1936,6 +1970,7 @@
       "unauthorized": "Acces Refuzat",
       "unauthorizedDescription": "Puteți vizualiza doar propriul profil.",
       "loadFailed": "Nu s-a putut încărca profilul",
+      "loadFailedDescription": "Nu am putut încărca informațiile profilului. Vă rugăm să încercați din nou.",
       "saveFailed": "Nu s-au putut salva modificările"
     },
     "actions": {
@@ -1943,7 +1978,8 @@
       "saving": "Se salvează...",
       "saved": "Modificările au fost salvate cu succes",
       "cancel": "Anulează",
-      "back": "Înapoi la Acasă"
+      "back": "Înapoi la Acasă",
+      "retry": "Încearcă din nou"
     }
   }
 }

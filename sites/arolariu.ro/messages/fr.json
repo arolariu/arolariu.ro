@@ -1827,7 +1827,9 @@
       "title": "Paramètres du Profil",
       "subtitle": "Gérez votre compte et personnalisez votre expérience",
       "memberSince": "Membre depuis {date}",
-      "userId": "ID Utilisateur"
+      "userId": "ID Utilisateur",
+      "premiumMember": "Membre Premium",
+      "profileCompletion": "Profil Complété"
     },
     "appearance": {
       "title": "Apparence",
@@ -1888,11 +1890,43 @@
       "totalInvoices": "Total des Factures",
       "totalMerchants": "Marchands Suivis",
       "totalScans": "Scans Téléchargés",
+      "totalSaved": "Total Économisé",
+      "daysActive": "jours actifs",
       "accountAge": "Ancienneté du Compte",
       "accountAgeDays": "{days} jours",
       "lastActivity": "Dernière Activité",
       "storageUsed": "Stockage Utilisé",
       "dataPoints": "Points de Données Analysés"
+    },
+    "quickActions": {
+      "viewInvoices": "Voir les Factures",
+      "uploadScan": "Télécharger un Scan",
+      "merchants": "Marchands",
+      "exportData": "Exporter les Données",
+      "total": "total",
+      "newReceipt": "Nouveau reçu",
+      "discovered": "découverts",
+      "downloadBackup": "Télécharger sauvegarde"
+    },
+    "achievements": {
+      "title": "Réalisations",
+      "earned": "obtenues"
+    },
+    "activity": {
+      "title": "Activité Récente"
+    },
+    "security": {
+      "title": "Sécurité",
+      "description": "Gérez les paramètres de sécurité de votre compte",
+      "password": "Mot de Passe",
+      "passwordDescription": "Votre mot de passe est sécurisé et chiffré",
+      "secure": "Sécurisé",
+      "sessions": "Sessions Actives",
+      "sessionsDescription": "Gérez les appareils connectés à votre compte",
+      "manage": "Gérer",
+      "twoFactor": "Authentification à Deux Facteurs",
+      "twoFactorDescription": "Ajoutez une couche de sécurité supplémentaire",
+      "enable": "Activer"
     },
     "dataManagement": {
       "title": "Gestion des Données",
@@ -1936,6 +1970,7 @@
       "unauthorized": "Accès Refusé",
       "unauthorizedDescription": "Vous ne pouvez voir que votre propre profil.",
       "loadFailed": "Échec du chargement du profil",
+      "loadFailedDescription": "Nous n'avons pas pu charger les informations de votre profil. Veuillez réessayer.",
       "saveFailed": "Échec de l'enregistrement des modifications"
     },
     "actions": {
@@ -1943,7 +1978,8 @@
       "saving": "Enregistrement...",
       "saved": "Modifications enregistrées avec succès",
       "cancel": "Annuler",
-      "back": "Retour à l'Accueil"
+      "back": "Retour à l'Accueil",
+      "retry": "Réessayer"
     }
   }
 }

@@ -56,21 +56,9 @@ export async function generateMetadata(): Promise<Metadata> {
  * **Authorization**: Users can only view their own profile. If the route ID
  * doesn't match the authenticated user's identifier, access is denied.
  *
- * **Profile Features**:
- * - Appearance settings (theme, custom colors)
- * - Font preferences (accessibility)
- * - Language/locale settings
- * - Account information
- * - User statistics
- * - Data management (export, delete)
- * - Notification preferences
- *
- * **Client Component Delegation**: Delegates interactive profile UI to
- * `RenderProfileScreen` (island.tsx), which handles:
- * - Theme toggling
- * - Color picker interactions
- * - Font switching
- * - Form submissions
+ * **Client Component Delegation**: All user data fetching is delegated to the
+ * client component (island.tsx) via the `useUserInformation` hook. The server
+ * component only handles route-level authorization.
  *
  * @param props - Page props containing dynamic route parameters
  * @returns Promise resolving to server-rendered JSX element containing the
@@ -84,12 +72,13 @@ export default async function ProfilePage(props: Readonly<PageProps<"/profile/[i
   const pageParams = await props.params;
   const profileId = pageParams.id;
 
+  // Server-side auth validation only - we don't pass User object to client
   const userInformation = await fetchBFFUserFromAuthService();
-  const {userIdentifier, user} = userInformation;
+  const {userIdentifier} = userInformation;
 
   // Check if user is authenticated
   const isGuestUser = userIdentifier === EMPTY_GUID;
-  if (isGuestUser || !user) {
+  if (isGuestUser) {
     return <RenderForbiddenScreen />;
   }
 
@@ -100,11 +89,8 @@ export default async function ProfilePage(props: Readonly<PageProps<"/profile/[i
   }
 
   return (
-    <main className='px-5 py-24'>
-      <RenderProfileScreen
-        user={user}
-        userIdentifier={userIdentifier}
-      />
+    <main className='min-h-screen px-4 py-20 sm:px-6 lg:px-8'>
+      <RenderProfileScreen />
     </main>
   );
 }

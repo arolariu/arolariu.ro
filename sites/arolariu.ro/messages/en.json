@@ -1827,7 +1827,9 @@
       "title": "Profile Settings",
       "subtitle": "Manage your account and personalize your experience",
       "memberSince": "Member since {date}",
-      "userId": "User ID"
+      "userId": "User ID",
+      "premiumMember": "Premium Member",
+      "profileCompletion": "Profile Completion"
     },
     "appearance": {
       "title": "Appearance",
@@ -1888,11 +1890,43 @@
       "totalInvoices": "Total Invoices",
       "totalMerchants": "Merchants Tracked",
       "totalScans": "Scans Uploaded",
+      "totalSaved": "Total Saved",
+      "daysActive": "days active",
       "accountAge": "Account Age",
       "accountAgeDays": "{days} days",
       "lastActivity": "Last Activity",
       "storageUsed": "Storage Used",
       "dataPoints": "Data Points Analyzed"
+    },
+    "quickActions": {
+      "viewInvoices": "View Invoices",
+      "uploadScan": "Upload Scan",
+      "merchants": "Merchants",
+      "exportData": "Export Data",
+      "total": "total",
+      "newReceipt": "New receipt",
+      "discovered": "discovered",
+      "downloadBackup": "Download backup"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "earned": "earned"
+    },
+    "activity": {
+      "title": "Recent Activity"
+    },
+    "security": {
+      "title": "Security",
+      "description": "Manage your account security settings",
+      "password": "Password",
+      "passwordDescription": "Your password is secure and encrypted",
+      "secure": "Secure",
+      "sessions": "Active Sessions",
+      "sessionsDescription": "Manage devices signed into your account",
+      "manage": "Manage",
+      "twoFactor": "Two-Factor Authentication",
+      "twoFactorDescription": "Add an extra layer of security",
+      "enable": "Enable"
     },
     "dataManagement": {
       "title": "Data Management",
@@ -1936,6 +1970,7 @@
       "unauthorized": "Access Denied",
       "unauthorizedDescription": "You can only view your own profile.",
       "loadFailed": "Failed to load profile",
+      "loadFailedDescription": "We couldn't load your profile information. Please try again.",
       "saveFailed": "Failed to save changes"
     },
     "actions": {
@@ -1943,7 +1978,8 @@
       "saving": "Saving...",
       "saved": "Changes saved successfully",
       "cancel": "Cancel",
-      "back": "Back to Home"
+      "back": "Back to Home",
+      "retry": "Try Again"
     }
   }
 }
