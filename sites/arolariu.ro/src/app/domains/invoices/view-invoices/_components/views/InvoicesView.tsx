@@ -108,25 +108,20 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
     [],
   );
 
-  const ViewMode = () => {
-    switch (view) {
-      case "table":
-        return (
-          <TableView
-            invoices={paginatedItems}
-            pageSize={pageSize}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            handlePrevPage={handlePrevPage}
-            handleNextPage={handleNextPage}
-            handlePageSizeChange={handlePageSizeChange}
-          />
-        );
-      case "grid":
-      default:
-        return <GridView invoices={paginatedItems} />;
-    }
-  };
+  const viewContent =
+    view === "table" ? (
+      <TableView
+        invoices={paginatedItems}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        handlePrevPage={handlePrevPage}
+        handleNextPage={handleNextPage}
+        handlePageSizeChange={handlePageSizeChange}
+      />
+    ) : (
+      <GridView invoices={paginatedItems} />
+    );
 
   return (
     <div className='space-y-4'>
@@ -285,7 +280,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
           </div>
         </div>
       </div>
-      {ViewMode()}
+      {viewContent}
     </div>
   );
 }
