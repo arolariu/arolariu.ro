@@ -1,6 +1,6 @@
 "use client";
 
-import {CallToAction, FAQ, Hero, Mission, Navigation, Stats, Values} from "./_components";
+import {CallToAction, Faq, Hero, Mission, Navigation, Stats, Values} from "./_components";
 
 /**
  * About hub page with comprehensive sections introducing the platform and author.
@@ -27,7 +27,7 @@ export default function RenderAboutScreen(): React.JSX.Element {
       <Values />
       <Stats />
       <Navigation />
-      <FAQ />
+      <Faq />
       <CallToAction />
     </div>
   );

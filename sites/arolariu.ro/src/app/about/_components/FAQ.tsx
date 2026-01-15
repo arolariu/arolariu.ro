@@ -11,7 +11,7 @@ const questions = ["q1", "q2", "q3", "q4"] as const;
 /**
  * FAQ section with accordion-style questions and answers.
  */
-export default function FAQ(): React.JSX.Element {
+export default function Faq(): React.JSX.Element {
   const t = useTranslations("About.Hub.faq");
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});

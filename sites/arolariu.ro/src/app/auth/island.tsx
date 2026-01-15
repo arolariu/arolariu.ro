@@ -163,9 +163,9 @@ export default function RenderAuthScreen(): React.JSX.Element {
                 <CardContent className='relative space-y-6 pt-2'>
                   {/* Benefits list */}
                   <ul className='space-y-3'>
-                    {card.bullets.map((bullet, bulletIndex) => (
+                    {card.bullets.map((bullet) => (
                       <li
-                        key={`${card.key}-bullet-${bulletIndex}`}
+                        key={`${card.key}-${bullet}`}
                         className='text-muted-foreground flex items-start gap-3 text-sm'>
                         <span className='flex items-start gap-3'>
                           <span
