@@ -3,7 +3,19 @@
  * @module scripts/generate.i18n
  *
  * @remarks
- * Reads translation JSON files, validates structure, and generates i18n artifacts.
+ * Validates and synchronizes translation files for all supported locales against
+ * the English source of truth. The script ensures all locales (Romanian and French)
+ * have complete translation coverage by:
+ * 1. Loading the English translations as the source of truth
+ * 2. Validating each target locale against English keys
+ * 3. Adding missing keys with empty strings for translators to fill
+ * 4. Reporting translation coverage statistics
+ *
+ * Supported locales:
+ * - en.json (English - source of truth)
+ * - ro.json (Romanian)
+ * - fr.json (French)
+ *
  * This script is used by `npm run generate` as part of the build toolchain.
  */
 
@@ -331,7 +343,45 @@ function writeTranslationKeysFile(filePath: string, translationKeys: string[], v
 }
 
 /**
+ * Validates and synchronizes a single target locale against the English source.
+ * @param enTranslations The English translations (source of truth).
+ * @param enKeys The extracted English translation keys.
+ * @param targetLocale The target locale code (e.g., "ro", "fr").
+ * @param translationsPath The base path to the messages directory.
+ * @param verbose Whether to enable verbose logging.
+ * @returns The number of missing keys that were added.
+ */
+function validateLocale(
+  enTranslations: MessageFormat,
+  enKeys: string[],
+  targetLocale: string,
+  translationsPath: string,
+  verbose: boolean,
+): number {
+  const targetFile = path.resolve(translationsPath, `${targetLocale}.json`);
+  console.info(pc.cyan(`\n📋 Validating ${pc.bold(targetLocale.toUpperCase())} translations...`));
+
+  const targetTranslations = loadTranslationFile(targetFile, verbose);
+  const targetKeys = extractMessageKeys(targetTranslations, verbose);
+
+  console.info(`[arolariu.ro::generateTranslations] Finding missing keys for ${targetLocale}...`);
+  const missingKeys = findMissingKeys(enKeys, targetKeys, verbose);
+
+  if (missingKeys.length > 0) {
+    console.info(pc.yellow(`[arolariu.ro::generateTranslations] Writing ${missingKeys.length} missing keys to ${targetLocale}.json...`));
+    writeTranslationKeysFile(targetFile, missingKeys, verbose);
+  } else {
+    console.log(pc.green(`[arolariu.ro::generateTranslations] No missing keys detected for ${targetLocale}.`));
+  }
+
+  areMessageValuesEqual(enTranslations, targetTranslations, verbose);
+
+  return missingKeys.length;
+}
+
+/**
  * This is the main function of the script.
+ * Validates all supported locales (Romanian and French) against the English source of truth.
  * @param verbose A boolean flag that indicates if the script should log verbose output.
  */
 export async function main(verbose: boolean = false): Promise<number> {
@@ -345,32 +395,40 @@ export async function main(verbose: boolean = false): Promise<number> {
   const TRANSLATIONS_PATH = currentDirectory.concat("/sites/arolariu.ro/messages").replaceAll("\\", "/");
   console.info(`[arolariu.ro::generateTranslations] Base translation path set as:\n\t >> ${TRANSLATIONS_PATH}`);
 
+  // Supported locales to validate against English (source of truth)
+  const SUPPORTED_LOCALES = ["ro", "fr"] as const;
+
   const EN_TRANSLATIONS_FILE = path.resolve(TRANSLATIONS_PATH, "en.json");
-  const RO_TRANSLATIONS_FILE = path.resolve(TRANSLATIONS_PATH, "ro.json");
 
-  console.info("[arolariu.ro::generateTranslations] Loading translation files...");
+  console.info("[arolariu.ro::generateTranslations] Loading English translations (source of truth)...");
   const enTranslations = loadTranslationFile(EN_TRANSLATIONS_FILE, verbose);
-  const roTranslations = loadTranslationFile(RO_TRANSLATIONS_FILE, verbose);
 
-  console.info("[arolariu.ro::generateTranslations] Extracting translation keys...");
+  console.info("[arolariu.ro::generateTranslations] Extracting English translation keys...");
   const enKeys = extractMessageKeys(enTranslations, verbose);
-  const roKeys = extractMessageKeys(roTranslations, verbose);
+  console.info(pc.gray(`   Total English keys: ${pc.green(String(enKeys.length))}`));
 
-  console.info("[arolariu.ro::generateTranslations] Finding missing translations keys...");
-  const missingKeys = findMissingKeys(enKeys, roKeys, verbose);
+  // Validate each supported locale against English
+  let totalMissingKeys = 0;
+  const localeResults: Record<string, number> = {};
 
-  if (missingKeys.length > 0) {
-    console.info(pc.yellow("[arolariu.ro::generateTranslations] Writing missing translations to translation file(s)..."));
-    writeTranslationKeysFile(RO_TRANSLATIONS_FILE, missingKeys, verbose);
-  } else {
-    console.log(pc.green("[arolariu.ro::generateTranslations] No missing keys detected."));
+  for (const locale of SUPPORTED_LOCALES) {
+    const missingCount = validateLocale(enTranslations, enKeys, locale, TRANSLATIONS_PATH, verbose);
+    localeResults[locale] = missingCount;
+    totalMissingKeys += missingCount;
   }
 
-  areMessageValuesEqual(enTranslations, roTranslations, verbose);
-
+  // Summary output
   console.log(pc.green("\n✨ i18n synchronization completed."));
-  console.log(pc.gray(`   Missing keys added: ${pc.green(String(missingKeys.length))}`));
-  return missingKeys.length;
+  console.log(pc.cyan("📊 Summary:"));
+  console.log(pc.gray(`   English keys (source): ${pc.green(String(enKeys.length))}`));
+  for (const locale of SUPPORTED_LOCALES) {
+    const count = localeResults[locale];
+    const status = count === 0 ? pc.green("✓ complete") : pc.yellow(`${count} keys added`);
+    console.log(pc.gray(`   ${locale.toUpperCase()}: ${status}`));
+  }
+  console.log(pc.gray(`   Total missing keys added: ${pc.green(String(totalMissingKeys))}`));
+
+  return totalMissingKeys;
 }
 
 if (import.meta.main) {
@@ -383,6 +441,13 @@ if (import.meta.main) {
     console.log(pc.magenta("║                   ||arolariu.ro|| i18n Generator - Help          ║"));
     console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
     console.log(pc.cyan("Usage:"), pc.gray("npm run generate /i18n [flags]\n"));
+    console.log(pc.cyan("Description:"));
+    console.log(pc.gray("  Validates and synchronizes translation files against English (en.json)."));
+    console.log(pc.gray("  Ensures all supported locales have matching translation keys.\n"));
+    console.log(pc.cyan("Supported Locales:"));
+    console.log(pc.gray("  • en.json - English (source of truth)"));
+    console.log(pc.gray("  • ro.json - Romanian"));
+    console.log(pc.gray("  • fr.json - French\n"));
     console.log(pc.cyan("Flags:"));
     console.log(`  ${pc.green("/verbose     /v    --verbose     -v")}  Enable verbose logging 🔊`);
     console.log(`  ${pc.green("/help        /h    --help        -h")}  Show this help menu ❓`);
