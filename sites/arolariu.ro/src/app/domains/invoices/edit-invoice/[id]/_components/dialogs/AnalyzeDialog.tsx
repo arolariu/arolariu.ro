@@ -152,7 +152,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const [currentStep, setCurrentStep] = useState<string>("");
 
   const handleOptionSelect = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const optionId = (e.currentTarget as HTMLDivElement).dataset["optionId"];
+    const {optionId} = e.currentTarget.dataset;
     if (optionId) {
       setSelectedOption(Number(optionId) as InvoiceAnalysisOptions);
     }
@@ -189,29 +189,35 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
       // Keep the same spinner + step texts while the backend request is pending.
       // We intentionally cap progress at 95% until the request completes.
-      let isAnalysisSettled = false;
-
-      analysisPromise
-        .then(() => {
-          isAnalysisSettled = true;
-        })
-        .catch(() => {
-          isAnalysisSettled = true;
-        });
-
       const stepDelayMs = 800;
 
-      while (!isAnalysisSettled) {
+      // Create a promise that resolves when analysis completes
+      const analysisSettledPromise = analysisPromise.then(
+        () => true,
+        () => true,
+      );
+
+      // Animate through steps until analysis completes
+      const animateSteps = async (): Promise<void> => {
         for (let i = 0; i < steps.length; i++) {
-          if (isAnalysisSettled) break;
+          // Check if analysis has completed
+          const settled = await Promise.race([
+            analysisSettledPromise,
+            delay(0).then(() => false),
+          ]);
+          if (settled) return;
 
           setCurrentStep(steps[i] ?? "Processing...");
           setProgress(((i + 1) / steps.length) * 95);
 
-          // Wait briefly before advancing steps, but don’t block completion.
-          await Promise.race([analysisPromise, delay(stepDelayMs)]);
+          // Wait briefly before advancing steps, but don't block completion.
+          // Catch and swallow errors here - they will be handled by the outer await
+          await Promise.race([analysisPromise.catch(() => null), delay(stepDelayMs)]);
         }
-      }
+      };
+
+      // Run animation until analysis settles
+      await Promise.race([analysisSettledPromise, animateSteps()]);
 
       // Await again so we propagate errors into the catch below.
       await analysisPromise;
@@ -313,13 +319,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
                             {option.icon}
                           </div>
                           <div className='flex items-center gap-2'>
-                            {option.recommended && (
-                              <Badge
+                            {option.recommended ? <Badge
                                 variant='secondary'
                                 className='bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'>
                                 Recommended
-                              </Badge>
-                            )}
+                                                  </Badge> : null}
                             {selectedOption === option.id && <TbCheck className='h-5 w-5 text-purple-500' />}
                           </div>
                         </div>
@@ -338,8 +342,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
               </div>
 
               {/* Selected Option Features */}
-              {selectedConfig && (
-                <motion.div
+              {selectedConfig ? <motion.div
                   initial={{opacity: 0, height: 0}}
                   animate={{opacity: 1, height: "auto"}}
                   className='space-y-2'>
@@ -355,8 +358,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                       </Badge>
                     ))}
                   </div>
-                </motion.div>
-              )}
+                                </motion.div> : null}
 
               <Separator />
 

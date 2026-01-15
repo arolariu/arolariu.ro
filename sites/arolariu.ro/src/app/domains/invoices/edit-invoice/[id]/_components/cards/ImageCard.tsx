@@ -90,6 +90,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
     }
   }, [currentScanIndex]);
 
+  const handleOpenZoom = useCallback(() => {
+    setIsZoomOpen(true);
+  }, []);
+
   return (
     <TooltipProvider>
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
@@ -103,7 +107,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
             <button
               type='button'
               className='group/image relative w-full cursor-pointer overflow-hidden rounded-md border'
-              onClick={() => setIsZoomOpen(true)}
+              onClick={handleOpenZoom}
               aria-label='Click to expand image'>
               <Image
                 src={currentScanSrc}
@@ -141,7 +145,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               <Button
                 variant='outline'
                 className='w-full cursor-pointer'
-                onClick={() => setIsZoomOpen(true)}>
+                onClick={handleOpenZoom}>
                 <TbZoomIn className='mr-2 h-4 w-4' />
                 Expand Image
               </Button>

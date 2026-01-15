@@ -2,7 +2,7 @@
 
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback} from "react";
 import {TbDeviceFloppy, TbPrinter, TbScanEye, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
@@ -45,22 +45,16 @@ import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
  */
 export default function InvoiceHeader(): React.JSX.Element {
   const {invoice, pendingChanges, hasChanges, isSaving, setName, saveChanges, discardChanges} = useEditInvoiceContext();
-  const [invoiceName, setInvoiceName] = useState<string>(invoice.name);
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
   const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});
   const canAnalyze = invoice.items.length <= 0;
 
-  // Sync local state with context when pending changes are discarded
-  useEffect(() => {
-    if (pendingChanges.name === undefined) {
-      setInvoiceName(invoice.name);
-    }
-  }, [pendingChanges.name, invoice.name]);
+  // Derive the displayed name from pending changes or the original invoice name
+  const invoiceName = pendingChanges.name ?? invoice.name;
 
   const handleNameChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const newName = event.target.value;
-      setInvoiceName(newName);
       setName(newName);
     },
     [setName],
@@ -97,8 +91,7 @@ export default function InvoiceHeader(): React.JSX.Element {
       <div className='flex flex-wrap items-center gap-2'>
         <TooltipProvider>
           {/* Save & Discard buttons - only show when there are changes */}
-          {hasChanges && (
-            <>
+          {hasChanges ? <>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -129,8 +122,7 @@ export default function InvoiceHeader(): React.JSX.Element {
                   <p>Discard all pending changes</p>
                 </TooltipContent>
               </Tooltip>
-            </>
-          )}
+                        </> : null}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
