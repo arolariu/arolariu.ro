@@ -9,20 +9,20 @@ type Props = {
   currency: string;
 };
 
+function getTrendIcon(value: number): React.JSX.Element {
+  if (value > 5) return <TbTrendingUp className='h-4 w-4 text-amber-500' />;
+  if (value < -5) return <TbTrendingDown className='h-4 w-4 text-emerald-500' />;
+  return <TbMinus className='text-muted-foreground h-4 w-4' />;
+}
+
+function getTrendColor(value: number): string {
+  if (value > 5) return "text-amber-500";
+  if (value < -5) return "text-emerald-500";
+  return "text-muted-foreground";
+}
+
 export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.JSX.Element {
   const percentageProgress = Math.min(((stats.currentAmount - stats.minAmount) / (stats.maxAmount - stats.minAmount)) * 100, 100);
-
-  const getTrendIcon = (value: number) => {
-    if (value > 5) return <TbTrendingUp className='h-4 w-4 text-amber-500' />;
-    if (value < -5) return <TbTrendingDown className='h-4 w-4 text-emerald-500' />;
-    return <TbMinus className='text-muted-foreground h-4 w-4' />;
-  };
-
-  const getTrendColor = (value: number) => {
-    if (value > 5) return "text-amber-500";
-    if (value < -5) return "text-emerald-500";
-    return "text-muted-foreground";
-  };
 
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>

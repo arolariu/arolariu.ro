@@ -10,9 +10,8 @@ import {computeBudgetImpact} from "../../_utils/analytics";
 export function BudgetImpactCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
-  const {
-    paymentInformation: {currency},
-  } = invoice;
+  const {paymentInformation} = invoice;
+  const {currency} = paymentInformation;
 
   const {
     monthlyBudget,
@@ -25,7 +24,21 @@ export function BudgetImpactCard(): React.JSX.Element {
     isOverBudget,
     isNearLimit,
     monthName,
-  } = computeBudgetImpact(invoice.paymentInformation);
+  } = computeBudgetImpact(paymentInformation);
+
+  // Determine progress bar color class based on budget status
+  const getProgressColorClass = (): string => {
+    if (isOverBudget) return "[&>div]:bg-destructive";
+    if (isNearLimit) return "[&>div]:bg-amber-500";
+    return "";
+  };
+
+  // Determine daily allowance trend icon
+  const getDailyAllowanceIcon = (): React.JSX.Element => {
+    if (dailyAllowance > 60) return <TbTrendingUp className='h-5 w-5 text-emerald-500' />;
+    if (dailyAllowance > 40) return <TbMinus className='h-5 w-5 text-amber-500' />;
+    return <TbTrendingDown className='text-destructive h-5 w-5' />;
+  };
 
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
@@ -44,7 +57,7 @@ export function BudgetImpactCard(): React.JSX.Element {
           </div>
           <Progress
             value={Math.min(percentUsed, 100)}
-            className={`h-3 ${isOverBudget ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-amber-500" : ""}`}
+            className={`h-3 ${getProgressColorClass()}`}
           />
           <div className='text-muted-foreground flex items-center justify-between text-xs'>
             <span>{formatCurrency(totalSpent, {currencyCode: currency.code, locale})} spent</span>
@@ -66,7 +79,7 @@ export function BudgetImpactCard(): React.JSX.Element {
             <p className={`text-lg font-semibold tabular-nums ${isOverBudget ? "text-destructive" : ""}`}>
               {formatCurrency(Math.abs(remaining), {currencyCode: currency.code, locale})}
             </p>
-            {isOverBudget && <p className='text-destructive text-xs'>Over budget</p>}
+            {isOverBudget ? <p className='text-destructive text-xs'>Over budget</p> : null}
           </div>
           <div className='space-y-1'>
             <p className='text-muted-foreground text-xs'>Days Left</p>
@@ -82,13 +95,7 @@ export function BudgetImpactCard(): React.JSX.Element {
               <p className='text-muted-foreground text-xs'>Daily Allowance</p>
               <p className='text-sm font-medium'>{formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})}/day</p>
             </div>
-            {dailyAllowance > 60 ? (
-              <TbTrendingUp className='h-5 w-5 text-emerald-500' />
-            ) : dailyAllowance > 40 ? (
-              <TbMinus className='h-5 w-5 text-amber-500' />
-            ) : (
-              <TbTrendingDown className='text-destructive h-5 w-5' />
-            )}
+            {getDailyAllowanceIcon()}
           </div>
         )}
       </CardContent>

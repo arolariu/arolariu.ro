@@ -41,9 +41,8 @@ export function MerchantInfoCard(): React.JSX.Element {
       <CardFooter>
         <Button
           variant='outline'
-          className='w-full bg-transparent'
-          asChild>
-          <a href='#'>View All Receipts</a>
+          className='w-full bg-transparent'>
+          View All Receipts
         </Button>
       </CardFooter>
     </Card>
