@@ -400,7 +400,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 transition={{duration: 0.6}}>
                 <h1 className='mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl dark:text-white'>
                   {t("hero.title")}{" "}
-                  <span className='bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent'>
+                  <span className='bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent'>
                     {t("hero.titleHighlight")}
                   </span>{" "}
                   {t("hero.titleSuffix")}
@@ -411,7 +411,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                   <Button
                     asChild
                     size='lg'
-                    className='bg-linear-to-r from-indigo-600 to-purple-600 px-8 text-white hover:from-indigo-700 hover:to-purple-700'>
+                    className='bg-linear-to-r from-gradient-from to-gradient-to px-8 text-white hover:opacity-90'>
                     <Link href='/domains/invoices/upload-scans'>
                       <TbUpload className='mr-2 h-5 w-5' />
                       {t("hero.getStarted")}

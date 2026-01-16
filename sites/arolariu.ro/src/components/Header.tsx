@@ -27,8 +27,7 @@ function Header(): React.JSX.Element {
             className='ml-2 flex items-center font-medium hover:text-yellow-300'>
             <Image
               src={logo}
-              alt=''
-              aria-hidden
+              alt='arolariu.ro logo'
               className='2xsm:hidden rounded-full ring-2 ring-indigo-500 lg:block'
               width={40}
               height={40}

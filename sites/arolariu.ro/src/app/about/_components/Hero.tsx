@@ -84,7 +84,7 @@ export default function Hero(): React.JSX.Element {
 
         {/* Main title */}
         <motion.h1
-          className='mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl'
+          className='mb-6 bg-gradient-to-r from-gradient-from via-gradient-via to-gradient-to bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl'
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{delay: 0.3}}>
