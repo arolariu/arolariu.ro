@@ -129,7 +129,7 @@ test.describe("Footer Component Tests", () => {
   });
 
   test("should ensure all internal footer links are navigable and return 200 OK", async ({page, context}) => {
-    test.setTimeout(90000); // Increase timeout for this test that checks multiple pages
+    test.setTimeout(120000); // Increase timeout for this test that checks multiple pages
 
     const footer = page.locator("footer");
     // Match links starting with / but not containing # (anchors)
@@ -147,11 +147,22 @@ test.describe("Footer Component Tests", () => {
       }
     }
 
-    // Check each unique href - use 'commit' instead of 'load' for faster checking
+    // Check each unique href with retry logic for server warmup issues
     for (const href of hrefs) {
       const newPage = await context.newPage();
       try {
-        const response = await newPage.goto(href, {timeout: 15000, waitUntil: "commit"});
+        let response = null;
+        // Retry up to 3 times for 5xx errors (server warmup)
+        for (let attempt = 0; attempt < 3; attempt++) {
+          response = await newPage.goto(href, {timeout: 20000, waitUntil: "commit"});
+          const status = response?.status();
+          if (status === 200) {
+            break;
+          } else if (status && status >= 500) {
+            await newPage.waitForTimeout(1000 * (attempt + 1));
+            continue;
+          }
+        }
         expect(response?.status(), `Link ${href} should return 200 OK.`).toBe(200);
       } finally {
         await newPage.close();

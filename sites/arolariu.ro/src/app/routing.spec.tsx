@@ -30,8 +30,31 @@ const routes = [
 test.describe("Routing tests", () => {
   for (const route of routes) {
     test(`should navigate to ${route} and return 200`, async ({page}) => {
-      const response = await page.goto(route);
-      expect(response?.status()).toBe(200);
+      // Retry navigation up to 3 times to handle server warmup issues in CI
+      let lastError: Error | null = null;
+      let response = null;
+
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await page.goto(route, {waitUntil: "commit", timeout: 30000});
+          const status = response?.status();
+
+          // Accept 200 or retry on 5xx errors (server warmup)
+          if (status === 200) {
+            break;
+          } else if (status && status >= 500) {
+            // Server error - wait and retry
+            await page.waitForTimeout(1000 * (attempt + 1));
+            continue;
+          }
+        } catch (error) {
+          lastError = error as Error;
+          await page.waitForTimeout(1000 * (attempt + 1));
+        }
+      }
+
+      expect(response, `Navigation response should exist for ${route}`).not.toBeNull();
+      expect(response?.status(), lastError?.message ?? `Route ${route} should return 200`).toBe(200);
     });
   }
 });

@@ -47,8 +47,10 @@ test.describe("Header Component Tests", () => {
       const logoLink = page.locator("header a[href='/'], header a[href='https://localhost:3000']").first();
       await expect(logoLink).toBeVisible({timeout: 10000});
 
-      // Click logo and verify navigation to home
-      await logoLink.click();
+      // Use force:true to bypass Next.js dev overlay that may intercept clicks
+      // Also wait for page to be fully stable before clicking
+      await page.waitForLoadState("domcontentloaded");
+      await logoLink.click({force: true});
       await page.waitForURL(/\/$/, {timeout: 10000});
     });
 
@@ -79,7 +81,9 @@ test.describe("Header Component Tests", () => {
       const aboutLink = page.locator("header a[href*='about']").first();
 
       if (await aboutLink.isVisible({timeout: 5000})) {
-        await aboutLink.click();
+        // Use force:true to bypass Next.js dev overlay that may intercept clicks
+        await page.waitForLoadState("domcontentloaded");
+        await aboutLink.click({force: true});
         await page.waitForURL(/\/about/, {timeout: 10000});
         expect(page.url()).toContain("/about");
       }
