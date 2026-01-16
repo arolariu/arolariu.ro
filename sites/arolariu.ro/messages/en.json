@@ -2073,7 +2073,9 @@
           "title": "Custom Colors",
           "description": "Personalize your color scheme",
           "primary": "Primary Color",
-          "secondary": "Secondary Color"
+          "secondary": "Secondary Color",
+          "preview": "Gradient Preview",
+          "previewText": "Sample Gradient Text"
         },
         "locale": {
           "title": "Language",

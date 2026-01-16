@@ -1,6 +1,7 @@
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
+import {useGradientTheme} from "@/contexts/GradientThemeContext";
 import {setCookie} from "@/lib/actions/cookies";
 import {
   Button,
@@ -41,6 +42,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   const t = useTranslations("MyProfile.settings.appearance");
   const {theme, setTheme} = useTheme();
   const {fontType, setFont} = useFontContext();
+  const {setPrimaryColor, setSecondaryColor} = useGradientTheme();
 
   const handleThemeChange = useCallback(
     (newTheme: "light" | "dark" | "system") => {
@@ -65,9 +67,16 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
         void setCookie(`theme-${type.replace("Color", "-color")}`, color);
         document.documentElement.style.setProperty(`--color-${type.replace("Color", "")}`, color);
         onSettingsChange({[type]: color});
+
+        // Update gradient theme (persisted via IndexedDB through GradientThemeContext)
+        if (type === "primaryColor") {
+          setPrimaryColor(color);
+        } else {
+          setSecondaryColor(color);
+        }
       }
     },
-    [onSettingsChange],
+    [onSettingsChange, setPrimaryColor, setSecondaryColor],
   );
 
   const handleThemeLightClick = useCallback(() => handleThemeChange("light"), [handleThemeChange]);
@@ -264,6 +273,25 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
+
+            {/* Gradient Preview */}
+            <Separator />
+            <div className='space-y-2'>
+              <Label>{t("colors.preview")}</Label>
+              <div
+                className='h-16 w-full rounded-lg'
+                style={{
+                  background: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
+                }}
+              />
+              <p
+                className='bg-clip-text text-center text-lg font-bold text-transparent'
+                style={{
+                  backgroundImage: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
+                }}>
+                {t("colors.previewText")}
+              </p>
             </div>
           </CardContent>
         </Card>

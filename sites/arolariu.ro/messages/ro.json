@@ -2073,7 +2073,9 @@
           "title": "Culori Personalizate",
           "description": "Personalizați schema de culori",
           "primary": "Culoare Primară",
-          "secondary": "Culoare Secundară"
+          "secondary": "Culoare Secundară",
+          "preview": "Previzualizare Gradient",
+          "previewText": "Text Gradient Exemplu"
         },
         "locale": {
           "title": "Limbă",

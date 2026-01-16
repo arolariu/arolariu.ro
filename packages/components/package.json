@@ -519,6 +519,11 @@
       "import": "./dist/components/ui/usewindowsize.js",
       "default": "./dist/components/ui/usewindowsize.js"
     },
+    "./gradient-utils": {
+      "types": "./dist/components/ui/gradient-utils.d.ts",
+      "import": "./dist/components/ui/gradient-utils.js",
+      "default": "./dist/components/ui/gradient-utils.js"
+    },
     "./utilities": {
       "types": "./dist/components/ui/utilities.d.ts",
       "import": "./dist/components/ui/utilities.js",
