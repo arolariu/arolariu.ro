@@ -441,4 +441,114 @@ describe("useScansStore", () => {
       expect(useScansStore.getState().selectedScans).toEqual([scan1]);
     });
   });
+
+  describe("updateScanMetadata", () => {
+    it("should update metadata for a specific scan", () => {
+      const scan = createTestScan("1", {metadata: {key1: "value1"}});
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().updateScanMetadata("1", {key2: "value2"});
+      });
+
+      const updatedScan = useScansStore.getState().scans[0];
+      expect(updatedScan?.metadata).toEqual({key1: "value1", key2: "value2"});
+    });
+
+    it("should merge with existing metadata", () => {
+      const scan = createTestScan("1", {metadata: {existing: "data"}});
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().updateScanMetadata("1", {new: "value"});
+      });
+
+      const updatedScan = useScansStore.getState().scans[0];
+      expect(updatedScan?.metadata).toEqual({existing: "data", new: "value"});
+    });
+
+    it("should also update metadata in selectedScans", () => {
+      const scan = createTestScan("1", {metadata: {}});
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().toggleScanSelection(scan);
+        useScansStore.getState().updateScanMetadata("1", {updated: "true"});
+      });
+
+      const selectedScan = useScansStore.getState().selectedScans[0];
+      expect(selectedScan?.metadata).toEqual({updated: "true"});
+    });
+
+    it("should not affect other scans", () => {
+      const scan1 = createTestScan("1", {metadata: {original: "1"}});
+      const scan2 = createTestScan("2", {metadata: {original: "2"}});
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2]);
+        useScansStore.getState().updateScanMetadata("1", {changed: "true"});
+      });
+
+      const unchanged = useScansStore.getState().scans.find((s) => s.id === "2");
+      expect(unchanged?.metadata).toEqual({original: "2"});
+    });
+  });
+
+  describe("markScansAsUsedByInvoice", () => {
+    it("should mark a scan as used by an invoice", () => {
+      const scan = createTestScan("1");
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().markScansAsUsedByInvoice(["1"], "invoice-123");
+      });
+
+      const markedScan = useScansStore.getState().scans[0];
+      expect(markedScan?.metadata.usedByInvoice).toBe("true");
+      expect(markedScan?.metadata.invoiceId).toBe("invoice-123");
+      expect(markedScan?.metadata.invoiceCreatedAt).toBeDefined();
+    });
+
+    it("should mark multiple scans as used by the same invoice", () => {
+      const scan1 = createTestScan("1");
+      const scan2 = createTestScan("2");
+      const scan3 = createTestScan("3");
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2, scan3]);
+        useScansStore.getState().markScansAsUsedByInvoice(["1", "2"], "invoice-456");
+      });
+
+      const scans = useScansStore.getState().scans;
+      expect(scans.find((s) => s.id === "1")?.metadata.usedByInvoice).toBe("true");
+      expect(scans.find((s) => s.id === "2")?.metadata.usedByInvoice).toBe("true");
+      expect(scans.find((s) => s.id === "3")?.metadata.usedByInvoice).toBeUndefined();
+    });
+
+    it("should preserve existing metadata when marking", () => {
+      const scan = createTestScan("1", {metadata: {existingKey: "existingValue"}});
+
+      act(() => {
+        useScansStore.getState().setScans([scan]);
+        useScansStore.getState().markScansAsUsedByInvoice(["1"], "invoice-789");
+      });
+
+      const markedScan = useScansStore.getState().scans[0];
+      expect(markedScan?.metadata.existingKey).toBe("existingValue");
+      expect(markedScan?.metadata.usedByInvoice).toBe("true");
+    });
+
+    it("should not affect scans not in the scanIds list", () => {
+      const scan1 = createTestScan("1");
+      const scan2 = createTestScan("2");
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2]);
+        useScansStore.getState().markScansAsUsedByInvoice(["1"], "invoice-abc");
+      });
+
+      const unmarkedScan = useScansStore.getState().scans.find((s) => s.id === "2");
+      expect(unmarkedScan?.metadata.usedByInvoice).toBeUndefined();
+    });
+  });
 });
