@@ -70,7 +70,7 @@ export default function ScansHeader(): React.JSX.Element {
             <TooltipTrigger asChild>
               <Button
                 asChild
-                className='flex items-center gap-2 bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'>
+                className='flex items-center gap-2 bg-linear-to-r from-gradient-from to-gradient-to text-white hover:opacity-90'>
                 <Link href='/domains/invoices/upload-scans'>
                   <TbUpload className='h-4 w-4' />
                   <span className='hidden sm:inline'>{t("uploadMore")}</span>

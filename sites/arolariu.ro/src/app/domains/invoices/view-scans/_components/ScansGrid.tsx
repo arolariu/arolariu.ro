@@ -107,7 +107,7 @@ export default function ScansGrid(): React.JSX.Element {
             <div className='mb-8 space-y-6'>
               <EmptyStateStep
                 step={1}
-                icon={<TbUpload className='h-4 w-4 text-blue-500' />}
+                icon={<TbUpload className='h-4 w-4 text-accent-primary' />}
                 title={t("emptyState.step1Title")}
                 description={t("emptyState.step1Description")}
               />

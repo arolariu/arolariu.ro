@@ -15,15 +15,15 @@ export default function TechnologiesSection(): React.JSX.Element {
 
   const points = [
     {
-      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      check: <TbCheck className='inline h-6 w-6 text-accent-primary' />,
       text: t("points.point1"),
     },
     {
-      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      check: <TbCheck className='inline h-6 w-6 text-accent-primary' />,
       text: t("points.point2"),
     },
     {
-      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      check: <TbCheck className='inline h-6 w-6 text-accent-primary' />,
       text: t("points.point3"),
     },
   ];

@@ -37,7 +37,7 @@ export default function Biography(): React.JSX.Element {
 
   const bioSections = [
     {
-      icon: <TbCode className='h-8 w-8 text-blue-500' />,
+      icon: <TbCode className='h-8 w-8 text-accent-primary' />,
       content: t("FirstPoint", {age: (new Date().getFullYear() - 2000).toString()}),
     },
     {

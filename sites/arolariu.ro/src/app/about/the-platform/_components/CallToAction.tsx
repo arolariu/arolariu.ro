@@ -80,7 +80,7 @@ export default function CallToAction(): React.JSX.Element {
             transition={{duration: 0.6}}>
             <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl'>
               {t("title")}{" "}
-              <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>
+              <span className='bg-gradient-to-r from-gradient-from via-gradient-via to-gradient-to bg-clip-text text-transparent'>
                 {t("titleHighlight")}
               </span>
               ?

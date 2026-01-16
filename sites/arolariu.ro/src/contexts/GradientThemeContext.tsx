@@ -50,6 +50,21 @@ interface GradientThemeContextValue {
 const GradientThemeContext = createContext<GradientThemeContextValue | undefined>(undefined);
 
 /**
+ * Derives a darker HSL color from an HSL string by reducing lightness.
+ * @param hsl - HSL string in format "h s% l%"
+ * @param amount - Amount to reduce lightness (default: 20)
+ * @returns Darker HSL string
+ */
+function darkenHsl(hsl: string, amount = 20): string {
+  const parts = hsl.split(" ");
+  const h = parts[0];
+  const s = parts[1];
+  const l = Number.parseInt(parts[2]?.replace("%", "") ?? "50", 10);
+  const newL = Math.max(0, l - amount);
+  return `${h} ${s} ${newL}%`;
+}
+
+/**
  * Applies gradient CSS variables to document root.
  *
  * @param theme - Gradient theme configuration with hex colors
@@ -57,6 +72,10 @@ const GradientThemeContext = createContext<GradientThemeContextValue | undefined
  * @remarks
  * Converts hex colors to HSL format for Tailwind CSS compatibility.
  * The HSL format matches other CSS variables in globals.css (e.g., "187 94% 43%").
+ *
+ * Also sets derived variables:
+ * - `--accent-primary`: Same as gradient-from, for text/icon accents
+ * - `--footer-bg`: Darker version of gradient-via, for footer background
  */
 function applyGradientVariables(theme: GradientTheme): void {
   if (typeof document === "undefined") return;
@@ -70,9 +89,17 @@ function applyGradientVariables(theme: GradientTheme): void {
   root.style.setProperty("--gradient-from", fromHsl);
   root.style.setProperty("--gradient-to", toHsl);
 
+  // Set accent-primary to match gradient-from (primary color)
+  root.style.setProperty("--accent-primary", fromHsl);
+
   if (theme.via) {
     const viaHsl = hexToHsl(theme.via);
     root.style.setProperty("--gradient-via", viaHsl);
+    // Footer background is a darker version of the via color
+    root.style.setProperty("--footer-bg", darkenHsl(viaHsl, 25));
+  } else {
+    // If no via color, use a darker version of the from color for footer
+    root.style.setProperty("--footer-bg", darkenHsl(fromHsl, 25));
   }
 }
 

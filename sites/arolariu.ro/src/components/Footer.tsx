@@ -56,7 +56,7 @@ import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
  * 4. **Metadata**: Copyright notice, source code link, build info, commit SHA
  *
  * **Styling Architecture:**
- * - Base: Indigo 700 background with white text
+ * - Base: footer-bg background (dynamic, derived from gradient theme) with white text
  * - Hover Effects: Yellow 500 accent color on interactive elements
  * - Responsive Classes: Uses Tailwind's `2xsm:` (custom), `sm:`, `md:`, `lg:` breakpoints
  *
@@ -101,9 +101,9 @@ function FooterComponent(): React.JSX.Element {
   const siteName = SITE_NAME.toUpperCase();
 
   return (
-    <footer className='relative bottom-0 w-full bg-indigo-700 print:hidden'>
+    <footer className='relative bottom-0 w-full bg-footer-bg print:hidden'>
       <svg
-        className='absolute top-0 -mt-5 h-6 w-full text-indigo-700 sm:-mt-10 sm:h-16'
+        className='absolute top-0 -mt-5 h-6 w-full text-footer-bg sm:-mt-10 sm:h-16'
         preserveAspectRatio='none'
         viewBox='0 0 1440 54'>
         <path

@@ -165,7 +165,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                     <Tooltip>
                       <TooltipTrigger
                         asChild
-                        className='cursor-pointer hover:text-blue-500'>
+                        className='cursor-pointer hover:text-accent-primary'>
                         <Link
                           href={`/domains/invoices/view-invoice/${invoice.id}`}
                           className='h-8 w-8'>
