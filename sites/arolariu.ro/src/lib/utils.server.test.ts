@@ -384,6 +384,166 @@ describe("createJwtToken", () => {
   });
 });
 
+describe("fetchWithTimeout", () => {
+  it("should call fetch with correct parameters", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    const url = "https://api.example.com/data";
+    const options = {method: "GET"};
+
+    await fetchWithTimeout(url, options, 5000);
+
+    expect(mockFetch).toHaveBeenCalled();
+    const [fetchUrl, fetchOptions] = mockFetch.mock.calls[0];
+    expect(fetchUrl).toBe(url);
+    expect(fetchOptions.method).toBe("GET");
+    expect(fetchOptions.signal).toBeDefined();
+    expect(fetchOptions.cache).toBe("no-store");
+  });
+
+  it("should return response on success", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const mockResponse = new Response("Success", {status: 200});
+    globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
+
+    const response = await fetchWithTimeout("https://api.example.com/data");
+
+    expect(response).toBeDefined();
+    expect(response.status).toBe(200);
+  });
+
+  it("should use default timeout when not specified", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response("OK"));
+
+    await fetchWithTimeout("https://api.example.com/data");
+
+    expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it("should throw timeout error when request times out", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const abortError = new Error("signal is aborted without reason");
+    abortError.name = "AbortError";
+    globalThis.fetch = vi.fn().mockRejectedValue(abortError);
+
+    await expect(fetchWithTimeout("https://api.example.com/data", {}, 100)).rejects.toThrow(/timed out/);
+  });
+
+  it("should re-throw non-abort errors", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const networkError = new Error("Network error");
+    globalThis.fetch = vi.fn().mockRejectedValue(networkError);
+
+    await expect(fetchWithTimeout("https://api.example.com/data")).rejects.toThrow("Network error");
+  });
+});
+
+describe("mapHttpStatusToErrorCode", () => {
+  it("should map 401 to AUTH_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(401)).toBe("AUTH_ERROR");
+  });
+
+  it("should map 403 to AUTH_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(403)).toBe("AUTH_ERROR");
+  });
+
+  it("should map 404 to NOT_FOUND", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(404)).toBe("NOT_FOUND");
+  });
+
+  it("should map 400 to VALIDATION_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(400)).toBe("VALIDATION_ERROR");
+  });
+
+  it("should map 422 to VALIDATION_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(422)).toBe("VALIDATION_ERROR");
+  });
+
+  it("should map 500 to SERVER_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(500)).toBe("SERVER_ERROR");
+  });
+
+  it("should map 502 to SERVER_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(502)).toBe("SERVER_ERROR");
+  });
+
+  it("should map 503 to SERVER_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(503)).toBe("SERVER_ERROR");
+  });
+
+  it("should map unknown status codes to UNKNOWN_ERROR", async () => {
+    const {mapHttpStatusToErrorCode} = await import("./utils.server");
+    expect(mapHttpStatusToErrorCode(200)).toBe("UNKNOWN_ERROR");
+    expect(mapHttpStatusToErrorCode(201)).toBe("UNKNOWN_ERROR");
+    expect(mapHttpStatusToErrorCode(418)).toBe("UNKNOWN_ERROR");
+  });
+});
+
+describe("createErrorResult", () => {
+  it("should create error result from Error object", async () => {
+    const {createErrorResult} = await import("./utils.server");
+    const error = new Error("Something went wrong");
+
+    const result = createErrorResult<string>(error, "Default message");
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("NETWORK_ERROR");
+    expect(result.error?.message).toBe("Something went wrong");
+  });
+
+  it("should identify timeout errors", async () => {
+    const {createErrorResult} = await import("./utils.server");
+    const error = new Error("Request timed out after 5000ms");
+
+    const result = createErrorResult<string>(error, "Default message");
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("TIMEOUT_ERROR");
+    expect(result.error?.message).toContain("timed out");
+  });
+
+  it("should handle non-Error objects", async () => {
+    const {createErrorResult} = await import("./utils.server");
+
+    const result = createErrorResult<string>("String error", "Default message");
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("UNKNOWN_ERROR");
+    expect(result.error?.message).toBe("Default message");
+  });
+
+  it("should use default message for unknown errors", async () => {
+    const {createErrorResult} = await import("./utils.server");
+
+    const result = createErrorResult<number>(null, "An unknown error occurred");
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("UNKNOWN_ERROR");
+    expect(result.error?.message).toBe("An unknown error occurred");
+  });
+
+  it("should handle undefined as error", async () => {
+    const {createErrorResult} = await import("./utils.server");
+
+    const result = createErrorResult<boolean>(undefined, "Unexpected error");
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("UNKNOWN_ERROR");
+    expect(result.error?.message).toBe("Unexpected error");
+  });
+});
+
 describe("verifyJwtToken", () => {
   it("should return result object with valid or error property", async () => {
     const {verifyJwtToken} = await import("./utils.server");
