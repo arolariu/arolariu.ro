@@ -1,5 +1,6 @@
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
+import {GradientThemeProvider} from "@/contexts/GradientThemeContext";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
@@ -139,10 +140,12 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
             defaultTheme='system'
             attribute='class'
             themes={["light", "dark"]}>
-            {children}
-            <ToastProvider />
-            <Commander />
-            <WebVitals />
+            <GradientThemeProvider>
+              {children}
+              <ToastProvider />
+              <Commander />
+              <WebVitals />
+            </GradientThemeProvider>
           </ThemeProvider>
         </FontProvider>
       </AuthProvider>
