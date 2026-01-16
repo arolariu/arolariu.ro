@@ -59,7 +59,10 @@ export default defineConfig({
   workers: weAreInCI ? "75%" : "100%",
   timeout: 60 * 1000, // 60 seconds - 1 minute
   projects: projectsToRun,
-  outputDir: "code-cov/playwright-report",
+  // Keep test artifacts separate from report output.
+  // Playwright clears the HTML report output folder prior to generation;
+  // if it overlaps with the test output folder, artifacts can be lost.
+  outputDir: "code-cov/playwright-results",
   maxFailures: weAreInCI ? 5 : 10, // Stop after these many failures
 
   reporter: [
