@@ -169,6 +169,21 @@ describe("useMerchants", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchants in useMerchants hook:", mockError);
   });
 
+  it("should handle unsuccessful API response", async () => {
+    mockFetchMerchants.mockResolvedValue({
+      success: false,
+      error: {code: "FETCH_ERROR", message: "Failed to fetch merchants"},
+    });
+
+    const {result} = renderHook(() => useMerchants());
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchants:", "FETCH_ERROR", "Failed to fetch merchants");
+  });
+
   it("should handle network error gracefully", async () => {
     mockFetchMerchants.mockRejectedValue(new Error("Network error"));
 

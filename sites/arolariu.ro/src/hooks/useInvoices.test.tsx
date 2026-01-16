@@ -179,6 +179,21 @@ describe("useInvoices", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching invoices in useInvoices hook:", mockError);
   });
 
+  it("should handle unsuccessful API response", async () => {
+    mockFetchInvoices.mockResolvedValue({
+      success: false,
+      error: {code: "FETCH_ERROR", message: "Failed to fetch invoices"},
+    });
+
+    const {result} = renderHook(() => useInvoices());
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching invoices:", "FETCH_ERROR", "Failed to fetch invoices");
+  });
+
   it("should handle network error gracefully", async () => {
     mockFetchInvoices.mockRejectedValue(new Error("Network error"));
 
