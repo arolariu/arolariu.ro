@@ -66,6 +66,10 @@ const tailwindConfig: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Gradient theme colors - user customizable via my-profile settings
+        "gradient-from": "hsl(var(--gradient-from))",
+        "gradient-via": "hsl(var(--gradient-via))",
+        "gradient-to": "hsl(var(--gradient-to))",
       },
       borderRadius: {
         lg: "var(--radius)",
