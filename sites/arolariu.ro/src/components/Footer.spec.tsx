@@ -129,7 +129,7 @@ test.describe("Footer Component Tests", () => {
   });
 
   test("should ensure all internal footer links are navigable and return 200 OK", async ({page, context}) => {
-    test.setTimeout(120000); // Increase timeout for this test that checks multiple pages
+    test.setTimeout(180000); // Increase timeout for this test that checks multiple pages with retries
 
     const footer = page.locator("footer");
     // Match links starting with / but not containing # (anchors)
@@ -148,18 +148,22 @@ test.describe("Footer Component Tests", () => {
     }
 
     // Check each unique href with retry logic for server warmup issues
+    // Next.js dev server compiles pages on-demand, which can cause initial 500 errors
     for (const href of hrefs) {
       const newPage = await context.newPage();
       try {
         let response = null;
-        // Retry up to 3 times for 5xx errors (server warmup)
-        for (let attempt = 0; attempt < 3; attempt++) {
-          response = await newPage.goto(href, {timeout: 20000, waitUntil: "commit"});
+        const maxAttempts = 5;
+        // Retry up to 5 times for 5xx errors (server warmup/compilation)
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          response = await newPage.goto(href, {timeout: 30000, waitUntil: "domcontentloaded"});
           const status = response?.status();
           if (status === 200) {
             break;
           } else if (status && status >= 500) {
-            await newPage.waitForTimeout(1000 * (attempt + 1));
+            // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+            const waitTime = 2000 * Math.pow(2, attempt);
+            await newPage.waitForTimeout(waitTime);
             continue;
           }
         }
