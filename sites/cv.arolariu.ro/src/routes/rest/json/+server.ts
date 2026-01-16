@@ -36,12 +36,12 @@ const AVAILABLE_SECTIONS: SectionKey[] = [
  * Creates a deterministic ETag from the resume data.
  */
 function generateETag(data: unknown): string {
-  const str = JSON.stringify(data);
+  const dataJson = JSON.stringify(data);
   let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
+  for (let index = 0; index < dataJson.length; index++) {
+    const char = dataJson.charCodeAt(index);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash;
+    hash &= hash; // &= is used to keep hash in 32-bit integer range
   }
   return `"cv-${Math.abs(hash).toString(36)}"`;
 }
@@ -50,9 +50,9 @@ function generateETag(data: unknown): string {
  * Extracts a specific section from the resume.
  */
 function getSection(sectionName: string): unknown | undefined {
-  const resumeObj = resume as Record<string, unknown>;
+  const resumeObject = resume as Record<string, unknown>;
   if (AVAILABLE_SECTIONS.includes(sectionName as SectionKey)) {
-    return resumeObj[sectionName];
+    return resumeObject[sectionName];
   }
   return undefined;
 }
@@ -160,8 +160,8 @@ export const GET: RequestHandler = ({request, url}) => {
   });
 };
 
-export const OPTIONS: RequestHandler = () => {
-  return new Response(null, {
+export const OPTIONS: RequestHandler = () =>
+  new Response(null, {
     status: 204,
     headers: {
       "Access-Control-Allow-Origin": "*",
@@ -170,4 +170,3 @@ export const OPTIONS: RequestHandler = () => {
       "Access-Control-Max-Age": "86400",
     },
   });
-};
