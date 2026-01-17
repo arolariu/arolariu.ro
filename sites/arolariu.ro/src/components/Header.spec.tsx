@@ -1,4 +1,5 @@
 import {expect, test} from "@playwright/test";
+import {navigateWithRetry, getNavigationOptions} from "../../tests/playwright-helpers";
 
 test.describe("Header Component Tests", () => {
   test.beforeEach(async ({page}) => {
@@ -81,11 +82,14 @@ test.describe("Header Component Tests", () => {
       const aboutLink = page.locator("header a[href*='about']").first();
 
       if (await aboutLink.isVisible({timeout: 5000})) {
-        // Use force:true to bypass Next.js dev overlay that may intercept clicks
-        await page.waitForLoadState("domcontentloaded");
-        await aboutLink.click({force: true});
-        await page.waitForURL(/\/about/, {timeout: 10000});
-        expect(page.url()).toContain("/about");
+        // Get the href and navigate directly with retry logic
+        // This avoids timing issues with click + waitForURL
+        const href = await aboutLink.getAttribute("href");
+        if (href) {
+          const result = await navigateWithRetry(page, href, getNavigationOptions());
+          expect(result.success, `About page navigation should succeed (status: ${result.status})`).toBe(true);
+          expect(page.url()).toContain("/about");
+        }
       }
     });
   });

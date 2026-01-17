@@ -1,24 +1,5 @@
-import {expect, Page, test} from "@playwright/test";
-
-// Helper function to check link attributes for external links
-async function checkExternalLink(page: Page, selector: string, expectedHref: string) {
-  await expect(page.locator(selector).first()).toBeVisible({timeout: 15000});
-  await expect(page.locator(selector).first()).toHaveAttribute("href", expectedHref);
-  await expect(page.locator(selector).first()).toHaveAttribute("target", "_blank");
-}
-
-// Helper function to check internal navigation links
-async function checkInternalLink(page: Page, selector: string, expectedHref: string, expectedText?: RegExp | string) {
-  await expect(page.locator(selector).first()).toBeVisible({timeout: 15000});
-  await expect(page.locator(selector).first()).toHaveAttribute("href", expectedHref);
-  if (expectedText) {
-    if (typeof expectedText === "string") {
-      await expect(page.locator(selector).first()).toHaveText(new RegExp(expectedText, "i"));
-    } else {
-      await expect(page.locator(selector).first()).toHaveText(expectedText);
-    }
-  }
-}
+import {expect, test} from "@playwright/test";
+import {checkExternalLink, checkInternalLink, checkLinkNavigable, getNavigationOptions} from "../../tests/playwright-helpers";
 
 test.describe("Footer Component Tests", () => {
   test.beforeEach(async ({page}) => {
@@ -129,8 +110,6 @@ test.describe("Footer Component Tests", () => {
   });
 
   test("should ensure all internal footer links are navigable and return 200 OK", async ({page, context}) => {
-    test.setTimeout(180000); // Increase timeout for this test that checks multiple pages with retries
-
     const footer = page.locator("footer");
     // Match links starting with / but not containing # (anchors)
     const internalLinksLocators = footer.locator("a[href^='/']:not([href*='#'])");
@@ -147,30 +126,11 @@ test.describe("Footer Component Tests", () => {
       }
     }
 
-    // Check each unique href with retry logic for server warmup issues
-    // Next.js dev server compiles pages on-demand, which can cause initial 500 errors
+    // Check each unique href using the test utilities
+    const navigationOptions = getNavigationOptions();
     for (const href of hrefs) {
-      const newPage = await context.newPage();
-      try {
-        let response = null;
-        const maxAttempts = 5;
-        // Retry up to 5 times for 5xx errors (server warmup/compilation)
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          response = await newPage.goto(href, {timeout: 30000, waitUntil: "domcontentloaded"});
-          const status = response?.status();
-          if (status === 200) {
-            break;
-          } else if (status && status >= 500) {
-            // Exponential backoff: 2s, 4s, 8s, 16s, 32s
-            const waitTime = 2000 * Math.pow(2, attempt);
-            await newPage.waitForTimeout(waitTime);
-            continue;
-          }
-        }
-        expect(response?.status(), `Link ${href} should return 200 OK.`).toBe(200);
-      } finally {
-        await newPage.close();
-      }
+      const result = await checkLinkNavigable(context, href, navigationOptions);
+      expect(result.status, `Link ${href} should return 200 OK (got ${result.status} after ${result.attempts} attempts).`).toBe(200);
     }
   });
 
