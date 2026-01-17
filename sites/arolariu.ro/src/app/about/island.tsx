@@ -1,6 +1,12 @@
 "use client";
 
-import {CallToAction, Faq, Hero, Mission, Navigation, Stats, Values} from "./_components";
+import CallToAction from "./_components/CallToAction";
+import Faq from "./_components/Faq";
+import Hero from "./_components/Hero";
+import Mission from "./_components/Mission";
+import Navigation from "./_components/Navigation";
+import Stats from "./_components/Stats";
+import Values from "./_components/Values";
 
 /**
  * About hub page with comprehensive sections introducing the platform and author.
