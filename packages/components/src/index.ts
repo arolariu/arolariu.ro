@@ -312,13 +312,21 @@ export {useWindowSize} from "./hooks/useWindowSize";
 
 export {cn} from "./lib/utilities";
 export {
+  // New descriptive names
+  adjustHexColorLightness,
+  calculateComplementaryHexColor,
+  convertHexToHslString,
+  convertHslToHexString,
+  parseHslStringToComponents,
+  validateHexColorFormat,
+  // Legacy aliases (deprecated)
   adjustLightness,
   getComplementaryColor,
   hexToHsl,
   hslToHex,
   isValidHexColor,
   parseHslString,
-} from "./lib/gradient-utils";
+} from "./lib/color-conversion-utilities";
 
 // Animate-UI exports:
 export {FlipButton, type FlipButtonProps, type FlipDirection} from "./components/ui/flip-button";

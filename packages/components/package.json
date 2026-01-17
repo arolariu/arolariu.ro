@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "🎨 70+ beautiful, accessible React components built on Radix UI. TypeScript-first, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
@@ -519,10 +519,10 @@
       "import": "./dist/components/ui/usewindowsize.js",
       "default": "./dist/components/ui/usewindowsize.js"
     },
-    "./gradient-utils": {
-      "types": "./dist/components/ui/gradient-utils.d.ts",
-      "import": "./dist/components/ui/gradient-utils.js",
-      "default": "./dist/components/ui/gradient-utils.js"
+    "./color-conversion-utilities": {
+      "types": "./dist/components/ui/color-conversion-utilities.d.ts",
+      "import": "./dist/components/ui/color-conversion-utilities.js",
+      "default": "./dist/components/ui/color-conversion-utilities.js"
     },
     "./utilities": {
       "types": "./dist/components/ui/utilities.d.ts",

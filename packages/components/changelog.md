@@ -8,6 +8,17 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.5.0](https://www.npmjs.com/package/@arolariu/components/v/0.5.0) - 2026-01-16
+**✨ New Features & Improvements**
+- 🔄 **Renamed `gradient-utils` to `color-conversion-utilities`** with more descriptive function names:
+  - `hexToHsl` → `convertHexToHslString`
+  - `hslToHex` → `convertHslToHexString`
+  - `isValidHexColor` → `validateHexColorFormat`
+  - `getComplementaryColor` → `calculateComplementaryHexColor`
+  - `adjustLightness` → `adjustHexColorLightness`
+  - `parseHslString` → `parseHslStringToComponents`
+- 📚 **Legacy aliases maintained** for backwards compatibility (deprecated)
+
 ### [0.4.2](https://www.npmjs.com/package/@arolariu/components/v/0.4.2) - 2025-12-18
 **✨ New Features & Improvements**
 - 🆕 **New Component: `CardAction`** - A component for adding actions to cards.
