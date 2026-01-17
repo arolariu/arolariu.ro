@@ -145,10 +145,9 @@ export const DEFAULT_PREFERENCES: PreferencesPersistedState = {
 
 /**
  * Shared storage adapter for key-value persistence.
+ * Uses "account-preferences" as the storage key in the shared IndexedDB table.
  */
-const sharedStorage = createSharedStorage<PreferencesPersistedState>({
-  keyPrefix: "preferences-",
-});
+const sharedStorage = createSharedStorage<PreferencesPersistedState>();
 
 /**
  * Rehydration callback that sets the hydration status.
@@ -161,7 +160,7 @@ function handleRehydration(state: PreferencesStore | undefined) {
  * Persist middleware configuration.
  */
 const persistConfig = {
-  name: "user-preferences",
+  name: "account-preferences",
   storage: sharedStorage,
   partialize: (state: PreferencesStore): PreferencesPersistedState => ({
     primaryColor: state.primaryColor,
