@@ -21,7 +21,7 @@
 
 "use client";
 
-import {hexToHsl} from "@arolariu/components";
+import {convertHexToHslString} from "@arolariu/components";
 import {usePreferencesStore, type GradientTheme} from "@/stores";
 import React, {createContext, use, useEffect, useMemo} from "react";
 
@@ -83,8 +83,8 @@ function applyGradientVariables(theme: GradientTheme): void {
   const root = document.documentElement;
 
   // Convert hex to HSL for Tailwind compatibility
-  const fromHsl = hexToHsl(theme.from);
-  const toHsl = hexToHsl(theme.to);
+  const fromHsl = convertHexToHslString(theme.from);
+  const toHsl = convertHexToHslString(theme.to);
 
   root.style.setProperty("--gradient-from", fromHsl);
   root.style.setProperty("--gradient-to", toHsl);
@@ -93,7 +93,7 @@ function applyGradientVariables(theme: GradientTheme): void {
   root.style.setProperty("--accent-primary", fromHsl);
 
   if (theme.via) {
-    const viaHsl = hexToHsl(theme.via);
+    const viaHsl = convertHexToHslString(theme.via);
     root.style.setProperty("--gradient-via", viaHsl);
     // Footer background is a darker version of the via color
     root.style.setProperty("--footer-bg", darkenHsl(viaHsl, 25));
