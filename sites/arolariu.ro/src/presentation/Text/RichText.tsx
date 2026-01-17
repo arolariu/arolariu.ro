@@ -39,7 +39,7 @@ export function RichText({className, sectionKey, textKey}: Readonly<Props>): Rea
           <br />
         </>
       ),
-      code: (chunks: React.ReactNode) => <code className='font-extrabold text-accent-primary'>{chunks}</code>,
+      code: (chunks: React.ReactNode) => <code className='text-accent-primary font-extrabold'>{chunks}</code>,
       ul: (chunks: React.ReactNode) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
       li: (chunks: React.ReactNode) => <li>{chunks}</li>,
       span: (chunks: React.ReactNode) => <span>{chunks}</span>,

@@ -393,7 +393,10 @@ describe("createInvoiceFromScans", () => {
     });
 
     it("should send correct payload for scan attachment", async () => {
-      const scans = [createTestScan("scan-1"), createTestScan("scan-2", {blobUrl: "https://storage.test.com/scan-2.png", scanType: ScanType.PNG})];
+      const scans = [
+        createTestScan("scan-1"),
+        createTestScan("scan-2", {blobUrl: "https://storage.test.com/scan-2.png", scanType: ScanType.PNG}),
+      ];
 
       mockFetch
         .mockResolvedValueOnce({

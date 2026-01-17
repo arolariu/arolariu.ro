@@ -240,7 +240,7 @@ function UploadContent(): React.JSX.Element {
               <h3 className='mb-4 font-semibold text-gray-900 dark:text-white'>{t("sidebar.formats.title")}</h3>
               <div className='space-y-3'>
                 <FileTypeCard
-                  icon={<TbPhoto className='h-5 w-5 text-accent-primary' />}
+                  icon={<TbPhoto className='text-accent-primary h-5 w-5' />}
                   label={t("sidebar.formats.images")}
                   extensions={t("sidebar.formats.imageExtensions")}
                 />

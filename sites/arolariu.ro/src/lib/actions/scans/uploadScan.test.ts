@@ -185,9 +185,7 @@ describe("uploadScan", () => {
         fileName: "receipt.jpg",
       });
 
-      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(
-        expect.stringMatching(/\.jpg$/),
-      );
+      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(expect.stringMatching(/\.jpg$/));
     });
 
     it("should use filename as extension when no dot in filename", async () => {
@@ -198,9 +196,7 @@ describe("uploadScan", () => {
         fileName: "receipt",
       });
 
-      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(
-        expect.stringMatching(/\.receipt$/),
-      );
+      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(expect.stringMatching(/\.receipt$/));
     });
 
     it("should handle multi-dot filenames", async () => {
@@ -209,9 +205,7 @@ describe("uploadScan", () => {
         fileName: "receipt.2024.01.01.jpg",
       });
 
-      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(
-        expect.stringMatching(/\.jpg$/),
-      );
+      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(expect.stringMatching(/\.jpg$/));
     });
   });
 
@@ -247,17 +241,13 @@ describe("uploadScan", () => {
     it("should include user identifier in blob path", async () => {
       await uploadScan(validInput);
 
-      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(
-        expect.stringMatching(/^scans\/test-user-guid\//),
-      );
+      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(expect.stringMatching(/^scans\/test-user-guid\//));
     });
 
     it("should include scan ID in blob name", async () => {
       const result = await uploadScan(validInput);
 
-      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(
-        expect.stringContaining(result.scan.id.slice(0, 8)),
-      );
+      expect(mockGetBlockBlobClient).toHaveBeenCalledWith(expect.stringContaining(result.scan.id.slice(0, 8)));
     });
   });
 });

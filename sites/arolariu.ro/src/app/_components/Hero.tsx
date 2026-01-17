@@ -23,7 +23,7 @@ export default function HeroSection(): React.JSX.Element {
           transition={{duration: 0.8, delay: 0.3}}
           className='relative z-10'>
           <h1 className='2xsm:text-center mt-6 text-4xl font-normal text-white sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>
-            <span className='bg-linear-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent'>{t("title")}</span>
+            <span className='from-gradient-from to-gradient-to bg-linear-to-r bg-clip-text text-transparent'>{t("title")}</span>
           </h1>
           <p className='2xsm:text-center mt-4 max-w-lg text-xl text-gray-500 md:text-left lg:max-w-2xl'>
             <RichText
@@ -32,7 +32,7 @@ export default function HeroSection(): React.JSX.Element {
             />
           </p>
           <div className='2xsm:ml-[26%] relative mt-8 inline-flex md:ml-0'>
-            <div className='absolute -inset-px rounded-full bg-linear-to-r from-gradient-from to-gradient-to transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50' />
+            <div className='from-gradient-from to-gradient-to absolute -inset-px rounded-full bg-linear-to-r transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50' />
             <Link
               href='/domains'
               title=''

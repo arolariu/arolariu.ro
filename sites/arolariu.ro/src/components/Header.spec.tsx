@@ -1,5 +1,5 @@
 import {expect, test} from "@playwright/test";
-import {navigateWithRetry, getNavigationOptions} from "../../tests/playwright-helpers";
+import {getNavigationOptions, navigateWithRetry} from "../../tests/playwright-helpers";
 
 test.describe("Header Component Tests", () => {
   test.beforeEach(async ({page}) => {

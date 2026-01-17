@@ -159,11 +159,7 @@ async function handleSuccessfulResponse(
  * expect(result.status).toBe(200);
  * ```
  */
-export async function navigateWithRetry(
-  page: Page,
-  url: string,
-  options: NavigateWithRetryOptions = {},
-): Promise<NavigationResult> {
+export async function navigateWithRetry(page: Page, url: string, options: NavigateWithRetryOptions = {}): Promise<NavigationResult> {
   const {maxAttempts = 3, initialDelay = 1000, maxTotalWait = 30000, waitUntil = "domcontentloaded", navigationTimeout = 15000} = options;
 
   const state: RetryState = {
@@ -260,12 +256,7 @@ export async function checkExternalLink(page: Page, selector: string, expectedHr
  * @param expectedHref - Expected href value
  * @param expectedText - Optional expected text content
  */
-export async function checkInternalLink(
-  page: Page,
-  selector: string,
-  expectedHref: string,
-  expectedText?: RegExp | string,
-): Promise<void> {
+export async function checkInternalLink(page: Page, selector: string, expectedHref: string, expectedText?: RegExp | string): Promise<void> {
   await expect(page.locator(selector).first()).toBeVisible({timeout: 15000});
   await expect(page.locator(selector).first()).toHaveAttribute("href", expectedHref);
   if (expectedText) {

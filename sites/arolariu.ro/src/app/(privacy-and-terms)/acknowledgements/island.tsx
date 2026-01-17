@@ -40,7 +40,7 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
       <section className='mx-auto w-full max-w-7xl px-4 py-16'>
         <div className='mb-8 text-center'>
           <h2 className='mb-4 text-3xl font-bold'>
-            <span className='bg-gradient-to-r from-gradient-from to-gradient-to bg-clip-text text-transparent'>{t("packages.title")}</span>
+            <span className='from-gradient-from to-gradient-to bg-gradient-to-r bg-clip-text text-transparent'>{t("packages.title")}</span>
           </h2>
           <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>{t("packages.subtitle")}</p>
         </div>

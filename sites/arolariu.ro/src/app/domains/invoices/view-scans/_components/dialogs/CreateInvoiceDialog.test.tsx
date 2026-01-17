@@ -361,7 +361,9 @@ describe("CreateInvoiceDialog", () => {
 
     it("should format KB correctly", () => {
       mockPayload = {
-        selectedScans: [{id: "scan-1", name: "Scan 1", blobUrl: "https://example.com/scan1.jpg", mimeType: "image/jpeg", sizeInBytes: 2048}],
+        selectedScans: [
+          {id: "scan-1", name: "Scan 1", blobUrl: "https://example.com/scan1.jpg", mimeType: "image/jpeg", sizeInBytes: 2048},
+        ],
       };
       render(<CreateInvoiceDialog />);
       expect(screen.getByText(/2.0 KB/)).toBeInTheDocument();

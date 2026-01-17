@@ -4,14 +4,7 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {
-  useInvoice,
-  useInvoices,
-  useMerchant,
-  useMerchants,
-  usePaginationWithSearch,
-  useUserInformation,
-} from "./index";
+import {useInvoice, useInvoices, useMerchant, useMerchants, usePaginationWithSearch, useUserInformation} from "./index";
 
 describe("hooks barrel export", () => {
   describe("data fetching hooks", () => {

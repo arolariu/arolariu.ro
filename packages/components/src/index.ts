@@ -310,23 +310,23 @@ export {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./compon
 export {useIsMobile} from "./hooks/useIsMobile";
 export {useWindowSize} from "./hooks/useWindowSize";
 
-export {cn} from "./lib/utilities";
 export {
   // New descriptive names
   adjustHexColorLightness,
+  // Legacy aliases (deprecated)
+  adjustLightness,
   calculateComplementaryHexColor,
   convertHexToHslString,
   convertHslToHexString,
-  parseHslStringToComponents,
-  validateHexColorFormat,
-  // Legacy aliases (deprecated)
-  adjustLightness,
   getComplementaryColor,
   hexToHsl,
   hslToHex,
   isValidHexColor,
   parseHslString,
+  parseHslStringToComponents,
+  validateHexColorFormat,
 } from "./lib/color-conversion-utilities";
+export {cn} from "./lib/utilities";
 
 // Animate-UI exports:
 export {FlipButton, type FlipButtonProps, type FlipDirection} from "./components/ui/flip-button";

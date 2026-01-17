@@ -10,7 +10,17 @@ import {chromium, type FullConfig} from "@playwright/test";
  * Critical routes that need to be pre-warmed before tests run.
  * These are pages that are commonly tested and slow to compile on first load.
  */
-const CRITICAL_ROUTES = ["/", "/about", "/about/the-author", "/about/the-platform", "/domains", "/domains/invoices", "/auth", "/auth/sign-in", "/auth/sign-up"];
+const CRITICAL_ROUTES = [
+  "/",
+  "/about",
+  "/about/the-author",
+  "/about/the-platform",
+  "/domains",
+  "/domains/invoices",
+  "/auth",
+  "/auth/sign-in",
+  "/auth/sign-up",
+];
 
 /**
  * Global setup function that pre-warms critical routes.

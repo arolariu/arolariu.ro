@@ -21,8 +21,8 @@
 
 "use client";
 
-import {convertHexToHslString} from "@arolariu/components";
 import {usePreferencesStore, type GradientTheme} from "@/stores";
+import {convertHexToHslString} from "@arolariu/components";
 import React, {createContext, use, useEffect, useMemo} from "react";
 
 /**

@@ -101,9 +101,9 @@ function FooterComponent(): React.JSX.Element {
   const siteName = SITE_NAME.toUpperCase();
 
   return (
-    <footer className='relative bottom-0 w-full bg-footer-bg print:hidden'>
+    <footer className='bg-footer-bg relative bottom-0 w-full print:hidden'>
       <svg
-        className='absolute top-0 -mt-5 h-6 w-full text-footer-bg sm:-mt-10 sm:h-16'
+        className='text-footer-bg absolute top-0 -mt-5 h-6 w-full sm:-mt-10 sm:h-16'
         preserveAspectRatio='none'
         viewBox='0 0 1440 54'>
         <path

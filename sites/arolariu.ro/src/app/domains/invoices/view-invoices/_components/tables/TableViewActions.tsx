@@ -33,7 +33,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger
           asChild
-          className='cursor-pointer hover:text-accent-primary'>
+          className='hover:text-accent-primary cursor-pointer'>
           <Button
             variant='ghost'
             size='icon'

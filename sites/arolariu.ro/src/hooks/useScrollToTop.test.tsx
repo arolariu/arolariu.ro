@@ -84,9 +84,7 @@ describe("ScrollToTop", () => {
 
       // Trigger scroll event
       act(() => {
-        const scrollHandler = addEventListenerSpy.mock.calls.find(
-          (call) => call[0] === "scroll",
-        )?.[1] as EventListener;
+        const scrollHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === "scroll")?.[1] as EventListener;
         scrollHandler(new Event("scroll"));
       });
 
@@ -99,9 +97,7 @@ describe("ScrollToTop", () => {
       // Set scrollY above threshold and trigger scroll event
       Object.defineProperty(globalThis, "scrollY", {value: 501, configurable: true});
       act(() => {
-        const scrollHandler = addEventListenerSpy.mock.calls.find(
-          (call) => call[0] === "scroll",
-        )?.[1] as EventListener;
+        const scrollHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === "scroll")?.[1] as EventListener;
         scrollHandler(new Event("scroll"));
       });
 
@@ -114,9 +110,7 @@ describe("ScrollToTop", () => {
       // First show the button
       Object.defineProperty(globalThis, "scrollY", {value: 600, configurable: true});
       act(() => {
-        const scrollHandler = addEventListenerSpy.mock.calls.find(
-          (call) => call[0] === "scroll",
-        )?.[1] as EventListener;
+        const scrollHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === "scroll")?.[1] as EventListener;
         scrollHandler(new Event("scroll"));
       });
 
@@ -125,9 +119,7 @@ describe("ScrollToTop", () => {
       // Then scroll back up
       Object.defineProperty(globalThis, "scrollY", {value: 100, configurable: true});
       act(() => {
-        const scrollHandler = addEventListenerSpy.mock.calls.find(
-          (call) => call[0] === "scroll",
-        )?.[1] as EventListener;
+        const scrollHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === "scroll")?.[1] as EventListener;
         scrollHandler(new Event("scroll"));
       });
 
@@ -142,9 +134,7 @@ describe("ScrollToTop", () => {
       // Show the button
       Object.defineProperty(globalThis, "scrollY", {value: 600, configurable: true});
       act(() => {
-        const scrollHandler = addEventListenerSpy.mock.calls.find(
-          (call) => call[0] === "scroll",
-        )?.[1] as EventListener;
+        const scrollHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === "scroll")?.[1] as EventListener;
         scrollHandler(new Event("scroll"));
       });
 
@@ -181,9 +171,7 @@ describe("ScrollToTop", () => {
       // Show the button
       Object.defineProperty(globalThis, "scrollY", {value: 600, configurable: true});
       act(() => {
-        const scrollHandler = addEventListenerSpy.mock.calls.find(
-          (call) => call[0] === "scroll",
-        )?.[1] as EventListener;
+        const scrollHandler = addEventListenerSpy.mock.calls.find((call) => call[0] === "scroll")?.[1] as EventListener;
         scrollHandler(new Event("scroll"));
       });
 

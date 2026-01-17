@@ -60,7 +60,9 @@ export default function CallToAction(): React.JSX.Element {
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className='mb-4 text-4xl font-bold sm:text-5xl'>
-            <span className='bg-gradient-to-r from-gradient-from via-gradient-via to-gradient-to bg-clip-text text-transparent'>{t("title")}</span>
+            <span className='from-gradient-from via-gradient-via to-gradient-to bg-gradient-to-r bg-clip-text text-transparent'>
+              {t("title")}
+            </span>
           </h2>
           <p className='text-muted-foreground mx-auto mb-10 max-w-2xl text-lg leading-relaxed'>{t("subtitle")}</p>
         </motion.div>
