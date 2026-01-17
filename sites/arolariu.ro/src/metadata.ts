@@ -27,6 +27,12 @@ import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {SITE_URL} from "./lib/utils.generic";
 
 /**
+ * Fallback URL for local development and CI environments.
+ * Used when SITE_URL environment variable is not set.
+ */
+const FALLBACK_URL = "http://localhost:3000";
+
+/**
  * Base configuration options for site metadata.
  *
  * @remarks
@@ -35,7 +41,7 @@ import {SITE_URL} from "./lib/utils.generic";
  */
 const options = {
   siteName: "arolariu.ro",
-  siteUrl: new URL(SITE_URL),
+  siteUrl: new URL(SITE_URL || FALLBACK_URL),
   author: "Alexandru-Razvan Olariu",
   description:
     "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania. Features invoice management, portfolio, and technology insights.",
