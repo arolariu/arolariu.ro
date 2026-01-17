@@ -5,7 +5,7 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
-import {API_JWT, API_URL, CONFIG_STORE, convertBase64ToBlob, getMimeTypeFromBase64} from "./utils.server";
+import {API_JWT, API_URL, CONFIG_STORE, convertBase64ToBlob} from "./utils.server";
 
 // Mock the telemetry module
 vi.mock("@/instrumentation.server", () => ({
@@ -103,70 +103,6 @@ describe("Environment Variables", () => {
   });
 });
 
-describe("getMimeTypeFromBase64", () => {
-  it("should extract MIME type from base64 string with image/png", () => {
-    const base64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBe("image/png");
-  });
-
-  it("should extract MIME type from base64 string with image/jpeg", () => {
-    const base64 =
-      "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBe("image/jpeg");
-  });
-
-  it("should extract MIME type from base64 string with application/pdf", () => {
-    const base64 = "data:application/pdf;base64,JVBERi0xLjQKJeLjz9MKMyAwIG9iago8PC9UeXBlL1BhZ2Uv";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBe("application/pdf");
-  });
-
-  it("should extract MIME type from base64 string with text/plain", () => {
-    const base64 = "data:text/plain;base64,SGVsbG8gV29ybGQ=";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBe("text/plain");
-  });
-
-  it("should extract MIME type from base64 string with application/json", () => {
-    const base64 = "data:application/json;base64,eyJrZXkiOiJ2YWx1ZSJ9";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBe("application/json");
-  });
-
-  it("should return null for invalid base64 string without data URI scheme", () => {
-    const base64 = "SGVsbG8gV29ybGQ=";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBeNull();
-  });
-
-  it("should return null for empty string", () => {
-    const base64 = "";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBeNull();
-  });
-
-  it("should return null for malformed data URI", () => {
-    const base64 = "data:base64,SGVsbG8=";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBeNull();
-  });
-
-  it("should handle MIME type with charset parameter", () => {
-    const base64 = "data:text/html;charset=utf-8;base64,PGh0bWw+PC9odG1sPg==";
-    const result = getMimeTypeFromBase64(base64);
-    // The regex expects ";base64," but this has ";charset=utf-8;base64," so it won't match
-    expect(result).toBeNull();
-  });
-
-  it("should handle complex MIME types", () => {
-    const base64 = "data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,UEsDBBQ=";
-    const result = getMimeTypeFromBase64(base64);
-    expect(result).toBe("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-  });
-});
-
 describe("convertBase64ToBlob", () => {
   // Mock atob for Node.js environment
   beforeEach(() => {
@@ -234,6 +170,13 @@ describe("convertBase64ToBlob", () => {
     const blob = await convertBase64ToBlob(base64);
 
     expect(blob.type).toBe("image/jpeg");
+  });
+
+  it("should handle complex MIME types", async () => {
+    const base64 = "data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,UEsDBBQ=";
+    const blob = await convertBase64ToBlob(base64);
+
+    expect(blob.type).toBe("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
   });
 });
 
