@@ -17,8 +17,7 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import type {Scan} from "@/types/scans";
-import {ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
@@ -125,46 +124,42 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
       })) {
         const metadata = blob.metadata ?? {};
 
-        // Skip if no scan ID in metadata (invalid scan)
-        if (!metadata["scanId"]) {
-          continue;
+        // Only process blobs with valid scan ID in metadata
+        if (metadata["scanId"]) {
+          // Parse status from metadata
+          const statusString = metadata["status"] ?? ScanStatus.READY;
+          const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
+
+          // Only include non-archived scans (or all scans if includeArchived is true)
+          if (includeArchived || status !== ScanStatus.ARCHIVED) {
+            // Construct blob URL
+            const blobUrl = containerClient.getBlockBlobClient(blob.name).url;
+
+            // Parse upload timestamp
+            const uploadedAt = metadata["uploadedAt"] ? new Date(metadata["uploadedAt"]) : (blob.properties.createdOn ?? new Date());
+
+            // Determine MIME type
+            const mimeType = blob.properties.contentType ?? "application/octet-stream";
+
+            const scan: Scan = {
+              id: metadata["scanId"],
+              userIdentifier: metadata["userIdentifier"] ?? userIdentifier,
+              name: metadata["originalFileName"] ?? blob.name.split("/").pop() ?? "Unknown",
+              blobUrl,
+              mimeType,
+              sizeInBytes: blob.properties.contentLength ?? 0,
+              scanType: mimeTypeToScanType(mimeType),
+              uploadedAt,
+              status,
+              metadata: {
+                originalFileName: metadata["originalFileName"] ?? "",
+                ...metadata,
+              },
+            };
+
+            scans.push(scan);
+          }
         }
-
-        // Parse status from metadata
-        const statusString = metadata["status"] ?? ScanStatus.READY;
-        const status = Object.values(ScanStatus).includes(statusString as ScanStatus) ? (statusString as ScanStatus) : ScanStatus.READY;
-
-        // Skip archived scans unless requested
-        if (!includeArchived && status === ScanStatus.ARCHIVED) {
-          continue;
-        }
-
-        // Construct blob URL
-        const blobUrl = containerClient.getBlockBlobClient(blob.name).url;
-
-        // Parse upload timestamp
-        const uploadedAt = metadata["uploadedAt"] ? new Date(metadata["uploadedAt"]) : (blob.properties.createdOn ?? new Date());
-
-        // Determine MIME type
-        const mimeType = blob.properties.contentType ?? "application/octet-stream";
-
-        const scan: Scan = {
-          id: metadata["scanId"],
-          userIdentifier: metadata["userIdentifier"] ?? userIdentifier,
-          name: metadata["originalFileName"] ?? blob.name.split("/").pop() ?? "Unknown",
-          blobUrl,
-          mimeType,
-          sizeInBytes: blob.properties.contentLength ?? 0,
-          scanType: mimeTypeToScanType(mimeType),
-          uploadedAt,
-          status,
-          metadata: {
-            originalFileName: metadata["originalFileName"] ?? "",
-            ...metadata,
-          },
-        };
-
-        scans.push(scan);
       }
       addSpanEvent("azure.blob.list.complete");
 

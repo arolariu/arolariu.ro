@@ -2,6 +2,9 @@ import {ScrollToTop} from "@/hooks/useScrollToTop";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
+import Architecture from "./_components/Architecture";
+import CallToAction from "./_components/CallToAction";
+import Features from "./_components/Features";
 import Hero from "./_components/Hero";
 import Statistics from "./_components/Statistics";
 import TechStack from "./_components/TechStack";
@@ -22,23 +25,44 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * This is the platform page.
- * @returns The platform page, rendered as a React component.
+ * The Platform page - A comprehensive showcase of the arolariu.ro platform.
+ *
+ * This page provides an immersive experience exploring:
+ * - Platform overview and vision (Hero)
+ * - Key features and capabilities (Features)
+ * - Technical architecture (Architecture)
+ * - Technology stack (TechStack)
+ * - Platform statistics (Statistics)
+ * - Development timeline (Timeline)
+ * - Call to action (CallToAction)
+ *
+ * @returns The platform page, rendered as a React Server Component.
  */
 export default async function PlatformPage(): Promise<React.JSX.Element> {
   return (
-    <div
-      className='bg-background text-foreground relative min-h-screen'
-      style={{
-        cursor:
-          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%231e90ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m18 16 4-4-4-4'/><path d='m6 8-4 4 4 4'/><path d='m14.5 4-5 16'/></svg>\") 16 16, auto",
-      }}>
+    <div className='bg-background text-foreground relative min-h-screen'>
       <ScrollToTop />
-      <main className='pb-12'>
+      <main>
+        {/* Hero Section - Full viewport intro with animated background */}
         <Hero />
+
+        {/* Features Section - Interactive feature cards */}
+        <Features />
+
+        {/* Architecture Section - Technical architecture diagram */}
+        <Architecture />
+
+        {/* Tech Stack Section - Technologies used */}
         <TechStack />
-        <Timeline />
+
+        {/* Statistics Section - Platform metrics with animated counters */}
         <Statistics />
+
+        {/* Timeline Section - Development journey */}
+        <Timeline />
+
+        {/* Call to Action Section - Footer CTA */}
+        <CallToAction />
       </main>
     </div>
   );

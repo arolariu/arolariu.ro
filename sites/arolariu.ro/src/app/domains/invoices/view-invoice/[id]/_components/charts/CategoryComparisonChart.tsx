@@ -5,13 +5,24 @@ import {Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis} from 
 import type {CategoryTrendData} from "../../_utils/analytics";
 
 type Props = {
-  data: CategoryTrendData[];
-  currency: string;
+  readonly data: CategoryTrendData[];
+  readonly currency: string;
 };
 
-function CustomTooltip({active, payload, currency}: {active?: boolean; payload?: any[]; currency: string}) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
+type TooltipPayloadItem = {
+  payload: {category: string; current: number; average: number};
+};
+
+type CustomTooltipProps = {
+  readonly active: boolean;
+  readonly payload: TooltipPayloadItem[];
+  readonly currency: string;
+};
+
+function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+  const [firstItem] = payload;
+  if (!active || payload.length === 0 || !firstItem) return null;
+  const data = firstItem.payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='text-sm font-medium'>{data.category}</p>
@@ -76,7 +87,15 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                 axisLine={false}
                 width={70}
               />
-              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    active={false}
+                    payload={[]}
+                    currency={currency}
+                  />
+                }
+              />
               <Legend
                 iconSize={8}
                 wrapperStyle={{fontSize: "11px"}}

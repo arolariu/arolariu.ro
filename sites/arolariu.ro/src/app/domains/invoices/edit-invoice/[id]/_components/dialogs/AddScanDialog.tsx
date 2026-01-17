@@ -73,7 +73,7 @@ export default function AddScanDialog(): React.JSX.Element {
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      const selectedFile = acceptedFiles[0];
+      const [selectedFile] = acceptedFiles;
       if (!selectedFile) return;
 
       // Validate file size (max 10MB)
@@ -114,8 +114,8 @@ export default function AddScanDialog(): React.JSX.Element {
       // Step 1: Convert file to base64
       const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
+        reader.addEventListener("load", () => resolve(reader.result as string));
+        reader.addEventListener("error", () => reject(reader.error));
         reader.readAsDataURL(file);
       });
 
@@ -175,9 +175,14 @@ export default function AddScanDialog(): React.JSX.Element {
     close();
   }, [close]);
 
+  const handleScanTypeChange = useCallback((value: string) => {
+    setScanType(Number(value) as InvoiceScanType);
+  }, []);
+
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
@@ -185,8 +190,9 @@ export default function AddScanDialog(): React.JSX.Element {
           <DialogDescription>Upload a new receipt image or document to attach to this invoice.</DialogDescription>
         </DialogHeader>
 
+        {/* eslint-disable react/jsx-props-no-spreading, react/jsx-handler-names -- react-dropzone library requires spread props */}
         <div className='grid gap-4 py-4'>
-          {/* Dropzone */}
+          {/* Dropzone - using react-dropzone library pattern with spread props */}
           <div
             {...getRootProps()}
             className={cn(
@@ -211,7 +217,7 @@ export default function AddScanDialog(): React.JSX.Element {
           </div>
 
           {/* Selected file preview */}
-          {file && (
+          {file ? (
             <div className='bg-muted flex items-center justify-between rounded-md p-3'>
               <div className='flex items-center gap-3'>
                 <TbFile className='h-8 w-8 shrink-0' />
@@ -230,15 +236,15 @@ export default function AddScanDialog(): React.JSX.Element {
                 <TbX className='h-4 w-4' />
               </Button>
             </div>
-          )}
+          ) : null}
 
           {/* Scan type selector */}
-          {file && (
+          {file ? (
             <div className='grid gap-2'>
               <Label htmlFor='scan-type'>Scan Type</Label>
               <Select
                 value={String(scanType)}
-                onValueChange={(value) => setScanType(Number(value) as InvoiceScanType)}
+                onValueChange={handleScanTypeChange}
                 disabled={isUploading}>
                 <SelectTrigger id='scan-type'>
                   <SelectValue placeholder='Select scan type' />
@@ -251,8 +257,9 @@ export default function AddScanDialog(): React.JSX.Element {
                 </SelectContent>
               </Select>
             </div>
-          )}
+          ) : null}
         </div>
+        {/* eslint-enable react/jsx-props-no-spreading, react/jsx-handler-names */}
 
         <DialogFooter>
           <Button

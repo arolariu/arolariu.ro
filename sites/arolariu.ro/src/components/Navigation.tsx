@@ -3,20 +3,22 @@
 import type {NavigationItem} from "@/types";
 
 import {Button} from "@arolariu/components";
+import {useAuth} from "@clerk/nextjs";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
-import React, {useCallback, useMemo, useState} from "react";
+import React, {memo, useCallback, useMemo, useState} from "react";
 import {TbChevronDown, TbMenu} from "react-icons/tb";
 
 /**
  * Hook to get translated navigation items.
+ * @param isSignedIn - Whether the user is signed in.
  * @returns Array of navigation items with translated labels.
  */
-function useNavigationItems(): ReadonlyArray<NavigationItem> {
+function useNavigationItems(isSignedIn: boolean): ReadonlyArray<NavigationItem> {
   const t = useTranslations("Navigation");
 
-  return useMemo(
-    () => [
+  return useMemo(() => {
+    const items: NavigationItem[] = [
       {
         label: t("domains"),
         href: "/domains",
@@ -55,9 +57,18 @@ function useNavigationItems(): ReadonlyArray<NavigationItem> {
           },
         ],
       },
-    ],
-    [t],
-  );
+    ];
+
+    // Add My Profile when signed in
+    if (isSignedIn) {
+      items.push({
+        label: t("myProfile"),
+        href: "/my-profile",
+      });
+    }
+
+    return items;
+  }, [t, isSignedIn]);
 }
 
 // Desktop helper components
@@ -117,8 +128,9 @@ const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.
  * This component renders the desktop navigation.
  * @returns The desktop navigation component.
  */
-export function DesktopNavigation(): React.JSX.Element {
-  const navigationItems = useNavigationItems();
+function DesktopNavigationComponent(): React.JSX.Element {
+  const {isSignedIn} = useAuth();
+  const navigationItems = useNavigationItems(Boolean(isSignedIn));
 
   return (
     <div className='mx-auto px-4 dark:text-white'>
@@ -133,6 +145,12 @@ export function DesktopNavigation(): React.JSX.Element {
     </div>
   );
 }
+
+/**
+ * Memoized Desktop Navigation component to prevent unnecessary re-renders.
+ */
+export const DesktopNavigation = memo(DesktopNavigationComponent);
+DesktopNavigation.displayName = "DesktopNavigation";
 
 // Mobile helper components
 const MobileNavigationChild = ({col}: Readonly<{col: NavigationItem}>): React.JSX.Element => (
@@ -209,9 +227,10 @@ const MobileNavigationItem = ({
  * This component renders the mobile navigation.
  * @returns The mobile navigation component.
  */
-export function MobileNavigation(): React.JSX.Element {
+function MobileNavigationComponent(): React.JSX.Element {
   const t = useTranslations("Navigation.mobile");
-  const navigationItems = useNavigationItems();
+  const {isSignedIn} = useAuth();
+  const navigationItems = useNavigationItems(Boolean(isSignedIn));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 
@@ -241,6 +260,9 @@ export function MobileNavigation(): React.JSX.Element {
           />
           <aside
             id='mobile-navigation'
+            role='dialog'
+            aria-modal='true'
+            aria-label={t("title")}
             className='relative w-80 max-w-full overflow-auto rounded-r-lg bg-white p-6 shadow-xl'>
             <div className='mb-4 flex items-center justify-between'>
               <h3 className='text-lg font-semibold tracking-tight text-black'>{t("title")}</h3>
@@ -269,3 +291,9 @@ export function MobileNavigation(): React.JSX.Element {
     </>
   );
 }
+
+/**
+ * Memoized Mobile Navigation component to prevent unnecessary re-renders.
+ */
+export const MobileNavigation = memo(MobileNavigationComponent);
+MobileNavigation.displayName = "MobileNavigation";

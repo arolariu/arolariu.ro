@@ -146,6 +146,16 @@ export default function InvoiceCard(): React.JSX.Element {
     [setTransactionDate, currentTransactionDate],
   );
 
+  const handleHoursChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleTimeChange("hours", e.target.value),
+    [handleTimeChange],
+  );
+
+  const handleMinutesChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleTimeChange("minutes", e.target.value),
+    [handleTimeChange],
+  );
+
   return (
     <motion.div variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}>
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
@@ -209,7 +219,6 @@ export default function InvoiceCard(): React.JSX.Element {
                       startMonth={new Date(2015, 0)}
                       endMonth={new Date(new Date().getFullYear() + 1, 11)}
                       className='w-64 rounded-md border [--cell-size:2.5rem]'
-                      autoFocus
                     />
                     <Separator className='my-3' />
                     <div className='flex items-center justify-center gap-2'>
@@ -225,7 +234,7 @@ export default function InvoiceCard(): React.JSX.Element {
                           min={0}
                           max={23}
                           value={currentTransactionDate.getUTCHours()}
-                          onChange={(e) => handleTimeChange("hours", e.target.value)}
+                          onChange={handleHoursChange}
                           className='h-9 w-16 text-center'
                         />
                       </div>
@@ -242,7 +251,7 @@ export default function InvoiceCard(): React.JSX.Element {
                           min={0}
                           max={59}
                           value={currentTransactionDate.getUTCMinutes()}
-                          onChange={(e) => handleTimeChange("minutes", e.target.value)}
+                          onChange={handleMinutesChange}
                           className='h-9 w-16 text-center'
                         />
                       </div>

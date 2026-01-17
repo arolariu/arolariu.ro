@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import Image from "next/image";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbZoomIn} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 
@@ -33,7 +33,7 @@ export function ReceiptScanCard(): React.JSX.Element {
   const currentScan = scans[currentScanIndex];
   const currentScanSrc = currentScan?.location || "/placeholder.svg";
 
-  const handleNextScan = () => {
+  const handleNextScan = useCallback(() => {
     if (currentScanIndex < totalScans - 1) {
       setIsTransitioning(true);
       setTimeout(() => {
@@ -41,9 +41,9 @@ export function ReceiptScanCard(): React.JSX.Element {
         setIsTransitioning(false);
       }, 200);
     }
-  };
+  }, [currentScanIndex, totalScans]);
 
-  const handlePreviousScan = () => {
+  const handlePreviousScan = useCallback(() => {
     if (currentScanIndex > 0) {
       setIsTransitioning(true);
       setTimeout(() => {
@@ -51,7 +51,11 @@ export function ReceiptScanCard(): React.JSX.Element {
         setIsTransitioning(false);
       }, 200);
     }
-  };
+  }, [currentScanIndex]);
+
+  const handleOpenImage = useCallback(() => {
+    setIsOpen(true);
+  }, []);
 
   return (
     <TooltipProvider>
@@ -98,7 +102,7 @@ export function ReceiptScanCard(): React.JSX.Element {
               <Button
                 variant='outline'
                 className='w-full bg-transparent'
-                onClick={() => setIsOpen(true)}>
+                onClick={handleOpenImage}>
                 <TbZoomIn className='mr-2 h-4 w-4' />
                 Expand Image
               </Button>

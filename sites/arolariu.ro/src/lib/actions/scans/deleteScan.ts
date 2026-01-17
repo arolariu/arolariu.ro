@@ -93,8 +93,8 @@ export async function deleteScan({blobUrl}: DeleteScanInput): DeleteScanOutput {
       const url = new URL(blobUrl);
       const pathParts = url.pathname.split("/");
       // Path format: /containerName/scans/userIdentifier/filename
-      const containerName = pathParts[1];
-      const blobName = pathParts.slice(2).join("/");
+      const [, containerName, ...blobParts] = pathParts;
+      const blobName = blobParts.join("/");
       addSpanEvent("blob.url.parse.complete");
 
       // Step 3. Verify user owns this scan (path contains their user ID)

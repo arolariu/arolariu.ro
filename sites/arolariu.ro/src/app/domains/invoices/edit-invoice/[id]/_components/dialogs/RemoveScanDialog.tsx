@@ -92,6 +92,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
@@ -106,7 +107,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
           </DialogDescription>
         </DialogHeader>
 
-        {scan && (
+        {scan ? (
           <div className='py-4'>
             <div className='bg-muted overflow-hidden rounded-md border'>
               <Image
@@ -119,14 +120,14 @@ export default function RemoveScanDialog(): React.JSX.Element {
             </div>
             <p className='text-muted-foreground mt-2 text-center text-xs'>Scan {scanIndex + 1}</p>
           </div>
-        )}
+        ) : null}
 
-        {isLastScan && (
+        {isLastScan ? (
           <div className='bg-destructive/10 text-destructive rounded-md p-3'>
             <p className='text-sm font-medium'>Cannot remove last scan</p>
             <p className='text-xs'>Every invoice must have at least one scan attached. Add another scan before removing this one.</p>
           </div>
-        )}
+        ) : null}
 
         <DialogFooter>
           <Button

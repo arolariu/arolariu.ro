@@ -69,6 +69,18 @@ interface EditInvoiceContextValue {
 
 const EditInvoiceContext = createContext<EditInvoiceContextValue | undefined>(undefined);
 
+/**
+ * Removes a specific field from the pending changes object.
+ * @param changes - Current pending changes
+ * @param fieldToRemove - Field key to remove
+ * @returns New object without the specified field
+ */
+function removeFieldFromChanges<K extends keyof PendingChanges>(changes: PendingChanges, fieldToRemove: K): PendingChanges {
+  const entries = Object.entries(changes);
+  const filtered = entries.filter(([key]) => key !== fieldToRemove);
+  return Object.fromEntries(filtered) as PendingChanges;
+}
+
 interface EditInvoiceContextProviderProps {
   readonly invoice: Invoice;
   readonly merchant: Merchant;
@@ -112,8 +124,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
         setPendingChanges((prev) => {
           const isEqual = compareFn ? compareFn(newValue, originalValue) : newValue === originalValue;
           if (isEqual) {
-            const {[field]: _, ...rest} = prev;
-            return rest;
+            return removeFieldFromChanges(prev, field);
           }
           return {...prev, [field]: newValue};
         });

@@ -17,7 +17,7 @@ import {useScans} from "../_hooks/useScans";
 function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
+  const diffMins = Math.floor(diffMs / 60_000);
 
   if (diffMins < 1) return "just now";
   if (diffMins < 60) return `${diffMins}m ago`;
@@ -41,18 +41,19 @@ export default function ScansHeader(): React.JSX.Element {
           <h1 className='text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white'>
             {t("titleWithCount", {count: String(scans.length)})}
           </h1>
-          {lastSyncTimestamp && (
+          {lastSyncTimestamp ? (
             <p className='text-sm text-gray-500 dark:text-gray-400'>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p>
-          )}
+          ) : null}
         </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
-                type='button'
-                className='mt-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='mt-1 h-6 w-6 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'>
                 <TbInfoCircle className='h-5 w-5' />
-              </button>
+              </Button>
             </TooltipTrigger>
             <TooltipContent
               side='right'
@@ -69,7 +70,7 @@ export default function ScansHeader(): React.JSX.Element {
             <TooltipTrigger asChild>
               <Button
                 asChild
-                className='flex items-center gap-2 bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'>
+                className='from-gradient-from to-gradient-to flex items-center gap-2 bg-linear-to-r text-white hover:opacity-90'>
                 <Link href='/domains/invoices/upload-scans'>
                   <TbUpload className='h-4 w-4' />
                   <span className='hidden sm:inline'>{t("uploadMore")}</span>

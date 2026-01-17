@@ -62,7 +62,7 @@ function TipItem({children}: Readonly<{children: React.ReactNode}>): React.JSX.E
 /**
  * Upload statistics component.
  */
-function UploadStats(): React.JSX.Element {
+function UploadStats(): React.JSX.Element | null {
   const t = useTranslations("Domains.services.invoices.service.upload-scans");
   const {pendingUploads, sessionStats} = useScanUpload();
 
@@ -75,7 +75,7 @@ function UploadStats(): React.JSX.Element {
   const {totalAdded, totalCompleted, totalFailed} = sessionStats;
 
   // Don't show if no activity this session
-  if (totalAdded === 0 && pendingUploads.length === 0) return <></>;
+  if (totalAdded === 0 && pendingUploads.length === 0) return null;
 
   // Show "View Scans" button when all uploads are done (nothing pending or uploading)
   const allDone = totalCompleted > 0 && pending === 0 && uploading === 0;
@@ -122,7 +122,7 @@ function UploadStats(): React.JSX.Element {
           )}
         </div>
 
-        {allDone && (
+        {allDone ? (
           <Button
             asChild
             className='bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
@@ -131,7 +131,7 @@ function UploadStats(): React.JSX.Element {
               <TbArrowRight className='ml-2 h-4 w-4' />
             </Link>
           </Button>
-        )}
+        ) : null}
       </div>
     </motion.div>
   );
@@ -166,11 +166,12 @@ function UploadContent(): React.JSX.Element {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  type='button'
-                  className='mt-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='mt-1 h-auto w-auto p-0 text-gray-400 hover:bg-transparent hover:text-gray-600 dark:text-gray-500 dark:hover:bg-transparent dark:hover:text-gray-300'>
                   <TbInfoCircle className='h-5 w-5' />
-                </button>
+                </Button>
               </TooltipTrigger>
               <TooltipContent
                 side='right'
@@ -239,7 +240,7 @@ function UploadContent(): React.JSX.Element {
               <h3 className='mb-4 font-semibold text-gray-900 dark:text-white'>{t("sidebar.formats.title")}</h3>
               <div className='space-y-3'>
                 <FileTypeCard
-                  icon={<TbPhoto className='h-5 w-5 text-blue-500' />}
+                  icon={<TbPhoto className='text-accent-primary h-5 w-5' />}
                   label={t("sidebar.formats.images")}
                   extensions={t("sidebar.formats.imageExtensions")}
                 />

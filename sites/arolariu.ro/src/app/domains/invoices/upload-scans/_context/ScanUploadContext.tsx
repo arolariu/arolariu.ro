@@ -80,13 +80,22 @@ function revokePreview(upload: PendingUpload): void {
 }
 
 /**
+ * Removes an upload from the list by ID, revoking its preview first.
+ */
+function removeUploadFromList(uploads: PendingUpload[], uploadId: string): PendingUpload[] {
+  const toRemove = uploads.find((u) => u.id === uploadId);
+  if (toRemove) revokePreview(toRemove);
+  return uploads.filter((u) => u.id !== uploadId);
+}
+
+/**
  * Converts a File to base64 string.
  */
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
+    reader.addEventListener("load", () => resolve(reader.result as string));
+    reader.addEventListener("error", () => reject(reader.error));
     reader.readAsDataURL(file);
   });
 }
@@ -115,27 +124,23 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
 
       if (!isImage && !isPdf) {
         toast.error(`Unsupported file type: ${file.type}`);
-        continue;
-      }
-
-      // Check file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
+      } else if (file.size > 10 * 1024 * 1024) {
+        // Check file size (max 10MB)
         toast.error(`File too large: ${file.name} (max 10MB)`);
-        continue;
+      } else {
+        const id = uuidv4();
+        const preview = URL.createObjectURL(file);
+
+        newUploads.push({
+          id,
+          name: file.name,
+          file,
+          mimeType: file.type,
+          size: file.size,
+          preview,
+          status: "idle",
+        });
       }
-
-      const id = uuidv4();
-      const preview = URL.createObjectURL(file);
-
-      newUploads.push({
-        id,
-        name: file.name,
-        file,
-        mimeType: file.type,
-        size: file.size,
-        preview,
-        status: "idle",
-      });
     }
 
     if (newUploads.length > 0) {
@@ -192,6 +197,15 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
   }, []);
 
   /**
+   * Remove a completed upload from the pending list after a delay.
+   */
+  const scheduleUploadRemoval = useCallback((uploadId: string, delayMs: number) => {
+    setTimeout(() => {
+      setPendingUploads((prev) => removeUploadFromList(prev, uploadId));
+    }, delayMs);
+  }, []);
+
+  /**
    * Upload all pending files to Azure.
    * Authentication is handled by the server action.
    */
@@ -239,13 +253,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
             successCount++;
 
             // Remove from pending after short delay (for visual feedback)
-            setTimeout(() => {
-              setPendingUploads((prev) => {
-                const toRemove = prev.find((u) => u.id === upload.id);
-                if (toRemove) revokePreview(toRemove);
-                return prev.filter((u) => u.id !== upload.id);
-              });
-            }, 1000);
+            scheduleUploadRemoval(upload.id, 1000);
           } else {
             updateUploadStatus(upload.id, "failed", `Upload failed with status ${result.status}`);
             failCount++;
@@ -273,7 +281,7 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
     if (failCount > 0) {
       toast.error(`Failed to upload ${failCount} scan(s)`);
     }
-  }, [pendingUploads, updateUploadStatus, addScan]);
+  }, [pendingUploads, updateUploadStatus, addScan, scheduleUploadRemoval]);
 
   /**
    * Reset session statistics.

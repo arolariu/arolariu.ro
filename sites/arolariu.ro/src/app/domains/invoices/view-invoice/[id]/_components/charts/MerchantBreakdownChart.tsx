@@ -5,14 +5,25 @@ import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "r
 import type {MerchantBreakdown} from "../../_utils/analytics";
 
 type Props = {
-  data: MerchantBreakdown[];
-  currency: string;
-  currentMerchant: string;
+  readonly data: MerchantBreakdown[];
+  readonly currency: string;
+  readonly currentMerchant: string;
 };
 
-function CustomTooltip({active, payload, currency}: {active?: boolean; payload?: any[]; currency: string}) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
+type TooltipPayloadItem = {
+  payload: {name: string; total: number; count: number; average: number};
+};
+
+type CustomTooltipProps = {
+  readonly active: boolean;
+  readonly payload: TooltipPayloadItem[];
+  readonly currency: string;
+};
+
+function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+  const [firstItem] = payload;
+  if (!active || payload.length === 0 || !firstItem) return null;
+  const data = firstItem.payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='text-sm font-medium'>{data.name}</p>
@@ -78,15 +89,23 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
                 axisLine={false}
                 width={32}
               />
-              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    active={false}
+                    payload={[]}
+                    currency={currency}
+                  />
+                }
+              />
               <Bar
                 dataKey='total'
                 radius={[4, 4, 0, 0]}
                 maxBarSize={48}>
-                {data.map((entry, index) => (
+                {data.map((entry) => (
                   <Cell
-                    key={`cell-${index}`}
-                    fill={entry.name === currentMerchant ? "hsl(var(--primary))" : `hsl(var(--chart-${(index % 5) + 1}))`}
+                    key={`cell-${entry.name}`}
+                    fill={entry.name === currentMerchant ? "hsl(var(--primary))" : `hsl(var(--chart-${(data.indexOf(entry) % 5) + 1}))`}
                   />
                 ))}
               </Bar>

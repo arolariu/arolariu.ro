@@ -5,13 +5,41 @@
  * @module app/domains/invoices/view-scans/_components/ScansGrid
  */
 
+import type {CachedScan} from "@/types/scans";
 import {Button, Card, CardContent} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
+import {useCallback} from "react";
 import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
 import ScanCard from "./ScanCard";
+
+/** Pre-generated skeleton keys for loading state to avoid array index as key */
+const SKELETON_KEYS = ["skeleton-1", "skeleton-2", "skeleton-3", "skeleton-4", "skeleton-5", "skeleton-6"] as const;
+
+type ScanCardWrapperProps = {
+  scan: CachedScan;
+  isSelected: boolean;
+  onToggleSelection: (scan: CachedScan) => void;
+};
+
+/**
+ * Wrapper component to provide memoized toggle callback.
+ */
+function ScanCardWrapper({scan, isSelected, onToggleSelection}: Readonly<ScanCardWrapperProps>): React.JSX.Element {
+  const handleToggle = useCallback(() => {
+    onToggleSelection(scan);
+  }, [scan, onToggleSelection]);
+
+  return (
+    <ScanCard
+      scan={scan}
+      isSelected={isSelected}
+      onToggleSelect={handleToggle}
+    />
+  );
+}
 
 /**
  * Empty state step component.
@@ -49,9 +77,9 @@ export default function ScansGrid(): React.JSX.Element {
   if (!hasHydrated || (isSyncing && scans.length === 0)) {
     return (
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-        {Array.from({length: 6}).map((_, i) => (
+        {SKELETON_KEYS.map((skeletonKey) => (
           <div
-            key={i}
+            key={skeletonKey}
             className='aspect-[4/3] animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700'
           />
         ))}
@@ -79,7 +107,7 @@ export default function ScansGrid(): React.JSX.Element {
             <div className='mb-8 space-y-6'>
               <EmptyStateStep
                 step={1}
-                icon={<TbUpload className='h-4 w-4 text-blue-500' />}
+                icon={<TbUpload className='text-accent-primary h-4 w-4' />}
                 title={t("emptyState.step1Title")}
                 description={t("emptyState.step1Description")}
               />
@@ -126,11 +154,11 @@ export default function ScansGrid(): React.JSX.Element {
   return (
     <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
       {scans.map((scan) => (
-        <ScanCard
+        <ScanCardWrapper
           key={scan.id}
           scan={scan}
           isSelected={selectedScans.some((s) => s.id === scan.id)}
-          onToggleSelect={() => toggleSelection(scan)}
+          onToggleSelection={toggleSelection}
         />
       ))}
     </div>

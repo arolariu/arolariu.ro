@@ -139,7 +139,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 Delete
               </DropdownMenuItem>
               <DropdownMenuItem
-                className='cursor-pointer text-blue-500'
+                className='text-accent-primary cursor-pointer'
                 onClick={openShareDialog}>
                 <TbShare className='mr-2 h-4 w-4' />
                 Share

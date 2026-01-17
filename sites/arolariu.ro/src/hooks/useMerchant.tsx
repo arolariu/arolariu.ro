@@ -112,8 +112,13 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
   useEffect(() => {
     const fetchMerchantForUser = async () => {
       try {
-        const merchant = await fetchMerchant({merchantId: merchantIdentifier});
-        upsertMerchant(merchant);
+        const result = await fetchMerchant({merchantId: merchantIdentifier});
+        if (result.success) {
+          upsertMerchant(result.data);
+        } else {
+          console.error(">>> Error fetching merchant:", result.error.code, result.error.message);
+          setIsError(true);
+        }
       } catch (error: unknown) {
         console.error(">>> Error fetching merchant in useMerchant hook:", error as Error);
         setIsError(true);

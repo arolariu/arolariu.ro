@@ -1,4 +1,5 @@
 import {expect, test} from "@playwright/test";
+import {getNavigationOptions, navigateWithRetry} from "../../tests/playwright-helpers";
 
 const routes = [
   // Index page:
@@ -30,8 +31,11 @@ const routes = [
 test.describe("Routing tests", () => {
   for (const route of routes) {
     test(`should navigate to ${route} and return 200`, async ({page}) => {
-      const response = await page.goto(route);
-      expect(response?.status()).toBe(200);
+      const options = getNavigationOptions();
+      const result = await navigateWithRetry(page, route, options);
+
+      expect(result.response, `Navigation response should exist for ${route}`).not.toBeNull();
+      expect(result.status, `Route ${route} should return 200 (got ${result.status} after ${result.attempts} attempts)`).toBe(200);
     });
   }
 });

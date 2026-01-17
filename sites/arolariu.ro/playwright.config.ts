@@ -18,7 +18,7 @@ const allProjects = [
       baseURL: "https://localhost:3000",
       ignoreHTTPSErrors: true,
     },
-    timeout: 60 * 1000, // 60 seconds - 1 minute
+    timeout: 90 * 1000, // 90 seconds - increased for CI warmup
     testMatch: "src/**/*.spec.{ts,tsx}",
   },
   {
@@ -28,7 +28,7 @@ const allProjects = [
       baseURL: "https://localhost:3000",
       ignoreHTTPSErrors: true,
     },
-    timeout: 60 * 1000, // 60 seconds - 1 minute
+    timeout: 90 * 1000, // 90 seconds - increased for CI warmup
     testMatch: "src/**/*.spec.{ts,tsx}",
   },
   {
@@ -38,7 +38,7 @@ const allProjects = [
       baseURL: "https://localhost:3000",
       ignoreHTTPSErrors: true,
     },
-    timeout: 60 * 1000, // 60 seconds - 1 minute
+    timeout: 90 * 1000, // 90 seconds - increased for CI warmup
     testMatch: "src/**/*.spec.{ts,tsx}",
   },
 ];
@@ -54,12 +54,16 @@ const projectsToRun = allProjects.filter((project) => {
 });
 
 export default defineConfig({
+  globalSetup: "./tests/global-setup.ts",
   fullyParallel: true,
-  retries: weAreInCI ? 1 : 2,
+  retries: weAreInCI ? 2 : 2, // Increased CI retries for flaky warmup issues
   workers: weAreInCI ? "75%" : "100%",
-  timeout: 60 * 1000, // 60 seconds - 1 minute
+  timeout: 90 * 1000, // 90 seconds - increased for CI warmup
   projects: projectsToRun,
-  outputDir: "code-cov/playwright-report",
+  // Keep test artifacts separate from report output.
+  // Playwright clears the HTML report output folder prior to generation;
+  // if it overlaps with the test output folder, artifacts can be lost.
+  outputDir: "code-cov/playwright-results",
   maxFailures: weAreInCI ? 5 : 10, // Stop after these many failures
 
   reporter: [

@@ -10,7 +10,7 @@ import {memo} from "react";
  * **Rendering Context**: Client Component (`"use client"` required).
  *
  * **Why Client Component?**
- * - Uses Clerk's `useUser` hook for real-time auth state
+ * - Uses Clerk's `useAuth` hook for real-time auth state
  * - Requires interactive sign-in/sign-out functionality
  * - Needs access to browser-based authentication flow
  *
@@ -28,11 +28,6 @@ import {memo} from "react";
  * - Wrapped with `React.memo` to prevent re-renders when parent updates
  * - Only re-renders when Clerk auth state changes
  * - Loading skeleton prevents layout shift during hydration
- *
- * **Design Rationale**:
- * - Clerk components handle OAuth flows, session management, and security
- * - Skeleton loader provides visual feedback during authentication check
- * - Conditional rendering ensures appropriate UI for each auth state
  *
  * @returns JSX element showing sign-in button, user profile button, or loading state
  *
@@ -53,7 +48,8 @@ import {memo} from "react";
  */
 function AuthButton(): React.JSX.Element {
   const {isSignedIn, isLoaded} = useAuth();
-  if (!isLoaded || isSignedIn == undefined) {
+
+  if (!isLoaded) {
     return <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />;
   }
 

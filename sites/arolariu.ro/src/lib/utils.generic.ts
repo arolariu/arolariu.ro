@@ -285,14 +285,23 @@ export interface FormatDateOptions extends Partial<Intl.DateTimeFormatOptions> {
  * formatDate(new Date(), { dateStyle: "full" }); // "Thursday, October 12, 2023"
  * ```
  */
-export function formatDate(possibleDate: string | Date, options: FormatDateOptions): string {
-  let date: Date | undefined = undefined;
-
+/**
+ * Converts a possible date value to a Date object.
+ * @param possibleDate - The date to convert (ISO string or Date object).
+ * @returns A Date object.
+ */
+function toDate(possibleDate: string | Date): Date {
   if (typeof possibleDate === "string") {
-    date = new Date(possibleDate);
-  } else if (possibleDate instanceof Date) {
-    date = possibleDate;
+    return new Date(possibleDate);
   }
+  if (possibleDate instanceof Date) {
+    return possibleDate;
+  }
+  return new Date();
+}
+
+export function formatDate(possibleDate: string | Date, options: FormatDateOptions): string {
+  const date: Date = toDate(possibleDate);
 
   const formatOptions: Intl.DateTimeFormatOptions = {
     dateStyle: "short",

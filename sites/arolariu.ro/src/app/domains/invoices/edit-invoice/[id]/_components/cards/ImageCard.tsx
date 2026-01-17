@@ -90,6 +90,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
     }
   }, [currentScanIndex]);
 
+  const handleOpenZoom = useCallback(() => {
+    setIsZoomOpen(true);
+  }, []);
+
   return (
     <TooltipProvider>
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
@@ -100,10 +104,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
           <Dialog
             open={isZoomOpen}
             onOpenChange={setIsZoomOpen}>
-            <button
-              type='button'
-              className='group/image relative w-full cursor-pointer overflow-hidden rounded-md border'
-              onClick={() => setIsZoomOpen(true)}
+            <Button
+              variant='ghost'
+              className='group/image relative h-auto w-full cursor-pointer overflow-hidden rounded-md border p-0'
+              onClick={handleOpenZoom}
               aria-label='Click to expand image'>
               <Image
                 src={currentScanSrc}
@@ -117,7 +121,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               <div className='bg-background/80 absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/image:opacity-100'>
                 <TbZoomIn className='h-8 w-8' />
               </div>
-            </button>
+            </Button>
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
@@ -141,7 +145,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               <Button
                 variant='outline'
                 className='w-full cursor-pointer'
-                onClick={() => setIsZoomOpen(true)}>
+                onClick={handleOpenZoom}>
                 <TbZoomIn className='mr-2 h-4 w-4' />
                 Expand Image
               </Button>

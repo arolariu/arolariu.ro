@@ -24,8 +24,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {convertBase64ToBlob} from "@/lib/utils.server";
-import type {Scan} from "@/types/scans";
-import {ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
@@ -177,11 +176,11 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
       });
       addSpanEvent("azure.blob.upload.complete");
 
-      if (blobUploadResponse._response.status !== 201) {
+      if (blobUploadResponse._response.status === 201) {
+        logWithTrace("info", "Successfully uploaded scan to Azure", {scanId}, "server");
+      } else {
         addSpanEvent("azure.blob.upload.error");
         logWithTrace("error", "Error uploading blob to Azure Storage", {status: blobUploadResponse._response.status}, "server");
-      } else {
-        logWithTrace("info", "Successfully uploaded scan to Azure", {scanId}, "server");
       }
 
       // Step 5. Construct and return the Scan entity

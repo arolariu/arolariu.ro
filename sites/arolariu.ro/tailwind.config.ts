@@ -66,6 +66,14 @@ const tailwindConfig: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Gradient theme colors - user customizable via my-profile settings
+        "gradient-from": "hsl(var(--gradient-from))",
+        "gradient-via": "hsl(var(--gradient-via))",
+        "gradient-to": "hsl(var(--gradient-to))",
+        // Accent primary - for text/icons (uses primary gradient color)
+        "accent-primary": "hsl(var(--accent-primary))",
+        // Footer background - darker shade derived from gradient
+        "footer-bg": "hsl(var(--footer-bg))",
       },
       borderRadius: {
         lg: "var(--radius)",

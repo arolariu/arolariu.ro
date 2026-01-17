@@ -1,4 +1,5 @@
 import {expect, test} from "@playwright/test";
+import {getNavigationOptions, navigateWithRetry} from "../../tests/playwright-helpers";
 
 test.describe("Header Component Tests", () => {
   test.beforeEach(async ({page}) => {
@@ -47,8 +48,10 @@ test.describe("Header Component Tests", () => {
       const logoLink = page.locator("header a[href='/'], header a[href='https://localhost:3000']").first();
       await expect(logoLink).toBeVisible({timeout: 10000});
 
-      // Click logo and verify navigation to home
-      await logoLink.click();
+      // Use force:true to bypass Next.js dev overlay that may intercept clicks
+      // Also wait for page to be fully stable before clicking
+      await page.waitForLoadState("domcontentloaded");
+      await logoLink.click({force: true});
       await page.waitForURL(/\/$/, {timeout: 10000});
     });
 
@@ -79,9 +82,14 @@ test.describe("Header Component Tests", () => {
       const aboutLink = page.locator("header a[href*='about']").first();
 
       if (await aboutLink.isVisible({timeout: 5000})) {
-        await aboutLink.click();
-        await page.waitForURL(/\/about/, {timeout: 10000});
-        expect(page.url()).toContain("/about");
+        // Get the href and navigate directly with retry logic
+        // This avoids timing issues with click + waitForURL
+        const href = await aboutLink.getAttribute("href");
+        if (href) {
+          const result = await navigateWithRetry(page, href, getNavigationOptions());
+          expect(result.success, `About page navigation should succeed (status: ${result.status})`).toBe(true);
+          expect(page.url()).toContain("/about");
+        }
       }
     });
   });

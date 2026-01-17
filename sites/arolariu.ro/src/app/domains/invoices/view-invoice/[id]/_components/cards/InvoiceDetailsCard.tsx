@@ -24,7 +24,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useLocale} from "next-intl";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbCalendar, TbChevronLeft, TbChevronRight, TbCreditCard, TbHeart} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 
@@ -38,6 +38,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
   const totalPages = Math.ceil(invoice.items.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedItems = invoice.items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage((p) => Math.max(1, p - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage((p) => Math.min(totalPages, p + 1));
+  }, [totalPages]);
 
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
@@ -107,8 +115,8 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedItems.map((item, index) => (
-                  <TableRow key={`${item.productCode}-${index}`}>
+                {paginatedItems.map((item) => (
+                  <TableRow key={item.productCode}>
                     <TableCell>
                       <div className='space-y-1'>
                         <p className='font-medium'>{item.genericName || item.rawName}</p>
@@ -169,7 +177,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  onClick={handlePreviousPage}
                   disabled={currentPage === 1}>
                   <TbChevronLeft className='h-4 w-4' />
                   Previous
@@ -177,7 +185,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={handleNextPage}
                   disabled={currentPage === totalPages}>
                   Next
                   <TbChevronRight className='h-4 w-4' />

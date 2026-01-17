@@ -1,6 +1,7 @@
 "use client";
 
 import {Badge} from "@arolariu/components/badge";
+import {Button} from "@arolariu/components/button";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import React, {useCallback, useState} from "react";
@@ -157,11 +158,11 @@ export default function Experience(): React.JSX.Element {
                 initial={{opacity: 0, x: -20}}
                 animate={{opacity: 1, x: 0}}
                 transition={{delay: index * 0.1, duration: 0.5}}>
-                <button
-                  type='button'
+                <Button
+                  variant='ghost'
                   data-index={index}
                   onClick={handleExperienceClick}
-                  className={`relative flex items-start pl-16 ${activeExpIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"} transition-opacity duration-300`}>
+                  className={`relative flex h-auto items-start pl-16 ${activeExpIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"} transition-opacity duration-300`}>
                   <div
                     className={`absolute left-0 z-10 flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ${activeExpIndex === index ? "bg-primary/20" : "bg-muted"}`}>
                     <div
@@ -180,7 +181,7 @@ export default function Experience(): React.JSX.Element {
                       <span>{experience.period}</span>
                     </div>
                   </div>
-                </button>
+                </Button>
               </motion.div>
             ))}
           </div>
@@ -218,7 +219,7 @@ export default function Experience(): React.JSX.Element {
                 <p className='text-muted-foreground mb-6'>{currentExperience.description}</p>
 
                 <div className='mb-6'>
-                  <h4 className='mb-3 text-lg font-semibold'>Responsibilites</h4>
+                  <h4 className='mb-3 text-lg font-semibold'>{t("responsibilitiesLabel")}</h4>
                   <ul className='space-y-2'>
                     {currentExperience.responsibilities.map((responsability, i) => (
                       <motion.li
@@ -235,7 +236,7 @@ export default function Experience(): React.JSX.Element {
                 </div>
 
                 <div className='mb-6'>
-                  <h4 className='mb-3 text-lg font-semibold'>Achievements</h4>
+                  <h4 className='mb-3 text-lg font-semibold'>{t("achievementsLabel")}</h4>
                   <ul className='space-y-2'>
                     {currentExperience.achievements.map((achievement, i) => (
                       <motion.li
@@ -252,7 +253,7 @@ export default function Experience(): React.JSX.Element {
                 </div>
 
                 <div>
-                  <h4 className='mb-3 text-lg font-semibold'>Technologies & Skills</h4>
+                  <h4 className='mb-3 text-lg font-semibold'>{t("techSkillsLabel")}</h4>
                   <div className='flex flex-wrap gap-2'>
                     {currentExperience.skills.map((skill, i) => (
                       <motion.div

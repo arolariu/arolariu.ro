@@ -4,11 +4,15 @@
 
 This guide provides practical examples for implementing multi-language support in the arolariu.ro frontend.
 
+**Supported Languages**: English (en), Romanian (ro), French (fr)
+
 ## Quick Start
 
 ### 1. Add Translation Keys
 
-Add keys to both `messages/en.json` and `messages/ro.json`:
+Add keys to all translation files: `messages/en.json`, `messages/ro.json`, and `messages/fr.json`:
+
+> **Tip**: Run `npm run generate:i18n` after adding keys to `en.json` to automatically detect missing keys in other locales.
 
 ```json
 {
@@ -189,7 +193,7 @@ export function FormattedData() {
 import {getLocale} from "next-intl/server";
 
 export default async function Page() {
-  const locale = await getLocale(); // "en" or "ro"
+  const locale = await getLocale(); // "en", "ro", or "fr"
   return <div>Current language: {locale}</div>;
 }
 ```
@@ -204,21 +208,27 @@ import {useRouter} from "next/navigation";
 
 export function LanguageSwitcher() {
   const router = useRouter();
-  
+
   const switchToEnglish = async () => {
     await setCookie("locale", "en");
     router.refresh();
   };
-  
+
   const switchToRomanian = async () => {
     await setCookie("locale", "ro");
     router.refresh();
   };
-  
+
+  const switchToFrench = async () => {
+    await setCookie("locale", "fr");
+    router.refresh();
+  };
+
   return (
     <div>
       <button onClick={switchToEnglish}>English</button>
       <button onClick={switchToRomanian}>Română</button>
+      <button onClick={switchToFrench}>Français</button>
     </div>
   );
 }
@@ -341,9 +351,10 @@ Instead, use common namespace:
 
 **Solution**:
 
-1. Check key exists in both `en.json` and `ro.json`
+1. Check key exists in all locale files: `en.json`, `ro.json`, and `fr.json`
 2. Verify correct namespace: `useTranslations("MyPage")`
-3. Run `npm run dev` to regenerate types
+3. Run `npm run generate:i18n` to detect and add missing keys
+4. Run `npm run dev` to regenerate types
 
 ### Issue: Translations Not Updating
 
@@ -370,7 +381,7 @@ npm run generate:i18n
 import {getCookie} from "@/lib/actions/cookies";
 
 const locale = await getCookie("locale");
-console.log("Current locale:", locale); // Should be "en" or "ro"
+console.log("Current locale:", locale); // Should be "en", "ro", or "fr"
 ```
 
 ## Translation File Structure
@@ -379,8 +390,11 @@ console.log("Current locale:", locale); // Should be "en" or "ro"
 messages/
 ├── en.json           # English translations (source of truth)
 ├── ro.json           # Romanian translations
+├── fr.json           # French translations
 └── en.d.json.ts      # Auto-generated TypeScript types
 ```
+
+> **Note**: Always add new keys to `en.json` first, then run `npm run generate:i18n` to synchronize other locales.
 
 ### Example Translation Structure
 
@@ -420,6 +434,15 @@ messages/
 | Get locale | `await getLocale()` | `const locale = useLocale()` |
 | Format dates | `const format = await useFormatter()` | `const format = useFormatter()` |
 | Generate metadata | `generateMetadata()` with `getTranslations()` | N/A |
+| Sync translations | `npm run generate:i18n` | N/A |
+
+## Supported Locales
+
+| Locale | Language | File |
+|--------|----------|------|
+| `en` | English | `messages/en.json` (source of truth) |
+| `ro` | Romanian | `messages/ro.json` |
+| `fr` | French | `messages/fr.json` |
 
 ## Additional Resources
 
@@ -427,3 +450,4 @@ messages/
 - **next-intl Docs**: <https://next-intl-docs.vercel.app/>
 - **ICU Message Format**: <https://formatjs.io/docs/core-concepts/icu-syntax/>
 - **Translation Files**: `sites/arolariu.ro/messages/`
+- **i18n Script**: `scripts/generate.i18n.ts`

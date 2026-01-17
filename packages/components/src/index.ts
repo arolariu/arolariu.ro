@@ -310,6 +310,22 @@ export {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./compon
 export {useIsMobile} from "./hooks/useIsMobile";
 export {useWindowSize} from "./hooks/useWindowSize";
 
+export {
+  // New descriptive names
+  adjustHexColorLightness,
+  // Legacy aliases (deprecated)
+  adjustLightness,
+  calculateComplementaryHexColor,
+  convertHexToHslString,
+  convertHslToHexString,
+  getComplementaryColor,
+  hexToHsl,
+  hslToHex,
+  isValidHexColor,
+  parseHslString,
+  parseHslStringToComponents,
+  validateHexColorFormat,
+} from "./lib/color-conversion-utilities";
 export {cn} from "./lib/utilities";
 
 // Animate-UI exports:

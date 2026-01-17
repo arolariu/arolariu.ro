@@ -1,12 +1,16 @@
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
+import {GradientThemeProvider} from "@/contexts/GradientThemeContext";
 import {Toaster as ToastProvider} from "@arolariu/components";
-import {enUS, roRO} from "@clerk/localizations";
+import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import React from "react";
+import enMessages from "../../messages/en.json";
+import frMessages from "../../messages/fr.json";
+import roMessages from "../../messages/ro.json";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
 
@@ -14,14 +18,14 @@ const WebVitals = dynamic(() => import("./web-vitals"));
  * Props for the ContextProviders component defining locale and children.
  *
  * @remarks
- * **Locale Constraint**: Only supports "en" (English) and "ro" (Romanian) locales.
+ * **Locale Constraint**: Supports "en" (English), "ro" (Romanian), and "fr" (French) locales.
  * This constraint ensures type safety and prevents invalid locale values from being passed.
  *
  * **Children Pattern**: Uses React.ReactNode to accept any valid React children,
  * including elements, fragments, strings, numbers, and portals.
  */
 type Props = {
-  locale: "en" | "ro";
+  locale: "en" | "ro" | "fr";
   children: React.ReactNode;
 };
 
@@ -42,6 +46,7 @@ type Props = {
  * the locale prop. Uses synchronous `require()` to load translations at render time:
  * - `en`: English translations from `messages/en.json`
  * - `ro`: Romanian translations from `messages/ro.json`
+ * - `fr`: French translations from `messages/fr.json`
  *
  * **Performance Optimization**: Uses `dynamic()` import for WebVitals component to
  * defer loading of performance monitoring code until after initial page render,
@@ -67,7 +72,7 @@ type Props = {
  *   depend on the established contexts
  *
  * @param props - Component properties
- * @param props.locale - The application locale ("en" or "ro"). Determines which
+ * @param props.locale - The application locale ("en", "ro", or "fr"). Determines which
  * translation messages to load and which Clerk localization to use.
  * @param props.children - React children to render within the provider tree,
  * typically the root layout content including page components.
@@ -119,12 +124,15 @@ type Props = {
  * @see RFC 1003 - Internationalization System documentation
  */
 export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
-  const messages = locale === "ro" ? require("../../messages/ro.json") : require("../../messages/en.json");
+  const messageMap = {en: enMessages, ro: roMessages, fr: frMessages};
+  const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
+  const messages = messageMap[locale] as typeof enMessages;
+  const localization = localizationMap[locale];
   return (
     <TranslationProvider
       locale={locale}
       messages={messages}>
-      <AuthProvider localization={locale === "ro" ? roRO : enUS}>
+      <AuthProvider localization={localization}>
         <FontProvider>
           <ThemeProvider
             enableSystem
@@ -132,10 +140,12 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
             defaultTheme='system'
             attribute='class'
             themes={["light", "dark"]}>
-            {children}
-            <ToastProvider />
-            <Commander />
-            <WebVitals />
+            <GradientThemeProvider>
+              {children}
+              <ToastProvider />
+              <Commander />
+              <WebVitals />
+            </GradientThemeProvider>
           </ThemeProvider>
         </FontProvider>
       </AuthProvider>

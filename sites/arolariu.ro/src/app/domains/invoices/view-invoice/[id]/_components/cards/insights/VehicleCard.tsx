@@ -1,8 +1,9 @@
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
-import {Button, Card, CardContent, CardHeader, CardTitle, ChartContainer, ChartTooltip} from "@arolariu/components";
+import {Button, Card, CardContent, CardHeader, CardTitle, ChartContainer, ChartTooltip, ChartTooltipContent} from "@arolariu/components";
 import {useLocale} from "next-intl";
+import {useCallback} from "react";
 import {TbBarrel, TbBulb, TbCalendar, TbCar, TbCurrencyDollar, TbGasStation, TbGauge, TbMapPin, TbTrendingUp} from "react-icons/tb";
 import {Area, AreaChart, ResponsiveContainer, XAxis, YAxis} from "recharts";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
@@ -12,6 +13,14 @@ export function VehicleCard(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const {currency, totalCostAmount: totalAmount} = paymentInformation;
+
+  const tooltipFormatter = useCallback(
+    (value: number | string | readonly (string | number)[] | undefined) => {
+      if (value === undefined || Array.isArray(value)) return null;
+      return formatCurrency(Number(value), {currencyCode: currency.code, locale});
+    },
+    [currency.code, locale],
+  );
 
   // Estimate fuel details
   const pricePerLiter = 6.7;
@@ -33,8 +42,8 @@ export function VehicleCard(): React.JSX.Element {
 
   // Maintenance reminders
   const reminders = [
-    {task: "Oil change due in ~1,200 km", urgent: false},
-    {task: "Tire rotation recommended", urgent: false},
+    {id: "oil-change", task: "Oil change due in ~1,200 km", urgent: false},
+    {id: "tire-rotation", task: "Tire rotation recommended", urgent: false},
   ];
 
   // Cheapest nearby
@@ -132,18 +141,7 @@ export function VehicleCard(): React.JSX.Element {
                   tickLine={false}
                   axisLine={false}
                 />
-                <ChartTooltip
-                  content={({active, payload}) => {
-                    if (!active || !payload?.length) return null;
-                    const data = payload[0].payload;
-                    return (
-                      <div className='bg-background rounded-lg border p-2 shadow-sm'>
-                        <p className='text-xs font-medium'>{data.month}</p>
-                        <p className='text-sm font-semibold'>{formatCurrency(data.amount, {currencyCode: currency.code, locale})}</p>
-                      </div>
-                    );
-                  }}
-                />
+                <ChartTooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
                 <Area
                   type='monotone'
                   dataKey='amount'
@@ -185,9 +183,9 @@ export function VehicleCard(): React.JSX.Element {
             <h4 className='text-sm font-medium'>Maintenance Reminders</h4>
           </div>
           <ul className='text-muted-foreground space-y-1 text-sm'>
-            {reminders.map((r, i) => (
+            {reminders.map((r) => (
               <li
-                key={i}
+                key={r.id}
                 className='flex items-center gap-2'>
                 <span className='text-muted-foreground'>•</span>
                 {r.task}

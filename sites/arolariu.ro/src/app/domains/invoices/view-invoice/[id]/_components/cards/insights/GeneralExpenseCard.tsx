@@ -1,9 +1,9 @@
 "use client";
 
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
-import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Progress} from "@arolariu/components";
+import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Label, Progress} from "@arolariu/components";
 import {useLocale} from "next-intl";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbBriefcase, TbChartBar, TbCheck, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbRefresh, TbTag} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 
@@ -29,12 +29,24 @@ export function GeneralExpenseCard(): React.JSX.Element {
   const [trackWarranty, setTrackWarranty] = useState(false);
   const [insuranceInventory, setInsuranceInventory] = useState(false);
 
+  const handleBusinessExpenseChange = useCallback((checked: boolean | "indeterminate") => {
+    setBusinessExpense(checked === true);
+  }, []);
+
+  const handleTrackWarrantyChange = useCallback((checked: boolean | "indeterminate") => {
+    setTrackWarranty(checked === true);
+  }, []);
+
+  const handleInsuranceInventoryChange = useCallback((checked: boolean | "indeterminate") => {
+    setInsuranceInventory(checked === true);
+  }, []);
+
   const vatReclaimable = totalAmount * 0.19;
 
   // Similar past purchases (mock)
   const pastPurchases = [
-    {store: "Altex", date: new Date("2024-11-15"), amount: 320, item: "Headphones"},
-    {store: "eMAG", date: new Date("2024-09-22"), amount: 890, item: "Monitor"},
+    {id: "altex-2024-11-15", store: "Altex", date: new Date("2024-11-15"), amount: 320, item: "Headphones"},
+    {id: "emag-2024-09-22", store: "eMAG", date: new Date("2024-09-22"), amount: 890, item: "Monitor"},
   ];
 
   const nearLimitBudget = budgets.find((b) => b.spent / b.limit >= 0.9);
@@ -63,6 +75,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
+                aria-label='Confirm category detection is correct'
                 className='gap-1 bg-transparent'>
                 <TbCheck className='h-3 w-3' />
                 Correct
@@ -70,6 +83,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Button
                 variant='ghost'
                 size='sm'
+                aria-label='Change detected category'
                 className='gap-1'>
                 <TbRefresh className='h-3 w-3' />
                 Change
@@ -104,12 +118,15 @@ export function GeneralExpenseCard(): React.JSX.Element {
               );
             })}
           </div>
-          {nearLimitBudget && (
-            <p className='flex items-center gap-1 text-xs text-amber-600'>
-              <span>!</span>
+          {nearLimitBudget ? (
+            <p
+              className='flex items-center gap-1 text-xs text-amber-600'
+              role='alert'
+              aria-live='polite'>
+              <span aria-hidden='true'>!</span>
               {nearLimitBudget.name}: {Math.round((nearLimitBudget.spent / nearLimitBudget.limit) * 100)}% used (10 days left in month)
             </p>
-          )}
+          ) : null}
         </div>
 
         {/* Tax & Business Options */}
@@ -123,45 +140,45 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Checkbox
                 id='business'
                 checked={businessExpense}
-                onCheckedChange={(c) => setBusinessExpense(c === true)}
+                onCheckedChange={handleBusinessExpenseChange}
               />
-              <label
+              <Label
                 htmlFor='business'
-                className='cursor-pointer text-sm'>
+                className='cursor-pointer text-sm font-normal'>
                 Mark as business expense
-              </label>
+              </Label>
             </div>
             <div className='flex items-center gap-2'>
               <Checkbox
                 id='warranty'
                 checked={trackWarranty}
-                onCheckedChange={(c) => setTrackWarranty(c === true)}
+                onCheckedChange={handleTrackWarrantyChange}
               />
-              <label
+              <Label
                 htmlFor='warranty'
-                className='cursor-pointer text-sm'>
+                className='cursor-pointer text-sm font-normal'>
                 Track warranty (24 months standard)
-              </label>
+              </Label>
             </div>
             <div className='flex items-center gap-2'>
               <Checkbox
                 id='insurance'
                 checked={insuranceInventory}
-                onCheckedChange={(c) => setInsuranceInventory(c === true)}
+                onCheckedChange={handleInsuranceInventoryChange}
               />
-              <label
+              <Label
                 htmlFor='insurance'
-                className='cursor-pointer text-sm'>
+                className='cursor-pointer text-sm font-normal'>
                 Add to insurance inventory
-              </label>
+              </Label>
             </div>
           </div>
-          {businessExpense && (
+          {businessExpense ? (
             <p className='flex items-center gap-1 text-sm text-green-600'>
               <TbBriefcase className='h-3 w-3' />
               VAT Reclaimable: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
             </p>
-          )}
+          ) : null}
         </div>
 
         {/* Similar Past Purchases */}
@@ -171,9 +188,9 @@ export function GeneralExpenseCard(): React.JSX.Element {
             <h4 className='text-sm font-medium'>Similar Past Purchases</h4>
           </div>
           <ul className='text-muted-foreground space-y-1.5 text-sm'>
-            {pastPurchases.map((p, i) => (
+            {pastPurchases.map((p) => (
               <li
-                key={i}
+                key={p.id}
                 className='flex items-center gap-2'>
                 <span className='text-muted-foreground'>•</span>
                 {p.store} - {formatDate(p.date, {locale})}: {formatCurrency(p.amount, {currencyCode: currency.code, locale})} ({p.item})
@@ -187,6 +204,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           <Button
             variant='outline'
             size='sm'
+            aria-label='Organize this expense into categories'
             className='flex-1 gap-1 bg-transparent'>
             <TbFolderOpen className='h-3 w-3' />
             Organize
@@ -194,6 +212,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           <Button
             variant='outline'
             size='sm'
+            aria-label='Export expense data'
             className='flex-1 gap-1 bg-transparent'>
             <TbDownload className='h-3 w-3' />
             Export

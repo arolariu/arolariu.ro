@@ -63,7 +63,7 @@ describe("useMerchants", () => {
   });
 
   it("should return empty merchants array initially", async () => {
-    mockFetchMerchants.mockResolvedValue([]);
+    mockFetchMerchants.mockResolvedValue({success: true, data: []});
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
@@ -92,7 +92,7 @@ describe("useMerchants", () => {
       {id: "merchant-2", name: "Merchant 2"},
     ];
 
-    mockFetchMerchants.mockResolvedValue(mockMerchants);
+    mockFetchMerchants.mockResolvedValue({success: true, data: mockMerchants});
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
@@ -123,7 +123,7 @@ describe("useMerchants", () => {
     mockFetchMerchants.mockImplementation(
       () =>
         new Promise((resolve) => {
-          setTimeout(() => resolve([]), 100);
+          setTimeout(() => resolve({success: true, data: []}), 100);
         }),
     );
 
@@ -169,6 +169,21 @@ describe("useMerchants", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchants in useMerchants hook:", mockError);
   });
 
+  it("should handle unsuccessful API response", async () => {
+    mockFetchMerchants.mockResolvedValue({
+      success: false,
+      error: {code: "FETCH_ERROR", message: "Failed to fetch merchants"},
+    });
+
+    const {result} = renderHook(() => useMerchants());
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching merchants:", "FETCH_ERROR", "Failed to fetch merchants");
+  });
+
   it("should handle network error gracefully", async () => {
     mockFetchMerchants.mockRejectedValue(new Error("Network error"));
 
@@ -191,7 +206,7 @@ describe("useMerchants", () => {
   });
 
   it("should always fetch regardless of userInformation state", async () => {
-    mockFetchMerchants.mockResolvedValue([]);
+    mockFetchMerchants.mockResolvedValue({success: true, data: []});
 
     renderHook(() => useMerchants());
 

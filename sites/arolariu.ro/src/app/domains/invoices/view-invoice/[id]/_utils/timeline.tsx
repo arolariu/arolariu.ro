@@ -41,10 +41,12 @@ export function getEventIcon(event: TimelineEvent): React.ReactElement {
 
 /**
  * Generates a unique ID for timeline events.
+ * Uses crypto.randomUUID() for secure random generation.
  * @returns {string} A unique identifier string
  */
 export function generateEventId(): string {
-  return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const uuid = crypto.randomUUID();
+  return `evt_${Date.now()}_${uuid.slice(0, 8)}`;
 }
 
 /**
@@ -72,6 +74,50 @@ export function getRelativeTime(date: Date): string {
   return "Just now";
 }
 
+/** Helper to build tooltip content by appending optional metadata fields */
+function buildTooltipContent(baseMessage: string, ...parts: Array<string | undefined>): string {
+  const filteredParts = parts.filter(Boolean);
+  if (filteredParts.length === 0) return baseMessage;
+  return `${baseMessage} ${filteredParts.join(" ")}`;
+}
+
+/** Extracts formatted metadata parts for tooltip generation */
+function extractMetadataParts(metadata?: TimelineEventMetadata): {
+  methodPart: string | undefined;
+  confidencePart: string | undefined;
+  durationPart: string | undefined;
+  itemCountPart: string | undefined;
+  recipeCountPart: string | undefined;
+  usersPart: string | undefined;
+  notesPart: string | undefined;
+  formatPart: string | undefined;
+  categoryPart: string | undefined;
+} {
+  return {
+    methodPart: metadata?.method ? `Method: ${metadata.method}.` : undefined,
+    confidencePart: metadata?.confidence ? `Accuracy: ${metadata.confidence}%.` : undefined,
+    durationPart: metadata?.duration ? `Processing time: ${metadata.duration}.` : undefined,
+    itemCountPart: metadata?.itemCount ? `Items analyzed: ${metadata.itemCount}.` : undefined,
+    recipeCountPart: metadata?.itemCount ? `${metadata.itemCount} recipes generated.` : undefined,
+    usersPart: metadata?.users?.length ? `Shared with: ${metadata.users.join(", ")}.` : undefined,
+    notesPart: metadata?.notes ? `Changes: ${metadata.notes}.` : undefined,
+    formatPart: metadata?.method ? `Format: ${metadata.method}.` : undefined,
+    categoryPart: metadata?.notes ? `Category: ${metadata.notes}.` : undefined,
+  };
+}
+
+/** Maps event types to their base tooltip messages */
+const BASE_TOOLTIPS: Record<TimelineEventType, string> = {
+  [TimelineEventType.CREATED]: "Invoice was scanned and digitized using OCR technology.",
+  [TimelineEventType.AI_ANALYSIS]: "AI processed the invoice to categorize items, detect allergens, and extract metadata.",
+  [TimelineEventType.RECIPES_GENERATED]: "Based on purchased ingredients, AI suggested recipes you can make.",
+  [TimelineEventType.SHARED]: "Invoice was shared for collaborative viewing or expense splitting.",
+  [TimelineEventType.EDITED]: "Manual changes were made to the invoice.",
+  [TimelineEventType.EXPORTED]: "Invoice was exported for external use.",
+  [TimelineEventType.MARKED_IMPORTANT]: "Invoice was flagged as important for quick access and priority tracking.",
+  [TimelineEventType.CATEGORIZED]: "Invoice was assigned a category for better organization.",
+};
+
 /**
  * Gets a detailed tooltip description for an event type.
  * @param {TimelineEventType} type - The type of event
@@ -79,18 +125,25 @@ export function getRelativeTime(date: Date): string {
  * @returns {string} Detailed description for tooltip
  */
 export function getEventTooltipContent(type: TimelineEventType, metadata?: TimelineEventMetadata): string {
-  const tooltips: Record<TimelineEventType, string> = {
-    [TimelineEventType.CREATED]: `Invoice was scanned and digitized using OCR technology.${metadata?.method ? ` Method: ${metadata.method}` : ""}${metadata?.confidence ? ` Accuracy: ${metadata.confidence}%` : ""}`,
-    [TimelineEventType.AI_ANALYSIS]: `AI processed the invoice to categorize items, detect allergens, and extract metadata.${metadata?.duration ? ` Processing time: ${metadata.duration}` : ""}${metadata?.itemCount ? ` Items analyzed: ${metadata.itemCount}` : ""}`,
-    [TimelineEventType.RECIPES_GENERATED]: `Based on purchased ingredients, AI suggested recipes you can make.${metadata?.itemCount ? ` ${metadata.itemCount} recipes generated.` : ""}`,
-    [TimelineEventType.SHARED]: `Invoice was shared for collaborative viewing or expense splitting.${metadata?.users?.length ? ` Shared with: ${metadata.users.join(", ")}` : ""}`,
-    [TimelineEventType.EDITED]: `Manual changes were made to the invoice.${metadata?.notes ? ` Changes: ${metadata.notes}` : ""}`,
-    [TimelineEventType.EXPORTED]: `Invoice was exported for external use.${metadata?.method ? ` Format: ${metadata.method}` : ""}`,
-    [TimelineEventType.MARKED_IMPORTANT]: "Invoice was flagged as important for quick access and priority tracking.",
-    [TimelineEventType.CATEGORIZED]: `Invoice was assigned a category for better organization.${metadata?.notes ? ` Category: ${metadata.notes}` : ""}`,
+  const parts = extractMetadataParts(metadata);
+  const baseTooltip = BASE_TOOLTIPS[type];
+  if (!baseTooltip) return "Event details unavailable";
+
+  // Map event types to their additional metadata parts
+  const additionalParts: Partial<Record<TimelineEventType, Array<string | undefined>>> = {
+    [TimelineEventType.CREATED]: [parts.methodPart, parts.confidencePart],
+    [TimelineEventType.AI_ANALYSIS]: [parts.durationPart, parts.itemCountPart],
+    [TimelineEventType.RECIPES_GENERATED]: [parts.recipeCountPart],
+    [TimelineEventType.SHARED]: [parts.usersPart],
+    [TimelineEventType.EDITED]: [parts.notesPart],
+    [TimelineEventType.EXPORTED]: [parts.formatPart],
+    [TimelineEventType.CATEGORIZED]: [parts.categoryPart],
   };
 
-  return tooltips[type] || "Event details unavailable";
+  const typeParts = additionalParts[type];
+  if (!typeParts) return baseTooltip;
+
+  return buildTooltipContent(baseTooltip, ...typeParts);
 }
 
 /**
@@ -99,17 +152,13 @@ export function getEventTooltipContent(type: TimelineEventType, metadata?: Timel
  * @returns {Record<string, TimelineEvent[]>} Events grouped by formatted date string
  */
 export function groupEventsByDate(events: TimelineEvent[], locale: Locale): Record<string, TimelineEvent[]> {
-  return events.reduce(
-    (acc, event) => {
-      const dateKey = formatDate(event.date, {locale});
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(event);
-      return acc;
-    },
-    {} as Record<string, TimelineEvent[]>,
-  );
+  const grouped: Record<string, TimelineEvent[]> = {};
+  for (const event of events) {
+    const dateKey = formatDate(event.date, {locale});
+    grouped[dateKey] ??= [];
+    grouped[dateKey].push(event);
+  }
+  return grouped;
 }
 
 /**
@@ -226,7 +275,7 @@ export function generateTimelineFromInvoice(invoice: Invoice): TimelineEvent[] {
   }
 
   // Sort events by date
-  return events.sort((a, b) => a.date.getTime() - b.date.getTime());
+  return events.toSorted((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 /**
@@ -236,10 +285,10 @@ export function generateTimelineFromInvoice(invoice: Invoice): TimelineEvent[] {
  */
 export function getInitials(identifier: string): string {
   if (identifier.includes("@")) {
-    const localPart = identifier.split("@")[0];
-    return localPart!.substring(0, 2).toUpperCase();
+    const [localPart] = identifier.split("@");
+    return localPart!.slice(0, 2).toUpperCase();
   }
-  return identifier.substring(0, 2).toUpperCase();
+  return identifier.slice(0, 2).toUpperCase();
 }
 
 /**
@@ -249,7 +298,7 @@ export function getInitials(identifier: string): string {
  */
 export function getDisplayName(identifier: string): string {
   if (identifier.includes("@")) {
-    const localPart = identifier.split("@")[0];
+    const [localPart] = identifier.split("@");
     return localPart!.charAt(0).toUpperCase() + localPart!.slice(1);
   }
   return identifier;

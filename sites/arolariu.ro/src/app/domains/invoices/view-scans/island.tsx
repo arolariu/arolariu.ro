@@ -9,9 +9,10 @@ import {Button, Card, CardContent} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
-import {useState} from "react";
+import {useCallback} from "react";
 import {TbArrowLeft, TbCheck, TbClick, TbFileInvoice, TbPhoto, TbStack2} from "react-icons/tb";
-import CreateInvoiceDialog from "./_components/CreateInvoiceDialog";
+import DialogContainer from "../_contexts/DialogContainer";
+import {DialogProvider, useDialogs} from "../_contexts/DialogContext";
 import ScanSelectionToolbar from "./_components/ScanSelectionToolbar";
 import ScansGrid from "./_components/ScansGrid";
 import ScansHeader from "./_components/ScansHeader";
@@ -49,12 +50,12 @@ function StatsCard({value, label, color}: Readonly<{value: number; label: string
 /**
  * Scan statistics component.
  */
-function ScanStats(): React.JSX.Element {
+function ScanStats(): React.JSX.Element | null {
   const t = useTranslations("Domains.services.invoices.service.view-scans");
   const {scans, selectedScans} = useScans();
   const readyScans = scans.filter((s) => s.status === "ready").length;
 
-  if (scans.length === 0) return <></>;
+  if (scans.length === 0) return null;
 
   return (
     <motion.div
@@ -94,12 +95,12 @@ function ScanStats(): React.JSX.Element {
 /**
  * Sidebar with tips and guidance.
  */
-function Sidebar(): React.JSX.Element {
+function Sidebar(): React.JSX.Element | null {
   const t = useTranslations("Domains.services.invoices.service.view-scans");
   const {scans, selectedScans} = useScans();
 
   // Don't show sidebar if no scans
-  if (scans.length === 0) return <></>;
+  if (scans.length === 0) return null;
 
   return (
     <div className='space-y-6'>
@@ -178,16 +179,16 @@ function Sidebar(): React.JSX.Element {
 }
 
 /**
- * Client-side island for the view scans workflow.
- *
- * @remarks
- * This component serves as the hydration boundary for the view scans page.
- * It manages the dialog state and renders the scan viewing UI.
+ * Inner content component that uses the dialog context.
  */
-export default function RenderViewScansScreen(): React.JSX.Element {
+function ViewScansContent(): React.JSX.Element {
   const t = useTranslations("Domains.services.invoices.service.view-scans");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const {scans, selectedScans} = useScans();
+  const {openDialog} = useDialogs();
+
+  const handleOpenCreateInvoice = useCallback(() => {
+    openDialog("VIEW_SCANS__CREATE_INVOICE", "add", {selectedScans});
+  }, [openDialog, selectedScans]);
 
   return (
     <section className='mx-auto max-w-7xl'>
@@ -217,14 +218,25 @@ export default function RenderViewScansScreen(): React.JSX.Element {
         <Sidebar />
       </div>
 
-      <ScanSelectionToolbar onCreateInvoice={() => setDialogOpen(true)} />
-      <CreateInvoiceDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        selectedScans={selectedScans}
-      />
+      <ScanSelectionToolbar onCreateInvoice={handleOpenCreateInvoice} />
+      <DialogContainer />
       {/* Add padding at bottom when toolbar is visible */}
-      {selectedScans.length > 0 && <div className='h-24' />}
+      {selectedScans.length > 0 ? <div className='h-24' /> : null}
     </section>
+  );
+}
+
+/**
+ * Client-side island for the view scans workflow.
+ *
+ * @remarks
+ * This component serves as the hydration boundary for the view scans page.
+ * It manages the dialog state via DialogProvider and renders the scan viewing UI.
+ */
+export default function RenderViewScansScreen(): React.JSX.Element {
+  return (
+    <DialogProvider>
+      <ViewScansContent />
+    </DialogProvider>
   );
 }

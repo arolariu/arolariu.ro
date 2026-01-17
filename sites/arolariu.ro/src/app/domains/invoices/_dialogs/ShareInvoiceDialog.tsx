@@ -146,7 +146,6 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,
-    open,
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
 
@@ -317,6 +316,30 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     );
   }, [invoice.id, invoice.sharedWith, router, handleClose]);
 
+  /** Navigate to public sharing mode */
+  const handleSelectPublic = useCallback(() => {
+    setSharingMode("public");
+  }, []);
+
+  /** Navigate to private sharing mode */
+  const handleSelectPrivate = useCallback(() => {
+    setSharingMode("private");
+  }, []);
+
+  /**
+   * Handle dialog state change from the Dialog component.
+   * Note: Opening is handled via useDialog hook, this mainly handles close.
+   */
+  const handleOpenChange = useCallback(
+    (nextOpenState: boolean) => {
+      // The dialog only needs to handle closing since opening is managed by useDialog
+      if (!nextOpenState) {
+        handleClose();
+      }
+    },
+    [handleClose],
+  );
+
   /** Get the dialog description based on current state */
   const getDialogDescription = (): string => {
     if (isInvoicePublic) {
@@ -337,8 +360,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Share Invoice</DialogTitle>
@@ -358,8 +380,8 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
           <>
             {sharingMode === "selection" && (
               <SelectionMode
-                onSelectPublic={() => setSharingMode("public")}
-                onSelectPrivate={() => setSharingMode("private")}
+                onSelectPublic={handleSelectPublic}
+                onSelectPrivate={handleSelectPrivate}
               />
             )}
             {sharingMode === "public" && (

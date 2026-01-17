@@ -15,6 +15,7 @@ import RemoveScanDialog from "../edit-invoice/[id]/_components/dialogs/RemoveSca
 import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
+import CreateInvoiceDialog from "../view-scans/_components/dialogs/CreateInvoiceDialog";
 import {useDialogs} from "./DialogContext";
 
 /**
@@ -56,6 +57,9 @@ export default function DialogContainer(): React.JSX.Element | null {
       return <InvoicesImportDialog />;
     case "VIEW_INVOICES__EXPORT":
       return <InvoicesExportDialog />;
+    // view-scans Dialogs
+    case "VIEW_SCANS__CREATE_INVOICE":
+      return <CreateInvoiceDialog />;
     // shared dialogs
     case "SHARED__INVOICE_DELETE":
       return <DeleteInvoiceDialog />;

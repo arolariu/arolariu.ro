@@ -18,9 +18,9 @@ export default function AuthBulletList(props: AuthBulletListProps): React.JSX.El
 
   return (
     <ul className={props.className ?? "text-muted-foreground space-y-2 text-sm"}>
-      {props.bullets.map((bullet, index) => (
+      {props.bullets.map((bullet) => (
         <li
-          key={`${bullet}-${index}`}
+          key={bullet}
           className='flex items-start gap-2'>
           {bulletAdornment}
           <span>{bullet}</span>

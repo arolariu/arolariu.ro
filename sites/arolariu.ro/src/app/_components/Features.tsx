@@ -56,7 +56,7 @@ export default function FeaturesSection(): React.JSX.Element {
             .split(" ")
             .map((word) => ({
               text: word,
-              className: "inline-block text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-500",
+              className: "inline-block text-transparent bg-clip-text bg-linear-to-r from-gradient-from to-gradient-to",
             }))}
           className='text-5xl font-bold'
           cursorClassName='h-10 2xsm:hidden md:block'

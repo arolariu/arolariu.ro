@@ -20,7 +20,7 @@ This is the **arolariu.ro** monorepo - a full-stack platform built with:
 | Add UI component | `packages/components/src/components/ui/` | `stories/`, `src/index.ts` |
 | Add API endpoint | `sites/api.arolariu.ro/src/Core/Endpoints/` | Domain models, `tests/` |
 | Add frontend page | `sites/arolariu.ro/src/app/` | `island.tsx`, `_components/` |
-| Add translation | `sites/arolariu.ro/messages/` | `en.json`, `ro.json` |
+| Add translation | `sites/arolariu.ro/messages/` | `en.json`, `ro.json`, `fr.json` |
 | Add custom hook | `sites/arolariu.ro/src/hooks/` | `stores/`, `types/` |
 | Modify Zustand store | `sites/arolariu.ro/src/stores/` | `hooks/`, `indexedDBStorage.ts` |
 | Add CV section | `sites/cv.arolariu.ro/src/data/` | `components/`, `routes/` |
@@ -64,7 +64,7 @@ This is the **arolariu.ro** monorepo - a full-stack platform built with:
 | MCP servers not starting (Windows) | Use `cmd /c npx` in `.mcp.json` |
 | Tests failing with coverage errors | Check thresholds in `vitest.config.ts` |
 | Build fails with TS errors | Run `npm run generate` first |
-| Missing translations | Check `messages/en.json` structure |
+| Missing translations | Run `npm run generate:i18n` to sync locales |
 | API connection refused | Ensure API is running: `npm run dev:api` |
 | Component not found | Check barrel export in `packages/components/src/index.ts` |
 
@@ -171,7 +171,7 @@ Endpoints → Processing Services → Orchestration Services → Foundation Serv
 - State management: Zustand stores with IndexedDB persistence
 - Server Actions in `src/lib/actions/`
 - Custom hooks in `src/hooks/` (useInvoice, useInvoices, useMerchant, etc.)
-- i18n via next-intl (messages in `messages/en.json`, `messages/ro.json`)
+- i18n via next-intl (messages in `messages/en.json`, `messages/ro.json`, `messages/fr.json`)
 
 ## Code Standards
 
@@ -204,6 +204,9 @@ Endpoints → Processing Services → Orchestration Services → Foundation Serv
 | RFC 1001 | Frontend OpenTelemetry System |
 | RFC 1003 | Internationalization (next-intl) |
 | RFC 1004 | Metadata & SEO System |
+| RFC 1005 | State Management (Zustand) |
+| RFC 1006 | Component Library Architecture |
+| RFC 1007 | Advanced Frontend Patterns |
 
 Additional instructions for GitHub Copilot are in `.github/instructions/`:
 - `backend.instructions.md` - DDD and .NET patterns
@@ -215,7 +218,7 @@ Additional instructions for GitHub Copilot are in `.github/instructions/`:
 **Prerequisites:**
 - Node.js ≥24
 - .NET 10.0 SDK
-- npm ≥10
+- npm ≥11 (bundled with Node.js 24)
 
 **Initial Setup:**
 ```bash

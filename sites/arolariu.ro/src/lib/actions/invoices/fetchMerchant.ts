@@ -22,7 +22,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Merchant} from "@/types/invoices";
-import {API_URL} from "../../utils.server";
+import {API_URL, createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -35,9 +35,9 @@ type ServerActionInputType = Readonly<{
   readonly merchantId: string;
 }>;
 /**
- * Returns the complete Merchant entity.
+ * Returns a result with Merchant entity or error details.
  */
-type ServerActionOutputType = Promise<Readonly<Merchant>>;
+type ServerActionOutputType = Promise<ServerActionResult<Readonly<Merchant>>>;
 
 /**
  * Fetches a single merchant by its unique identifier.
@@ -87,7 +87,14 @@ export default async function fetchMerchant({merchantId}: ServerActionInputType)
     try {
       // Step 0. Validate input is correct
       logWithTrace("info", "Validating input for fetchMerchant", {merchantId}, "server");
-      validateStringIsGuidType(merchantId, "merchantId");
+      try {
+        validateStringIsGuidType(merchantId, "merchantId");
+      } catch {
+        return {
+          success: false,
+          error: {code: "VALIDATION_ERROR", message: `Invalid merchant ID: ${merchantId}`},
+        };
+      }
 
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
@@ -95,10 +102,10 @@ export default async function fetchMerchant({merchantId}: ServerActionInputType)
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
-      // Step 2. Make the API request to fetch the merchant
+      // Step 2. Make the API request to fetch the merchant (with timeout)
       addSpanEvent("bff.request.fetch-merchant.start");
       logWithTrace("info", "Making API request to fetch merchant", {merchantId}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/merchants/${merchantId}`, {
+      const response = await fetchWithTimeout(`${API_URL}/rest/v1/merchants/${merchantId}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
@@ -108,16 +115,28 @@ export default async function fetchMerchant({merchantId}: ServerActionInputType)
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched merchant", {merchantId}, "server");
-        return response.json() as ServerActionOutputType;
+        const data = (await response.json()) as Readonly<Merchant>;
+        return {success: true, data};
       }
 
+      // Handle HTTP errors with standardized error codes
       const errorText = await response.text();
-      throw new Error(`BFF fetch merchant request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorCode = mapHttpStatusToErrorCode(response.status);
+      logWithTrace("error", "API returned error status", {status: response.status, errorText, merchantId}, "server");
+
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: `Failed to fetch merchant: ${response.status} ${response.statusText}`,
+          status: response.status,
+        },
+      };
     } catch (error) {
       addSpanEvent("bff.request.fetch-merchant.error");
       logWithTrace("error", "Error fetching the merchant from the server", {error, merchantId}, "server");
       console.error("Error fetching the merchant from the server:", error);
-      throw error;
+      return createErrorResult<Readonly<Merchant>>(error, "Failed to fetch merchant");
     }
   });
 }

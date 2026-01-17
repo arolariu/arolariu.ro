@@ -37,7 +37,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
         <section className='mb-6 max-w-80 rounded-xl border p-4 sm:mb-0'>
           <article className='h-64 overflow-hidden rounded-lg'>
             <Image
-              alt='content'
+              alt={t("services.invoices.card.imageAlt")}
               className='h-full w-full object-cover object-center'
               src='/images/domains/invoice-management-system.png'
               width='600'

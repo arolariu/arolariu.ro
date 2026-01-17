@@ -62,7 +62,7 @@ describe("useInvoice", () => {
   it("should initialize with null invoice and loading state", () => {
     const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test Invoice").build();
 
-    mockFetchInvoice.mockResolvedValue(mockInvoice);
+    mockFetchInvoice.mockResolvedValue({success: true, data: mockInvoice});
 
     const {result} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
 
@@ -74,7 +74,7 @@ describe("useInvoice", () => {
   it("should fetch invoice successfully", async () => {
     const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test Invoice").build();
 
-    mockFetchInvoice.mockResolvedValue(mockInvoice);
+    mockFetchInvoice.mockResolvedValue({success: true, data: mockInvoice});
 
     // Update mock to return the invoice after fetch and set hasHydrated to true
     let storeInvoices: Invoice[] = [];
@@ -114,7 +114,10 @@ describe("useInvoice", () => {
   });
 
   it("should handle fetch errors", async () => {
-    mockFetchInvoice.mockRejectedValue(new Error("Failed to fetch"));
+    mockFetchInvoice.mockResolvedValue({
+      success: false,
+      error: {code: "NETWORK_ERROR", message: "Failed to fetch"},
+    });
 
     // Set hasHydrated to true so isLoading becomes false
     mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
@@ -141,8 +144,9 @@ describe("useInvoice", () => {
   });
 
   it("should set loading state during fetch", async () => {
-    let resolvePromise: (value: Invoice) => void;
-    const promise = new Promise<Invoice>((resolve) => {
+    const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test").build();
+    let resolvePromise: (value: {success: true; data: Invoice}) => void;
+    const promise = new Promise<{success: true; data: Invoice}>((resolve) => {
       resolvePromise = resolve;
     });
 
@@ -166,8 +170,7 @@ describe("useInvoice", () => {
     expect(result.current.invoice).toBeNull();
 
     // Resolve the promise
-    const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test").build();
-    resolvePromise!(mockInvoice);
+    resolvePromise!({success: true, data: mockInvoice});
 
     // Simulate hydration completing
     hasHydrated = true;

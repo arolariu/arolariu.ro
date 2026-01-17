@@ -39,7 +39,9 @@
           }
         },
         "subtitle": "Certificări și acreditări profesionale pe care Alexandru le-a obținut de-a lungul carierei sale.",
-        "title": "Certificări"
+        "title": "Certificări",
+        "coreSkillsLabel": "Competențe Demonstrate:",
+        "viewCertification": "Vezi certificarea"
       },
       "Competencies": {
         "competences": {
@@ -169,6 +171,9 @@
         },
         "subtitle": "O călătorie prin cariera profesională a lui Alexandru și prin companiile cu care a lucrat.",
         "title": "Experiență profesională",
+        "responsibilitiesLabel": "Responsabilități",
+        "achievementsLabel": "Realizări",
+        "techSkillsLabel": "Tehnologii și Competențe",
         "ubisoft": {
           "achievements": "# A contribuit la dezvoltarea de aplicații cloud-native folosind .NET și Azure, # A implementat arhitectura microserviciilor pentru sisteme scalabile și rezistente, # A colaborat cu echipe interfuncționale pentru a furniza soluții software de înaltă calitate, # A participat la revizuiri de cod și a îndrumat dezvoltatorii juniori",
           "company": "Ubisoft",
@@ -263,10 +268,595 @@
       }
     },
     "footer": "Vă mulțumesc!",
+    "Hub": {
+      "hero": {
+        "badge": "Despre noi",
+        "title": "Descoperă arolariu.ro",
+        "subtitle": "O platformă full-stack modernă construită cu pasiune, proiectată pentru inovație și creată cu atenție la detalii.",
+        "ctaPrimary": "Explorează platforma",
+        "ctaSecondary": "Cunoaște autorul"
+      },
+      "mission": {
+        "title": "Misiunea noastră",
+        "statement": "Să construim software care face diferența.",
+        "description": "arolariu.ro este mai mult decât un simplu site web - este un teren de joacă pentru tehnologii moderne, o vitrină de bune practici și o platformă care demonstrează ce este posibil atunci când excelența în inginerie întâlnește viziunea creativă.",
+        "pillars": {
+          "innovation": {
+            "title": "Inovație",
+            "description": "Adoptăm tehnologii de ultimă oră și modele arhitecturale moderne"
+          },
+          "quality": {
+            "title": "Calitate",
+            "description": "Menținem standarde înalte cu acoperire de teste de peste 90%"
+          },
+          "openness": {
+            "title": "Deschidere",
+            "description": "Open source, transparent și orientat spre comunitate"
+          }
+        }
+      },
+      "values": {
+        "title": "Valori fundamentale",
+        "subtitle": "Principiile care ghidează fiecare linie de cod",
+        "items": {
+          "engineering": {
+            "title": "Excelență în inginerie",
+            "description": "Fiecare funcționalitate este construită cu arhitectură curată, testare adecvată și mentenabilitate în minte."
+          },
+          "learning": {
+            "title": "Învățare continuă",
+            "description": "Această platformă servește ca teren de testare pentru noi tehnologii și abordări."
+          },
+          "community": {
+            "title": "Comunitatea pe primul loc",
+            "description": "Open source din suflet, contribuind înapoi la comunitatea de dezvoltatori."
+          },
+          "privacy": {
+            "title": "Axat pe confidențialitate",
+            "description": "Protecția datelor utilizatorilor și confidențialitatea sunt fundamentale, nu gânduri secundare."
+          },
+          "performance": {
+            "title": "Orientat spre performanță",
+            "description": "Optimizat pentru viteză cu randare pe server și implementări pe edge."
+          },
+          "accessibility": {
+            "title": "Design accesibil",
+            "description": "Construit pentru toți, cu navigare prin tastatură și suport pentru cititoare de ecran."
+          }
+        }
+      },
+      "stats": {
+        "title": "În cifre",
+        "subtitle": "Metrici cheie care demonstrează angajamentul nostru față de calitate",
+        "items": {
+          "yearsActive": {
+            "value": "3+",
+            "label": "Ani activi",
+            "description": "În continuă evoluție din 2022"
+          },
+          "linesOfCode": {
+            "value": "50K+",
+            "label": "Linii de cod",
+            "description": "Între frontend și backend"
+          },
+          "technologies": {
+            "value": "25+",
+            "label": "Tehnologii",
+            "description": "Stack tehnologic modern"
+          },
+          "testCoverage": {
+            "value": "90%",
+            "label": "Acoperire teste",
+            "description": "Standard de asigurare a calității"
+          }
+        }
+      },
+      "navigation": {
+        "title": "Explorează mai departe",
+        "subtitle": "Aprofundează ce face arolariu.ro unic",
+        "platform": {
+          "title": "Platforma",
+          "subtitle": "Descoperă arhitectura, stack-ul tehnologic și funcționalitățile care alimentează arolariu.ro.",
+          "features": [
+            "Frontend Next.js 16",
+            "Backend .NET 10",
+            "Infrastructură Azure Cloud"
+          ],
+          "cta": "Explorează platforma"
+        },
+        "author": {
+          "title": "Autorul",
+          "subtitle": "Cunoaște-l pe Alexandru-Răzvan Olariu, inginerul software din spatele acestei platforme.",
+          "features": [
+            "Inginer Microsoft",
+            "Arhitect de soluții",
+            "Entuziast tehnologie"
+          ],
+          "cta": "Cunoaște-l pe Alexandru"
+        }
+      },
+      "faq": {
+        "title": "Întrebări frecvente",
+        "subtitle": "Întrebări comune despre platformă și scopul ei",
+        "questions": {
+          "q1": {
+            "question": "Ce este arolariu.ro?",
+            "answer": "arolariu.ro este o platformă full-stack cuprinzătoare care servește atât ca portofoliu personal, cât și ca vitrină tehnologică. Demonstrează practici moderne de dezvoltare web folosind Next.js, .NET și servicii cloud Azure."
+          },
+          "q2": {
+            "question": "Este această platformă open source?",
+            "answer": "Da! Întreaga platformă este open source și disponibilă pe GitHub. Poți explora codul sursă, să înveți din el sau chiar să contribui la dezvoltarea lui."
+          },
+          "q3": {
+            "question": "Ce tehnologii sunt folosite?",
+            "answer": "Platforma folosește Next.js 16 cu React 19 pentru frontend, .NET 10 cu ASP.NET Core pentru backend și Azure pentru infrastructura cloud. Include și o bibliotecă de componente cuprinzătoare și testare extensivă."
+          },
+          "q4": {
+            "question": "Pot folosi aceasta ca referință pentru propriile mele proiecte?",
+            "answer": "Absolut! Platforma este proiectată să prezinte cele mai bune practici în ingineria software. Simte-te liber să o folosești ca referință pentru arhitectură, modele și detalii de implementare."
+          }
+        }
+      },
+      "cta": {
+        "title": "Gata de explorare?",
+        "subtitle": "Începe-ți călătoria prin platformă sau conectează-te cu autorul.",
+        "primary": "Vezi pe GitHub",
+        "secondary": "Ia legătura",
+        "footer": "Construit cu pasiune în România"
+      }
+    },
     "Platform": {
       "__metadata__": {
         "description": "Aflați mai multe despre platformă, Arolariu.ro.",
         "title": "Platforma"
+      },
+      "hero": {
+        "statusBadge": "Platformă Open Source",
+        "subtitle": "Modern • Scalabil • Open Source",
+        "title": "Bine ai venit pe",
+        "description": "O platformă full-stack completă care combină Next.js, .NET și servicii cloud Azure. Construită cu arhitectură de nivel enterprise, design bazat pe domeniu și un accent pe experiența dezvoltatorului.",
+        "stats": {
+          "projects": "Proiecte",
+          "techStack": "Stack tehnologic",
+          "linesOfCode": "Linii de cod",
+          "countries": "Țări"
+        },
+        "cta": {
+          "exploreFeatures": "Explorează funcționalități",
+          "viewSource": "Vezi codul sursă"
+        },
+        "trust": {
+          "openSource": "Open Source",
+          "privacyFirst": "Confidențialitate în prim-plan",
+          "freeForever": "Gratuit pentru totdeauna"
+        },
+        "scrollIndicator": "Derulează pentru a explora"
+      },
+      "features": {
+        "badge": "Funcționalități ale platformei",
+        "title": "Tot ce ai nevoie,",
+        "titleHighlight": "frumos realizat",
+        "description": "O suită completă de instrumente concepute pentru gestionarea modernă a finanțelor personale, organizarea rețetelor și multe altele. Construite cu tehnologii de ultimă generație și un accent pe experiența utilizatorului.",
+        "items": {
+          "invoices": {
+            "title": "Procesare facturi",
+            "description": "Analiză și gestionare a facturilor cu ajutorul AI",
+            "longDescription": "Încărcați fotografii cu bonuri și lăsați AI să extragă detaliile comerciantului, articolele, prețurile și multe altele. Categorizarea automată, urmărirea cheltuielilor și analizele detaliate vă ajută să vă înțelegeți tiparele de cheltuieli.",
+            "tags": "AI,OCR,Analize"
+          },
+          "merchants": {
+            "title": "Inteligență comercianți",
+            "description": "Detectare automată a comercianților și perspective",
+            "longDescription": "AI-ul nostru identifică comercianții din datele bonurilor, construind o bază de date completă a tiparelor dvs. de cumpărături. Obțineți informații despre unde faceți cumpărături, tendințele cheltuielilor și comparații între comercianți.",
+            "tags": "ML,Perspective,Urmărire"
+          },
+          "budgets": {
+            "title": "Gestionare buget",
+            "description": "Urmărire inteligentă a bugetului și alerte",
+            "longDescription": "Setați bugete pe categorii și primiți alerte inteligente când vă apropiați de limite. Vizualizați cheltuielile cu grafice interactive și identificați zonele pentru optimizare.",
+            "tags": "Bugete,Alerte,Planificare"
+          },
+          "analytics": {
+            "title": "Analize cheltuieli",
+            "description": "Perspective profunde în cheltuielile dvs.",
+            "longDescription": "Tablou de bord analitic complet cu tendințe de cheltuieli, defalcări pe categorii, comparații lunare și perspective predictive alimentate de algoritmi de învățare automată.",
+            "tags": "Grafice,Tendințe,Rapoarte"
+          },
+          "recipes": {
+            "title": "Gestionare rețete",
+            "description": "Organizați și descoperiți creații culinare",
+            "longDescription": "Stocați rețetele preferate, descoperiți unele noi și planificați mesele eficient. Sugestii bazate pe AI în funcție de ingrediente, preferințe dietetice și istoricul de gătit.",
+            "tags": "Gătit,Planificare mese,AI"
+          },
+          "ai": {
+            "title": "Asistent AI",
+            "description": "Automatizare inteligentă la îndemână",
+            "longDescription": "Alimentat de Azure OpenAI, asistentul nostru AI ajută la înțelegerea documentelor, extragerea datelor, categorizarea inteligentă și interogări în limbaj natural despre datele dvs.",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "security": {
+            "title": "Securitate enterprise",
+            "description": "Securitate de nivel bancar pentru datele dvs.",
+            "longDescription": "Datele dvs. sunt protejate cu criptare de nivel enterprise, autentificare securizată prin Azure AD B2C și conformitate cu GDPR. Nu vindem și nu împărtășim niciodată informațiile dvs. personale.",
+            "tags": "Criptare,GDPR,SSO"
+          },
+          "i18n": {
+            "title": "Multi-limbă",
+            "description": "Experiență complet internaționalizată",
+            "longDescription": "Platforma suportă mai multe limbi cu suport RTL complet. Disponibilă în prezent în engleză și română, cu mai multe limbi planificate pentru versiunile viitoare.",
+            "tags": "i18n,Engleză,Română"
+          },
+          "auth": {
+            "title": "Autentificare securizată",
+            "description": "Opțiuni de conectare flexibile și sigure",
+            "longDescription": "Conectați-vă cu Microsoft, Google, GitHub sau email. Azure AD B2C oferă gestionarea identității de nivel enterprise cu suport MFA și experiență SSO fără întreruperi.",
+            "tags": "OAuth,MFA,SSO"
+          }
+        },
+        "modal": {
+          "exploreFeature": "Explorează funcționalitatea",
+          "close": "Închide"
+        }
+      },
+      "architecture": {
+        "badge": "Arhitectură tehnică",
+        "title": "Construit pentru",
+        "titleHighlight": "scalabilitate și fiabilitate",
+        "description": "O arhitectură modernă nativă cloud care urmează principiile de design bazat pe domeniu, metodologia The Standard și cele mai bune practici din industrie.",
+        "layers": {
+          "client": {
+            "name": "Nivelul client",
+            "description": "Frontend-uri moderne bazate pe React cu capacități SSR și SSG",
+            "technologies": "Next.js 16,React 19,TypeScript,Tailwind CSS"
+          },
+          "cdn": {
+            "name": "Edge și CDN",
+            "description": "Livrare globală de conținut cu cache la margine și optimizare",
+            "technologies": "Azure CDN,Vercel Edge,Active statice"
+          },
+          "api": {
+            "name": "Gateway API",
+            "description": "API-uri RESTful cu documentație OpenAPI și limitare a ratei",
+            "technologies": ".NET 10,Minimal APIs,OpenAPI,GraphQL"
+          },
+          "services": {
+            "name": "Microservicii",
+            "description": "Design bazat pe domeniu cu contexte delimitate și arhitectură curată",
+            "technologies": "DDD,CQRS,Event Sourcing,The Standard"
+          },
+          "auth": {
+            "name": "Identitate și securitate",
+            "description": "Autentificare de nivel enterprise cu furnizori multipli",
+            "technologies": "Azure AD B2C,OAuth 2.0,OIDC,MFA"
+          },
+          "data": {
+            "name": "Nivelul de date",
+            "description": "Strategie de baze de date multi-model pentru performanță optimă",
+            "technologies": "CosmosDB,Azure SQL,Redis Cache,Blob Storage"
+          },
+          "ai": {
+            "name": "Servicii AI",
+            "description": "Procesare inteligentă a documentelor și înțelegere a limbajului natural",
+            "technologies": "Azure OpenAI,Document Intelligence,Computer Vision"
+          },
+          "infra": {
+            "name": "Infrastructură cloud",
+            "description": "Infrastructură Azure complet gestionată cu implementare IaC",
+            "technologies": "Azure,Bicep IaC,Container Apps,Key Vault"
+          }
+        },
+        "principles": {
+          "rsc": {
+            "title": "React Server Components",
+            "description": "Utilizarea RSC pentru performanță optimă cu randare server-side și streaming"
+          },
+          "appRouter": {
+            "title": "Arhitectură App Router",
+            "description": "Rutare bazată pe fișiere cu layout-uri, stări de încărcare și limite de erori"
+          },
+          "cloudNative": {
+            "title": "Design nativ cloud",
+            "description": "Microservicii containerizate cu auto-scalare și capacități de auto-vindecare"
+          }
+        }
+      },
+      "techStack": {
+        "badge": "Stack tehnologic",
+        "title": "Alimentat de",
+        "titleHighlight": "tehnologii moderne",
+        "description": "Un stack tehnologic atent ales pentru performanță, experiența dezvoltatorului și mentenabilitate pe termen lung.",
+        "categories": {
+          "frontend": {
+            "name": "Frontend",
+            "description": "Tehnologii web moderne pentru experiențe de utilizator ultra-rapide"
+          },
+          "backend": {
+            "name": "Backend",
+            "description": "Tehnologii server-side scalabile și API-uri"
+          },
+          "cloud": {
+            "name": "Cloud și DevOps",
+            "description": "Automatizarea infrastructurii și implementării"
+          },
+          "tooling": {
+            "name": "Unelte pentru dezvoltatori",
+            "description": "Unelte și framework-uri pentru excelență în dezvoltare"
+          }
+        },
+        "technologies": {
+          "react": {
+            "name": "React",
+            "description": "Bibliotecă UI pentru construirea de interfețe interactive"
+          },
+          "nextjs": {
+            "name": "Next.js",
+            "description": "Framework React full-stack cu SSR/SSG"
+          },
+          "typescript": {
+            "name": "TypeScript",
+            "description": "JavaScript cu tipuri pentru cod robust"
+          },
+          "tailwind": {
+            "name": "Tailwind CSS",
+            "description": "Framework CSS bazat pe utilități"
+          },
+          "zustand": {
+            "name": "Zustand",
+            "description": "Gestionare ușoară a stării"
+          },
+          "motion": {
+            "name": "Motion",
+            "description": "Animații gata de producție"
+          },
+          "dotnet": {
+            "name": ".NET",
+            "description": "Framework backend principal"
+          },
+          "aspnet": {
+            "name": "ASP.NET Core",
+            "description": "API-uri web de înaltă performanță"
+          },
+          "nodejs": {
+            "name": "Node.js",
+            "description": "BFF și funcții serverless"
+          },
+          "cosmosdb": {
+            "name": "CosmosDB",
+            "description": "Bază de date NoSQL distribuită global"
+          },
+          "azuresql": {
+            "name": "Azure SQL",
+            "description": "Bază de date relațională gestionată"
+          },
+          "redis": {
+            "name": "Redis",
+            "description": "Cache în memorie pentru performanță"
+          },
+          "azure": {
+            "name": "Azure",
+            "description": "Furnizor cloud principal"
+          },
+          "vercel": {
+            "name": "Vercel",
+            "description": "Platformă de implementare frontend"
+          },
+          "docker": {
+            "name": "Docker",
+            "description": "Platformă de containerizare"
+          },
+          "githubActions": {
+            "name": "GitHub Actions",
+            "description": "Automatizare CI/CD"
+          },
+          "bicep": {
+            "name": "Bicep",
+            "description": "Infrastructură ca și cod"
+          },
+          "azureDevops": {
+            "name": "Azure DevOps",
+            "description": "Gestionare proiecte și pipeline-uri"
+          },
+          "git": {
+            "name": "Git",
+            "description": "Sistem de control al versiunilor"
+          },
+          "eslint": {
+            "name": "ESLint",
+            "description": "Linting JavaScript cu 20+ plugin-uri"
+          },
+          "prettier": {
+            "name": "Prettier",
+            "description": "Formatare cod"
+          },
+          "vitest": {
+            "name": "Vitest",
+            "description": "Framework de testare unitară"
+          },
+          "playwright": {
+            "name": "Playwright",
+            "description": "Framework de testare E2E"
+          },
+          "pnpm": {
+            "name": "pnpm/npm",
+            "description": "Gestionare pachete"
+          }
+        },
+        "stats": {
+          "technologies": {
+            "value": "24+",
+            "label": "Tehnologii",
+            "description": "În stack-ul nostru"
+          },
+          "coverage": {
+            "value": "90%+",
+            "label": "Acoperire teste",
+            "description": "Teste unitare și E2E"
+          },
+          "typescript": {
+            "value": "100%",
+            "label": "TypeScript",
+            "description": "Siguranță completă a tipurilor"
+          },
+          "security": {
+            "value": "A+",
+            "label": "Grad de securitate",
+            "description": "Cele mai bune practici"
+          }
+        }
+      },
+      "statistics": {
+        "badge": "Statistici ale platformei",
+        "title": "Numere care",
+        "titleHighlight": "vorbesc de la sine",
+        "description": "O privire asupra dimensiunii și impactului platformei arolariu.ro, de la linii de cod la acoperire globală.",
+        "items": {
+          "projects": {
+            "value": "15",
+            "suffix": "+",
+            "label": "Proiecte",
+            "description": "Repozitorii active"
+          },
+          "commits": {
+            "value": "2500",
+            "suffix": "+",
+            "label": "Commit-uri",
+            "description": "Contribuții de cod"
+          },
+          "linesOfCode": {
+            "value": "150",
+            "suffix": "K+",
+            "label": "Linii de cod",
+            "description": "În toate proiectele"
+          },
+          "apis": {
+            "value": "8",
+            "suffix": "+",
+            "label": "API-uri",
+            "description": "Microservicii"
+          },
+          "users": {
+            "value": "1000",
+            "suffix": "+",
+            "label": "Utilizatori",
+            "description": "Activi lunar"
+          },
+          "countries": {
+            "value": "25",
+            "suffix": "+",
+            "label": "Țări",
+            "description": "Acoperire globală"
+          },
+          "stars": {
+            "value": "50",
+            "suffix": "+",
+            "label": "Stele",
+            "description": "Stele GitHub"
+          },
+          "contributors": {
+            "value": "5",
+            "suffix": "+",
+            "label": "Contribuitori",
+            "description": "Open source"
+          }
+        }
+      },
+      "timeline": {
+        "badge": "Călătoria de dezvoltare",
+        "title": "De la idee la",
+        "titleHighlight": "realitate",
+        "description": "Călătoria arolariu.ro de la o simplă idee la o platformă completă, cu etape cheie pe parcurs.",
+        "futureIndicator": "Călătoria continuă...",
+        "expandHint": "Click pentru a extinde",
+        "collapseHint": "Click pentru a restrânge",
+        "keyAchievements": "Realizări cheie:",
+        "events": {
+          "inception": {
+            "date": "Martie 2022",
+            "title": "Începutul proiectului",
+            "description": "Platforma arolariu.ro a fost concepută ca un proiect personal de învățare pentru a explora dezvoltarea web modernă.",
+            "details": "Faza inițială de concept și planificare,Cercetare în tehnologii web moderne,Primul repozitoriu creat pe GitHub,Prototip HTML/CSS de bază dezvoltat",
+            "tags": "Planificare,Cercetare"
+          },
+          "prototype": {
+            "date": "Iunie 2022",
+            "title": "Primul prototip",
+            "description": "Primul prototip funcțional al platformei a fost dezvoltat folosind React și servicii backend de bază.",
+            "details": "Implementare frontend React,Flux de autentificare de bază,Design UI/UX inițial,Configurare mediu de dezvoltare locală",
+            "tags": "React,Frontend"
+          },
+          "backend": {
+            "date": "Septembrie 2022",
+            "title": "Infrastructură backend",
+            "description": "Refacerea completă a backend-ului cu .NET și implementarea arhitecturii native cloud.",
+            "details": "Dezvoltare API .NET 6,Configurare infrastructură cloud Azure,Design bază de date cu CosmosDB,Implementare pipeline CI/CD",
+            "tags": ".NET,Azure,API"
+          },
+          "expansion": {
+            "date": "Ianuarie 2023",
+            "title": "Extinderea platformei",
+            "description": "Adăugări majore de funcționalități incluzând procesarea facturilor și capabilități de analiză alimentate de AI.",
+            "details": "Încărcare facturi și integrare OCR,Integrare Azure Document Intelligence,Algoritmi de detectare a comercianților,Funcționalități de urmărire a bugetului",
+            "tags": "AI,OCR,Facturi"
+          },
+          "launch": {
+            "date": "Iunie 2023",
+            "title": "Lansare publică",
+            "description": "Lansare publică oficială cu un set complet de funcționalități și infrastructură gata de producție.",
+            "details": "Implementare în producție pe Azure,Configurare domeniu personalizat,Implementare securitate SSL/TLS,Optimizare performanță",
+            "tags": "Lansare,Producție"
+          },
+          "nextjs": {
+            "date": "Decembrie 2023",
+            "title": "Migrare la Next.js",
+            "description": "Rescrierea completă a frontend-ului la Next.js App Router cu React Server Components.",
+            "details": "Migrare la Next.js 14+,Adoptarea React Server Components,SEO îmbunătățit cu generare statică,Metrici de performanță îmbunătățite",
+            "tags": "Next.js,RSC,Migrare"
+          },
+          "ai": {
+            "date": "Iunie 2024",
+            "title": "Integrare AI",
+            "description": "Integrare profundă cu Azure OpenAI pentru procesarea inteligentă a documentelor și interogări în limbaj natural.",
+            "details": "Integrare Azure OpenAI GPT-4,Interogări facturi în limbaj natural,Algoritmi de categorizare inteligentă,Funcționalități de analiză predictivă",
+            "tags": "GPT-4,Azure AI,NLP"
+          },
+          "present": {
+            "date": "Prezent",
+            "title": "Evoluție continuă",
+            "description": "Dezvoltare continuă cu funcționalități noi, optimizări și contribuții din comunitate.",
+            "details": "Actualizări regulate de funcționalități,Îmbunătățiri de performanță,Integrare feedback din comunitate,Planificare roadmap viitor",
+            "tags": "Activ,În creștere"
+          }
+        }
+      },
+      "callToAction": {
+        "title": "Gata să",
+        "titleHighlight": "începi",
+        "description": "Explorează platforma, încearcă funcționalitățile și alătură-te comunității. Fie că ești aici să gestionezi facturi, să descoperi rețete sau doar să explorezi, există ceva pentru toată lumea.",
+        "cta": {
+          "exploreApplications": "Explorează aplicațiile",
+          "createAccount": "Creează cont"
+        },
+        "links": {
+          "viewSource": "Vezi codul sursă",
+          "meetAuthor": "Cunoaște autorul",
+          "getInTouch": "Ia legătura"
+        },
+        "trust": {
+          "openSource": {
+            "title": "Open Source",
+            "description": "100% open source cu licență MIT"
+          },
+          "privacyFirst": {
+            "title": "Confidențialitate în prim-plan",
+            "description": "Datele tale rămân ale tale, mereu"
+          },
+          "freeToUse": {
+            "title": "Gratuit de folosit",
+            "description": "Fără taxe ascunse sau abonamente"
+          }
+        },
+        "footer": "Construit cu pasiune de",
+        "footerRole": ", un inginer software la Microsoft."
       }
     },
     "subtitle": " Povestea arolariu.ro a început în 2022, când autorul - Alexandru-Răzvan Olariu, a vrut să înțeleagă cum funcționează site-urile. Întreaga platformă și integrările subiacente au fost dezvoltate exclusiv de autor, din ceea ce a învățat de-a lungul anilor. Alexandru lucrează în prezent ca inginer software la Microsoft. Pentru a afla mai multe despre el, consultați secțiunea din dreapta a acestei pagini. Platforma este construită folosind cele mai noi tehnologii de ultimă oră. Pentru a afla mai multe despre el, consultați secțiunea din stânga a acestei pagini.",
@@ -276,6 +866,69 @@
     "__metadata__": {
       "description": "Pagina de mulțumire pentru pachetele terțe utilizate în acest proiect și colaboratori.",
       "title": "Mulțumiri"
+    },
+    "hero": {
+      "badge": "Open Source",
+      "title": "Mulțumiri",
+      "subtitle": "Această platformă este construită pe umerii unor proiecte open-source incredibile. Suntem recunoscători întreținătorilor și contributorilor care își fac munca disponibilă gratuit.",
+      "lastUpdate": "Ultima actualizare: {date}"
+    },
+    "stats": {
+      "title": "Prezentare Generală a Dependențelor",
+      "subtitle": "O privire asupra ecosistemului open-source care alimentează această platformă",
+      "total": {
+        "value": "86",
+        "label": "Total Pachete",
+        "description": "Dependențe utilizate"
+      },
+      "production": {
+        "value": "38",
+        "label": "Producție",
+        "description": "Dependențe runtime"
+      },
+      "development": {
+        "value": "48",
+        "label": "Dezvoltare",
+        "description": "Instrumente de build"
+      },
+      "mitLicense": {
+        "value": "69",
+        "label": "Licență MIT",
+        "description": "Cea mai comună licență"
+      }
+    },
+    "contributors": {
+      "title": "Contributori Principali",
+      "subtitle": "Organizații și indivizi pe ale căror pachete ne bazăm cel mai mult",
+      "items": {
+        "c1": {
+          "name": "OpenTelemetry Authors",
+          "packages": "12",
+          "description": "Instrumentație pentru observabilitate"
+        },
+        "c2": {
+          "name": "Microsoft Corporation",
+          "packages": "5",
+          "description": "SDK-uri Azure și unelte"
+        },
+        "c3": {
+          "name": "Clerk",
+          "packages": "2",
+          "description": "Soluții de autentificare"
+        },
+        "c4": {
+          "name": "Kent C. Dodds",
+          "packages": "3",
+          "description": "Utilități pentru testare"
+        }
+      }
+    },
+    "licenses": {
+      "title": "Distribuția Licențelor",
+      "mit": "Licență MIT",
+      "apache": "Apache 2.0",
+      "mitDescription": "Licență permisivă care permite utilizare largă",
+      "apacheDescription": "Licență open-source prietenoasă pentru întreprinderi"
     },
     "lastUpdate": "Ultima actualizare pe:",
     "packages": {
@@ -386,7 +1039,9 @@
         "oauth": "OAuth 2.0",
         "privacy": "Confidențialitate",
         "session": "Sesiune sincronizată"
-      }
+      },
+      "step1": "Pasul 1",
+      "step2": "Pasul 2"
     },
     "SignIn": {
       "__metadata__": {
@@ -433,6 +1088,29 @@
       "illustrationAlt": "Ilustrație pentru pagina de înregistrare"
     }
   },
+  "Commander": {
+    "placeholder": "Tastați o comandă sau căutați...",
+    "noResults": "Niciun rezultat găsit.",
+    "groups": {
+      "navigation": "Navigare",
+      "theme": "Temă",
+      "language": "Limbă",
+      "accessibility": "Accesibilitate",
+      "fun": "Distracție",
+      "links": "Linkuri"
+    },
+    "items": {
+      "homepage": "Pagina principală",
+      "light": "Luminos",
+      "dark": "Întunecat",
+      "system": "Sistem",
+      "fontNormal": "Font standard",
+      "fontDyslexic": "Font pentru dislexie",
+      "rainbow": "Mod curcubeu",
+      "disco": "Mod disco",
+      "matrix": "Mod Matrix"
+    }
+  },
   "Domains": {
     "__metadata__": {
       "description": "Serviciile de spațiu din domeniu sunt servicii care sunt oferite vizitatorilor și membrilor spațiului de domeniu `arolariu.ro`",
@@ -443,7 +1121,8 @@
       "invoices": {
         "card": {
           "description": "Acest serviciu de domeniu ajută la transformarea digitală a chitanțelor fizice. \nPermite utilizatorilor să încarce chitanțe și să obțină informații bine elaborate despre obiceiurile lor de cheltuieli.",
-          "title": "Sistem de management al bonurilor fiscale"
+          "title": "Sistem de management al bonurilor fiscale",
+          "imageAlt": "Ilustrație a Sistemului de Management al Facturilor care prezintă digitalizarea chitanțelor"
         },
         "service": {
           "states": {
@@ -454,6 +1133,96 @@
             "loading": {
               "title": "Se încarcă factura",
               "description": "Se încarcă factura cu identificatorul {invoiceIdentifier}."
+            }
+          },
+          "homepage": {
+            "__metadata__": {
+              "description": "Pagina principală pentru serviciul de domeniu Sistemul de Management al Facturilor.",
+              "title": "Sistemul de Management al Facturilor - Acasă"
+            },
+            "hero": {
+              "title": "Gestionează-ți",
+              "titleHighlight": "Facturile",
+              "titleSuffix": "cu Ușurință",
+              "description": "Încarcă chitanțele și facturile tale, organizează-le și obține informații despre obiceiurile tale de cheltuieli. Sistemul nostru bazat pe AI extrage datele automat.",
+              "getStarted": "Începe Acum",
+              "viewMyInvoices": "Vezi Facturile Mele"
+            },
+            "workflow": {
+              "title": "Cum Funcționează",
+              "description": "Trei pași simpli pentru a digitaliza și organiza documentele tale financiare",
+              "step1": {
+                "title": "Încarcă Scanări",
+                "description": "Trage și lasă chitanțele, facturile sau bonurile tale. Acceptăm fișiere JPG, PNG și PDF de până la 10MB fiecare.",
+                "button": "Încarcă Acum"
+              },
+              "step2": {
+                "title": "Vizualizează și Organizează",
+                "description": "Revizuiește scanările încărcate, selectează-le pe cele dorite și creează facturi din ele individual sau în loturi.",
+                "button": "Vezi Scanările"
+              },
+              "step3": {
+                "title": "Gestionează Facturile",
+                "description": "Vizualizează facturile, analizează tiparele de cheltuieli și obține perspective bazate pe AI despre obiceiurile tale financiare.",
+                "button": "Vezi Facturile"
+              }
+            },
+            "features": {
+              "title": "Funcționalități Puternice",
+              "description": "Tot ce ai nevoie pentru a gestiona facturile eficient",
+              "ocr": {
+                "title": "Extracție OCR Inteligentă",
+                "description": "AI-ul nostru extrage automat numele comercianților, datele, sumele și articolele din scanări."
+              },
+              "analytics": {
+                "title": "Analiză Cheltuieli",
+                "description": "Obține informații detaliate despre tiparele tale de cheltuieli cu grafice și rapoarte."
+              },
+              "batch": {
+                "title": "Procesare în Loturi",
+                "description": "Procesează mai multe scanări simultan - creează facturi individuale sau combină-le într-una singură."
+              },
+              "signInPrompt": "Conectează-te pentru a salva facturile permanent și a le accesa de pe orice dispozitiv."
+            },
+            "bento": {
+              "title": "Tot Ce Ai Nevoie",
+              "description": "Funcționalități puternice concepute pentru a face gestionarea facturilor fără efort",
+              "ai": {
+                "title": "Bazat pe AI",
+                "description": "Extracție GPT-4"
+              },
+              "analyticsCard": {
+                "title": "Analiză",
+                "description": "Perspective cheltuieli"
+              },
+              "cloud": {
+                "title": "Sincronizare Cloud",
+                "description": "Acces de oriunde"
+              },
+              "ocr": {
+                "title": "OCR Inteligent",
+                "description": "Captură automată date"
+              },
+              "secure": {
+                "title": "Securizat",
+                "description": "Criptare de nivel bancar"
+              },
+              "share": {
+                "title": "Partajare",
+                "description": "Colaborare ușoară"
+              },
+              "mobile": "Funcționează excelent pe dispozitive mobile"
+            },
+            "cta": {
+              "title": "Gata să Începi?",
+              "description": "Încarcă prima ta scanare și experimentează magia gestionării facturilor bazată pe AI.",
+              "uploadButton": "Încarcă Prima Scanare",
+              "learnMore": "Află Mai Multe",
+              "badges": {
+                "secure": "Securizat și Privat",
+                "cloud": "Sincronizat în Cloud",
+                "ai": "Bazat pe AI"
+              }
             }
           },
           "edit-page": {
@@ -786,6 +1555,7 @@
     "about": "Despre",
     "thePlatform": "Platforma",
     "theAuthor": "Autorul",
+    "myProfile": "Profilul meu",
     "mobile": {
       "openNavigation": "Deschide navigarea",
       "closeNavigation": "Închide navigarea",
@@ -1048,5 +1818,469 @@
       }
     },
     "title": "Termenii serviciului"
+  },
+  "Profile": {
+    "__metadata__": {
+      "title": "Profilul Utilizatorului",
+      "description": "Gestionați setările contului, preferințele și opțiunile de personalizare."
+    },
+    "header": {
+      "title": "Setări Profil",
+      "subtitle": "Gestionați contul și personalizați experiența",
+      "memberSince": "Membru din {date}",
+      "userId": "ID Utilizator",
+      "premiumMember": "Membru Premium",
+      "profileCompletion": "Completare Profil"
+    },
+    "appearance": {
+      "title": "Aspect",
+      "description": "Personalizați cum arată și se simte aplicația",
+      "theme": {
+        "title": "Temă",
+        "description": "Alegeți schema de culori preferată",
+        "light": "Luminos",
+        "dark": "Întunecat",
+        "system": "Sistem"
+      },
+      "font": {
+        "title": "Font",
+        "description": "Selectați un font confortabil pentru dvs.",
+        "normal": "Standard",
+        "normalDescription": "Font serif clasic pentru citire elegantă",
+        "dyslexic": "Prietenos pentru dislexie",
+        "dyslexicDescription": "Optimizat pentru citire mai ușoară"
+      },
+      "customColors": {
+        "title": "Culori Personalizate",
+        "description": "Personalizați schema de culori",
+        "primary": "Culoare Primară",
+        "secondary": "Culoare Secundară",
+        "preview": "Previzualizare",
+        "reset": "Resetare la Implicit",
+        "apply": "Aplică Culorile",
+        "comingSoon": "În Curând",
+        "comingSoonDescription": "Temele de culori personalizate vor fi disponibile într-o actualizare viitoare"
+      }
+    },
+    "locale": {
+      "title": "Limbă și Regiune",
+      "description": "Setați limba preferată pentru interfață",
+      "language": {
+        "title": "Limbă",
+        "description": "Selectați limba preferată",
+        "en": "Engleză",
+        "ro": "Română",
+        "fr": "Franceză"
+      },
+      "changeNote": "Pagina se va reîncărca pentru a aplica modificările de limbă"
+    },
+    "account": {
+      "title": "Cont",
+      "description": "Vizualizați și gestionați informațiile contului",
+      "email": "Adresa de Email",
+      "emailVerified": "Verificat",
+      "emailUnverified": "Neverificat",
+      "createdAt": "Cont Creat",
+      "lastSignIn": "Ultima Autentificare",
+      "manageAccount": "Gestionează Contul",
+      "manageAccountDescription": "Actualizați profilul, setările de securitate și mai mult în Clerk"
+    },
+    "statistics": {
+      "title": "Statistici Cont",
+      "description": "Prezentare generală a activității pe platformă",
+      "totalInvoices": "Total Facturi",
+      "totalMerchants": "Comercianți Urmăriți",
+      "totalScans": "Scanări Încărcate",
+      "totalSaved": "Total Economisit",
+      "daysActive": "zile active",
+      "accountAge": "Vechime Cont",
+      "accountAgeDays": "{days} zile",
+      "lastActivity": "Ultima Activitate",
+      "storageUsed": "Spațiu Utilizat",
+      "dataPoints": "Puncte de Date Analizate"
+    },
+    "quickActions": {
+      "viewInvoices": "Vezi Facturile",
+      "uploadScan": "Încarcă Scanare",
+      "merchants": "Comercianți",
+      "exportData": "Exportă Date",
+      "total": "total",
+      "newReceipt": "Bon nou",
+      "discovered": "descoperit",
+      "downloadBackup": "Descarcă backup"
+    },
+    "achievements": {
+      "title": "Realizări",
+      "earned": "câștigate"
+    },
+    "activity": {
+      "title": "Activitate Recentă"
+    },
+    "security": {
+      "title": "Securitate",
+      "description": "Gestionați setările de securitate ale contului",
+      "password": "Parolă",
+      "passwordDescription": "Parola dvs. este sigură și criptată",
+      "secure": "Securizat",
+      "sessions": "Sesiuni Active",
+      "sessionsDescription": "Gestionați dispozitivele conectate la cont",
+      "manage": "Gestionează",
+      "twoFactor": "Autentificare în Doi Pași",
+      "twoFactorDescription": "Adăugați un nivel suplimentar de securitate",
+      "enable": "Activează"
+    },
+    "dataManagement": {
+      "title": "Gestionarea Datelor",
+      "description": "Exportați sau ștergeți datele",
+      "export": {
+        "title": "Exportă Datele",
+        "description": "Descărcați o copie a tuturor datelor în format JSON",
+        "button": "Exportă Toate Datele",
+        "processing": "Se pregătește exportul...",
+        "comingSoon": "Funcția de export va fi disponibilă în curând"
+      },
+      "delete": {
+        "title": "Șterge Contul",
+        "description": "Ștergeți permanent contul și toate datele asociate",
+        "warning": "Această acțiune nu poate fi anulată. Toate facturile, scanările și preferințele vor fi șterse permanent.",
+        "button": "Șterge Contul",
+        "confirmTitle": "Sunteți absolut sigur?",
+        "confirmDescription": "Aceasta va șterge permanent contul și va elimina toate datele de pe serverele noastre. Această acțiune nu poate fi anulată.",
+        "confirmButton": "Da, șterge contul meu",
+        "cancelButton": "Anulează",
+        "typeToConfirm": "Tastați DELETE pentru confirmare",
+        "deleting": "Se șterge contul..."
+      }
+    },
+    "notifications": {
+      "title": "Notificări",
+      "description": "Gestionați preferințele de notificare",
+      "email": {
+        "title": "Notificări Email",
+        "description": "Primiți actualizări despre cont prin email"
+      },
+      "marketing": {
+        "title": "Emailuri de Marketing",
+        "description": "Primiți noutăți despre funcții noi și actualizări"
+      },
+      "comingSoon": "Setările de notificare vor fi disponibile în curând"
+    },
+    "errors": {
+      "notFound": "Profilul utilizatorului nu a fost găsit",
+      "notFoundDescription": "Profilul pe care îl căutați nu există sau nu aveți permisiunea să îl vizualizați.",
+      "unauthorized": "Acces Refuzat",
+      "unauthorizedDescription": "Puteți vizualiza doar propriul profil.",
+      "loadFailed": "Nu s-a putut încărca profilul",
+      "loadFailedDescription": "Nu am putut încărca informațiile profilului. Vă rugăm să încercați din nou.",
+      "saveFailed": "Nu s-au putut salva modificările"
+    },
+    "actions": {
+      "save": "Salvează Modificările",
+      "saving": "Se salvează...",
+      "saved": "Modificările au fost salvate cu succes",
+      "cancel": "Anulează",
+      "back": "Înapoi la Acasă",
+      "retry": "Încearcă din nou"
+    }
+  },
+  "MyProfile": {
+    "meta": {
+      "title": "Profilul Meu",
+      "description": "Gestionați setările și preferințele contului"
+    },
+    "header": {
+      "premium": "Premium",
+      "memberSince": "Membru din {date}",
+      "userId": "ID Utilizator",
+      "daysActive": "zile active",
+      "editProfile": "Editează Profilul",
+      "editProfileTitle": "Editează Profilul",
+      "editProfileDescription": "Actualizați informațiile profilului",
+      "editProfileClerkNote": "Informațiile profilului sunt gestionate prin Clerk. Faceți clic mai jos pentru a actualiza detaliile.",
+      "manageOnClerk": "Gestionează pe Clerk",
+      "profileCompletion": "Completare Profil",
+      "completionHint": "Completați profilul pentru a debloca toate funcțiile"
+    },
+    "sidebar": {
+      "premium": "Premium",
+      "daysActive": "zile active",
+      "profileCompletion": "Completare Profil",
+      "account": "Cont",
+      "preferences": "Preferințe",
+      "manageClerk": "Gestionează Contul pe Clerk",
+      "nav": {
+        "profile": "Profil",
+        "appearance": "Aspect",
+        "ai": "Asistent AI",
+        "analytics": "Analize",
+        "notifications": "Notificări",
+        "security": "Securitate",
+        "data": "Date"
+      }
+    },
+    "stats": {
+      "title": "Statistici Rapide",
+      "description": "Prezentare generală a activității contului",
+      "invoices": {
+        "title": "Total Facturi",
+        "description": "Facturi procesate și stocate"
+      },
+      "merchants": {
+        "title": "Comercianți",
+        "description": "Comercianți unici urmăriți"
+      },
+      "scans": {
+        "title": "Total Scanări",
+        "description": "Scanări de bonuri încărcate"
+      },
+      "saved": {
+        "title": "Total Economisit",
+        "description": "Economii estimate din urmărire"
+      },
+      "monthly": {
+        "title": "Medie Lunară",
+        "description": "Cheltuieli medii lunare"
+      },
+      "aiQueries": {
+        "title": "Interogări AI",
+        "description": "Interacțiuni cu asistentul AI"
+      },
+      "storage": {
+        "title": "Utilizare Stocare",
+        "description": "Alocarea spațiului de stocare",
+        "used": "utilizat"
+      }
+    },
+    "settings": {
+      "appearance": {
+        "title": "Setări Aspect",
+        "description": "Personalizați aspectul și senzația experienței",
+        "theme": {
+          "title": "Temă",
+          "description": "Alegeți schema de culori preferată",
+          "light": "Deschis",
+          "dark": "Întunecat",
+          "system": "Sistem"
+        },
+        "font": {
+          "title": "Font",
+          "description": "Selectați un font confortabil",
+          "normal": "Standard",
+          "dyslexic": "Prietenos pentru dislexici",
+          "dyslexicHint": "Font OpenDyslexic pentru lizibilitate îmbunătățită"
+        },
+        "colors": {
+          "title": "Culori Personalizate",
+          "description": "Personalizați schema de culori",
+          "primary": "Culoare Primară",
+          "secondary": "Culoare Secundară",
+          "preview": "Previzualizare Gradient",
+          "previewText": "Text Gradient Exemplu"
+        },
+        "locale": {
+          "title": "Limbă",
+          "description": "Setați limba preferată"
+        },
+        "advanced": {
+          "title": "Opțiuni Avansate",
+          "description": "Opțiuni suplimentare de personalizare",
+          "compactMode": "Mod Compact",
+          "compactModeHint": "Reduceți spațierea pentru mai mult conținut",
+          "animations": "Animații",
+          "animationsHint": "Activați animațiile interfeței"
+        }
+      },
+      "ai": {
+        "title": "Setări Asistent AI",
+        "description": "Configurați comportamentul și preferințele asistentului AI",
+        "model": {
+          "title": "Model AI",
+          "description": "Selectați modelul AI pentru asistent"
+        },
+        "behavior": {
+          "title": "Presetare Comportament",
+          "description": "Alegeți cum răspunde AI-ul"
+        },
+        "temperature": {
+          "title": "Stil Răspuns",
+          "description": "Echilibru între precizie și creativitate",
+          "precise": "Precis",
+          "creative": "Creativ"
+        },
+        "maxTokens": {
+          "title": "Lungime Răspuns",
+          "description": "Maximum tokeni per răspuns"
+        },
+        "features": {
+          "title": "Funcții AI",
+          "description": "Activați sau dezactivați capabilitățile AI",
+          "autoSuggest": "Auto-Sugestie",
+          "autoSuggestHint": "Primiți sugestii automate în timp ce lucrați",
+          "contextAwareness": "Conștientizare Context",
+          "contextAwarenessHint": "AI folosește context din facturile dvs.",
+          "memory": "Memorie Conversație",
+          "memoryHint": "AI își amintește conversațiile anterioare"
+        },
+        "voice": {
+          "title": "Setări Voce",
+          "description": "Configurați interacțiunea vocală",
+          "enabled": "Intrare Vocală",
+          "enabledHint": "Utilizați comenzi vocale cu AI"
+        }
+      },
+      "analytics": {
+        "title": "Setări Analize",
+        "description": "Configurați cum sunt analizate și raportate datele",
+        "enabled": {
+          "title": "Analize",
+          "description": "Activați sau dezactivați funcțiile de analiză",
+          "label": "Activează Analize",
+          "hint": "Urmăriți și analizați tiparele de cheltuieli"
+        },
+        "granularity": {
+          "title": "Granularitate Date",
+          "description": "Cât de detaliate să fie analizele"
+        },
+        "export": {
+          "title": "Format Export",
+          "description": "Format implicit pentru exporturi de date"
+        },
+        "tracking": {
+          "title": "Opțiuni Urmărire",
+          "description": "Alegeți ce să urmăriți",
+          "spending": "Urmărește Cheltuieli",
+          "spendingHint": "Monitorizați cheltuielile generale",
+          "categories": "Urmărește Categorii",
+          "categoriesHint": "Analizați cheltuielile pe categorii",
+          "merchants": "Urmărește Comercianți",
+          "merchantsHint": "Monitorizați date specifice comercianților"
+        },
+        "advanced": {
+          "title": "Analize Avansate",
+          "description": "Funcții premium de analiză",
+          "benchmarking": "Comparație",
+          "benchmarkingHint": "Comparați cu utilizatori similari",
+          "predictive": "Analiză Predictivă",
+          "predictiveHint": "Predicții de cheltuieli bazate pe AI"
+        },
+        "dataUsage": {
+          "title": "Utilizare Date",
+          "info": "Datele dvs. de analiză sunt procesate local și nu sunt partajate niciodată fără consimțământul explicit."
+        }
+      },
+      "notifications": {
+        "title": "Setări Notificări",
+        "description": "Gestionați cum și când primiți notificări",
+        "email": {
+          "title": "Notificări Email",
+          "description": "Configurați preferințele de comunicare prin email",
+          "enabled": "Activează Notificările Email",
+          "enabledHint": "Primiți actualizări prin email"
+        },
+        "reports": {
+          "title": "Rapoarte",
+          "description": "Livrare programată a rapoartelor",
+          "weeklyDigest": "Rezumat Săptămânal",
+          "weeklyDigestHint": "Rezumatul activității săptămânale",
+          "monthlyReport": "Raport Lunar",
+          "monthlyReportHint": "Analiză detaliată a cheltuielilor lunare"
+        },
+        "financial": {
+          "title": "Alerte Financiare",
+          "description": "Fiți notificat despre cheltuieli",
+          "spendingAlerts": "Alerte Cheltuieli",
+          "spendingAlertsHint": "Notificare când cheltuielile depășesc pragul",
+          "budgetAlerts": "Alerte Buget",
+          "budgetAlertsHint": "Alertă când vă apropiați de limitele bugetare"
+        },
+        "updates": {
+          "title": "Actualizări Produs",
+          "description": "Rămâneți informat despre funcții noi",
+          "newFeatures": "Funcții Noi",
+          "newFeaturesHint": "Fiți notificat despre funcționalități noi",
+          "marketing": "Emailuri Marketing",
+          "marketingHint": "Conținut promoțional și oferte"
+        },
+        "security": {
+          "title": "Notificări Securitate",
+          "description": "Alerte critice de securitate",
+          "securityAlerts": "Alerte Securitate",
+          "securityAlertsHint": "Notificări importante de securitate",
+          "alwaysOnNote": "Alertele de securitate nu pot fi complet dezactivate pentru protecția dvs."
+        }
+      },
+      "security": {
+        "title": "Setări Securitate",
+        "description": "Protejați-vă contul cu măsuri de securitate îmbunătățite",
+        "twoFactor": {
+          "title": "Autentificare în Doi Pași",
+          "description": "Adăugați un nivel suplimentar de securitate contului",
+          "enabled": "Activează 2FA",
+          "enabledHint": "Necesită un al doilea factor la autentificare",
+          "activeMessage": "Autentificarea în doi pași este activă"
+        },
+        "session": {
+          "title": "Setări Sesiune",
+          "description": "Gestionați sesiunile de conectare",
+          "timeout": "Expirare Sesiune",
+          "minutes": "minute",
+          "hour": "oră",
+          "hours": "ore",
+          "loginNotifications": "Notificări Conectare",
+          "loginNotificationsHint": "Fiți notificat de conectări noi"
+        },
+        "password": {
+          "title": "Parolă și Acces",
+          "description": "Gestionați credențialele contului",
+          "changePassword": "Schimbă Parola",
+          "clerkNote": "Gestionarea parolei se face prin Clerk"
+        },
+        "devices": {
+          "title": "Dispozitive de Încredere",
+          "description": "Gestionați dispozitivele care pot accesa contul",
+          "lastUsed": "Ultima utilizare",
+          "current": "Actual",
+          "empty": "Niciun dispozitiv de încredere configurat"
+        }
+      },
+      "data": {
+        "title": "Gestionare Date",
+        "description": "Controlați stocarea datelor și setările de confidențialitate",
+        "retention": {
+          "title": "Retenție Date",
+          "description": "Cât timp să păstrați datele",
+          "hint": "Datele mai vechi vor fi arhivate automat"
+        },
+        "backup": {
+          "title": "Setări Backup",
+          "description": "Configurare backup automat",
+          "autoBackup": "Backup Automat",
+          "autoBackupHint": "Backup automat al datelor",
+          "frequency": "Frecvență Backup"
+        },
+        "privacy": {
+          "title": "Setări Confidențialitate",
+          "description": "Controlați cum sunt folosite datele",
+          "shareAnonymous": "Partajare Date Anonime",
+          "shareAnonymousHint": "Ajutați la îmbunătățirea serviciului cu date anonimizate"
+        },
+        "export": {
+          "title": "Export Date",
+          "description": "Descărcați o copie a datelor",
+          "downloadAll": "Descarcă Toate Datele",
+          "hint": "Exportul va include toate facturile, scanările și setările"
+        },
+        "danger": {
+          "title": "Zonă Periculoasă",
+          "description": "Acțiuni ireversibile",
+          "deleteData": "Șterge Toate Datele",
+          "deleteDataHint": "Eliminați permanent toate facturile și scanările",
+          "deleteButton": "Șterge Date",
+          "deleteAccount": "Șterge Cont",
+          "deleteAccountHint": "Ștergeți permanent contul",
+          "manageAccount": "Gestionează pe Clerk"
+        }
+      }
+    }
   }
 }

@@ -8,6 +8,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Checkbox,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsContent,
   TabsList,
@@ -118,65 +125,58 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
             <CardContent>
               <div className='space-y-4'>
                 <div className='grid gap-2'>
-                  <label
-                    htmlFor='history'
-                    className='text-sm font-medium'>
-                    Chat History
-                  </label>
-                  <select
-                    id='history'
-                    className='border-input bg-background w-full rounded-md border px-3 py-2'>
-                    <option value='30'>Keep for 30 days</option>
-                    <option value='60'>Keep for 60 days</option>
-                    <option value='90'>Keep for 90 days</option>
-                    <option value='0'>Don&apos;t save history</option>
-                  </select>
+                  <Label htmlFor='history'>Chat History</Label>
+                  <Select defaultValue='30'>
+                    <SelectTrigger id='history'>
+                      <SelectValue placeholder='Select retention period' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='30'>Keep for 30 days</SelectItem>
+                      <SelectItem value='60'>Keep for 60 days</SelectItem>
+                      <SelectItem value='90'>Keep for 90 days</SelectItem>
+                      <SelectItem value='0'>Don&apos;t save history</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className='grid gap-2'>
                   <span className='text-sm font-medium'>Data Access</span>
                   <div className='flex items-center space-x-2'>
-                    <input
-                      type='checkbox'
+                    <Checkbox
                       id='access-invoices'
-                      className='rounded border-gray-300'
                       defaultChecked
                     />
-                    <label
+                    <Label
                       htmlFor='access-invoices'
-                      className='text-sm'>
+                      className='text-sm font-normal'>
                       Allow access to invoice data
-                    </label>
+                    </Label>
                   </div>
                   <div className='flex items-center space-x-2'>
-                    <input
-                      type='checkbox'
+                    <Checkbox
                       id='access-merchants'
-                      className='rounded border-gray-300'
                       defaultChecked
                     />
-                    <label
+                    <Label
                       htmlFor='access-merchants'
-                      className='text-sm'>
+                      className='text-sm font-normal'>
                       Allow access to merchant data
-                    </label>
+                    </Label>
                   </div>
                 </div>
 
                 <div className='grid gap-2'>
                   <span className='text-sm font-medium'>Notification Preferences</span>
                   <div className='flex items-center space-x-2'>
-                    <input
-                      type='checkbox'
+                    <Checkbox
                       id='notify-insights'
-                      className='rounded border-gray-300'
                       defaultChecked
                     />
-                    <label
+                    <Label
                       htmlFor='notify-insights'
-                      className='text-sm'>
+                      className='text-sm font-normal'>
                       Notify me about new insights
-                    </label>
+                    </Label>
                   </div>
                 </div>
 

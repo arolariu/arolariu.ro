@@ -15,15 +15,15 @@ export default function TechnologiesSection(): React.JSX.Element {
 
   const points = [
     {
-      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      check: <TbCheck className='text-accent-primary inline h-6 w-6' />,
       text: t("points.point1"),
     },
     {
-      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      check: <TbCheck className='text-accent-primary inline h-6 w-6' />,
       text: t("points.point2"),
     },
     {
-      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      check: <TbCheck className='text-accent-primary inline h-6 w-6' />,
       text: t("points.point3"),
     },
   ];
@@ -38,7 +38,9 @@ export default function TechnologiesSection(): React.JSX.Element {
             whileInView={{opacity: 1, x: 0}}
             viewport={{once: true}}
             transition={{duration: 0.8}}>
-            <Badge className='text-md rounded-xl bg-linear-to-r from-cyan-500 via-pink-500 to-purple-500'>{t("badgeTitle")}</Badge>
+            <Badge className='text-md from-gradient-from via-gradient-via to-gradient-to rounded-xl bg-linear-to-r'>
+              {t("badgeTitle")}
+            </Badge>
             <h2 className='mb-6 text-3xl font-bold md:text-4xl'>{t("title")}</h2>
             <span className='text-muted-foreground mb-6 block text-lg'>{t("description")}</span>
             <ul className='mb-8 space-y-4'>

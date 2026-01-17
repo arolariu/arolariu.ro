@@ -8,11 +8,21 @@ import {TbDroplets, TbHome, TbLeaf, TbPackage, TbSparkles, TbSpray, TbStar, TbTo
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 
 type SupplyItem = {
+  id: string;
   name: string;
   icon: React.ReactNode;
   daysRemaining: number;
   maxDays: number;
 };
+
+/**
+ * Get the progress bar color class based on percentage remaining.
+ */
+function getSupplyProgressColor(percentage: number): string {
+  if (percentage > 60) return "bg-green-500";
+  if (percentage > 30) return "bg-yellow-500";
+  return "bg-red-500";
+}
 
 export function HomeInventoryCard(): React.JSX.Element {
   const locale = useLocale();
@@ -43,7 +53,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           className='h-4 w-4 text-blue-500'
         />
       );
-      supplies.push({name: "Laundry Detergent", icon, daysRemaining, maxDays: 60});
+      supplies.push({id: `laundry-${item.productCode}`, name: "Laundry Detergent", icon, daysRemaining, maxDays: 60});
     } else if (name.includes("dish") || name.includes("soap")) {
       daysRemaining = 18;
       icon = (
@@ -52,16 +62,16 @@ export function HomeInventoryCard(): React.JSX.Element {
           className='h-4 w-4 text-cyan-500'
         />
       );
-      supplies.push({name: "Dish Soap", icon, daysRemaining, maxDays: 30});
+      supplies.push({id: `dish-${item.productCode}`, name: "Dish Soap", icon, daysRemaining, maxDays: 30});
     } else if (name.includes("paper") || name.includes("towel") || name.includes("tissue")) {
-      daysRemaining = 30;
+      // daysRemaining stays at default 30
       icon = (
         <TbToiletPaper
           key='toilet'
           className='h-4 w-4 text-gray-500'
         />
       );
-      supplies.push({name: "Paper Products", icon, daysRemaining, maxDays: 45});
+      supplies.push({id: `paper-${item.productCode}`, name: "Paper Products", icon, daysRemaining, maxDays: 45});
     } else if (name.includes("floor") || name.includes("cleaner")) {
       daysRemaining = 60;
       icon = (
@@ -70,9 +80,9 @@ export function HomeInventoryCard(): React.JSX.Element {
           className='h-4 w-4 text-green-500'
         />
       );
-      supplies.push({name: "Floor Cleaner", icon, daysRemaining, maxDays: 90});
+      supplies.push({id: `floor-${item.productCode}`, name: "Floor Cleaner", icon, daysRemaining, maxDays: 90});
     } else {
-      supplies.push({name: item.genericName, icon, daysRemaining, maxDays: 45});
+      supplies.push({id: `generic-${item.productCode}`, name: item.genericName, icon, daysRemaining, maxDays: 45});
     }
   });
 
@@ -80,6 +90,7 @@ export function HomeInventoryCard(): React.JSX.Element {
   if (supplies.length === 0) {
     supplies.push(
       {
+        id: "default-laundry",
         name: "Laundry Detergent",
         icon: (
           <TbDroplets
@@ -91,6 +102,7 @@ export function HomeInventoryCard(): React.JSX.Element {
         maxDays: 60,
       },
       {
+        id: "default-dish",
         name: "Dish Soap",
         icon: (
           <TbSparkles
@@ -125,12 +137,12 @@ export function HomeInventoryCard(): React.JSX.Element {
         <div className='space-y-3'>
           <h4 className='text-muted-foreground text-sm font-medium'>Supply Stock Levels (estimated)</h4>
           <div className='space-y-3'>
-            {supplies.map((supply, i) => {
+            {supplies.map((supply) => {
               const pct = (supply.daysRemaining / supply.maxDays) * 100;
-              const color = pct > 60 ? "bg-green-500" : pct > 30 ? "bg-yellow-500" : "bg-red-500";
+              const color = getSupplyProgressColor(pct);
               return (
                 <div
-                  key={i}
+                  key={supply.id}
                   className='space-y-1'>
                   <div className='flex items-center justify-between text-sm'>
                     <div className='flex items-center gap-2'>

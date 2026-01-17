@@ -125,8 +125,20 @@ export default async function EditInvoicePage(
   if (!isAuthenticated) return <RenderForbiddenScreen />;
 
   // By fetching straight from the server, we ensure we have the latest snapshot.
-  const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
-  const merchant = await fetchMerchant({merchantId: invoice.merchantReference});
+  const invoiceResult = await fetchInvoice({invoiceId: invoiceIdentifier});
+  if (!invoiceResult.success) {
+    // Handle fetch error - show forbidden screen for auth errors or not found
+    return <RenderForbiddenScreen />;
+  }
+
+  const invoice = invoiceResult.data;
+  const merchantResult = await fetchMerchant({merchantId: invoice.merchantReference});
+  if (!merchantResult.success) {
+    // Handle merchant fetch error
+    return <RenderForbiddenScreen />;
+  }
+
+  const merchant = merchantResult.data;
 
   return (
     <main className='overflow-hidden py-24'>

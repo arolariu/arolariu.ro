@@ -139,7 +139,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
                     <div className='bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-xl'>
                       <card.icon className='h-6 w-6' />
                     </div>
-                    <div className='text-muted-foreground text-sm font-medium'>{index === 0 ? "Step 1" : "Step 2"}</div>
+                    <div className='text-muted-foreground text-sm font-medium'>{index === 0 ? t("step1") : t("step2")}</div>
                   </div>
 
                   {/* Illustration */}
@@ -163,9 +163,9 @@ export default function RenderAuthScreen(): React.JSX.Element {
                 <CardContent className='relative space-y-6 pt-2'>
                   {/* Benefits list */}
                   <ul className='space-y-3'>
-                    {card.bullets.map((bullet, bulletIndex) => (
+                    {card.bullets.map((bullet) => (
                       <li
-                        key={`${card.key}-bullet-${bulletIndex}`}
+                        key={`${card.key}-${bullet}`}
                         className='text-muted-foreground flex items-start gap-3 text-sm'>
                         <span className='flex items-start gap-3'>
                           <span

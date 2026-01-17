@@ -1,20 +1,32 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useCallback} from "react";
 import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {QuantityData} from "../../_utils/analytics";
 
 type Props = {
-  data: QuantityData[];
-  currency: string;
+  readonly data: QuantityData[];
+  readonly currency: string;
 };
 
-function CustomTooltip({active, payload, currency}: {active?: boolean; payload?: any[]; currency: string}) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
+type TooltipPayloadItem = {
+  payload: {fullName?: string; name: string; price: number; quantity: number; unit: string};
+};
+
+type CustomTooltipProps = {
+  readonly active: boolean;
+  readonly payload: TooltipPayloadItem[];
+  readonly currency: string;
+};
+
+function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+  const [firstItem] = payload;
+  if (!active || payload.length === 0 || !firstItem) return null;
+  const data = firstItem.payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
-      <p className='text-sm font-medium'>{data.fullName || data.name}</p>
+      <p className='text-sm font-medium'>{data.fullName ?? data.name}</p>
       <p className='text-muted-foreground text-sm'>
         {data.price.toFixed(2)} {currency}
       </p>
@@ -32,6 +44,8 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
       color: "hsl(var(--chart-2))",
     },
   };
+
+  const tickFormatter = useCallback((value: number) => `${value}`, []);
 
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
@@ -55,7 +69,7 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
                 tick={{fontSize: 10}}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `${value}`}
+                tickFormatter={tickFormatter}
               />
               <YAxis
                 type='category'
@@ -65,15 +79,23 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
                 axisLine={false}
                 width={80}
               />
-              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    active={false}
+                    payload={[]}
+                    currency={currency}
+                  />
+                }
+              />
               <Bar
                 dataKey='price'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={24}>
-                {data.map((_, index) => (
+                {data.map((item) => (
                   <Cell
-                    key={`cell-${index}`}
-                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
+                    key={`cell-${item.name}`}
+                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
                   />
                 ))}
               </Bar>

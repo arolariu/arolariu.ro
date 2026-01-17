@@ -6,6 +6,7 @@
  * Provides Next.js specific mocks and extends the monorepo test setup.
  */
 
+import "@testing-library/jest-dom/vitest";
 import "fake-indexeddb/auto";
 import {vi} from "vitest";
 

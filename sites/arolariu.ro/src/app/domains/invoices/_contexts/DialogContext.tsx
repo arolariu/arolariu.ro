@@ -21,6 +21,7 @@ export type DialogType = Readonly<
   | "VIEW_INVOICE__SHARE_ANALYTICS"
   | "VIEW_INVOICES__IMPORT"
   | "VIEW_INVOICES__EXPORT"
+  | "VIEW_SCANS__CREATE_INVOICE"
   | "SHARED__INVOICE_DELETE"
   | "SHARED__INVOICE_SHARE"
 > | null; // null is used to indicate no dialog is open

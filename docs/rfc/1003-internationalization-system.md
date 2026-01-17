@@ -51,8 +51,9 @@ Modern Next.js applications with App Router and React Server Components require 
 │  └─ Locale validation                                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  messages/                                                      │
-│  ├─ en.json - English translations                             │
+│  ├─ en.json - English translations (source of truth)           │
 │  ├─ ro.json - Romanian translations                            │
+│  ├─ fr.json - French translations                              │
 │  └─ en.d.json.ts - Auto-generated TypeScript types            │
 ├─────────────────────────────────────────────────────────────────┤
 │  app/layout.tsx                                                 │
@@ -90,7 +91,7 @@ export default getRequestConfig(async () => {
   const localeCookie = allCookies.get("locale");
   const locale: Locale = (localeCookie?.value ?? "en") as Locale;
 
-  const supportedLocales: Locale[] = ["en", "ro"] as const;
+  const supportedLocales: Locale[] = ["en", "ro", "fr"] as const;
   if (!supportedLocales.includes(locale)) {
     throw new Error(`[arolariu.ro::i18n] >>> Locale "${locale}" is not supported.`);
   }
@@ -293,18 +294,24 @@ The providers file wraps the app with necessary context:
 
 ```typescript
 // app/providers.tsx
-import {enUS, roRO} from "@clerk/localizations";
+import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 
 type Props = {
-  locale: "en" | "ro";
+  locale: "en" | "ro" | "fr";
   children: React.ReactNode;
+};
+
+const clerkLocalizations = {
+  en: enUS,
+  ro: roRO,
+  fr: frFR,
 };
 
 export default function ContextProviders({locale, children}: Props) {
   return (
-    <AuthProvider localization={locale === "ro" ? roRO : enUS}>
+    <AuthProvider localization={clerkLocalizations[locale]}>
       <FontProvider>
         <ThemeProvider>
           <TranslationProvider>
@@ -378,7 +385,7 @@ import {useRouter} from "next/navigation";
 
 export function Commander() {
   const router = useRouter();
-  
+
   const onSelectLangEnglish = useCallback(() => {
     void setCookie("locale", "en");
     router.refresh(); // Trigger server re-render with new locale
@@ -386,6 +393,11 @@ export function Commander() {
 
   const onSelectLangRomanian = useCallback(() => {
     void setCookie("locale", "ro");
+    router.refresh();
+  }, [router]);
+
+  const onSelectLangFrench = useCallback(() => {
+    void setCookie("locale", "fr");
     router.refresh();
   }, [router]);
 
@@ -400,6 +412,10 @@ export function Commander() {
           <CommandItem onSelect={onSelectLangRomanian}>
             <Languages />
             <span>Română</span>
+          </CommandItem>
+          <CommandItem onSelect={onSelectLangFrench}>
+            <Languages />
+            <span>Français</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>
@@ -462,9 +478,11 @@ export default withNextIntl(nextConfig);
 }
 ```
 
-#### Step 2: Update All Locales (ro.json, etc.)
+#### Step 2: Update All Locales (ro.json, fr.json)
 
 Maintain parallel structure in all locale files:
+
+**Romanian (ro.json):**
 
 ```json
 {
@@ -475,6 +493,21 @@ Maintain parallel structure in all locale files:
     },
     "welcome": "Bine ai venit la noua noastră funcționalitate!",
     "callToAction": "Începe acum"
+  }
+}
+```
+
+**French (fr.json):**
+
+```json
+{
+  "NewFeature": {
+    "__metadata__": {
+      "title": "Nouvelle Fonctionnalité",
+      "description": "Découvrez notre nouvelle fonctionnalité"
+    },
+    "welcome": "Bienvenue dans notre nouvelle fonctionnalité !",
+    "callToAction": "Commencer maintenant"
   }
 }
 ```
@@ -598,7 +631,7 @@ t("greeting");                       // ❌ TypeScript error: missing parameter
 #### Locale Validation
 
 ```typescript
-const supportedLocales = ["en", "ro"] as const;
+const supportedLocales = ["en", "ro", "fr"] as const;
 if (!supportedLocales.includes(locale as Locale)) {
   throw new Error(`Locale "${locale}" is not supported.`);
 }
@@ -642,7 +675,7 @@ type Messages = typeof messages;
 
 declare module "next-intl" {
   interface IntlConfig {
-    locale: "en" | "ro";
+    locale: "en" | "ro" | "fr";
     messages: Messages;
   }
 }
@@ -873,6 +906,9 @@ test("changes language to Romanian", async ({page}) => {
 
 ### 8.1 Adding a New Locale
 
+The application currently supports three locales: **English (en)**, **Romanian (ro)**, and **French (fr)**.
+To add a new locale (e.g., Spanish), follow these steps:
+
 #### Step 1: Create Translation File
 
 ```bash
@@ -884,7 +920,7 @@ cp messages/en.json messages/es.json
 
 ```typescript
 // app/globals.ts
-const locales = ["en", "ro", "es"] as const;
+const locales = ["en", "ro", "fr", "es"] as const;
 type Locale = (typeof locales)[number];
 ```
 
@@ -892,25 +928,33 @@ type Locale = (typeof locales)[number];
 
 ```typescript
 // i18n/request.ts
-const supportedLocales = ["en", "ro", "es"] as const;
+const supportedLocales = ["en", "ro", "fr", "es"] as const;
 ```
 
-#### Step 4: Update Providers
+#### Step 4: Update i18n Generation Script
+
+```typescript
+// scripts/generate.i18n.ts
+const SUPPORTED_LOCALES = ["ro", "fr", "es"] as const;
+```
+
+#### Step 5: Update Providers
 
 ```typescript
 // app/providers.tsx
-import {enUS, roRO, esES} from "@clerk/localizations";
+import {enUS, esES, frFR, roRO} from "@clerk/localizations";
 
 const clerkLocalizations = {
   en: enUS,
   ro: roRO,
+  fr: frFR,
   es: esES,
 };
 
 <AuthProvider localization={clerkLocalizations[locale]}>
 ```
 
-#### Step 5: Update Locale Switcher
+#### Step 6: Update Locale Switcher
 
 ```typescript
 // components/Commander.tsx
@@ -1056,10 +1100,10 @@ npm run generate:translations
 #### Issue: "Locale is not supported" Error
 
 ```typescript
-Error: [arolariu.ro::i18n] >>> Locale "fr" is not supported.
+Error: [arolariu.ro::i18n] >>> Locale "de" is not supported.
 ```
 
-**Solution**: Ensure locale is in supported list
+**Solution**: Ensure locale is in supported list (currently en, ro, fr)
 
 ```typescript
 const supportedLocales = ["en", "ro", "fr"] as const;
@@ -1152,6 +1196,7 @@ ANALYZE=true npm run build
 - `next-intl` client library: ~5-8 KB gzipped
 - English translations (en.json): ~15 KB raw, ~3 KB gzipped
 - Romanian translations (ro.json): ~16 KB raw, ~3 KB gzipped
+- French translations (fr.json): ~16 KB raw, ~3 KB gzipped
 
 **Per-Route Impact**:
 
@@ -1259,11 +1304,13 @@ The next-intl internationalization system provides a robust, type-safe, and perf
 - ✅ SEO-optimized with proper metadata localization
 - ✅ Scalable namespace organization
 - ✅ Developer-friendly API with IntelliSense
+- ✅ Automated translation validation via `npm run generate:i18n`
 
-The system is production-ready and actively used across the entire application, supporting English and Romanian locales with the flexibility to add additional languages as needed.
+The system is production-ready and actively used across the entire application, supporting **English**, **Romanian**, and **French** locales with the flexibility to add additional languages as needed. The `scripts/generate.i18n.ts` script ensures all locales remain synchronized with the English source of truth.
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-10-25  
+**Document Version**: 1.1
+**Last Updated**: 2026-01-15
 **Status**: Implemented ✅
+**Changelog**: v1.1 - Added French (fr) language support documentation

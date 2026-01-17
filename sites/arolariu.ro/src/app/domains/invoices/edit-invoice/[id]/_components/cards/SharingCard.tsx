@@ -132,7 +132,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       <CardContent className='space-y-4'>
         <div className='flex items-center'>
           <div className='bg-primary/10 mr-3 flex h-10 w-10 items-center justify-center rounded-full'>
-            {Boolean(userInformation?.user?.imageUrl) ? (
+            {userInformation?.user?.imageUrl ? (
               <Image
                 src={userInformation?.user?.imageUrl!}
                 alt='User'

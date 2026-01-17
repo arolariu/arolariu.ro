@@ -24,7 +24,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import type {Merchant} from "@/types/invoices";
-import {API_URL} from "../../utils.server";
+import {API_URL, createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -33,9 +33,9 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 type ServerActionInputType = Readonly<{}>;
 
 /**
- * Returns an array of Merchant entities.
+ * Returns a result with array of Merchant entities or error details.
  */
-type ServerActionOutputType = Promise<Readonly<Merchant[]>>;
+type ServerActionOutputType = Promise<ServerActionResult<Readonly<Merchant[]>>>;
 
 /**
  * Fetches all merchants associated with the authenticated user's invoices.
@@ -90,10 +90,10 @@ export default async function fetchMerchants(_void?: ServerActionInputType): Ser
       const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
-      // Step 2. Make the API request to fetch merchants
+      // Step 2. Make the API request to fetch merchants (with timeout)
       addSpanEvent("bff.request.fetch-merchants.start");
       logWithTrace("info", "Making API request to fetch merchants", {}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/merchants`, {
+      const response = await fetchWithTimeout(`${API_URL}/rest/v1/merchants`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
@@ -103,16 +103,28 @@ export default async function fetchMerchants(_void?: ServerActionInputType): Ser
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched merchants", {}, "server");
-        return response.json() as ServerActionOutputType;
+        const data = (await response.json()) as Readonly<Merchant[]>;
+        return {success: true, data};
       }
 
+      // Handle HTTP errors with standardized error codes
       const errorText = await response.text();
-      throw new Error(`BFF fetch merchants request failed: ${response.status} ${response.statusText} - ${errorText}`);
+      const errorCode = mapHttpStatusToErrorCode(response.status);
+      logWithTrace("error", "API returned error status", {status: response.status, errorText}, "server");
+
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: `Failed to fetch merchants: ${response.status} ${response.statusText}`,
+          status: response.status,
+        },
+      };
     } catch (error) {
       addSpanEvent("bff.request.fetch-merchants.error");
       logWithTrace("error", "Error fetching the merchants from the server", {error}, "server");
       console.error("Error fetching the merchants from the server:", error);
-      throw error;
+      return createErrorResult<Readonly<Merchant[]>>(error, "Failed to fetch merchants");
     }
   });
 }

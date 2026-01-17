@@ -44,6 +44,16 @@
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
     --footer: 252 100% 30%;
+
+    /* Gradient Theme Variables - User customizable via my-profile settings */
+    --gradient-from: 187 94% 43%;  /* cyan-500: #06b6d4 */
+    --gradient-via: 262 83% 58%;   /* purple-500: #8b5cf6 */
+    --gradient-to: 330 81% 60%;    /* pink-500: #ec4899 */
+
+    /* Primary accent color for text/icons - derived from gradient-from */
+    --accent-primary: var(--gradient-from);
+    /* Footer background - darker version of gradient-via */
+    --footer-bg: 262 83% 35%;  /* purple-700 equivalent */
   }
 
   .dark {
@@ -67,6 +77,16 @@
     --input: 0 0% 20%;
     --ring: 214 100% 50%;
     --footer: 252 100% 30%;
+
+    /* Gradient Theme Variables - Same as light mode, user preferences override */
+    --gradient-from: 187 94% 43%;  /* cyan-500: #06b6d4 */
+    --gradient-via: 262 83% 58%;   /* purple-500: #8b5cf6 */
+    --gradient-to: 330 81% 60%;    /* pink-500: #ec4899 */
+
+    /* Primary accent color for text/icons - derived from gradient-from */
+    --accent-primary: var(--gradient-from);
+    /* Footer background - darker version of gradient-via */
+    --footer-bg: 262 83% 35%;  /* purple-700 equivalent */
   }
 }
 

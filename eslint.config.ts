@@ -22,6 +22,9 @@ import tseslint from "typescript-eslint";
 const websiteEslintConfig: Config = defineConfig({
   name: "[@arolariu/website]",
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
+  ignores: [
+    "sites/arolariu.ro/messages/*.d.json.ts", // Generated i18n type declarations
+  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,

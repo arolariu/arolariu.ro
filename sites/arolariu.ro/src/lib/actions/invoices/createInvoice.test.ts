@@ -113,6 +113,42 @@ describe("createInvoice", () => {
     );
   });
 
+  it("should add userIdentifier from auth when payload does not have one", async () => {
+    const mockScan = {
+      scanType: InvoiceScanType.JPEG,
+      location: "https://cdn.arolariu.ro/invoices/test-scan.jpg",
+      metadata: {},
+    };
+    // Payload without userIdentifier (or with empty string)
+    const mockPayload = {
+      userIdentifier: "",
+      initialScan: mockScan,
+      metadata: {
+        isImportant: "false",
+        requiresAnalysis: "true",
+      },
+    };
+    const mockInvoice = new InvoiceBuilder().withUserIdentifier(mockUserIdentifier).build();
+
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userJwt: mockToken,
+      userIdentifier: mockUserIdentifier,
+    });
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => mockInvoice,
+    });
+
+    await createInvoice(mockPayload);
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: JSON.stringify({...mockPayload, userIdentifier: mockUserIdentifier}),
+      }),
+    );
+  });
+
   it("should throw an error if creation fails", async () => {
     const mockScan = {
       scanType: InvoiceScanType.JPEG,

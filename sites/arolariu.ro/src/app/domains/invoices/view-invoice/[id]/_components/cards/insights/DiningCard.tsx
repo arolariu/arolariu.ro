@@ -28,11 +28,18 @@ export function DiningCard(): React.JSX.Element {
   const estimatedCalories = Math.round(350 + itemCount * 280);
   const estimatedProtein = Math.round(12 + itemCount * 11);
   const estimatedCarbs = Math.round(45 + itemCount * 35);
-  const sodiumLevel = totalAmount > 50 ? "High" : totalAmount > 30 ? "Medium" : "Low";
+
+  // Determine sodium level based on total amount spent
+  const getSodiumLevel = (): string => {
+    if (totalAmount > 50) return "High";
+    if (totalAmount > 30) return "Medium";
+    return "Low";
+  };
+  const sodiumLevel = getSodiumLevel();
 
   // Mock historical data
   const fastFoodFrequency = 3;
-  const avgSpend = 45.0;
+  const avgSpend = 45;
   const favoritePlace = "McDonald's";
   const visits = 8;
 
@@ -40,9 +47,9 @@ export function DiningCard(): React.JSX.Element {
 
   // Healthier swaps
   const swaps = [
-    {swap: "Grilled instead of fried", calSaved: 200},
-    {swap: "Water instead of soda", calSaved: 150, moneySaved: 8},
-    {swap: "Side salad instead of fries", calSaved: 280},
+    {id: "grilled", swap: "Grilled instead of fried", calSaved: 200},
+    {id: "water", swap: "Water instead of soda", calSaved: 150, moneySaved: 8},
+    {id: "salad", swap: "Side salad instead of fries", calSaved: 280},
   ];
 
   // Challenge
@@ -130,18 +137,18 @@ export function DiningCard(): React.JSX.Element {
             <h4 className='text-sm font-medium'>Healthier Swaps</h4>
           </div>
           <ul className='space-y-1.5'>
-            {swaps.map((s, i) => (
+            {swaps.map((s) => (
               <li
-                key={i}
+                key={s.id}
                 className='text-muted-foreground flex items-start gap-2 text-sm'>
                 <span className='text-muted-foreground'>•</span>
                 <span>
                   {s.swap}: <span className='font-medium text-green-600'>-{s.calSaved} cal</span>
-                  {s.moneySaved && (
+                  {s.moneySaved ? (
                     <span className='font-medium text-green-600'>
                       , saves {formatCurrency(s.moneySaved, {currencyCode: currency.code, locale})}
                     </span>
-                  )}
+                  ) : null}
                 </span>
               </li>
             ))}

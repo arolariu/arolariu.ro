@@ -121,6 +121,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
@@ -164,7 +165,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                   <div className='min-w-0 flex-1'>
                     <p className='truncate font-semibold'>{invoiceName}</p>
                     <p className='text-muted-foreground font-mono text-xs'>{invoice.id}</p>
-                    {invoice.description && <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>{invoice.description}</p>}
+                    {invoice.description ? <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>{invoice.description}</p> : null}
                   </div>
                 </div>
               </div>

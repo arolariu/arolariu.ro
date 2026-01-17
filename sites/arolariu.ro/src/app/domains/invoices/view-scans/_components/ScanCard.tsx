@@ -17,6 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   Card,
   CardContent,
   Checkbox,
@@ -28,7 +29,7 @@ import {
 } from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbDotsVertical, TbFileTypePdf, TbLink, TbTrash} from "react-icons/tb";
 
 type ScanCardProps = {
@@ -68,7 +69,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
   const isUsedByInvoice = scan.metadata?.["usedByInvoice"] === "true";
 
-  const handleDelete = async (): Promise<void> => {
+  const handleDelete = useCallback(async (): Promise<void> => {
     setIsDeleting(true);
     try {
       const result = await deleteScan({blobUrl: scan.blobUrl});
@@ -85,7 +86,22 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
       setIsDeleting(false);
       setShowDeleteDialog(false);
     }
-  };
+  }, [scan.blobUrl, scan.id, removeScan, t]);
+
+  const handleStopPropagation = useCallback((e: React.MouseEvent | React.KeyboardEvent): void => {
+    e.stopPropagation();
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent): void => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, []);
+
+  const handleOpenDeleteDialog = useCallback((): void => {
+    setShowDeleteDialog(true);
+  }, []);
 
   return (
     <>
@@ -113,8 +129,11 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
             {/* Selection checkbox */}
             <div
+              role='button'
+              tabIndex={0}
               className='absolute top-2 left-2'
-              onClick={(e) => e.stopPropagation()}>
+              onClick={handleStopPropagation}
+              onKeyDown={handleKeyDown}>
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={onToggleSelect}
@@ -124,20 +143,24 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
             {/* Actions menu */}
             <div
+              role='button'
+              tabIndex={0}
               className='absolute top-2 right-2'
-              onClick={(e) => e.stopPropagation()}>
+              onClick={handleStopPropagation}
+              onKeyDown={handleKeyDown}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button
-                    type='button'
-                    className='flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow-sm transition-colors hover:bg-white dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800'>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='h-7 w-7 rounded-full bg-white/80 text-gray-700 shadow-sm hover:bg-white dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800'>
                     <TbDotsVertical className='h-4 w-4' />
-                  </button>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem
                     className='text-red-600 focus:bg-red-50 focus:text-red-700 dark:text-red-400 dark:focus:bg-red-900/20'
-                    onClick={() => setShowDeleteDialog(true)}>
+                    onClick={handleOpenDeleteDialog}>
                     <TbTrash className='mr-2 h-4 w-4' />
                     {t("delete")}
                   </DropdownMenuItem>
@@ -146,14 +169,14 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             </div>
 
             {/* Used by invoice badge */}
-            {isUsedByInvoice && (
+            {isUsedByInvoice ? (
               <div className='absolute right-2 bottom-2'>
                 <div className='flex items-center gap-1 rounded-full bg-blue-500/90 px-2 py-0.5 text-xs font-medium text-white'>
                   <TbLink className='h-3 w-3' />
                   {t("linked")}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* File info */}

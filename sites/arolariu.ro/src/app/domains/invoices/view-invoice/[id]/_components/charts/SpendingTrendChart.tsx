@@ -1,17 +1,29 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useCallback} from "react";
 import {Area, AreaChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {SpendingTrendData} from "../../_utils/analytics";
 
 type Props = {
-  data: SpendingTrendData[];
-  currency: string;
+  readonly data: SpendingTrendData[];
+  readonly currency: string;
 };
 
-function CustomTooltip({active, payload, currency}: {active?: boolean; payload?: any[]; currency: string}) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
+type TooltipPayloadItem = {
+  payload: {name: string; date: string; amount: number; isCurrent?: boolean};
+};
+
+type CustomTooltipProps = {
+  readonly active: boolean;
+  readonly payload: TooltipPayloadItem[];
+  readonly currency: string;
+};
+
+function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+  const [firstItem] = payload;
+  if (!active || payload.length === 0 || !firstItem) return null;
+  const data = firstItem.payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='text-sm font-medium'>{data.name}</p>
@@ -19,7 +31,7 @@ function CustomTooltip({active, payload, currency}: {active?: boolean; payload?:
       <p className='mt-1 text-sm font-medium'>
         {data.amount.toFixed(2)} {currency}
       </p>
-      {data.isCurrent && <p className='text-primary mt-1 text-xs'>Current Invoice</p>}
+      {data.isCurrent ? <p className='text-primary mt-1 text-xs'>Current Invoice</p> : null}
     </div>
   );
 }
@@ -33,6 +45,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
   };
 
   const currentPoint = data.find((d) => d.isCurrent);
+  const tickFormatter = useCallback((value: number) => `${value}`, []);
 
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
@@ -81,9 +94,17 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                 tickLine={false}
                 axisLine={false}
                 width={32}
-                tickFormatter={(value) => `${value}`}
+                tickFormatter={tickFormatter}
               />
-              <Tooltip content={<CustomTooltip currency={currency} />} />
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    active={false}
+                    payload={[]}
+                    currency={currency}
+                  />
+                }
+              />
               <Area
                 type='monotone'
                 dataKey='amount'
@@ -91,7 +112,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                 strokeWidth={2}
                 fill='url(#colorAmount)'
               />
-              {currentPoint && (
+              {currentPoint ? (
                 <ReferenceDot
                   x={currentPoint.date}
                   y={currentPoint.amount}
@@ -100,7 +121,7 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
                   stroke='hsl(var(--background))'
                   strokeWidth={2}
                 />
-              )}
+              ) : null}
             </AreaChart>
           </ResponsiveContainer>
         </ChartContainer>
