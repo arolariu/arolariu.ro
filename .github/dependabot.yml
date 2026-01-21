@@ -4,6 +4,11 @@
 # This configuration manages automated dependency updates across the monorepo,
 # including npm packages, NuGet packages, GitHub Actions, and Docker images.
 #
+# Update Policy:
+#   - Target Branch: preview (all PRs target the preview branch)
+#   - Update Types: MINOR and MAJOR only (patches are ignored)
+#   - Grouping: Related packages are grouped to reduce PR noise
+#
 # Monorepo Structure:
 #   /                        - Root (Nx, ESLint, Prettier, Vitest, Playwright)
 #   /packages/components     - Shared React component library (RSLib, Storybook)
@@ -53,13 +58,18 @@ updates:
     assignees:
       - "arolariu"
     open-pull-requests-limit: 5
+    ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
-      # Group all GitHub Actions minor updates together
+      # Group all GitHub Actions minor/major updates together
       github-actions-all:
         patterns:
           - "*"
         update-types:
           - "minor"
+          - "major"
 
   # ===========================================================================
   # ROOT NPM DEPENDENCIES
@@ -86,6 +96,9 @@ updates:
     open-pull-requests-limit: 10
     versioning-strategy: increase
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
@@ -99,6 +112,7 @@ updates:
           - "@stylistic/*"
         update-types:
           - "minor"
+          - "major"
       # Prettier and formatting plugins
       prettier:
         patterns:
@@ -107,6 +121,7 @@ updates:
           - "@trivago/*"
         update-types:
           - "minor"
+          - "major"
       # Nx monorepo tooling
       nx:
         patterns:
@@ -114,6 +129,7 @@ updates:
           - "@nx/*"
         update-types:
           - "minor"
+          - "major"
       # TypeScript and type definitions
       typescript:
         patterns:
@@ -121,6 +137,7 @@ updates:
           - "@types/*"
         update-types:
           - "minor"
+          - "major"
       # Testing: Vitest (unit) + Playwright (E2E)
       testing:
         patterns:
@@ -130,6 +147,7 @@ updates:
           - "@playwright/*"
         update-types:
           - "minor"
+          - "major"
 
   # ===========================================================================
   # FRONTEND - NEXT.JS 16 WEBSITE
@@ -156,6 +174,9 @@ updates:
     open-pull-requests-limit: 10
     versioning-strategy: increase
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
@@ -169,18 +190,21 @@ updates:
           - "@next/*"
         update-types:
           - "minor"
+          - "major"
       # Radix UI primitives (shadcn/ui foundation)
       radix:
         patterns:
           - "@radix-ui/*"
         update-types:
           - "minor"
+          - "major"
       # Clerk authentication
       clerk:
         patterns:
           - "@clerk/*"
         update-types:
           - "minor"
+          - "major"
       # Tailwind CSS v4 ecosystem
       tailwind:
         patterns:
@@ -189,12 +213,14 @@ updates:
           - "tailwind-*"
         update-types:
           - "minor"
+          - "major"
       # OpenTelemetry observability stack
       opentelemetry:
         patterns:
           - "@opentelemetry/*"
         update-types:
           - "minor"
+          - "major"
       # Forms: react-hook-form + zod validation
       forms:
         patterns:
@@ -203,6 +229,7 @@ updates:
           - "@hookform/*"
         update-types:
           - "minor"
+          - "major"
       # Internationalization with next-intl
       i18n:
         patterns:
@@ -210,18 +237,21 @@ updates:
           - "@formatjs/*"
         update-types:
           - "minor"
+          - "major"
       # Azure SDKs for storage, config, etc.
       azure-sdk:
         patterns:
           - "@azure/*"
         update-types:
           - "minor"
+          - "major"
       # State management: Zustand
       state:
         patterns:
           - "zustand"
         update-types:
           - "minor"
+          - "major"
 
   # ===========================================================================
   # SHARED COMPONENTS LIBRARY
@@ -248,6 +278,9 @@ updates:
     open-pull-requests-limit: 5
     versioning-strategy: increase
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
@@ -259,6 +292,7 @@ updates:
           - "@chromatic-com/*"
         update-types:
           - "minor"
+          - "major"
       # RSLib/Rsbuild build tooling
       rslib:
         patterns:
@@ -266,6 +300,7 @@ updates:
           - "@rsbuild/*"
         update-types:
           - "minor"
+          - "major"
       # UI utilities (CVA, clsx, tailwind-merge)
       ui-utils:
         patterns:
@@ -275,6 +310,7 @@ updates:
           - "tailwind-merge"
         update-types:
           - "minor"
+          - "major"
 
   # ===========================================================================
   # CV SITE - SVELTEKIT
@@ -301,6 +337,9 @@ updates:
     open-pull-requests-limit: 5
     versioning-strategy: increase
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
@@ -312,6 +351,7 @@ updates:
           - "svelte-*"
         update-types:
           - "minor"
+          - "major"
 
   # ===========================================================================
   # BACKEND - .NET 10 API
@@ -336,6 +376,10 @@ updates:
     assignees:
       - "arolariu"
     open-pull-requests-limit: 10
+    ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
     groups:
       # Microsoft.Extensions.* and System.* packages
       microsoft:
@@ -344,18 +388,21 @@ updates:
           - "System.*"
         update-types:
           - "minor"
+          - "major"
       # Azure SDK for .NET
       azure:
         patterns:
           - "Azure.*"
         update-types:
           - "minor"
+          - "major"
       # OpenTelemetry for observability
       opentelemetry:
         patterns:
           - "OpenTelemetry*"
         update-types:
           - "minor"
+          - "major"
       # Testing: xUnit, FluentAssertions, Coverlet
       testing:
         patterns:
@@ -365,6 +412,7 @@ updates:
           - "coverlet*"
         update-types:
           - "minor"
+          - "major"
 
   # ===========================================================================
   # DOCKER IMAGES - INFRASTRUCTURE CONTAINERS
@@ -390,6 +438,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 3
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
 
@@ -417,6 +468,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 2
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
 
@@ -444,6 +498,9 @@ updates:
       - "arolariu"
     open-pull-requests-limit: 2
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
 
@@ -472,6 +529,9 @@ updates:
     open-pull-requests-limit: 3
     versioning-strategy: increase
     ignore:
+      # Only update minors and majors, not patches
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
@@ -481,6 +541,7 @@ updates:
           - "@actions/*"
         update-types:
           - "minor"
+          - "major"
       # TypeScript and testing
       dev-tools:
         patterns:
@@ -490,3 +551,4 @@ updates:
           - "@vitest/*"
         update-types:
           - "minor"
+          - "major"
