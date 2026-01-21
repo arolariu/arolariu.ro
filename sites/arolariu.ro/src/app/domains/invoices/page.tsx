@@ -9,7 +9,9 @@
  */
 
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
+import {getLocale, getTranslations} from "next-intl/server";
 import RenderInvoiceDomainScreen from "./island";
 
 /**
@@ -20,7 +22,7 @@ import RenderInvoiceDomainScreen from "./island";
  *
  * **i18n**: Uses `next-intl` translations from Invoices.__metadata__.
  *
- * **TODO**: Replace hardcoded title/description with translated strings.
+ * **SEO**: Delegates to `createMetadata` for consistent Open Graph defaults.
  *
  * @returns Metadata configured for the invoices domain route.
  *
@@ -34,13 +36,11 @@ import RenderInvoiceDomainScreen from "./island";
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Invoices.__metadata__");
   const locale = await getLocale();
-  // TODO: Use translations instead of hardcoding.
-  return {
+  return createMetadata({
     locale,
-    title: "Invoice Management System",
-    description:
-      "The invoice management system provides users with detailed insights into their spending habits, according to their uploaded receipts.",
-  };
+    title: t("title"),
+    description: t("description"),
+  });
 }
 
 /**
@@ -59,7 +59,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * <InvoicePage />
  * ```
  */
-export default async function InvoicesHomepage(props: Readonly<PageProps<"/domains/invoices">>): Promise<React.JSX.Element> {
+export default async function InvoicesHomepage(_props: Readonly<PageProps<"/domains/invoices">>): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   return <RenderInvoiceDomainScreen isAuthenticated={isAuthenticated} />;
 }
