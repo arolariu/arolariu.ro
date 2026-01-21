@@ -152,8 +152,8 @@ export const PROJECT_GROUPS = {
   /** Minimal set for quick feedback */
   smoke: ["desktop-chrome"] as const,
 
-  /** Core browsers for CI */
-  ci: ["desktop-chrome", "desktop-firefox"] as const,
+  /** Core browser for CI */
+  ci: ["desktop-chrome"] as const,
 
   /** Full desktop coverage */
   desktop: ["desktop-chrome", "desktop-firefox", "desktop-safari", "desktop-edge"] as const,
@@ -191,8 +191,8 @@ export function getProjectsForEnvironment(): PlaywrightTestProject[] {
 
   switch (env) {
     case "ci":
-      // CI: Chrome + Firefox for balance of coverage and speed
-      projects = [createProject("chromium-desktop-e2e", "desktop-chrome"), createProject("firefox-desktop-e2e", "desktop-firefox")];
+      // CI: Chrome only for speed and stability
+      projects = [createProject("chromium-desktop-e2e", "desktop-chrome")];
       break;
 
     case "local-full":
