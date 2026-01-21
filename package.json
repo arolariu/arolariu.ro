@@ -144,7 +144,7 @@
     "@storybook/addon-onboarding": "10.1.11",
     "@storybook/addon-themes": "10.2.0",
     "@storybook/nextjs": "10.1.11",
-    "@storybook/nextjs-vite": "10.1.11",
+    "@storybook/nextjs-vite": "10.2.0",
     "@storybook/test-runner": "0.24.2",
     "@sveltejs/adapter-auto": "7.0.0",
     "@sveltejs/kit": "2.50.0",
