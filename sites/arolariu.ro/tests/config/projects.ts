@@ -123,15 +123,16 @@ export interface CreateProjectOptions {
  * ```
  */
 export function createProject(name: string, preset: DevicePresetName, options?: CreateProjectOptions): PlaywrightTestProject {
-  const devicePreset = DEVICE_PRESETS[preset];
+  // Explicitly type as DevicePreset to access optional properties safely
+  const devicePreset: DevicePreset = DEVICE_PRESETS[preset];
   const baseURL = getBaseURL();
 
   return {
     name,
     use: {
       ...devicePreset.deviceDescriptor,
-      ...(devicePreset.launchOptions && {launchOptions: devicePreset.launchOptions}),
-      ...(devicePreset.contextOptions && devicePreset.contextOptions),
+      ...(devicePreset.launchOptions ? {launchOptions: devicePreset.launchOptions} : {}),
+      ...(devicePreset.contextOptions ?? {}),
       baseURL,
       ignoreHTTPSErrors: true,
       ...options?.use,
