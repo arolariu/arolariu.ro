@@ -1,18 +1,15 @@
 /**
- * @fileoverview Unified unit test action script for GitHub Actions workflows.
+ * @fileoverview Unified test results action script for GitHub Actions workflows.
  * @module github/scripts/src/runUnitTestAction
  *
  * @remarks
- * This module handles all unit test-related operations for GitHub Actions CI/CD:
- * - **Test Result Collection**: Gathers Vitest and Playwright test results
- * - **Code Coverage Analysis**: Parses and formats coverage data
- * - **Bundle Size Comparison**: Compares build artifact sizes against main branch
- * - **PR Comment Generation**: Creates comprehensive test summary comments
- * - **Branch Statistics**: Provides commit comparison and change metrics
+ * This module generates professional PR comments with comprehensive test results:
+ * - **Vitest Unit Tests**: Coverage metrics with visual indicators
+ * - **Playwright E2E Tests**: Test statistics, failures, and flaky test details
+ * - **Branch Comparison**: Commit statistics vs main branch
  *
- * The comment generation is optimized for performance by running independent sections
- * in parallel where possible, and includes comprehensive error handling to ensure
- * partial results are still reported even if individual sections fail.
+ * The comment is designed for enterprise-grade reporting with clear visual hierarchy
+ * and actionable information for developers reviewing PRs.
  *
  * @example
  * ```typescript
@@ -23,8 +20,11 @@
  */
 
 import * as core from "@actions/core";
-import {BUNDLE_TARGET_FOLDERS, STATUS_EMOJI_UNIT_TESTS, createGitHubHelper, env, fs, git, playwright, vitest} from "../helpers/index.ts";
+import {STATUS_EMOJI_UNIT_TESTS, createGitHubHelper, env, fs, git, playwright, vitest} from "../helpers/index.ts";
 import type {WorkflowInfo} from "../types/index.ts";
+
+/** Path to Vitest coverage summary JSON file */
+const VITEST_COVERAGE_PATH = "sites/arolariu.ro/code-cov/vitest/coverage-summary.json";
 
 /** Path to Playwright test results JSON file */
 const PLAYWRIGHT_RESULTS_PATH = "sites/arolariu.ro/code-cov/playwright-report/results.json";
@@ -68,9 +68,18 @@ function generateWorkflowInfoSection(workflowInfo: WorkflowInfo): string {
     STATUS_EMOJI_UNIT_TESTS[workflowInfo.jobStatus as keyof typeof STATUS_EMOJI_UNIT_TESTS] ?? STATUS_EMOJI_UNIT_TESTS.unknown;
   const statusText = workflowInfo.jobStatus.charAt(0).toUpperCase() + workflowInfo.jobStatus.slice(1);
 
-  let section = `## ${statusEmoji} Tests ${statusText} for [\`${workflowInfo.shortCurrentCommitSha}\`](${workflowInfo.commitUrl})\n\n`;
-  section += `**PR:** [#${workflowInfo.prNumber}](${workflowInfo.prUrl}) | **Branch:** \`${workflowInfo.branchName}\` | **Workflow:** [#${workflowInfo.runId} Action](${workflowInfo.workflowRunUrl})\n\n`;
-  section += `----\n`;
+  let section = `## ${statusEmoji} Test Results: ${statusText}\n\n`;
+  section += `| Property | Value |\n`;
+  section += `|----------|-------|\n`;
+  section += `| **Commit** | [\`${workflowInfo.shortCurrentCommitSha}\`](${workflowInfo.commitUrl}) |\n`;
+  section += `| **Branch** | \`${workflowInfo.branchName}\` |\n`;
+  section += `| **Workflow** | [Run #${workflowInfo.runId}](${workflowInfo.workflowRunUrl}) |\n`;
+
+  if (workflowInfo.prNumber > 0) {
+    section += `| **Pull Request** | [#${workflowInfo.prNumber}](${workflowInfo.prUrl}) |\n`;
+  }
+
+  section += `\n----\n`;
   return section;
 }
 
@@ -112,33 +121,51 @@ async function getBranchCommitComparisonSection(currentCommitSha: string, shortC
 }
 
 /**
- * Generates Vitest test results section
+ * Generates Vitest test results section with coverage metrics
+ *
+ * This function parses the Vitest coverage-summary.json file and generates
+ * a professional markdown section with:
+ * - Coverage percentages for statements, branches, functions, and lines
+ * - Visual emoji indicators (🟢 >= 90%, 🟡 >= 75%, 🔴 < 75%)
+ * - Graceful fallback when coverage data is unavailable
+ *
  * @returns Markdown formatted Vitest results section
  */
 async function getVitestResultsSection(): Promise<string> {
-  const coverageJsonPath = "sites/arolariu.ro/code-cov/coverage-summary.json";
-
   try {
-    const exists = await fs.exists(coverageJsonPath);
+    const exists = await fs.exists(VITEST_COVERAGE_PATH);
 
     if (!exists) {
+      core.debug(`Vitest coverage file not found at ${VITEST_COVERAGE_PATH}`);
       let section = `### 🧪 Vitest Unit Tests\n\n`;
-      section += `⚠️ No coverage data found at \`${coverageJsonPath}\`\n\n`;
+      section += `> ⚠️ Coverage data not available\n\n`;
       section += `----\n`;
       return section;
     }
 
     // Parse coverage using vitest helper
-    const coverageData = await vitest.parseCoverage(coverageJsonPath, fs);
+    core.debug(`Parsing Vitest coverage from ${VITEST_COVERAGE_PATH}`);
+    const coverageData = await vitest.parseCoverage(VITEST_COVERAGE_PATH, fs);
 
-    // Generate markdown section
-    return vitest.generateMarkdownSection(coverageData);
+    // Log coverage summary
+    core.info(
+      `📊 Vitest coverage: ${coverageData.total.statements.pct.toFixed(1)}% statements, ` +
+        `${coverageData.total.branches.pct.toFixed(1)}% branches, ` +
+        `${coverageData.total.functions.pct.toFixed(1)}% functions, ` +
+        `${coverageData.total.lines.pct.toFixed(1)}% lines`,
+    );
+
+    // Generate enhanced markdown section with emoji indicators
+    return vitest.generateMarkdownSection(coverageData, {
+      useEmoji: true,
+      title: "🧪 Vitest Unit Tests",
+    });
   } catch (error) {
     const err = error as Error;
     core.warning(`Failed to read Vitest coverage: ${err.message}`);
 
     let section = `### 🧪 Vitest Unit Tests\n\n`;
-    section += `⚠️ Could not read coverage data: ${err.message}\n\n`;
+    section += `> ⚠️ Could not read coverage data: ${err.message}\n\n`;
     section += `----\n`;
     return section;
   }
@@ -196,49 +223,13 @@ async function getPlaywrightResultsSection(jobStatus: string, workflowRunUrl: st
 }
 
 /**
- * Generates bundle size comparison markdown
- * @param targetFolders - Folders to analyze
- * @returns Markdown formatted bundle size comparison
- */
-async function getBundleSizeComparisonSection(targetFolders: readonly string[]): Promise<string> {
-  try {
-    let section = `### 📦 Bundle Size Analysis (vs. Main)\n\n`;
-
-    // Fetch main branch for comparison
-    await git.fetchBranch("main", "origin", 1);
-
-    section += `Comparing bundle sizes between \`main\` and current branch for ${targetFolders.length} folder(s).\n\n`;
-    section += `| Folder | Status |\n`;
-    section += `|--------|--------|\n`;
-
-    for (const folder of targetFolders) {
-      try {
-        // For now, just indicate that the folder was checked
-        section += `| \`${folder}\` | ✓ Analyzed |\n`;
-      } catch (error) {
-        section += `| \`${folder}\` | ⚠️ Error |\n`;
-      }
-    }
-
-    section += `\n_Detailed bundle size comparison requires additional Git operations._\n\n`;
-    section += `----\n`;
-    return section;
-  } catch (error) {
-    const err = error as Error;
-    core.error(`Failed to generate bundle size comparison: ${err.message}`);
-    return `### 📦 Bundle Size Analysis (vs. Main)\n\n_Error generating bundle size comparison: ${err.message}_\n\n----\n`;
-  }
-}
-
-/**
- * Builds the complete unit test summary PR comment body by aggregating multiple analysis sections
+ * Builds the complete test summary PR comment body by aggregating multiple analysis sections
  *
  * This function orchestrates the generation of all comment sections in a specific order:
- * 1. Workflow information (commit, branch, run status)
+ * 1. Workflow header (commit, branch, run status, PR links)
  * 2. Branch/commit comparison statistics
  * 3. Vitest unit test coverage results
  * 4. Playwright E2E test results
- * 5. Bundle size analysis
  *
  * @param workflowInfo - Workflow and PR metadata including URLs and identifiers
  * @param currentCommitSha - Full SHA hash of the commit being analyzed
@@ -246,25 +237,16 @@ async function getBundleSizeComparisonSection(targetFolders: readonly string[]):
  *
  * @remarks
  * - Each section is generated independently with its own error handling
- * - Failed sections are replaced with error messages rather than failing the entire comment
- * - Debug logging is provided for each section to aid in troubleshooting
- * - The function is optimized for readability and maintainability over performance
- *
- * @example
- * ```typescript
- * const commentBody = await buildUnitTestSummaryCommentBody(workflowInfo, 'abc123...');
- * // Returns comprehensive markdown with all test results and analysis
- * ```
+ * - Failed sections show warning messages rather than failing the entire comment
+ * - The comment is designed for enterprise-grade CI/CD reporting
  */
 async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, currentCommitSha: string): Promise<string> {
   let commentBody = "";
 
   core.debug("Building workflow info section...");
-  // Add workflow info section
   commentBody += generateWorkflowInfoSection(workflowInfo);
 
   core.debug("Building branch/commit comparison section...");
-  // Add branch/commit comparison
   commentBody += await getBranchCommitComparisonSection(currentCommitSha, workflowInfo.shortCurrentCommitSha);
 
   core.debug("Building Vitest test results section...");
@@ -273,8 +255,8 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
   core.debug("Building Playwright test results section...");
   commentBody += await getPlaywrightResultsSection(workflowInfo.jobStatus, workflowInfo.workflowRunUrl);
 
-  core.debug("Building bundle size comparison section...");
-  commentBody += await getBundleSizeComparisonSection(BUNDLE_TARGET_FOLDERS);
+  // Add footer with generated timestamp
+  commentBody += `\n<sub>🤖 Generated by CI at ${new Date().toISOString()}</sub>\n`;
 
   core.debug(`Comment body assembled: ${commentBody.split("\n").length} lines`);
   return commentBody;
@@ -338,8 +320,8 @@ async function createPRComment(commentBody: string, branchName: string): Promise
  *
  * 1. **Environment Validation**: Extracts and validates required workflow context
  * 2. **Metadata Construction**: Builds URLs and workflow information objects
- * 3. **Content Generation**: Aggregates test results, coverage, and bundle analysis
- * 4. **Comment Posting**: Uses the core PR comment utility to post to GitHub
+ * 3. **Content Generation**: Aggregates Vitest coverage and Playwright test results
+ * 4. **Comment Posting**: Uses the GitHub helper to post comments to PRs
  *
  * @returns Promise that resolves when the comment is successfully posted or skipped
  *
