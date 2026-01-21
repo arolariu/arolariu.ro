@@ -23,8 +23,11 @@
  */
 
 import * as core from "@actions/core";
-import {BUNDLE_TARGET_FOLDERS, STATUS_EMOJI_UNIT_TESTS, createGitHubHelper, env, fs, git, vitest} from "../helpers/index.ts";
+import {BUNDLE_TARGET_FOLDERS, STATUS_EMOJI_UNIT_TESTS, createGitHubHelper, env, fs, git, playwright, vitest} from "../helpers/index.ts";
 import type {WorkflowInfo} from "../types/index.ts";
+
+/** Path to Playwright test results JSON file */
+const PLAYWRIGHT_RESULTS_PATH = "sites/arolariu.ro/code-cov/playwright-report/results.json";
 
 /**
  * Workflow context extracted from environment variables
@@ -142,24 +145,54 @@ async function getVitestResultsSection(): Promise<string> {
 }
 
 /**
- * Generates Playwright test results section
- * @param jobStatus - Job execution status
- * @param workflowRunUrl - URL to workflow run
+ * Generates Playwright test results section with rich statistics and failure details
+ *
+ * This function attempts to parse the actual Playwright JSON results file to generate
+ * a comprehensive test report including:
+ * - Test statistics (passed, failed, skipped, flaky counts)
+ * - Failure details with error messages
+ * - Flaky test information with retry counts
+ * - Duration statistics
+ *
+ * If the results file is not available or cannot be parsed, it falls back to a simple
+ * status-based message for backward compatibility.
+ *
+ * @param jobStatus - Job execution status (success, failure, etc.)
+ * @param workflowRunUrl - URL to workflow run for artifact links
  * @returns Markdown formatted Playwright results section
  */
 async function getPlaywrightResultsSection(jobStatus: string, workflowRunUrl: string): Promise<string> {
-  const statusEmoji = jobStatus === "success" ? "✅" : jobStatus === "failure" ? "❌" : "⚠️";
-  const testStatusMessage =
-    jobStatus === "success"
-      ? "All Playwright tests passed!"
-      : jobStatus === "failure"
-        ? "Playwright tests failed."
-        : `Playwright tests status: ${jobStatus}.`;
+  try {
+    const exists = await fs.exists(PLAYWRIGHT_RESULTS_PATH);
 
-  let section = `### ${statusEmoji} Playwright Tests\n\n`;
-  section += `${testStatusMessage} ([View Full Report](${workflowRunUrl}#artifacts))\n\n`;
-  section += `----\n`;
-  return section;
+    if (!exists) {
+      core.debug(`Playwright results file not found at ${PLAYWRIGHT_RESULTS_PATH}, using simple section`);
+      // Fall back to simple section when no results file
+      return playwright.generateSimpleSection(jobStatus, workflowRunUrl);
+    }
+
+    // Parse actual results and generate rich markdown
+    core.debug(`Parsing Playwright results from ${PLAYWRIGHT_RESULTS_PATH}`);
+    const results = await playwright.parseResults(PLAYWRIGHT_RESULTS_PATH, fs);
+
+    core.info(
+      `📊 Playwright results: ${results.statistics.passed} passed, ${results.statistics.failed} failed, ` +
+        `${results.statistics.skipped} skipped, ${results.statistics.flaky} flaky`,
+    );
+
+    return playwright.generateMarkdownSection(results, {
+      workflowRunUrl,
+      includeFailureDetails: true,
+      includeFlakyTests: true,
+      maxFailuresToShow: 10,
+      showDuration: true,
+    });
+  } catch (error) {
+    const err = error as Error;
+    core.warning(`Failed to read Playwright results: ${err.message}`);
+    // Fall back to simple section on error
+    return playwright.generateSimpleSection(jobStatus, workflowRunUrl);
+  }
 }
 
 /**
