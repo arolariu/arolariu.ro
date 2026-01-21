@@ -1,14 +1,15 @@
-import {expect, test} from "playwright/test";
+/**
+ * @fileoverview Global error (5xx) and 404 handling E2E tests.
+ * @module src/app/global-error.spec
+ */
 
-test.describe("Global Error (5xx) Tests", () => {
-  test.afterEach(async ({page}, testInfo) => {
-    const screenshotName = testInfo.titlePath.join("_").replace(/[^a-zA-Z0-9_-]/g, "-") + ".png";
-    const screenshotPath = testInfo.outputPath(screenshotName);
-    await page.screenshot({path: screenshotPath});
-    await testInfo.attach(screenshotName, {path: screenshotPath, contentType: "image/png"});
-  });
+import {expect, test} from "../../tests/fixtures";
+import {PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
 
-  test("should display 404 page for non-existent route", async ({page}) => {
+test.describe("Global Error (5xx) Tests @error", () => {
+  // Note: Screenshots are automatically captured by the autoScreenshot fixture
+
+  test(tagged("should display 404 page for non-existent route", TEST_TYPE_TAGS.SMOKE, PRIORITY_TAGS.P1), async ({page}) => {
     const response = await page.goto("/this-page-does-not-exist-12345");
 
     // Should return 404 status

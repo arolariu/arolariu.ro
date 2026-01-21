@@ -1,93 +1,104 @@
 /**
  * @fileoverview Playwright E2E configuration for the arolariu.ro website.
+ * Uses modular configuration for easy extension and maintenance.
  * @module sites/arolariu.ro/playwright.config
  *
  * @remarks
- * Defines local/CI projects and common settings (baseURL, timeouts, reporters).
+ * Configuration is split into modules under tests/config/ for:
+ * - Environment detection and settings
+ * - Browser/device project definitions
+ * - Reporter configuration
+ *
+ * @example
+ * Run tests:
+ * ```bash
+ * # Run all tests
+ * npx playwright test
+ *
+ * # Run smoke tests only
+ * npx playwright test --grep @smoke
+ *
+ * # Run on specific browser
+ * npx playwright test --project=chromium-desktop-e2e
+ *
+ * # Run with full browser matrix
+ * TEST_ENV=local-full npx playwright test
+ * ```
  */
 
-import {defineConfig, devices} from "@playwright/test";
+import {defineConfig} from "@playwright/test";
 
-const weAreInCI = Boolean(process.env["CI"]);
+import {
+  getEnvironmentConfig,
+  getProjectsForEnvironment,
+  getReportersForEnvironment,
+  getWorkerConfig,
+  isCI,
+  OUTPUT_DIRS,
+  TIMEOUTS,
+  WEB_SERVER_CONFIG,
+} from "./tests/config";
 
-const allProjects = [
-  {
-    name: "chromium-desktop-e2e",
-    use: {
-      ...devices["Desktop Chrome"],
-      baseURL: "https://localhost:3000",
-      ignoreHTTPSErrors: true,
-    },
-    timeout: 90 * 1000, // 90 seconds - increased for CI warmup
-    testMatch: "src/**/*.spec.{ts,tsx}",
-  },
-  {
-    name: "firefox-desktop-e2e",
-    use: {
-      ...devices["Desktop Firefox"],
-      baseURL: "https://localhost:3000",
-      ignoreHTTPSErrors: true,
-    },
-    timeout: 90 * 1000, // 90 seconds - increased for CI warmup
-    testMatch: "src/**/*.spec.{ts,tsx}",
-  },
-  {
-    name: "webkit-desktop-e2e",
-    use: {
-      ...devices["Desktop Safari"],
-      baseURL: "https://localhost:3000",
-      ignoreHTTPSErrors: true,
-    },
-    timeout: 90 * 1000, // 90 seconds - increased for CI warmup
-    testMatch: "src/**/*.spec.{ts,tsx}",
-  },
-];
-
-const projectsToRun = allProjects.filter((project) => {
-  if (weAreInCI) {
-    return (
-      project.name !== "webkit-desktop-e2e" // Skip WebKit in CI
-      && project.name !== "firefox-desktop-e2e" // Skip Firefox in CI
-    );
-  }
-  return true; // Run all projects locally
-});
+// Get environment-specific configuration
+const envConfig = getEnvironmentConfig();
+const customWorkers = getWorkerConfig();
 
 export default defineConfig({
+  // ==================== Global Setup/Teardown ====================
   globalSetup: "./tests/global-setup.ts",
+  globalTeardown: "./tests/global-teardown.ts",
+
+  // ==================== Test Execution ====================
   fullyParallel: true,
-  retries: weAreInCI ? 2 : 2, // Increased CI retries for flaky warmup issues
-  workers: weAreInCI ? "75%" : "100%",
-  timeout: 90 * 1000, // 90 seconds - increased for CI warmup
-  projects: projectsToRun,
-  // Keep test artifacts separate from report output.
-  // Playwright clears the HTML report output folder prior to generation;
-  // if it overlaps with the test output folder, artifacts can be lost.
-  outputDir: "code-cov/playwright-results",
-  maxFailures: weAreInCI ? 5 : 10, // Stop after these many failures
+  retries: envConfig.retries,
+  workers: customWorkers ?? envConfig.workers,
+  timeout: envConfig.timeout,
+  maxFailures: envConfig.maxFailures,
 
-  reporter: [
-    ["html", {outputFolder: "code-cov/playwright-report/html", open: "never"}],
-    ["json", {outputFile: "code-cov/playwright-report/results.json"}],
-    ["junit", {outputFile: "code-cov/playwright-report/junit.xml"}],
-    weAreInCI ? ["github"] : ["list", {printSteps: true}],
-  ],
-
-  use: {
-    bypassCSP: true,
-    ignoreHTTPSErrors: true,
-    screenshot: "only-on-failure",
-    trace: "on-first-retry",
-    video: weAreInCI ? "retain-on-failure" : "on-first-retry",
+  // ==================== Expect Configuration ====================
+  expect: {
+    timeout: TIMEOUTS.expect,
   },
 
+  // ==================== Projects ====================
+  projects: getProjectsForEnvironment(),
+
+  // ==================== Output ====================
+  outputDir: OUTPUT_DIRS.results,
+  reporter: getReportersForEnvironment(),
+
+  // ==================== Shared Settings ====================
+  use: {
+    // Base URL
+    baseURL: envConfig.baseURL,
+
+    // Security
+    bypassCSP: true,
+    ignoreHTTPSErrors: true,
+
+    // Artifacts
+    screenshot: "only-on-failure",
+    trace: envConfig.trace,
+    video: envConfig.video,
+
+    // Timeouts
+    actionTimeout: TIMEOUTS.action,
+    navigationTimeout: TIMEOUTS.navigation,
+  },
+
+  // ==================== Web Server ====================
   webServer: [
     {
-      command: "npm run dev",
-      reuseExistingServer: !weAreInCI,
-      url: "https://localhost:3000",
-      timeout: 300 * 1000, // 300 seconds - 5 minutes
-      ignoreHTTPSErrors: true,
+      command: WEB_SERVER_CONFIG.command,
+      url: WEB_SERVER_CONFIG.url,
+      timeout: WEB_SERVER_CONFIG.timeout,
+      ignoreHTTPSErrors: WEB_SERVER_CONFIG.ignoreHTTPSErrors,
+      reuseExistingServer: envConfig.reuseExistingServer,
+      stdout: isCI() ? "pipe" : "ignore",
+      // Ignore stderr to suppress harmless ECONNRESET errors during test cleanup.
+      // These occur when the browser closes connections with pending requests.
+      // Real server errors will still cause tests to fail.
+      stderr: "ignore",
     },
   ],
 });

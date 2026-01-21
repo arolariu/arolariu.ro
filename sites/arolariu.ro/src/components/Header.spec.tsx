@@ -1,140 +1,105 @@
-import {expect, test} from "@playwright/test";
-import {getNavigationOptions, navigateWithRetry} from "../../tests/playwright-helpers";
+/**
+ * @fileoverview Header component E2E tests.
+ * Uses the enhanced Playwright fixture system with page objects.
+ * @module src/components/Header.spec
+ */
 
-test.describe("Header Component Tests", () => {
+import {expect, test} from "../../tests/fixtures";
+import {HeaderComponent} from "../../tests/page-objects";
+import {COMPONENT_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
+
+test.describe("Header Component Tests @header", () => {
+  let header: HeaderComponent;
+
   test.beforeEach(async ({page}) => {
+    header = new HeaderComponent(page);
     await page.goto("/");
   });
 
-  test.afterEach(async ({page}, testInfo) => {
-    const screenshotName = testInfo.titlePath.join("_").replace(/[^a-zA-Z0-9_-]/g, "-") + ".png";
-    const screenshotPath = testInfo.outputPath(screenshotName);
-    await page.screenshot({path: screenshotPath});
-    await testInfo.attach(screenshotName, {path: screenshotPath, contentType: "image/png"});
-  });
+  // Note: Screenshots are automatically captured by the autoScreenshot fixture
+  // No need for repetitive afterEach hooks!
 
   test.describe("Header Structure and Visibility", () => {
-    test("should display the header element", async ({page}) => {
-      const header = page.locator("header");
-      await expect(header).toBeVisible({timeout: 10000});
+    test(tagged("should display the header element", TEST_TYPE_TAGS.SMOKE, PRIORITY_TAGS.CRITICAL), async () => {
+      await header.shouldBeVisible();
     });
 
-    test("should have proper positioning and styling", async ({page}) => {
-      const header = page.locator("header");
-      await expect(header).toBeVisible();
-
-      // The header uses responsive positioning:
-      // - 2xsm:fixed (mobile: fixed positioning)
-      // - lg:relative (desktop: relative positioning)
-      // The computed style depends on viewport size and CSS loading
-      // Wait for styles to be fully computed before checking position
-      await page.waitForLoadState("domcontentloaded");
-
-      // Accept any valid positioning that enables proper navigation behavior
-      // Note: getComputedStyle may return empty string if styles not fully loaded
-      const position = await header.evaluate((el) => globalThis.getComputedStyle(el).position);
-      const validPositions = ["sticky", "fixed", "relative", "static", "absolute", ""];
-      expect(validPositions).toContain(position);
+    test("should have proper positioning and styling", async () => {
+      await header.shouldBeVisible();
+      await header.shouldHaveProperPositioning();
     });
   });
 
   test.describe("Header Logo and Branding", () => {
-    test("should display the site logo", async ({page}) => {
-      const logo = page.locator("header img[alt*='logo'], header svg");
-      await expect(logo.first()).toBeVisible({timeout: 10000});
+    test(tagged("should display the site logo", TEST_TYPE_TAGS.SMOKE), async () => {
+      await header.shouldHaveLogo();
     });
 
     test("should have a clickable logo linking to home", async ({page}) => {
-      const logoLink = page.locator("header a[href='/'], header a[href='https://localhost:3000']").first();
-      await expect(logoLink).toBeVisible({timeout: 10000});
-
-      // Use force:true to bypass Next.js dev overlay that may intercept clicks
-      // Also wait for page to be fully stable before clicking
-      await page.waitForLoadState("domcontentloaded");
-      await logoLink.click({force: true});
-      await page.waitForURL(/\/$/, {timeout: 10000});
+      await header.shouldBeVisible();
+      await header.clickLogo();
+      expect(page.url()).toMatch(/\/$/);
     });
 
-    test("should display site name or title", async ({page}) => {
-      // Look for site name in header
-      const headerText = page.locator("header");
-      await expect(headerText).toBeVisible();
-
-      const text = await headerText.textContent();
-      expect(text).toBeTruthy();
-      expect(text!.length).toBeGreaterThan(0);
+    test("should display site name or title", async () => {
+      await header.shouldBeVisible();
+      const siteName = await header.getSiteName();
+      expect(siteName).toBeTruthy();
+      expect(siteName!.length).toBeGreaterThan(0);
     });
   });
 
   test.describe("Header Navigation", () => {
-    test("should display navigation menu", async ({page}) => {
-      const nav = page.locator("header nav, header [role='navigation']");
-      await expect(nav.first()).toBeVisible({timeout: 10000});
+    test(tagged("should display navigation menu", TEST_TYPE_TAGS.SMOKE), async () => {
+      await header.shouldHaveNavigation();
     });
 
-    test("should have navigation links", async ({page}) => {
-      const navLinks = page.locator("header nav a, header [role='navigation'] a");
-      const count = await navLinks.count();
-      expect(count).toBeGreaterThan(0);
+    test("should have navigation links", async () => {
+      await header.shouldHaveNavLinks(1);
     });
 
     test("should navigate to About page from header", async ({page}) => {
-      const aboutLink = page.locator("header a[href*='about']").first();
+      const aboutLink = header.aboutLink;
 
       if (await aboutLink.isVisible({timeout: 5000})) {
-        // Get the href and navigate directly with retry logic
-        // This avoids timing issues with click + waitForURL
-        const href = await aboutLink.getAttribute("href");
-        if (href) {
-          const result = await navigateWithRetry(page, href, getNavigationOptions());
-          expect(result.success, `About page navigation should succeed (status: ${result.status})`).toBe(true);
-          expect(page.url()).toContain("/about");
-        }
+        const result = await header.navigateToAbout();
+        expect(result.success, `About page navigation should succeed (status: ${result.status})`).toBe(true);
+        expect(page.url()).toContain("/about");
       }
     });
   });
 
   test.describe("Header Responsive Behavior", () => {
-    test("should display mobile menu button on small screens", async ({page}) => {
-      await page.setViewportSize({width: 375, height: 667});
-
-      const mobileMenuButton = page.locator("header button[aria-label*='menu' i], header button[aria-label*='navigation' i]");
+    test(tagged("should display mobile menu button on small screens", COMPONENT_TAGS.HEADER), async () => {
+      await header.setMobileViewport();
 
       // Mobile menu button should exist (even if not visible without interaction)
-      const count = await mobileMenuButton.count();
+      const count = await header.mobileMenuButton.count();
       expect(count).toBeGreaterThanOrEqual(0);
     });
 
-    test("should display full navigation on desktop", async ({page}) => {
-      await page.setViewportSize({width: 1920, height: 1080});
-
-      const nav = page.locator("header nav, header [role='navigation']");
-      await expect(nav.first()).toBeVisible();
+    test("should display full navigation on desktop", async () => {
+      await header.setDesktopViewport();
+      await header.shouldHaveNavigation();
     });
   });
 
-  test.describe("Header Accessibility", () => {
-    test("should have proper semantic HTML structure", async ({page}) => {
-      const header = page.locator("header");
-      await expect(header).toBeVisible();
-
-      // Check for navigation landmark
-      const nav = page.locator("header nav, header [role='navigation']");
-      expect(await nav.count()).toBeGreaterThan(0);
+  test.describe("Header Accessibility @a11y", () => {
+    test("should have proper semantic HTML structure", async () => {
+      await header.shouldHaveProperSemantics();
     });
 
-    test("should have accessible links with text or aria-labels", async ({page}) => {
-      const links = page.locator("header a");
-      const count = await links.count();
+    test("should have accessible links with text or aria-labels", async () => {
+      await header.shouldHaveAccessibleLinks();
+    });
 
-      for (let i = 0; i < Math.min(count, 10); i++) {
-        const link = links.nth(i);
-        if (await link.isVisible()) {
-          const text = await link.textContent();
-          const ariaLabel = await link.getAttribute("aria-label");
-          expect(text || ariaLabel).toBeTruthy();
-        }
+    test("should pass accessibility checks", async ({checkA11y}) => {
+      const result = await checkA11y({include: ["header"]});
+      // Log violations but don't fail on minor issues
+      if (result.violations.length > 0) {
+        console.log("Header a11y issues:", result.formatViolations());
       }
+      result.assertNoViolationsAbove("serious");
     });
   });
 });
