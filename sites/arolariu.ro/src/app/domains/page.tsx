@@ -106,6 +106,6 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link RenderDomainsScreen} - Client component with interactive domain cards
  * @see RFC 2001 - Domain-Driven Design Architecture documentation
  */
-export default async function DomainsHomepage(props: Readonly<PageProps<"/domains">>): Promise<React.JSX.Element> {
+export default async function DomainsHomepage(_props: Readonly<PageProps<"/domains">>): Promise<React.JSX.Element> {
   return <RenderDomainsScreen />;
 }

@@ -60,7 +60,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * <MyProfilePage />
  * ```
  */
-export default async function MyProfileHomepage(props: Readonly<PageProps<"/my-profile">>): Promise<React.JSX.Element> {
+export default async function MyProfileHomepage(_props: Readonly<PageProps<"/my-profile">>): Promise<React.JSX.Element> {
   const user = await currentUser();
   if (!user) redirect("/auth/sign-in?redirect_url=/my-profile");
 

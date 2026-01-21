@@ -70,7 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * <AuthorPage />
  * ```
  */
-export default async function AboutTheAuthorPage(props: Readonly<PageProps<"/about/the-author">>): Promise<React.JSX.Element> {
+export default async function AboutTheAuthorPage(_props: Readonly<PageProps<"/about/the-author">>): Promise<React.JSX.Element> {
   return (
     <div
       className='bg-background text-foreground relative min-h-screen'

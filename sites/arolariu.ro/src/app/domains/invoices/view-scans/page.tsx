@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * This page requires authentication since scans are user-specific.
  * Unauthenticated users are redirected to sign-in.
  */
-export default async function ViewScansPage(props: Readonly<PageProps<"/domains/invoices/view-scans">>): Promise<React.JSX.Element> {
+export default async function ViewScansPage(_props: Readonly<PageProps<"/domains/invoices/view-scans">>): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchAaaSUserFromAuthService();
 
   if (!isAuthenticated) {

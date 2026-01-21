@@ -127,7 +127,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  * @see RFC 1003 - Internationalization System (rich text formatting)
  */
-export default async function ViewInvoicesPage(props: Readonly<PageProps<"/domains/invoices/view-invoices">>): Promise<React.JSX.Element> {
+export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/domains/invoices/view-invoices">>): Promise<React.JSX.Element> {
   const t = await getTranslations("Domains.services.invoices.service.view-invoices");
   const {user} = await fetchAaaSUserFromAuthService();
   const username = user?.fullName ?? "dear guest";

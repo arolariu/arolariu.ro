@@ -67,7 +67,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * <SignInPage />
  * ```
  */
-export default async function AuthSignInPage(props: Readonly<PageProps<"/auth/sign-in">>): Promise<React.JSX.Element> {
+export default async function AuthSignInPage(_props: Readonly<PageProps<"/auth/sign-in/[[...sign-in]]">>): Promise<React.JSX.Element> {
   return (
     <section className='relative mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8 lg:py-14'>
       <RenderAuthSignInPage />

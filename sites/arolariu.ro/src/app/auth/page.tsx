@@ -90,7 +90,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link fetchAaaSUserFromAuthService} - Server action for authentication status
  * @see {@link RenderAuthScreen} - Client component with authentication forms
  */
-export default async function AuthHomepage(props: Readonly<PageProps<"/auth">>): Promise<React.JSX.Element> {
+export default async function AuthHomepage(_props: Readonly<PageProps<"/auth">>): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   if (isAuthenticated) return redirect("/");
   return (

@@ -133,7 +133,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link RenderAboutScreen} - Client island for interactive brand storytelling UI
  * @see {@link https://blog.hubspot.com/marketing/best-about-us-pages | About Page Best Practices}
  */
-export default async function AboutHomepage(props: Readonly<PageProps<"/about">>): Promise<React.JSX.Element> {
+export default async function AboutHomepage(_props: Readonly<PageProps<"/about">>): Promise<React.JSX.Element> {
   return (
     <main className='flex w-full flex-col items-center'>
       <RenderAboutScreen />

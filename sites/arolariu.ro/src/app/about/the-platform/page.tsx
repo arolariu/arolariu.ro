@@ -69,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * <PlatformPage />
  * ```
  */
-export default async function AboutThePlatformPage(props: Readonly<PageProps<"/about/the-platform">>): Promise<React.JSX.Element> {
+export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/about/the-platform">>): Promise<React.JSX.Element> {
   return (
     <div className='bg-background text-foreground relative min-h-screen'>
       <ScrollToTop />
