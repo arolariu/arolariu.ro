@@ -283,25 +283,38 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
 /**
  * Creates a comment on a pull request with the provided markdown content
  *
+ * This function supports both `pull_request` and `push` event triggers:
+ * - For `pull_request` events: Uses the PR context from the workflow payload
+ * - For `push` events: Searches for an open PR with the current branch as head
+ *
  * @param commentBody - Pre-formatted markdown content to post as the PR comment
+ * @param branchName - The current branch name (used for fallback PR discovery)
  * @returns Promise that resolves when the comment is posted successfully or skipped gracefully
  *
  * @example
  * ```typescript
- * await createPRComment('## ✅ Build Successful\n\nAll checks passed!');
+ * await createPRComment('## ✅ Build Successful\n\nAll checks passed!', 'preview');
  * ```
  */
-async function createPRComment(commentBody: string): Promise<void> {
+async function createPRComment(commentBody: string, branchName: string): Promise<void> {
   core.info("🚀 Starting PR comment creation process...");
 
   // Get GitHub token
   const token = env.getRequired("GITHUB_TOKEN");
   const gh = createGitHubHelper(token);
 
-  // Validate PR context
-  const pr = gh.getPullRequest();
+  // Try to get PR context from workflow payload (works for pull_request events)
+  let pr = gh.getPullRequest();
+
+  // If no PR context from payload, try to find an open PR for this branch (works for push events)
+  if (!pr) {
+    core.info(`🔍 No PR context in payload, searching for open PRs with head branch: ${branchName}`);
+    pr = await gh.findPullRequestForBranch(branchName);
+  }
+
   if (!pr) {
     core.warning("⏭️ No PR context found - skipping comment creation");
+    core.info("💡 Tip: Ensure there is an open PR with this branch as the head, or trigger the workflow from a pull_request event");
     return;
   }
 
@@ -386,5 +399,5 @@ export default async function runUnitTestAction(): Promise<void> {
   core.debug(`✓ Comment body assembled: ${commentBody.length} characters, ${commentBody.split("\n").length} lines`);
 
   // Post the comment to the pull request using the core utility function
-  await createPRComment(commentBody);
+  await createPRComment(commentBody, branchName);
 }
