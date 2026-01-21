@@ -41,7 +41,7 @@ const containerVariants: Variants = {
  *
  * @returns The animated sign in component with Clerk authentication
  */
-export default function RenderSignInPage(): React.JSX.Element {
+export default function RenderAuthSignInPage(): React.JSX.Element {
   const t = useTranslations("Authentication.SignIn");
   const trust = useTranslations("Authentication.Island.trust");
 

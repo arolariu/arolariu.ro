@@ -15,7 +15,7 @@
   "dependencies": {
     "@actions/artifact": "5.0.2",
     "@actions/attest": "2.2.0",
-    "@actions/cache": "5.0.2",
+    "@actions/cache": "5.0.3",
     "@actions/core": "2.0.2",
     "@actions/exec": "2.0.0",
     "@actions/github": "7.0.0",
@@ -27,8 +27,8 @@
   },
   "devDependencies": {
     "@types/node": "24.10.4",
-    "@vitest/ui": "4.0.16",
+    "@vitest/ui": "4.0.17",
     "typescript": "5.9.3",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   }
 }

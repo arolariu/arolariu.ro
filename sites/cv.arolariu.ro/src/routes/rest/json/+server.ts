@@ -39,7 +39,7 @@ function generateETag(data: unknown): string {
   const dataJson = JSON.stringify(data);
   let hash = 0;
   for (let index = 0; index < dataJson.length; index++) {
-    const char = dataJson.charCodeAt(index);
+    const char = dataJson.codePointAt(index) ?? 0;
     hash = (hash << 5) - hash + char;
     hash &= hash; // &= is used to keep hash in 32-bit integer range
   }
@@ -52,6 +52,7 @@ function generateETag(data: unknown): string {
 function getSection(sectionName: string): unknown | undefined {
   const resumeObject = resume as Record<string, unknown>;
   if (AVAILABLE_SECTIONS.includes(sectionName as SectionKey)) {
+    // eslint-disable-next-line security/detect-object-injection -- safe due to prior check
     return resumeObject[sectionName];
   }
   return undefined;

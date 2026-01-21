@@ -51,7 +51,7 @@ import RenderAcknowledgementsScreen from "./island";
  * @see {@link NodePackagesJSON} - TypeScript type for licenses.json structure
  * @see {@link TIMESTAMP} - Build timestamp constant from utils.generic
  */
-export default async function AcknowledgementsPage(): Promise<React.JSX.Element> {
+export default async function AcknowledgementsHomepage(_props: Readonly<PageProps<"/acknowledgements">>): Promise<React.JSX.Element> {
   const lastUpdatedDate = new Date(TIMESTAMP).toUTCString();
 
   return (

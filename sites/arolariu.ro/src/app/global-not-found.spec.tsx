@@ -1,14 +1,15 @@
-import {expect, test} from "playwright/test";
+/**
+ * @fileoverview Global not found (404) page E2E tests.
+ * @module src/app/global-not-found.spec
+ */
 
-test.describe("Global Not Found (404) Tests", () => {
-  test.afterEach(async ({page}, testInfo) => {
-    const screenshotName = testInfo.titlePath.join("_").replace(/[^a-zA-Z0-9_-]/g, "-") + ".png";
-    const screenshotPath = testInfo.outputPath(screenshotName);
-    await page.screenshot({path: screenshotPath});
-    await testInfo.attach(screenshotName, {path: screenshotPath, contentType: "image/png"});
-  });
+import {expect, test} from "../../tests/fixtures";
+import {PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests/utils";
 
-  test("should have proper error page structure", async ({page}) => {
+test.describe("Global Not Found (404) Tests @error @404", () => {
+  // Note: Screenshots are automatically captured by the autoScreenshot fixture
+
+  test(tagged("should have proper error page structure", TEST_TYPE_TAGS.SMOKE, PRIORITY_TAGS.P1), async ({page}) => {
     await page.goto("/invalid-route-test");
 
     // Should have basic HTML structure
@@ -26,5 +27,18 @@ test.describe("Global Not Found (404) Tests", () => {
 
     // Should provide some helpful information
     expect(bodyText!.length).toBeGreaterThan(20);
+  });
+
+  test.describe("404 Page Accessibility @a11y", () => {
+    test("should be accessible", async ({page, checkA11y}) => {
+      await page.goto("/non-existent-route-a11y-test");
+
+      const result = await checkA11y();
+      // Log violations but don't fail on minor issues
+      if (result.violations.length > 0) {
+        console.log("404 page a11y issues:", result.formatViolations());
+      }
+      result.assertNoViolationsAbove("serious");
+    });
   });
 });

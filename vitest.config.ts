@@ -48,7 +48,7 @@ export default defineConfig({
         "clover", // Jenkins/CI integration
         "cobertura", // Azure DevOps integration
       ],
-      reportsDirectory: "./coverage/vitest",
+      reportsDirectory: "./code-cov/vitest",
       thresholds: {
         branches: 90, // 90% branch coverage
         functions: 90, // 90% function coverage

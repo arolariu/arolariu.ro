@@ -1111,6 +1111,12 @@
       "matrix": "Matrix Mode"
     }
   },
+  "Invoices": {
+    "__metadata__": {
+      "description": "Manage receipts, create invoices, and gain insights into your spending habits.",
+      "title": "Invoice Management System"
+    }
+  },
   "Domains": {
     "__metadata__": {
       "description": "Domain Space Services are services that are offered to visitors and members of the `arolariu.ro` domain space",

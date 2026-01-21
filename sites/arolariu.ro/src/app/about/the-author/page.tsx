@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Author profile page for the About section.
+ * @module app/about/the-author/page
+ *
+ * @remarks
+ * Defines metadata and the server-rendered Author page layout, composing
+ * multiple informational sections about Alexandru-Răzvan Olariu.
+ *
+ * @see {@link createMetadata}
+ */
+
 import {ScrollToTop} from "@/hooks/useScrollToTop";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
@@ -12,8 +23,23 @@ import Hero from "./_components/Hero";
 import Perspectives from "./_components/Perspectives";
 
 /**
- * Generates metadata for the Author page.
- * @returns The metadata for the Author page.
+ * Generates localized metadata for the Author page.
+ *
+ * @remarks
+ * **Rendering Context**: Server Component metadata generator.
+ *
+ * **i18n**: Uses `next-intl` translations from the About.Author namespace.
+ *
+ * **SEO**: Delegates to `createMetadata` for consistent Open Graph defaults.
+ *
+ * @returns Metadata configured for the Author route.
+ *
+ * @example
+ * ```tsx
+ * export async function generateMetadata(): Promise<Metadata> {
+ *   return createMetadata({title: "About the Author"});
+ * }
+ * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("About.Author.__metadata__");
@@ -26,10 +52,25 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Renders the Author's page which contains detailed information about Alexandru-Razvan Olariu.
- * @returns The rendered AuthorPage component, SSR'ed.
+ * Renders the Author profile page with detailed sections.
+ *
+ * @remarks
+ * **Rendering Context**: Server Component (App Router page).
+ *
+ * **Composition**: Combines hero, biography, competencies, experience,
+ * education, certifications, perspectives, and contact sections.
+ *
+ * **Interaction**: Includes a `ScrollToTop` helper for improved navigation.
+ *
+ * @returns The server-rendered Author page JSX.
+ *
+ * @example
+ * ```tsx
+ * // Next.js renders this page at /about/the-author
+ * <AuthorPage />
+ * ```
  */
-export default async function AuthorPage(): Promise<React.JSX.Element> {
+export default async function AboutTheAuthorPage(_props: Readonly<PageProps<"/about/the-author">>): Promise<React.JSX.Element> {
   return (
     <div
       className='bg-background text-foreground relative min-h-screen'

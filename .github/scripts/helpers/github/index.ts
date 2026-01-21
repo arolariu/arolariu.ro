@@ -192,6 +192,14 @@ export interface IGitHubHelper {
   listIssues(options?: {state?: "open" | "closed" | "all"; labels?: string[]; assignee?: string}): Promise<IssueInfo[]>;
 
   /**
+   * Finds an open pull request for a given branch name
+   * Useful when triggered by push events where PR context is not available
+   * @param branchName - The head branch name to search for
+   * @returns Promise resolving to PR context or null if no open PR found
+   */
+  findPullRequestForBranch(branchName: string): Promise<PullRequestContext | null>;
+
+  /**
    * Adds labels to an issue or PR
    * @param issueNumber - Issue or PR number
    * @param labels - Labels to add
@@ -265,6 +273,46 @@ export class GitHubHelper implements IGitHubHelper {
       head: pr["head"].ref,
       author: pr["user"]?.login ?? "",
     };
+  }
+
+  /**
+   * {@inheritDoc IGitHubHelper.findPullRequestForBranch}
+   */
+  async findPullRequestForBranch(branchName: string): Promise<PullRequestContext | null> {
+    try {
+      core.debug(`Searching for open PRs with head branch: ${branchName}`);
+
+      // Query GitHub API for open PRs with the specified head branch
+      const response = await this.client.rest.pulls.list({
+        owner: this.repo.owner,
+        repo: this.repo.name,
+        state: "open",
+        head: `${this.repo.owner}:${branchName}`,
+      });
+
+      if (response.data.length === 0) {
+        core.debug(`No open PRs found for branch: ${branchName}`);
+        return null;
+      }
+
+      // Return the first (most recent) open PR for this branch
+      const pr = response.data[0];
+      core.info(`Found open PR #${pr.number} for branch: ${branchName}`);
+
+      return {
+        number: pr.number,
+        title: pr.title,
+        url: pr.html_url,
+        state: pr.state,
+        base: pr.base.ref,
+        head: pr.head.ref,
+        author: pr.user?.login ?? "",
+      };
+    } catch (error) {
+      const err = error as Error;
+      core.warning(`Failed to find PR for branch ${branchName}: ${err.message}`);
+      return null;
+    }
   }
 
   /**

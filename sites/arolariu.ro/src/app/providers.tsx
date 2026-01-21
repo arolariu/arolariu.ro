@@ -4,7 +4,7 @@ import {GradientThemeProvider} from "@/contexts/GradientThemeContext";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
-import {NextIntlClientProvider as TranslationProvider} from "next-intl";
+import {Locale, NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import React from "react";
@@ -25,7 +25,7 @@ const WebVitals = dynamic(() => import("./web-vitals"));
  * including elements, fragments, strings, numbers, and portals.
  */
 type Props = {
-  locale: "en" | "ro" | "fr";
+  locale: Locale;
   children: React.ReactNode;
 };
 

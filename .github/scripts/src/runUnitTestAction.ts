@@ -1,18 +1,15 @@
 /**
- * @fileoverview Unified unit test action script for GitHub Actions workflows.
+ * @fileoverview Unified test results action script for GitHub Actions workflows.
  * @module github/scripts/src/runUnitTestAction
  *
  * @remarks
- * This module handles all unit test-related operations for GitHub Actions CI/CD:
- * - **Test Result Collection**: Gathers Vitest and Playwright test results
- * - **Code Coverage Analysis**: Parses and formats coverage data
- * - **Bundle Size Comparison**: Compares build artifact sizes against main branch
- * - **PR Comment Generation**: Creates comprehensive test summary comments
- * - **Branch Statistics**: Provides commit comparison and change metrics
+ * This module generates professional PR comments with comprehensive test results:
+ * - **Vitest Unit Tests**: Coverage metrics with visual indicators
+ * - **Playwright E2E Tests**: Test statistics, failures, and flaky test details
+ * - **Branch Comparison**: Commit statistics vs main branch
  *
- * The comment generation is optimized for performance by running independent sections
- * in parallel where possible, and includes comprehensive error handling to ensure
- * partial results are still reported even if individual sections fail.
+ * The comment is designed for enterprise-grade reporting with clear visual hierarchy
+ * and actionable information for developers reviewing PRs.
  *
  * @example
  * ```typescript
@@ -23,8 +20,14 @@
  */
 
 import * as core from "@actions/core";
-import {BUNDLE_TARGET_FOLDERS, STATUS_EMOJI_UNIT_TESTS, createGitHubHelper, env, fs, git, vitest} from "../helpers/index.ts";
+import {STATUS_EMOJI_UNIT_TESTS, createGitHubHelper, env, fs, git, playwright, vitest} from "../helpers/index.ts";
 import type {WorkflowInfo} from "../types/index.ts";
+
+/** Path to Vitest coverage summary JSON file */
+const VITEST_COVERAGE_PATH = "sites/arolariu.ro/code-cov/vitest/coverage-summary.json";
+
+/** Path to Playwright test results JSON file */
+const PLAYWRIGHT_RESULTS_PATH = "sites/arolariu.ro/code-cov/playwright-report/results.json";
 
 /**
  * Workflow context extracted from environment variables
@@ -65,9 +68,18 @@ function generateWorkflowInfoSection(workflowInfo: WorkflowInfo): string {
     STATUS_EMOJI_UNIT_TESTS[workflowInfo.jobStatus as keyof typeof STATUS_EMOJI_UNIT_TESTS] ?? STATUS_EMOJI_UNIT_TESTS.unknown;
   const statusText = workflowInfo.jobStatus.charAt(0).toUpperCase() + workflowInfo.jobStatus.slice(1);
 
-  let section = `## ${statusEmoji} Tests ${statusText} for [\`${workflowInfo.shortCurrentCommitSha}\`](${workflowInfo.commitUrl})\n\n`;
-  section += `**PR:** [#${workflowInfo.prNumber}](${workflowInfo.prUrl}) | **Branch:** \`${workflowInfo.branchName}\` | **Workflow:** [#${workflowInfo.runId} Action](${workflowInfo.workflowRunUrl})\n\n`;
-  section += `----\n`;
+  let section = `## ${statusEmoji} Test Results: ${statusText}\n\n`;
+  section += `| Property | Value |\n`;
+  section += `|----------|-------|\n`;
+  section += `| **Commit** | [\`${workflowInfo.shortCurrentCommitSha}\`](${workflowInfo.commitUrl}) |\n`;
+  section += `| **Branch** | \`${workflowInfo.branchName}\` |\n`;
+  section += `| **Workflow** | [Run #${workflowInfo.runId}](${workflowInfo.workflowRunUrl}) |\n`;
+
+  if (workflowInfo.prNumber > 0) {
+    section += `| **Pull Request** | [#${workflowInfo.prNumber}](${workflowInfo.prUrl}) |\n`;
+  }
+
+  section += `\n----\n`;
   return section;
 }
 
@@ -109,103 +121,115 @@ async function getBranchCommitComparisonSection(currentCommitSha: string, shortC
 }
 
 /**
- * Generates Vitest test results section
+ * Generates Vitest test results section with coverage metrics
+ *
+ * This function parses the Vitest coverage-summary.json file and generates
+ * a professional markdown section with:
+ * - Coverage percentages for statements, branches, functions, and lines
+ * - Visual emoji indicators (🟢 >= 90%, 🟡 >= 75%, 🔴 < 75%)
+ * - Graceful fallback when coverage data is unavailable
+ *
  * @returns Markdown formatted Vitest results section
  */
 async function getVitestResultsSection(): Promise<string> {
-  const coverageJsonPath = "sites/arolariu.ro/code-cov/coverage-summary.json";
-
   try {
-    const exists = await fs.exists(coverageJsonPath);
+    const exists = await fs.exists(VITEST_COVERAGE_PATH);
 
     if (!exists) {
+      core.debug(`Vitest coverage file not found at ${VITEST_COVERAGE_PATH}`);
       let section = `### 🧪 Vitest Unit Tests\n\n`;
-      section += `⚠️ No coverage data found at \`${coverageJsonPath}\`\n\n`;
+      section += `> ⚠️ Coverage data not available\n\n`;
       section += `----\n`;
       return section;
     }
 
     // Parse coverage using vitest helper
-    const coverageData = await vitest.parseCoverage(coverageJsonPath, fs);
+    core.debug(`Parsing Vitest coverage from ${VITEST_COVERAGE_PATH}`);
+    const coverageData = await vitest.parseCoverage(VITEST_COVERAGE_PATH, fs);
 
-    // Generate markdown section
-    return vitest.generateMarkdownSection(coverageData);
+    // Log coverage summary
+    core.info(
+      `📊 Vitest coverage: ${coverageData.total.statements.pct.toFixed(1)}% statements, ` +
+        `${coverageData.total.branches.pct.toFixed(1)}% branches, ` +
+        `${coverageData.total.functions.pct.toFixed(1)}% functions, ` +
+        `${coverageData.total.lines.pct.toFixed(1)}% lines`,
+    );
+
+    // Generate enhanced markdown section with emoji indicators
+    return vitest.generateMarkdownSection(coverageData, {
+      useEmoji: true,
+      title: "🧪 Vitest Unit Tests",
+    });
   } catch (error) {
     const err = error as Error;
     core.warning(`Failed to read Vitest coverage: ${err.message}`);
 
     let section = `### 🧪 Vitest Unit Tests\n\n`;
-    section += `⚠️ Could not read coverage data: ${err.message}\n\n`;
+    section += `> ⚠️ Could not read coverage data: ${err.message}\n\n`;
     section += `----\n`;
     return section;
   }
 }
 
 /**
- * Generates Playwright test results section
- * @param jobStatus - Job execution status
- * @param workflowRunUrl - URL to workflow run
+ * Generates Playwright test results section with rich statistics and failure details
+ *
+ * This function attempts to parse the actual Playwright JSON results file to generate
+ * a comprehensive test report including:
+ * - Test statistics (passed, failed, skipped, flaky counts)
+ * - Failure details with error messages
+ * - Flaky test information with retry counts
+ * - Duration statistics
+ *
+ * If the results file is not available or cannot be parsed, it falls back to a simple
+ * status-based message for backward compatibility.
+ *
+ * @param jobStatus - Job execution status (success, failure, etc.)
+ * @param workflowRunUrl - URL to workflow run for artifact links
  * @returns Markdown formatted Playwright results section
  */
 async function getPlaywrightResultsSection(jobStatus: string, workflowRunUrl: string): Promise<string> {
-  const statusEmoji = jobStatus === "success" ? "✅" : jobStatus === "failure" ? "❌" : "⚠️";
-  const testStatusMessage =
-    jobStatus === "success"
-      ? "All Playwright tests passed!"
-      : jobStatus === "failure"
-        ? "Playwright tests failed."
-        : `Playwright tests status: ${jobStatus}.`;
-
-  let section = `### ${statusEmoji} Playwright Tests\n\n`;
-  section += `${testStatusMessage} ([View Full Report](${workflowRunUrl}#artifacts))\n\n`;
-  section += `----\n`;
-  return section;
-}
-
-/**
- * Generates bundle size comparison markdown
- * @param targetFolders - Folders to analyze
- * @returns Markdown formatted bundle size comparison
- */
-async function getBundleSizeComparisonSection(targetFolders: readonly string[]): Promise<string> {
   try {
-    let section = `### 📦 Bundle Size Analysis (vs. Main)\n\n`;
+    const exists = await fs.exists(PLAYWRIGHT_RESULTS_PATH);
 
-    // Fetch main branch for comparison
-    await git.fetchBranch("main", "origin", 1);
-
-    section += `Comparing bundle sizes between \`main\` and current branch for ${targetFolders.length} folder(s).\n\n`;
-    section += `| Folder | Status |\n`;
-    section += `|--------|--------|\n`;
-
-    for (const folder of targetFolders) {
-      try {
-        // For now, just indicate that the folder was checked
-        section += `| \`${folder}\` | ✓ Analyzed |\n`;
-      } catch (error) {
-        section += `| \`${folder}\` | ⚠️ Error |\n`;
-      }
+    if (!exists) {
+      core.debug(`Playwright results file not found at ${PLAYWRIGHT_RESULTS_PATH}, using simple section`);
+      // Fall back to simple section when no results file
+      return playwright.generateSimpleSection(jobStatus, workflowRunUrl);
     }
 
-    section += `\n_Detailed bundle size comparison requires additional Git operations._\n\n`;
-    section += `----\n`;
-    return section;
+    // Parse actual results and generate rich markdown
+    core.debug(`Parsing Playwright results from ${PLAYWRIGHT_RESULTS_PATH}`);
+    const results = await playwright.parseResults(PLAYWRIGHT_RESULTS_PATH, fs);
+
+    core.info(
+      `📊 Playwright results: ${results.statistics.passed} passed, ${results.statistics.failed} failed, ` +
+        `${results.statistics.skipped} skipped, ${results.statistics.flaky} flaky`,
+    );
+
+    return playwright.generateMarkdownSection(results, {
+      workflowRunUrl,
+      includeFailureDetails: true,
+      includeFlakyTests: true,
+      maxFailuresToShow: 10,
+      showDuration: true,
+    });
   } catch (error) {
     const err = error as Error;
-    core.error(`Failed to generate bundle size comparison: ${err.message}`);
-    return `### 📦 Bundle Size Analysis (vs. Main)\n\n_Error generating bundle size comparison: ${err.message}_\n\n----\n`;
+    core.warning(`Failed to read Playwright results: ${err.message}`);
+    // Fall back to simple section on error
+    return playwright.generateSimpleSection(jobStatus, workflowRunUrl);
   }
 }
 
 /**
- * Builds the complete unit test summary PR comment body by aggregating multiple analysis sections
+ * Builds the complete test summary PR comment body by aggregating multiple analysis sections
  *
  * This function orchestrates the generation of all comment sections in a specific order:
- * 1. Workflow information (commit, branch, run status)
+ * 1. Workflow header (commit, branch, run status, PR links)
  * 2. Branch/commit comparison statistics
  * 3. Vitest unit test coverage results
  * 4. Playwright E2E test results
- * 5. Bundle size analysis
  *
  * @param workflowInfo - Workflow and PR metadata including URLs and identifiers
  * @param currentCommitSha - Full SHA hash of the commit being analyzed
@@ -213,25 +237,16 @@ async function getBundleSizeComparisonSection(targetFolders: readonly string[]):
  *
  * @remarks
  * - Each section is generated independently with its own error handling
- * - Failed sections are replaced with error messages rather than failing the entire comment
- * - Debug logging is provided for each section to aid in troubleshooting
- * - The function is optimized for readability and maintainability over performance
- *
- * @example
- * ```typescript
- * const commentBody = await buildUnitTestSummaryCommentBody(workflowInfo, 'abc123...');
- * // Returns comprehensive markdown with all test results and analysis
- * ```
+ * - Failed sections show warning messages rather than failing the entire comment
+ * - The comment is designed for enterprise-grade CI/CD reporting
  */
 async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, currentCommitSha: string): Promise<string> {
   let commentBody = "";
 
   core.debug("Building workflow info section...");
-  // Add workflow info section
   commentBody += generateWorkflowInfoSection(workflowInfo);
 
   core.debug("Building branch/commit comparison section...");
-  // Add branch/commit comparison
   commentBody += await getBranchCommitComparisonSection(currentCommitSha, workflowInfo.shortCurrentCommitSha);
 
   core.debug("Building Vitest test results section...");
@@ -240,8 +255,8 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
   core.debug("Building Playwright test results section...");
   commentBody += await getPlaywrightResultsSection(workflowInfo.jobStatus, workflowInfo.workflowRunUrl);
 
-  core.debug("Building bundle size comparison section...");
-  commentBody += await getBundleSizeComparisonSection(BUNDLE_TARGET_FOLDERS);
+  // Add footer with generated timestamp
+  commentBody += `\n<sub>🤖 Generated by CI at ${new Date().toISOString()}</sub>\n`;
 
   core.debug(`Comment body assembled: ${commentBody.split("\n").length} lines`);
   return commentBody;
@@ -250,25 +265,38 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
 /**
  * Creates a comment on a pull request with the provided markdown content
  *
+ * This function supports both `pull_request` and `push` event triggers:
+ * - For `pull_request` events: Uses the PR context from the workflow payload
+ * - For `push` events: Searches for an open PR with the current branch as head
+ *
  * @param commentBody - Pre-formatted markdown content to post as the PR comment
+ * @param branchName - The current branch name (used for fallback PR discovery)
  * @returns Promise that resolves when the comment is posted successfully or skipped gracefully
  *
  * @example
  * ```typescript
- * await createPRComment('## ✅ Build Successful\n\nAll checks passed!');
+ * await createPRComment('## ✅ Build Successful\n\nAll checks passed!', 'preview');
  * ```
  */
-async function createPRComment(commentBody: string): Promise<void> {
+async function createPRComment(commentBody: string, branchName: string): Promise<void> {
   core.info("🚀 Starting PR comment creation process...");
 
   // Get GitHub token
   const token = env.getRequired("GITHUB_TOKEN");
   const gh = createGitHubHelper(token);
 
-  // Validate PR context
-  const pr = gh.getPullRequest();
+  // Try to get PR context from workflow payload (works for pull_request events)
+  let pr = gh.getPullRequest();
+
+  // If no PR context from payload, try to find an open PR for this branch (works for push events)
+  if (!pr) {
+    core.info(`🔍 No PR context in payload, searching for open PRs with head branch: ${branchName}`);
+    pr = await gh.findPullRequestForBranch(branchName);
+  }
+
   if (!pr) {
     core.warning("⏭️ No PR context found - skipping comment creation");
+    core.info("💡 Tip: Ensure there is an open PR with this branch as the head, or trigger the workflow from a pull_request event");
     return;
   }
 
@@ -292,8 +320,8 @@ async function createPRComment(commentBody: string): Promise<void> {
  *
  * 1. **Environment Validation**: Extracts and validates required workflow context
  * 2. **Metadata Construction**: Builds URLs and workflow information objects
- * 3. **Content Generation**: Aggregates test results, coverage, and bundle analysis
- * 4. **Comment Posting**: Uses the core PR comment utility to post to GitHub
+ * 3. **Content Generation**: Aggregates Vitest coverage and Playwright test results
+ * 4. **Comment Posting**: Uses the GitHub helper to post comments to PRs
  *
  * @returns Promise that resolves when the comment is successfully posted or skipped
  *
@@ -353,5 +381,5 @@ export default async function runUnitTestAction(): Promise<void> {
   core.debug(`✓ Comment body assembled: ${commentBody.length} characters, ${commentBody.split("\n").length} lines`);
 
   // Post the comment to the pull request using the core utility function
-  await createPRComment(commentBody);
+  await createPRComment(commentBody, branchName);
 }

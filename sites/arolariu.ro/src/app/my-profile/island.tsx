@@ -5,17 +5,16 @@ import type {User} from "@clerk/nextjs/server";
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbBell, TbBrain, TbChartBar, TbDatabase, TbPalette, TbShield, TbUser} from "react-icons/tb";
-import {
-  ProfileHeader,
-  ProfileSkeleton,
-  QuickStats,
-  SettingsAI,
-  SettingsAnalytics,
-  SettingsAppearance,
-  SettingsData,
-  SettingsNotifications,
-  SettingsSecurity,
-} from "./_components";
+
+import {ProfileHeader} from "./_components/ProfileHeader";
+import {ProfileSkeleton} from "./_components/ProfileSkeleton";
+import {QuickStats} from "./_components/QuickStats";
+import {SettingsAI} from "./_components/SettingsAI";
+import {SettingsAnalytics} from "./_components/SettingsAnalytics";
+import {SettingsAppearance} from "./_components/SettingsAppearance";
+import {SettingsData} from "./_components/SettingsData";
+import {SettingsNotifications} from "./_components/SettingsNotifications";
+import {SettingsSecurity} from "./_components/SettingsSecurity";
 import {getDefaultSettings, getMockStatistics} from "./_utils/helpers";
 import type {SettingsSection, UserSettings} from "./_utils/types";
 
@@ -34,7 +33,7 @@ const TAB_CONFIG = [
   {id: "data", icon: TbDatabase, key: "data"},
 ] as const;
 
-export default function ProfileIsland({user}: Props): React.JSX.Element {
+export default function RenderMyProfileScreen({user}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.sidebar.nav");
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [settings, setSettings] = useState<UserSettings>(getDefaultSettings);

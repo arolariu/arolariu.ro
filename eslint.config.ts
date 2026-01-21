@@ -148,6 +148,8 @@ const websiteEslintConfig: Config = defineConfig({
 
     "sonarjs/todo-tag": "off", // We allow todos tags.
 
+    "security/detect-object-injection": "off", // We trust our data sources.
+
     "unicorn/no-null": "off", // We allow null values.
     "unicorn/prefer-spread": "off", // We have no preference.
     "unicorn/filename-case": "off", // this rule is biased.
@@ -219,12 +221,17 @@ const cvEslintConfig: Config = defineConfig({
     "one-var": "off", // we allow multiple variable declarations per file.
     "no-undef": "off", // svelte + eslint can't accurately detect undefined variables.
     "sort-keys": "off", // this rule is biased; we use Prettier for sorting.
-    "no-continue": "off", // we allow continue statements in loops.
+    "no-bitwise": "off", // we allow bitwise operators.
     "no-console": "off", // Console statements are stripped in prod builds.
     "no-ternary": "off", // we use ternary operators for conditional expressions.
     "func-style": "off", // we allow both function declarations and expressions.
+    "no-plusplus": "off", // We allow the use of the ++ and -- operators.
+    "no-continue": "off", // we allow continue statements in loops.
     "sort-imports": "off", // this rule is biased; we use Prettier for sorting.
+    "no-undefined": "off", // we allow undefined values for context init code.
     "max-statements": "off", // we don't impose a max statements limit on functions.
+    "no-magic-numbers": "off", // Magic numbers are used for prioritization of enums and fields.
+    "no-inline-comments": "off", // we use inline comments to mark things.
     "no-underscore-dangle": "off", // we use dunder naming for private access modifier mark.
     "max-lines-per-function": "off", // we don't impose a max lines limit on functions.
     "max-lines": ["error", {max: 600}], // we allow a maximum of 600 lines per file.

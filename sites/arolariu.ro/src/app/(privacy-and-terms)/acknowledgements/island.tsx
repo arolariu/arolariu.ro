@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Client island for third-party acknowledgements.
+ * @module app/(privacy-and-terms)/acknowledgements/island
+ *
+ * @remarks
+ * Renders attribution content for open-source dependencies, including
+ * statistics, contributors, and an interactive package browser.
+ */
+
 "use client";
 
 import type {NodePackagesJSON} from "@/types";
@@ -14,10 +23,27 @@ type Props = {
 };
 
 /**
- * This component renders the acknowledgements screen for the third-party packages used in this project.
- * It displays comprehensive attribution with statistics, contributors, and package browser.
- * The component is designed to be used in a client-side rendered context.
- * @returns The acknowledgements screen, CSR'ed.
+ * Renders the acknowledgements screen for third-party dependencies.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"`).
+ *
+ * **Composition**: Displays attribution sections, then renders a packages
+ * browser with localized copy from the `Acknowledgements` namespace.
+ *
+ * **Why Client Component?**
+ * - Uses `next-intl` client translations.
+ * - Hosts interactive browsing of package data.
+ *
+ * @param props - Acknowledgements data and last update timestamp.
+ * @param props.packages - Parsed dependency metadata for attribution.
+ * @param props.lastUpdatedDate - ISO date string for the data snapshot.
+ * @returns The acknowledgements screen with attribution sections and packages.
+ *
+ * @example
+ * ```tsx
+ * <RenderAcknowledgementsScreen packages={data} lastUpdatedDate="2026-01-21" />
+ * ```
  */
 export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("Acknowledgements");

@@ -142,7 +142,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link https://www.ftc.gov/business-guidance/resources/website-terms-service | FTC Terms of Service Guidelines}
  * @see {@link https://termly.io/resources/articles/what-are-terms-and-conditions/ | Terms & Conditions Best Practices}
  */
-export default async function TermsOfServicePage(): Promise<React.JSX.Element> {
+export default async function TermsOfServiceHomepage(_props: Readonly<PageProps<"/terms-of-service">>): Promise<React.JSX.Element> {
   const t = await getTranslations("termsOfService");
 
   return (

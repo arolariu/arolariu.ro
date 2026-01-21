@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Client island for the Domains overview page.
+ * @module app/domains/island
+ *
+ * @remarks
+ * Renders the interactive Domains landing page content, including localized
+ * copy and service cards with client-side navigation.
+ */
+
 "use client";
 
 import {RichText} from "@/presentation/Text";
@@ -6,9 +15,21 @@ import Image from "next/image";
 import Link from "next/link";
 
 /**
- * The Domains screen, client side rendered.
- * It displays the services available for the domain.
- * @returns The Domains home screen.
+ * Renders the Domains overview screen.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"`).
+ *
+ * **i18n**: Uses `next-intl` translations from the Domains namespace.
+ *
+ * **Navigation**: Links users to available domain experiences.
+ *
+ * @returns The Domains landing screen with service cards.
+ *
+ * @example
+ * ```tsx
+ * <RenderDomainsScreen />
+ * ```
  */
 export default function RenderDomainsScreen(): React.JSX.Element {
   const t = useTranslations("Domains");

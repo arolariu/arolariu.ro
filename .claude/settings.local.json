@@ -39,7 +39,7 @@
       "mcp__filesystem__*",
       "mcp__memory__*",
       "mcp__fetch__*",
-      "Bash(git commit:*)"
+      "WebSearch"
     ],
     "deny": []
   },

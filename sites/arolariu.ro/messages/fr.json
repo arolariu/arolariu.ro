@@ -1111,6 +1111,12 @@
       "matrix": "Mode Matrix"
     }
   },
+  "Invoices": {
+    "__metadata__": {
+      "description": "Gérez vos reçus, créez des factures et obtenez des informations sur vos habitudes de dépenses.",
+      "title": "Système de Gestion des Factures"
+    }
+  },
   "Domains": {
     "__metadata__": {
       "description": "Les services de l'espace de domaine sont des services offerts aux visiteurs et membres de l'espace de domaine `arolariu.ro`",

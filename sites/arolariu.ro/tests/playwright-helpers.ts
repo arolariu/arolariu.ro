@@ -57,6 +57,35 @@ interface RetryState {
 }
 
 /**
+ * Configuration shared by retry handlers.
+ */
+interface RetryConfig {
+  maxAttempts: number;
+  initialDelay: number;
+  maxTotalWait: number;
+}
+
+/**
+ * Result of handling a retry step.
+ */
+interface RetryUpdate {
+  shouldBreak: boolean;
+  addedWait: number;
+}
+
+/**
+ * Parameters for handling a successful navigation response.
+ */
+interface HandleSuccessParams {
+  page: Page;
+  response: Response;
+  attempt: number;
+  config: RetryConfig;
+  totalWaitTime: number;
+  attempts: number;
+}
+
+/**
  * Calculate the delay for the current attempt.
  */
 function calculateDelay(attempt: number, initialDelay: number, maxTotalWait: number, totalWaitTime: number): number {
@@ -85,62 +114,46 @@ async function safeWait(page: Page, delay: number): Promise<boolean> {
 /**
  * Handle a navigation error by updating state and waiting if needed.
  */
-async function handleNavigationError(
-  page: Page,
-  error: Error,
-  attempt: number,
-  maxAttempts: number,
-  initialDelay: number,
-  maxTotalWait: number,
-  state: RetryState,
-): Promise<void> {
-  state.lastError = error;
-  const delay = calculateDelay(attempt, initialDelay, maxTotalWait, state.totalWaitTime);
-  if (delay > 0 && attempt < maxAttempts - 1) {
+async function handleNavigationError(page: Page, attempt: number, config: RetryConfig, totalWaitTime: number): Promise<RetryUpdate> {
+  const delay = calculateDelay(attempt, config.initialDelay, config.maxTotalWait, totalWaitTime);
+  if (delay > 0 && attempt < config.maxAttempts - 1) {
     const waited = await safeWait(page, delay);
     if (!waited) {
-      state.shouldBreak = true;
-      return;
+      return {shouldBreak: true, addedWait: 0};
     }
-    state.totalWaitTime += delay;
+    return {shouldBreak: false, addedWait: delay};
   }
+
+  return {shouldBreak: false, addedWait: 0};
 }
 
 /**
  * Handle a successful response by returning early or waiting for retry.
  */
-async function handleSuccessfulResponse(
-  page: Page,
-  response: Response,
-  attempt: number,
-  maxAttempts: number,
-  initialDelay: number,
-  maxTotalWait: number,
-  state: RetryState,
-): Promise<NavigationResult | undefined> {
+async function handleSuccessfulResponse(params: HandleSuccessParams): Promise<NavigationResult | RetryUpdate | undefined> {
+  const {page, response, attempt, config, totalWaitTime, attempts} = params;
   const status = response.status();
 
   // Success - return immediately
   if (status === HTTP_OK) {
-    return {response, status, success: true, attempts: state.attempts};
+    return {response, status, success: true, attempts};
   }
 
   // Server error (5xx) - retry with linear backoff
   if (isServerError(status)) {
-    const delay = calculateDelay(attempt, initialDelay, maxTotalWait, state.totalWaitTime);
-    if (delay > 0 && attempt < maxAttempts - 1) {
+    const delay = calculateDelay(attempt, config.initialDelay, config.maxTotalWait, totalWaitTime);
+    if (delay > 0 && attempt < config.maxAttempts - 1) {
       const waited = await safeWait(page, delay);
       if (!waited) {
-        state.shouldBreak = true;
-        return undefined;
+        return {shouldBreak: true, addedWait: 0};
       }
-      state.totalWaitTime += delay;
+      return {shouldBreak: false, addedWait: delay};
     }
     return undefined;
   }
 
   // Client error (4xx) or redirect (3xx) - return as-is, don't retry
-  return {response, status, success: false, attempts: state.attempts, error: `Received status ${status}`};
+  return {response, status, success: false, attempts, error: `Received status ${status}`};
 }
 
 /**
@@ -161,6 +174,7 @@ async function handleSuccessfulResponse(
  */
 export async function navigateWithRetry(page: Page, url: string, options: NavigateWithRetryOptions = {}): Promise<NavigationResult> {
   const {maxAttempts = 3, initialDelay = 1000, maxTotalWait = 30000, waitUntil = "domcontentloaded", navigationTimeout = 15000} = options;
+  const retryConfig: RetryConfig = {maxAttempts, initialDelay, maxTotalWait};
 
   const state: RetryState = {
     totalWaitTime: 0,
@@ -179,11 +193,25 @@ export async function navigateWithRetry(page: Page, url: string, options: Naviga
       state.lastResponse = response;
 
       if (response) {
-        const result = await handleSuccessfulResponse(page, response, attempt, maxAttempts, initialDelay, maxTotalWait, state);
-        if (result) return result;
+        const result = await handleSuccessfulResponse({
+          page,
+          response,
+          attempt,
+          config: retryConfig,
+          totalWaitTime: state.totalWaitTime,
+          attempts: state.attempts,
+        });
+        if (result) {
+          if ("success" in result) return result;
+          state.totalWaitTime += result.addedWait;
+          state.shouldBreak = result.shouldBreak;
+        }
       }
     } catch (error) {
-      await handleNavigationError(page, error as Error, attempt, maxAttempts, initialDelay, maxTotalWait, state);
+      state.lastError = error as Error;
+      const update = await handleNavigationError(page, attempt, retryConfig, state.totalWaitTime);
+      state.totalWaitTime += update.addedWait;
+      state.shouldBreak = update.shouldBreak;
     }
   }
 
