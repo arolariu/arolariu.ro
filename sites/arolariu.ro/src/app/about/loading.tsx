@@ -1,9 +1,35 @@
+/**
+ * @fileoverview Loading UI for the /about route group.
+ * @module app/about/loading
+ *
+ * @remarks
+ * Defines a route-level loading fallback for the About section using
+ * Skeleton placeholders from the shared component library.
+ *
+ * @see {@link https://nextjs.org/docs/app/building-your-application/routing/loading-ui}
+ */
+
 import {Skeleton} from "@arolariu/components/skeleton";
 
 /**
- * The loading screen for the about index page.
- * @returns Loading screen, CSR'ed or SSR'ed (?).
- * @see https://nextjs.org/docs/app/building-your-application/routing/loading-ui
+ * Renders the loading skeletons for the About route group.
+ *
+ * @remarks
+ * **Rendering Context**: Server Component (route segment loading UI).
+ *
+ * **Purpose**: Provides a consistent placeholder layout while nested About
+ * pages stream and resolve their data and modules.
+ *
+ * **Design**: Uses multiple `Skeleton` blocks to approximate the final layout
+ * without revealing content, improving perceived performance.
+ *
+ * @returns The About route loading UI with skeleton placeholders.
+ *
+ * @example
+ * ```tsx
+ * // Next.js renders this automatically during /about route loading
+ * <Loading />
+ * ```
  */
 export default function Loading(): React.JSX.Element {
   return (

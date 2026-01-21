@@ -33,7 +33,7 @@ const TAB_CONFIG = [
   {id: "data", icon: TbDatabase, key: "data"},
 ] as const;
 
-export default function ProfileIsland({user}: Props): React.JSX.Element {
+export default function RenderMyProfileScreen({user}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.sidebar.nav");
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [settings, setSettings] = useState<UserSettings>(getDefaultSettings);

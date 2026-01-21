@@ -125,7 +125,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link https://gdpr.eu/privacy-notice/ | GDPR Privacy Notice Requirements}
  * @see {@link https://oag.ca.gov/privacy/ccpa | CCPA Privacy Policy Requirements}
  */
-export default async function PrivacyPolicyPage(): Promise<React.JSX.Element> {
+export default async function PrivacyPolicyHomepage(props: Readonly<PageProps<"/privacy-policy">>): Promise<React.JSX.Element> {
   const t = await getTranslations("privacyPolicy");
 
   return (

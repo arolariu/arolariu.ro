@@ -1,26 +1,40 @@
+/**
+ * @fileoverview Loading UI for authentication routes.
+ * @module app/auth/loading
+ *
+ * @remarks
+ * Provides a route-level loading fallback for the auth section using
+ * Skeleton placeholders to mirror the final layout.
+ */
+
 import {Skeleton} from "@arolariu/components";
 
 /**
- * Enhanced loading skeleton for authentication pages.
+ * Renders the loading skeleton for authentication pages.
  *
  * @remarks
- * **Rendering Context**: Server Component rendered during Suspense fallback.
+ * **Rendering Context**: Server Component (route segment loading UI).
  *
- * **Purpose**: Provides a visual placeholder matching the enhanced layout
- * structure of the authentication page (island.tsx) while content loads.
+ * **Purpose**: Mirrors the auth page layout while content streams.
  *
  * **Layout Structure**:
- * - Hero header with badge, title, and subtitle skeletons
- * - Trust badges row
- * - Two authentication cards side by side
- * - Each card: icon, illustration, title, description, bullets, CTA
+ * - Hero header with badge, title, and subtitle skeletons.
+ * - Trust badges row.
+ * - Two authentication cards side by side.
+ * - Each card: icon, illustration, title, description, bullets, CTA.
  *
  * **Performance**: Improves perceived performance by showing the
- * authentication interface structure immediately.
+ * interface structure immediately.
  *
  * **Accessibility**: Maintains semantic HTML structure for consistency.
  *
- * @returns Server-rendered JSX with skeleton placeholders
+ * @returns Server-rendered JSX with skeleton placeholders.
+ *
+ * @example
+ * ```tsx
+ * // Next.js renders this automatically during auth route loading
+ * <Loading />
+ * ```
  */
 export default function Loading(): React.JSX.Element {
   return (

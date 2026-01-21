@@ -54,6 +54,6 @@ import Loading from "./loading";
  * @see {@link DomainsHomepage} - Main domains page component
  * @see RFC 1001 - OpenTelemetry Observability System (for instrumentation patterns)
  */
-export default function DomainsLayout(props: Readonly<LayoutProps<"/domains">>): React.JSX.Element {
+export default function DomainsRootLayout(props: Readonly<LayoutProps<"/domains">>): React.JSX.Element {
   return <Suspense fallback={<Loading />}>{props.children}</Suspense>;
 }

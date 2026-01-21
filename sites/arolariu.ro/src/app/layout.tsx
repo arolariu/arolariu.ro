@@ -21,7 +21,7 @@ export {metadata} from "@/metadata";
  * The root layout of the website that wraps the entire app.
  * @returns The root layout of the website.
  */
-export default async function RootLayout(props: LayoutProps<"/">): Promise<React.JSX.Element> {
+export default async function RootLayout(props: Readonly<LayoutProps<"/">>): Promise<React.JSX.Element> {
   const locale = await getLocale();
   const eulaCookie = await getCookie("eula-accepted");
 
