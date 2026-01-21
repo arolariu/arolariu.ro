@@ -37,6 +37,7 @@ updates:
   # Scans: /.github/workflows/*.yml and /.github/actions/*/action.yml
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "sunday"
@@ -66,6 +67,7 @@ updates:
   # Monorepo root: Nx, ESLint, Prettier, TypeScript, Vitest, Playwright
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -135,6 +137,7 @@ updates:
   # Main website: Next.js 16, React 19, Tailwind CSS v4, Clerk, OpenTelemetry
   - package-ecosystem: "npm"
     directory: "/sites/arolariu.ro"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "tuesday"
@@ -226,6 +229,7 @@ updates:
   # packages/components: RSLib build, Storybook docs, shadcn/ui components
   - package-ecosystem: "npm"
     directory: "/packages/components"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "tuesday"
@@ -278,6 +282,7 @@ updates:
   # Static CV/resume site built with SvelteKit + Azure SWA adapter
   - package-ecosystem: "npm"
     directory: "/sites/cv.arolariu.ro"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "wednesday"
@@ -314,6 +319,7 @@ updates:
   # Modular monolith API: Microsoft, Azure SDK, OpenTelemetry, xUnit
   - package-ecosystem: "nuget"
     directory: "/sites/api.arolariu.ro"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "thursday"
@@ -366,6 +372,7 @@ updates:
   # Container definitions in /infra/containers (backend, frontend, cv)
   - package-ecosystem: "docker"
     directory: "/infra/containers"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "friday"
@@ -392,6 +399,7 @@ updates:
   # Standalone Dockerfile in sites/arolariu.ro
   - package-ecosystem: "docker"
     directory: "/sites/arolariu.ro"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "friday"
@@ -418,6 +426,7 @@ updates:
   # Standalone Dockerfile in sites/api.arolariu.ro
   - package-ecosystem: "docker"
     directory: "/sites/api.arolariu.ro"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "friday"
@@ -444,6 +453,7 @@ updates:
   # TypeScript scripts using @actions/* toolkit packages
   - package-ecosystem: "npm"
     directory: "/.github/scripts"
+    target-branch: "preview"
     schedule:
       interval: "weekly"
       day: "friday"
