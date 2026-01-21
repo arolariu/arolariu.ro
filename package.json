@@ -141,7 +141,7 @@
     "@storybook/addon-coverage": "3.0.0",
     "@storybook/addon-docs": "10.1.11",
     "@storybook/addon-links": "10.1.11",
-    "@storybook/addon-onboarding": "10.1.11",
+    "@storybook/addon-onboarding": "10.2.0",
     "@storybook/addon-themes": "10.2.0",
     "@storybook/nextjs": "10.1.11",
     "@storybook/nextjs-vite": "10.2.0",
