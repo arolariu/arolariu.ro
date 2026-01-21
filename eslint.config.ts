@@ -148,6 +148,8 @@ const websiteEslintConfig: Config = defineConfig({
 
     "sonarjs/todo-tag": "off", // We allow todos tags.
 
+    "security/detect-object-injection": "off", // We trust our data sources.
+
     "unicorn/no-null": "off", // We allow null values.
     "unicorn/prefer-spread": "off", // We have no preference.
     "unicorn/filename-case": "off", // this rule is biased.
