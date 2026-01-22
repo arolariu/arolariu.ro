@@ -1,14 +1,12 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 /// <summary>
 /// Merchant Identifier not set Exception
 /// </summary>
 [Serializable]
-[ExcludeFromCodeCoverage]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
 public class MerchantIdNotSetException : Exception
 {
