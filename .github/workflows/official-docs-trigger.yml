@@ -47,6 +47,13 @@ on:
 
   # Manual trigger for on-demand documentation regeneration
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment for deployment"
+        options:
+          - "production"
+        default: "production"
+        type: choice
 
 env:
   COMMIT_SHA: ${{ github.sha }}

@@ -1,13 +1,11 @@
 namespace arolariu.Backend.Common.DDD.ValueObjects;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Contact information value object.
 /// </summary>
 [Serializable]
-[ExcludeFromCodeCoverage]
 public sealed record ContactInformation
 {
   /// <summary>

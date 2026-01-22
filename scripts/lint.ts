@@ -9,10 +9,18 @@
  * responsive and to reduce wall-clock time when linting multiple targets.
  */
 
+import path from "node:path";
 import process from "node:process";
 import pc from "picocolors";
 import Piscina from "piscina";
-import type {ESLintWorkerInput, ESLintWorkerResult} from "./types/lint.ts";
+import {
+  createProgressTracker,
+  formatBytes,
+  logWorkerComplete,
+  logWorkerSpawn,
+  printWorkerTimeline,
+} from "./common/index.ts";
+import type {ESLintFileStats, ESLintWorkerInput, ESLintWorkerResult} from "./types/lint.ts";
 
 type LintTarget = "all" | "packages" | "website" | "cv";
 
@@ -50,8 +58,13 @@ const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv"];
  */
 function printWorkerResult(result: ESLintWorkerResult): void {
   const workerInfo = pc.gray(`[Worker #${result.workerId}]`);
-  const durationInfo = pc.gray(`[${result.durationMs}ms]`);
-  console.log(pc.cyan(`\n🔍 ESLint config: ${pc.bold(result.configName)} ${workerInfo} ${durationInfo}`));
+  const timingInfo = pc.gray(`[init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms, total: ${result.durationMs}ms]`);
+  const fileInfo = pc.gray(`[${result.fileCount} files]`);
+  const memInfo = pc.gray(`[${formatBytes(result.peakMemoryBytes)}]`);
+  console.log(
+    pc.cyan(`\n🔍 ESLint config: ${pc.bold(result.configName)} ${workerInfo}`),
+  );
+  console.log(pc.gray(`   ${timingInfo} ${fileInfo} ${memInfo}`));
 
   if (result.error) {
     console.log(pc.red(`  ✗ Worker error: ${result.error}`));
@@ -74,17 +87,71 @@ function printWorkerResult(result: ESLintWorkerResult): void {
 }
 
 /**
+ * Prints the slowest files report across all workers.
+ *
+ * @param results - All worker results containing slowest files data.
+ */
+function printSlowestFilesReport(results: ESLintWorkerResult[]): void {
+  // Collect all file stats from all workers
+  const allFileStats: ESLintFileStats[] = [];
+  for (const result of results) {
+    if (result.slowestFiles) {
+      allFileStats.push(...result.slowestFiles);
+    }
+  }
+
+  // Sort by lint time and take top 5
+  const topSlowest = allFileStats.sort((a, b) => b.lintTimeMs - a.lintTimeMs).slice(0, 5);
+
+  if (topSlowest.length === 0 || topSlowest.every((f) => f.lintTimeMs === 0)) {
+    return; // No timing data available
+  }
+
+  console.log(pc.bold("\n  🐢 Slowest Files to Lint:"));
+  for (const [index, file] of topSlowest.entries()) {
+    const relativePath = path.relative(process.cwd(), file.filePath);
+    const timeStr = file.lintTimeMs > 0 ? pc.yellow(`${file.lintTimeMs.toFixed(0)}ms`) : pc.gray("cached");
+    console.log(pc.gray(`     ${index + 1}. `) + pc.dim(relativePath) + ` ${timeStr}`);
+  }
+}
+
+/**
+ * Prints memory usage summary across all workers.
+ *
+ * @param results - All worker results containing memory data.
+ */
+function printMemorySummary(results: ESLintWorkerResult[]): void {
+  const totalMemory = results.reduce((sum, r) => sum + r.peakMemoryBytes, 0);
+  const maxMemory = Math.max(...results.map((r) => r.peakMemoryBytes));
+  const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
+
+  console.log(pc.bold("\n  📊 Resource Usage:"));
+  console.log(pc.gray(`     Total files linted: `) + pc.cyan(`${totalFiles}`));
+  console.log(pc.gray(`     Peak memory (max worker): `) + pc.cyan(formatBytes(maxMemory)));
+  console.log(pc.gray(`     Combined memory (all workers): `) + pc.cyan(formatBytes(totalMemory)));
+}
+
+/**
  * Runs ESLint for the specified target using Piscina worker threads.
  *
  * @remarks
  * When `lintTarget` is `all`, this dispatches one worker per target and
  * aggregates counts to compute a conventional process exit code.
+ * Uses Promise.allSettled for graceful degradation - if one worker fails,
+ * others continue and results are collected.
  *
  * @param lintTarget - The target to lint.
+ * @param filePatterns - Optional glob patterns for selective targeting.
  * @returns Exit code (0 for success, 1 for any error).
  */
-async function startESLint(lintTarget: LintTarget): Promise<number> {
-  console.log(pc.bold(pc.magenta(`\n🔎 Running ESLint for: ${lintTarget}`)));
+async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Promise<number> {
+  const hasSelectiveTargeting = filePatterns && filePatterns.length > 0;
+  const targetDisplay = hasSelectiveTargeting ? `${lintTarget} (${filePatterns.length} patterns)` : lintTarget;
+  console.log(pc.bold(pc.magenta(`\n🔎 Running ESLint for: ${targetDisplay}`)));
+
+  if (hasSelectiveTargeting) {
+    console.log(pc.gray("   Patterns: " + filePatterns.join(", ")));
+  }
 
   // Create Piscina worker pool
   const piscina = new Piscina({
@@ -97,25 +164,120 @@ async function startESLint(lintTarget: LintTarget): Promise<number> {
   try {
     if (lintTarget === "all") {
       console.log(pc.yellow("⏱️  Running lint on all targets in parallel..."));
-      console.log(pc.bold(pc.magenta("\n🧵 Dispatching workers for parallel linting...")));
-      console.log(pc.gray(`   Main process PID: ${process.pid}`));
-      console.log(pc.gray(`   Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}\n`));
+      console.log(pc.bold(pc.cyan("\n  🧵 Dispatching parallel workers...")));
+      console.log(pc.gray(`     Main process PID: ${process.pid}`));
+      console.log(pc.gray(`     Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}`));
+      console.log();
+
+      const progress = createProgressTracker(allTargets.length);
+      const dispatchTime = Date.now();
+      const results: (ESLintWorkerResult | null)[] = new Array(allTargets.length).fill(null);
+      const completionEvents: Array<{index: number; target: string; durationMs: number; status: "success" | "error"}> =
+        [];
+      let failedWorkers = 0;
+
+      // Log all spawn events first
+      for (const [index, target] of allTargets.entries()) {
+        logWorkerSpawn(index + 1, target);
+      }
+      console.log();
+
+      // Start the progress bar
+      progress.start();
 
       // Dispatch all targets in parallel
-      const promises = allTargets.map((target) => {
+      const promises = allTargets.map((target, index) => {
         const configName = configNameMap[target];
-        const input: ESLintWorkerInput = {configName};
+        const input: ESLintWorkerInput = {
+          configName,
+          taskIndex: index,
+          dispatchedAt: dispatchTime,
+          filePatterns: hasSelectiveTargeting ? filePatterns : undefined,
+        };
+
         return piscina.run(input) as Promise<ESLintWorkerResult>;
       });
 
-      // Wait for all workers to complete
-      const results = await Promise.all(promises);
+      // Use Promise.allSettled for graceful degradation
+      const settledResults = await Promise.allSettled(promises);
+
+      // Process results
+      for (const [index, settled] of settledResults.entries()) {
+        const target = allTargets[index]!;
+
+        if (settled.status === "fulfilled") {
+          const result = settled.value;
+          results[index] = result;
+          completionEvents.push({
+            index: index + 1,
+            target,
+            durationMs: result.durationMs,
+            status: result.error ? "error" : "success",
+          });
+        } else {
+          // Worker crashed - create error result
+          failedWorkers++;
+          const errorResult: ESLintWorkerResult = {
+            configName: configNameMap[target],
+            errorCount: 1,
+            warningCount: 0,
+            resultText: "",
+            error: `Worker crashed: ${settled.reason}`,
+            workerId: -1,
+            durationMs: 0,
+            workTimeMs: 0,
+            initTimeMs: 0,
+            fileCount: 0,
+            peakMemoryBytes: 0,
+            slowestFiles: [],
+          };
+          results[index] = errorResult;
+          completionEvents.push({
+            index: index + 1,
+            target,
+            durationMs: 0,
+            status: "error",
+          });
+        }
+        progress.increment();
+      }
+
+      progress.finish();
+
+      // Log completion events in order they finished
+      console.log();
+      for (const event of completionEvents) {
+        logWorkerComplete(event.index, event.target, event.durationMs, event.status);
+      }
+
+      // Show graceful degradation notice if any workers failed
+      if (failedWorkers > 0) {
+        console.log(
+          pc.yellow(`\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`),
+        );
+      }
+
+      // Print timeline visualization (only for successful workers)
+      const timelineEntries = allTargets
+        .map((target, index) => ({
+          target,
+          durationMs: results[index]?.durationMs ?? 0,
+        }))
+        .filter((e) => e.durationMs > 0);
+
+      if (timelineEntries.length > 0) {
+        printWorkerTimeline(timelineEntries);
+      }
 
       // Print results in consistent order (packages → website → cv)
       let totalErrors = 0;
       let totalWarnings = 0;
+      const validResults: ESLintWorkerResult[] = [];
 
       for (const result of results) {
+        if (!result) continue;
+        validResults.push(result);
+
         console.log(pc.gray("\n─────────────────────────────────────────────────"));
         printWorkerResult(result);
         console.log(pc.gray("─────────────────────────────────────────────────"));
@@ -128,20 +290,39 @@ async function startESLint(lintTarget: LintTarget): Promise<number> {
         }
       }
 
+      // Print enhanced summary
+      printMemorySummary(validResults);
+      printSlowestFilesReport(validResults);
+
       console.log(pc.bold(pc.cyan(`\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`)));
       return totalErrors > 0 ? 1 : 0;
     } else {
       // Single target - still use worker for consistency
       const configName = configNameMap[lintTarget];
-      const input: ESLintWorkerInput = {configName};
-      const result = (await piscina.run(input)) as ESLintWorkerResult;
+      const input: ESLintWorkerInput = {
+        configName,
+        taskIndex: 0,
+        dispatchedAt: Date.now(),
+        filePatterns: hasSelectiveTargeting ? filePatterns : undefined,
+      };
 
-      printWorkerResult(result);
+      try {
+        const result = (await piscina.run(input)) as ESLintWorkerResult;
+        printWorkerResult(result);
 
-      if (result.error) {
+        // Print slowest files for single target too
+        if (result.slowestFiles && result.slowestFiles.length > 0) {
+          printSlowestFilesReport([result]);
+        }
+
+        if (result.error) {
+          return 1;
+        }
+        return result.errorCount > 0 ? 1 : 0;
+      } catch (error) {
+        console.log(pc.red(`  ✗ Worker crashed: ${error}`));
         return 1;
       }
-      return result.errorCount > 0 ? 1 : 0;
     }
   } finally {
     // Always close the pool
@@ -154,22 +335,27 @@ async function startESLint(lintTarget: LintTarget): Promise<number> {
  *
  * @remarks
  * This is the script entrypoint used by Nx/package scripts.
+ * Supports selective targeting via additional glob pattern arguments.
  *
  * @param arg - Target name (`all`, `packages`, `website`, `cv`).
+ * @param filePatterns - Optional glob patterns for selective targeting.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(arg?: string): Promise<number> {
+export async function main(arg?: string, filePatterns?: string[]): Promise<number> {
   console.log(pc.bold(pc.magenta("\n╔════════════════════════════════════════╗")));
   console.log(pc.bold(pc.magenta("║    arolariu.ro Code Linter Tool        ║")));
   console.log(pc.bold(pc.magenta("╚════════════════════════════════════════╝\n")));
 
   if (!arg) {
     console.error(pc.red("✗ Missing target argument"));
-    console.log(pc.gray("\n💡 Usage: lint <all|packages|website|cv>"));
+    console.log(pc.gray("\n💡 Usage: lint <all|packages|website|cv> [glob patterns...]"));
     console.log(pc.gray("   - all:      Lint all targets"));
     console.log(pc.gray("   - packages: Lint component packages"));
     console.log(pc.gray("   - website:  Lint main website"));
-    console.log(pc.gray("   - cv:       Lint CV site\n"));
+    console.log(pc.gray("   - cv:       Lint CV site"));
+    console.log(pc.gray("\n📁 Selective targeting:"));
+    console.log(pc.gray('   lint website "src/**/*.tsx"       Lint only TSX files'));
+    console.log(pc.gray('   lint all "**/*.test.ts"           Lint only test files\n'));
     return 1;
   }
 
@@ -178,16 +364,16 @@ export async function main(arg?: string): Promise<number> {
 
     switch (arg) {
       case "all":
-        exitCode = await startESLint("all");
+        exitCode = await startESLint("all", filePatterns);
         break;
       case "packages":
-        exitCode = await startESLint("packages");
+        exitCode = await startESLint("packages", filePatterns);
         break;
       case "website":
-        exitCode = await startESLint("website");
+        exitCode = await startESLint("website", filePatterns);
         break;
       case "cv":
-        exitCode = await startESLint("cv");
+        exitCode = await startESLint("cv", filePatterns);
         break;
       default:
         console.error(pc.red(`✗ Invalid target: "${arg}"`));
@@ -210,7 +396,9 @@ export async function main(arg?: string): Promise<number> {
 
 if (import.meta.main) {
   const arg = process.argv[2];
-  main(arg)
+  // Collect additional arguments as file patterns for selective targeting
+  const filePatterns = process.argv.slice(3).filter((p) => p.length > 0);
+  main(arg, filePatterns.length > 0 ? filePatterns : undefined)
     .then((code) => process.exit(code))
     .catch((err) => {
       console.error(err);

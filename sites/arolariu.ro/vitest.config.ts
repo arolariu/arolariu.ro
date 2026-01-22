@@ -20,8 +20,9 @@ export default mergeConfig(
     test: {
       silent: "passed-only",
       setupFiles: [resolve(__dirname, "./vitest.setup.ts")],
+      exclude: ["**/node_modules/**", "**/tests/**"], // Exclude E2E tests directory
       coverage: {
-        exclude: ["**/instrumentation.server.ts", "**/instrumentation.ts", "**/.next/**"],
+        exclude: ["**/instrumentation.server.ts", "**/instrumentation.ts", "**/.next/**", "**/tests/**"],
       },
     },
     resolve: {

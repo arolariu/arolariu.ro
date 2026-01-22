@@ -1,14 +1,12 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 /// <summary>
 /// Invoice Orchestration Dependency Exception
 /// </summary>
 [Serializable]
-[ExcludeFromCodeCoverage]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
 public class InvoiceOrchestrationDependencyException : Exception
 {

@@ -185,6 +185,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
     steps:
+      - name: ⚠️ Test Skip Warning
+        if: inputs.skip_tests == true
+        run: |
+          echo "::warning::Tests were skipped for this build (run ${{ github.run_id }})"
+          echo "::warning::Environment: ${{ inputs.environment || 'development' }}"
+          echo "::warning::Triggered by: ${{ github.actor }}"
+
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 

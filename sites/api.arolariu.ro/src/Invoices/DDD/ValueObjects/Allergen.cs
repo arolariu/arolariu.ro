@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Represents an identified or inferred allergen associated with an invoice product line.
@@ -12,7 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 /// <para><b>Mutation:</b> Instances are mutable for progressive enrichment (name normalization, description augmentation, documentation link updates).</para>
 /// <para><b>Thread-safety:</b> Not thread-safe. Treat each instance as aggregate-scoped.</para>
 /// </remarks>
-[ExcludeFromCodeCoverage]
 public sealed record Allergen
 {
   /// <summary>Canonical allergen display name (e.g. "Peanuts", "Gluten").</summary>

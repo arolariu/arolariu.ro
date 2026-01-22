@@ -33,13 +33,23 @@ export type FormatTarget = "packages" | "website" | "cv" | "api";
  *
  * @example
  * ```typescript
- * const input: FormatWorkerInput = { target: "website" };
+ * const input: FormatWorkerInput = {
+ *   target: "website",
+ *   taskIndex: 1,
+ *   dispatchedAt: Date.now(),
+ * };
  * const result = await piscina.run(input);
  * ```
  */
 export interface FormatWorkerInput {
   /** The formatting target (e.g., "packages", "website", "cv", "api") */
   readonly target: FormatTarget;
+  /** Position in the task queue (0-based index) for ordering results */
+  readonly taskIndex: number;
+  /** Timestamp when the task was dispatched from the main thread (Date.now()) */
+  readonly dispatchedAt: number;
+  /** Optional glob patterns to filter files (selective targeting) */
+  readonly filePatterns?: readonly string[];
 }
 
 /**
@@ -74,6 +84,14 @@ export interface FormatWorkerResult {
   readonly error?: string;
   /** Worker thread ID (unique per worker) */
   readonly workerId: number;
-  /** Duration of the worker execution in milliseconds */
+  /** Total duration including thread startup and module loading (milliseconds) */
   readonly durationMs: number;
+  /** Time spent on actual formatting work only (milliseconds) */
+  readonly workTimeMs: number;
+  /** Time spent on initialization/module loading (milliseconds) */
+  readonly initTimeMs: number;
+  /** Number of files that were processed */
+  readonly fileCount: number;
+  /** Peak memory usage in bytes (heap used) */
+  readonly peakMemoryBytes: number;
 }

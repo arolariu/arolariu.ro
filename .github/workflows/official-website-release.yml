@@ -108,7 +108,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
+          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
         with:
           app-name: ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"

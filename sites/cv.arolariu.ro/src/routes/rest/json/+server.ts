@@ -71,6 +71,7 @@ export const GET: RequestHandler = ({request, url}) => {
   const format = url.searchParams.get("format") ?? "full";
   const pretty = url.searchParams.get("pretty") === "true";
 
+  // eslint-disable-next-line init-declarations -- will be assigned below
   let responseData: unknown;
 
   // Handle section-specific requests

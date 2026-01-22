@@ -200,11 +200,10 @@ async function runSummary(): Promise<void> {
     core.info(`📝 Posting comment to PR #${prNumber}`);
 
     try {
-      // Use a unique identifier per workflow run so each run creates a new comment
-      // This fulfills the user requirement: "comment should be outputted everytime"
-      const uniqueCommentId = `${HYGIENE_COMMENT_IDENTIFIER}-run-${runId}`;
-      await gh.upsertComment(prNumber, commentBody, uniqueCommentId);
-      core.info("✅ Comment posted successfully");
+      // Use a consistent identifier to update existing comment instead of creating duplicates
+      // This keeps PR history clean while still showing latest results
+      await gh.upsertComment(prNumber, commentBody, HYGIENE_COMMENT_IDENTIFIER);
+      core.info("✅ Comment posted/updated successfully");
     } catch (error) {
       const err = error as Error;
       core.error(`❌ Failed to post comment: ${err.message}`);

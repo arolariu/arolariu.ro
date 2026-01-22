@@ -1,14 +1,12 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 /// <summary>
 /// Invoice processing service dependency validation exception.
 /// </summary>
 [Serializable]
-[ExcludeFromCodeCoverage]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
 public class InvoiceProcessingServiceDependencyValidationException : Exception
 {

@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 
@@ -17,7 +16,6 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 /// <para><b>Thread-safety:</b> Not thread-safe; confine to aggregate mutation scope.</para>
 /// </remarks>
 [Serializable]
-[ExcludeFromCodeCoverage]
 public sealed record PaymentInformation
 {
   /// <summary>Point-in-time at which the purchase was executed (store local time).</summary>

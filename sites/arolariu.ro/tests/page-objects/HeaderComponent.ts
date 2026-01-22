@@ -78,6 +78,7 @@ export class HeaderComponent extends BaseComponent {
    */
   static readonly selectors = HEADER_SELECTORS;
 
+  // eslint-disable-next-line no-useless-constructor -- for clarity
   constructor(page: Page) {
     super(page);
   }
@@ -155,7 +156,7 @@ export class HeaderComponent extends BaseComponent {
   async clickLogo(): Promise<void> {
     await this.page.waitForLoadState("domcontentloaded");
     await this.logoLink.click({force: true});
-    await this.page.waitForURL(/\/$/, {timeout: TIMEOUTS.navigation});
+    await this.page.waitForURL(/\/$/u, {timeout: TIMEOUTS.navigation});
   }
 
   /**

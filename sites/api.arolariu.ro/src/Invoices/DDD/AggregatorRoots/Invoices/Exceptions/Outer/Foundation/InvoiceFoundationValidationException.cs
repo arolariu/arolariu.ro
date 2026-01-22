@@ -1,14 +1,12 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 /// <summary>
 /// Invoice Validation Exception
 /// </summary>
 [Serializable]
-[ExcludeFromCodeCoverage]
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
 public class InvoiceFoundationValidationException : Exception
 {

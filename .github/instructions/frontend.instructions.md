@@ -1,4 +1,6 @@
 ---
+version: "1.0.0"
+lastUpdated: "2026-01-22"
 description: 'Next.js and React development standards with App Router, RSC, and observability'
 applyTo: 'sites/arolariu.ro/**/*.tsx, sites/arolariu.ro/**/*.ts, sites/arolariu.ro/**/*.jsx, sites/arolariu.ro/**/*.js, sites/arolariu.ro/**/*.css'
 ---
