@@ -137,7 +137,7 @@ public sealed class ProductExtendedTests
 		var product = new Product { RawName = emojiName };
 
 		// Assert
-		Assert.Contains("🍕", product.RawName);
+		Assert.True(product.RawName.Contains("🍕", StringComparison.Ordinal));
 	}
 
 	/// <summary>
@@ -169,7 +169,7 @@ public sealed class ProductExtendedTests
 		var product = new Product { RawName = multilineName };
 
 		// Assert
-		Assert.Contains("\n", product.RawName);
+		Assert.True(product.RawName.Contains('\n', StringComparison.Ordinal));
 	}
 
 	/// <summary>
@@ -185,7 +185,7 @@ public sealed class ProductExtendedTests
 		var product = new Product { RawName = tabbedName };
 
 		// Assert
-		Assert.Contains("\t", product.RawName);
+		Assert.True(product.RawName.Contains('\t', StringComparison.Ordinal));
 	}
 
 	#endregion
@@ -384,7 +384,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_NotDefined_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.NOT_DEFINED));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.NOT_DEFINED));
 	}
 
 	/// <summary>
@@ -393,7 +393,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_Beverages_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.BEVERAGES));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.BEVERAGES));
 	}
 
 	/// <summary>
@@ -402,7 +402,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_CleaningSupplies_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.CLEANING_SUPPLIES));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.CLEANING_SUPPLIES));
 	}
 
 	/// <summary>
@@ -411,7 +411,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_Other_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.OTHER));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.OTHER));
 	}
 
 	/// <summary>
@@ -433,7 +433,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_Dairy_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.DAIRY));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.DAIRY));
 	}
 
 	/// <summary>
@@ -442,7 +442,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_Meat_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.MEAT));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.MEAT));
 	}
 
 	/// <summary>
@@ -451,7 +451,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_Fruits_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.FRUITS));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.FRUITS));
 	}
 
 	/// <summary>
@@ -460,7 +460,7 @@ public sealed class ProductExtendedTests
 	[Fact]
 	public void ProductCategory_Vegetables_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(ProductCategory), ProductCategory.VEGETABLES));
+		Assert.True(Enum.IsDefined<ProductCategory>(ProductCategory.VEGETABLES));
 	}
 
 	#endregion

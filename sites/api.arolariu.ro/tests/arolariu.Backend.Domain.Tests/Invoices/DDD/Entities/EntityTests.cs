@@ -705,7 +705,7 @@ public sealed class EntityTests
 	public void ScanType_AllValues_AreDefined(ScanType scanType)
 	{
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(ScanType), scanType));
+		Assert.True(Enum.IsDefined<ScanType>(scanType));
 	}
 
 	/// <summary>
@@ -724,7 +724,7 @@ public sealed class EntityTests
 		var parsed = Enum.Parse<ScanType>(scanTypeName);
 
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(ScanType), parsed));
+		Assert.True(Enum.IsDefined<ScanType>(parsed));
 	}
 
 	#endregion
@@ -738,7 +738,7 @@ public sealed class EntityTests
 	public void InvoiceCategory_NotDefined_IsDefined()
 	{
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(InvoiceCategory), InvoiceCategory.NOT_DEFINED));
+		Assert.True(Enum.IsDefined<InvoiceCategory>(InvoiceCategory.NOT_DEFINED));
 	}
 
 	/// <summary>
@@ -754,7 +754,7 @@ public sealed class EntityTests
 	public void InvoiceCategory_AllValues_AreDefined(InvoiceCategory category)
 	{
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(InvoiceCategory), category));
+		Assert.True(Enum.IsDefined<InvoiceCategory>(category));
 	}
 
 	#endregion
@@ -768,7 +768,7 @@ public sealed class EntityTests
 	public void MerchantCategory_Other_IsDefined()
 	{
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(MerchantCategory), MerchantCategory.OTHER));
+		Assert.True(Enum.IsDefined<MerchantCategory>(MerchantCategory.OTHER));
 	}
 
 	/// <summary>
@@ -784,7 +784,7 @@ public sealed class EntityTests
 	public void MerchantCategory_AllValues_AreDefined(MerchantCategory category)
 	{
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(MerchantCategory), category));
+		Assert.True(Enum.IsDefined<MerchantCategory>(category));
 	}
 
 	#endregion

@@ -27,7 +27,7 @@ public sealed class PaymentInformationExtendedTests
 		Assert.Equal(PaymentType.UNKNOWN, payment.PaymentType);
 		Assert.Equal(0.0m, payment.TotalCostAmount);
 		Assert.Equal(0.0m, payment.TotalTaxAmount);
-		Assert.NotNull(payment.Currency);
+		Assert.NotEqual(default, payment.Currency);
 	}
 
 	/// <summary>
@@ -154,7 +154,7 @@ public sealed class PaymentInformationExtendedTests
 	[Fact]
 	public void PaymentType_Unknown_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(PaymentType), PaymentType.UNKNOWN));
+		Assert.True(Enum.IsDefined<PaymentType>(PaymentType.UNKNOWN));
 	}
 
 	/// <summary>
@@ -163,7 +163,7 @@ public sealed class PaymentInformationExtendedTests
 	[Fact]
 	public void PaymentType_Cash_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(PaymentType), PaymentType.CASH));
+		Assert.True(Enum.IsDefined<PaymentType>(PaymentType.CASH));
 	}
 
 	/// <summary>
@@ -172,7 +172,7 @@ public sealed class PaymentInformationExtendedTests
 	[Fact]
 	public void PaymentType_Card_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(PaymentType), PaymentType.CARD));
+		Assert.True(Enum.IsDefined<PaymentType>(PaymentType.CARD));
 	}
 
 	/// <summary>
@@ -181,7 +181,7 @@ public sealed class PaymentInformationExtendedTests
 	[Fact]
 	public void PaymentType_Transfer_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(PaymentType), PaymentType.TRANSFER));
+		Assert.True(Enum.IsDefined<PaymentType>(PaymentType.TRANSFER));
 	}
 
 	/// <summary>
@@ -190,7 +190,7 @@ public sealed class PaymentInformationExtendedTests
 	[Fact]
 	public void PaymentType_MobilePayment_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(PaymentType), PaymentType.MOBILEPAYMENT));
+		Assert.True(Enum.IsDefined<PaymentType>(PaymentType.MOBILEPAYMENT));
 	}
 
 	/// <summary>
@@ -199,7 +199,7 @@ public sealed class PaymentInformationExtendedTests
 	[Fact]
 	public void PaymentType_Voucher_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(PaymentType), PaymentType.VOUCHER));
+		Assert.True(Enum.IsDefined<PaymentType>(PaymentType.VOUCHER));
 	}
 
 	/// <summary>
@@ -208,7 +208,7 @@ public sealed class PaymentInformationExtendedTests
 	[Fact]
 	public void PaymentType_Other_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(PaymentType), PaymentType.Other));
+		Assert.True(Enum.IsDefined<PaymentType>(PaymentType.Other));
 	}
 
 	/// <summary>

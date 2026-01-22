@@ -282,7 +282,7 @@ public sealed class ValueObjectTests
 		var parsed = Enum.Parse<PaymentType>(paymentTypeName);
 
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(PaymentType), parsed));
+		Assert.True(Enum.IsDefined<PaymentType>(parsed));
 	}
 
 	#endregion
@@ -435,8 +435,8 @@ public sealed class ValueObjectTests
 
 		// Assert
 		Assert.Equal(recipe, recipe);
-		Assert.Equal(recipe.Name, "Test Recipe");
-		Assert.Equal(recipe.ApproximateTotalDuration, 30);
+		Assert.Equal("Test Recipe", recipe.Name);
+		Assert.Equal(30, recipe.ApproximateTotalDuration);
 	}
 
 	#endregion
@@ -471,7 +471,7 @@ public sealed class ValueObjectTests
 		var parsed = Enum.Parse<RecipeComplexity>(complexityName);
 
 		// Assert
-		Assert.True(Enum.IsDefined(typeof(RecipeComplexity), parsed));
+		Assert.True(Enum.IsDefined<RecipeComplexity>(parsed));
 	}
 
 	#endregion

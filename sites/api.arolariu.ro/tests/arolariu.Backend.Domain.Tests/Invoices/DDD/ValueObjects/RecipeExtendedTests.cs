@@ -168,7 +168,7 @@ public sealed class RecipeExtendedTests
 	[Fact]
 	public void RecipeComplexity_Unknown_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(RecipeComplexity), RecipeComplexity.UNKNOWN));
+		Assert.True(Enum.IsDefined<RecipeComplexity>(RecipeComplexity.UNKNOWN));
 	}
 
 	/// <summary>
@@ -177,7 +177,7 @@ public sealed class RecipeExtendedTests
 	[Fact]
 	public void RecipeComplexity_Easy_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(RecipeComplexity), RecipeComplexity.EASY));
+		Assert.True(Enum.IsDefined<RecipeComplexity>(RecipeComplexity.EASY));
 	}
 
 	/// <summary>
@@ -186,7 +186,7 @@ public sealed class RecipeExtendedTests
 	[Fact]
 	public void RecipeComplexity_Normal_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(RecipeComplexity), RecipeComplexity.NORMAL));
+		Assert.True(Enum.IsDefined<RecipeComplexity>(RecipeComplexity.NORMAL));
 	}
 
 	/// <summary>
@@ -195,7 +195,7 @@ public sealed class RecipeExtendedTests
 	[Fact]
 	public void RecipeComplexity_Hard_Exists()
 	{
-		Assert.True(Enum.IsDefined(typeof(RecipeComplexity), RecipeComplexity.HARD));
+		Assert.True(Enum.IsDefined<RecipeComplexity>(RecipeComplexity.HARD));
 	}
 
 	/// <summary>
@@ -310,7 +310,7 @@ public sealed class RecipeExtendedTests
 		var recipe = new Recipe { Name = "Crème brûlée à la française" };
 
 		// Assert
-		Assert.Contains("brûlée", recipe.Name);
+		Assert.True(recipe.Name.Contains("brûlée", StringComparison.Ordinal));
 	}
 
 	/// <summary>
@@ -323,7 +323,7 @@ public sealed class RecipeExtendedTests
 		var recipe = new Recipe { Description = "Use 2-3 eggs & 1/2 cup sugar (or more!)" };
 
 		// Assert
-		Assert.Contains("&", recipe.Description);
+		Assert.True(recipe.Description.Contains('&', StringComparison.Ordinal));
 	}
 
 	#endregion
