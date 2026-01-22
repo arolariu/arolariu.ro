@@ -624,7 +624,7 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
 
 		mockBroker
 			.Setup(b => b.ReadMerchantAsync(merchantId, null))
-			.ThrowsAsync(new NullReferenceException("Null reference"));
+			.ThrowsAsync(new ArgumentNullException("parameter", "Null reference"));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantFoundationServiceException>(() =>

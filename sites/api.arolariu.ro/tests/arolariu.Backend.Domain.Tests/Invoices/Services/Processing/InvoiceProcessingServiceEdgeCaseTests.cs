@@ -686,7 +686,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
 		mockInvoiceOrchestrationService
 			.Setup(s => s.ReadInvoiceObject(invoiceId, null))
-			.ThrowsAsync(new InvoiceOrchestrationServiceException(new Exception("Error")));
+			.ThrowsAsync(new InvoiceOrchestrationServiceException(new InvalidOperationException("Error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
@@ -706,7 +706,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 		// Note: DeleteProduct calls ReadInvoiceObject without userIdentifier param
 		mockInvoiceOrchestrationService
 			.Setup(s => s.ReadInvoiceObject(invoiceId, null))
-			.ThrowsAsync(new InvoiceOrchestrationValidationException(new Exception("Validation error")));
+			.ThrowsAsync(new InvoiceOrchestrationValidationException(new InvalidOperationException("Validation error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<InvoiceProcessingServiceValidationException>(() =>
@@ -724,7 +724,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
 		mockMerchantOrchestrationService
 			.Setup(s => s.CreateMerchantObject(merchant, null))
-			.ThrowsAsync(new MerchantOrchestrationServiceException(new Exception("Error")));
+			.ThrowsAsync(new MerchantOrchestrationServiceException(new InvalidOperationException("Error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<InvoiceProcessingServiceException>(() =>
@@ -743,7 +743,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
 		mockMerchantOrchestrationService
 			.Setup(s => s.UpdateMerchantObject(merchant, merchantId, null))
-			.ThrowsAsync(new MerchantOrchestrationServiceValidationException(new Exception("Validation error")));
+			.ThrowsAsync(new MerchantOrchestrationServiceValidationException(new InvalidOperationException("Validation error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyValidationException>(() =>
@@ -799,7 +799,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
 		mockInvoiceOrchestrationService
 			.Setup(s => s.ReadInvoiceObject(invoiceId, null))
-			.ThrowsAsync(new InvoiceOrchestrationDependencyException(new Exception("Dependency error")));
+			.ThrowsAsync(new InvoiceOrchestrationDependencyException(new InvalidOperationException("Dependency error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>
@@ -942,7 +942,7 @@ public sealed class InvoiceProcessingServiceEdgeCaseTests
 
 		mockInvoiceOrchestrationService
 			.Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null))
-			.ThrowsAsync(new InvoiceOrchestrationDependencyException(new Exception("Dependency error")));
+			.ThrowsAsync(new InvoiceOrchestrationDependencyException(new InvalidOperationException("Dependency error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<InvoiceProcessingServiceDependencyException>(() =>

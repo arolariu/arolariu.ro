@@ -629,14 +629,14 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
 	/// Validates handling of NullReferenceException.
 	/// </summary>
 	[Fact]
-	public async Task ReadInvoiceObject_NullReferenceException_ThrowsFoundationServiceException()
+	public async Task ReadInvoiceObject_ArgumentNullException_ThrowsFoundationServiceException()
 	{
 		// Arrange
 		var invoiceId = Guid.NewGuid();
 
 		mockBroker
 			.Setup(b => b.ReadInvoiceAsync(invoiceId, null))
-			.ThrowsAsync(new NullReferenceException("Null reference"));
+			.ThrowsAsync(new ArgumentNullException("parameter", "Null reference"));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<InvoiceFoundationServiceException>(() =>

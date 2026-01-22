@@ -140,7 +140,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.CreateMerchantObject(merchant, null))
-			.ThrowsAsync(new MerchantFoundationServiceValidationException(new Exception("Validation error")));
+			.ThrowsAsync(new MerchantFoundationServiceValidationException(new InvalidOperationException("Validation error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
@@ -158,7 +158,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.CreateMerchantObject(merchant, null))
-			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new Exception("Dependency error")));
+			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new InvalidOperationException("Dependency error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
@@ -176,7 +176,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.CreateMerchantObject(merchant, null))
-			.ThrowsAsync(new MerchantFoundationServiceException(new Exception("Service error")));
+			.ThrowsAsync(new MerchantFoundationServiceException(new InvalidOperationException("Service error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceException>(() =>
@@ -280,7 +280,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.ReadMerchantObject(merchantId, null))
-			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new Exception("Dependency error")));
+			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new InvalidOperationException("Dependency error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
@@ -385,7 +385,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
-			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new Exception("Dependency error")));
+			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new InvalidOperationException("Dependency error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
@@ -492,7 +492,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.UpdateMerchantObject(merchant, merchantId, null))
-			.ThrowsAsync(new MerchantFoundationServiceValidationException(new Exception("Validation error")));
+			.ThrowsAsync(new MerchantFoundationServiceValidationException(new InvalidOperationException("Validation error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
@@ -511,7 +511,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.UpdateMerchantObject(merchant, merchantId, null))
-			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new Exception("Dependency error")));
+			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new InvalidOperationException("Dependency error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
@@ -593,7 +593,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.DeleteMerchantObject(merchantId, null))
-			.ThrowsAsync(new MerchantFoundationServiceValidationException(new Exception("Validation error")));
+			.ThrowsAsync(new MerchantFoundationServiceValidationException(new InvalidOperationException("Validation error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceValidationException>(() =>
@@ -611,7 +611,7 @@ public sealed class MerchantOrchestrationServiceExtendedTests
 
 		mockStorageService
 			.Setup(s => s.DeleteMerchantObject(merchantId, null))
-			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new Exception("Dependency error")));
+			.ThrowsAsync(new MerchantFoundationServiceDependencyException(new InvalidOperationException("Dependency error")));
 
 		// Act & Assert
 		await Assert.ThrowsAsync<MerchantOrchestrationServiceDependencyException>(() =>
