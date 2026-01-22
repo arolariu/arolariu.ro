@@ -24,6 +24,7 @@ const websiteEslintConfig: Config = defineConfig({
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
   ignores: [
     "sites/arolariu.ro/messages/*.d.json.ts", // Generated i18n type declarations
+    "sites/arolariu.ro/tests/**", // E2E tests directory (Playwright)
   ],
   languageOptions: {
     ecmaVersion: "latest",
