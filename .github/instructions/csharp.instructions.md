@@ -1,4 +1,6 @@
 ---
+version: "1.0.0"
+lastUpdated: "2026-01-22"
 description: "C# coding standards and patterns for .NET 10.0 development"
 applyTo: '**/*.cs'
 ---

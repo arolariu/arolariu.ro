@@ -1,4 +1,6 @@
 ---
+version: "1.0.0"
+lastUpdated: "2026-01-22"
 description: 'Infrastructure as Code (IaC) with Bicep DSL - Best Practices and Guidelines'
 applyTo: '**/*.bicep'
 ---
