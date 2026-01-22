@@ -35,6 +35,18 @@ export interface ESLintWorkerInput {
   readonly taskIndex: number;
   /** Timestamp when the task was dispatched from the main thread (Date.now()) */
   readonly dispatchedAt: number;
+  /** Optional glob patterns to filter files (selective targeting) */
+  readonly filePatterns?: readonly string[];
+}
+
+/**
+ * Per-file timing statistics from ESLint.
+ */
+export interface ESLintFileStats {
+  /** File path */
+  readonly filePath: string;
+  /** Time spent linting this file in milliseconds */
+  readonly lintTimeMs: number;
 }
 
 /**
@@ -68,6 +80,16 @@ export interface ESLintWorkerResult {
   readonly error?: string;
   /** Worker thread ID (unique per worker) */
   readonly workerId: number;
-  /** Duration of the worker execution in milliseconds */
+  /** Total duration including thread startup and module loading (milliseconds) */
   readonly durationMs: number;
+  /** Time spent on actual linting work only (milliseconds) */
+  readonly workTimeMs: number;
+  /** Time spent on initialization/module loading (milliseconds) */
+  readonly initTimeMs: number;
+  /** Number of files that were linted */
+  readonly fileCount: number;
+  /** Peak memory usage in bytes (heap used) */
+  readonly peakMemoryBytes: number;
+  /** Top slowest files with their lint times */
+  readonly slowestFiles: readonly ESLintFileStats[];
 }
