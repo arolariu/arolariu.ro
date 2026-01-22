@@ -98,8 +98,9 @@ jobs:
           cache-key-prefix: 'api'
 
       - name: 🧪 Running unit tests...
+        working-directory: .
         run: |
-          dotnet test --configuration Release --logger trx --results-directory ./TestResults --collect:"XPlat Code Coverage" .\arolariu.slnx
+          dotnet test --configuration Release --logger trx --results-directory ./sites/api.arolariu.ro/TestResults --collect:"XPlat Code Coverage" ./arolariu.slnx
 
       - name: 📤 Upload test results...
         if: always()
