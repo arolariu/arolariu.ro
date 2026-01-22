@@ -97,18 +97,18 @@ jobs:
           install-dotnet-dependencies: 'true'
           cache-key-prefix: 'api'
 
-      # - name: 🧪 Running unit tests...
-      #   run: |
-      #     dotnet test --configuration Release --logger trx --results-directory ./TestResults --collect:"XPlat Code Coverage" .\arolariu.slnx
+      - name: 🧪 Running unit tests...
+        run: |
+          dotnet test --configuration Release --logger trx --results-directory ./TestResults --collect:"XPlat Code Coverage" .\arolariu.slnx
 
-      # - name: 📤 Upload test results...
-      #   if: always()
-      #   uses: actions/upload-artifact@v4.6.2
-      #   with:
-      #     name: test-results-${{ github.run_id }}
-      #     path: sites/api.arolariu.ro/TestResults/
-      #     if-no-files-found: warn
-      #     retention-days: 7
+      - name: 📤 Upload test results...
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: test-results-${{ github.run_id }}
+          path: sites/api.arolariu.ro/TestResults/
+          if-no-files-found: warn
+          retention-days: 7
 
   build:
     if: github.repository == 'arolariu/arolariu.ro'
