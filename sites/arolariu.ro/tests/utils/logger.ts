@@ -75,6 +75,10 @@ function log(category: LogCategory, level: LogLevel, message: string, data?: Rec
         console.log(formattedMessage, data ?? "");
       }
       break;
+
+    default:
+      console.log(formattedMessage, data ?? "");
+      break;
   }
 }
 

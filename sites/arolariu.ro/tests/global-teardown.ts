@@ -128,7 +128,7 @@ async function generateSummary(): Promise<void> {
     return;
   }
 
-  const stats = results.stats;
+  const {stats} = results;
   const passed = stats.expected ?? 0;
   const failed = stats.unexpected ?? 0;
   const skipped = stats.skipped ?? 0;

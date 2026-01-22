@@ -114,6 +114,7 @@ export class FooterComponent extends BaseComponent {
    */
   static readonly selectors = FOOTER_SELECTORS;
 
+  // eslint-disable-next-line no-useless-constructor -- for clarity
   constructor(page: Page) {
     super(page);
   }
@@ -190,7 +191,7 @@ export class FooterComponent extends BaseComponent {
    */
   async clickLogo(): Promise<void> {
     await this.heroLink.click();
-    await this.page.waitForURL(/\/$/, {timeout: TIMEOUTS.navigation});
+    await this.page.waitForURL(/\/$/u, {timeout: TIMEOUTS.navigation});
   }
 
   /**
@@ -355,7 +356,7 @@ export class FooterComponent extends BaseComponent {
    */
   async shouldHaveBuildInfo(): Promise<this> {
     await expect(this.buildInfo).toBeVisible();
-    await expect(this.buildInfo).toContainText(/Built on/i);
+    await expect(this.buildInfo).toContainText(/Built on/iu);
     return this;
   }
 
@@ -410,7 +411,7 @@ export class FooterComponent extends BaseComponent {
    */
   async getBuildTimestamp(): Promise<string | null> {
     const text = await this.buildInfo.textContent();
-    const match = text?.match(/Built on (.+?) -/);
+    const match = text?.match(/Built on (.+?) -/u);
     return match?.[1] ?? null;
   }
 
