@@ -20,13 +20,21 @@
  *
  * @example
  * ```typescript
- * const input: ESLintWorkerInput = { configName: "[@arolariu/website]" };
+ * const input: ESLintWorkerInput = {
+ *   configName: "[@arolariu/website]",
+ *   taskIndex: 1,
+ *   dispatchedAt: Date.now(),
+ * };
  * const result = await piscina.run(input);
  * ```
  */
 export interface ESLintWorkerInput {
   /** The ESLint config name to find and use (e.g., "[@arolariu/packages]") */
   readonly configName: string;
+  /** Position in the task queue (0-based index) for ordering results */
+  readonly taskIndex: number;
+  /** Timestamp when the task was dispatched from the main thread (Date.now()) */
+  readonly dispatchedAt: number;
 }
 
 /**

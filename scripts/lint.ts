@@ -12,6 +12,7 @@
 import process from "node:process";
 import pc from "picocolors";
 import Piscina from "piscina";
+import {createProgressTracker, logWorkerComplete, logWorkerSpawn, printWorkerTimeline} from "./common/index.ts";
 import type {ESLintWorkerInput, ESLintWorkerResult} from "./types/lint.ts";
 
 type LintTarget = "all" | "packages" | "website" | "cv";
@@ -97,19 +98,65 @@ async function startESLint(lintTarget: LintTarget): Promise<number> {
   try {
     if (lintTarget === "all") {
       console.log(pc.yellow("⏱️  Running lint on all targets in parallel..."));
-      console.log(pc.bold(pc.magenta("\n🧵 Dispatching workers for parallel linting...")));
-      console.log(pc.gray(`   Main process PID: ${process.pid}`));
-      console.log(pc.gray(`   Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}\n`));
+      console.log(pc.bold(pc.cyan("\n  🧵 Dispatching parallel workers...")));
+      console.log(pc.gray(`     Main process PID: ${process.pid}`));
+      console.log(pc.gray(`     Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}`));
+      console.log();
+
+      const progress = createProgressTracker(allTargets.length);
+      const dispatchTime = Date.now();
+      const results: ESLintWorkerResult[] = [];
+      const completionEvents: Array<{index: number; target: string; durationMs: number; status: "success" | "error"}> =
+        [];
+
+      // Log all spawn events first
+      for (const [index, target] of allTargets.entries()) {
+        logWorkerSpawn(index + 1, target);
+      }
+      console.log();
+
+      // Start the progress bar
+      progress.start();
 
       // Dispatch all targets in parallel
-      const promises = allTargets.map((target) => {
+      const promises = allTargets.map((target, index) => {
         const configName = configNameMap[target];
-        const input: ESLintWorkerInput = {configName};
-        return piscina.run(input) as Promise<ESLintWorkerResult>;
+        const input: ESLintWorkerInput = {
+          configName,
+          taskIndex: index,
+          dispatchedAt: dispatchTime,
+        };
+
+        return (piscina.run(input) as Promise<ESLintWorkerResult>).then((result) => {
+          // Store completion data for later logging
+          completionEvents.push({
+            index: index + 1,
+            target,
+            durationMs: result.durationMs,
+            status: result.error ? "error" : "success",
+          });
+          progress.increment();
+          results[index] = result; // Store in order
+          return result;
+        });
       });
 
       // Wait for all workers to complete
-      const results = await Promise.all(promises);
+      await Promise.all(promises);
+      progress.finish();
+
+      // Log completion events in order they finished
+      console.log();
+      for (const event of completionEvents) {
+        logWorkerComplete(event.index, event.target, event.durationMs, event.status);
+      }
+
+      // Print timeline visualization
+      const timelineEntries = allTargets.map((target, index) => ({
+        target,
+        durationMs: results[index]!.durationMs,
+      }));
+      printWorkerTimeline(timelineEntries);
 
       // Print results in consistent order (packages → website → cv)
       let totalErrors = 0;
@@ -133,7 +180,11 @@ async function startESLint(lintTarget: LintTarget): Promise<number> {
     } else {
       // Single target - still use worker for consistency
       const configName = configNameMap[lintTarget];
-      const input: ESLintWorkerInput = {configName};
+      const input: ESLintWorkerInput = {
+        configName,
+        taskIndex: 0,
+        dispatchedAt: Date.now(),
+      };
       const result = (await piscina.run(input)) as ESLintWorkerResult;
 
       printWorkerResult(result);

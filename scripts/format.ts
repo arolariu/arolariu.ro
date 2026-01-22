@@ -13,6 +13,7 @@ import process from "node:process";
 import {fileURLToPath} from "node:url";
 import pc from "picocolors";
 import Piscina from "piscina";
+import {createProgressTracker, formatTimestamp, logWorkerComplete, printWorkerTimeline} from "./common/index.ts";
 import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./types/format.ts";
 
 /** All available format targets in consistent order */
@@ -274,25 +275,70 @@ async function runOnAllTargets(): Promise<number> {
   console.log(pc.dim(`     PID: ${process.pid}  │  Workers: ${piscina.options.minThreads}-${piscina.options.maxThreads} threads`));
   console.log();
 
-  // Show processing indicator
-  console.log(pc.yellow("  ⏳ Processing..."));
-
   try {
     const startTime = Date.now();
+    const progress = createProgressTracker(allTargets.length);
+    const dispatchTime = Date.now();
+    const results: FormatWorkerResult[] = [];
+    const completionEvents: Array<{index: number; target: string; durationMs: number; status: "success" | "error"}> =
+      [];
+
+    // Log all spawn events first with target-specific icons
+    for (const [index, target] of allTargets.entries()) {
+      const config = targetConfig[target];
+      const timestamp = pc.gray(`[${formatTimestamp()}]`);
+      const workerLabel = pc.cyan(`Worker #${index + 1}`);
+      console.log(`${timestamp} 🚀 ${workerLabel} spawned for ${config.icon} ${config.color(pc.bold(target))}`);
+    }
+    console.log();
+
+    // Start the progress bar
+    progress.start();
 
     // Dispatch all workers in parallel
-    const workerPromises = allTargets.map((target) => {
-      const input: FormatWorkerInput = {target};
-      return piscina.run(input) as Promise<FormatWorkerResult>;
+    const workerPromises = allTargets.map((target, index) => {
+      const input: FormatWorkerInput = {
+        target,
+        taskIndex: index,
+        dispatchedAt: dispatchTime,
+      };
+
+      return (piscina.run(input) as Promise<FormatWorkerResult>).then((result) => {
+        // Store completion data for later logging
+        const status = result.exitCode === 0 ? "success" : "error";
+        completionEvents.push({
+          index: index + 1,
+          target,
+          durationMs: result.durationMs,
+          status,
+        });
+        progress.increment();
+        results[index] = result; // Store in order
+        return result;
+      });
     });
 
     // Wait for all workers to complete
-    const results = await Promise.all(workerPromises);
+    await Promise.all(workerPromises);
+    progress.finish();
+
+    // Log completion events in order they finished
+    console.log();
+    for (const event of completionEvents) {
+      logWorkerComplete(event.index, event.target, event.durationMs, event.status);
+    }
 
     const elapsed = Date.now() - startTime;
 
-    // Clear processing line and show completion
-    console.log(pc.green(`  ✓ Completed in ${elapsed}ms`));
+    // Print timeline visualization
+    const timelineEntries = allTargets.map((target, index) => ({
+      target,
+      durationMs: results[index]!.durationMs,
+    }));
+    printWorkerTimeline(timelineEntries);
+
+    // Show completion
+    console.log(pc.green(`\n  ✓ Completed in ${elapsed}ms`));
 
     // Print results in order with index
     for (const [index, result] of results.entries()) {
@@ -330,7 +376,11 @@ async function runOnSingleTarget(target: FormatTarget): Promise<number> {
 
   try {
     const startTime = Date.now();
-    const input: FormatWorkerInput = {target};
+    const input: FormatWorkerInput = {
+      target,
+      taskIndex: 0,
+      dispatchedAt: Date.now(),
+    };
     const result = (await piscina.run(input)) as FormatWorkerResult;
     const elapsed = Date.now() - startTime;
 
