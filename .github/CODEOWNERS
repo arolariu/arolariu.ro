@@ -1,0 +1,42 @@
+# =============================================================================
+# CODEOWNERS - Automatic code review assignment
+# =============================================================================
+# This file defines code ownership for automatic reviewer assignment.
+# GitHub uses this to automatically request reviews from the right people.
+#
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# =============================================================================
+
+# Global owners (fallback for any file not matched below)
+* @arolariu
+
+# Frontend - Main Website (Next.js)
+sites/arolariu.ro/ @arolariu
+packages/components/ @arolariu
+
+# Backend - API (.NET)
+sites/api.arolariu.ro/ @arolariu
+*.cs @arolariu
+*.csproj @arolariu
+*.slnx @arolariu
+
+# CV Website (SvelteKit)
+sites/cv.arolariu.ro/ @arolariu
+
+# Documentation Site (DocFX)
+sites/docs.arolariu.ro/ @arolariu
+
+# Infrastructure as Code
+infra/ @arolariu
+*.bicep @arolariu
+
+# CI/CD and DevOps
+.github/workflows/ @arolariu
+.github/actions/ @arolariu
+.github/scripts/ @arolariu
+
+# Configuration files
+package.json @arolariu
+tsconfig.json @arolariu
+.prettierrc @arolariu
+eslint.config.js @arolariu
