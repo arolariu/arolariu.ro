@@ -26,7 +26,7 @@
 #   - Bundle Size: Tracked for regression detection (vs main)
 #
 # Artifacts:
-#   - retention-days: 1 (ephemeral, only needed for summary job)
+#   - retention-days: 7 (for debugging past PR failures)
 #   - Pattern: artifacts/hygiene/{check}-result.json
 #
 # Local Resolution:
@@ -132,7 +132,7 @@ jobs:
         with:
           name: format-result
           path: artifacts/hygiene/format-result.json
-          retention-days: 1
+          retention-days: 7
 
   # ============================================================================
   # LINT CHECK
@@ -173,7 +173,7 @@ jobs:
         with:
           name: lint-result
           path: artifacts/hygiene/lint-result.json
-          retention-days: 1
+          retention-days: 7
 
   # ============================================================================
   # UNIT TESTS
@@ -220,7 +220,7 @@ jobs:
             artifacts/hygiene/test-result.json
             artifacts/vitest-output.json
             coverage/vitest/coverage-summary.json
-          retention-days: 1
+          retention-days: 7
 
   # ============================================================================
   # CODE STATISTICS & BUNDLE ANALYSIS
@@ -261,7 +261,7 @@ jobs:
         with:
           name: stats-result
           path: artifacts/hygiene/stats-result.json
-          retention-days: 1
+          retention-days: 7
 
   # ============================================================================
   # SUMMARY & PR COMMENT
@@ -305,6 +305,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 🎯 Determine final status
+        id: final-status
         run: |
           # Check if any of the check jobs failed (not continue-on-error failures)
           FORMAT_STATUS="${{ needs.format.result }}"
@@ -317,6 +318,33 @@ jobs:
           echo "Test: $TEST_STATUS"
           echo "Stats: $STATS_STATUS"
 
+          # Determine if any check failed
+          if [[ "$FORMAT_STATUS" == "failure" || "$LINT_STATUS" == "failure" || "$TEST_STATUS" == "failure" ]]; then
+            echo "has-failures=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-failures=false" >> $GITHUB_OUTPUT
+          fi
+
           # The actual pass/fail is determined by the artifacts
           # This just logs the job-level results
           echo "✅ Summary job completed. See PR comment for detailed results."
+
+      - name: 🏷️ Label Dependabot PR on failure
+        if: steps.final-status.outputs.has-failures == 'true' && github.actor == 'dependabot[bot]'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const prNumber = context.payload.pull_request?.number;
+            if (!prNumber) {
+              console.log('Not a PR context, skipping label');
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              issue_number: prNumber,
+              labels: ['breaking-change', 'needs-review']
+            });
+
+            console.log(`Added 'breaking-change' and 'needs-review' labels to PR #${prNumber}`);
