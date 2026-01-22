@@ -136,6 +136,31 @@ export const isVerboseMode = process.env["VERBOSE"] === "true";
  */
 export const isInCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
+/**
+ * Formats bytes into a human-readable string (KB, MB, GB).
+ *
+ * @param bytes - Number of bytes
+ * @returns Human-readable string (e.g., "12.5 MB")
+ *
+ * @example
+ * ```typescript
+ * formatBytes(1024);      // "1.00 KB"
+ * formatBytes(1048576);   // "1.00 MB"
+ * formatBytes(1073741824); // "1.00 GB"
+ * ```
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  } else if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(2)} KB`;
+  } else if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  } else {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
+}
+
 // ============================================================================
 // Worker Lifecycle Logging Utilities
 // ============================================================================
@@ -179,6 +204,19 @@ export function logWorkerSpawn(workerId: number, taskName: string): void {
 }
 
 /**
+ * Formats a duration in milliseconds to a human-readable string.
+ *
+ * @param ms - Duration in milliseconds
+ * @returns Formatted duration string (e.g., "1.2s" or "500ms")
+ */
+export function formatDurationMs(ms: number): string {
+  if (ms < 1000) {
+    return `${ms}ms`;
+  }
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
+/**
  * Logs a worker completion event with timestamp, task name, and duration.
  *
  * @param workerId - The sequential worker ID (1-based)
@@ -189,7 +227,7 @@ export function logWorkerSpawn(workerId: number, taskName: string): void {
  * @example
  * ```typescript
  * logWorkerComplete(1, "packages", 2222, "success");
- * // Output: [14:23:47.345] ✅ Worker #1 finished "packages" in 2,222ms
+ * // Output: [14:23:47.345] ✅ Worker #1 finished "packages" in 2.22s
  * ```
  */
 export function logWorkerComplete(
@@ -203,7 +241,7 @@ export function logWorkerComplete(
   const workerLabel = pc.cyan(`Worker #${workerId}`);
   const taskLabel = pc.bold(pc.yellow(`"${taskName}"`));
   const durationColor = status === "success" ? pc.green : pc.red;
-  const formattedDuration = durationColor(`${durationMs.toLocaleString()}ms`);
+  const formattedDuration = durationColor(formatDurationMs(durationMs));
   console.log(`${timestamp} ${icon} ${workerLabel} finished ${taskLabel} in ${formattedDuration}`);
 }
 
@@ -318,10 +356,10 @@ export function printWorkerTimeline(results: readonly TimelineEntry[]): void {
     const filled = Math.round((result.durationMs / maxDuration) * barWidth);
     const bar = pc.cyan("█".repeat(filled)) + pc.gray("░".repeat(barWidth - filled));
     const label = result.target.padEnd(10);
-    const duration = `${result.durationMs.toLocaleString()}ms`.padStart(8);
+    const duration = formatDurationMs(result.durationMs).padStart(8);
     console.log(`  ${label} │${bar}│ ${duration}`);
   }
 
   console.log(pc.gray("  " + "─".repeat(lineWidth)));
-  console.log(pc.gray(`  ${"".padEnd(10)}  0ms${" ".repeat(barWidth - 14)}${maxDuration.toLocaleString()}ms`));
+  console.log(pc.gray(`  ${"".padEnd(10)}  0s${" ".repeat(barWidth - 12)}${formatDurationMs(maxDuration)}`));
 }
