@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.Contracts;
@@ -20,7 +19,6 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 /// <para><b>Thread-safety:</b> Not thread-safe — treat instances as single-thread scoped.</para>
 /// <para><b>Soft Delete:</b> Not currently implementing soft-delete flags at this level; deletion semantics handled at persistence/broker layer if added.</para>
 /// </remarks>
-[ExcludeFromCodeCoverage]
 public sealed class Merchant : NamedEntity<Guid>
 {
   /// <summary>Immutable merchant identity.</summary>

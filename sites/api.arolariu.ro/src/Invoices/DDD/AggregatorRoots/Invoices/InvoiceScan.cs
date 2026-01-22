@@ -3,7 +3,6 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// The scan type enum represents the type of scan.
@@ -50,7 +49,6 @@ public enum ScanType
 /// <param name="Location"></param>
 /// <param name="Metadata"></param>
 [Serializable]
-[ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
 public readonly record struct InvoiceScan(
   [Required] ScanType Type,
   [Required] Uri Location,

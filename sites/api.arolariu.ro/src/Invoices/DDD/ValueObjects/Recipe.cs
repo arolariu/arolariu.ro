@@ -2,12 +2,10 @@ namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Recipe model.
 /// </summary>
-[ExcludeFromCodeCoverage]
 public sealed record Recipe
 {
   /// <summary>

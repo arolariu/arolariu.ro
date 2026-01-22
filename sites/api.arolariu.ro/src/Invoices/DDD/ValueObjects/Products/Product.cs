@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
@@ -19,10 +18,9 @@ using Microsoft.EntityFrameworkCore;
 /// (Cosmos owned collection). They SHOULD NOT be shared across invoice aggregates.</para>
 /// <para><b>Classification:</b> <c>Category</c> and <c>DetectedAllergens</c> may be progressively enriched; initial ingestion often sets
 /// <c>Category = ProductCategory.NOT_DEFINED</c> and an empty allergen list.</para>
-/// <para><b>Thread-safety:</b> Not thread-safe; mutate only within the aggregate’s modification workflow.</para>
+/// <para><b>Thread-safety:</b> Not thread-safe; mutate only within the aggregate's modification workflow.</para>
 /// </remarks>
 [Owned]
-[ExcludeFromCodeCoverage]
 public class Product
 {
   /// <summary>Raw OCR / extracted name as it appears on the physical or digital invoice.</summary>

@@ -1,7 +1,5 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
-using System.Diagnostics.CodeAnalysis;
-
 /// <summary>
 /// Operational metadata flags describing mutable processing / workflow state for a product line item.
 /// </summary>
@@ -15,7 +13,6 @@ using System.Diagnostics.CodeAnalysis;
 /// </list>
 /// <para><b>Thread-safety:</b> Not thread-safe; modifications must occur within aggregate mutation workflow.</para>
 /// </remarks>
-[ExcludeFromCodeCoverage]
 public record struct ProductMetadata
 {
   /// <summary>Indicates the product has been user- or system-modified post-ingestion.</summary>

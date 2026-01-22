@@ -25,7 +25,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <para><b>Merge Semantics:</b> See <see cref="Merge(Invoice, Invoice)"/> for partial update precedence rules.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe. Do not share instances across threads without external synchronization.</para>
 /// </remarks>
-[ExcludeFromCodeCoverage] // Entities are not tested - they are used to represent the data in the application domain.
 public sealed class Invoice : NamedEntity<Guid>
 {
   /// <inheritdoc/>
