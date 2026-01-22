@@ -13,7 +13,13 @@ import process from "node:process";
 import {fileURLToPath} from "node:url";
 import pc from "picocolors";
 import Piscina from "piscina";
-import {createProgressTracker, formatTimestamp, logWorkerComplete, printWorkerTimeline} from "./common/index.ts";
+import {
+  createProgressTracker,
+  formatBytes,
+  formatTimestamp,
+  logWorkerComplete,
+  printWorkerTimeline,
+} from "./common/index.ts";
 import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./types/format.ts";
 
 /** All available format targets in consistent order */
@@ -158,15 +164,24 @@ function printWorkerResult(result: FormatWorkerResult, index?: number): void {
   // Separator
   console.log(pc.gray(`  ${box.teeRight}${box.horizontal.repeat(cardWidth)}${box.teeLeft}`));
 
-  // Stats row: Worker info and Duration
+  // Stats row: Worker info and Duration breakdown
   const workerText = `Worker #${result.workerId}`;
-  const durationText = `Duration: ${formatDuration(result.durationMs)}`;
-  const statsLine = ` ${pc.dim(workerText)}  ${pc.gray("│")}  ${durationText}`;
+  const timingText = `init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms`;
+  const statsLine = ` ${pc.dim(workerText)}  ${pc.gray("│")}  ${pc.dim(timingText)}`;
   // Visible length calculation for stats
-  const statsVisibleLength = 1 + workerText.length + 3 + 10 + result.durationMs.toString().length + 2 + 2;
+  const statsVisibleLength = 1 + workerText.length + 3 + timingText.length;
   const statsPadding = " ".repeat(Math.max(0, innerWidth - statsVisibleLength));
 
   console.log(pc.gray(`  ${box.vertical}`) + statsLine + statsPadding + pc.gray(`  ${box.vertical}`));
+
+  // Second stats row: Total duration
+  const durationText = `Total: ${formatDuration(result.durationMs)}`;
+  const memoryText = `Memory: ${formatBytes(result.peakMemoryBytes)}`;
+  const statsLine2 = ` ${durationText}  ${pc.gray("│")}  ${pc.dim(memoryText)}`;
+  const statsVisibleLength2 = 1 + 7 + result.durationMs.toString().length + 2 + 3 + 8 + 10;
+  const statsPadding2 = " ".repeat(Math.max(0, innerWidth - statsVisibleLength2));
+
+  console.log(pc.gray(`  ${box.vertical}`) + statsLine2 + statsPadding2 + pc.gray(`  ${box.vertical}`));
 
   // Result text (if any meaningful output)
   if (result.resultText && result.resultText.trim().length > 0) {
@@ -214,6 +229,9 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
   const formatted = results.filter((r) => r.formatted).length;
   const failed = results.filter((r) => r.exitCode !== 0).length;
   const totalDuration = results.reduce((sum, r) => sum + r.durationMs, 0);
+  const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
+  const totalMemory = results.reduce((sum, r) => sum + r.peakMemoryBytes, 0);
+  const maxMemory = Math.max(...results.map((r) => r.peakMemoryBytes));
 
   const boxWidth = 50;
 
@@ -230,11 +248,15 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
   // Status breakdown with icons
   if (alreadyFormatted > 0) {
     const bar = pc.green("█".repeat(alreadyFormatted));
-    console.log(`   ${pc.green("●")} ${pc.bold("Clean:")}     ${bar} ${pc.green(String(alreadyFormatted))} target(s) already formatted`);
+    console.log(
+      `   ${pc.green("●")} ${pc.bold("Clean:")}     ${bar} ${pc.green(String(alreadyFormatted))} target(s) already formatted`,
+    );
   }
   if (formatted > 0) {
     const bar = pc.yellow("█".repeat(formatted));
-    console.log(`   ${pc.yellow("●")} ${pc.bold("Fixed:")}     ${bar} ${pc.yellow(String(formatted))} target(s) were formatted`);
+    console.log(
+      `   ${pc.yellow("●")} ${pc.bold("Fixed:")}     ${bar} ${pc.yellow(String(formatted))} target(s) were formatted`,
+    );
   }
   if (failed > 0) {
     const bar = pc.red("█".repeat(failed));
@@ -243,9 +265,22 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
 
   console.log();
 
+  // Resource usage
+  console.log(pc.bold("   📊 Resource Usage:"));
+  if (totalFiles > 0) {
+    console.log(pc.dim(`      Files processed: ${totalFiles}`));
+  }
+  console.log(pc.dim(`      Peak memory (max worker): ${formatBytes(maxMemory)}`));
+  console.log(pc.dim(`      Combined memory: ${formatBytes(totalMemory)}`));
+
+  console.log();
+
   // Timing info
   const avgDuration = Math.round(totalDuration / results.length);
+  const totalInitTime = results.reduce((sum, r) => sum + r.initTimeMs, 0);
+  const totalWorkTime = results.reduce((sum, r) => sum + r.workTimeMs, 0);
   console.log(pc.dim(`   ⏱️  Total time: ${totalDuration}ms (avg: ${avgDuration}ms per target)`));
+  console.log(pc.dim(`      Init time: ${totalInitTime}ms  │  Work time: ${totalWorkTime}ms`));
 
   console.log();
   console.log(createLine(boxWidth + 6));
@@ -257,12 +292,20 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
  * @remarks
  * This mode maximizes developer feedback speed by running independent targets
  * concurrently, then printing results in a deterministic target order.
+ * Uses Promise.allSettled for graceful degradation - if one worker fails,
+ * others continue and results are collected.
  *
+ * @param filePatterns - Optional glob patterns for selective targeting.
  * @returns Exit code (0 for success, non-zero for failure).
  */
-async function runOnAllTargets(): Promise<number> {
+async function runOnAllTargets(filePatterns?: string[]): Promise<number> {
   // Show what we're about to do
   printTargetOverview();
+
+  if (filePatterns && filePatterns.length > 0) {
+    console.log(pc.gray("  📁 Selective targeting: " + filePatterns.join(", ")));
+    console.log();
+  }
 
   console.log(pc.bold(pc.cyan("  🧵 Dispatching parallel workers...")));
   console.log();
@@ -272,16 +315,19 @@ async function runOnAllTargets(): Promise<number> {
     execArgv: ["--experimental-strip-types", "--no-warnings"],
   });
 
-  console.log(pc.dim(`     PID: ${process.pid}  │  Workers: ${piscina.options.minThreads}-${piscina.options.maxThreads} threads`));
+  console.log(
+    pc.dim(`     PID: ${process.pid}  │  Workers: ${piscina.options.minThreads}-${piscina.options.maxThreads} threads`),
+  );
   console.log();
 
   try {
     const startTime = Date.now();
     const progress = createProgressTracker(allTargets.length);
     const dispatchTime = Date.now();
-    const results: FormatWorkerResult[] = [];
+    const results: (FormatWorkerResult | null)[] = new Array(allTargets.length).fill(null);
     const completionEvents: Array<{index: number; target: string; durationMs: number; status: "success" | "error"}> =
       [];
+    let failedWorkers = 0;
 
     // Log all spawn events first with target-specific icons
     for (const [index, target] of allTargets.entries()) {
@@ -301,25 +347,56 @@ async function runOnAllTargets(): Promise<number> {
         target,
         taskIndex: index,
         dispatchedAt: dispatchTime,
+        filePatterns: filePatterns,
       };
 
-      return (piscina.run(input) as Promise<FormatWorkerResult>).then((result) => {
-        // Store completion data for later logging
-        const status = result.exitCode === 0 ? "success" : "error";
+      return piscina.run(input) as Promise<FormatWorkerResult>;
+    });
+
+    // Use Promise.allSettled for graceful degradation
+    const settledResults = await Promise.allSettled(workerPromises);
+
+    // Process results
+    for (const [index, settled] of settledResults.entries()) {
+      const target = allTargets[index]!;
+
+      if (settled.status === "fulfilled") {
+        const result = settled.value;
+        results[index] = result;
         completionEvents.push({
           index: index + 1,
           target,
           durationMs: result.durationMs,
-          status,
+          status: result.exitCode === 0 ? "success" : "error",
         });
-        progress.increment();
-        results[index] = result; // Store in order
-        return result;
-      });
-    });
+      } else {
+        // Worker crashed - create error result
+        failedWorkers++;
+        const errorResult: FormatWorkerResult = {
+          target,
+          checkPassed: false,
+          formatted: false,
+          exitCode: 1,
+          resultText: `Worker crashed: ${settled.reason}`,
+          error: String(settled.reason),
+          workerId: -1,
+          durationMs: 0,
+          workTimeMs: 0,
+          initTimeMs: 0,
+          fileCount: 0,
+          peakMemoryBytes: 0,
+        };
+        results[index] = errorResult;
+        completionEvents.push({
+          index: index + 1,
+          target,
+          durationMs: 0,
+          status: "error",
+        });
+      }
+      progress.increment();
+    }
 
-    // Wait for all workers to complete
-    await Promise.all(workerPromises);
     progress.finish();
 
     // Log completion events in order they finished
@@ -328,27 +405,41 @@ async function runOnAllTargets(): Promise<number> {
       logWorkerComplete(event.index, event.target, event.durationMs, event.status);
     }
 
+    // Show graceful degradation notice if any workers failed
+    if (failedWorkers > 0) {
+      console.log(pc.yellow(`\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`));
+    }
+
     const elapsed = Date.now() - startTime;
 
-    // Print timeline visualization
-    const timelineEntries = allTargets.map((target, index) => ({
-      target,
-      durationMs: results[index]!.durationMs,
-    }));
-    printWorkerTimeline(timelineEntries);
+    // Print timeline visualization (only for successful workers)
+    const timelineEntries = allTargets
+      .map((target, index) => ({
+        target,
+        durationMs: results[index]?.durationMs ?? 0,
+      }))
+      .filter((e) => e.durationMs > 0);
+
+    if (timelineEntries.length > 0) {
+      printWorkerTimeline(timelineEntries);
+    }
 
     // Show completion
     console.log(pc.green(`\n  ✓ Completed in ${elapsed}ms`));
 
     // Print results in order with index
+    const validResults: FormatWorkerResult[] = [];
     for (const [index, result] of results.entries()) {
-      printWorkerResult(result, index);
+      if (result) {
+        validResults.push(result);
+        printWorkerResult(result, index);
+      }
     }
 
     // Print fancy summary
-    printSummaryBox(results);
+    printSummaryBox(validResults);
 
-    const failed = results.filter((r) => r.exitCode !== 0).length;
+    const failed = validResults.filter((r) => r.exitCode !== 0).length;
     return failed > 0 ? 1 : 0;
   } finally {
     await piscina.destroy();
@@ -359,13 +450,22 @@ async function runOnAllTargets(): Promise<number> {
  * Runs formatting on a single target using a Piscina worker.
  *
  * @param target - The specific target to format.
+ * @param filePatterns - Optional glob patterns for selective targeting.
  * @returns Exit code (0 for success, non-zero for failure).
  */
-async function runOnSingleTarget(target: FormatTarget): Promise<number> {
+async function runOnSingleTarget(target: FormatTarget, filePatterns?: string[]): Promise<number> {
   const config = targetConfig[target];
 
   console.log();
-  console.log(pc.bold(`  ${config.icon} Formatting: ${config.color(target.toUpperCase())}`) + pc.dim(` (${config.description})`));
+  console.log(
+    pc.bold(`  ${config.icon} Formatting: ${config.color(target.toUpperCase())}`) +
+      pc.dim(` (${config.description})`),
+  );
+
+  if (filePatterns && filePatterns.length > 0) {
+    console.log(pc.gray("  📁 Patterns: " + filePatterns.join(", ")));
+  }
+
   console.log();
   console.log(pc.yellow("  ⏳ Processing..."));
 
@@ -380,15 +480,22 @@ async function runOnSingleTarget(target: FormatTarget): Promise<number> {
       target,
       taskIndex: 0,
       dispatchedAt: Date.now(),
+      filePatterns: filePatterns,
     };
-    const result = (await piscina.run(input)) as FormatWorkerResult;
-    const elapsed = Date.now() - startTime;
 
-    console.log(pc.green(`  ✓ Completed in ${elapsed}ms`));
+    try {
+      const result = (await piscina.run(input)) as FormatWorkerResult;
+      const elapsed = Date.now() - startTime;
 
-    printWorkerResult(result);
+      console.log(pc.green(`  ✓ Completed in ${elapsed}ms`));
 
-    return result.exitCode;
+      printWorkerResult(result);
+
+      return result.exitCode;
+    } catch (error) {
+      console.log(pc.red(`  ✗ Worker crashed: ${error}`));
+      return 1;
+    }
   } finally {
     await piscina.destroy();
   }
@@ -412,7 +519,7 @@ function printHeader(): void {
  * Prints the help/usage information.
  */
 function printHelp(): void {
-  console.log(pc.bold("  📖 Usage:") + pc.cyan(" format <target>"));
+  console.log(pc.bold("  📖 Usage:") + pc.cyan(" format <target> [glob patterns...]"));
   console.log();
   console.log(pc.bold("  Available targets:"));
   console.log();
@@ -422,6 +529,10 @@ function printHelp(): void {
     const config = targetConfig[target];
     console.log(`     ${config.icon} ${config.color(target.padEnd(9))} ${pc.dim("→")} ${config.description}`);
   }
+  console.log();
+  console.log(pc.bold("  📁 Selective targeting:"));
+  console.log(pc.dim('     format website "src/**/*.tsx"    Format only TSX files in website'));
+  console.log(pc.dim('     format packages "**/*.ts"        Format only TS files in packages'));
   console.log();
   console.log(pc.dim("  Examples:"));
   console.log(pc.dim("     npm run format all"));
@@ -436,11 +547,13 @@ function printHelp(): void {
  * This is the script entrypoint used by `npm run format`.
  * The function dispatches formatting work to worker threads and exits with a
  * conventional POSIX process exit code.
+ * Supports selective targeting via additional glob pattern arguments.
  *
  * @param arg - Target name (`all`, `packages`, `website`, `cv`, `api`).
+ * @param filePatterns - Optional glob patterns for selective targeting.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(arg?: string): Promise<number> {
+export async function main(arg?: string, filePatterns?: string[]): Promise<number> {
   printHeader();
 
   if (!arg) {
@@ -455,13 +568,13 @@ export async function main(arg?: string): Promise<number> {
 
     switch (arg) {
       case "all":
-        exitCode = await runOnAllTargets();
+        exitCode = await runOnAllTargets(filePatterns);
         break;
       case "packages":
       case "website":
       case "cv":
       case "api":
-        exitCode = await runOnSingleTarget(arg);
+        exitCode = await runOnSingleTarget(arg, filePatterns);
         break;
       default:
         console.error(pc.red(`✗ Invalid target: "${arg}"`));
@@ -471,11 +584,15 @@ export async function main(arg?: string): Promise<number> {
 
     if (exitCode === 0) {
       console.log();
-      console.log(pc.bgGreen(pc.black(" SUCCESS ")) + pc.green(" All targets formatted successfully! ") + pc.bold("🎉"));
+      console.log(
+        pc.bgGreen(pc.black(" SUCCESS ")) + pc.green(" All targets formatted successfully! ") + pc.bold("🎉"),
+      );
       console.log();
     } else {
       console.log();
-      console.log(pc.bgYellow(pc.black(" WARNING ")) + pc.yellow(" Formatting completed with some issues ") + pc.bold("⚠️"));
+      console.log(
+        pc.bgYellow(pc.black(" WARNING ")) + pc.yellow(" Formatting completed with some issues ") + pc.bold("⚠️"),
+      );
       console.log();
     }
 
@@ -487,7 +604,9 @@ export async function main(arg?: string): Promise<number> {
 
     if (error instanceof Error) {
       console.log(pc.gray(`  ${box.topLeft}${box.horizontal.repeat(50)}${box.topRight}`));
-      console.log(pc.gray(`  ${box.vertical}`) + pc.red(` Error: ${error.message}`.padEnd(50)) + pc.gray(box.vertical));
+      console.log(
+        pc.gray(`  ${box.vertical}`) + pc.red(` Error: ${error.message}`.padEnd(50)) + pc.gray(box.vertical),
+      );
       console.log(pc.gray(`  ${box.bottomLeft}${box.horizontal.repeat(50)}${box.bottomRight}`));
 
       if (error.stack) {
@@ -509,8 +628,10 @@ export async function main(arg?: string): Promise<number> {
 
 if (import.meta.main) {
   const arg = process.argv[2];
+  // Collect additional arguments as file patterns for selective targeting
+  const filePatterns = process.argv.slice(3).filter((p) => p.length > 0);
   try {
-    const code = await main(arg);
+    const code = await main(arg, filePatterns.length > 0 ? filePatterns : undefined);
     process.exit(code);
   } catch (err: unknown) {
     console.error(err);
