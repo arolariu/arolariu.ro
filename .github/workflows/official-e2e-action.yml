@@ -17,7 +17,7 @@
 #   - Artifact Upload: Test logs uploaded on failure for debugging
 #
 # Triggers:
-#   - Scheduled: (Disabled) Hourly cron job for continuous monitoring
+#   - Scheduled: Daily at 6 AM UTC (8 AM Romania) for continuous monitoring
 #   - Manual: workflow_dispatch for on-demand test execution
 #
 # Failure Handling:
@@ -45,9 +45,9 @@ permissions:
   issues: write # Required to create issues on test failure
 
 on:
-  # Scheduled trigger (currently disabled)
-  # schedule:
-  #   - cron: "0 * * * *" # Every hour UTC
+  # Scheduled trigger - runs daily at 6 AM UTC (8 AM Romania)
+  schedule:
+    - cron: "0 6 * * *"
 
   # Manual trigger for on-demand E2E testing
   workflow_dispatch:
@@ -135,7 +135,24 @@ jobs:
       - name: 🌡️ Check dependencies health
         run: |
           echo "Fetching backend health status..."
-          curl -s https://api.arolariu.ro/health -o backend-health.json
+          HTTP_CODE=$(curl -s -o backend-health.json -w "%{http_code}" https://api.arolariu.ro/health)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Health check failed with HTTP $HTTP_CODE"
+            cat backend-health.json
+            exit 1
+          fi
+
+          HEALTH_STATUS=$(jq -r '.status' backend-health.json 2>/dev/null || echo "unknown")
+          echo "Health status: $HEALTH_STATUS"
+
+          if [ "$HEALTH_STATUS" != "Healthy" ] && [ "$HEALTH_STATUS" != "healthy" ]; then
+            echo "::error::Backend unhealthy: $HEALTH_STATUS"
+            cat backend-health.json
+            exit 1
+          fi
+
+          echo "✅ Backend health check passed"
           cat backend-health.json
 
       - name: 🚀 Running end-to-end tests...
