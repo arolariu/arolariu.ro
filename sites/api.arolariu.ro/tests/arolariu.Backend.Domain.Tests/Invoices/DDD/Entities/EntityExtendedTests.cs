@@ -274,7 +274,7 @@ public sealed class EntityExtendedTests
 		var merchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
 		// Act
-		merchant.Name = null;
+		merchant.Name = null!;
 
 		// Assert
 		Assert.Null(merchant.Name);
@@ -351,17 +351,25 @@ public sealed class EntityExtendedTests
 	/// Validates invoice scan with various URI schemes.
 	/// </summary>
 	[Theory]
-	[InlineData("https://example.com/scan.jpg")]
-	[InlineData("http://example.com/scan.jpg")]
-	[InlineData("file:///c:/scans/scan.jpg")]
-	public void InvoiceScan_VariousUriSchemes_AreAllowed(string uriString)
+	[MemberData(nameof(GetVariousUriSchemes))]
+	public void InvoiceScan_VariousUriSchemes_AreAllowed(Uri uri)
 	{
 		// Arrange & Act
-		var scan = new InvoiceScan(ScanType.OTHER, new Uri(uriString), null);
+		var scan = new InvoiceScan(ScanType.OTHER, uri, null);
 
 		// Assert
 		Assert.NotNull(scan.Location);
 	}
+
+	/// <summary>
+	/// Gets various URI schemes for testing.
+	/// </summary>
+	public static TheoryData<Uri> GetVariousUriSchemes() => new()
+	{
+		new Uri("https://example.com/scan.jpg"),
+		new Uri("http://example.com/scan.jpg"),
+		new Uri("file:///c:/scans/scan.jpg")
+	};
 
 	/// <summary>
 	/// Validates invoice scan with complex URI.
@@ -377,7 +385,7 @@ public sealed class EntityExtendedTests
 
 		// Assert
 		Assert.Equal("storage.azure.com", scan.Location.Host);
-		Assert.Contains("scan-123_abc.jpg", scan.Location.LocalPath);
+		Assert.True(scan.Location.LocalPath.Contains("scan-123_abc.jpg", StringComparison.Ordinal));
 	}
 
 	/// <summary>

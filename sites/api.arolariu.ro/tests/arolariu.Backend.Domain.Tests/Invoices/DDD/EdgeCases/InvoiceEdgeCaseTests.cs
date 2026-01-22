@@ -204,7 +204,7 @@ public sealed class InvoiceEdgeCaseTests
 		{
 			id = Guid.NewGuid(),
 			UserIdentifier = Guid.NewGuid(),
-			Description = null
+			Description = null!
 		};
 
 		// Assert
@@ -586,8 +586,8 @@ public sealed class InvoiceEdgeCaseTests
 
 		// Assert
 		Assert.NotNull(merchant.Address);
-		Assert.Contains("Company", merchant.Address.FullName);
-		Assert.Contains("ext.", merchant.Address.PhoneNumber);
+		Assert.True(merchant.Address.FullName.Contains("Company", StringComparison.Ordinal));
+		Assert.True(merchant.Address.PhoneNumber.Contains("ext.", StringComparison.Ordinal));
 	}
 
 	#endregion
@@ -678,7 +678,7 @@ public sealed class InvoiceEdgeCaseTests
 		var scan = new InvoiceScan(ScanType.JPG, complexUri, null);
 
 		// Assert
-		Assert.Contains("token=", scan.Location.Query);
+		Assert.True(scan.Location.Query.Contains("token=", StringComparison.Ordinal));
 	}
 
 	/// <summary>
@@ -739,8 +739,8 @@ public sealed class InvoiceEdgeCaseTests
 		};
 
 		// Assert
-		Assert.Contains("(", allergen.Name);
-		Assert.Contains("&", allergen.Description);
+		Assert.True(allergen.Name.Contains('(', StringComparison.Ordinal));
+		Assert.True(allergen.Description.Contains('&', StringComparison.Ordinal));
 	}
 
 	/// <summary>
@@ -757,8 +757,8 @@ public sealed class InvoiceEdgeCaseTests
 		};
 
 		// Assert
-		Assert.Contains("ü", allergen.Name);
-		Assert.Contains("日本語", allergen.Description);
+		Assert.True(allergen.Name.Contains('ü', StringComparison.Ordinal));
+		Assert.True(allergen.Description.Contains("日本語", StringComparison.Ordinal));
 	}
 
 	#endregion
@@ -856,7 +856,7 @@ public sealed class InvoiceEdgeCaseTests
 		};
 
 		// Assert
-		Assert.StartsWith("+40", contact.PhoneNumber);
+		Assert.StartsWith("+40", contact.PhoneNumber, StringComparison.Ordinal);
 	}
 
 	/// <summary>
