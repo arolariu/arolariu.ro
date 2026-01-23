@@ -254,10 +254,11 @@ async function runA11yCheck(page: Page, options: A11yCheckOptions = {}): Promise
     if (config.exclude) {
       runOptions.exclude = config.exclude;
     }
-    if (config.rules) {
-      runOptions.rules = config.rules;
-    }
-    if (config.tags) {
+    // If specific rules are provided, use runOnly to ONLY check those rules
+    if (config.rules && Object.keys(config.rules).length > 0) {
+      runOptions.runOnly = {type: "rule", values: Object.keys(config.rules)};
+    } else if (config.tags) {
+      // Only use tags if no specific rules are provided
       runOptions.runOnly = {type: "tag", values: config.tags};
     }
 
