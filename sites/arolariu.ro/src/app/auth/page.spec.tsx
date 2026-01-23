@@ -43,8 +43,8 @@ test.describe("Authentication @auth", () => {
     test(tagged("should have proper structure", TEST_TYPE_TAGS.E2E, FEATURE_TAGS.AUTH), async ({safeNavigate, page}) => {
       await safeNavigate("/auth/");
 
-      // Check essential elements
-      await expect(page.locator("header")).toBeVisible();
+      // Check essential elements - use semantic role for header to avoid matching content headers
+      await expect(page.getByRole("banner")).toBeVisible();
       await expect(page.locator("main")).toBeVisible();
       await expect(page.locator("footer")).toBeVisible();
     });
