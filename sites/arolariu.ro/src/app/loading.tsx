@@ -1,11 +1,13 @@
 /**
  * A server-rendered loading component that displays immediately.
  * Uses CSS animations instead of JavaScript to work during Next.js compilation.
+ * Uses a div wrapper instead of main to avoid duplicate landmark violations when
+ * page content also renders a main element during streaming/hydration.
  * @returns A loading component.
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className='bg-background min-h-screen'>
+    <div className='bg-background min-h-screen'>
       {/* Hero section skeleton */}
       <section className='relative min-h-screen overflow-hidden pt-20'>
         <div className='container mx-auto px-4'>
@@ -55,6 +57,6 @@ export default function Loading(): React.JSX.Element {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
