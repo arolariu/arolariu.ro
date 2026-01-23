@@ -3,7 +3,8 @@
     "editor.defaultFoldingRangeProvider": "ms-dotnettools.csharp",
     "editor.foldingImportsByDefault": true,
     "editor.foldingStrategy": "auto",
-    "editor.showFoldingControls": "mouseover"
+    "editor.showFoldingControls": "mouseover",
+    "editor.defaultFormatter": "ms-dotnettools.csharp"
   },
   "[javascript]": {
     "editor.defaultFormatter": "prettier.prettier-vscode"
