@@ -10,6 +10,7 @@ using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Core.Auth.Modules;
+using arolariu.Backend.Core.Domain.General.Configuration;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using Azure.Core;
@@ -288,6 +289,7 @@ internal static class WebApplicationBuilderExtensions
     services.AddOpenApi();
     services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
     services.AddHealthChecks();
+    services.AddRateLimitingPolicies();
 
     builder.AddOTelLogging();
     builder.AddOTelMetering();
