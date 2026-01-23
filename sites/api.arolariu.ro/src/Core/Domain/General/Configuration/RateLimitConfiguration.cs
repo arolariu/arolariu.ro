@@ -58,48 +58,48 @@ internal static class RateLimitConfiguration
               RateLimitPartition.GetFixedWindowLimiter(
                   partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
                   factory: _ => new FixedWindowRateLimiterOptions
-                {
-                  PermitLimit = 1000,
-                  Window = TimeSpan.FromMinutes(1),
-                  QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                  QueueLimit = 10
-                }));
+                  {
+                    PermitLimit = 1000,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 10
+                  }));
 
       // Standard reads: 300 requests per minute per user
       options.AddPolicy(RateLimitPolicies.StandardReads, context =>
               RateLimitPartition.GetFixedWindowLimiter(
                   partitionKey: GetUserIdentifier(context),
                   factory: _ => new FixedWindowRateLimiterOptions
-                {
-                  PermitLimit = 300,
-                  Window = TimeSpan.FromMinutes(1),
-                  QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                  QueueLimit = 5
-                }));
+                  {
+                    PermitLimit = 300,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 5
+                  }));
 
       // Standard writes: 60 requests per minute per user
       options.AddPolicy(RateLimitPolicies.StandardWrites, context =>
               RateLimitPartition.GetFixedWindowLimiter(
                   partitionKey: GetUserIdentifier(context),
                   factory: _ => new FixedWindowRateLimiterOptions
-                {
-                  PermitLimit = 60,
-                  Window = TimeSpan.FromMinutes(1),
-                  QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                  QueueLimit = 2
-                }));
+                  {
+                    PermitLimit = 60,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 2
+                  }));
 
       // Analysis operations: 10 requests per hour per user (AI-intensive)
       options.AddPolicy(RateLimitPolicies.AnalysisOperations, context =>
               RateLimitPartition.GetFixedWindowLimiter(
                   partitionKey: GetUserIdentifier(context),
                   factory: _ => new FixedWindowRateLimiterOptions
-                {
-                  PermitLimit = 10,
-                  Window = TimeSpan.FromHours(1),
-                  QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                  QueueLimit = 1
-                }));
+                  {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromHours(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 1
+                  }));
 
       // Health check: No limit (for monitoring systems)
       options.AddPolicy(RateLimitPolicies.HealthCheck, _ =>
