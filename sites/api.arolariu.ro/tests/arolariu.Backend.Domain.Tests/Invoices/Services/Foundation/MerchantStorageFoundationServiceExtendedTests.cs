@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
@@ -541,15 +542,15 @@ public sealed class MerchantStorageFoundationServiceExtendedTests
 			.ToList();
 
 		mockBroker
-			.Setup(b => b.CreateMerchantAsync(It.IsAny<Merchant>()))
-			.ReturnsAsync((Merchant m) => m);
+			.Setup(b => b.CreateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync((Merchant m, CancellationToken _) => m);
 
 		// Act
 		var tasks = merchants.Select(m => service.CreateMerchantObject(m, null));
 		await Task.WhenAll(tasks);
 
 		// Assert
-		mockBroker.Verify(b => b.CreateMerchantAsync(It.IsAny<Merchant>()), Times.Exactly(10));
+		mockBroker.Verify(b => b.CreateMerchantAsync(It.IsAny<Merchant>(), It.IsAny<CancellationToken>()), Times.Exactly(10));
 	}
 
 	/// <summary>

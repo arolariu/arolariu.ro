@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Processing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -106,14 +107,14 @@ public sealed class InvoiceProcessingServiceTests
 		var userId = Guid.NewGuid();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId))
+			.Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		// Act
 		await processingService.AnalyzeInvoice(options, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	/// <summary>
@@ -129,7 +130,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new InvoiceOrchestrationDependencyException(innerException);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null))
+			.Setup(s => s.AnalyzeInvoiceWithOptions(options, invoiceId, null, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -171,14 +172,14 @@ public sealed class InvoiceProcessingServiceTests
 		var userId = Guid.NewGuid();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.CreateInvoiceObject(invoice))
+			.Setup(s => s.CreateInvoiceObject(invoice, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.CreateInvoice(invoice, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.CreateInvoiceObject(invoice), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.CreateInvoiceObject(invoice, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	/// <summary>
@@ -193,7 +194,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new InvoiceOrchestrationServiceException(innerException);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.CreateInvoiceObject(invoice))
+			.Setup(s => s.CreateInvoiceObject(invoice, It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -217,7 +218,7 @@ public sealed class InvoiceProcessingServiceTests
 		var expectedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(expectedInvoice);
 
 		// Act
@@ -240,7 +241,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new InvoiceOrchestrationValidationException(innerException);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, null))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, null, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -263,7 +264,7 @@ public sealed class InvoiceProcessingServiceTests
 		var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(5);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadAllInvoiceObjects(userId))
+			.Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(expectedInvoices);
 
 		// Act
@@ -284,7 +285,7 @@ public sealed class InvoiceProcessingServiceTests
 		var userId = Guid.NewGuid();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadAllInvoiceObjects(userId))
+			.Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new List<Invoice>());
 
 		// Act
@@ -311,7 +312,7 @@ public sealed class InvoiceProcessingServiceTests
 		var updatedInvoice = InvoiceBuilder.CreateRandomInvoice();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(updatedInvoice);
 
 		// Act
@@ -335,7 +336,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new InvoiceOrchestrationDependencyValidationException(innerException);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null))
+			.Setup(s => s.UpdateInvoiceObject(updatedInvoice, invoiceId, null, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -358,14 +359,14 @@ public sealed class InvoiceProcessingServiceTests
 		var userId = Guid.NewGuid();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.DeleteInvoiceObject(invoiceId, userId))
+			.Setup(s => s.DeleteInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		// Act
 		await processingService.DeleteInvoice(invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	#endregion
@@ -383,19 +384,19 @@ public sealed class InvoiceProcessingServiceTests
 		var invoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadAllInvoiceObjects(userId))
+			.Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoices);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.DeleteInvoiceObject(It.IsAny<Guid>(), userId))
+			.Setup(s => s.DeleteInvoiceObject(It.IsAny<Guid>(), userId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		// Act
 		await processingService.DeleteInvoices(userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.ReadAllInvoiceObjects(userId), Times.Once);
-		mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(It.IsAny<Guid>(), userId), Times.Exactly(3));
+		mockInvoiceOrchestrationService.Verify(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(It.IsAny<Guid>(), userId, It.IsAny<CancellationToken>()), Times.Exactly(3));
 	}
 
 	/// <summary>
@@ -408,14 +409,14 @@ public sealed class InvoiceProcessingServiceTests
 		var userId = Guid.NewGuid();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadAllInvoiceObjects(userId))
+			.Setup(s => s.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new List<Invoice>());
 
 		// Act
 		await processingService.DeleteInvoices(userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>()), Times.Never);
+		mockInvoiceOrchestrationService.Verify(s => s.DeleteInvoiceObject(It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
 	}
 
 	#endregion
@@ -436,19 +437,19 @@ public sealed class InvoiceProcessingServiceTests
 		var product = new Product { RawName = "Test Product", GenericName = "Test", Price = 10m };
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, null))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.AddProduct(product, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.ReadInvoiceObject(invoiceId, null), Times.Once);
-		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	#endregion
@@ -467,7 +468,7 @@ public sealed class InvoiceProcessingServiceTests
 		var invoice = InvoiceBuilder.CreateRandomInvoice();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
@@ -495,7 +496,7 @@ public sealed class InvoiceProcessingServiceTests
 		var productName = invoice.Items.First().RawName;
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
@@ -517,7 +518,7 @@ public sealed class InvoiceProcessingServiceTests
 		var invoice = InvoiceBuilder.CreateRandomInvoice();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
@@ -544,18 +545,18 @@ public sealed class InvoiceProcessingServiceTests
 		var productName = invoice.Items.First().RawName;
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, null))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.DeleteProduct(productName, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	/// <summary>
@@ -571,18 +572,18 @@ public sealed class InvoiceProcessingServiceTests
 		var product = invoice.Items.First();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, null))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.DeleteProduct(product, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	#endregion
@@ -602,18 +603,18 @@ public sealed class InvoiceProcessingServiceTests
 		var scan = new InvoiceScan(ScanType.JPG, new Uri("https://example.com/scan.jpg"), null);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.CreateInvoiceScan(scan, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	#endregion
@@ -632,7 +633,7 @@ public sealed class InvoiceProcessingServiceTests
 		var invoice = InvoiceBuilder.CreateRandomInvoice();
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
@@ -660,18 +661,18 @@ public sealed class InvoiceProcessingServiceTests
 		invoice.Scans.Add(scan);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.DeleteInvoiceScan(scan, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	#endregion
@@ -691,18 +692,18 @@ public sealed class InvoiceProcessingServiceTests
 		var metadata = new Dictionary<string, object> { { "key1", "value1" }, { "key2", 123 } };
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.AddMetadataToInvoice(metadata, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	#endregion
@@ -722,11 +723,11 @@ public sealed class InvoiceProcessingServiceTests
 		var metadata = new Dictionary<string, object> { { "key1", "value1" } };
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
@@ -753,7 +754,7 @@ public sealed class InvoiceProcessingServiceTests
 		invoice.AdditionalMetadata["testKey"] = "testValue";
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
@@ -783,18 +784,18 @@ public sealed class InvoiceProcessingServiceTests
 		var keysToDelete = new List<string> { "key1" };
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.ReadInvoiceObject(invoiceId, userId))
+			.Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		mockInvoiceOrchestrationService
-			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId))
+			.Setup(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(invoice);
 
 		// Act
 		await processingService.DeleteMetadataFromInvoice(keysToDelete, invoiceId, userId);
 
 		// Assert
-		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId), Times.Once);
+		mockInvoiceOrchestrationService.Verify(s => s.UpdateInvoiceObject(It.IsAny<Invoice>(), invoiceId, userId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	#endregion
@@ -812,14 +813,14 @@ public sealed class InvoiceProcessingServiceTests
 		var parentCompanyId = Guid.NewGuid();
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.CreateMerchantObject(merchant, parentCompanyId))
+			.Setup(s => s.CreateMerchantObject(merchant, parentCompanyId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		// Act
 		await processingService.CreateMerchant(merchant, parentCompanyId);
 
 		// Assert
-		mockMerchantOrchestrationService.Verify(s => s.CreateMerchantObject(merchant, parentCompanyId), Times.Once);
+		mockMerchantOrchestrationService.Verify(s => s.CreateMerchantObject(merchant, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	/// <summary>
@@ -834,7 +835,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new MerchantOrchestrationServiceException(innerException);
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.CreateMerchantObject(merchant, null))
+			.Setup(s => s.CreateMerchantObject(merchant, null, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -858,7 +859,7 @@ public sealed class InvoiceProcessingServiceTests
 		var expectedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.ReadMerchantObject(merchantId, parentCompanyId))
+			.Setup(s => s.ReadMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(expectedMerchant);
 
 		// Act
@@ -881,7 +882,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new MerchantOrchestrationServiceValidationException(innerException);
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.ReadMerchantObject(merchantId, null))
+			.Setup(s => s.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -904,7 +905,7 @@ public sealed class InvoiceProcessingServiceTests
 		var expectedMerchants = MerchantTestDataBuilder.CreateMultipleRandomMerchants(5);
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
+			.Setup(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(expectedMerchants);
 
 		// Act
@@ -927,7 +928,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new MerchantOrchestrationServiceDependencyException(innerException);
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.ReadAllMerchantObjects(parentCompanyId))
+			.Setup(s => s.ReadAllMerchantObjects(parentCompanyId, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -951,7 +952,7 @@ public sealed class InvoiceProcessingServiceTests
 		var updatedMerchant = MerchantTestDataBuilder.CreateRandomMerchant();
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId))
+			.Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(updatedMerchant);
 
 		// Act
@@ -975,7 +976,7 @@ public sealed class InvoiceProcessingServiceTests
 		var orchException = new MerchantOrchestrationServiceDependencyValidationException(innerException);
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null))
+			.Setup(s => s.UpdateMerchantObject(updatedMerchant, merchantId, null, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(orchException);
 
 		// Act & Assert
@@ -998,14 +999,14 @@ public sealed class InvoiceProcessingServiceTests
 		var parentCompanyId = Guid.NewGuid();
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.DeleteMerchantObject(merchantId, parentCompanyId))
+			.Setup(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()))
 			.Returns(Task.CompletedTask);
 
 		// Act
 		await processingService.DeleteMerchant(merchantId, parentCompanyId);
 
 		// Assert
-		mockMerchantOrchestrationService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId), Times.Once);
+		mockMerchantOrchestrationService.Verify(s => s.DeleteMerchantObject(merchantId, parentCompanyId, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	/// <summary>
@@ -1018,7 +1019,7 @@ public sealed class InvoiceProcessingServiceTests
 		var merchantId = Guid.NewGuid();
 
 		mockMerchantOrchestrationService
-			.Setup(s => s.DeleteMerchantObject(merchantId, null))
+			.Setup(s => s.DeleteMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
 			.ThrowsAsync(new InvalidOperationException("Unexpected error"));
 
 		// Act & Assert

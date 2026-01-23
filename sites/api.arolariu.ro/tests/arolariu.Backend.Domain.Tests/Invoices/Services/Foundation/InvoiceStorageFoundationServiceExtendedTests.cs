@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Foundation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
@@ -571,15 +572,15 @@ public sealed class InvoiceStorageFoundationServiceExtendedTests
 		var invoices = InvoiceBuilder.CreateMultipleRandomInvoices(10);
 
 		mockBroker
-			.Setup(b => b.CreateInvoiceAsync(It.IsAny<Invoice>()))
-			.ReturnsAsync((Invoice inv) => inv);
+			.Setup(b => b.CreateInvoiceAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()))
+			.ReturnsAsync((Invoice inv, CancellationToken _) => inv);
 
 		// Act
 		var tasks = invoices.Select(inv => service.CreateInvoiceObject(inv, null));
 		await Task.WhenAll(tasks);
 
 		// Assert
-		mockBroker.Verify(b => b.CreateInvoiceAsync(It.IsAny<Invoice>()), Times.Exactly(10));
+		mockBroker.Verify(b => b.CreateInvoiceAsync(It.IsAny<Invoice>(), It.IsAny<CancellationToken>()), Times.Exactly(10));
 	}
 
 	/// <summary>
