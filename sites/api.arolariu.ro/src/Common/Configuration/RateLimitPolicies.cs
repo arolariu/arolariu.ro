@@ -21,26 +21,26 @@ namespace arolariu.Backend.Common.Configuration;
 /// </remarks>
 public static class RateLimitPolicies
 {
-	/// <summary>
-	/// Policy name for standard read operations (GET requests).
-	/// Allows 300 requests per minute per user/IP.
-	/// </summary>
-	public const string StandardReads = "StandardReads";
+  /// <summary>
+  /// Policy name for standard read operations (GET requests).
+  /// Allows 300 requests per minute per user/IP.
+  /// </summary>
+  public const string StandardReads = "StandardReads";
 
-	/// <summary>
-	/// Policy name for standard write operations (POST, PUT, PATCH, DELETE requests).
-	/// Allows 60 requests per minute per user/IP.
-	/// </summary>
-	public const string StandardWrites = "StandardWrites";
+  /// <summary>
+  /// Policy name for standard write operations (POST, PUT, PATCH, DELETE requests).
+  /// Allows 60 requests per minute per user/IP.
+  /// </summary>
+  public const string StandardWrites = "StandardWrites";
 
-	/// <summary>
-	/// Policy name for resource-intensive analysis operations (AI/ML processing).
-	/// Allows 10 requests per hour per user/IP.
-	/// </summary>
-	public const string AnalysisOperations = "AnalysisOperations";
+  /// <summary>
+  /// Policy name for resource-intensive analysis operations (AI/ML processing).
+  /// Allows 10 requests per hour per user/IP.
+  /// </summary>
+  public const string AnalysisOperations = "AnalysisOperations";
 
-	/// <summary>
-	/// Policy name for health check endpoints (unlimited for monitoring systems).
-	/// </summary>
-	public const string HealthCheck = "HealthCheck";
+  /// <summary>
+  /// Policy name for health check endpoints (unlimited for monitoring systems).
+  /// </summary>
+  public const string HealthCheck = "HealthCheck";
 }

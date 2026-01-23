@@ -82,10 +82,7 @@ export const test = base.extend<A11yFixtures>({
       // Inject axe-core if not present
       if (!axeInjected) {
         await page.addScriptTag({url: AXE_CDN_URL});
-        await page.waitForFunction(
-          () => typeof (globalThis as unknown as {axe?: unknown}).axe !== "undefined",
-          {timeout: 10000}
-        );
+        await page.waitForFunction(() => typeof (globalThis as unknown as {axe?: unknown}).axe !== "undefined", {timeout: 10000});
       }
 
       // Run axe analysis
@@ -111,9 +108,7 @@ export const test = base.extend<A11yFixtures>({
           runOptions.exclude = opts.exclude;
         }
 
-        return (
-          globalThis as unknown as {axe: {run: (options: AxeRunOptions) => Promise<AxeResults>}}
-        ).axe.run(runOptions);
+        return (globalThis as unknown as {axe: {run: (options: AxeRunOptions) => Promise<AxeResults>}}).axe.run(runOptions);
       }, options);
 
       return {
@@ -121,9 +116,7 @@ export const test = base.extend<A11yFixtures>({
         passes: results.passes,
         assertNoViolations: () => {
           if (results.violations.length > 0) {
-            const formatted = results.violations
-              .map((v) => `[${v.impact}] ${v.id}: ${v.description}`)
-              .join("\n");
+            const formatted = results.violations.map((v) => `[${v.impact}] ${v.id}: ${v.description}`).join("\n");
             throw new Error(`Found ${results.violations.length} accessibility violations:\n${formatted}`);
           }
         },
@@ -132,15 +125,11 @@ export const test = base.extend<A11yFixtures>({
           const severe = results.violations.filter((v) => IMPACT_ORDER[v.impact] >= threshold);
           if (severe.length > 0) {
             const formatted = severe.map((v) => `[${v.impact}] ${v.id}: ${v.description}`).join("\n");
-            throw new Error(
-              `Found ${severe.length} ${level}+ accessibility violations:\n${formatted}`
-            );
+            throw new Error(`Found ${severe.length} ${level}+ accessibility violations:\n${formatted}`);
           }
         },
         formatViolations: () => {
-          return results.violations
-            .map((v) => `[${v.impact}] ${v.id}: ${v.description}`)
-            .join("\n");
+          return results.violations.map((v) => `[${v.impact}] ${v.id}: ${v.description}`).join("\n");
         },
       };
     };

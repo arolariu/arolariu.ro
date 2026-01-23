@@ -22,10 +22,7 @@ const CRITICAL_PAGES = [
 test.describe("Full Site Accessibility Audit @a11y @regression", () => {
   test.describe("WCAG 2.1 AA Compliance", () => {
     for (const {path, name} of CRITICAL_PAGES) {
-      test(tagged(`${name} meets WCAG 2.1 AA`, TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P1), async ({
-        safeNavigate,
-        checkA11y,
-      }) => {
+      test(tagged(`${name} meets WCAG 2.1 AA`, TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P1), async ({safeNavigate, checkA11y}) => {
         await safeNavigate(path);
 
         const results = await checkA11y({
@@ -159,7 +156,10 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
       await page.keyboard.press("Escape");
 
       // Page should still be functional (check body is visible as fallback)
-      const mainVisible = await page.locator("main").isVisible().catch(() => false);
+      const mainVisible = await page
+        .locator("main")
+        .isVisible()
+        .catch(() => false);
       const bodyVisible = await page.locator("body").isVisible();
       expect(mainVisible || bodyVisible).toBe(true);
     });

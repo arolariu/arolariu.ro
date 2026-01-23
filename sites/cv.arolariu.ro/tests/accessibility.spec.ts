@@ -4,7 +4,7 @@
  * @module tests/accessibility.spec
  */
 
-import {test, expect} from "./fixtures/a11y.fixture";
+import {expect, test} from "./fixtures/a11y.fixture";
 
 /**
  * CV platform pages to test.
@@ -177,11 +177,7 @@ test.describe("CV Platform Accessibility @a11y", () => {
         // Check that focus has some visual indicator
         const hasOutline = await focusedElement.evaluate((el) => {
           const styles = globalThis.getComputedStyle(el);
-          return (
-            styles.outlineStyle !== "none" ||
-            styles.boxShadow !== "none" ||
-            styles.borderStyle !== "none"
-          );
+          return styles.outlineStyle !== "none" || styles.boxShadow !== "none" || styles.borderStyle !== "none";
         });
 
         expect(hasOutline).toBe(true);

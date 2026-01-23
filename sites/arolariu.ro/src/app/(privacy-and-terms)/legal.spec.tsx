@@ -22,8 +22,14 @@ test.describe("Legal Pages @legal", () => {
         // Check that page body loads
         await expect(page.locator("body")).toBeVisible();
         // Main should exist or at least body content
-        const mainVisible = await page.locator("main").isVisible().catch(() => false);
-        const bodyHasContent = await page.locator("body").textContent().then((t) => t && t.length > 0);
+        const mainVisible = await page
+          .locator("main")
+          .isVisible()
+          .catch(() => false);
+        const bodyHasContent = await page
+          .locator("body")
+          .textContent()
+          .then((t) => t && t.length > 0);
         expect(mainVisible || bodyHasContent).toBe(true);
       });
     }
@@ -38,9 +44,9 @@ test.describe("Legal Pages @legal", () => {
         await expect(page.locator("body")).toBeVisible();
 
         // Check for some content - header, main, or footer
-        const hasHeader = await page.locator("header").count() > 0;
-        const hasMain = await page.locator("main").count() > 0;
-        const hasFooter = await page.locator("footer").count() > 0;
+        const hasHeader = (await page.locator("header").count()) > 0;
+        const hasMain = (await page.locator("main").count()) > 0;
+        const hasFooter = (await page.locator("footer").count()) > 0;
         expect(hasHeader || hasMain || hasFooter).toBe(true);
       });
     }
@@ -51,10 +57,8 @@ test.describe("Legal Pages @legal", () => {
 
         // Check for content in main or body
         const main = page.locator("main");
-        const mainExists = await main.count() > 0;
-        const content = mainExists
-          ? await main.textContent()
-          : await page.locator("body").textContent();
+        const mainExists = (await main.count()) > 0;
+        const content = mainExists ? await main.textContent() : await page.locator("body").textContent();
         expect(content).toBeTruthy();
         expect(content!.length).toBeGreaterThan(50);
       });
@@ -63,10 +67,7 @@ test.describe("Legal Pages @legal", () => {
 
   test.describe("Accessibility Tests @a11y", () => {
     for (const {path, name} of LEGAL_PAGES) {
-      test(tagged(`${name} should be accessible`, TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P2), async ({
-        safeNavigate,
-        checkA11y,
-      }) => {
+      test(tagged(`${name} should be accessible`, TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P2), async ({safeNavigate, checkA11y}) => {
         await safeNavigate(path);
 
         const results = await checkA11y({
@@ -111,7 +112,10 @@ test.describe("Legal Pages @legal", () => {
       await safeNavigate("/");
 
       // Check if privacy policy link exists in footer
-      const privacyLink = page.locator("footer").getByRole("link", {name: /privacy/i}).first();
+      const privacyLink = page
+        .locator("footer")
+        .getByRole("link", {name: /privacy/i})
+        .first();
       if (await privacyLink.isVisible({timeout: 3000})) {
         await privacyLink.click();
         await expect(page).toHaveURL(/privacy-policy/);

@@ -15,9 +15,7 @@ export default function Loading(): React.JSX.Element {
             {/* Left side - Text with visible h1 */}
             <div className='relative z-10'>
               <div className='bg-muted mb-6 h-6 w-40 animate-pulse rounded' />
-              <h1 className='text-muted-foreground mb-4 text-4xl font-bold sm:text-5xl lg:text-6xl'>
-                Loading...
-              </h1>
+              <h1 className='text-muted-foreground mb-4 text-4xl font-bold sm:text-5xl lg:text-6xl'>Loading...</h1>
               <div className='bg-muted mb-8 h-6 w-full max-w-lg animate-pulse rounded' />
               <div className='bg-muted mb-8 h-6 w-full max-w-lg animate-pulse rounded' />
               <div className='flex flex-wrap gap-4'>

@@ -25,10 +25,7 @@ test.describe("About Section @about", () => {
       await expect(page.locator("footer")).toBeVisible();
     });
 
-    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P1), async ({
-      safeNavigate,
-      checkA11y,
-    }) => {
+    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P1), async ({safeNavigate, checkA11y}) => {
       await safeNavigate("/about/");
 
       const results = await checkA11y({
@@ -61,10 +58,7 @@ test.describe("About Section @about", () => {
       expect(content!.length).toBeGreaterThan(0);
     });
 
-    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P2), async ({
-      safeNavigate,
-      checkA11y,
-    }) => {
+    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P2), async ({safeNavigate, checkA11y}) => {
       await safeNavigate("/about/the-author/");
 
       const results = await checkA11y({
@@ -92,10 +86,7 @@ test.describe("About Section @about", () => {
       expect(content!.length).toBeGreaterThan(0);
     });
 
-    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P2), async ({
-      safeNavigate,
-      checkA11y,
-    }) => {
+    test(tagged("should pass accessibility checks", TEST_TYPE_TAGS.A11Y, PRIORITY_TAGS.P2), async ({safeNavigate, checkA11y}) => {
       await safeNavigate("/about/the-platform/");
 
       const results = await checkA11y({

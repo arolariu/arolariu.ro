@@ -45,7 +45,7 @@ test.describe("Homepage @homepage", () => {
     test(tagged("should have working navigation links", TEST_TYPE_TAGS.E2E, FEATURE_TAGS.NAVIGATION), async ({page}) => {
       // Check that About link exists and is clickable
       const aboutLink = page.getByRole("link", {name: /about/i});
-      if (await aboutLink.count() > 0) {
+      if ((await aboutLink.count()) > 0) {
         await expect(aboutLink.first()).toBeVisible();
       }
     });
