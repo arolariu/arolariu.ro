@@ -33,7 +33,7 @@ import {Skeleton} from "@arolariu/components/skeleton";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center pt-24 text-center'>
+    <div className='flex flex-col flex-nowrap items-center justify-center justify-items-center pt-24 text-center'>
       <section>
         <center className='container mx-auto px-5 pt-24'>
           <Skeleton className='h-[20px] w-[250px] rounded-xl' />
@@ -60,6 +60,6 @@ export default function Loading(): React.JSX.Element {
           <Skeleton className='h-[12px] w-[100px] rounded-xl' />
         </div>
       </section>
-    </main>
+    </div>
   );
 }

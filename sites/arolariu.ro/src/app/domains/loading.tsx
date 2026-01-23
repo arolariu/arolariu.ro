@@ -40,7 +40,7 @@ import {Skeleton} from "@arolariu/components";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className='container mx-auto px-5 py-24'>
+    <div className='container mx-auto px-5 py-24'>
       {/* Header Section Skeleton */}
       <section className='flex flex-col'>
         {/* Progress Bar */}
@@ -118,6 +118,6 @@ export default function Loading(): React.JSX.Element {
           </article>
         </section>
       </section>
-    </main>
+    </div>
   );
 }
