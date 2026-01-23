@@ -6,6 +6,7 @@
 
 import {chromium, type FullConfig} from "@playwright/test";
 import * as path from "node:path";
+import * as fs from "node:fs";
 
 /** Storage state file path for sharing auth state across tests */
 export const STORAGE_STATE_PATH = path.join(process.cwd(), "tests", "e2e-storage-state.json");
@@ -104,7 +105,6 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   }
 
   // Save storage state for other tests to use
-  const fs = await import("fs");
   const authDir = path.dirname(STORAGE_STATE_PATH);
   if (!fs.existsSync(authDir)) {
     fs.mkdirSync(authDir, {recursive: true});
