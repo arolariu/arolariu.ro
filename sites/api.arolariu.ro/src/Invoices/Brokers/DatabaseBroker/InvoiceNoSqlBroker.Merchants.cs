@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -15,13 +16,13 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceNoSqlBroker
 {
   /// <inheritdoc/>
-  public async ValueTask<Merchant> CreateMerchantAsync(Merchant merchant)
+  public async ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantAsync));
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
     var response = await container
-      .CreateItemAsync(merchant)
+      .CreateItemAsync(merchant, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
     var insertedMerchant = response.Resource;
@@ -29,7 +30,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null)
+  public async ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantAsync));
     var database = CosmosClient.GetDatabase("primary");
@@ -39,7 +40,7 @@ public partial class InvoiceNoSqlBroker
     {
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
-      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey).ConfigureAwait(false);
+      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
       var merchant = response.Resource;
       return merchant is not null && merchant.IsSoftDeleted
@@ -53,7 +54,7 @@ public partial class InvoiceNoSqlBroker
         .WithParameter("@merchantIdentifier", merchantIdentifier);
 
       var iterator = container.GetItemQueryIterator<Merchant>(query);
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
 
       var merchant = response.Resource.Any() ? response.Resource.First() : null;
       return merchant is not null && merchant.IsSoftDeleted
@@ -63,7 +64,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId)
+  public async ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsAsync));
     var database = CosmosClient.GetDatabase("primary");
@@ -77,7 +78,8 @@ public partial class InvoiceNoSqlBroker
     var iterator = container.GetItemQueryIterator<Merchant>(query);
     while (iterator.HasMoreResults)
     {
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      cancellationToken.ThrowIfCancellationRequested();
+      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
       merchantList.AddRange(response);
     }
 
@@ -86,17 +88,17 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant)
+  public async ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("merchants");
 
-    var merchant = await ReadMerchantAsync(merchantIdentifier).ConfigureAwait(false);
+    var merchant = await ReadMerchantAsync(merchantIdentifier, cancellationToken: cancellationToken).ConfigureAwait(false);
     var partitionKey = new PartitionKey(merchant?.ParentCompanyId.ToString());
 
     var response = await container
-      .ReplaceItemAsync(updatedMerchant, merchantIdentifier.ToString(), partitionKey)
+      .ReplaceItemAsync(updatedMerchant, merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
     var newMerchant = response.Resource;
@@ -104,7 +106,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant)
+  public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
     var database = CosmosClient.GetDatabase("primary");
@@ -112,7 +114,7 @@ public partial class InvoiceNoSqlBroker
 
     var partitionKey = new PartitionKey(currentMerchant?.ParentCompanyId.ToString());
     var response = await container
-      .UpsertItemAsync(updatedMerchant, partitionKey)
+      .UpsertItemAsync(updatedMerchant, partitionKey, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
     var newMerchant = response.Resource;
@@ -120,7 +122,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null)
+  public async ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync));
     var database = CosmosClient.GetDatabase("primary");
@@ -130,14 +132,14 @@ public partial class InvoiceNoSqlBroker
     {
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(parentCompanyId.Value.ToString());
-      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey).ConfigureAwait(false);
+      var response = await container.ReadItemAsync<Merchant>(merchantIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
       var merchant = response.Resource;
       if (merchant is not null)
       {
         merchant.SoftDelete();
         var merchantKey = merchant.id.ToString();
         await container
-          .ReplaceItemAsync(merchant, merchantKey, partitionKey)
+          .ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
       }
       return;
@@ -149,7 +151,7 @@ public partial class InvoiceNoSqlBroker
         .WithParameter("@merchantIdentifier", merchantIdentifier);
 
       var iterator = container.GetItemQueryIterator<Merchant>(query);
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
 
       var merchant = response.Resource.Any() ? response.Resource.First() : null;
       if (merchant is not null)
@@ -160,7 +162,7 @@ public partial class InvoiceNoSqlBroker
         var partitionKey = new PartitionKey(merchant.ParentCompanyId.ToString());
 
         await container
-          .ReplaceItemAsync(merchant, merchantKey, partitionKey)
+          .ReplaceItemAsync(merchant, merchantKey, partitionKey, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
       }
     }

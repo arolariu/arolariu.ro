@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -36,7 +37,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <para><b>Performance Notes:</b> Prefer partition-aware overloads. Cross-partition queries should be monitored (add RU telemetry in higher layers).
 /// Upsert patterns may incur additional RU vs targeted replace (evaluate once concurrency tokens introduced).</para>
 /// <para><b>Thread Safety:</b> Implementations (e.g., EF Core DbContext wrapper) are typically NOT thread-safe; consumers should scope instances per unit-of-work.</para>
-/// <para><b>Cancellation:</b> No cancellation tokens yet (backlog: add overloads with <c>CancellationToken</c> to support request abort and timeouts).</para>
+/// <para><b>Cancellation:</b> All async methods accept an optional <c>CancellationToken</c> to support request abort and timeouts.</para>
 /// <para><b>Backlog:</b> Pagination / continuation tokens, optimistic concurrency, projection queries (selective field retrieval),
 /// bulk operations (transactional batch for co-partitioned items), telemetry hooks, and soft-delete for merchants.</para>
 /// </remarks>
@@ -51,9 +52,11 @@ public interface IInvoiceNoSqlBroker
   /// <para>Asynchronous I/O-bound single write operation. Assumes the invoice aggregate has been fully validated upstream.</para>
   /// </remarks>
   /// <param name="invoice">Fully populated invoice aggregate (identity may be reassigned by upstream factory prior to call).</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The persisted invoice including any storage-generated metadata.</returns>
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="invoice"/> is null.</exception>
-  ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Retrieves a single invoice by identifier using either a single point read or a cross-partition (greedy) lookup.
@@ -63,16 +66,20 @@ public interface IInvoiceNoSqlBroker
   /// <para>Returns null when not found or soft-deleted.</para>
   /// </remarks>
   /// <param name="invoiceIdentifier">Invoice aggregate identity (GUID).</param>
-  /// <param name="userIdentifier"></param>
+  /// <param name="userIdentifier">Optional partition key for efficient point read.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The matching invoice or null.</returns>
-  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Lists all non soft-deleted invoices for a specific user/partition.
   /// </summary>
   /// <param name="userIdentifier">Partition key / owner identity.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>An enumerable of invoices (may be empty).</returns>
-  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Replaces (upserts) an invoice by identifier (partition inferred from <paramref name="updatedInvoice"/>).
@@ -82,9 +89,11 @@ public interface IInvoiceNoSqlBroker
   /// </remarks>
   /// <param name="invoiceIdentifier">Target invoice identity.</param>
   /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The persisted invoice after update.</returns>
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedInvoice"/> is null.</exception>
-  ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Replaces (upserts) an invoice using current and updated aggregate snapshots.
@@ -94,9 +103,11 @@ public interface IInvoiceNoSqlBroker
   /// </remarks>
   /// <param name="currentInvoice">Current persisted invoice snapshot (not validated here).</param>
   /// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The persisted invoice after update.</returns>
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="currentInvoice"/> or <paramref name="updatedInvoice"/> is null.</exception>
-  ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Soft-deletes an invoice by identifier within a known partition.
@@ -106,7 +117,9 @@ public interface IInvoiceNoSqlBroker
   /// </remarks>
   /// <param name="invoiceIdentifier">Invoice identity.</param>
   /// <param name="userIdentifier">Partition (owner) identity.</param>
-  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null);
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Soft-deletes all invoices for a given user partition.
@@ -115,7 +128,9 @@ public interface IInvoiceNoSqlBroker
   /// <para>Iterates all partition documents; may incur significant RU charges for large partitions.</para>
   /// </remarks>
   /// <param name="userIdentifier">Partition (owner) identity whose invoices will be soft-deleted.</param>
-  ValueTask DeleteInvoicesAsync(Guid userIdentifier);
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask DeleteInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default);
 
   #endregion
 
@@ -128,9 +143,11 @@ public interface IInvoiceNoSqlBroker
   /// <para>Performs a single write operation. Caller must ensure uniqueness and upstream validation of fields.</para>
   /// </remarks>
   /// <param name="merchant">Merchant entity to persist.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The persisted merchant.</returns>
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="merchant"/> is null.</exception>
-  ValueTask<Merchant> CreateMerchantAsync(Merchant merchant);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Retrieves a merchant by identifier via cross-partition (greedy) search.
@@ -140,33 +157,41 @@ public interface IInvoiceNoSqlBroker
   /// </remarks>
   /// <param name="merchantIdentifier">Merchant identity.</param>
   /// <param name="parentCompanyId">The parent company identifier.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The merchant or null if not found or soft-deleted (if soft-delete introduced later).</returns>
-  ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Lists merchants filtered by parent company partition.
   /// </summary>
   /// <param name="parentCompanyId">Partition key representing the parent company identifier.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>An enumerable of merchants (may be empty).</returns>
-  ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Replaces (upserts) a merchant by identifier (partition inferred via existing document lookup).
   /// </summary>
   /// <param name="merchantIdentifier">Merchant identity.</param>
   /// <param name="updatedMerchant">Updated merchant snapshot.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The persisted merchant.</returns>
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedMerchant"/> is null.</exception>
-  ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Replaces (upserts) a merchant using its current and updated snapshots.
   /// </summary>
   /// <param name="currentMerchant">Current persisted merchant (not modified).</param>
   /// <param name="updatedMerchant">Updated merchant snapshot to persist.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The persisted merchant.</returns>
   /// <exception cref="ArgumentNullException">Thrown if <paramref name="currentMerchant"/> or <paramref name="updatedMerchant"/> is null.</exception>
-  ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken = default);
 
   /// <summary>
   /// Soft-deletes (or physically replaces) a merchant by identifier via cross-partition search.
@@ -176,6 +201,8 @@ public interface IInvoiceNoSqlBroker
   /// </remarks>
   /// <param name="merchantIdentifier">Merchant identity.</param>
   /// <param name="parentCompanyId">The parent company identifier.</param>
-  ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null);
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
   #endregion
 }

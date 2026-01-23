@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -16,7 +17,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceNoSqlBroker
 {
   /// <inheritdoc/>
-  public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice)
+  public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, CancellationToken cancellationToken = default)
   {
     ArgumentNullException.ThrowIfNull(invoice);
 
@@ -29,7 +30,7 @@ public partial class InvoiceNoSqlBroker
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
     var response = await container
-      .CreateItemAsync(invoice)
+      .CreateItemAsync(invoice, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
@@ -40,7 +41,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null)
+  public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
     activity?
@@ -60,7 +61,7 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(userIdentifier.ToString());
-      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey).ConfigureAwait(false);
+      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
 
@@ -88,7 +89,7 @@ public partial class InvoiceNoSqlBroker
           .WithParameter("@invoiceIdentifier", invoiceIdentifier);
 
       var iterator = container.GetItemQueryIterator<Invoice>(query);
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
 
       activity?.SetCosmosDbRequestCharge(response.RequestCharge);
 
@@ -105,7 +106,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier)
+  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
     activity?
@@ -127,7 +128,8 @@ public partial class InvoiceNoSqlBroker
 
     while (iterator.HasMoreResults)
     {
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      cancellationToken.ThrowIfCancellationRequested();
+      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
       invoices.AddRange([.. response]);
     }
@@ -143,7 +145,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice)
+  public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
@@ -156,7 +158,7 @@ public partial class InvoiceNoSqlBroker
 
     var partitionKey = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
     var response = await container
-      .UpsertItemAsync(updatedInvoice, partitionKey)
+      .UpsertItemAsync(updatedInvoice, partitionKey, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
@@ -167,7 +169,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice)
+  public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
     activity?
@@ -181,7 +183,7 @@ public partial class InvoiceNoSqlBroker
     var partitionKeyForInvoice = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
 
     var response = await invoicesContainer
-      .UpsertItemAsync(updatedInvoice, partitionKeyForInvoice)
+      .UpsertItemAsync(updatedInvoice, partitionKeyForInvoice, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
     activity?.SetCosmosDbRequestCharge(response.RequestCharge);
@@ -193,7 +195,7 @@ public partial class InvoiceNoSqlBroker
 
 
   /// <inheritdoc/>
-  public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null)
+  public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
     activity?
@@ -214,7 +216,7 @@ public partial class InvoiceNoSqlBroker
 
       // We have the partition key for the merchant, so we can perform a targeted query (point read).
       var partitionKey = new PartitionKey(userIdentifier.ToString());
-      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey).ConfigureAwait(false);
+      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       var invoice = response.Resource;
@@ -226,7 +228,7 @@ public partial class InvoiceNoSqlBroker
 
         // Update the invoice and the products.
         var replaceResponse = await container
-          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey)
+          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
@@ -244,7 +246,7 @@ public partial class InvoiceNoSqlBroker
       var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @invoiceIdentifier")
           .WithParameter("@invoiceIdentifier", invoiceIdentifier);
       var iterator = container.GetItemQueryIterator<Invoice>(query);
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       var invoice = response.Resource.Any() ? response.Resource.First() : null;
@@ -257,7 +259,7 @@ public partial class InvoiceNoSqlBroker
         // Update the invoice and the products.
         var partitionKey = new PartitionKey(invoice.UserIdentifier.ToString());
         var replaceResponse = await container
-          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey)
+          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
       }
@@ -268,7 +270,7 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask DeleteInvoicesAsync(Guid userIdentifier)
+  public async ValueTask DeleteInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync));
     activity?
@@ -289,11 +291,13 @@ public partial class InvoiceNoSqlBroker
 
     while (iterator.HasMoreResults)
     {
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      cancellationToken.ThrowIfCancellationRequested();
+      var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
       totalRequestCharge += response.RequestCharge;
 
       foreach (var invoice in response)
       {
+        cancellationToken.ThrowIfCancellationRequested();
         invoice.SoftDelete();
         // Mark the invoice products as soft-deleted.
         foreach (var product in invoice.Items)
@@ -303,7 +307,7 @@ public partial class InvoiceNoSqlBroker
 
         // Update the invoice and the products.
         var replaceResponse = await container
-          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey)
+          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey, cancellationToken: cancellationToken)
           .ConfigureAwait(false);
         totalRequestCharge += replaceResponse.RequestCharge;
         deletedCount++;
