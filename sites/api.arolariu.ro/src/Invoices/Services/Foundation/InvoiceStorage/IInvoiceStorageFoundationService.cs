@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -36,9 +37,11 @@ public interface IInvoiceStorageFoundationService
   /// </remarks>
   /// <param name="invoice">Fully formed invoice aggregate to persist.</param>
   /// <param name="userIdentifier">Optional partition / tenant context for the invoice (acts as partition key).</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Asynchronous task.</returns>
   /// <exception cref="ArgumentNullException">If <paramref name="invoice"/> is null.</exception>
-  Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
   #endregion
 
   #region Read Invoice Object API
@@ -51,8 +54,10 @@ public interface IInvoiceStorageFoundationService
   /// </remarks>
   /// <param name="identifier">Invoice aggregate identifier.</param>
   /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Invoice instance or null.</returns>
-  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
   #endregion
 
   #region Read Invoice Objects API
@@ -64,8 +69,10 @@ public interface IInvoiceStorageFoundationService
   /// <para><b>Soft Delete:</b> Implementations SHOULD filter out soft-deleted invoices unless a diagnostic flag is added in future.</para>
   /// </remarks>
   /// <param name="userIdentifier">Partition / tenant context.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Enumerable collection (empty if none).</returns>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken = default);
   #endregion
 
   #region Update Invoice Object API
@@ -79,8 +86,10 @@ public interface IInvoiceStorageFoundationService
   /// <param name="updatedInvoice">Proposed new aggregate state.</param>
   /// <param name="invoiceIdentifier">Identity of the invoice being updated (must match <c>updatedInvoice.id</c> if enforced).</param>
   /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Updated invoice instance.</returns>
-  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
   #endregion
 
   #region Delete Invoice Object API
@@ -93,7 +102,9 @@ public interface IInvoiceStorageFoundationService
   /// </remarks>
   /// <param name="identifier">Invoice identifier.</param>
   /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Asynchronous task.</returns>
-  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
   #endregion
 }
