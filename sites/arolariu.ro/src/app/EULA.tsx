@@ -51,7 +51,6 @@ function EulaLoading(): React.JSX.Element {
         <div className='flex justify-center'>
           <div className='h-12 w-12 animate-pulse rounded-full bg-gray-200' />
         </div>
-        <div className='mx-auto h-8 w-64 animate-pulse rounded-md bg-gray-200' />
         <div className='mx-auto h-4 w-48 animate-pulse rounded-md bg-gray-200' />
 
         <div className='mx-auto w-full max-w-xs'>
@@ -135,22 +134,23 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
 
   if (eulaCookie === null) {
     return (
-      <motion.div
-        initial={{opacity: 0, y: 20}}
-        animate={{opacity: 1, y: 0}}
-        transition={{duration: 0.5}}
-        className='mx-auto w-full max-w-4xl px-4 py-20'>
-        <EulaLoading />
-      </motion.div>
+      <main className='mx-auto w-full max-w-4xl px-4 py-20'>
+        <motion.div
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          transition={{duration: 0.5}}>
+          <EulaLoading />
+        </motion.div>
+      </main>
     );
   }
 
   return (
-    <motion.div
-      initial={{opacity: 0, y: 20}}
-      animate={{opacity: 1, y: 0}}
-      transition={{duration: 0.5}}
-      className='mx-auto w-full max-w-4xl px-4 py-20'>
+    <main className='mx-auto w-full max-w-4xl px-4 py-20'>
+      <motion.div
+        initial={{opacity: 0, y: 20}}
+        animate={{opacity: 1, y: 0}}
+        transition={{duration: 0.5}}>
       <Card className='border-2 shadow-lg'>
         <CardHeader className='space-y-2 text-center'>
           <motion.div
@@ -160,7 +160,9 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             className='flex justify-center'>
             <TbShield className='text-primary h-12 w-12' />
           </motion.div>
-          <CardTitle className='text-2xl font-bold md:text-3xl'>{t("title")}</CardTitle>
+          <CardTitle asChild>
+            <h1 className='text-2xl font-bold md:text-3xl'>{t("title")}</h1>
+          </CardTitle>
           <CardDescription className='text-base'>{t("subtitle")}</CardDescription>
 
           <Tabs
@@ -361,6 +363,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
           <p className='text-muted-foreground text-center text-xs'>{t("content").split(".")[0]}.</p>
         </CardFooter>
       </Card>
-    </motion.div>
+      </motion.div>
+    </main>
   );
 }
