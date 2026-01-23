@@ -27,6 +27,7 @@
  */
 
 import {defineConfig} from "@playwright/test";
+import * as path from "node:path";
 
 import {
   getEnvironmentConfig,
@@ -38,6 +39,9 @@ import {
   TIMEOUTS,
   WEB_SERVER_CONFIG,
 } from "./tests/config";
+
+/** Storage state file path for sharing auth state across tests */
+const STORAGE_STATE_PATH = path.resolve(process.cwd(), "tests", "e2e-storage-state.json");
 
 // Get environment-specific configuration
 const envConfig = getEnvironmentConfig();
@@ -75,6 +79,9 @@ export default defineConfig({
     // Security
     bypassCSP: true,
     ignoreHTTPSErrors: true,
+
+    // Auth state (includes EULA cookie)
+    storageState: STORAGE_STATE_PATH,
 
     // Artifacts
     screenshot: "only-on-failure",
