@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
@@ -35,28 +36,28 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Create Invoice Object API
   /// <inheritdoc/>
-  public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null) =>
+  public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
     ValidateInvoiceInformationIsValid(invoice);
 
     await invoiceNoSqlBroker
-      .CreateInvoiceAsync(invoice)
+      .CreateInvoiceAsync(invoice, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 
   #region Read Invoice Object API
   /// <inheritdoc/>
-  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null) =>
+  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
     ValidateIdentifierIsSet(identifier);
 
     var invoice = await invoiceNoSqlBroker
-      .ReadInvoiceAsync(identifier, userIdentifier)
+      .ReadInvoiceAsync(identifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
     return invoice!;
   }).ConfigureAwait(false);
@@ -64,12 +65,12 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Read Invoice Objects API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
+  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
     var invoices = await invoiceNoSqlBroker
-      .ReadInvoicesAsync(userIdentifier)
+      .ReadInvoicesAsync(userIdentifier, cancellationToken)
       .ConfigureAwait(false);
     return invoices;
   }).ConfigureAwait(false);
@@ -77,14 +78,14 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Update Invoice Object API
   /// <inheritdoc/>
-  public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
+  public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
     ValidateIdentifierIsSet(invoiceIdentifier);
 
     var newInvoice = await invoiceNoSqlBroker
-      .UpdateInvoiceAsync(invoiceIdentifier, updatedInvoice)
+      .UpdateInvoiceAsync(invoiceIdentifier, updatedInvoice, cancellationToken)
       .ConfigureAwait(false);
 
     return newInvoice!;
@@ -93,14 +94,14 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
   #region Delete Invoice Object API
   /// <inheritdoc/>
-  public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null) =>
+  public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
     ValidateIdentifierIsSet(identifier);
 
     await invoiceNoSqlBroker
-      .DeleteInvoiceAsync(identifier, userIdentifier)
+      .DeleteInvoiceAsync(identifier, userIdentifier, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion

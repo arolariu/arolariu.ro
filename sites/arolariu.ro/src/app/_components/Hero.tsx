@@ -16,10 +16,10 @@ export default function HeroSection(): React.JSX.Element {
   return (
     <section className='relative min-h-screen overflow-hidden py-20'>
       <article className='mx-auto grid grid-cols-1 items-center gap-12 px-4 lg:grid-cols-2'>
-        {/* Left side */}
+        {/* Left side - h1 always visible for accessibility, container animates scale only */}
         <motion.div
-          initial={{opacity: 0, scale: 0.8}}
-          animate={{opacity: 1, scale: 1}}
+          initial={{scale: 0.8}}
+          animate={{scale: 1}}
           transition={{duration: 0.8, delay: 0.3}}
           className='relative z-10'>
           <h1 className='2xsm:text-center mt-6 text-4xl font-normal text-white sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>

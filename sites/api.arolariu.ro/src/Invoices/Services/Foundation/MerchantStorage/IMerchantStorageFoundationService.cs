@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -35,8 +36,10 @@ public interface IMerchantStorageFoundationService
   /// </remarks>
   /// <param name="merchant">Merchant aggregate to persist (MUST NOT be null).</param>
   /// <param name="parentCompanyId">Optional tenancy / partition discriminator.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Asynchronous task.</returns>
-  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
   #endregion
 
   #region Read Merchant Object API
@@ -49,8 +52,10 @@ public interface IMerchantStorageFoundationService
   /// </remarks>
   /// <param name="identifier">Merchant identifier.</param>
   /// <param name="parentCompanyId">Optional partition discriminator.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>The merchant or null.</returns>
-  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
   #endregion
 
   #region Read Merchant Objects API
@@ -62,8 +67,10 @@ public interface IMerchantStorageFoundationService
   /// <para><b>Filtering:</b> Soft-deleted entities SHOULD be excluded if soft delete introduced.</para>
   /// </remarks>
   /// <param name="parentCompanyId">Partition discriminator.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Enumerable (empty if none).</returns>
-  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken = default);
   #endregion
 
   #region Update Merchant Object API
@@ -77,8 +84,10 @@ public interface IMerchantStorageFoundationService
   /// <param name="updatedMerchant">New merchant state.</param>
   /// <param name="merchantIdentifier">Identifier of merchant being updated.</param>
   /// <param name="parentCompanyId">Optional partition discriminator.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Updated merchant.</returns>
-  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
   #endregion
 
   #region Delete Merchant Object API
@@ -91,7 +100,9 @@ public interface IMerchantStorageFoundationService
   /// </remarks>
   /// <param name="identifier">Merchant identifier.</param>
   /// <param name="parentCompanyId">Optional partition discriminator.</param>
+  /// <param name="cancellationToken">Optional cancellation token to abort the operation.</param>
   /// <returns>Asynchronous task.</returns>
-  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null);
+  /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
+  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
   #endregion
 }

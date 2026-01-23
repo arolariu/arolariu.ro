@@ -3,6 +3,7 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Common.Configuration;
 using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Domain.General.Middlewares;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
@@ -105,6 +106,7 @@ internal static class WebApplicationExtensions
 
     #region Middlewares
     app.UseCors("AllowAllOrigins");
+    app.UseRateLimiter();
     app.UseMiddleware<SecurityHeadersMiddleware>();
     #endregion
 
@@ -113,7 +115,8 @@ internal static class WebApplicationExtensions
     app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
     app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
     app.MapOpenApi();
-    app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse });
+    app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse })
+       .RequireRateLimiting(RateLimitPolicies.HealthCheck);
     app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);
 
     return app;

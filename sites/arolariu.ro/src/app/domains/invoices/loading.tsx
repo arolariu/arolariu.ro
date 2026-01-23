@@ -38,7 +38,7 @@ import {Skeleton} from "@arolariu/components";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className='px-5 py-24'>
+    <div className='px-5 py-24'>
       {/* Hero Section Skeleton */}
       <section className='flex flex-col items-center justify-center justify-items-center text-center'>
         {/* Top SVG Illustration Skeleton */}
@@ -96,6 +96,6 @@ export default function Loading(): React.JSX.Element {
           <Skeleton className='h-[500px] w-[500px] object-fill object-center md:mx-auto md:h-full lg:h-1/2' />
         </div>
       </section>
-    </main>
+    </div>
   );
 }

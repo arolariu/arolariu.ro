@@ -18,6 +18,7 @@
 **/coverage/**
 **/test-results/**
 **/TestResults/**
+**/.auth/**
 **/.next/**
 **/**/.DS_Store
 **/*.tsbuildinfo
@@ -39,3 +40,4 @@ sites/arolariu.ro/certificates
 sites/arolariu.ro/messages/*.d.json.ts
 sites/arolariu.ro/licenses.json
 sites/arolariu.ro/next-env.d.ts
+**/e2e-storage-state.json

@@ -5,7 +5,7 @@ import {Skeleton} from "@arolariu/components";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className='min-h-screen px-5 py-24'>
+    <div className='min-h-screen px-5 py-24'>
       <section className='mx-auto max-w-7xl'>
         {/* Header skeleton */}
         <div className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
@@ -31,6 +31,6 @@ export default function Loading(): React.JSX.Element {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

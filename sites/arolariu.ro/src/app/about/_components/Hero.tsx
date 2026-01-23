@@ -82,11 +82,11 @@ export default function Hero(): React.JSX.Element {
           </Badge>
         </motion.div>
 
-        {/* Main title */}
+        {/* Main title - starts visible for accessibility, animates position only */}
         <motion.h1
           className='from-gradient-from via-gradient-via to-gradient-to mb-6 bg-gradient-to-r bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl'
-          initial={{opacity: 0, y: 20}}
-          animate={{opacity: 1, y: 0}}
+          initial={{y: 20}}
+          animate={{y: 0}}
           transition={{delay: 0.3}}>
           {t("title")}
         </motion.h1>

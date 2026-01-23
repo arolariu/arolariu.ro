@@ -5,6 +5,11 @@
  */
 
 import {chromium, type FullConfig} from "@playwright/test";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+/** Storage state file path for sharing auth state across tests */
+export const STORAGE_STATE_PATH = path.join(process.cwd(), "tests", "e2e-storage-state.json");
 
 /**
  * Critical routes that need to be pre-warmed before tests run.
@@ -20,6 +25,9 @@ const CRITICAL_ROUTES = [
   "/auth",
   "/auth/sign-in",
   "/auth/sign-up",
+  "/privacy-policy",
+  "/terms-of-service",
+  "/acknowledgements",
 ];
 
 /**
@@ -37,6 +45,21 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   const context = await browser.newContext({
     ignoreHTTPSErrors: true,
   });
+
+  // Set EULA cookie to bypass consent dialog during tests
+  // This allows tests to access actual page content
+  await context.addCookies([
+    {
+      name: "eula-accepted",
+      value: "true",
+      domain: "localhost",
+      path: "/",
+      httpOnly: false,
+      secure: true,
+      sameSite: "Lax",
+    },
+  ]);
+
   const page = await context.newPage();
 
   for (const route of CRITICAL_ROUTES) {
@@ -44,22 +67,22 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     console.log(`[Global Setup] Warming up: ${route}`);
 
     try {
-      // Navigate with generous timeout and retry once
+      // Navigate with generous timeout and wait for network idle to ensure compilation completes
       let response = await page.goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
+        waitUntil: "networkidle",
+        timeout: 60000,
       });
 
       let status = response?.status();
 
-      // If we get a 500, wait and retry once
+      // If we get a 500, wait and retry once (compilation may still be in progress)
       if (status === 500) {
         console.log(`[Global Setup] Got 500 for ${route}, retrying after delay...`);
         try {
-          await page.waitForTimeout(3000);
+          await page.waitForTimeout(5000);
           response = await page.goto(url, {
-            waitUntil: "domcontentloaded",
-            timeout: 30000,
+            waitUntil: "networkidle",
+            timeout: 60000,
           });
           status = response?.status();
         } catch {
@@ -74,12 +97,20 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     }
   }
 
-  // Give the server a moment to stabilize after warmup
+  // Give the server more time to stabilize after warmup
   try {
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
   } catch {
     // Page may have been closed during wait
   }
+
+  // Save storage state for other tests to use
+  const authDir = path.dirname(STORAGE_STATE_PATH);
+  if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, {recursive: true});
+  }
+  await context.storageState({path: STORAGE_STATE_PATH});
+  console.log(`[Global Setup] Storage state saved to: ${STORAGE_STATE_PATH}`);
 
   await context.close();
   await browser.close();

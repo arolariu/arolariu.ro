@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
@@ -36,21 +37,21 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
   #region Create Merchant Object API
   /// <inheritdoc/>
-  public async Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null) =>
+  public async Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
     ValidateMerchantIdentifierIsSet(merchant.id);
 
     await invoiceNoSqlBroker
-      .CreateMerchantAsync(merchant)
+      .CreateMerchantAsync(merchant, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 
   #region Delete Merchant Object API
   /// <inheritdoc/>
-  public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null) =>
+  public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
@@ -58,20 +59,20 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
     ValidateMerchantIdentifierIsSet(identifier);
     ValidateParentCompanyIdentifierIsSet(parentCompanyId);
 
-    await invoiceNoSqlBroker.DeleteMerchantAsync(identifier, parentCompanyId).ConfigureAwait(false);
+    await invoiceNoSqlBroker.DeleteMerchantAsync(identifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 
   #region Read Merchant Objects API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId) =>
+  public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
 
 
     IEnumerable<Merchant> merchants = await invoiceNoSqlBroker
-      .ReadMerchantsAsync(parentCompanyId)
+      .ReadMerchantsAsync(parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
     return merchants;
   }).ConfigureAwait(false);
@@ -79,12 +80,12 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
   #region Read Merchant Object API
   /// <inheritdoc/>
-  public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null) =>
+  public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
     var merchant = await invoiceNoSqlBroker
-      .ReadMerchantAsync(identifier, parentCompanyId)
+      .ReadMerchantAsync(identifier, parentCompanyId, cancellationToken)
       .ConfigureAwait(false);
     return merchant!;
   }).ConfigureAwait(false);
@@ -92,15 +93,15 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
   #region Update Merchant Object API
   /// <inheritdoc/>
-  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null) =>
+  public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
-    var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId).ConfigureAwait(false);
+    var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId, cancellationToken).ConfigureAwait(false);
     ArgumentNullException.ThrowIfNull(currentMerchant);
 
     var newMerchant = await invoiceNoSqlBroker
-      .UpdateMerchantAsync(currentMerchant, updatedMerchant)
+      .UpdateMerchantAsync(currentMerchant, updatedMerchant, cancellationToken)
       .ConfigureAwait(false);
 
     return newMerchant;

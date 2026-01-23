@@ -93,7 +93,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
   return (
     <section className='relative mx-auto w-full max-w-6xl'>
       <div className='relative flex flex-col gap-12'>
-        <header className='relative text-center'>
+        <div className='relative text-center'>
           <div className='relative'>
             <Badge
               variant='secondary'
@@ -113,7 +113,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
             className='mt-8 flex flex-wrap items-center justify-center gap-3'
             badges={trustBadges}
           />
-        </header>
+        </div>
 
         <div className='grid gap-8 md:grid-cols-2 lg:gap-10'>
           {cards.map((card, index) => (
@@ -207,8 +207,8 @@ export default function RenderAuthScreen(): React.JSX.Element {
           ))}
         </div>
 
-        {/* Footer */}
-        <footer className='text-muted-foreground mx-auto max-w-2xl text-center text-sm leading-relaxed'>{t("footer")}</footer>
+        {/* Section footer note */}
+        <p className='text-muted-foreground mx-auto max-w-2xl text-center text-sm leading-relaxed'>{t("footer")}</p>
       </div>
     </section>
   );
