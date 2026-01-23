@@ -18,9 +18,13 @@
     "test:vitest": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "svelte-kit sync && vitest run --coverage"
+    "test:coverage": "svelte-kit sync && vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:a11y": "playwright test tests/accessibility.spec.ts",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "*",
     "@sveltejs/adapter-auto": "*",
     "@sveltejs/kit": "*",
     "@sveltejs/vite-plugin-svelte": "*",
