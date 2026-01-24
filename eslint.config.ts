@@ -24,7 +24,6 @@ const websiteEslintConfig: Config = defineConfig({
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
   ignores: [
     "sites/arolariu.ro/messages/*.d.json.ts", // Generated i18n type declarations
-    "sites/arolariu.ro/tests/**", // E2E tests directory (Playwright)
   ],
   languageOptions: {
     ecmaVersion: "latest",
@@ -421,7 +420,7 @@ const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesE
 // Add the global ignores to the default config.
 for (const individualEslintConfig of eslintConfig) {
   const eslintPathsIgnoreList = [
-    "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts}/**", // dirs
+    "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts,tests}/**", // dirs
     "**/*.{test,config,spec,setup,stories,d}.{js,jsx,ts,tsx}", // files
   ];
 
