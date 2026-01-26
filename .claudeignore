@@ -1,0 +1,10 @@
+node_modules/
+.git/
+*.tsbuildinfo
+coverage/
+artifacts/
+TestResults/
+logs/
+.nx/
+dist/
+build/
