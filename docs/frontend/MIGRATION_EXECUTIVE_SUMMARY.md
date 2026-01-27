@@ -78,8 +78,15 @@ Top 10 most frequent Tailwind patterns:
 ```
 src/styles/
 ├── index.scss              # Main entry point
-├── base/                   # Reset, typography, forms
-├── abstracts/              # Variables, functions, mixins
+├── base/                   # Reset, normalize, base element styles
+│   ├── _reset.scss        # Modern CSS reset (Josh Comeau's reset)
+│   ├── _typography.scss   # Base typography for HTML elements (h1-h6, p, a, code)
+│   ├── _forms.scss        # Form element defaults (input, textarea, select, label)
+│   └── _accessibility.scss # A11y utilities (sr-only, focus-visible, skip-links)
+├── abstracts/              # SCSS helpers (no CSS output)
+│   ├── _variables.scss    # SCSS variables (z-index, container widths, durations)
+│   ├── _functions.scss    # SCSS functions (px-to-rem, fluid-size, color manipulation)
+│   └── _mixins.scss       # Reusable mixins (flex-center, card, button-base, transitions)
 ├── tokens/                 # Design system tokens
 │   ├── _colors.scss       # Color palette
 │   ├── _typography.scss   # Font system
@@ -87,11 +94,22 @@ src/styles/
 │   ├── _shadows.scss      # Shadow tokens
 │   ├── _borders.scss      # Border radii
 │   └── _transitions.scss  # Animation durations
-├── layout/                 # Grid, flexbox, breakpoints
+├── layout/                 # Structural layout systems
+│   ├── _breakpoints.scss  # Media query mixins (8 breakpoints: 2xsm-3xl)
+│   ├── _grid.scss         # CSS Grid utilities and mixins
+│   ├── _flexbox.scss      # Flexbox utilities (flex, items-center, justify-between)
+│   └── _container.scss    # Container system with responsive padding
 ├── components/             # Global component styles
-├── utilities/              # Utility classes (minimal)
+├── utilities/              # Minimal utility classes (rarely used)
+│   ├── _display.scss      # Display utilities (block, inline, hidden)
+│   ├── _spacing.scss      # Spacing utilities (mx-auto, m-0, p-0)
+│   ├── _text.scss         # Text utilities (text-center, uppercase, underline)
+│   └── _visibility.scss   # Responsive visibility (sm-only, print-hidden)
 ├── animations/             # Keyframes, transitions
-└── themes/                 # Light, dark, gradients
+└── themes/                 # Theme definitions
+    ├── _light.scss        # Light mode CSS custom properties
+    ├── _dark.scss         # Dark mode overrides (.dark class)
+    └── _gradients.scss    # Gradient utilities (user-customizable)
 ```
 
 ### Design Token System Highlights
@@ -131,19 +149,32 @@ src/styles/
 
 ```scss
 // Block__Element--Modifier pattern
-.invoice-card {
+.invoiceCard {
   // Block styles
+  padding: spacing.$spacing-4;
   
   &__header {
     // Element: header
+    border-bottom: 1px solid var(--color-border);
   }
   
   &__title {
     // Element: title
+    font-size: typography.$font-size-2xl;
     
     &--large {
-      // Modifier: large variant
+      // Modifier: large variant (use mixin instead of modifier when possible)
+      font-size: typography.$font-size-3xl;
     }
+  }
+}
+
+// Better approach: Use mixins and breakpoints instead of modifiers
+.invoiceCard {
+  padding: spacing.$spacing-4;
+  
+  @include breakpoints.media-lg-up {
+    padding: spacing.$spacing-6;  // Responsive sizing via media queries
   }
 }
 ```
@@ -153,8 +184,20 @@ src/styles/
 components/Header/
 ├── Header.tsx
 ├── Header.module.scss
-├── Header.test.tsx
-└── index.ts
+└── Header.test.tsx
+
+Note: NO index.ts barrel exports for TSX components
+```
+
+**TSX Usage:**
+```tsx
+import styles from './Header.module.scss';
+
+<div className={styles.invoiceCard}>
+  <div className={styles.invoiceCard__header}>
+    <h2 className={styles.invoiceCard__title}>Invoice</h2>
+  </div>
+</div>
 ```
 
 **Page-Level Shared Styles (Turbopack Optimization):**
@@ -176,12 +219,15 @@ app/domains/invoices/
 **Effort:** 14 hours
 
 **Tasks:**
-1. Install SCSS dependencies (`sass@^1.87.0`)
+1. Install SCSS dependencies (`sass@^1.87.0`, `autoprefixer`, `cssnano`)
 2. Create `/styles` directory structure
 3. Port design tokens from `tailwind.config.ts` to SCSS
-4. Create base SCSS files (reset, typography, forms)
-5. Update `next.config.ts` and `postcss.config.js`
-6. Update `globals.css` to import SCSS
+4. Create base SCSS files (reset, typography, forms, accessibility)
+5. Update `globals.css` to import SCSS (replace Tailwind directives)
+6. Update `postcss.config.js` (remove Tailwind, keep autoprefixer + cssnano)
+7. Delete `tailwind.config.ts`
+
+**Note:** Next.js has built-in SCSS support - no `next.config.ts` changes needed! Turbopack automatically handles SCSS compilation, CSS Modules, and code splitting.
 
 **Deliverables:**
 - Complete SCSS infrastructure
@@ -328,31 +374,14 @@ export const USE_SCSS_STYLES =
 
 ### Quality Gates
 
-- [ ] Zero critical visual regressions
-- [ ] Zero accessibility regressions (axe-core pass)
+- [ ] No critical visual regressions
+- [ ] No accessibility regressions (axe-core pass)
 - [ ] 100% component parity with Tailwind version
-- [ ] Positive developer feedback
-- [ ] Successful 5-week rollout
-- [ ] Bundle size target met
+- [ ] Successful progressive deployment
 
 ---
 
 ## 💰 Cost-Benefit Analysis
-
-### Investment Required
-
-**Development Costs:**
-- 157 hours @ $80-100/hour = **$12,560 - $15,700**
-- 2-4 weeks calendar time
-- Opportunity cost: Delayed feature development
-
-**Risk Costs:**
-- Potential downtime: Minimal (gradual rollout)
-- Rollback plan: Zero cost (feature flag)
-
-**Total Investment:** ~$15,000
-
-### Expected Returns
 
 **Short-term Benefits (0-6 months):**
 - 15% CSS bundle reduction → Faster page loads

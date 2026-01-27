@@ -941,27 +941,39 @@ $breakpoint-3xl: 1976px;   // Ultra-wide
 /**
  * PostCSS Configuration
  * 
- * Plugins:
+ * Why we still need PostCSS:
+ * - autoprefixer: Adds vendor prefixes automatically
  * - cssnano: CSS minification and optimization
+ * 
+ * Next.js expects PostCSS for its CSS processing pipeline
  */
 
 const postcssConfig = {
   plugins: {
-    // Remove Tailwind PostCSS plugin
-    // '@tailwindcss/postcss': {},  // REMOVED
+    // Add vendor prefixes (e.g., -webkit-, -moz-)
+    autoprefixer: {},
     
-    // Keep cssnano for production minification
-    cssnano: {
+    // Minify CSS in production builds
+    cssnano: process.env.NODE_ENV === 'production' ? {
       preset: ['default', {
         discardComments: {
           removeAll: true,
         },
+        normalizeWhitespace: true,
+        colormin: true,
+        minifyFontValues: true,
+        minifyGradients: true,
       }],
-    },
+    } : false,
   },
 };
 
 export default postcssConfig;
+```
+
+**Install Required Packages:**
+```bash
+npm install -D autoprefixer cssnano
 ```
 
 ---
@@ -1276,9 +1288,6 @@ test.describe('Accessibility Tests', () => {
 ### Performance Testing
 
 ```bash
-# Lighthouse CI
-npm run lighthouse:ci
-
 # Bundle analysis
 npm run analyze
 

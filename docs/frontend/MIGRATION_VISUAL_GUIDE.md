@@ -174,26 +174,34 @@ sites/arolariu.ro/
 │   ├── app/
 │   │   ├── globals.css              ← Imports SCSS + CSS variables
 │   │   ├── page.tsx                 ← Uses CSS Modules
-│   │   ├── page.module.scss         ← NEW: Page styles
 │   │   ├── layout.tsx               ← Uses CSS Modules
-│   │   └── layout.module.scss       ← NEW: Layout styles
+│   │   │
+│   │   └── domains/
+│   │       └── invoices/
+│   │           ├── page.tsx         ← RSC
+│   │           ├── island.tsx       ← RCC
+│   │           ├── layout.tsx       ← RSC
+│   │           ├── loading.tsx      ← RSC
+│   │           └── styles.module.scss ← SHARED by all 4 files above
 │   │
 │   ├── components/
 │   │   ├── Header/
 │   │   │   ├── Header.tsx           ← Uses CSS Modules
-│   │   │   ├── Header.module.scss   ← NEW: Header styles
-│   │   │   └── index.ts
+│   │   │   ├── Header.module.scss   ← Header styles
+│   │   │   └── Header.test.tsx      ← Tests
 │   │   │
 │   │   └── Footer/
 │   │       ├── Footer.tsx           ← Uses CSS Modules
-│   │       ├── Footer.module.scss   ← NEW: Footer styles
-│   │       └── index.ts
+│   │       ├── Footer.module.scss   ← Footer styles
+│   │       └── Footer.test.tsx      ← Tests
 │   │
 │   └── types/
 │       └── index.ts
 │
-├── postcss.config.js                ← Updated (Tailwind removed)
+├── postcss.config.js                ← Updated (autoprefixer + cssnano only)
 └── package.json                     ← Tailwind deps removed, sass added
+
+Note: NO index.ts barrel exports for TSX components
 ```
 
 ---
@@ -216,9 +224,9 @@ Step 1: Analyze Component
 
 Step 2: Create CSS Module
 ├─ Create ComponentName.module.scss
-├─ Import design tokens: @use '@/styles/tokens/colors' as c;
-├─ Import mixins: @use '@/styles/abstracts/mixins' as m;
-└─ Import breakpoints: @use '@/styles/layout/breakpoints' as bp;
+├─ Import design tokens: @use '@/styles/tokens/colors' as colors;
+├─ Import mixins: @use '@/styles/abstracts/mixins' as mixins;
+└─ Import breakpoints: @use '@/styles/layout/breakpoints' as breakpoints;
 
 ↓
 
@@ -327,10 +335,10 @@ import styles from './Header.module.scss';
 
 ```scss
 // components/Header/Header.module.scss
-@use '@/styles/tokens/colors' as c;
-@use '@/styles/tokens/spacing' as s;
-@use '@/styles/tokens/typography' as t;
-@use '@/styles/layout/breakpoints' as bp;
+@use '@/styles/tokens/colors' as colors;
+@use '@/styles/tokens/spacing' as spacing;
+@use '@/styles/tokens/typography' as typography;
+@use '@/styles/layout/breakpoints' as breakpoints;
 
 .header {
   @media print {
@@ -347,7 +355,7 @@ import styles from './Header.module.scss';
   right: 0;
   z-index: 50;
   
-  @include bp.media-lg-up {
+  @include breakpoints.media-lg-up {
     position: relative;
     z-index: auto;
   }
@@ -360,10 +368,10 @@ import styles from './Header.module.scss';
 }
 
 .logo {
-  margin-left: s.$spacing-2;
+  margin-left: spacing.$spacing-2;
   display: flex;
   align-items: center;
-  font-weight: t.$font-weight-medium;
+  font-weight: typography.$font-weight-medium;
   transition: color 0.2s ease;
   
   &:hover {
@@ -373,20 +381,20 @@ import styles from './Header.module.scss';
 
 .logoImage {
   border-radius: 50%;
-  box-shadow: 0 0 0 2px c.$color-primary-500;
+  box-shadow: 0 0 0 2px colors.$color-primary-500;
   
-  @include bp.media-max(bp.$breakpoint-lg) {
+  @include breakpoints.media-max(breakpoints.$breakpoint-lg) {
     display: none;
   }
   
-  @include bp.media-lg-up {
+  @include breakpoints.media-lg-up {
     display: block;
   }
 }
 
 .logoText {
-  margin-left: s.$spacing-3;
-  font-size: t.$font-size-xl;
+  margin-left: spacing.$spacing-3;
+  font-size: typography.$font-size-xl;
 }
 ```
 
@@ -408,16 +416,51 @@ import styles from './Header.module.scss';
 └─────────────────────────────────────────────────────────────┘
 
 tokens/_colors.scss
-├─ Primary Palette (Blue)
+├─ Primary Palette (Blue) - Static design tokens
 │  ├─ 50  ███ hsl(221, 83%, 95%)  Lightest
 │  ├─ 100 ███ hsl(221, 83%, 90%)
 │  ├─ 200 ███ hsl(221, 83%, 80%)
 │  ├─ 300 ███ hsl(221, 83%, 70%)
 │  ├─ 400 ███ hsl(221, 83%, 60%)
-│  ├─ 500 ███ hsl(221, 83%, 53%)  Base
+│  ├─ 500 ███ hsl(221, 83%, 53%)  Base (DEFAULT)
 │  ├─ 600 ███ hsl(221, 83%, 45%)
 │  ├─ 700 ███ hsl(221, 83%, 35%)
 │  ├─ 800 ███ hsl(221, 83%, 25%)
+│  └─ 900 ███ hsl(221, 83%, 15%)  Darkest
+
+├─ User-Customizable System (CSS Custom Properties)
+│  ├─ --user-primary           ← User can change via profile
+│  ├─ --user-secondary         ← User can change via profile
+│  ├─ --user-accent            ← User can change via profile
+│  ├─ --user-gradient-from     ← User can change via profile
+│  ├─ --user-gradient-via      ← User can change via profile
+│  └─ --user-gradient-to       ← User can change via profile
+│
+├─ Application Theme Variables (Reference User Vars)
+│  ├─ --color-primary          → var(--user-primary)
+│  ├─ --color-secondary        → var(--user-secondary)
+│  ├─ --gradient-from          → var(--user-gradient-from)
+│  ├─ --gradient-via           → var(--user-gradient-via)
+│  └─ --gradient-to            → var(--user-gradient-to)
+│
+└─ Semantic Colors (Fixed)
+   ├─ --color-background
+   ├─ --color-foreground
+   ├─ --color-muted
+   └─ --color-border
+
+Usage Pattern:
+┌──────────────────────────────────────────────────┐
+│ Component SCSS:                                  │
+│   .button {                                      │
+│     background: var(--color-primary);  ← Always  │
+│   }                                              │
+│                                                  │
+│ JavaScript (User Profile):                      │
+│   document.documentElement.style.setProperty(   │
+│     '--user-primary', '187, 94%, 43%'  ← Custom │
+│   );                                            │
+└──────────────────────────────────────────────────┘
 │  └─ 900 ███ hsl(221, 83%, 15%)  Darkest
 │
 ├─ Semantic Colors
