@@ -89,42 +89,14 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: � Display release context
-        run: |
-          echo "::group::🔍 Release Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🚀 WEBSITE RELEASE PIPELINE                                │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Release phase (1/1)                      │"
-          echo "│ 🌍 Environment:   ${{ inputs.environment || 'development' }}"
-          echo "│ 🐳 Container:     ${{ inputs.container_name || 'frontend/dev.arolariu' }}"
-          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
-          echo "│ 🎯 Target:        ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 👤 Triggered by:  ${{ github.actor }}"
-          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
-          echo "│ 📌 Trigger:       ${{ github.event_name }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-          # Write initial summary
-          echo "## 🚀 Website Release" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Environment | ${{ inputs.environment || 'development' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Container | \`${{ inputs.container_name || 'frontend/dev.arolariu' }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| App Service | ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Triggered By | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-
-      - name: �🔒 Performing auth against Azure Public Cloud...
+      - name: 🔐 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: 🔒 Performing auth against private Azure Container Registry...
+      - name: 🔐 Performing auth against private Azure Container Registry...
         uses: Azure/docker-login@v2
         with:
           username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}

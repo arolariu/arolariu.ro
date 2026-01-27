@@ -74,7 +74,10 @@ jobs:
       version: ${{ steps.package-info.outputs.version }}
       name: ${{ steps.package-info.outputs.name }}
     steps:
-      - name: � Display workflow context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display workflow context
         run: |
           echo "::group::🔍 Publish Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -82,7 +85,7 @@ jobs:
           echo "├────────────────────────────────────────────────────────────┤"
           echo "│ 📦 Package:       @arolariu/components                     │"
           echo "│ 🏷️ Tag:          ${{ inputs.tag || 'latest' }}"
-          echo "│ 🔐 Auth:          Trusted Publishing (OIDC)                │"
+          echo "│ 🔐 Auth:          Trusted Publishing (OIDC)"
           echo "│ 🧪 Dry Run:       ${{ inputs.dry-run || 'false' }}"
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "│ 👤 Triggered by:  ${{ github.actor }}"
@@ -99,9 +102,6 @@ jobs:
           echo "| Distribution Tag | ${{ inputs.tag || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Dry Run | ${{ inputs.dry-run || 'false' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Authentication | OIDC Trusted Publishing |" >> $GITHUB_STEP_SUMMARY
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -192,7 +192,10 @@ jobs:
       name: npm-publish
       url: https://www.npmjs.com/package/${{ needs.validate.outputs.name }}
     steps:
-      - name: � Display publish context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display publish context
         run: |
           echo "::group::🔍 Publish Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -204,9 +207,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
 
       - name: 📦 Setup Node.js with npm registry
         uses: actions/setup-node@v6

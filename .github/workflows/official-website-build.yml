@@ -111,7 +111,10 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     timeout-minutes: 25
     steps:
-      - name: � Display workflow context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display workflow context
         run: |
           echo "::group::🔍 Workflow Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -128,9 +131,6 @@ jobs:
           echo "│ 🧪 Skip Tests:    ${{ inputs.skip_tests || 'false' }}"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2
@@ -237,6 +237,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
     steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
       - name: 📋 Display build context
         run: |
           echo "::group::🔍 Build Context"
@@ -258,9 +261,6 @@ jobs:
           echo "::warning::Tests were skipped for this build (run ${{ github.run_id }})"
           echo "::warning::Environment: ${{ inputs.environment || 'development' }}"
           echo "::warning::Triggered by: ${{ github.actor }}"
-
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2

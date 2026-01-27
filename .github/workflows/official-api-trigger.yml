@@ -86,7 +86,10 @@ jobs:
     environment: ${{ inputs.environment || 'production' }}
     timeout-minutes: 10
     steps:
-      - name: � Display workflow context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display workflow context
         run: |
           echo "::group::🔍 Workflow Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -102,9 +105,6 @@ jobs:
           echo "│ 🔢 Run Number:    ${{ github.run_number }}"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -168,7 +168,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'production' }}
     steps:
-      - name: � Display build context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display build context
         run: |
           echo "::group::🔍 Build Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -181,9 +184,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -279,20 +279,6 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: 📋 Display deployment context
-        run: |
-          echo "::group::🔍 Deployment Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🚀 DEPLOYMENT PHASE                                        │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🎯 Target:        Azure App Service (api-arolariu-ro)      │"
-          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
-          echo "│ 🐳 Container:     backend/api.arolariu:${{ inputs.environment == 'production' && github.sha || 'latest' }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 👤 Deployed by:   ${{ github.actor }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
       - name: 🔒 Handling the auth process to Azure Public Cloud...
         uses: Azure/login@v2
         with:

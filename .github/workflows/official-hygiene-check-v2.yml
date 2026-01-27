@@ -68,7 +68,13 @@ jobs:
       has-changes: ${{ steps.detect.outputs.has-changes }}
       changed-files-count: ${{ steps.detect.outputs.changed-files-count }}
     steps:
-      - name: � Display workflow context
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📝 Display workflow context
         run: |
           echo "::group::🔍 Hygiene Check Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -92,12 +98,6 @@ jobs:
           echo "| PR | #${{ github.event.pull_request.number || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Author | @${{ github.event.pull_request.user.login || github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Head SHA | \`${{ env.HEAD_REF }}\` |" >> $GITHUB_STEP_SUMMARY
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -129,7 +129,13 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: � Display check context
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📝 Display check context
         run: |
           echo "::group::🔍 Format Check Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -141,12 +147,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -183,7 +183,13 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: � Display check context
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📝 Display check context
         run: |
           echo "::group::🔍 Lint Check Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -195,12 +201,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -237,7 +237,13 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: � Display check context
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📝 Display check context
         run: |
           echo "::group::🔍 Unit Tests Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -249,12 +255,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -297,7 +297,13 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: � Display check context
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📝 Display check context
         run: |
           echo "::group::🔍 Statistics Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -309,12 +315,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -350,7 +350,12 @@ jobs:
     needs: [setup, format, lint, test, stats]
     if: always() && (needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch')
     steps:
-      - name: � Display summary context
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: 📝 Display summary context
         run: |
           echo "::group::🔍 Summary Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -363,11 +368,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace

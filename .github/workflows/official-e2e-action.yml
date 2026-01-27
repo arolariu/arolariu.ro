@@ -60,7 +60,10 @@ jobs:
     outputs:
       cache-key: ${{ steps.workspace-setup.outputs.node-cache-hit }}
     steps:
-      - name: � Display workflow context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display workflow context
         run: |
           echo "::group::🔍 E2E Test Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -86,9 +89,6 @@ jobs:
           echo "| Backend Target | https://api.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
           echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
 
-      - name: �🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
-
       - name: 📦 Setup workspace
         id: workspace-setup
         uses: ./.github/actions/setup-workspace
@@ -112,6 +112,9 @@ jobs:
     outputs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
       - name: 📋 Display test context
         run: |
           echo "::group::🔍 Frontend E2E Context"
@@ -123,9 +126,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -184,7 +184,10 @@ jobs:
     outputs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
-      - name: � Display test context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display test context
         run: |
           echo "::group::🔍 Backend E2E Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -195,9 +198,6 @@ jobs:
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
-
-      - name: �🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -298,7 +298,10 @@ jobs:
     env:
       TZ: Europe/Bucharest
     steps:
-      - name: � Display failure context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display failure context
         run: |
           echo "::group::🔍 Failure Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -319,9 +322,6 @@ jobs:
           echo "|------------|--------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend | ${{ needs.frontend.result }} | ${{ needs.frontend.outputs.duration || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Backend | ${{ needs.backend.result }} | ${{ needs.backend.outputs.duration || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-
-      - name: �🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
