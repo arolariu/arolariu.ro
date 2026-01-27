@@ -1,0 +1,481 @@
+###############################################################################
+# api.arolariu.ro - API Playground
+#
+# This file provides an interactive playground for exploring the arolariu.ro
+# backend API. Use with VS Code REST Client extension or compatible tools.
+#
+# SETUP:
+# 1. Install "REST Client" extension in VS Code (humao.rest-client)
+# 2. Configure variables below with your credentials
+# 3. Click "Send Request" above any request to execute it
+#
+# WORKFLOW:
+# - Start with Health Check to verify API availability
+# - Create an Invoice first (stores ID in @invoiceId)
+# - Use subsequent requests to explore sub-resources
+# - Clean up with Delete requests when done
+#
+###############################################################################
+
+###############################################################################
+# CONFIGURATION - Update these values before running requests
+###############################################################################
+
+@baseUrl = https://api.arolariu.ro
+@apiVersion = v1
+
+# Authentication - Get your JWT from the frontend /api/user endpoint
+@authToken = YOUR_JWT_TOKEN_HERE
+
+# User identifier - Must match the authenticated user's GUID
+@userIdentifier = 00000000-0000-0000-0000-000000000000
+
+# Dynamic identifiers - These are populated after create operations
+@invoiceId = {{$guid}}
+@merchantId = {{$guid}}
+
+###############################################################################
+# HEALTH & DIAGNOSTICS
+###############################################################################
+
+### Health Check
+# Verify the API is operational. No authentication required.
+# Rate limited - avoid excessive polling.
+GET {{baseUrl}}/health
+Accept: application/json
+
+###############################################################################
+# INVOICES - CRUD Operations
+###############################################################################
+
+### Get All Invoices
+# Retrieve all invoices for the authenticated user.
+# Returns: Array of Invoice objects
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Create Invoice
+# Create a new invoice with an initial scan.
+# The response includes the created invoice with its generated ID.
+# Copy the 'id' from the response to use in subsequent requests.
+POST {{baseUrl}}/rest/{{apiVersion}}/invoices
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "userIdentifier": "{{userIdentifier}}",
+  "initialScan": {
+    "type": 2,
+    "location": "https://cdn.arolariu.ro/invoices/sample-receipt.png",
+    "metadata": {
+      "source": "http-playground",
+      "uploadedAt": "{{$datetime iso8601}}"
+    }
+  },
+  "metadata": {
+    "createdVia": "http-playground",
+    "timestamp": "{{$datetime iso8601}}"
+  }
+}
+
+###
+
+### Get Specific Invoice
+# Retrieve a single invoice by its identifier.
+# Replace {{invoiceId}} with an actual invoice GUID.
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Update Invoice (Full Replace)
+# Completely replace an invoice's data.
+# All fields must be provided - partial updates use PATCH.
+PUT {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "userIdentifier": "{{userIdentifier}}",
+  "description": "Updated invoice via HTTP playground",
+  "paymentInformation": {
+    "dateOfPurchase": "{{$datetime iso8601}}",
+    "totalAmount": 150.00,
+    "totalTax": 28.50,
+    "currency": "RON"
+  },
+  "additionalMetadata": {
+    "updatedVia": "http-playground",
+    "updatedAt": "{{$datetime iso8601}}"
+  }
+}
+
+###
+
+### Patch Invoice (Partial Update)
+# Update specific fields of an invoice.
+# Only provided fields are modified.
+PATCH {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "description": "Patched description",
+  "additionalMetadata": {
+    "patchedAt": "{{$datetime iso8601}}"
+  }
+}
+
+###
+
+### Delete Invoice
+# Permanently delete a specific invoice.
+# Returns: 204 No Content on success
+DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Delete All Invoices (Bulk)
+# ⚠️ CAUTION: Deletes ALL invoices for the authenticated user!
+# Use with extreme care - this action is irreversible.
+DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# INVOICE PRODUCTS - Item Management
+###############################################################################
+
+### Get Invoice Products
+# Retrieve all products/items from an invoice.
+# Returns: Array of Product objects
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Add Product to Invoice
+# Add a new product/item to an invoice.
+# rawName is required and used as a unique identifier.
+POST {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "rawName": "Fresh Milk 1L",
+  "detectedAllergens": [],
+  "category": 1,
+  "quantity": 2,
+  "quantityUnit": "piece",
+  "price": 8.50,
+  "totalPrice": 17.00
+}
+
+###
+
+### Update Product in Invoice
+# Update an existing product's details.
+# The product is identified by rawName in the body.
+PUT {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "rawName": "Fresh Milk 1L",
+  "detectedAllergens": ["lactose"],
+  "category": 1,
+  "quantity": 3,
+  "quantityUnit": "piece",
+  "price": 8.50,
+  "totalPrice": 25.50
+}
+
+###
+
+### Remove Product from Invoice
+# Remove a product from the invoice.
+# Product is identified by rawName in the request body.
+DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "rawName": "Fresh Milk 1L"
+}
+
+###############################################################################
+# INVOICE MERCHANT - Association Management
+###############################################################################
+
+### Get Invoice Merchant
+# Retrieve the merchant associated with an invoice.
+# Returns: 404 if no merchant is associated.
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/merchant
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Add Merchant to Invoice
+# Associate a new merchant with the invoice.
+# Creates the merchant if it doesn't exist.
+POST {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/merchant
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Sample Supermarket",
+  "address": "123 Main Street, Bucharest, Romania",
+  "phoneNumber": "+40 21 123 4567",
+  "category": "Retail",
+  "parentCompanyId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+}
+
+###
+
+### Remove Merchant from Invoice
+# Disassociate the merchant from the invoice.
+# The merchant entity itself is not deleted.
+DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/merchant
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# INVOICE SCANS - Receipt Image Management
+###############################################################################
+
+### Get Invoice Scans
+# Retrieve all scans/images associated with an invoice.
+# Returns: Array of Scan objects with location URLs.
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/scans
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Add Scan to Invoice
+# Add an additional scan/image to the invoice.
+# Useful for multi-page receipts or additional documentation.
+POST {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/scans
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "type": 2,
+  "location": "https://cdn.arolariu.ro/invoices/additional-page.png",
+  "metadata": {
+    "page": "2",
+    "uploadedAt": "{{$datetime iso8601}}"
+  }
+}
+
+###
+
+### Delete Scan from Invoice
+# Remove a specific scan by its location field.
+# The location must be URL-encoded in the path.
+# Example: https://cdn.arolariu.ro/invoices/scan.png -> https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Fscan.png
+DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/scans/https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Fadditional-page.png
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# INVOICE METADATA - Custom Key-Value Storage
+###############################################################################
+
+### Get Invoice Metadata
+# Retrieve additional metadata key-value pairs.
+# Returns: Object with custom metadata fields.
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/metadata
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Patch Invoice Metadata
+# Add or update metadata key-value pairs.
+# Existing keys are updated, new keys are added.
+PATCH {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/metadata
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "customField1": "value1",
+  "customField2": "value2",
+  "tags": "grocery,weekly",
+  "reviewed": "true"
+}
+
+###
+
+### Delete Invoice Metadata Keys
+# Remove specific metadata keys.
+# Provide an array of key names to delete.
+DELETE {{baseUrl}}/rest/{{apiVersion}}/invoices/{{invoiceId}}/metadata
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "keys": ["customField1", "customField2"]
+}
+
+###############################################################################
+# MERCHANTS - Standalone CRUD Operations
+###############################################################################
+
+### Get All Merchants
+# Retrieve all merchants for a parent company.
+# The parentCompanyId query parameter is required.
+GET {{baseUrl}}/rest/{{apiVersion}}/merchants?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Create Merchant
+# Create a new standalone merchant.
+# Returns: 201 Created with merchant data including generated ID.
+POST {{baseUrl}}/rest/{{apiVersion}}/merchants
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "New Grocery Store",
+  "address": "456 Commerce Ave, Cluj-Napoca, Romania",
+  "phoneNumber": "+40 264 987 654",
+  "category": "Grocery",
+  "parentCompanyId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+}
+
+###
+
+### Get Specific Merchant
+# Retrieve a single merchant by its identifier.
+GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Update Merchant (Full Replace)
+# Completely replace a merchant's data.
+PUT {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Store Name",
+  "address": "789 New Address, Timisoara, Romania",
+  "phoneNumber": "+40 256 111 222",
+  "category": "Supermarket",
+  "parentCompanyId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+}
+
+###
+
+### Delete Merchant
+# Permanently delete a merchant.
+# Returns: 204 No Content on success.
+DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# MERCHANT INVOICES - Relationship Management
+###############################################################################
+
+### Get Merchant Invoices
+# Retrieve all invoices associated with a merchant.
+# Returns: Array of Invoice objects.
+GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Add Invoice to Merchant
+# Associate existing invoice(s) with a merchant.
+# Provide array of invoice identifiers.
+PATCH {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "invoiceIdentifiers": ["{{invoiceId}}"]
+}
+
+###
+
+### Remove Invoice from Merchant
+# Disassociate invoice(s) from a merchant.
+# The invoices themselves are not deleted.
+DELETE {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/invoices
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "invoiceIdentifiers": ["{{invoiceId}}"]
+}
+
+###
+
+### Get Merchant Products
+# Retrieve all products across all invoices for a merchant.
+# Useful for aggregate reporting and analytics.
+GET {{baseUrl}}/rest/{{apiVersion}}/merchants/{{merchantId}}/products
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###############################################################################
+# ERROR SCENARIOS - Testing Edge Cases
+###############################################################################
+
+### Get Non-existent Invoice (404 Expected)
+# Demonstrates 404 response for missing resources.
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+###
+
+### Unauthorized Request (401 Expected)
+# Demonstrates 401 response when authentication is missing.
+GET {{baseUrl}}/rest/{{apiVersion}}/invoices
+Accept: application/json
+
+###
+
+### Invalid Request Body (400 Expected)
+# Demonstrates 400 response for validation errors.
+POST {{baseUrl}}/rest/{{apiVersion}}/invoices
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "invalidField": "this should fail validation"
+}
+
+###############################################################################
+# QUICK REFERENCE
+###############################################################################
+#
+# Status Codes:
+# - 200 OK: Request succeeded
+# - 201 Created: Resource created successfully
+# - 202 Accepted: Request accepted for processing
+# - 204 No Content: Request succeeded, no content returned
+# - 400 Bad Request: Invalid request body or parameters
+# - 401 Unauthorized: Missing or invalid authentication
+# - 403 Forbidden: Insufficient permissions
+# - 404 Not Found: Resource does not exist
+# - 429 Too Many Requests: Rate limit exceeded
+#
+# Tips:
+# - Use {{$guid}} to generate a new GUID
+# - Use {{$datetime iso8601}} for current timestamp
+# - Use {{$randomInt min max}} for random numbers
+# - Variables defined with @name can be referenced as {{name}}
+#
+###############################################################################
