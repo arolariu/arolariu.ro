@@ -67,7 +67,10 @@ jobs:
       name: "documentation"
       url: "https://docs.arolariu.ro"
     steps:
-      - name: � Display workflow context
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📝 Display workflow context
         run: |
           echo "::group::🔍 Workflow Context"
           echo "┌────────────────────────────────────────────────────────────┐"
@@ -91,9 +94,6 @@ jobs:
           echo "| Framework | DocFX + TypeDoc |" >> $GITHUB_STEP_SUMMARY
           echo "| Target | Azure Static Web Apps |" >> $GITHUB_STEP_SUMMARY
           echo "| URL | https://docs.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
-
-      - name: �🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
