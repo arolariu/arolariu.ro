@@ -1,0 +1,436 @@
+###############################################################################
+# arolariu.ro - Frontend Playground
+#
+# This file provides an interactive playground for exploring the arolariu.ro
+# Next.js frontend application. Use with VS Code REST Client extension.
+#
+# SETUP:
+# 1. Install "REST Client" extension in VS Code (humao.rest-client)
+# 2. Configure variables below for your target environment
+# 3. Click "Send Request" above any request to execute it
+#
+# ENVIRONMENTS:
+# - Local Development: baseHost=localhost:3000, baseProtocol=http
+# - Production: baseHost=arolariu.ro, baseProtocol=https
+#
+# NOTE: This is a Next.js application - pages return HTML, API routes return JSON
+#
+###############################################################################
+
+###############################################################################
+# CONFIGURATION - Update these values for your environment
+###############################################################################
+
+@baseProtocol = https
+@baseHost = arolariu.ro
+@baseUrl = {{baseProtocol}}://{{baseHost}}
+
+# For local development, uncomment these:
+# @baseProtocol = http
+# @baseHost = localhost:3000
+# @baseUrl = {{baseProtocol}}://{{baseHost}}
+
+# Authentication (optional - for protected routes)
+@authToken = YOUR_AUTH_TOKEN_HERE
+
+# Dynamic route parameters
+@invoiceId = 00000000-0000-0000-0000-000000000000
+
+# Locale for i18n testing (en, ro, fr)
+@locale = en
+
+###############################################################################
+# HEALTH CHECKS
+###############################################################################
+
+### Root Page Health Check
+# Quick check to verify the application is responding.
+# Returns: HTML page
+GET {{baseUrl}}/
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### API Health Check
+# Verify the API layer is operational.
+# Returns: JSON with user information (guest credentials if not authenticated)
+GET {{baseUrl}}/api/user
+Accept: application/json
+
+###############################################################################
+# PUBLIC PAGES - Home & About
+###############################################################################
+
+### Homepage
+# The main landing page of arolariu.ro
+GET {{baseUrl}}/
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### About Page
+# Overview of the platform and author
+GET {{baseUrl}}/about
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### About - The Author
+# Information about Alexandru Olariu
+GET {{baseUrl}}/about/the-author
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### About - The Platform
+# Technical details about the arolariu.ro platform
+GET {{baseUrl}}/about/the-platform
+Accept: text/html
+Accept-Language: {{locale}}
+
+###############################################################################
+# PUBLIC PAGES - Domains
+###############################################################################
+
+### Domains Overview
+# List of available business domains/features
+GET {{baseUrl}}/domains
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### Invoices Domain
+# Invoice management domain landing page
+GET {{baseUrl}}/domains/invoices
+Accept: text/html
+Accept-Language: {{locale}}
+
+###############################################################################
+# PUBLIC PAGES - Legal & Compliance
+###############################################################################
+
+### Privacy Policy
+# Data privacy and GDPR compliance information
+GET {{baseUrl}}/privacy-policy
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### Terms of Service
+# Platform usage terms and conditions
+GET {{baseUrl}}/terms-of-service
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### Acknowledgements
+# Third-party libraries and credits
+GET {{baseUrl}}/acknowledgements
+Accept: text/html
+Accept-Language: {{locale}}
+
+###############################################################################
+# AUTHENTICATION PAGES
+###############################################################################
+
+### Auth Landing Page
+# Authentication hub - may redirect to sign-in
+GET {{baseUrl}}/auth
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### Sign In Page
+# Clerk-powered sign in page
+GET {{baseUrl}}/auth/sign-in
+Accept: text/html
+Accept-Language: {{locale}}
+
+###
+
+### Sign Up Page
+# Clerk-powered registration page
+GET {{baseUrl}}/auth/sign-up
+Accept: text/html
+Accept-Language: {{locale}}
+
+###############################################################################
+# PROTECTED PAGES - User Profile
+# Note: These may redirect to auth if not authenticated
+###############################################################################
+
+### My Profile
+# User profile and settings page
+# Requires authentication - will redirect if not logged in
+GET {{baseUrl}}/my-profile
+Accept: text/html
+Accept-Language: {{locale}}
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# PROTECTED PAGES - Invoice Management
+# Note: These require authentication
+###############################################################################
+
+### Upload Scans
+# Upload new invoice scans/receipts
+GET {{baseUrl}}/domains/invoices/upload-scans
+Accept: text/html
+Accept-Language: {{locale}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### View Scans
+# Browse uploaded invoice scans
+GET {{baseUrl}}/domains/invoices/view-scans
+Accept: text/html
+Accept-Language: {{locale}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### View Invoices List
+# List all invoices for the authenticated user
+GET {{baseUrl}}/domains/invoices/view-invoices
+Accept: text/html
+Accept-Language: {{locale}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### View Specific Invoice (Dynamic Route)
+# View details of a specific invoice
+# Replace {{invoiceId}} with an actual invoice GUID
+GET {{baseUrl}}/domains/invoices/view-invoice/{{invoiceId}}
+Accept: text/html
+Accept-Language: {{locale}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Edit Specific Invoice (Dynamic Route)
+# Edit an existing invoice
+# Replace {{invoiceId}} with an actual invoice GUID
+GET {{baseUrl}}/domains/invoices/edit-invoice/{{invoiceId}}
+Accept: text/html
+Accept-Language: {{locale}}
+Authorization: Bearer {{authToken}}
+
+###############################################################################
+# API ROUTES
+###############################################################################
+
+### Get User Information
+# Returns current user info and JWT token.
+# - Authenticated: Returns user details and valid JWT
+# - Guest: Returns guest credentials with limited access
+GET {{baseUrl}}/api/user
+Accept: application/json
+
+###
+
+### Get User Information (with Auth)
+# Same endpoint but with authentication header
+GET {{baseUrl}}/api/user
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+### Clerk Webhook (Unauthorized Test)
+# Tests that the webhook endpoint rejects unauthorized requests.
+# Expected: 400 Bad Request (invalid webhook signature)
+# This is a security test - the endpoint should reject invalid signatures.
+POST {{baseUrl}}/api/auth/clerk
+Content-Type: application/json
+
+{
+  "type": "test.event",
+  "data": {
+    "test": true
+  }
+}
+
+###############################################################################
+# STATIC ASSETS - SEO Files
+###############################################################################
+
+### Robots.txt
+# Search engine crawler instructions
+# Contains: User-agent directives, Sitemap reference
+GET {{baseUrl}}/robots.txt
+Accept: text/plain
+
+###
+
+### Sitemap.xml
+# XML sitemap for search engines
+# Contains: All public URLs with metadata
+GET {{baseUrl}}/sitemap.xml
+Accept: application/xml
+
+###############################################################################
+# STATIC ASSETS - PWA & Icons
+###############################################################################
+
+### Web App Manifest
+# PWA manifest for installable web app
+# Contains: App name, icons, theme colors, display mode
+GET {{baseUrl}}/manifest.json
+Accept: application/json
+
+###
+
+### Icon SVG
+# Main application icon in SVG format
+GET {{baseUrl}}/icon.svg
+Accept: image/svg+xml
+
+###
+
+### Logo SVG
+# Application logo in SVG format
+GET {{baseUrl}}/logo.svg
+Accept: image/svg+xml
+
+###
+
+### Favicon
+# Browser tab icon
+GET {{baseUrl}}/favicon.ico
+
+###############################################################################
+# STATIC ASSETS - Well-Known Files
+###############################################################################
+
+### Humans.txt
+# Credits and acknowledgements in humans.txt format
+# See: https://humanstxt.org/
+GET {{baseUrl}}/humans.txt
+Accept: text/plain
+
+###
+
+### Security.txt
+# Security contact information
+# See: https://securitytxt.org/
+GET {{baseUrl}}/security.txt
+Accept: text/plain
+
+###
+
+### Browserconfig.xml
+# Windows tile configuration for pinned sites
+GET {{baseUrl}}/browserconfig.xml
+Accept: application/xml
+
+###############################################################################
+# ERROR SCENARIOS - Testing Edge Cases
+###############################################################################
+
+### 404 - Non-existent Page
+# Test that the application returns proper 404 for unknown routes
+GET {{baseUrl}}/this-page-does-not-exist-{{$guid}}
+Accept: text/html
+
+###
+
+### 404 - Non-existent API Route
+# Test that the API returns proper 404 for unknown endpoints
+GET {{baseUrl}}/api/non-existent-endpoint-{{$guid}}
+Accept: application/json
+
+###
+
+### 405 - Method Not Allowed
+# Test that POST to GET-only API route returns 405
+POST {{baseUrl}}/api/user
+Content-Type: application/json
+
+{}
+
+###############################################################################
+# INTERNATIONALIZATION (i18n) TESTING
+###############################################################################
+
+### Homepage - English
+GET {{baseUrl}}/
+Accept: text/html
+Accept-Language: en
+
+###
+
+### Homepage - Romanian
+GET {{baseUrl}}/
+Accept: text/html
+Accept-Language: ro
+
+###
+
+### Homepage - French
+GET {{baseUrl}}/
+Accept: text/html
+Accept-Language: fr
+
+###############################################################################
+# PERFORMANCE TESTING
+###############################################################################
+
+### Homepage Performance
+# Baseline performance measurement for the homepage
+# Check response time in the response metadata
+GET {{baseUrl}}/
+Accept: text/html
+Cache-Control: no-cache
+
+###
+
+### API Performance
+# Baseline performance measurement for API
+# Check response time in the response metadata
+GET {{baseUrl}}/api/user
+Accept: application/json
+Cache-Control: no-cache
+
+###############################################################################
+# QUICK REFERENCE
+###############################################################################
+#
+# Response Codes:
+# - 200 OK: Request succeeded
+# - 301/302/307/308: Redirect (common for auth-protected pages)
+# - 400 Bad Request: Invalid request
+# - 401 Unauthorized: Authentication required
+# - 403 Forbidden: Insufficient permissions
+# - 404 Not Found: Page/resource doesn't exist
+# - 405 Method Not Allowed: Wrong HTTP method
+#
+# Headers:
+# - Accept-Language: Controls i18n (en, ro, fr)
+# - Authorization: Bearer token for protected routes
+# - Cache-Control: no-cache for fresh content
+#
+# VS Code REST Client Tips:
+# - Use {{$guid}} to generate a random GUID
+# - Use {{$datetime iso8601}} for current timestamp
+# - Use {{$randomInt min max}} for random numbers
+# - Variables defined with @name can be referenced as {{name}}
+# - Click "Send Request" above any ### block to execute
+#
+# Security Headers (expected in responses):
+# - X-Frame-Options: DENY or SAMEORIGIN
+# - X-Content-Type-Options: nosniff
+# - Content-Security-Policy: Present
+# - Referrer-Policy: Present
+# - Permissions-Policy: Present
+#
+###############################################################################
