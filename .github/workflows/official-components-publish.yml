@@ -74,7 +74,33 @@ jobs:
       version: ${{ steps.package-info.outputs.version }}
       name: ${{ steps.package-info.outputs.name }}
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display workflow context
+        run: |
+          echo "::group::🔍 Publish Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 📦 NPM PACKAGE PUBLISH PIPELINE                            │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Package:       @arolariu/components                     │"
+          echo "│ 🏷️ Tag:          ${{ inputs.tag || 'latest' }}"
+          echo "│ 🔐 Auth:          Trusted Publishing (OIDC)                │"
+          echo "│ 🧪 Dry Run:       ${{ inputs.dry-run || 'false' }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 👤 Triggered by:  ${{ github.actor }}"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          # Write initial summary
+          echo "## 📦 NPM Package Publish" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | \`@arolariu/components\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Distribution Tag | ${{ inputs.tag || 'latest' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dry Run | ${{ inputs.dry-run || 'false' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Authentication | OIDC Trusted Publishing |" >> $GITHUB_STEP_SUMMARY
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
@@ -87,33 +113,72 @@ jobs:
       - name: 📋 Extract package information
         id: package-info
         run: |
+          echo "::group::📋 Package Information"
           VERSION=$(node -p "require('./package.json').version")
           NAME=$(node -p "require('./package.json').name")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "name=$NAME" >> $GITHUB_OUTPUT
           echo "::notice::Package: $NAME@$VERSION"
 
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 📦 PACKAGE DETAILS                                         │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ Name:    $NAME"
+          echo "│ Version: $VERSION"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Package Details" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Name | \`$NAME\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`$VERSION\` |" >> $GITHUB_STEP_SUMMARY
+
       - name: 🔍 Check if version already published
         run: |
           VERSION="${{ steps.package-info.outputs.version }}"
           NAME="${{ steps.package-info.outputs.name }}"
 
+          echo "::group::🔍 Version Check"
+          echo "Checking npm registry for $NAME@$VERSION..."
+
           # Check if this version already exists on npm
           if npm view "$NAME@$VERSION" version 2>/dev/null; then
             echo "::error::Version $VERSION is already published on npm!"
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ❌ Version Conflict" >> $GITHUB_STEP_SUMMARY
+            echo "Version \`$VERSION\` is already published on npm." >> $GITHUB_STEP_SUMMARY
             exit 1
           else
             echo "::notice::Version $VERSION is not yet published. Ready to proceed."
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ✅ Version Available" >> $GITHUB_STEP_SUMMARY
+            echo "Version \`$VERSION\` is not yet published. Ready to proceed." >> $GITHUB_STEP_SUMMARY
           fi
+          echo "::endgroup::"
 
       - name: 🏗️ Build package
-        run: npm run build
+        run: |
+          echo "::group::🏗️ Building Package"
+          START_TIME=$(date +%s)
+          npm run build
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ Build completed in ${DURATION}s"
+          echo "::endgroup::"
 
       - name: 🧪 Run tests
-        run: npm run test --if-present
+        run: |
+          echo "::group::🧪 Running Tests"
+          npm run test --if-present
+          echo "::endgroup::"
 
       - name: 📦 Verify package contents
-        run: npm pack --dry-run
+        run: |
+          echo "::group::📦 Package Contents"
+          npm pack --dry-run
+          echo "::endgroup::"
 
   # ===========================================================================
   # PUBLISH JOB
@@ -127,7 +192,20 @@ jobs:
       name: npm-publish
       url: https://www.npmjs.com/package/${{ needs.validate.outputs.name }}
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display publish context
+        run: |
+          echo "::group::🔍 Publish Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🚀 PUBLISH PHASE                                           │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Package:       ${{ needs.validate.outputs.name }}@${{ needs.validate.outputs.version }}"
+          echo "│ 🏷️ Tag:          ${{ inputs.tag || 'latest' }}"
+          echo "│ 🔐 Auth:          Trusted Publishing (OIDC)"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
 
       - name: 📦 Setup Node.js with npm registry

@@ -1,12 +1,4 @@
 {
-  "inputs": [
-    {
-      "description": "GitHub Personal Access Token (PAT) for MCP auth.",
-      "id": "github_token",
-      "password": true,
-      "type": "promptString"
-    }
-  ],
   "servers": {
     "nextjs-devtools": {
       "type": "stdio",
@@ -17,11 +9,6 @@
         "type": "stdio",
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
-    },
-    "eslint-mcp-server": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@eslint/mcp@latest"]
     },
     "github-mcp-server": {
       "type": "http",

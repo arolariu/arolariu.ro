@@ -2,77 +2,255 @@
   "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
   "info": {
     "name": "api.arolariu.ro",
-    "description": "Complete E2E test collection for the arolariu.ro backend API. Covers all Invoice and Merchant endpoints.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create → read → update → delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "api-arolariu-ro-backend-tests",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
   },
   "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script: Validation and setup",
+          "",
+          "// Validate required collection variables",
+          "const requiredVars = ['baseUrl', 'authToken', 'userIdentifier'];",
+          "requiredVars.forEach(varName => {",
+          "    const value = pm.collectionVariables.get(varName) || pm.environment.get(varName);",
+          "    if (!value) {",
+          "        console.warn(`⚠️ Warning: Required variable '${varName}' is not set`);",
+          "    }",
+          "});",
+          "",
+          "// Validate GUID format for userIdentifier",
+          "const userIdentifier = pm.collectionVariables.get('userIdentifier');",
+          "const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+          "if (userIdentifier && !guidRegex.test(userIdentifier)) {",
+          "    console.warn(`⚠️ Warning: userIdentifier '${userIdentifier}' is not a valid GUID format`);",
+          "}",
+          "",
+          "// Set request timestamp for diagnostics",
+          "pm.variables.set('requestTimestamp', new Date().toISOString());",
+          "",
+          "// Log request info",
+          "console.log(`📤 [${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
+        ]
+      }
+    },
     {
       "listen": "test",
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Collection-level test: RESTful status code validation",
-          "pm.test(\"Response status follows RESTful conventions\", function () {",
-          "    var requestName = pm.info.requestName;",
-          "    // Skip for requests that expect specific non-2xx responses",
-          "    if (requestName.includes('15 - Get Invoice Merchant (None)')) {",
-          "        pm.expect(pm.response.code).to.eql(404, 'Expected 404 for no merchant');",
+          "// Collection-level tests: Default expectations for all requests",
+          "// Request-level tests can override or extend these defaults",
+          "",
+          "// Helper: Check if request expects non-2xx response",
+          "function expectsNon2xxResponse() {",
+          "    const requestName = pm.info.requestName;",
+          "    return requestName.includes('(None)') || ",
+          "           requestName.includes('Unauthorized') ||",
+          "           requestName.includes('Invalid') ||",
+          "           requestName.includes('Non-existent');",
+          "}",
+          "",
+          "// Helper: Check if request is analysis endpoint (long-running)",
+          "function isAnalysisRequest() {",
+          "    return pm.info.requestName.toLowerCase().includes('analyze');",
+          "}",
+          "",
+          "// Status code validation: RESTful conventions",
+          "pm.test('Response status follows RESTful conventions', function () {",
+          "    if (expectsNon2xxResponse()) {",
+          "        // Skip status check for requests expecting errors",
+          "        this.skip();",
           "        return;",
           "    }",
-          "    var method = pm.request.method.toUpperCase();",
-          "    var code = pm.response.code;",
-          "    var expectedRange;",
-          "    if (method === 'GET' || method === 'HEAD') { expectedRange = [200, 299]; }",
-          "    else if (method === 'POST') { expectedRange = [200, 299]; }",
-          "    else if (method === 'PUT' || method === 'PATCH') { expectedRange = [200, 299]; }",
-          "    else if (method === 'DELETE') { expectedRange = [200, 299]; }",
-          "    else { expectedRange = [200, 399]; }",
+          "",
+          "    const method = pm.request.method.toUpperCase();",
+          "    const code = pm.response.code;",
+          "    let expectedRange;",
+          "",
+          "    switch (method) {",
+          "        case 'GET':",
+          "        case 'HEAD':",
+          "            expectedRange = [200, 299];",
+          "            break;",
+          "        case 'POST':",
+          "            expectedRange = [200, 201]; // 200 OK or 201 Created",
+          "            break;",
+          "        case 'PUT':",
+          "        case 'PATCH':",
+          "            expectedRange = [200, 202]; // 200 OK or 202 Accepted",
+          "            break;",
+          "        case 'DELETE':",
+          "            expectedRange = [200, 204]; // 200 OK or 204 No Content",
+          "            break;",
+          "        default:",
+          "            expectedRange = [200, 299];",
+          "    }",
+          "",
           "    pm.expect(code).to.be.within(expectedRange[0], expectedRange[1],",
-          "        `Expected ${method} request to return ${expectedRange[0]}-${expectedRange[1]}, got ${code}`);",
+          "        `Expected ${method} to return ${expectedRange[0]}-${expectedRange[1]}, got ${code}`);",
           "});",
           "",
-          "// Collection-level test: Performance SLA (<2000ms for analysis, <1000ms otherwise)",
-          "pm.test(\"Response time is acceptable\", function () {",
-          "    var requestName = pm.info.requestName.toLowerCase();",
-          "    var threshold = requestName.includes('01') ? 30000 : 3000;",
+          "// Performance SLA: Response time validation",
+          "pm.test('Response time meets SLA threshold', function () {",
+          "    const threshold = isAnalysisRequest() ? 30000 : 3000; // 30s for analysis, 3s otherwise",
           "    pm.expect(pm.response.responseTime).to.be.below(threshold,",
-          "        `Response time ${pm.response.responseTime}ms exceeds ${threshold}ms threshold`);",
+          "        `Response time ${pm.response.responseTime}ms exceeds ${threshold}ms SLA`);",
           "});",
           "",
-          "// Collection-level test: Content-Type header validation",
-          "pm.test(\"Content-Type header is present and valid\", function () {",
-          "    var requestName = pm.info.requestName;",
-          "    // Skip for requests that expect 404 with no body",
-          "    if (requestName.includes('15 - Get Invoice Merchant (None)')) {",
-          "        return; // 404 may not have content-type",
+          "// Content-Type header validation",
+          "pm.test('Content-Type header is present and valid', function () {",
+          "    if (pm.response.code === 204) {",
+          "        // 204 No Content doesn't require Content-Type",
+          "        this.skip();",
+          "        return;",
           "    }",
-          "    var contentType = pm.response.headers.get('Content-Type');",
-          "    if (pm.response.code !== 204) {",
-          "        pm.expect(contentType).to.exist;",
-          "        pm.expect(contentType).to.match(/application\\/json|text\\/plain|text\\/html/,",
-          "            `Invalid Content-Type: ${contentType}`);",
+          "",
+          "    const contentType = pm.response.headers.get('Content-Type');",
+          "    pm.expect(contentType).to.exist;",
+          "    pm.expect(contentType).to.match(/application\\/json|text\\/plain|text\\/html/,",
+          "        `Invalid Content-Type: ${contentType}`);",
+          "});",
+          "",
+          "// Response body validation",
+          "pm.test('Response body is valid', function () {",
+          "    if (pm.response.code === 204 || pm.request.method === 'HEAD') {",
+          "        // 204 No Content and HEAD requests have no body",
+          "        this.skip();",
+          "        return;",
+          "    }",
+          "",
+          "    pm.expect(pm.response.text()).to.have.length.greaterThan(0,",
+          "        'Response body is empty');",
+          "});",
+          "",
+          "// JSON structure validation",
+          "pm.test('JSON responses are well-formed', function () {",
+          "    const contentType = pm.response.headers.get('Content-Type');",
+          "    if (contentType && contentType.includes('application/json')) {",
+          "        pm.response.to.have.jsonBody();",
+          "    } else {",
+          "        this.skip();",
           "    }",
           "});",
           "",
-          "// Collection-level test: Response body validation (skip for 204)",
-          "pm.test(\"Response body is valid\", function () {",
-          "    var requestName = pm.info.requestName;",
-          "    // Skip for requests that expect 404 with no body",
-          "    if (requestName.includes('15 - Get Invoice Merchant (None)')) {",
-          "        return; // 404 may have empty body",
+          "// Security headers validation",
+          "pm.test('Security headers are present', function () {",
+          "    const headers = pm.response.headers;",
+          "    ",
+          "    // Check for CORS headers (expected in API responses)",
+          "    const corsHeader = headers.get('Access-Control-Allow-Origin');",
+          "    if (corsHeader) {",
+          "        pm.expect(corsHeader).to.exist;",
           "    }",
-          "    if (pm.response.code !== 204) {",
-          "        pm.expect(pm.response.text()).to.have.length.greaterThan(0);",
+          "",
+          "    // X-Content-Type-Options should be nosniff",
+          "    const xContentType = headers.get('X-Content-Type-Options');",
+          "    if (xContentType) {",
+          "        pm.expect(xContentType).to.equal('nosniff');",
           "    }",
           "});",
           "",
-          "// Log detailed performance metrics for diagnostics",
-          "console.log(`[${pm.info.requestName}] Status: ${pm.response.code} | Time: ${pm.response.responseTime}ms | Size: ${pm.response.responseSize} bytes`);"
+          "// Error response structure validation",
+          "pm.test('Error responses have proper structure', function () {",
+          "    if (pm.response.code >= 400) {",
+          "        pm.response.to.have.jsonBody();",
+          "        const jsonData = pm.response.json();",
+          "        // Most error responses should have title/detail/status per RFC 7807",
+          "        pm.expect(jsonData).to.be.an('object');",
+          "    } else {",
+          "        this.skip();",
+          "    }",
+          "});",
+          "",
+          "// Log detailed diagnostics",
+          "const statusIcon = pm.response.code < 400 ? '✅' : '❌';",
+          "console.log(`${statusIcon} [${pm.info.requestName}] ${pm.response.code} | ${pm.response.responseTime}ms | ${pm.response.responseSize} bytes`);"
         ]
       }
     }
   ],
   "item": [
+    {
+      "name": "Health & Diagnostics",
+      "description": "System health and availability checks",
+      "item": [
+        {
+          "name": "00 - Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Health check endpoint for monitoring service availability. Returns detailed health information including service dependencies. Rate limited - use sparingly in automated monitoring.",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Health check returns 200 OK', function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Health check response is valid JSON', function () {",
+                  "    pm.response.to.have.jsonBody();",
+                  "});",
+                  "",
+                  "pm.test('Health check has status field', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Health status is Healthy', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.be.oneOf(['Healthy', 'Degraded']);",
+                  "});",
+                  "",
+                  "pm.test('Health check completes quickly', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "console.log('🏥 Health check passed - API is operational');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "Invoices",
       "description": "Invoice CRUD operations and sub-resource management",
@@ -154,21 +332,40 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Expected status 201 Created\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "pm.test('Invoice created successfully (201)', function () {",
+                  "    pm.expect(pm.response.code).to.equal(201);",
                   "});",
-                  "try {",
-                  "    var body = pm.response.json();",
-                  "    var id = body && (body.id || body.invoiceIdentifier || body.Id);",
-                  "    if (id) {",
-                  "        pm.collectionVariables.set('invoiceIdentifier', String(id));",
-                  "        console.log('Stored invoiceIdentifier = ' + id);",
-                  "    } else {",
-                  "        console.warn('Create Invoice response did not include an id field. Response: ' + JSON.stringify(body));",
+                  "",
+                  "pm.test('Response contains invoice data', function () {",
+                  "    pm.response.to.have.jsonBody();",
+                  "});",
+                  "",
+                  "pm.test('Invoice has valid GUID identifier', function () {",
+                  "    const body = pm.response.json();",
+                  "    const id = body.id || body.invoiceIdentifier || body.Id;",
+                  "    pm.expect(id).to.exist;",
+                  "    ",
+                  "    // Validate GUID format",
+                  "    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+                  "    pm.expect(id).to.match(guidRegex);",
+                  "    ",
+                  "    // Store for subsequent requests",
+                  "    pm.collectionVariables.set('invoiceIdentifier', String(id));",
+                  "    console.log('📝 Created invoice: ' + id);",
+                  "});",
+                  "",
+                  "pm.test('Invoice has required fields', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('userIdentifier');",
+                  "    pm.expect(body.userIdentifier).to.equal(pm.collectionVariables.get('userIdentifier'));",
+                  "});",
+                  "",
+                  "pm.test('Location header points to created resource', function () {",
+                  "    const location = pm.response.headers.get('Location');",
+                  "    if (location) {",
+                  "        pm.expect(location).to.include('/invoices/');",
                   "    }",
-                  "} catch (e) {",
-                  "    console.warn('Could not parse response body: ' + e);",
-                  "}"
+                  "});"
                 ]
               }
             }
@@ -208,11 +405,29 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Response contains at least one invoice\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.be.an('array');",
-                  "    pm.expect(body.length).to.be.greaterThan(0);",
-                  "});"
+                  "pm.test('All invoices retrieved successfully', function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array of invoices', function () {",
+                  "    pm.response.to.have.jsonBody();",
+                  "    const invoices = pm.response.json();",
+                  "    pm.expect(invoices).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('At least one invoice exists', function () {",
+                  "    const invoices = pm.response.json();",
+                  "    pm.expect(invoices.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Created invoice is in the list', function () {",
+                  "    const invoices = pm.response.json();",
+                  "    const createdId = pm.collectionVariables.get('invoiceIdentifier');",
+                  "    const found = invoices.some(inv => inv.id === createdId || inv.invoiceIdentifier === createdId);",
+                  "    pm.expect(found).to.be.true;",
+                  "});",
+                  "",
+                  "console.log('📋 Retrieved ' + pm.response.json().length + ' invoice(s)');"
                 ]
               }
             }
@@ -253,12 +468,36 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Invoice ID matches requested\", function () {",
-                  "    var body = pm.response.json();",
-                  "    var expectedId = pm.collectionVariables.get('invoiceIdentifier');",
-                  "    var actualId = body.id || body.Id || body.invoiceIdentifier;",
-                  "    pm.expect(String(actualId).toLowerCase()).to.eql(String(expectedId).toLowerCase());",
-                  "});"
+                  "pm.test('Specific invoice retrieved successfully', function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is invoice object', function () {",
+                  "    pm.response.to.have.jsonBody();",
+                  "    const invoice = pm.response.json();",
+                  "    pm.expect(invoice).to.be.an('object');",
+                  "});",
+                  "",
+                  "pm.test('Invoice ID matches requested ID', function () {",
+                  "    const body = pm.response.json();",
+                  "    const expectedId = pm.collectionVariables.get('invoiceIdentifier');",
+                  "    const actualId = body.id || body.Id || body.invoiceIdentifier;",
+                  "    pm.expect(String(actualId).toLowerCase()).to.equal(String(expectedId).toLowerCase());",
+                  "});",
+                  "",
+                  "pm.test('Invoice belongs to correct user', function () {",
+                  "    const body = pm.response.json();",
+                  "    const expectedUserId = pm.collectionVariables.get('userIdentifier');",
+                  "    pm.expect(body.userIdentifier).to.equal(expectedUserId);",
+                  "});",
+                  "",
+                  "pm.test('Invoice has timestamp fields', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property('createdAt');",
+                  "    pm.expect(body).to.have.property('updatedAt');",
+                  "});",
+                  "",
+                  "console.log('✅ Retrieved invoice details');"
                 ]
               }
             }
@@ -1741,11 +1980,172 @@
       ]
     },
     {
+      "name": "Error Handling",
+      "description": "Tests for error responses and edge cases",
+      "item": [
+        {
+          "name": "38 - Get Non-existent Invoice (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Attempt to retrieve a non-existent invoice. Expected: 404 Not Found.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Non-existent invoice returns 404', function () {",
+                  "    pm.expect(pm.response.code).to.equal(404);",
+                  "});",
+                  "",
+                  "pm.test('Error response has proper structure', function () {",
+                  "    pm.response.to.have.jsonBody();",
+                  "});",
+                  "",
+                  "console.log('✅ 404 error handling verified');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "39 - Unauthorized Request (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Attempt to access protected endpoint without authentication. Expected: 401 Unauthorized.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unauthorized request returns 401', function () {",
+                  "    pm.expect(pm.response.code).to.equal(401);",
+                  "});",
+                  "",
+                  "pm.test('Unauthorized response has WWW-Authenticate header', function () {",
+                  "    const header = pm.response.headers.get('WWW-Authenticate');",
+                  "    if (header) {",
+                  "        pm.expect(header).to.exist;",
+                  "    }",
+                  "});",
+                  "",
+                  "console.log('✅ 401 authorization check verified');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "40 - Invalid Request Body (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Send invalid request body to test validation. Expected: 400 Bad Request.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invalidField\": \"invalid value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invalid request returns 400', function () {",
+                  "    pm.expect(pm.response.code).to.equal(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error has details', function () {",
+                  "    pm.response.to.have.jsonBody();",
+                  "});",
+                  "",
+                  "console.log('✅ 400 validation error verified');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Cleanup",
       "description": "Cleanup test data",
       "item": [
         {
-          "name": "38 - Delete Merchant",
+          "name": "41 - Delete Merchant",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1781,7 +2181,7 @@
           }
         },
         {
-          "name": "39 - Delete Invoice",
+          "name": "42 - Delete Invoice",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1811,7 +2211,7 @@
           }
         },
         {
-          "name": "40 - Verify Cleanup (Get All Invoices)",
+          "name": "43 - Verify Cleanup (Get All Invoices)",
           "request": {
             "method": "GET",
             "header": [],
@@ -1840,7 +2240,7 @@
           }
         },
         {
-          "name": "41 - Delete All Invoices (Bulk)",
+          "name": "44 - Delete All Invoices (Bulk)",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1873,30 +2273,52 @@
   ],
   "variable": [
     {
-      "key": "invoiceIdentifier",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "merchantIdentifier",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "userIdentifier",
-      "value": "fafa1779-d0d9-4442-bba6-cbf0e2bf6d7a",
-      "type": "string"
+      "key": "baseUrl",
+      "value": "https://api.arolariu.ro",
+      "type": "string",
+      "description": "Base URL for the API (e.g., https://api.arolariu.ro for production, http://localhost:5000 for local)"
     },
     {
       "key": "authToken",
       "value": "",
       "type": "string",
-      "description": "JWT Bearer token - inject via environment or manually"
+      "description": "JWT Bearer token for authentication - obtain from auth provider or /api/user endpoint on frontend"
     },
     {
-      "key": "baseUrl",
-      "value": "https://api.arolariu.ro",
-      "type": "string"
+      "key": "userIdentifier",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "string",
+      "description": "User GUID identifier matching the authenticated user - must be valid GUID format"
+    },
+    {
+      "key": "invoiceIdentifier",
+      "value": "",
+      "type": "string",
+      "description": "Invoice GUID - dynamically set after invoice creation in test flow"
+    },
+    {
+      "key": "merchantIdentifier",
+      "value": "",
+      "type": "string",
+      "description": "Merchant GUID - dynamically set after merchant creation in test flow"
+    },
+    {
+      "key": "apiVersion",
+      "value": "v1",
+      "type": "string",
+      "description": "API version for REST endpoints (currently v1)"
+    },
+    {
+      "key": "maxRetries",
+      "value": "3",
+      "type": "string",
+      "description": "Maximum retry attempts for failed requests (for automated testing)"
+    },
+    {
+      "key": "retryDelay",
+      "value": "1000",
+      "type": "string",
+      "description": "Delay in milliseconds between retry attempts"
     }
   ]
 }

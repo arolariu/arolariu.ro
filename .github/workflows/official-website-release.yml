@@ -89,7 +89,35 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: 🔒 Performing auth against Azure Public Cloud...
+      - name: � Display release context
+        run: |
+          echo "::group::🔍 Release Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🚀 WEBSITE RELEASE PIPELINE                                │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Release phase (1/1)                      │"
+          echo "│ 🌍 Environment:   ${{ inputs.environment || 'development' }}"
+          echo "│ 🐳 Container:     ${{ inputs.container_name || 'frontend/dev.arolariu' }}"
+          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
+          echo "│ 🎯 Target:        ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 👤 Triggered by:  ${{ github.actor }}"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "│ 📌 Trigger:       ${{ github.event_name }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          # Write initial summary
+          echo "## 🚀 Website Release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment || 'development' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container | \`${{ inputs.container_name || 'frontend/dev.arolariu' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| App Service | ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered By | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: �🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -112,3 +140,23 @@ jobs:
         with:
           app-name: ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+
+      - name: 📊 Release summary
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Release Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Website URL | ${{ steps.deploy-to-webapp.outputs.webapp-url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **Live URL**: ${{ steps.deploy-to-webapp.outputs.webapp-url }}" >> $GITHUB_STEP_SUMMARY
+
+          echo ""
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ✅ RELEASE COMPLETED SUCCESSFULLY                          │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔗 URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
+          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"

@@ -86,7 +86,24 @@ jobs:
     environment: ${{ inputs.environment || 'production' }}
     timeout-minutes: 10
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: � Display workflow context
+        run: |
+          echo "::group::🔍 Workflow Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🎯 BACKEND API CI/CD PIPELINE                              │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Test phase (1/3)                         │"
+          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
+          echo "│ 🔧 Infrastructure: ${{ env.INFRA }}"
+          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
+          echo "│ 👤 Triggered by:  ${{ github.actor }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "│ 🔢 Run Number:    ${{ github.run_number }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
@@ -100,7 +117,27 @@ jobs:
       - name: 🧪 Running unit tests...
         working-directory: .
         run: |
+          echo "::group::🧪 Running .NET Unit Tests"
+          echo "📍 Solution: arolariu.slnx"
+          echo "📍 Configuration: Release"
+          echo "📍 Test framework: xUnit"
+          echo ""
+          START_TIME=$(date +%s)
           dotnet test --configuration Release --logger trx --results-directory ./sites/api.arolariu.ro/TestResults --collect:"XPlat Code Coverage" ./arolariu.slnx
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo ""
+          echo "::notice::✅ Unit tests completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          # Write to job summary
+          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Configuration | Release |" >> $GITHUB_STEP_SUMMARY
+          echo "| Results Directory | ./sites/api.arolariu.ro/TestResults |" >> $GITHUB_STEP_SUMMARY
 
       - name: 📤 Upload test results...
         if: always()
@@ -111,6 +148,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: 📊 Test phase summary
+        if: always()
+        run: |
+          echo "::group::📊 Test Phase Summary"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ✅ TEST PHASE COMPLETED                                    │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📁 Artifacts: test-results-${{ github.run_id }}"
+          echo "│ 📅 Completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 🔗 Job URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
   build:
     if: github.repository == 'arolariu/arolariu.ro'
     name: 🛠️ Build phase (2/3)
@@ -118,7 +168,21 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'production' }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: � Display build context
+        run: |
+          echo "::group::🔍 Build Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🏗️ BUILD PHASE                                            │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Build phase (2/3)                        │"
+          echo "│ 🐳 Container:     backend/api.arolariu                     │"
+          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
+          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
@@ -148,6 +212,20 @@ jobs:
           CONTAINER_NAME: "backend/api.arolariu"
           CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         run: |
+          echo "::group::🐳 Docker Build"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🐳 DOCKER BUILD STARTED                                    │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Image: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+          echo "│ 📁 Context: ./sites/api.arolariu.ro"
+          echo "│ 🔧 Build args:"
+          echo "│    - API_NAME=${{ env.API_NAME }}"
+          echo "│    - API_URL=${{ env.API_URL }}"
+          echo "│    - COMMIT_SHA=${{ env.COMMIT_SHA }}"
+          echo "│    - INFRA=${{ env.INFRA }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo ""
+          START_TIME=$(date +%s)
           docker build \
             --build-arg API_NAME="${{ env.API_NAME }}" \
             --build-arg API_URL="${{ env.API_URL }}" \
@@ -158,12 +236,38 @@ jobs:
             --build-arg AZURE_CLIENT_ID="${{ env.AZURE_CLIENT_ID }}" \
             -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} \
             .
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo ""
+          echo "::notice::✅ Docker build completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          # Get image size
+          IMAGE_SIZE=$(docker images --format "{{.Size}}" ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}})
+          echo "📦 Image size: $IMAGE_SIZE"
+
+          # Write to job summary
+          echo "## 🐳 Docker Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Size | ${IMAGE_SIZE} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container | \`${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}\` |" >> $GITHUB_STEP_SUMMARY
 
       - name: ⏫ Pushing the docker container...
         env:
           CONTAINER_NAME: "backend/api.arolariu"
           CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
-        run: docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
+        run: |
+          echo "::group::⏫ Docker Push"
+          echo "📤 Pushing to Azure Container Registry..."
+          START_TIME=$(date +%s)
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ Docker push completed in ${DURATION}s"
+          echo "::endgroup::"
 
   deploy:
     if: github.repository == 'arolariu/arolariu.ro'
@@ -175,6 +279,20 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
+      - name: 📋 Display deployment context
+        run: |
+          echo "::group::🔍 Deployment Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🚀 DEPLOYMENT PHASE                                        │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🎯 Target:        Azure App Service (api-arolariu-ro)      │"
+          echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
+          echo "│ 🐳 Container:     backend/api.arolariu:${{ inputs.environment == 'production' && github.sha || 'latest' }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 👤 Deployed by:   ${{ github.actor }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
       - name: 🔒 Handling the auth process to Azure Public Cloud...
         uses: Azure/login@v2
         with:
@@ -198,3 +316,27 @@ jobs:
         with:
           app-name: "api-arolariu-ro"
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+
+      - name: 📊 Deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | \`api-arolariu-ro\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ inputs.environment || 'production' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container | \`backend/api.arolariu:${{ inputs.environment == 'production' && github.sha || 'latest' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed By | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **API URL**: https://api.arolariu.ro" >> $GITHUB_STEP_SUMMARY
+
+          echo ""
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ✅ DEPLOYMENT COMPLETED SUCCESSFULLY                       │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔗 URL: https://api.arolariu.ro                            │"
+          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"

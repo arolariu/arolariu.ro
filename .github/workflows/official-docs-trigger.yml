@@ -67,7 +67,32 @@ jobs:
       name: "documentation"
       url: "https://docs.arolariu.ro"
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: � Display workflow context
+        run: |
+          echo "::group::🔍 Workflow Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 📚 DOCUMENTATION WEBSITE PIPELINE                          │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Build & Deploy                           │"
+          echo "│ 🌍 Framework:     DocFX + TypeDoc                          │"
+          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
+          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
+          echo "│ 👤 Triggered by:  ${{ github.actor }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          # Write initial summary
+          echo "## 📚 Documentation Website Pipeline" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Framework | DocFX + TypeDoc |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | Azure Static Web Apps |" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | https://docs.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
+
+      - name: �🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
@@ -80,17 +105,52 @@ jobs:
 
       - name: "[DOCS::1/4] 🏗️ Installing the .NET dependencies..."
         run: |
+          echo "::group::📦 .NET Dependencies"
+          echo "Installing .NET workloads and restoring packages..."
+          START_TIME=$(date +%s)
           dotnet workload restore
           dotnet restore ./arolariu.slnx
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ Dependencies installed in ${DURATION}s"
+          echo "::endgroup::"
 
       - name: "[DOCS::2/4] 🧾 Generating TypeScript API reference (TypeDoc)..."
-        run: npm run docs:typedoc
+        run: |
+          echo "::group::📝 TypeDoc Generation"
+          echo "Generating TypeScript API documentation..."
+          START_TIME=$(date +%s)
+          npm run docs:typedoc
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ TypeDoc completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 TypeDoc Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
 
       - name: "[DOCS::3/4] ⚙️ Building the DocFX documentation platform..."
         run: |
+          echo "::group::📚 DocFX Build"
+          echo "Generating .NET API documentation with DocFX..."
+          START_TIME=$(date +%s)
           dotnet tool update -g docfx
           docfx metadata "./sites/docs.arolariu.ro/docfx.json"
           docfx build "./sites/docs.arolariu.ro/docfx.json"
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ DocFX completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📚 DocFX Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Output | sites/docs.arolariu.ro/_site |" >> $GITHUB_STEP_SUMMARY
 
       - name: "[DOCS::4/4] 🚀 Deploying documentation..."
         uses: Azure/static-web-apps-deploy@v1
@@ -99,3 +159,20 @@ jobs:
           action: "upload"
           app_location: "./sites/docs.arolariu.ro/_site" # App source code path
           output_location: "./sites/docs.arolariu.ro/_site"
+
+      - name: 📊 Deployment summary
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **Live URL**: https://docs.arolariu.ro" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+          echo ""
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ✅ DOCUMENTATION DEPLOYED SUCCESSFULLY                     │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔗 URL: https://docs.arolariu.ro                           │"
+          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"

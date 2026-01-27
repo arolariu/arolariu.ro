@@ -68,7 +68,32 @@ jobs:
       has-changes: ${{ steps.detect.outputs.has-changes }}
       changed-files-count: ${{ steps.detect.outputs.changed-files-count }}
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display workflow context
+        run: |
+          echo "::group::🔍 Hygiene Check Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🧹 CODE HYGIENE CHECK PIPELINE                             │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Setup & Change Detection                 │"
+          echo "│ 🔀 PR Number:     ${{ github.event.pull_request.number || 'N/A' }}"
+          echo "│ 🏷️ Head SHA:      ${{ env.HEAD_REF }}"
+          echo "│ 🏷️ Base SHA:      ${{ env.BASE_REF }}"
+          echo "│ 👤 Author:        ${{ github.event.pull_request.user.login || github.actor }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          # Write initial summary
+          echo "## 🧹 Code Hygiene Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| PR | #${{ github.event.pull_request.number || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Author | @${{ github.event.pull_request.user.login || github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Head SHA | \`${{ env.HEAD_REF }}\` |" >> $GITHUB_STEP_SUMMARY
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -104,7 +129,20 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display check context
+        run: |
+          echo "::group::🔍 Format Check Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🎨 FORMAT CHECK                                            │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔧 Tool:          Prettier                                 │"
+          echo "│ 📁 Scope:         All supported files                      │"
+          echo "│ 🔀 Changed files: ${{ needs.setup.outputs.changed-files-count || 'calculating...' }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
@@ -145,7 +183,20 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display check context
+        run: |
+          echo "::group::🔍 Lint Check Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🔍 LINT CHECK                                              │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔧 Tool:          ESLint (20+ plugins)                     │"
+          echo "│ 📁 Scope:         TypeScript, JavaScript, React            │"
+          echo "│ ⚙️ Config:        Strict TypeScript mode                   │"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
@@ -186,7 +237,20 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display check context
+        run: |
+          echo "::group::🔍 Unit Tests Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🧪 UNIT TESTS                                              │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔧 Framework:     Vitest                                   │"
+          echo "│ 📁 Scope:         All test files                           │"
+          echo "│ 📊 Coverage:      Enabled (target: 85%)                    │"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
@@ -233,7 +297,20 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     continue-on-error: true
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display check context
+        run: |
+          echo "::group::🔍 Statistics Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 📊 CODE STATISTICS                                         │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Bundle Size:   Analysis vs main branch                  │"
+          echo "│ 📁 Lines of Code: Tracked for regression                   │"
+          echo "│ 📈 Complexity:    Cyclomatic complexity metrics            │"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -273,7 +350,21 @@ jobs:
     needs: [setup, format, lint, test, stats]
     if: always() && (needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch')
     steps:
-      - name: 🛫 Checkout repository
+      - name: � Display summary context
+        run: |
+          echo "::group::🔍 Summary Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 📋 SUMMARY & PR COMMENT                                    │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🎨 Format:        ${{ needs.format.result }}"
+          echo "│ 🔍 Lint:          ${{ needs.lint.result }}"
+          echo "│ 🧪 Tests:         ${{ needs.test.result }}"
+          echo "│ 📊 Stats:         ${{ needs.stats.result }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
