@@ -60,7 +60,33 @@ jobs:
     outputs:
       cache-key: ${{ steps.workspace-setup.outputs.node-cache-hit }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: � Display workflow context
+        run: |
+          echo "::group::🔍 E2E Test Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🧪 END-TO-END TESTING PIPELINE                             │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Setup Dependencies                       │"
+          echo "│ 🔧 Tool:          Newman (Postman CLI)                     │"
+          echo "│ 🎯 Targets:       arolariu.ro + api.arolariu.ro            │"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 👤 Triggered by:  ${{ github.actor }}"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "│ 📌 Trigger:       ${{ github.event_name }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          # Write initial summary
+          echo "## 🧪 End-to-End Testing Pipeline" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | Newman (Postman CLI) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend Target | https://arolariu.ro |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend Target | https://api.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: �🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
@@ -71,7 +97,12 @@ jobs:
           cache-key-prefix: 'e2e'
 
       - name: 📦 Installing global dependencies...
-        run: npm install -g newman
+        run: |
+          echo "::group::📦 Installing Newman"
+          npm install -g newman
+          newman --version
+          echo "::notice::✅ Newman installed successfully"
+          echo "::endgroup::"
 
   frontend:
     if: github.repository == 'arolariu/arolariu.ro'
@@ -81,6 +112,18 @@ jobs:
     outputs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
+      - name: 📋 Display test context
+        run: |
+          echo "::group::🔍 Frontend E2E Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🌐 FRONTEND E2E TESTS                                      │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🎯 Target:        https://arolariu.ro                      │"
+          echo "│ 🔧 Tool:          Newman                                   │"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
@@ -93,12 +136,30 @@ jobs:
       - name: 🚀 Running end-to-end tests...
         id: test
         run: |
+          echo "::group::🧪 Frontend E2E Tests"
           mkdir -p e2e-logs
+          echo "Starting frontend E2E tests against https://arolariu.ro..."
           start=$(date +%s)
           npm run test:e2e:frontend 2>&1 | tee frontend-tests.log
           code=${PIPESTATUS[0]}
           end=$(date +%s)
-          echo "duration=$((end-start))s" >> $GITHUB_OUTPUT
+          duration=$((end-start))
+          echo "duration=${duration}s" >> $GITHUB_OUTPUT
+
+          if [ $code -eq 0 ]; then
+            echo "::notice::✅ Frontend tests passed in ${duration}s"
+          else
+            echo "::error::❌ Frontend tests failed after ${duration}s"
+          fi
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🌐 Frontend E2E Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${duration}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | $([ $code -eq 0 ] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+
           exit $code
         env:
           E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
@@ -123,7 +184,19 @@ jobs:
     outputs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: � Display test context
+        run: |
+          echo "::group::🔍 Backend E2E Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ⚡ BACKEND E2E TESTS                                       │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🎯 Target:        https://api.arolariu.ro                  │"
+          echo "│ 🔧 Tool:          Newman                                   │"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+      - name: �🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
@@ -134,12 +207,20 @@ jobs:
 
       - name: 🌡️ Check dependencies health
         run: |
+          echo "::group::🌡️ Health Check"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🌡️ BACKEND HEALTH CHECK                                   │"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo ""
           echo "Fetching backend health status..."
           HTTP_CODE=$(curl -s -o backend-health.json -w "%{http_code}" https://api.arolariu.ro/health)
 
           if [ "$HTTP_CODE" != "200" ]; then
             echo "::error::Health check failed with HTTP $HTTP_CODE"
             cat backend-health.json
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ❌ Health Check Failed" >> $GITHUB_STEP_SUMMARY
+            echo "HTTP Status: $HTTP_CODE" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
@@ -149,21 +230,49 @@ jobs:
           if [ "$HEALTH_STATUS" != "Healthy" ] && [ "$HEALTH_STATUS" != "healthy" ]; then
             echo "::error::Backend unhealthy: $HEALTH_STATUS"
             cat backend-health.json
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ❌ Backend Unhealthy" >> $GITHUB_STEP_SUMMARY
+            echo "Status: $HEALTH_STATUS" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
-          echo "✅ Backend health check passed"
+          echo "::notice::✅ Backend health check passed"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Health Check Passed" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| HTTP Status | $HTTP_CODE |" >> $GITHUB_STEP_SUMMARY
+          echo "| Health Status | $HEALTH_STATUS |" >> $GITHUB_STEP_SUMMARY
           cat backend-health.json
+          echo "::endgroup::"
 
       - name: 🚀 Running end-to-end tests...
         id: test
         run: |
+          echo "::group::🧪 Backend E2E Tests"
           mkdir -p e2e-logs
+          echo "Starting backend E2E tests against https://api.arolariu.ro..."
           start=$(date +%s)
           npm run test:e2e:backend 2>&1 | tee backend-tests.log
           code=${PIPESTATUS[0]}
           end=$(date +%s)
-          echo "duration=$((end-start))s" >> $GITHUB_OUTPUT
+          duration=$((end-start))
+          echo "duration=${duration}s" >> $GITHUB_OUTPUT
+
+          if [ $code -eq 0 ]; then
+            echo "::notice::✅ Backend tests passed in ${duration}s"
+          else
+            echo "::error::❌ Backend tests failed after ${duration}s"
+          fi
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚡ Backend E2E Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${duration}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | $([ $code -eq 0 ] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+
           exit $code
         env:
           E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
@@ -189,7 +298,29 @@ jobs:
     env:
       TZ: Europe/Bucharest
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: � Display failure context
+        run: |
+          echo "::group::🔍 Failure Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🐛 E2E TEST FAILURE - ISSUE CREATION                       │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🌐 Frontend:      ${{ needs.frontend.result }}"
+          echo "│ ⚡ Backend:       ${{ needs.backend.result }}"
+          echo "│ ⏱️ Frontend Time: ${{ needs.frontend.outputs.duration || 'N/A' }}"
+          echo "│ ⏱️ Backend Time:  ${{ needs.backend.outputs.duration || 'N/A' }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ❌ E2E Test Failures Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status | Duration |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.frontend.result }} | ${{ needs.frontend.outputs.duration || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | ${{ needs.backend.result }} | ${{ needs.backend.outputs.duration || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: �🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
