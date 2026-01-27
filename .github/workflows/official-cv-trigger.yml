@@ -66,7 +66,32 @@ jobs:
     name: 🧪 Testing the CV platform...
     runs-on: ubuntu-latest
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
+      - name: � Display workflow context
+        run: |
+          echo "::group::🔍 Workflow Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 📄 CV/RESUME WEBSITE PIPELINE                              │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Job:           Test phase                               │"
+          echo "│ 🌍 Framework:     SvelteKit                                │"
+          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
+          echo "│ 🏷️ Commit SHA:    ${{ github.sha }}"
+          echo "│ 👤 Triggered by:  ${{ github.actor }}"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
+          # Write initial summary
+          echo "## 📄 CV/Resume Website Pipeline" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Framework | SvelteKit |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target | Azure Static Web Apps |" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | https://cv.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
+
+      - name: �🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
@@ -77,7 +102,20 @@ jobs:
 
       - name: 🧪 Running unit tests...
         working-directory: './sites/cv.arolariu.ro'
-        run: npm run test:unit
+        run: |
+          echo "::group::🧪 Running SvelteKit Tests"
+          START_TIME=$(date +%s)
+          npm run test:unit
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "::notice::✅ Tests completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
 
   build-and-deploy:
     if: github.repository == 'arolariu/arolariu.ro' && (needs.test.result == 'success' || needs.test.result == 'skipped')
@@ -88,6 +126,18 @@ jobs:
       name: "cv-resume"
       url: "https://cv.arolariu.ro"
     steps:
+      - name: 📋 Display deployment context
+        run: |
+          echo "::group::🔍 Deployment Context"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🚀 CV WEBSITE DEPLOYMENT                                   │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🎯 Target:        Azure Static Web Apps                    │"
+          echo "│ 🔗 URL:           https://cv.arolariu.ro                   │"
+          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo "::endgroup::"
+
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v6
 
@@ -100,8 +150,25 @@ jobs:
       - name: 📦 Prepare and build...
         working-directory: './sites/cv.arolariu.ro'
         run: |
+          echo "::group::🏗️ Building CV Website"
+          echo "📍 Framework: SvelteKit"
+          echo "📍 Adapter: Azure Static Web Apps"
+          echo ""
+          START_TIME=$(date +%s)
           npm run prepare
           npm run build
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo ""
+          echo "::notice::✅ Build completed in ${DURATION}s"
+          echo "::endgroup::"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏗️ Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Duration | ${DURATION}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Output | build/static |" >> $GITHUB_STEP_SUMMARY
 
       - name: "🚀 Deploying CV website..."
         uses: Azure/static-web-apps-deploy@v1
@@ -112,3 +179,20 @@ jobs:
           app_location: "./sites/cv.arolariu.ro/"
           api_location: "./sites/cv.arolariu.ro/build/server"
           output_location: "build/static"
+
+      - name: 📊 Deployment summary
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 **Live URL**: https://cv.arolariu.ro" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+          echo ""
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ ✅ CV WEBSITE DEPLOYED SUCCESSFULLY                        │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 🔗 URL: https://cv.arolariu.ro                             │"
+          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "└────────────────────────────────────────────────────────────┘"
