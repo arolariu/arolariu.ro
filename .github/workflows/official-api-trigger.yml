@@ -302,27 +302,3 @@ jobs:
         with:
           app-name: "api-arolariu-ro"
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
-
-      - name: 📊 Deployment summary
-        run: |
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Target | \`api-arolariu-ro\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Environment | ${{ inputs.environment || 'production' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Container | \`backend/api.arolariu:${{ inputs.environment == 'production' && github.sha || 'latest' }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deployed By | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 **API URL**: https://api.arolariu.ro" >> $GITHUB_STEP_SUMMARY
-
-          echo ""
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ ✅ DEPLOYMENT COMPLETED SUCCESSFULLY                       │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🔗 URL: https://api.arolariu.ro                            │"
-          echo "│ 📅 Time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
