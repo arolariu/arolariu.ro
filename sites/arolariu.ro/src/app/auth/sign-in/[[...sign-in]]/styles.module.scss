@@ -124,3 +124,92 @@
   opacity: 0.6;
   background: linear-gradient(to bottom right, hsl(var(--primary) / 0.2), transparent);
 }
+
+// ===========================================
+// SKELETON LOADING
+// ===========================================
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  padding: space(4);
+  width: 100%;
+  min-height: 24rem;
+}
+
+.skeletonHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(3);
+}
+
+.skeletonLogo {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+}
+
+.skeletonTitle {
+  width: 60%;
+  height: 1.5rem;
+  border-radius: radius('md');
+}
+
+.skeletonSubtitle {
+  width: 80%;
+  height: 1rem;
+  border-radius: radius('md');
+}
+
+.skeletonInput {
+  width: 100%;
+  height: 2.5rem;
+  border-radius: radius('md');
+}
+
+.skeletonButton {
+  width: 100%;
+  height: 2.5rem;
+  border-radius: radius('md');
+  margin-top: space(2);
+}
+
+.skeletonDivider {
+  width: 100%;
+  height: 1rem;
+  border-radius: radius('md');
+  margin: space(2) 0;
+}
+
+.skeletonSocial {
+  display: flex;
+  gap: space(2);
+  justify-content: center;
+}
+
+.skeletonSocialButton {
+  width: 3rem;
+  height: 3rem;
+  border-radius: radius('md');
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted) / 0.3) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

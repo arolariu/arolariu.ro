@@ -2,12 +2,36 @@
 
 import {motion, type Variants} from "motion/react";
 import dynamic from "next/dynamic";
-
-const SignUp = dynamic(() => import("@clerk/nextjs").then((mod) => mod.SignUp), {ssr: false});
 import {useTranslations} from "next-intl";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
 import styles from "./styles.module.scss";
+
+function AuthSkeleton(): React.JSX.Element {
+  return (
+    <div className={styles["skeleton"]}>
+      <div className={styles["skeletonHeader"]}>
+        <div className={`${styles["skeletonLogo"]} ${styles["shimmer"]}`} />
+        <div className={`${styles["skeletonTitle"]} ${styles["shimmer"]}`} />
+        <div className={`${styles["skeletonSubtitle"]} ${styles["shimmer"]}`} />
+      </div>
+      <div className={`${styles["skeletonInput"]} ${styles["shimmer"]}`} />
+      <div className={`${styles["skeletonInput"]} ${styles["shimmer"]}`} />
+      <div className={`${styles["skeletonButton"]} ${styles["shimmer"]}`} />
+      <div className={`${styles["skeletonDivider"]} ${styles["shimmer"]}`} />
+      <div className={styles["skeletonSocial"]}>
+        <div className={`${styles["skeletonSocialButton"]} ${styles["shimmer"]}`} />
+        <div className={`${styles["skeletonSocialButton"]} ${styles["shimmer"]}`} />
+        <div className={`${styles["skeletonSocialButton"]} ${styles["shimmer"]}`} />
+      </div>
+    </div>
+  );
+}
+
+const SignUp = dynamic(() => import("@clerk/nextjs").then((mod) => mod.SignUp), {
+  ssr: false,
+  loading: () => <AuthSkeleton />,
+});
 
 const containerVariants: Variants = {
   hidden: {opacity: 0, y: 30, scale: 0.9},
