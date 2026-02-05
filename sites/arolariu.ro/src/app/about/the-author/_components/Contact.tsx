@@ -5,6 +5,7 @@ import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useRef, useState} from "react";
 import {TbBrandGithub, TbBrandLinkedin, TbCheck, TbCopy, TbExternalLink, TbMail, TbWorld} from "react-icons/tb";
+import styles from "./Contact.module.scss";
 
 const contactLinks = [
   {
@@ -81,14 +82,14 @@ export default function Contact(): React.JSX.Element {
   }, []);
 
   return (
-    <section className='mx-auto max-w-6xl px-4 py-20 md:px-8'>
+    <section className={styles["section"]}>
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
         transition={{duration: 0.6}}
-        className='mb-16 text-center'>
-        <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-        <span className='text-muted-foreground mx-auto block max-w-2xl'>{t("subtitle")}</span>
+        className={styles["header"]}>
+        <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
+        <span className={styles["subtitle"]}>{t("subtitle")}</span>
       </motion.div>
 
       <motion.div
@@ -96,18 +97,18 @@ export default function Contact(): React.JSX.Element {
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}
-        className='2xsm:gap-8 grid md:grid-cols-2 md:gap-0 lg:gap-8'>
+        className={styles["grid"]}>
         <motion.div variants={itemVariants}>
-          <Card className='bg-card h-full overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
-            <div className='from-primary to-primary/30 absolute top-0 left-0 h-1 w-full bg-linear-to-r' />
+          <Card className={styles["card"]}>
+            <div className={styles["cardAccent"]} />
 
             <CardHeader>
-              <CardTitle className='text-glow'>{t("socials.title")}</CardTitle>
+              <CardTitle className={styles["cardTitle"]}>{t("socials.title")}</CardTitle>
               <CardDescription>{t("socials.subtitle")}</CardDescription>
             </CardHeader>
 
-            <CardContent className='space-y-6'>
-              <div className='grid gap-4'>
+            <CardContent className={styles["linksContainer"]}>
+              <div className={styles["linksGrid"]}>
                 {contactLinks.map((link, index) => (
                   <motion.div
                     key={link.id}
@@ -117,33 +118,33 @@ export default function Contact(): React.JSX.Element {
                     data-id={link.id}
                     onMouseEnter={handleLinkMouseEnter}
                     onMouseLeave={handleLinkMouseLeave}
-                    className='relative'>
+                    className={styles["linkItemWrapper"]}>
                     <div
-                      className={`absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300 ${hoveredLink === link.id ? "opacity-10" : ""}`}
+                      className={`${styles["linkBg"]} ${hoveredLink === link.id ? styles["linkBgActive"] : ""}`}
                       style={{backgroundColor: link.color}}
                     />
 
-                    <div className='group border-border/50 relative flex items-center justify-between overflow-hidden rounded-lg border p-3'>
-                      <div className='flex items-center'>
+                    <div className={styles["linkContent"]}>
+                      <div className={styles["linkInfo"]}>
                         <div
-                          className='mr-3 rounded-full p-2 transition-colors duration-300'
+                          className={styles["linkIconWrapper"]}
                           style={{
                             backgroundColor: hoveredLink === link.id ? link.color : "rgba(var(--primary), 0.1)",
                             color: hoveredLink === link.id ? "white" : "hsl(var(--primary))",
                           }}>
                           {link.icon}
                         </div>
-                        <span className='font-medium'>{link.label}</span>
+                        <span className={styles["linkLabel"]}>{link.label}</span>
                       </div>
 
-                      <div className='flex items-center gap-2'>
+                      <div className={styles["linkActions"]}>
                         {link.id === "email" && (
                           <motion.button
                             onClick={copyEmail}
-                            className='text-muted-foreground hover:text-primary rounded-full p-2 transition-colors duration-300'
+                            className={styles["actionButton"]}
                             whileHover={{scale: 1.1}}
                             whileTap={{scale: 0.95}}>
-                            {copiedEmail ? <TbCheck className='h-4 w-4' /> : <TbCopy className='h-4 w-4' />}
+                            {copiedEmail ? <TbCheck className={styles["actionIcon"]} /> : <TbCopy className={styles["actionIcon"]} />}
                           </motion.button>
                         )}
 
@@ -151,15 +152,15 @@ export default function Contact(): React.JSX.Element {
                           href={link.href}
                           target={link.id === "email" ? undefined : "_blank"}
                           rel={link.id === "email" ? undefined : "noopener noreferrer"}
-                          className='text-muted-foreground hover:text-primary rounded-full p-2 transition-colors duration-300'
+                          className={styles["actionButton"]}
                           whileHover={{scale: 1.1}}
                           whileTap={{scale: 0.95}}>
-                          <TbExternalLink className='h-4 w-4' />
+                          <TbExternalLink className={styles["actionIcon"]} />
                         </motion.a>
                       </div>
 
                       <motion.div
-                        className='bg-primary absolute bottom-0 left-0 h-0.5'
+                        className={styles["linkProgress"]}
                         initial={{width: "0%"}}
                         animate={{width: hoveredLink === link.id ? "100%" : "0%"}}
                         transition={{duration: 0.3}}
@@ -169,25 +170,25 @@ export default function Contact(): React.JSX.Element {
                 ))}
               </div>
 
-              <div className='border-border/30 border-t pt-4'>
-                <span className='text-muted-foreground block text-sm'>{t("socials.footer")}</span>
+              <div className={styles["linksFooter"]}>
+                <span className={styles["linksFooterText"]}>{t("socials.footer")}</span>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className='bg-card relative h-full overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
-            <div className='bg-grid-pattern absolute inset-0 opacity-[0.03]' />
-            <div className='from-primary to-primary/30 absolute top-0 left-0 h-1 w-full bg-linear-to-r' />
+          <Card className={styles["collaborateCard"]}>
+            <div className={styles["gridPattern"]} />
+            <div className={styles["cardAccent"]} />
 
             <CardHeader>
-              <CardTitle className='text-glow'>{t("collaborate.title")}</CardTitle>
+              <CardTitle className={styles["cardTitle"]}>{t("collaborate.title")}</CardTitle>
               <CardDescription>{t("collaborate.subtitle")}</CardDescription>
             </CardHeader>
 
             <CardContent>
-              <div className='mb-6 grid grid-cols-2 gap-4'>
+              <div className={styles["disciplinesGrid"]}>
                 {[
                   t("collaborate.discipline1"),
                   t("collaborate.discipline2"),
@@ -200,19 +201,19 @@ export default function Contact(): React.JSX.Element {
                     animate={{opacity: 1, scale: 1}}
                     transition={{delay: index * 0.1, duration: 2.5}}
                     whileHover={{scale: 1.05, transition: {duration: 0.3}}}
-                    className='bg-primary/10 hover:bg-primary/50 rounded-lg p-3 text-center transition-colors duration-300'>
-                    <span className='text-primary font-medium'>{field}</span>
+                    className={styles["disciplineItem"]}>
+                    <span className={styles["disciplineText"]}>{field}</span>
                   </motion.div>
                 ))}
               </div>
 
-              <p className='mb-6'>{t("collaborate.footer")}</p>
+              <p className={styles["footerText"]}>{t("collaborate.footer")}</p>
 
               <motion.div
                 initial={{opacity: 0}}
                 animate={{opacity: 1}}
                 transition={{delay: 0.5, duration: 1}}
-                className='text-center'>
+                className={styles["ctaWrapper"]}>
                 <motion.div
                   animate={{
                     scale: [1, 1.05, 1],
@@ -223,7 +224,7 @@ export default function Contact(): React.JSX.Element {
                     repeat: Number.POSITIVE_INFINITY,
                     repeatType: "reverse",
                   }}>
-                  <h3 className='text-glow-strong text-2xl font-bold lg:text-5xl'>{t("footer")}</h3>
+                  <h3 className={styles["ctaText"]}>{t("footer")}</h3>
                 </motion.div>
               </motion.div>
             </CardContent>

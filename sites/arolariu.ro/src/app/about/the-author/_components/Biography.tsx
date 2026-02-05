@@ -4,6 +4,7 @@ import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef} from "react";
 import {TbAntenna, TbBook, TbBulb, TbCode, TbDeviceGamepad} from "react-icons/tb";
+import styles from "./Biography.module.scss";
 
 const containerVariants: Variants = {
   hidden: {opacity: 0},
@@ -35,34 +36,50 @@ export default function Biography(): React.JSX.Element {
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
-  const bioSections = [
+// Map bio section keys to SCSS icon class names
+const iconClassMap = {
+  first: "iconBlue",
+  second: "iconGreen",
+  third: "iconPurple",
+  fourth: "iconAmber",
+  fifth: "iconPink",
+} as const;
+
+type BioSectionKey = keyof typeof iconClassMap;
+
+  const bioSections: Array<{key: BioSectionKey; icon: React.ReactNode; content: string}> = [
     {
-      icon: <TbCode className='text-accent-primary h-8 w-8' />,
+      key: "first",
+      icon: <TbCode className={styles["iconBlue"]} />,
       content: t("FirstPoint", {age: (new Date().getFullYear() - 2000).toString()}),
     },
     {
-      icon: <TbDeviceGamepad className='h-8 w-8 text-green-500' />,
+      key: "second",
+      icon: <TbDeviceGamepad className={styles["iconGreen"]} />,
       content: t("SecondPoint"),
     },
     {
-      icon: <TbBulb className='h-8 w-8 text-purple-500' />,
+      key: "third",
+      icon: <TbBulb className={styles["iconPurple"]} />,
       content: t("ThirdPoint"),
     },
     {
-      icon: <TbBook className='h-8 w-8 text-amber-500' />,
+      key: "fourth",
+      icon: <TbBook className={styles["iconAmber"]} />,
       content: t("FourthPoint"),
     },
     {
-      icon: <TbAntenna className='h-8 w-8 text-pink-500' />,
+      key: "fifth",
+      icon: <TbAntenna className={styles["iconPink"]} />,
       content: t("FifthPoint"),
     },
   ];
 
   return (
-    <section className='relative mx-auto max-w-6xl px-4 py-20 md:px-8'>
-      <div className='absolute inset-0'>
+    <section className={styles["section"]}>
+      <div className={styles["bgOrbs"]}>
         <motion.div
-          className='absolute -top-20 -right-20 h-64 w-64 rounded-full bg-blue-500/100 blur-3xl'
+          className={styles["orbBlue"]}
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -70,7 +87,7 @@ export default function Biography(): React.JSX.Element {
           transition={{duration: 8, repeat: Number.POSITIVE_INFINITY}}
         />
         <motion.div
-          className='absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-purple-500/100 blur-3xl'
+          className={styles["orbPurple"]}
           animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.3, 0.5, 0.3],
@@ -84,29 +101,27 @@ export default function Biography(): React.JSX.Element {
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}
-        className='relative z-10 space-y-12'>
+        className={styles["content"]}>
         <motion.div
           variants={itemVariants}
-          className='text-center'>
-          <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
+          className={styles["header"]}>
+          <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
         </motion.div>
 
-        <motion.div
-          variants={itemVariants}
-          className='prose dark:prose-invert max-w-none'>
-          <div className='border-border/50 bg-card/50 relative overflow-hidden rounded-xl border p-6 shadow-lg backdrop-blur-xs md:p-8'>
-            <div className='absolute top-0 left-0 h-1 w-full bg-linear-to-r from-blue-500 via-purple-500 to-pink-500' />
+        <motion.div variants={itemVariants}>
+          <div className={styles["card"]}>
+            <div className={styles["accentTop"]} />
             {bioSections.map((section) => (
               <motion.div
                 key={section.content.slice(0, 20)}
-                className='flex flex-row items-start justify-start gap-4 rounded-lg p-4 text-black transition-all duration-300 dark:text-white'>
-                <span className='h-8 w-8 rounded-lg pr-2'>{section.icon}</span>
-                <span className='text-lg leading-relaxed'>{section.content}</span>
+                className={styles["bioItem"]}>
+                <span>{section.icon}</span>
+                <span className={styles["bioText"]}>{section.content}</span>
               </motion.div>
             ))}
 
             <motion.div
-              className='absolute bottom-0 left-0 h-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500'
+              className={styles["accentBottom"]}
               initial={{width: "0%"}}
               whileInView={{width: "100%"}}
               transition={{duration: 1.5, ease: "easeOut"}}

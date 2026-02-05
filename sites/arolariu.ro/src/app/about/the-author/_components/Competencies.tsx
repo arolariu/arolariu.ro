@@ -4,6 +4,7 @@ import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef} from "react";
 import {TbBook2, TbBrain, TbCalculator, TbCheck, TbTestPipe, TbUsers} from "react-icons/tb";
+import styles from "./Competencies.module.scss";
 
 const containerVariants: Variants = {
   hidden: {opacity: 0},
@@ -35,45 +36,45 @@ export default function Competencies(): React.JSX.Element {
   const skills = [
     {
       title: t("competences.algorithmicSkills.title"),
-      icon: <TbCalculator className='h-8 w-8' />,
+      icon: <TbCalculator className={styles["icon"]} />,
       description: t("competences.algorithmicSkills.description"),
     },
     {
       title: t("competences.testDrivenDevelopment.title"),
-      icon: <TbTestPipe className='h-8 w-8' />,
+      icon: <TbTestPipe className={styles["icon"]} />,
       description: t("competences.testDrivenDevelopment.description"),
     },
     {
       title: t("competences.domainDrivenDesign.title"),
-      icon: <TbBook2 className='h-8 w-8' />,
+      icon: <TbBook2 className={styles["icon"]} />,
       description: t("competences.domainDrivenDesign.description"),
     },
     {
       title: t("competences.agileMethodologies.title"),
-      icon: <TbUsers className='h-8 w-8' />,
+      icon: <TbUsers className={styles["icon"]} />,
       description: t("competences.agileMethodologies.description"),
     },
     {
       title: t("competences.customerCentric.title"),
-      icon: <TbBrain className='h-8 w-8' />,
+      icon: <TbBrain className={styles["icon"]} />,
       description: t("competences.customerCentric.description"),
     },
     {
       title: t("competences.engineeringExcellence.title"),
-      icon: <TbCheck className='h-8 w-8' />,
+      icon: <TbCheck className={styles["icon"]} />,
       description: t("competences.engineeringExcellence.description"),
     },
   ];
 
   return (
-    <section className='mx-auto max-w-6xl px-4 py-20 md:px-8'>
+    <section className={styles["section"]}>
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={inView ? {opacity: 1, y: 0} : {opacity: 0, y: 20}}
         transition={{duration: 0.6}}
-        className='mb-16 text-center'>
-        <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-        <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
+        className={styles["header"]}>
+        <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
+        <p className={styles["subtitle"]}>{t("subtitle")}</p>
       </motion.div>
 
       <motion.div
@@ -81,25 +82,25 @@ export default function Competencies(): React.JSX.Element {
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}
-        className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
+        className={styles["grid"]}>
         {skills.map((skill) => (
           <motion.div
             key={skill.title}
             variants={itemVariants}
-            className='group'
+            className={styles["cardWrapper"]}
             whileHover={{
               scale: 1.03,
               transition: {duration: 0.2},
             }}>
-            <div className='border-border/50 bg-card hover:border-primary/30 hover:bg-card/80 relative h-full overflow-hidden rounded-xl border p-6 shadow-md transition-all duration-300 hover:shadow-xl'>
-              <div className='from-primary to-primary/30 absolute top-0 left-0 h-1 w-full bg-linear-to-r' />
-              <div className='mb-4 flex items-center gap-4'>
-                <div className='bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground rounded-lg p-3 transition-colors duration-300'>
+            <div className={styles["card"]}>
+              <div className={styles["accentTop"]} />
+              <div className={styles["cardHeader"]}>
+                <div className={styles["iconWrapper"]}>
                   {skill.icon}
                 </div>
-                <h3 className='group-hover:text-glow text-xl font-semibold'>{skill.title}</h3>
+                <h3 className={styles["cardTitle"]}>{skill.title}</h3>
               </div>
-              <p className='text-muted-foreground'>{skill.description}</p>
+              <p className={styles["cardDescription"]}>{skill.description}</p>
             </div>
           </motion.div>
         ))}

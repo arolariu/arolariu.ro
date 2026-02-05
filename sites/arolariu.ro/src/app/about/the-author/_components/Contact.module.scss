@@ -1,0 +1,254 @@
+// ===========================================
+// THE AUTHOR - CONTACT COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+// Header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  color: hsl(var(--muted-foreground));
+}
+
+// Grid
+.grid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  @include respond-to('lg') {
+    gap: space(8);
+  }
+}
+
+// Card
+.card {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border: none;
+  background-color: hsl(var(--card));
+  @include shadow('lg');
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('xl');
+  }
+}
+
+// Card accent
+.cardAccent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.3));
+}
+
+// Card title
+.cardTitle {
+  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+}
+
+// Contact links container
+.linksContainer {
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+}
+
+.linksGrid {
+  display: grid;
+  gap: space(4);
+}
+
+// Link item wrapper
+.linkItemWrapper {
+  position: relative;
+}
+
+// Link background (for hover)
+.linkBg {
+  position: absolute;
+  inset: 0;
+  border-radius: radius('lg');
+  opacity: 0;
+  @include transition(opacity);
+}
+
+.linkBgActive {
+  opacity: 0.1;
+}
+
+// Link content
+.linkContent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  border-radius: radius('lg');
+  border: 1px solid hsl(var(--border) / 0.5);
+  padding: space(3);
+}
+
+.linkInfo {
+  display: flex;
+  align-items: center;
+}
+
+// Icon wrapper
+.linkIconWrapper {
+  margin-right: space(3);
+  padding: space(2);
+  border-radius: 9999px;
+  @include transition(background-color, color);
+}
+
+.linkLabel {
+  font-weight: font-weight('medium');
+}
+
+// Link actions
+.linkActions {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.actionButton {
+  padding: space(2);
+  border-radius: 9999px;
+  color: hsl(var(--muted-foreground));
+  @include transition(color);
+
+  &:hover {
+    color: hsl(var(--primary));
+  }
+}
+
+.actionIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+// Progress bar
+.linkProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background-color: hsl(var(--primary));
+}
+
+// Footer
+.linksFooter {
+  padding-top: space(4);
+  border-top: 1px solid hsl(var(--border) / 0.3);
+}
+
+.linksFooterText {
+  display: block;
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+// Collaborate card
+.collaborateCard {
+  composes: card;
+  position: relative;
+}
+
+// Grid pattern background
+.gridPattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image:
+    linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+// Disciplines grid
+.disciplinesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: space(4);
+  margin-bottom: space(6);
+}
+
+.disciplineItem {
+  padding: space(3);
+  border-radius: radius('lg');
+  background-color: hsl(var(--primary) / 0.1);
+  text-align: center;
+  @include transition(background-color);
+
+  &:hover {
+    background-color: hsl(var(--primary) / 0.5);
+  }
+}
+
+.disciplineText {
+  font-weight: font-weight('medium');
+  color: hsl(var(--primary));
+}
+
+// Footer text
+.footerText {
+  margin-bottom: space(6);
+}
+
+// CTA
+.ctaWrapper {
+  text-align: center;
+}
+
+.ctaText {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  text-shadow:
+    0 0 20px hsl(var(--primary) / 0.5),
+    0 0 40px hsl(var(--primary) / 0.3);
+
+  @include respond-to('lg') {
+    font-size: font-size('5xl');
+  }
+}

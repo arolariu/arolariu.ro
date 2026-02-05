@@ -1,0 +1,349 @@
+// ===========================================
+// THE AUTHOR - EXPERIENCE COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  background-color: hsl(var(--muted) / 0.3);
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+// Header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  color: hsl(var(--muted-foreground));
+}
+
+// Grid layout
+.grid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+// Timeline navigation
+.timelineNav {
+  position: relative;
+}
+
+.timelineLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2rem;
+  width: 1px;
+  background-color: hsl(var(--border) / 0.5);
+}
+
+.timelineItem {
+  position: relative;
+  margin-bottom: space(8);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Timeline button
+.timelineButton {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  height: auto;
+  padding-left: space(16);
+  @include transition(opacity);
+}
+
+.timelineButtonActive {
+  composes: timelineButton;
+  opacity: 1;
+}
+
+.timelineButtonInactive {
+  composes: timelineButton;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// Timeline icon container
+.timelineIcon {
+  position: absolute;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  @include transition(background-color);
+}
+
+.timelineIconActive {
+  composes: timelineIcon;
+  background-color: hsl(var(--primary) / 0.2);
+}
+
+.timelineIconInactive {
+  composes: timelineIcon;
+  background-color: hsl(var(--muted));
+}
+
+// Inner icon circle
+.timelineIconInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+}
+
+.timelineIconInnerActive {
+  composes: timelineIconInner;
+  background-color: hsl(var(--primary));
+  color: white;
+}
+
+.timelineIconInnerInactive {
+  composes: timelineIconInner;
+  background-color: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+}
+
+.timelineIconSvg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+// Timeline content
+.timelineContent {
+  text-align: left;
+}
+
+.timelineCompany {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  @include transition(text-shadow);
+}
+
+.timelineCompanyActive {
+  composes: timelineCompany;
+  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+}
+
+.timelineRole {
+  color: hsl(var(--muted-foreground));
+}
+
+.timelineMeta {
+  display: flex;
+  align-items: center;
+  margin-top: space(1);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.timelineMetaIcon {
+  margin-right: space(1);
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+// Experience card
+.experienceCard {
+  position: relative;
+  height: 100%;
+}
+
+.card {
+  position: relative;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  border-radius: radius('xl');
+  border: 1px solid hsl(var(--border) / 0.5);
+  background-color: hsl(var(--card));
+  padding: space(6);
+  @include shadow('lg');
+}
+
+// Card accent bars
+.cardAccentTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(to right, #ec4899, #a855f7, #3b82f6);
+}
+
+.cardAccentBottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
+}
+
+// Card header
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: space(6);
+}
+
+.cardTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  margin-top: space(1);
+  color: hsl(var(--muted-foreground));
+}
+
+.cardCompany {
+  composes: cardMeta;
+  font-weight: font-weight('medium');
+}
+
+.cardLocation {
+  composes: cardMeta;
+  font-size: font-size('sm');
+}
+
+.cardMetaIcon {
+  margin-right: space(1);
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+// Logo container
+.logoWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: radius('lg');
+  background-color: hsl(var(--background));
+}
+
+.logoInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  @include transition(color);
+}
+
+.logoIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: hsl(var(--muted-foreground));
+}
+
+// Card description
+.cardDescription {
+  margin-bottom: space(6);
+  color: hsl(var(--muted-foreground));
+}
+
+// Card sections
+.cardSection {
+  margin-bottom: space(6);
+}
+
+.cardSectionTitle {
+  margin-bottom: space(3);
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+// List
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.listItem {
+  display: flex;
+  align-items: flex-start;
+}
+
+.listIcon {
+  margin-top: 0.25rem;
+  margin-right: space(2);
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: hsl(var(--primary));
+}
+
+// Skills
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+.skillBadge {
+  font-weight: font-weight('normal');
+  @include transition(background-color, color);
+
+  &:hover {
+    background-color: hsl(var(--primary));
+    color: white;
+  }
+}

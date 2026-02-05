@@ -8,6 +8,7 @@ import React, {useCallback, useState} from "react";
 import {CgMicrosoft} from "react-icons/cg";
 import {SiIntel, SiUbisoft} from "react-icons/si";
 import {TbBriefcase, TbCalendar, TbChevronRight, TbMap} from "react-icons/tb";
+import styles from "./Experience.module.scss";
 
 type ExperienceType = {
   company: string;
@@ -60,7 +61,7 @@ export default function Experience(): React.JSX.Element {
       skills: t("microsoft3.techAndSkills")
         .split("#")
         .filter((item) => item.trim().length > 0),
-      logo: <CgMicrosoft className='text-muted-foreground h-10 w-10' />,
+      logo: <CgMicrosoft className={styles["logoIcon"]} />,
     },
     {
       company: t("microsoft2.company"),
@@ -77,7 +78,7 @@ export default function Experience(): React.JSX.Element {
       skills: t("microsoft2.techAndSkills")
         .split("#")
         .filter((item) => item.trim().length > 0),
-      logo: <CgMicrosoft className='text-muted-foreground h-10 w-10' />,
+      logo: <CgMicrosoft className={styles["logoIcon"]} />,
     },
     {
       company: t("microsoft1.company"),
@@ -94,7 +95,7 @@ export default function Experience(): React.JSX.Element {
       skills: t("microsoft1.techAndSkills")
         .split("#")
         .filter((item) => item.trim().length > 0),
-      logo: <CgMicrosoft className='text-muted-foreground h-10 w-10' />,
+      logo: <CgMicrosoft className={styles["logoIcon"]} />,
     },
     {
       company: t("intel.company"),
@@ -111,7 +112,7 @@ export default function Experience(): React.JSX.Element {
       skills: t("intel.techAndSkills")
         .split("#")
         .filter((item) => item.trim().length > 0),
-      logo: <SiIntel className='text-muted-foreground h-10 w-10' />,
+      logo: <SiIntel className={styles["logoIcon"]} />,
     },
     {
       company: t("ubisoft.company"),
@@ -128,33 +129,33 @@ export default function Experience(): React.JSX.Element {
       skills: t("ubisoft.techAndSkills")
         .split("#")
         .filter((item) => item.trim().length > 0),
-      logo: <SiUbisoft className='text-muted-foreground h-10 w-10' />,
+      logo: <SiUbisoft className={styles["logoIcon"]} />,
     },
   ] satisfies ExperienceType[];
 
   const currentExperience = experiences.at(activeExpIndex)!;
 
   return (
-    <section className='bg-muted/30 px-4 py-20 md:px-8'>
-      <div className='mx-auto max-w-6xl'>
+    <section className={styles["section"]}>
+      <div className={styles["container"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.6}}
-          className='mb-16 text-center'>
-          <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-          <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
+          className={styles["header"]}>
+          <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
 
-        <div className='grid gap-8 md:grid-cols-[1fr_2fr]'>
+        <div className={styles["grid"]}>
           {/* Timeline Navigation */}
-          <div className='relative'>
-            <div className='bg-border/50 absolute top-0 bottom-0 left-8 w-px' />
+          <div className={styles["timelineNav"]}>
+            <div className={styles["timelineLine"]} />
 
             {experiences.map((experience, index) => (
               <motion.div
                 key={`${experience.company}-${experience.period}`}
-                className='relative mb-8 last:mb-0'
+                className={styles["timelineItem"]}
                 initial={{opacity: 0, x: -20}}
                 animate={{opacity: 1, x: 0}}
                 transition={{delay: index * 0.1, duration: 0.5}}>
@@ -162,22 +163,20 @@ export default function Experience(): React.JSX.Element {
                   variant='ghost'
                   data-index={index}
                   onClick={handleExperienceClick}
-                  className={`relative flex h-auto items-start pl-16 ${activeExpIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"} transition-opacity duration-300`}>
-                  <div
-                    className={`absolute left-0 z-10 flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ${activeExpIndex === index ? "bg-primary/20" : "bg-muted"}`}>
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full ${activeExpIndex === index ? "bg-primary text-white" : "bg-background text-muted-foreground"}`}>
-                      <TbBriefcase className='h-5 w-5' />
+                  className={activeExpIndex === index ? styles["timelineButtonActive"] : styles["timelineButtonInactive"]}>
+                  <div className={activeExpIndex === index ? styles["timelineIconActive"] : styles["timelineIconInactive"]}>
+                    <div className={activeExpIndex === index ? styles["timelineIconInnerActive"] : styles["timelineIconInnerInactive"]}>
+                      <TbBriefcase className={styles["timelineIconSvg"]} />
                     </div>
                   </div>
 
-                  <div className='text-left'>
-                    <h3 className={`text-xl font-bold transition-colors duration-300 ${activeExpIndex === index ? "text-glow" : ""}`}>
+                  <div className={styles["timelineContent"]}>
+                    <h3 className={activeExpIndex === index ? styles["timelineCompanyActive"] : styles["timelineCompany"]}>
                       {experience.company}
                     </h3>
-                    <p className='text-muted-foreground'>{experience.role}</p>
-                    <div className='text-muted-foreground mt-1 flex items-center text-sm'>
-                      <TbCalendar className='mr-1 h-3 w-3' />
+                    <p className={styles["timelineRole"]}>{experience.role}</p>
+                    <div className={styles["timelineMeta"]}>
+                      <TbCalendar className={styles["timelineMetaIcon"]} />
                       <span>{experience.period}</span>
                     </div>
                   </div>
@@ -187,65 +186,65 @@ export default function Experience(): React.JSX.Element {
           </div>
 
           {/* Timeline Content */}
-          <div className='relative h-full'>
+          <div className={styles["experienceCard"]}>
             <AnimatePresence mode='wait'>
               <motion.div
                 initial={{opacity: 0, x: 20}}
                 animate={{opacity: 1, x: 0}}
                 exit={{opacity: 0, x: -20}}
                 transition={{duration: 0.3}}
-                className='border-border/50 bg-card relative top-0 left-0 h-full w-full overflow-hidden rounded-xl border p-6 shadow-lg'>
-                <div className='absolute top-0 left-0 h-1 w-full bg-linear-to-r from-pink-500 via-purple-500 to-blue-500' />
+                className={styles["card"]}>
+                <div className={styles["cardAccentTop"]} />
 
-                <div className='mb-6 flex items-start justify-between'>
+                <div className={styles["cardHeader"]}>
                   <div>
-                    <h3 className='text-glow text-2xl font-bold'>{currentExperience.role}</h3>
-                    <div className='text-muted-foreground mt-1 flex items-center'>
-                      <span className='font-medium'>{currentExperience.company}</span>
+                    <h3 className={styles["cardTitle"]}>{currentExperience.role}</h3>
+                    <div className={styles["cardCompany"]}>
+                      <span>{currentExperience.company}</span>
                     </div>
-                    <div className='text-muted-foreground mt-1 flex items-center text-sm'>
-                      <TbMap className='mr-1 h-3 w-3' />
+                    <div className={styles["cardLocation"]}>
+                      <TbMap className={styles["cardMetaIcon"]} />
                       <span>{currentExperience.location}</span>
                     </div>
                   </div>
 
-                  <div className='bg-background flex h-16 w-16 items-center justify-center rounded-lg'>
-                    <motion.div className='bg-background text-muted-foreground flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-300'>
+                  <div className={styles["logoWrapper"]}>
+                    <motion.div className={styles["logoInner"]}>
                       {currentExperience.logo}
                     </motion.div>
                   </div>
                 </div>
 
-                <p className='text-muted-foreground mb-6'>{currentExperience.description}</p>
+                <p className={styles["cardDescription"]}>{currentExperience.description}</p>
 
-                <div className='mb-6'>
-                  <h4 className='mb-3 text-lg font-semibold'>{t("responsibilitiesLabel")}</h4>
-                  <ul className='space-y-2'>
+                <div className={styles["cardSection"]}>
+                  <h4 className={styles["cardSectionTitle"]}>{t("responsibilitiesLabel")}</h4>
+                  <ul className={styles["list"]}>
                     {currentExperience.responsibilities.map((responsability, i) => (
                       <motion.li
                         key={`${responsability.slice(0, 20)}`}
-                        className='flex items-start'
+                        className={styles["listItem"]}
                         initial={{opacity: 0, x: -10}}
                         animate={{opacity: 1, x: 0}}
                         transition={{delay: i * 0.1, duration: 0.3}}>
-                        <TbChevronRight className='text-primary mt-1 mr-2 h-4 w-4 shrink-0' />
+                        <TbChevronRight className={styles["listIcon"]} />
                         <span>{responsability}</span>
                       </motion.li>
                     ))}
                   </ul>
                 </div>
 
-                <div className='mb-6'>
-                  <h4 className='mb-3 text-lg font-semibold'>{t("achievementsLabel")}</h4>
-                  <ul className='space-y-2'>
+                <div className={styles["cardSection"]}>
+                  <h4 className={styles["cardSectionTitle"]}>{t("achievementsLabel")}</h4>
+                  <ul className={styles["list"]}>
                     {currentExperience.achievements.map((achievement, i) => (
                       <motion.li
                         key={`${achievement.slice(0, 20)}`}
-                        className='flex items-start'
+                        className={styles["listItem"]}
                         initial={{opacity: 0, x: -10}}
                         animate={{opacity: 1, x: 0}}
                         transition={{delay: i * 0.1, duration: 0.3}}>
-                        <TbChevronRight className='text-primary mt-1 mr-2 h-4 w-4 shrink-0' />
+                        <TbChevronRight className={styles["listIcon"]} />
                         <span>{achievement}</span>
                       </motion.li>
                     ))}
@@ -253,8 +252,8 @@ export default function Experience(): React.JSX.Element {
                 </div>
 
                 <div>
-                  <h4 className='mb-3 text-lg font-semibold'>{t("techSkillsLabel")}</h4>
-                  <div className='flex flex-wrap gap-2'>
+                  <h4 className={styles["cardSectionTitle"]}>{t("techSkillsLabel")}</h4>
+                  <div className={styles["skills"]}>
                     {currentExperience.skills.map((skill, i) => (
                       <motion.div
                         key={`${skill.slice(0, 20)}`}
@@ -263,7 +262,7 @@ export default function Experience(): React.JSX.Element {
                         transition={{delay: i * 0.5, duration: 0.3}}>
                         <Badge
                           variant='secondary'
-                          className='hover:bg-primary font-normal transition-colors duration-300 hover:text-white'>
+                          className={styles["skillBadge"]}>
                           {skill}
                         </Badge>
                       </motion.div>
@@ -272,7 +271,7 @@ export default function Experience(): React.JSX.Element {
                 </div>
 
                 <motion.div
-                  className='absolute bottom-0 left-0 h-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500'
+                  className={styles["cardAccentBottom"]}
                   initial={{width: "0%"}}
                   animate={{width: "100%"}}
                   transition={{duration: 3, delay: 0.3}}

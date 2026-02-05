@@ -6,6 +6,7 @@ import {AnimatePresence, motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useRef, useState} from "react";
 import {TbArrowLeft, TbBook, TbBuildingCommunity, TbCalendar, TbInfoCircle, TbMap, TbSchool} from "react-icons/tb";
+import styles from "./Education.module.scss";
 
 type EducationType = {
   degree: string;
@@ -122,14 +123,14 @@ export default function Education(): React.JSX.Element {
   );
 
   return (
-    <section className='mx-auto max-w-6xl px-4 py-20 md:px-8'>
+    <section className={styles["section"]}>
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
         transition={{duration: 0.6}}
-        className='mb-16 text-center'>
-        <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-        <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
+        className={styles["header"]}>
+        <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
+        <p className={styles["subtitle"]}>{t("subtitle")}</p>
       </motion.div>
 
       <motion.div
@@ -137,16 +138,16 @@ export default function Education(): React.JSX.Element {
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}
-        className='space-y-12'>
+        className={styles["educationList"]}>
         {education.map((item, index) => (
           <motion.div
             key={item.degree}
             variants={itemVariants}
-            className='perspective relative'
+            className={styles["cardWrapper"]}
             data-index={index}
             onMouseEnter={handleCardMouseEnter}
             onMouseLeave={handleCardMouseLeave}>
-            <div className='perspective 2xsm:h-[800px] relative w-full md:h-[400px]'>
+            <div className={styles["cardContainer"]}>
               <AnimatePresence
                 initial={false}
                 mode='wait'>
@@ -157,61 +158,61 @@ export default function Education(): React.JSX.Element {
                     animate={{opacity: 1}}
                     exit={{opacity: 0}}
                     transition={{duration: 0.3}}
-                    className='absolute inset-0 h-full w-full'>
-                    <Card className='h-full overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
-                      <CardContent className='grid h-full w-full grid-cols-1 md:grid-cols-3'>
-                        <div className='flex h-full w-full flex-col items-center justify-center p-6 text-center md:col-span-1'>
+                    className={styles["card"]}>
+                    <Card className={styles["cardInner"]}>
+                      <CardContent className={styles["cardContent"]}>
+                        <div className={styles["cardLeft"]}>
                           <motion.div
-                            className='bg-primary/20 mb-4 flex h-20 w-20 cursor-pointer items-center justify-center rounded-full'
+                            className={styles["schoolIconWrapper"]}
                             whileHover={{scale: 1.1, rotate: 5}}
                             data-index={index}
                             onClick={handleToggleFlipClick}>
-                            <TbSchool className='text-primary h-10 w-10' />
+                            <TbSchool className={styles["schoolIcon"]} />
                           </motion.div>
-                          <h3 className='text-glow text-xl font-bold'>{item.degree}</h3>
-                          <div className='text-muted-foreground mt-2 flex items-center justify-center'>
-                            <TbCalendar className='mr-2 h-4 w-4' />
+                          <h3 className={styles["degree"]}>{item.degree}</h3>
+                          <div className={styles["metaItem"]}>
+                            <TbCalendar className={styles["metaIcon"]} />
                             <span>{item.period}</span>
                           </div>
-                          <div className='text-muted-foreground mt-1 flex items-center justify-center'>
-                            <TbMap className='mr-2 h-4 w-4' />
+                          <div className={styles["metaItem"]}>
+                            <TbMap className={styles["metaIcon"]} />
                             <span>{item.location}</span>
                           </div>
-                          <div className='text-muted-foreground mt-1 flex items-center justify-center'>
-                            <TbBuildingCommunity className='mr-2 h-4 w-4' />
+                          <div className={styles["metaItem"]}>
+                            <TbBuildingCommunity className={styles["metaIcon"]} />
                             <span>{item.institution}</span>
                           </div>
                         </div>
-                        <div className='flex h-full w-full flex-col p-6 md:col-span-2'>
-                          <h4 className='mb-4 flex items-center text-lg font-semibold'>
-                            <TbBook className='text-primary mr-2 h-5 w-5' />
+                        <div className={styles["cardRight"]}>
+                          <h4 className={styles["coursesHeader"]}>
+                            <TbBook className={styles["coursesIcon"]} />
                             {item.coursesTitle}
                           </h4>
-                          <ul className='space-y-2'>
+                          <ul className={styles["courseList"]}>
                             {item.courses.slice(0, 5).map((course) => (
                               <motion.li
                                 key={`${item.degree}-${course}`}
-                                className='flex items-start'
+                                className={styles["courseItem"]}
                                 initial={{opacity: 0.7}}
                                 whileHover={{
                                   opacity: 1,
                                   x: 5,
                                   transition: {duration: 0.2},
                                 }}>
-                                <span className='text-primary mr-2'>•</span>
+                                <span className={styles["courseBullet"]}>•</span>
                                 <span>{course}</span>
                               </motion.li>
                             ))}
                           </ul>
-                          <span className='text-muted-foreground mt-4'>{item.description}</span>
+                          <span className={styles["description"]}>{item.description}</span>
 
                           <Button
                             variant='ghost'
                             size='sm'
-                            className='text-primary mt-4 w-fit'
+                            className={styles["ctaButton"]}
                             data-index={index}
                             onClick={handleToggleFlipClick}>
-                            <TbInfoCircle className='mr-2 h-4 w-4' />
+                            <TbInfoCircle className={styles["ctaIcon"]} />
                             {item.aboutTheProgramCta}
                           </Button>
                         </div>
@@ -225,41 +226,41 @@ export default function Education(): React.JSX.Element {
                     animate={{opacity: 1}}
                     exit={{opacity: 0}}
                     transition={{duration: 0.3}}
-                    className='absolute inset-0 h-full w-full'>
-                    <Card className='h-full overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
-                      <CardContent className='flex h-full flex-col p-6'>
-                        <div className='mb-6 flex items-start justify-between'>
-                          <h3 className='text-glow text-xl font-bold'>{item.institution}</h3>
+                    className={styles["card"]}>
+                    <Card className={styles["cardInner"]}>
+                      <CardContent className={styles["backCard"]}>
+                        <div className={styles["backHeader"]}>
+                          <h3 className={styles["backTitle"]}>{item.institution}</h3>
                           <Button
                             variant='ghost'
                             size='sm'
-                            className='text-primary'
+                            className={styles["backButton"]}
                             data-index={index}
                             onClick={handleToggleFlipClick}>
-                            <TbArrowLeft className='mr-2 h-4 w-4' />
+                            <TbArrowLeft className={styles["backIcon"]} />
                           </Button>
                         </div>
 
-                        <div className='custom-scrollbar grow space-y-4 overflow-auto pr-2'>
-                          <div>
-                            <h4 className='mb-2 text-lg font-semibold'>{item.aboutTheProgramTitle}</h4>
+                        <div className={styles["scrollContent"]}>
+                          <div className={styles["scrollSection"]}>
+                            <h4 className={styles["scrollSectionTitle"]}>{item.aboutTheProgramTitle}</h4>
                             <p>{item.aboutTheProgramDescription}</p>
                           </div>
 
-                          <div>
-                            <h4 className='mb-2 text-lg font-semibold'>{item.aboutTheProgramLearningsTitle}</h4>
-                            <ul className='space-y-2'>
+                          <div className={styles["scrollSection"]}>
+                            <h4 className={styles["scrollSectionTitle"]}>{item.aboutTheProgramLearningsTitle}</h4>
+                            <ul className={styles["courseList"]}>
                               {item.aboutTheProgramLearnings.map((learning) => (
                                 <motion.li
                                   key={learning.slice(0, 20)}
-                                  className='flex items-start'
+                                  className={styles["courseItem"]}
                                   initial={{opacity: 0.7}}
                                   whileHover={{
                                     opacity: 1,
                                     x: 5,
                                     transition: {duration: 0.2},
                                   }}>
-                                  <span className='text-primary mr-2'>•</span>
+                                  <span className={styles["courseBullet"]}>•</span>
                                   <span>{learning}</span>
                                 </motion.li>
                               ))}
@@ -274,7 +275,7 @@ export default function Education(): React.JSX.Element {
             </div>
             {activeIndex === index && !isFlipped.includes(index) && (
               <motion.div
-                className='bg-primary/5 absolute inset-0 -z-10 rounded-xl blur-xl'
+                className={styles["glowEffect"]}
                 initial={{opacity: 0}}
                 animate={{opacity: 1}}
                 exit={{opacity: 0}}

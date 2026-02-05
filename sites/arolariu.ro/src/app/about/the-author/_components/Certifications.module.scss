@@ -1,0 +1,228 @@
+// ===========================================
+// THE AUTHOR - CERTIFICATIONS COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  background-color: hsl(var(--muted) / 0.3);
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+// Header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  color: hsl(var(--muted-foreground));
+}
+
+// Grid
+.grid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+// Card wrapper
+.cardWrapper {
+  position: relative;
+}
+
+// Card
+.card {
+  position: relative;
+  height: 600px;
+  overflow: hidden;
+  border-radius: radius('xl');
+  border: 1px solid hsl(var(--border) / 0.5);
+  background-color: hsl(var(--card));
+  padding: space(6);
+  @include shadow('md');
+  @include transition(border-color, box-shadow);
+
+  &:hover {
+    border-color: hsl(var(--primary) / 0.3);
+    @include shadow('xl');
+  }
+}
+
+// Card header
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: space(4);
+}
+
+// Award icon
+.awardIconWrapper {
+  padding: space(3);
+  border-radius: radius('lg');
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+.awardIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+// Code badge
+.codeBadge {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+
+// Card title
+.cardTitle {
+  margin-bottom: space(2);
+  font-size: font-size('xl');
+  font-weight: font-weight('semibold');
+
+  .card:hover & {
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  }
+}
+
+// Issuer info
+.issuerInfo {
+  display: flex;
+  align-items: center;
+  margin-bottom: space(4);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.issuerSeparator {
+  margin: 0 space(2);
+}
+
+// Scrollable content
+.scrollContent {
+  height: 350px;
+  overflow-y: auto;
+  padding-right: space(2);
+}
+
+.description {
+  margin-bottom: space(4);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+// Skills section
+.skillsSection {
+  margin-top: space(4);
+}
+
+.skillsTitle {
+  margin-bottom: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.skillsList {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.skillItem {
+  display: flex;
+  align-items: center;
+}
+
+.skillIcon {
+  margin-right: space(2);
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: hsl(var(--primary));
+}
+
+.skillText {
+  font-size: font-size('sm');
+}
+
+// Card footer
+.cardFooter {
+  position: absolute;
+  right: space(6);
+  bottom: space(6);
+  left: space(6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: space(4);
+}
+
+.viewLink {
+  display: inline-flex;
+  align-items: center;
+  font-size: font-size('sm');
+  color: hsl(var(--primary));
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.viewLinkIcon {
+  margin-left: space(1);
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+// Progress bar
+.progressBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background-color: hsl(var(--primary));
+}
+
+// Glow effect
+.glowEffect {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: radius('xl');
+  background-color: hsl(var(--primary) / 0.05);
+  filter: blur(24px);
+}

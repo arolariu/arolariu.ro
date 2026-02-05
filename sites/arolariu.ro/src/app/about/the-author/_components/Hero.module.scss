@@ -1,0 +1,84 @@
+// ===========================================
+// THE AUTHOR - HERO COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content {
+  z-index: 10;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 56rem;
+  padding: 0 space(4);
+  text-align: center;
+}
+
+.contentInner {
+  display: flex;
+  flex-direction: column;
+  gap: space(8);
+}
+
+// Profile image with glow effect
+.profileImage {
+  position: relative;
+  margin: 0 auto space(6);
+  width: 8rem;
+  height: 8rem;
+  border-radius: 9999px;
+  border: 4px solid hsl(var(--primary) / 0.2);
+  overflow: hidden;
+  box-shadow:
+    0 0 20px hsl(var(--primary) / 0.3),
+    0 0 40px hsl(var(--primary) / 0.2);
+
+  @include respond-to('md') {
+    width: 10rem;
+    height: 10rem;
+  }
+}
+
+// Title container
+.titleWrapper {
+  text-align: center;
+}
+
+.title {
+  text-align: center;
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('6xl');
+  }
+}
+
+// Gradient word styling (for typewriter)
+.gradientWord {
+  display: inline-block;
+  text-align: center;
+  font-size: font-size('xl');
+  background: linear-gradient(to right, #3b82f6, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+// Subtitle
+.subtitle {
+  max-width: 42rem;
+  font-size: font-size('lg');
+
+  @include respond-to('md') {
+    font-size: font-size('xl');
+  }
+}
