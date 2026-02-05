@@ -1,7 +1,7 @@
 "use client";
 
 import type {ReactNode} from "react";
-import styles from "../Auth.module.scss";
+import styles from "./styles.module.scss";
 
 export type AuthBulletListProps = Readonly<{
   bullets: ReadonlyArray<string>;

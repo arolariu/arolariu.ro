@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import styles from "../Auth.module.scss";
+import styles from "./styles.module.scss";
 
 export type AuthFormShellProps = Readonly<{
   kicker: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import {Badge} from "@arolariu/components";
-import styles from "../Auth.module.scss";
+import styles from "./styles.module.scss";
 
 export type AuthTrustBadgesRowProps = Readonly<{
   badges: ReadonlyArray<string>;

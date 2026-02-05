@@ -2,7 +2,7 @@
 
 import {motion, type Variants} from "motion/react";
 import Image from "next/image";
-import styles from "../Auth.module.scss";
+import styles from "./styles.module.scss";
 import AuthBulletList from "./AuthBulletList";
 import AuthTrustBadgesRow from "./AuthTrustBadgesRow";
 

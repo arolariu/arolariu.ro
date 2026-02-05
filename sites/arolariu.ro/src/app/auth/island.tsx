@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {TbArrowRight, TbLock, TbShield, TbUserPlus} from "react-icons/tb";
 import AuthTrustBadgesRow from "./_components/AuthTrustBadgesRow";
-import styles from "./Auth.module.scss";
+import styles from "./styles.module.scss";
 
 type AuthCardKey = "signUp" | "signIn";
 

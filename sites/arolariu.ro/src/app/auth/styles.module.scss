@@ -1,10 +1,11 @@
 // ===========================================
-// AUTH PAGES - SHARED STYLES
+// AUTH PAGE - MAIN ISLAND STYLES
+// Scoped to /auth route only
 // ===========================================
 @use '../../styles/abstracts' as *;
 
 // ===========================================
-// AUTH ISLAND (Main Auth Landing Page)
+// LAYOUT
 // ===========================================
 .section {
   position: relative;
@@ -21,7 +22,9 @@
   gap: space(12);
 }
 
-// Hero section
+// ===========================================
+// HERO SECTION
+// ===========================================
 .heroSection {
   position: relative;
   text-align: center;
@@ -90,7 +93,9 @@
   gap: space(3);
 }
 
-// Cards grid
+// ===========================================
+// CARDS GRID
+// ===========================================
 .cardsGrid {
   display: grid;
   gap: space(8);
@@ -278,6 +283,9 @@
   background-color: hsl(var(--primary) / 0.7);
 }
 
+// ===========================================
+// CTA SECTION
+// ===========================================
 .ctaSection {
   display: flex;
   flex-direction: column;
@@ -341,227 +349,13 @@
   color: hsl(var(--muted-foreground));
 }
 
-// Gradient variants for cards
+// ===========================================
+// GRADIENT VARIANTS
+// ===========================================
 .gradientEmerald {
   background: linear-gradient(to bottom right, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.1), transparent);
 }
 
 .gradientViolet {
   background: linear-gradient(to bottom right, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
-}
-
-// ===========================================
-// AUTH FORM SHELL
-// ===========================================
-.formShell {
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-  max-width: 28rem;
-  display: flex;
-  flex-direction: column;
-  gap: space(6);
-}
-
-.formShellHeader {
-  text-align: center;
-}
-
-.formShellKicker {
-  font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
-}
-
-.formShellSecondary {
-  margin-top: space(2);
-  font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
-}
-
-.formShellFooter {
-  text-align: center;
-  font-size: font-size('xs');
-  color: hsl(var(--muted-foreground));
-}
-
-// ===========================================
-// AUTH MARKETING PANEL
-// ===========================================
-.marketingPanel {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: space(8);
-}
-
-.marketingGlow {
-  position: absolute;
-  top: 25%;
-  left: -5rem;
-  width: 16rem;
-  height: 16rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.1);
-  filter: blur(48px);
-  pointer-events: none;
-}
-
-.marketingHeaderSection {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: space(4);
-}
-
-.marketingTitle {
-  background: linear-gradient(
-    to right,
-    hsl(var(--foreground)),
-    hsl(var(--foreground) / 0.9),
-    hsl(var(--foreground) / 0.7)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
-  letter-spacing: letter-spacing('tight');
-
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
-  }
-
-  @include respond-to('lg') {
-    font-size: font-size('5xl');
-  }
-}
-
-.marketingSubtitle {
-  font-size: font-size('base');
-  line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
-
-  @include respond-to('sm') {
-    font-size: font-size('lg');
-  }
-}
-
-.marketingTrustBadges {
-  margin-top: space(4);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: space(2);
-}
-
-.marketingCard {
-  position: relative;
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 28rem;
-  overflow: hidden;
-  border-radius: radius('2xl');
-  border: 1px solid hsl(var(--border) / 0.5);
-  padding: space(6);
-  background-color: hsl(var(--card) / 0.4);
-  backdrop-filter: blur(4px);
-
-  @include respond-to('lg') {
-    margin-left: 0;
-  }
-}
-
-.marketingCardGlowPrimary {
-  position: absolute;
-  top: -5rem;
-  left: -5rem;
-  width: 14rem;
-  height: 14rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.15);
-  filter: blur(48px);
-  pointer-events: none;
-}
-
-.marketingCardGlowSecondary {
-  position: absolute;
-  bottom: -5rem;
-  right: -5rem;
-  width: 14rem;
-  height: 14rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--secondary) / 0.15);
-  filter: blur(48px);
-  pointer-events: none;
-}
-
-.marketingIllustration {
-  position: relative;
-}
-
-.marketingImage {
-  margin-left: auto;
-  margin-right: auto;
-  width: 12rem;
-  height: 12rem;
-  object-fit: contain;
-  @include image-drop-shadow;
-
-  @include respond-to('sm') {
-    width: 14rem;
-    height: 14rem;
-  }
-}
-
-.marketingBulletSection {
-  margin-top: space(6);
-}
-
-// ===========================================
-// AUTH TRUST BADGES ROW
-// ===========================================
-.trustBadgesRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: space(2);
-}
-
-// ===========================================
-// AUTH BULLET LIST
-// ===========================================
-.authBulletList {
-  display: flex;
-  flex-direction: column;
-  gap: space(2);
-  font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
-}
-
-.authBulletListSpaced {
-  gap: space(3);
-}
-
-.authBulletItem {
-  display: flex;
-  align-items: flex-start;
-  gap: space(2);
-}
-
-.authBulletDot {
-  margin-top: space(2);
-  display: inline-block;
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.7);
-}
-
-.authBulletDotAnimated {
-  margin-top: space(1.5);
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.7);
 }
