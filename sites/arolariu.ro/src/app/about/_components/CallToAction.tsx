@@ -6,6 +6,7 @@ import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {useRef} from "react";
 import {TbBrandGithub, TbMail} from "react-icons/tb";
+import styles from "./CallToAction.module.scss";
 
 /**
  * Call-to-action section at the bottom of the About hub page.
@@ -18,11 +19,11 @@ export default function CallToAction(): React.JSX.Element {
   return (
     <section
       ref={ref}
-      className='relative w-full overflow-hidden px-4 py-24'>
+      className={styles["section"]}>
       {/* Animated background */}
-      <div className='pointer-events-none absolute inset-0'>
+      <div className={styles["bgOrbs"]}>
         <motion.div
-          className='absolute top-1/4 left-1/4 h-72 w-72 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 blur-3xl'
+          className={styles["orbBlue"]}
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -34,7 +35,7 @@ export default function CallToAction(): React.JSX.Element {
           }}
         />
         <motion.div
-          className='absolute right-1/4 bottom-1/4 h-72 w-72 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 blur-3xl'
+          className={styles["orbPurple"]}
           animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.3, 0.5, 0.3],
@@ -49,39 +50,39 @@ export default function CallToAction(): React.JSX.Element {
 
       {/* Grid pattern */}
       <div
-        className='pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(100,100,100,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(100,100,100,0.03)_1px,transparent_1px)] bg-[size:50px_50px]'
+        className={styles["gridPattern"]}
         aria-hidden='true'
       />
 
       {/* Content */}
-      <div className='relative mx-auto max-w-4xl text-center'>
+      <div className={styles["content"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className='mb-4 text-4xl font-bold sm:text-5xl'>
-            <span className='from-gradient-from via-gradient-via to-gradient-to bg-gradient-to-r bg-clip-text text-transparent'>
+          <h2 className={styles["title"]}>
+            <span className={styles["titleGradient"]}>
               {t("title")}
             </span>
           </h2>
-          <p className='text-muted-foreground mx-auto mb-10 max-w-2xl text-lg leading-relaxed'>{t("subtitle")}</p>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
 
         {/* CTA buttons */}
         <motion.div
-          className='flex flex-col items-center justify-center gap-4 sm:flex-row'
+          className={styles["cta"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.2, duration: 0.5}}>
           <Button
             asChild
             size='lg'
-            className='group min-w-[180px]'>
+            className={styles["ctaButton"]}>
             <a
               href='https://github.com/arolariu/arolariu.ro'
               target='_blank'
               rel='noopener noreferrer'>
-              <TbBrandGithub className='mr-2 h-5 w-5 transition-transform group-hover:scale-110' />
+              <TbBrandGithub className={styles["ctaIcon"]} />
               {t("primary")}
             </a>
           </Button>
@@ -89,9 +90,9 @@ export default function CallToAction(): React.JSX.Element {
             asChild
             variant='outline'
             size='lg'
-            className='min-w-[180px]'>
+            className={styles["ctaButton"]}>
             <Link href='/about/the-author#contact'>
-              <TbMail className='mr-2 h-5 w-5' />
+              <TbMail className={styles["ctaIcon"]} />
               {t("secondary")}
             </Link>
           </Button>
@@ -99,7 +100,7 @@ export default function CallToAction(): React.JSX.Element {
 
         {/* Footer text */}
         <motion.p
-          className='text-muted-foreground mt-12 text-sm'
+          className={styles["footer"]}
           initial={{opacity: 0}}
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.4, duration: 0.5}}>

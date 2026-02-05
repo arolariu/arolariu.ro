@@ -1,0 +1,123 @@
+// ===========================================
+// ABOUT HUB - CALL TO ACTION COMPONENT
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  width: 100%;
+  padding: space(24) space(4);
+  overflow: hidden;
+}
+
+// Background orbs
+.bgOrbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+}
+
+.orbBlue {
+  composes: orb;
+  top: 25%;
+  left: 25%;
+  width: 18rem;
+  height: 18rem;
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+}
+
+.orbPurple {
+  composes: orb;
+  right: 25%;
+  bottom: 25%;
+  width: 18rem;
+  height: 18rem;
+  background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+}
+
+// Grid pattern
+.gridPattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(100, 100, 100, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 100, 100, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+// Content
+.content {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 56rem;
+  text-align: center;
+}
+
+// Title
+.title {
+  margin-bottom: space(4);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('5xl');
+  }
+}
+
+.titleGradient {
+  @include gradient-text;
+}
+
+// Subtitle
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(10);
+  max-width: 42rem;
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+}
+
+// CTA buttons
+.cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.ctaButton {
+  min-width: 180px;
+}
+
+.ctaIcon {
+  margin-right: space(2);
+  width: 1.25rem;
+  height: 1.25rem;
+  @include transition(transform);
+}
+
+.ctaButton:hover .ctaIcon {
+  transform: scale(1.1);
+}
+
+// Footer text
+.footer {
+  margin-top: space(12);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}

@@ -1,0 +1,90 @@
+// ===========================================
+// ABOUT HUB - FAQ COMPONENT
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  width: 100%;
+  padding: space(20) space(4);
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 48rem;
+}
+
+// Section header
+.header {
+  margin-bottom: space(12);
+  text-align: center;
+}
+
+.iconWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: space(4);
+}
+
+.iconInner {
+  padding: space(3);
+  border-radius: radius('xl');
+  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+}
+
+.title {
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  font-size: font-size('lg');
+  color: hsl(var(--muted-foreground));
+}
+
+// Accordion
+.accordion {
+  width: 100%;
+}
+
+.accordionItem {
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+  @include transition(border-color);
+
+  &:hover {
+    border-color: hsl(var(--primary) / 0.3);
+  }
+}
+
+.accordionTrigger {
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.question {
+  padding-right: space(4);
+  text-align: left;
+  font-weight: font-weight('semibold');
+}
+
+.answer {
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+}

@@ -1,0 +1,170 @@
+// ===========================================
+// ABOUT HUB - VALUES COMPONENT
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  width: 100%;
+  padding: space(20) space(4);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    hsl(217 91% 60% / 0.05),
+    transparent
+  );
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+// Section header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  font-size: font-size('lg');
+  color: hsl(var(--muted-foreground));
+}
+
+// Values grid
+.grid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+// Value card
+.card {
+  height: 100%;
+  border-radius: radius('lg');
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  @include transition(transform, border-color, box-shadow);
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: hsl(var(--primary) / 0.3);
+    @include shadow('lg');
+  }
+}
+
+.cardContent {
+  padding: space(6);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+  margin-bottom: space(4);
+}
+
+// Icon with background
+.iconWrapper {
+  padding: space(3);
+  border-radius: radius('xl');
+  @include transition(transform);
+
+  .card:hover & {
+    transform: scale(1.1);
+  }
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+// Icon color variants
+.iconBlue {
+  composes: iconWrapper;
+  background-color: rgba(59, 130, 246, 0.1);
+
+  .icon {
+    color: #3b82f6;
+  }
+}
+
+.iconAmber {
+  composes: iconWrapper;
+  background-color: rgba(245, 158, 11, 0.1);
+
+  .icon {
+    color: #f59e0b;
+  }
+}
+
+.iconGreen {
+  composes: iconWrapper;
+  background-color: rgba(34, 197, 94, 0.1);
+
+  .icon {
+    color: #22c55e;
+  }
+}
+
+.iconPurple {
+  composes: iconWrapper;
+  background-color: rgba(168, 85, 247, 0.1);
+
+  .icon {
+    color: #a855f7;
+  }
+}
+
+.iconPink {
+  composes: iconWrapper;
+  background-color: rgba(236, 72, 153, 0.1);
+
+  .icon {
+    color: #ec4899;
+  }
+}
+
+.iconCyan {
+  composes: iconWrapper;
+  background-color: rgba(6, 182, 212, 0.1);
+
+  .icon {
+    color: #06b6d4;
+  }
+}
+
+// Card text
+.cardTitle {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+.cardDescription {
+  font-size: font-size('sm');
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+}

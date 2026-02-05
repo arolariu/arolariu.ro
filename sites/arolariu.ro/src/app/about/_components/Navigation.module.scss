@@ -1,0 +1,209 @@
+// ===========================================
+// ABOUT HUB - NAVIGATION COMPONENT
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  width: 100%;
+  padding: space(20) space(4);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    hsl(270 67% 47% / 0.05),
+    transparent
+  );
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+// Section header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  font-size: font-size('lg');
+  color: hsl(var(--muted-foreground));
+}
+
+// Navigation cards grid
+.grid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Navigation card
+.card {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background-color: hsl(var(--card) / 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border));
+  border-radius: radius('lg');
+  @include transition(transform, border-color, box-shadow);
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: hsl(var(--primary) / 0.4);
+    @include shadow('2xl');
+  }
+}
+
+.cardGradient {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  @include transition(opacity);
+  pointer-events: none;
+
+  .card:hover & {
+    opacity: 1;
+  }
+}
+
+// Gradient variants
+.gradientPlatform {
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.1), transparent);
+}
+
+.gradientAuthor {
+  background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.1), transparent);
+}
+
+// Card header
+.cardHeader {
+  position: relative;
+  padding-bottom: space(4);
+}
+
+// Image container
+.imageWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 10rem;
+  height: 10rem;
+  margin: 0 auto;
+  padding: space(4);
+  border-radius: radius('2xl');
+  background: linear-gradient(to bottom right, hsl(var(--muted) / 0.3), hsl(var(--muted) / 0.1));
+  @include transition(transform);
+
+  .card:hover & {
+    transform: scale(1.05);
+  }
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+}
+
+// Card content
+.cardContent {
+  position: relative;
+}
+
+.cardContentInner {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.cardTextCenter {
+  text-align: center;
+}
+
+.cardTitle {
+  margin-bottom: space(2);
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+}
+
+.cardSubtitle {
+  font-size: font-size('sm');
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+}
+
+// Feature list
+.featureList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.featureBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+}
+
+.featureIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+// Card footer
+.cardFooter {
+  position: relative;
+  padding-top: space(4);
+}
+
+.ctaButton {
+  width: 100%;
+}
+
+.ctaIcon {
+  margin-left: space(2);
+  width: 1rem;
+  height: 1rem;
+  @include transition(transform);
+}
+
+.ctaButton:hover .ctaIcon {
+  transform: translateX(4px);
+}
