@@ -27,3 +27,93 @@
     padding: space(14) space(8);
   }
 }
+
+// ===========================================
+// ISLAND LAYOUT
+// ===========================================
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: space(10);
+  width: 100%;
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.column {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+// ===========================================
+// FORM CONTAINER & CARD
+// ===========================================
+.formContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  overflow: hidden;
+  border-radius: radius('2xl');
+  border: 1px solid hsl(var(--border) / 0.5);
+  padding: space(3);
+  background-color: hsl(var(--card) / 0.6);
+  backdrop-filter: blur(12px);
+  @include shadow('2xl');
+  @include transition(border-color, box-shadow);
+
+  @include respond-to('sm') {
+    padding: space(4);
+  }
+
+  &:hover {
+    border-color: hsl(var(--secondary) / 0.3);
+    box-shadow: 0 25px 50px -12px hsl(var(--secondary) / 0.1);
+  }
+}
+
+// ===========================================
+// GLOW EFFECTS
+// ===========================================
+.glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.glowBackground {
+  inset: -1rem;
+  border-radius: radius('3xl');
+  opacity: 0.4;
+  background-color: hsl(var(--secondary) / 0.2);
+}
+
+.glowCornerTop {
+  top: -2.5rem;
+  left: -2.5rem;
+  width: 6rem;
+  height: 6rem;
+  opacity: 0.6;
+  background: linear-gradient(to bottom right, hsl(var(--secondary) / 0.2), transparent);
+}
+
+.glowCornerBottom {
+  bottom: -2.5rem;
+  right: -2.5rem;
+  width: 8rem;
+  height: 8rem;
+  opacity: 0.5;
+  background: linear-gradient(to top left, hsl(var(--primary) / 0.15), transparent);
+}

@@ -5,7 +5,7 @@ import {motion, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
-import styles from "../../_components/styles.module.scss";
+import styles from "./styles.module.scss";
 
 const containerVariants: Variants = {
   hidden: {opacity: 0, y: 30, scale: 0.9},
@@ -62,25 +62,25 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
             {/* Background glow */}
             <div
               aria-hidden='true'
-              className={`${styles["glow"]} ${styles["glowBackground"]} ${styles["glowBackgroundSecondary"]}`}
+              className={`${styles["glow"]} ${styles["glowBackground"]}`}
             />
 
             {/* Card */}
             <motion.div
-              className={`${styles["card"]} ${styles["cardSecondary"]}`}
+              className={styles["card"]}
               whileHover={{
                 boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
               }}>
-              {/* Corner accent top-left */}
+              {/* Corner accent top */}
               <div
                 aria-hidden='true'
-                className={`${styles["glow"]} ${styles["glowCorner"]} ${styles["glowCornerTopLeft"]}`}
+                className={`${styles["glow"]} ${styles["glowCornerTop"]}`}
               />
 
-              {/* Corner accent bottom-right */}
+              {/* Corner accent bottom */}
               <div
                 aria-hidden='true'
-                className={`${styles["glow"]} ${styles["glowCornerBottomRight"]}`}
+                className={`${styles["glow"]} ${styles["glowCornerBottom"]}`}
               />
 
               <SignUp />
