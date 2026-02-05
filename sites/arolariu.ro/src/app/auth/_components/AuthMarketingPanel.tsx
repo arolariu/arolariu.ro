@@ -39,15 +39,6 @@ const itemVariants: Variants = {
   },
 };
 
-const floatingAnimation = {
-  y: [0, -10, 0],
-  rotate: [0, 2, 0],
-  transition: {
-    duration: 5,
-    repeat: Infinity,
-    ease: "easeInOut" as const,
-  },
-};
 
 /**
  * Enhanced marketing panel for authentication pages with animations.
@@ -73,19 +64,10 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
       variants={containerVariants}
       initial='hidden'
       animate='visible'>
-      {/* Background glow effects */}
-      <motion.div
+      {/* Background glow effect - static for performance */}
+      <div
         aria-hidden='true'
         className={styles["marketingGlow"]}
-        animate={{
-          scale: [1, 1.1, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
       />
 
       {/* Header section */}
@@ -111,39 +93,18 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
       <motion.div
         variants={itemVariants}
         className={styles["marketingCard"]}>
-        {/* Gradient glows */}
-        <motion.div
+        {/* Gradient glows - static for performance */}
+        <div
           aria-hidden='true'
           className={styles["marketingCardGlowPrimary"]}
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.4, 0.6, 0.4],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
         />
-        <motion.div
+        <div
           aria-hidden='true'
           className={styles["marketingCardGlowSecondary"]}
-          animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 7,
-            delay: 1,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
         />
 
-        {/* Floating illustration */}
-        <motion.div
-          animate={floatingAnimation}
-          className={styles["marketingIllustration"]}>
+        {/* Illustration */}
+        <div className={styles["marketingIllustration"]}>
           <Image
             src={props.illustrationSrc}
             alt={props.illustrationAlt}
@@ -152,9 +113,9 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
             className={styles["marketingImage"]}
             priority
           />
-        </motion.div>
+        </div>
 
-        {/* Animated bullet list */}
+        {/* Bullet list */}
         <motion.div
           className={styles["marketingBulletSection"]}
           variants={itemVariants}>
@@ -162,18 +123,9 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
             className={`${styles["authBulletList"]} ${styles["authBulletListSpaced"]}`}
             bullets={props.bullets}
             bulletAdornment={
-              <motion.span
-                className={styles["authBulletDotAnimated"]}
+              <span
+                className={styles["authBulletDot"]}
                 aria-hidden='true'
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
               />
             }
           />

@@ -70,19 +70,10 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
             initial='hidden'
             animate='visible'
             className='relative mx-auto flex justify-center'>
-            {/* Background glow */}
-            <motion.div
+            {/* Background glow - static for performance */}
+            <div
               aria-hidden='true'
-              className='bg-primary/20 pointer-events-none absolute -inset-4 rounded-3xl blur-2xl'
-              animate={{
-                opacity: [0.3, 0.5, 0.3],
-                scale: [0.95, 1.02, 0.95],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
+              className='bg-primary/20 pointer-events-none absolute -inset-4 rounded-3xl blur-2xl opacity-40'
             />
 
             {/* Card container */}
@@ -91,19 +82,10 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
               whileHover={{
                 boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
               }}>
-              {/* Animated corner accent */}
-              <motion.div
+              {/* Corner accent - static for performance */}
+              <div
                 aria-hidden='true'
-                className='from-primary/20 pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-linear-to-br to-transparent blur-2xl'
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
+                className='from-primary/20 pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-linear-to-br to-transparent blur-2xl opacity-60'
               />
 
               <SignIn />
