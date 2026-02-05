@@ -1,4 +1,5 @@
 import {RichText} from "@/presentation/Text";
+import {Separator} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
@@ -43,23 +44,8 @@ export default function HeroSection(): React.JSX.Element {
           </div>
 
           <div className={styles["appreciation"]}>
-            <div className={styles["appreciationInner"]}>
-              <svg
-                className={styles["appreciationIcon"]}
-                viewBox='0 0 24 24'
-                fill='none'
-                strokeWidth='1.5'
-                xmlns='http://www.w3.org/2000/svg'>
-                <path
-                  d='M13 7.00003H21M21 7.00003V15M21 7.00003L13 15L9 11L3 17'
-                  stroke='url(#a)'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
-
-              <span className={styles["appreciationText"]}>{t("appreciation")}</span>
-            </div>
+            <Separator className={styles["appreciationSeparator"]} />
+            <span className={styles["appreciationText"]}>{t("appreciation")}</span>
           </div>
         </motion.div>
         {/* Right side */}

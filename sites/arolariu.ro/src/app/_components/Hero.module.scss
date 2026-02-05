@@ -111,21 +111,14 @@
 // Appreciation section
 .appreciation {
   margin-top: space(8);
-  padding-top: space(6);
-  border-top: 1px solid hsl(var(--border));
 }
 
-.appreciationInner {
-  display: inline-flex;
-  align-items: center;
-}
-
-.appreciationIcon {
-  width: 1.5rem;
-  height: 1.5rem;
+.appreciationSeparator {
+  margin-bottom: space(6);
 }
 
 .appreciationText {
+  display: block;
   text-align: center;
 
   @include respond-to('md') {
