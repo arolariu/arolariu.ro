@@ -60,15 +60,20 @@
 // Original: mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3
 .footer__grid {
   display: grid;
-  gap: 2rem; // gap-8
+  gap: 2rem; // gap-8 for mobile
   margin-bottom: 2rem; // mb-8
 
   @include respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  @include respond-to('md') {
+    column-gap: 4rem; // Larger horizontal gap between sections
+  }
+
   @include respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 6rem; // Even larger gap on desktop
   }
 }
 
