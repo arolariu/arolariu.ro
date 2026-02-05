@@ -153,9 +153,7 @@ export default async function TermsOfServiceHomepage(_props: Readonly<PageProps<
         <span>{t("last_updated")}</span>
       </section>
       <RenderTermsOfServiceScreen />
-      <section className={styles["footerSection"]}>
-        {t("contactInformation.content")}
-      </section>
+      <section className={styles["footerSection"]}>{t("contactInformation.content")}</section>
     </main>
   );
 }

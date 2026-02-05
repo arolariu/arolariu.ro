@@ -95,9 +95,7 @@ export default function Competencies(): React.JSX.Element {
             <div className={styles["card"]}>
               <div className={styles["accentTop"]} />
               <div className={styles["cardHeader"]}>
-                <div className={styles["iconWrapper"]}>
-                  {skill.icon}
-                </div>
+                <div className={styles["iconWrapper"]}>{skill.icon}</div>
                 <h3 className={styles["cardTitle"]}>{skill.title}</h3>
               </div>
               <p className={styles["cardDescription"]}>{skill.description}</p>

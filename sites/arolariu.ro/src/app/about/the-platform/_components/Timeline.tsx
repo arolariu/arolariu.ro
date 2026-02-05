@@ -219,9 +219,7 @@ export default function Timeline(): React.JSX.Element {
                         </motion.div>
 
                         {/* Expand/Collapse indicator */}
-                        <div className={styles["expandHint"]}>
-                          {isExpanded ? t("collapseHint") : t("expandHint")}
-                        </div>
+                        <div className={styles["expandHint"]}>{isExpanded ? t("collapseHint") : t("expandHint")}</div>
                       </CardContent>
 
                       {/* Animated border */}

@@ -237,7 +237,9 @@ export default function Architecture(): React.JSX.Element {
                   </div>
                   <div>
                     <h4 className={styles["principleTitle"]}>{t(`principles.${principleId}.title` as Parameters<typeof t>[0])}</h4>
-                    <p className={styles["principleDescription"]}>{t(`principles.${principleId}.description` as Parameters<typeof t>[0])}</p>
+                    <p className={styles["principleDescription"]}>
+                      {t(`principles.${principleId}.description` as Parameters<typeof t>[0])}
+                    </p>
                   </div>
                 </motion.div>
               );

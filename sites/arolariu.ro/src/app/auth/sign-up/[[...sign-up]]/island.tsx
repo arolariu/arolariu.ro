@@ -2,8 +2,8 @@
 
 import {SignUp} from "@clerk/nextjs";
 import {motion, type Variants} from "motion/react";
-import dynamic from "next/dynamic";
 import {useTranslations} from "next-intl";
+import dynamic from "next/dynamic";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
 import styles from "./styles.module.scss";

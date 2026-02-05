@@ -54,13 +54,9 @@ function PackageBadge({type}: Readonly<{type: PackageType}>): React.JSX.Element 
   const t = useTranslations("Acknowledgements.packagesScreen.badge");
 
   return type === "production" ? (
-    <span className={styles["productionBadge"]}>
-      {t("production")}
-    </span>
+    <span className={styles["productionBadge"]}>{t("production")}</span>
   ) : (
-    <span className={styles["developmentBadge"]}>
-      {t("development")}
-    </span>
+    <span className={styles["developmentBadge"]}>{t("development")}</span>
   );
 }
 

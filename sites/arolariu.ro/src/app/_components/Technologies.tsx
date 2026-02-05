@@ -40,9 +40,7 @@ export default function TechnologiesSection(): React.JSX.Element {
             viewport={{once: true}}
             transition={{duration: 0.8}}
             className={styles["content"]}>
-            <Badge className={styles["badge"]}>
-              {t("badgeTitle")}
-            </Badge>
+            <Badge className={styles["badge"]}>{t("badgeTitle")}</Badge>
             <h2 className={styles["title"]}>{t("title")}</h2>
             <span className={styles["description"]}>{t("description")}</span>
             <ul className={styles["pointsList"]}>

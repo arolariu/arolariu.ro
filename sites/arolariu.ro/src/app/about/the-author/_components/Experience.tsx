@@ -209,9 +209,7 @@ export default function Experience(): React.JSX.Element {
                   </div>
 
                   <div className={styles["logoWrapper"]}>
-                    <motion.div className={styles["logoInner"]}>
-                      {currentExperience.logo}
-                    </motion.div>
+                    <motion.div className={styles["logoInner"]}>{currentExperience.logo}</motion.div>
                   </div>
                 </div>
 

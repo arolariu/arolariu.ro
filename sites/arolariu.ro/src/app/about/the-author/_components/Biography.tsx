@@ -36,16 +36,16 @@ export default function Biography(): React.JSX.Element {
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
-// Map bio section keys to SCSS icon class names
-const iconClassMap = {
-  first: "iconBlue",
-  second: "iconGreen",
-  third: "iconPurple",
-  fourth: "iconAmber",
-  fifth: "iconPink",
-} as const;
+  // Map bio section keys to SCSS icon class names
+  const iconClassMap = {
+    first: "iconBlue",
+    second: "iconGreen",
+    third: "iconPurple",
+    fourth: "iconAmber",
+    fifth: "iconPink",
+  } as const;
 
-type BioSectionKey = keyof typeof iconClassMap;
+  type BioSectionKey = keyof typeof iconClassMap;
 
   const bioSections: Array<{key: BioSectionKey; icon: React.ReactNode; content: string}> = [
     {

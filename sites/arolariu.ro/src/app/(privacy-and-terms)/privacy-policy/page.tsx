@@ -136,9 +136,7 @@ export default async function PrivacyPolicyHomepage(_props: Readonly<PageProps<"
         <span>{t("last_updated")}</span>
       </section>
       <RenderPrivacyPolicyScreen />
-      <section className={styles["footerSection"]}>
-        {t("contactInformation.content")}
-      </section>
+      <section className={styles["footerSection"]}>{t("contactInformation.content")}</section>
     </main>
   );
 }

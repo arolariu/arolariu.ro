@@ -151,7 +151,9 @@ export default function Features(): React.JSX.Element {
                     </motion.div>
                   </div>
                   <CardTitle className={styles["cardTitle"]}>{t(`items.${feature.id}.title` as Parameters<typeof t>[0])}</CardTitle>
-                  <CardDescription className={styles["cardDescription"]}>{t(`items.${feature.id}.description` as Parameters<typeof t>[0])}</CardDescription>
+                  <CardDescription className={styles["cardDescription"]}>
+                    {t(`items.${feature.id}.description` as Parameters<typeof t>[0])}
+                  </CardDescription>
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
@@ -201,9 +203,7 @@ export default function Features(): React.JSX.Element {
                 </div>
               </div>
 
-              <p className={styles["modalDescription"]}>
-                {t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}
-              </p>
+              <p className={styles["modalDescription"]}>{t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}</p>
 
               <div className={styles["modalTags"]}>
                 {t(`items.${selectedFeature.id}.tags` as Parameters<typeof t>[0])

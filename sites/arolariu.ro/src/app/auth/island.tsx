@@ -108,9 +108,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
               OAuth 2.0
             </Badge>
 
-            <h1 className={styles["heroTitle"]}>
-              {t("hero.title")}
-            </h1>
+            <h1 className={styles["heroTitle"]}>{t("hero.title")}</h1>
 
             <p className={styles["heroSubtitle"]}>{t("hero.subtitle")}</p>
           </div>

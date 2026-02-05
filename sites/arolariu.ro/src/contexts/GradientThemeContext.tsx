@@ -23,7 +23,7 @@
 
 import {usePreferencesStore, type GradientTheme} from "@/stores";
 import {convertHexToHslString} from "@arolariu/components";
-import React, {createContext, use, useEffect, useMemo, useCallback} from "react";
+import React, {createContext, use, useCallback, useEffect, useMemo} from "react";
 
 /**
  * Predefined gradient color presets.
@@ -32,28 +32,28 @@ import React, {createContext, use, useEffect, useMemo, useCallback} from "react"
 export const GRADIENT_PRESETS = {
   default: {
     from: "#06b6d4", // cyan-500
-    via: "#8b5cf6",  // purple-500
-    to: "#ec4899",   // pink-500
+    via: "#8b5cf6", // purple-500
+    to: "#ec4899", // pink-500
   },
   ocean: {
     from: "#0ea5e9", // sky-500
-    via: "#06b6d4",  // cyan-500
-    to: "#14b8a6",   // teal-500
+    via: "#06b6d4", // cyan-500
+    to: "#14b8a6", // teal-500
   },
   sunset: {
     from: "#f97316", // orange-500
-    via: "#ef4444",  // red-500
-    to: "#ec4899",   // pink-500
+    via: "#ef4444", // red-500
+    to: "#ec4899", // pink-500
   },
   forest: {
     from: "#22c55e", // green-500
-    via: "#10b981",  // emerald-500
-    to: "#14b8a6",   // teal-500
+    via: "#10b981", // emerald-500
+    to: "#14b8a6", // teal-500
   },
   purple: {
     from: "#8b5cf6", // violet-500
-    via: "#a855f7",  // purple-500
-    to: "#d946ef",   // fuchsia-500
+    via: "#a855f7", // purple-500
+    to: "#d946ef", // fuchsia-500
   },
 } as const;
 
@@ -81,7 +81,7 @@ interface GradientThemeContextValue {
   /** Set tertiary (via) gradient color */
   setTertiaryColor: (color: string | undefined) => void;
   /** Current preset name or 'custom' if colors don't match any preset */
-  preset: GradientPreset | 'custom';
+  preset: GradientPreset | "custom";
   /** Apply a preset by name */
   setPreset: (preset: GradientPreset) => void;
   /** Available presets */
@@ -187,28 +187,31 @@ export function GradientThemeProvider({children}: Readonly<{children: React.Reac
    * Detects if current colors match any preset.
    * @returns The matching preset name or 'custom' if no match
    */
-  const detectPreset = useCallback((): GradientPreset | 'custom' => {
+  const detectPreset = useCallback((): GradientPreset | "custom" => {
     for (const [name, preset] of Object.entries(GRADIENT_PRESETS)) {
       if (
-        primaryColor.toLowerCase() === preset.from.toLowerCase() &&
-        secondaryColor.toLowerCase() === preset.to.toLowerCase() &&
-        tertiaryColor?.toLowerCase() === preset.via.toLowerCase()
+        primaryColor.toLowerCase() === preset.from.toLowerCase()
+        && secondaryColor.toLowerCase() === preset.to.toLowerCase()
+        && tertiaryColor?.toLowerCase() === preset.via.toLowerCase()
       ) {
         return name as GradientPreset;
       }
     }
-    return 'custom';
+    return "custom";
   }, [primaryColor, secondaryColor, tertiaryColor]);
 
   /**
    * Applies a preset by setting all three colors at once.
    */
-  const setPreset = useCallback((presetName: GradientPreset) => {
-    const preset = GRADIENT_PRESETS[presetName];
-    setPrimaryColor(preset.from);
-    setSecondaryColor(preset.to);
-    setTertiaryColor(preset.via);
-  }, [setPrimaryColor, setSecondaryColor, setTertiaryColor]);
+  const setPreset = useCallback(
+    (presetName: GradientPreset) => {
+      const preset = GRADIENT_PRESETS[presetName];
+      setPrimaryColor(preset.from);
+      setSecondaryColor(preset.to);
+      setTertiaryColor(preset.via);
+    },
+    [setPrimaryColor, setSecondaryColor, setTertiaryColor],
+  );
 
   /**
    * Effect: Applies CSS variables when preferences change.
@@ -246,7 +249,18 @@ export function GradientThemeProvider({children}: Readonly<{children: React.Reac
       setPreset,
       presets: GRADIENT_PRESETS,
     }),
-    [primaryColor, secondaryColor, tertiaryColor, hasHydrated, setPrimaryColor, setSecondaryColor, setTertiaryColor, getGradientTheme, detectPreset, setPreset],
+    [
+      primaryColor,
+      secondaryColor,
+      tertiaryColor,
+      hasHydrated,
+      setPrimaryColor,
+      setSecondaryColor,
+      setTertiaryColor,
+      getGradientTheme,
+      detectPreset,
+      setPreset,
+    ],
   );
 
   return <GradientThemeContext value={value}>{children}</GradientThemeContext>;

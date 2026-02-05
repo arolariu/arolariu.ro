@@ -61,9 +61,7 @@ export default function CallToAction(): React.JSX.Element {
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
           <h2 className={styles["title"]}>
-            <span className={styles["titleGradient"]}>
-              {t("title")}
-            </span>
+            <span className={styles["titleGradient"]}>{t("title")}</span>
           </h2>
           <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
