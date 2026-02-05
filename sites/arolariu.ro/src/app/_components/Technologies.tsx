@@ -4,6 +4,7 @@ import {Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {TbCheck, TbExternalLink} from "react-icons/tb";
+import styles from "./Technologies.module.scss";
 
 /**
  * This component showcases the technology stack used in the platform.
@@ -15,46 +16,47 @@ export default function TechnologiesSection(): React.JSX.Element {
 
   const points = [
     {
-      check: <TbCheck className='text-accent-primary inline h-6 w-6' />,
+      check: <TbCheck className={styles["checkIcon"]} />,
       text: t("points.point1"),
     },
     {
-      check: <TbCheck className='text-accent-primary inline h-6 w-6' />,
+      check: <TbCheck className={styles["checkIcon"]} />,
       text: t("points.point2"),
     },
     {
-      check: <TbCheck className='text-accent-primary inline h-6 w-6' />,
+      check: <TbCheck className={styles["checkIcon"]} />,
       text: t("points.point3"),
     },
   ];
 
   return (
-    <section className='relative py-20'>
-      <div className='from-background to-background absolute inset-0 bg-linear-to-b via-purple-200 backdrop-blur-xs dark:via-blue-950' />
-      <div className='relative z-10 container mx-auto px-4'>
-        <div className='grid grid-cols-1 items-center gap-16 lg:grid-cols-2'>
+    <section className={styles["section"]}>
+      <div className={styles["bgGradient"]} />
+      <div className={styles["container"]}>
+        <div className={styles["grid"]}>
           <motion.div
             initial={{opacity: 0, x: -30}}
             whileInView={{opacity: 1, x: 0}}
             viewport={{once: true}}
-            transition={{duration: 0.8}}>
-            <Badge className='text-md from-gradient-from via-gradient-via to-gradient-to rounded-xl bg-linear-to-r'>
+            transition={{duration: 0.8}}
+            className={styles["content"]}>
+            <Badge className={styles["badge"]}>
               {t("badgeTitle")}
             </Badge>
-            <h2 className='mb-6 text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-            <span className='text-muted-foreground mb-6 block text-lg'>{t("description")}</span>
-            <ul className='mb-8 space-y-4'>
+            <h2 className={styles["title"]}>{t("title")}</h2>
+            <span className={styles["description"]}>{t("description")}</span>
+            <ul className={styles["pointsList"]}>
               {points.map((point) => (
                 <li
                   key={point.text}
-                  className='flex items-center space-x-4'>
+                  className={styles["point"]}>
                   {point.check}
                   <span>{point.text}</span>
                 </li>
               ))}
             </ul>
-            <Button className='w-full'>
-              {t("learnMoreBtn")} <TbExternalLink className='ml-2 h-4 w-4' />
+            <Button className={styles["button"]}>
+              {t("learnMoreBtn")} <TbExternalLink className={styles["buttonIcon"]} />
             </Button>
           </motion.div>
 
@@ -63,11 +65,11 @@ export default function TechnologiesSection(): React.JSX.Element {
             whileInView={{opacity: 1, scale: 1}}
             viewport={{once: true}}
             transition={{duration: 0.8}}
-            className='relative'>
-            <div className='border-primary/20 bg-card/30 relative rounded-lg border p-2 shadow-xl backdrop-blur-xs'>
-              <div className='bg-background absolute -top-3 left-4 px-2 py-1 text-xs font-medium'>architecture.tsx</div>
-              <pre className='language-typescript overflow-x-auto p-4 text-sm'>
-                <code className='text-foreground'>
+            className={styles["visual"]}>
+            <div className={styles["codeBlock"]}>
+              <div className={styles["codeLabel"]}>architecture.tsx</div>
+              <pre className={styles["codePre"]}>
+                <code className={styles["codeContent"]}>
                   {`const platform = {
   frontend: {
     framework: "Next.js 14",
@@ -95,8 +97,8 @@ export default function TechnologiesSection(): React.JSX.Element {
             </div>
 
             {/* Decorative elements */}
-            <div className='bg-primary/30 absolute -top-6 -right-6 h-12 w-12 rounded-full blur-xl' />
-            <div className='absolute -bottom-6 -left-6 h-12 w-12 rounded-full bg-purple-500/30 blur-xl' />
+            <div className={styles["decorOrbPrimary"]} />
+            <div className={styles["decorOrbPurple"]} />
           </motion.div>
         </div>
       </div>
