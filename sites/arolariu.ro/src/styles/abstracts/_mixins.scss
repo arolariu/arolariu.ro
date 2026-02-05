@@ -221,3 +221,33 @@
     @content;
   }
 }
+
+// Reduced motion media query wrapper (accessibility)
+// Usage: @include reduced-motion { animation: none; }
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+// ===========================================
+// DECORATIVE ELEMENTS
+// ===========================================
+
+// Animated orb/blob background element
+// Usage: @include orb(10rem, 48px, hsl(var(--primary) / 0.2))
+@mixin orb($size: 10rem, $blur: 48px, $color: hsl(var(--primary) / 0.2)) {
+  position: absolute;
+  width: $size;
+  height: $size;
+  border-radius: 9999px;
+  background-color: $color;
+  filter: blur($blur);
+  pointer-events: none;
+}
+
+// Image drop shadow (for illustrations/photos)
+// Usage: @include image-drop-shadow
+@mixin image-drop-shadow {
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+}
