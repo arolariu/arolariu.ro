@@ -1,5 +1,91 @@
 // ===========================================
 // TYPOGRAPHY
-// Font families, sizes, weights, line heights
+// Uses existing FontContext CSS variables
 // ===========================================
-// Populated in Task 1.2
+
+// Font family references (set by FontContext)
+// --font-default = Caudex (serif, weight 700)
+// --font-dyslexic = Atkinson Hyperlegible (sans-serif, weight 400)
+
+$font-family-default: var(--font-default), 'Caudex', Georgia, 'Times New Roman', serif;
+$font-family-dyslexic: var(--font-dyslexic), 'Atkinson Hyperlegible', system-ui, sans-serif;
+$font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+// Font sizes
+$font-sizes: (
+  'xs': 0.75rem,     // 12px
+  'sm': 0.875rem,    // 14px
+  'base': 1rem,      // 16px
+  'lg': 1.125rem,    // 18px
+  'xl': 1.25rem,     // 20px
+  '2xl': 1.5rem,     // 24px
+  '3xl': 1.875rem,   // 30px
+  '4xl': 2.25rem,    // 36px
+  '5xl': 3rem,       // 48px
+  '6xl': 3.75rem,    // 60px
+  '7xl': 4.5rem,     // 72px
+  '8xl': 6rem,       // 96px
+  '9xl': 8rem,       // 128px
+);
+
+// Font weights
+$font-weights: (
+  'thin': 100,
+  'extralight': 200,
+  'light': 300,
+  'normal': 400,
+  'medium': 500,
+  'semibold': 600,
+  'bold': 700,
+  'extrabold': 800,
+  'black': 900,
+);
+
+// Line heights
+$line-heights: (
+  'none': 1,
+  'tight': 1.25,
+  'snug': 1.375,
+  'normal': 1.5,
+  'relaxed': 1.625,
+  'loose': 2,
+);
+
+// Letter spacing
+$letter-spacing: (
+  'tighter': -0.05em,
+  'tight': -0.025em,
+  'normal': 0,
+  'wide': 0.025em,
+  'wider': 0.05em,
+  'widest': 0.1em,
+);
+
+// Helper functions
+@function font-size($key) {
+  @if map-has-key($font-sizes, $key) {
+    @return map-get($font-sizes, $key);
+  }
+  @error "Unknown font-size: #{$key}";
+}
+
+@function font-weight($key) {
+  @if map-has-key($font-weights, $key) {
+    @return map-get($font-weights, $key);
+  }
+  @error "Unknown font-weight: #{$key}";
+}
+
+@function line-height($key) {
+  @if map-has-key($line-heights, $key) {
+    @return map-get($line-heights, $key);
+  }
+  @error "Unknown line-height: #{$key}";
+}
+
+@function letter-spacing($key) {
+  @if map-has-key($letter-spacing, $key) {
+    @return map-get($letter-spacing, $key);
+  }
+  @error "Unknown letter-spacing: #{$key}";
+}
