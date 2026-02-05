@@ -64,6 +64,11 @@
 .header__title {
   margin-left: space(3);
   font-size: font-size('xl');
+  color: hsl(var(--foreground)); // Ensure black/white text, not link color
+
+  &:hover {
+    color: #fde047; // yellow-300
+  }
 }
 
 .header__center {

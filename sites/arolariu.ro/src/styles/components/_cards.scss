@@ -1,0 +1,252 @@
+// ===========================================
+// CARD COMPONENT STYLES
+// Custom card styles using BEM methodology
+// ===========================================
+@use '../abstracts' as *;
+
+.card {
+  border-radius: radius('xl');
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  @include shadow('md');
+  overflow: hidden;
+
+  // Card header section
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: space(1.5);
+    padding: space(6);
+  }
+
+  // Card title
+  &__title {
+    font-size: font-size('2xl');
+    font-weight: font-weight('semibold');
+    line-height: 1;
+    letter-spacing: letter-spacing('tight');
+  }
+
+  // Card description/subtitle
+  &__description {
+    font-size: font-size('sm');
+    color: hsl(var(--muted-foreground));
+  }
+
+  // Card main content area
+  &__content {
+    padding: space(6);
+    padding-top: 0;
+  }
+
+  // Card footer
+  &__footer {
+    display: flex;
+    align-items: center;
+    padding: space(6);
+    padding-top: 0;
+    gap: space(2);
+  }
+
+  // Card image/media container
+  &__image {
+    width: 100%;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+  }
+
+  // Card actions container (for buttons)
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: space(2);
+    margin-top: auto;
+  }
+
+  // ==========================================
+  // MODIFIERS
+  // ==========================================
+
+  // Interactive card (clickable)
+  &--interactive {
+    @include transition(border-color, box-shadow, transform);
+    cursor: pointer;
+
+    &:hover {
+      border-color: hsl(var(--primary) / 0.3);
+      @include shadow('xl');
+    }
+
+    &:active {
+      transform: scale(0.99);
+    }
+  }
+
+  // Elevated card (more shadow, no border)
+  &--elevated {
+    @include shadow('lg');
+    border: none;
+
+    &:hover {
+      @include shadow('xl');
+      transform: translateY(-2px);
+    }
+  }
+
+  // Gradient overlay on hover
+  &--gradient-overlay {
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      @include gradient-bg(to bottom right);
+      opacity: 0;
+      @include transition(opacity);
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    &:hover::before {
+      opacity: 0.1;
+    }
+  }
+
+  // Bordered card (stronger border)
+  &--bordered {
+    border-width: 2px;
+  }
+
+  // Compact card (less padding)
+  &--compact {
+    .card__header {
+      padding: space(4);
+    }
+
+    .card__content {
+      padding: space(4);
+      padding-top: 0;
+    }
+
+    .card__footer {
+      padding: space(4);
+      padding-top: 0;
+    }
+  }
+
+  // Full-height card (flex column)
+  &--full-height {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    .card__content {
+      flex: 1;
+    }
+  }
+
+  // Horizontal card layout
+  &--horizontal {
+    display: flex;
+    flex-direction: row;
+
+    .card__image {
+      width: 40%;
+      flex-shrink: 0;
+    }
+
+    .card__body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    @include respond-below('md') {
+      flex-direction: column;
+
+      .card__image {
+        width: 100%;
+      }
+    }
+  }
+
+  // Featured card (gradient border)
+  &--featured {
+    position: relative;
+    border: none;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: radius('xl');
+      padding: 2px;
+      @include gradient-bg;
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+  }
+
+  // Disabled state
+  &--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// ==========================================
+// CARD GRID LAYOUT UTILITY
+// ==========================================
+
+.card-grid {
+  display: grid;
+  gap: space(6);
+
+  // Responsive columns
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include respond-to('xl') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  // Variant: 2 columns max
+  &--cols-2 {
+    @include respond-to('sm') {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include respond-to('lg') {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  // Variant: 3 columns max
+  &--cols-3 {
+    @include respond-to('lg') {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @include respond-to('xl') {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}
