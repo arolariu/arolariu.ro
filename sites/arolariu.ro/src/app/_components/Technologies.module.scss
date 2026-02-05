@@ -6,6 +6,7 @@
 .section {
   position: relative;
   padding: space(20) 0;
+  overflow: hidden; // Prevent decorative orbs from causing horizontal scroll
 }
 
 .bgGradient {

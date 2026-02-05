@@ -5,6 +5,7 @@
 
 .section {
   padding: space(12) 0;
+  overflow: hidden; // Prevent TypewriterTextSmooth nowrap from causing horizontal scroll
 
   @include respond-to('sm') {
     padding-bottom: space(16);
@@ -35,8 +36,26 @@
 }
 
 .titleWrapper {
-  font-size: font-size('5xl');
+  justify-content: center;
+  font-size: font-size('3xl');
   font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+
+  // Override the component's internal text sizing
+  div {
+    font-size: inherit;
+  }
 }
 
 .titleWord {
@@ -48,11 +67,18 @@
 }
 
 .cursorClass {
-  height: 2.5rem; // h-10
-  display: none;
+  height: 2rem;
+
+  @include respond-to('sm') {
+    height: 2.5rem;
+  }
 
   @include respond-to('md') {
-    display: block;
+    height: 3rem;
+  }
+
+  @include respond-to('lg') {
+    height: 3.75rem;
   }
 }
 
