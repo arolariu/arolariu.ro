@@ -1,14 +1,25 @@
 // ===========================================
 // SCSS Entry Point - arolariu.ro
+// 7-1 Architecture Pattern (adapted)
 // ===========================================
-// Verification test - remove after confirming SCSS works
 
-$test-color: #3490dc;
+// 1. Abstracts (no CSS output - variables, mixins, functions)
+@use 'abstracts' as *;
 
-.scss-verification-test {
-  color: $test-color;
+// 2. Base styles (reset, element defaults)
+@use 'base';
 
-  &:hover {
-    color: darken($test-color, 10%);
-  }
-}
+// 3. Theme definitions (CSS variable declarations)
+@use 'themes';
+
+// 4. Utility classes
+@use 'utilities';
+
+// 5. Shared component styles
+@use 'components';
+
+// 6. Animations
+@use 'animations';
+
+// 7. Page-specific global styles
+@use 'pages';
