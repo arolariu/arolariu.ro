@@ -1,6 +1,7 @@
 // ===========================================
 // MIXINS
 // ===========================================
+@use 'sass:map';
 @use 'variables' as *;
 
 // ===========================================
@@ -10,20 +11,20 @@
 // Mobile-first responsive mixin
 // Usage: @include respond-to('md') { ... }
 @mixin respond-to($breakpoint) {
-  @if map-has-key($breakpoints, $breakpoint) {
-    @media (min-width: map-get($breakpoints, $breakpoint)) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (min-width: map.get($breakpoints, $breakpoint)) {
       @content;
     }
   } @else {
-    @error "Unknown breakpoint: #{$breakpoint}. Available: #{map-keys($breakpoints)}";
+    @error "Unknown breakpoint: #{$breakpoint}. Available: #{map.keys($breakpoints)}";
   }
 }
 
 // Max-width responsive mixin (for mobile-only styles)
 // Usage: @include respond-below('md') { ... }
 @mixin respond-below($breakpoint) {
-  @if map-has-key($breakpoints, $breakpoint) {
-    @media (max-width: calc(map-get($breakpoints, $breakpoint) - 1px)) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (max-width: calc(map.get($breakpoints, $breakpoint) - 1px)) {
       @content;
     }
   } @else {
@@ -34,7 +35,7 @@
 // Between breakpoints
 // Usage: @include respond-between('sm', 'lg') { ... }
 @mixin respond-between($min, $max) {
-  @media (min-width: map-get($breakpoints, $min)) and (max-width: calc(map-get($breakpoints, $max) - 1px)) {
+  @media (min-width: map.get($breakpoints, $min)) and (max-width: calc(map.get($breakpoints, $max) - 1px)) {
     @content;
   }
 }
@@ -111,8 +112,8 @@
     'none': none,
   );
 
-  @if map-has-key($shadows, $level) {
-    box-shadow: map-get($shadows, $level);
+  @if map.has-key($shadows, $level) {
+    box-shadow: map.get($shadows, $level);
   } @else {
     @error "Unknown shadow level: #{$level}";
   }

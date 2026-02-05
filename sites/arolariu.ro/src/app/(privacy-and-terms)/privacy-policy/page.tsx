@@ -2,6 +2,7 @@ import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import RenderPrivacyPolicyScreen from "./island";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the Privacy Policy page with legal compliance.
@@ -129,13 +130,13 @@ export default async function PrivacyPolicyHomepage(_props: Readonly<PageProps<"
   const t = await getTranslations("privacyPolicy");
 
   return (
-    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
-      <section className='flex flex-col flex-nowrap items-center justify-center justify-items-center'>
-        <h1 className='from-gradient-from to-gradient-to bg-linear-to-r bg-clip-text text-3xl font-black text-transparent'>{t("title")}</h1>
+    <main className={styles["privacyPolicyMain"]}>
+      <section className={styles["headerSection"]}>
+        <h1 className={styles["pageTitle"]}>{t("title")}</h1>
         <span>{t("last_updated")}</span>
       </section>
       <RenderPrivacyPolicyScreen />
-      <section className='from-gradient-from to-gradient-to bg-linear-to-r bg-clip-text pt-8 text-3xl font-black text-transparent italic'>
+      <section className={styles["footerSection"]}>
         {t("contactInformation.content")}
       </section>
     </main>

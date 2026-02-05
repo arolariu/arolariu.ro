@@ -1,0 +1,41 @@
+// ===========================================
+// PRIVACY POLICY PAGE STYLES
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+// ===========================================
+// MAIN LAYOUT
+// ===========================================
+.privacyPolicyMain {
+  @include flex-center;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: space(8);
+  padding: space(24) space(12);
+}
+
+// ===========================================
+// HEADER SECTION
+// ===========================================
+.headerSection {
+  @include flex-center;
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.pageTitle {
+  @include gradient-text;
+  font-size: font-size('3xl');
+  font-weight: font-weight('black');
+}
+
+// ===========================================
+// FOOTER SECTION
+// ===========================================
+.footerSection {
+  @include gradient-text;
+  padding-top: space(8);
+  font-size: font-size('3xl');
+  font-weight: font-weight('black');
+  font-style: italic;
+}

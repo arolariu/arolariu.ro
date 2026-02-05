@@ -1,3 +1,5 @@
+@use 'sass:map';
+
 // ===========================================
 // TYPOGRAPHY
 // Uses existing FontContext CSS variables
@@ -63,29 +65,29 @@ $letter-spacing: (
 
 // Helper functions
 @function font-size($key) {
-  @if map-has-key($font-sizes, $key) {
-    @return map-get($font-sizes, $key);
+  @if map.has-key($font-sizes, $key) {
+    @return map.get($font-sizes, $key);
   }
   @error "Unknown font-size: #{$key}";
 }
 
 @function font-weight($key) {
-  @if map-has-key($font-weights, $key) {
-    @return map-get($font-weights, $key);
+  @if map.has-key($font-weights, $key) {
+    @return map.get($font-weights, $key);
   }
   @error "Unknown font-weight: #{$key}";
 }
 
 @function line-height($key) {
-  @if map-has-key($line-heights, $key) {
-    @return map-get($line-heights, $key);
+  @if map.has-key($line-heights, $key) {
+    @return map.get($line-heights, $key);
   }
   @error "Unknown line-height: #{$key}";
 }
 
 @function letter-spacing($key) {
-  @if map-has-key($letter-spacing, $key) {
-    @return map-get($letter-spacing, $key);
+  @if map.has-key($letter-spacing, $key) {
+    @return map.get($letter-spacing, $key);
   }
   @error "Unknown letter-spacing: #{$key}";
 }

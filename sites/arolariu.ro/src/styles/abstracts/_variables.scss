@@ -1,3 +1,5 @@
+@use 'sass:map';
+
 // ===========================================
 // SPACING SCALE
 // Matches current Tailwind usage patterns
@@ -41,10 +43,10 @@ $spacing: (
 
 // Helper function to get spacing value
 @function space($key) {
-  @if map-has-key($spacing, $key) {
-    @return map-get($spacing, $key);
+  @if map.has-key($spacing, $key) {
+    @return map.get($spacing, $key);
   }
-  @error "Unknown spacing key: #{$key}. Available: #{map-keys($spacing)}";
+  @error "Unknown spacing key: #{$key}. Available: #{map.keys($spacing)}";
 }
 
 // ===========================================
@@ -64,10 +66,10 @@ $breakpoints: (
 
 // Helper function to get breakpoint value
 @function breakpoint($key) {
-  @if map-has-key($breakpoints, $key) {
-    @return map-get($breakpoints, $key);
+  @if map.has-key($breakpoints, $key) {
+    @return map.get($breakpoints, $key);
   }
-  @error "Unknown breakpoint: #{$key}. Available: #{map-keys($breakpoints)}";
+  @error "Unknown breakpoint: #{$key}. Available: #{map.keys($breakpoints)}";
 }
 
 // ===========================================
@@ -87,10 +89,10 @@ $z-index: (
 );
 
 @function z($key) {
-  @if map-has-key($z-index, $key) {
-    @return map-get($z-index, $key);
+  @if map.has-key($z-index, $key) {
+    @return map.get($z-index, $key);
   }
-  @error "Unknown z-index key: #{$key}. Available: #{map-keys($z-index)}";
+  @error "Unknown z-index key: #{$key}. Available: #{map.keys($z-index)}";
 }
 
 // ===========================================
@@ -111,8 +113,8 @@ $border-radius: (
 );
 
 @function radius($key) {
-  @if map-has-key($border-radius, $key) {
-    @return map-get($border-radius, $key);
+  @if map.has-key($border-radius, $key) {
+    @return map.get($border-radius, $key);
   }
-  @error "Unknown radius key: #{$key}. Available: #{map-keys($border-radius)}";
+  @error "Unknown radius key: #{$key}. Available: #{map.keys($border-radius)}";
 }
