@@ -68,12 +68,16 @@
   }
 
   @include respond-to('md') {
-    column-gap: 4rem; // Larger horizontal gap between sections
+    column-gap: 6rem; // Larger horizontal gap between sections
   }
 
   @include respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 6rem; // Even larger gap on desktop
+    column-gap: 10rem; // Even larger gap on desktop
+  }
+
+  @include respond-to('xl') {
+    column-gap: 14rem; // Maximum gap on extra large screens
   }
 }
 
@@ -159,7 +163,7 @@
 // Original: 2xsm:flex-col 2xsm:text-center flex gap-8 lg:flex-row lg:text-left
 .footer__nav-section {
   display: flex;
-  gap: 2rem; // gap-8
+  gap: 2rem; // gap-8 for mobile
   flex-direction: row; // Default: row on desktop
   text-align: left; // Default: left aligned
 
@@ -167,6 +171,19 @@
   @include respond-below('lg') {
     flex-direction: column;
     text-align: center;
+  }
+
+  // Responsive gaps between nav columns
+  @include respond-to('md') {
+    gap: 3rem;
+  }
+
+  @include respond-to('lg') {
+    gap: 4rem;
+  }
+
+  @include respond-to('xl') {
+    gap: 6rem;
   }
 }
 
