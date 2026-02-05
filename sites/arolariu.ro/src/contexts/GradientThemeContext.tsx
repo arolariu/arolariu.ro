@@ -23,7 +23,42 @@
 
 import {usePreferencesStore, type GradientTheme} from "@/stores";
 import {convertHexToHslString} from "@arolariu/components";
-import React, {createContext, use, useEffect, useMemo} from "react";
+import React, {createContext, use, useEffect, useMemo, useCallback} from "react";
+
+/**
+ * Predefined gradient color presets.
+ * Each preset defines a harmonious color combination for the gradient theme.
+ */
+export const GRADIENT_PRESETS = {
+  default: {
+    from: "#06b6d4", // cyan-500
+    via: "#8b5cf6",  // purple-500
+    to: "#ec4899",   // pink-500
+  },
+  ocean: {
+    from: "#0ea5e9", // sky-500
+    via: "#06b6d4",  // cyan-500
+    to: "#14b8a6",   // teal-500
+  },
+  sunset: {
+    from: "#f97316", // orange-500
+    via: "#ef4444",  // red-500
+    to: "#ec4899",   // pink-500
+  },
+  forest: {
+    from: "#22c55e", // green-500
+    via: "#10b981",  // emerald-500
+    to: "#14b8a6",   // teal-500
+  },
+  purple: {
+    from: "#8b5cf6", // violet-500
+    via: "#a855f7",  // purple-500
+    to: "#d946ef",   // fuchsia-500
+  },
+} as const;
+
+/** Available gradient preset names */
+export type GradientPreset = keyof typeof GRADIENT_PRESETS;
 
 /**
  * Context value shape for gradient theme state and actions.
@@ -45,6 +80,12 @@ interface GradientThemeContextValue {
   setSecondaryColor: (color: string) => void;
   /** Set tertiary (via) gradient color */
   setTertiaryColor: (color: string | undefined) => void;
+  /** Current preset name or 'custom' if colors don't match any preset */
+  preset: GradientPreset | 'custom';
+  /** Apply a preset by name */
+  setPreset: (preset: GradientPreset) => void;
+  /** Available presets */
+  presets: typeof GRADIENT_PRESETS;
 }
 
 const GradientThemeContext = createContext<GradientThemeContextValue | undefined>(undefined);
@@ -143,6 +184,33 @@ export function GradientThemeProvider({children}: Readonly<{children: React.Reac
     usePreferencesStore();
 
   /**
+   * Detects if current colors match any preset.
+   * @returns The matching preset name or 'custom' if no match
+   */
+  const detectPreset = useCallback((): GradientPreset | 'custom' => {
+    for (const [name, preset] of Object.entries(GRADIENT_PRESETS)) {
+      if (
+        primaryColor.toLowerCase() === preset.from.toLowerCase() &&
+        secondaryColor.toLowerCase() === preset.to.toLowerCase() &&
+        tertiaryColor?.toLowerCase() === preset.via.toLowerCase()
+      ) {
+        return name as GradientPreset;
+      }
+    }
+    return 'custom';
+  }, [primaryColor, secondaryColor, tertiaryColor]);
+
+  /**
+   * Applies a preset by setting all three colors at once.
+   */
+  const setPreset = useCallback((presetName: GradientPreset) => {
+    const preset = GRADIENT_PRESETS[presetName];
+    setPrimaryColor(preset.from);
+    setSecondaryColor(preset.to);
+    setTertiaryColor(preset.via);
+  }, [setPrimaryColor, setSecondaryColor, setTertiaryColor]);
+
+  /**
    * Effect: Applies CSS variables when preferences change.
    *
    * @remarks
@@ -174,8 +242,11 @@ export function GradientThemeProvider({children}: Readonly<{children: React.Reac
       setPrimaryColor,
       setSecondaryColor,
       setTertiaryColor,
+      preset: detectPreset(),
+      setPreset,
+      presets: GRADIENT_PRESETS,
     }),
-    [primaryColor, secondaryColor, tertiaryColor, hasHydrated, setPrimaryColor, setSecondaryColor, setTertiaryColor, getGradientTheme],
+    [primaryColor, secondaryColor, tertiaryColor, hasHydrated, setPrimaryColor, setSecondaryColor, setTertiaryColor, getGradientTheme, detectPreset, setPreset],
   );
 
   return <GradientThemeContext value={value}>{children}</GradientThemeContext>;
@@ -196,6 +267,9 @@ export function GradientThemeProvider({children}: Readonly<{children: React.Reac
  * - `setPrimaryColor`: Function to change primary color
  * - `setSecondaryColor`: Function to change secondary color
  * - `setTertiaryColor`: Function to change tertiary color
+ * - `preset`: Current preset name or 'custom' if colors don't match any preset
+ * - `setPreset`: Function to apply a preset by name
+ * - `presets`: Available preset definitions
  *
  * @returns Current gradient theme context value
  *
@@ -216,6 +290,22 @@ export function GradientThemeProvider({children}: Readonly<{children: React.Reac
  *       value={primaryColor}
  *       onChange={(e) => setPrimaryColor(e.target.value)}
  *     />
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Using presets
+ * function PresetPicker() {
+ *   const { preset, setPreset, presets } = useGradientTheme();
+ *
+ *   return (
+ *     <select value={preset} onChange={(e) => setPreset(e.target.value as GradientPreset)}>
+ *       {Object.keys(presets).map((name) => (
+ *         <option key={name} value={name}>{name}</option>
+ *       ))}
+ *     </select>
  *   );
  * }
  * ```

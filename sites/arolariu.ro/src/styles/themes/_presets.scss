@@ -1,5 +1,60 @@
 // ===========================================
 // THEME PRESETS
-// Gradient preset overrides
 // ===========================================
-// Populated in Task 2.2
+// These presets are implemented in GradientThemeContext.tsx
+// This file documents the available presets for reference.
+//
+// To add a new preset:
+// 1. Add it to GRADIENT_PRESETS in GradientThemeContext.tsx
+// 2. Document it here
+// 3. Optionally add SCSS-specific overrides below
+
+// ===========================================
+// PRESET DEFINITIONS (Implemented in TypeScript)
+// ===========================================
+//
+// DEFAULT:
+//   from: #06b6d4 (cyan-500)
+//   via: #8b5cf6 (purple-500)
+//   to: #ec4899 (pink-500)
+//
+// OCEAN:
+//   from: #0ea5e9 (sky-500)
+//   via: #06b6d4 (cyan-500)
+//   to: #14b8a6 (teal-500)
+//
+// SUNSET:
+//   from: #f97316 (orange-500)
+//   via: #ef4444 (red-500)
+//   to: #ec4899 (pink-500)
+//
+// FOREST:
+//   from: #22c55e (green-500)
+//   via: #10b981 (emerald-500)
+//   to: #14b8a6 (teal-500)
+//
+// PURPLE:
+//   from: #8b5cf6 (violet-500)
+//   via: #a855f7 (purple-500)
+//   to: #d946ef (fuchsia-500)
+
+// ===========================================
+// PRESET-SPECIFIC SCSS OVERRIDES (optional)
+// ===========================================
+// Use data attributes set by GradientThemeContext if needed
+
+[data-gradient-preset="ocean"] {
+  // Ocean-specific overrides if needed
+}
+
+[data-gradient-preset="sunset"] {
+  // Sunset-specific overrides if needed
+}
+
+[data-gradient-preset="forest"] {
+  // Forest-specific overrides if needed
+}
+
+[data-gradient-preset="purple"] {
+  // Purple-specific overrides if needed
+}
