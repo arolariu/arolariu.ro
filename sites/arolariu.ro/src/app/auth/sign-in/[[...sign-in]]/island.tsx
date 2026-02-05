@@ -6,7 +6,7 @@ import {useTranslations} from "next-intl";
 import dynamic from "next/dynamic";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
-import styles from "./styles.module.scss";
+import styles from "./island.module.scss";
 
 /** Skeleton displayed while Clerk's SignIn component is mounting */
 function ClerkSkeleton(): React.JSX.Element {

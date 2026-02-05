@@ -5,7 +5,7 @@ import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {redirect} from "next/navigation";
 import RenderAuthScreen from "./island";
-import styles from "./styles.module.scss";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the authentication page with localized content.

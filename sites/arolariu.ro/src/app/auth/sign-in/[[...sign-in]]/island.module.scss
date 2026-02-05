@@ -1,32 +1,8 @@
 // ===========================================
-// SIGN-UP PAGE STYLES
-// Scoped to /auth/sign-up route
+// SIGN-IN PAGE - ISLAND STYLES
+// Scoped to /auth/sign-in/island.tsx only
 // ===========================================
 @use '../../../../styles/abstracts' as *;
-
-// ===========================================
-// PAGE SECTION
-// ===========================================
-.pageSection {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 72rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding: space(10) space(4);
-
-  @include respond-to('sm') {
-    padding-left: space(6);
-    padding-right: space(6);
-  }
-
-  @include respond-to('lg') {
-    padding: space(14) space(8);
-  }
-}
 
 // ===========================================
 // ISLAND LAYOUT
@@ -48,6 +24,22 @@
   width: 100%;
   display: flex;
   justify-content: center;
+}
+
+.columnReverse {
+  order: 2;
+
+  @include respond-to('lg') {
+    order: 1;
+  }
+}
+
+.columnForward {
+  order: 1;
+
+  @include respond-to('lg') {
+    order: 2;
+  }
 }
 
 // ===========================================
@@ -78,8 +70,8 @@
   }
 
   &:hover {
-    border-color: hsl(var(--secondary) / 0.3);
-    box-shadow: 0 25px 50px -12px hsl(var(--secondary) / 0.1);
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow: 0 25px 50px -12px hsl(var(--primary) / 0.1);
   }
 }
 
@@ -97,13 +89,13 @@
   inset: -1rem;
   border-radius: radius('3xl');
   opacity: 0.4;
-  background-color: hsl(var(--secondary) / 0.2);
+  background-color: hsl(var(--primary) / 0.2);
 }
 
 
 // ===========================================
 // CLERK SKELETON LOADING
-// Shown via Clerk's fallback prop while SignUp mounts
+// Shown via Clerk's fallback prop while SignIn mounts
 // ===========================================
 .clerkSkeleton {
   display: flex;
@@ -112,7 +104,7 @@
   padding: space(6);
   width: 100%;
   min-width: 20rem;
-  min-height: 36rem; // Taller than sign-in (more form fields)
+  min-height: 28rem;
 }
 
 .clerkSkeletonHeader {

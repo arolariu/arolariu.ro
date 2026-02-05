@@ -7,7 +7,7 @@ import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import RenderAuthSignUpPage from "./island";
-import styles from "./styles.module.scss";
+import styles from "./page.module.scss";
 
 /**
  * Generates localized metadata for the sign-up page.
