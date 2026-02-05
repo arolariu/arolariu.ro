@@ -1,0 +1,567 @@
+// ===========================================
+// AUTH PAGES - SHARED STYLES
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+// ===========================================
+// AUTH ISLAND (Main Auth Landing Page)
+// ===========================================
+.section {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 72rem;
+}
+
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(12);
+}
+
+// Hero section
+.heroSection {
+  position: relative;
+  text-align: center;
+}
+
+.heroInner {
+  position: relative;
+}
+
+.heroBadge {
+  margin-bottom: space(4);
+  padding: space(1) space(4);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.heroBadgeIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+.heroTitle {
+  background: linear-gradient(
+    to right,
+    hsl(var(--foreground)),
+    hsl(var(--foreground) / 0.9),
+    hsl(var(--foreground) / 0.7)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('sm') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+}
+
+.heroSubtitle {
+  margin-top: space(4);
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+
+  @include respond-to('sm') {
+    font-size: font-size('xl');
+  }
+}
+
+.trustBadgesCenter {
+  margin-top: space(8);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: space(3);
+}
+
+// Cards grid
+.cardsGrid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    gap: space(10);
+  }
+}
+
+.cardWrapper {
+  @include transition(transform);
+
+  &:hover {
+    transform: translateY(-0.25rem);
+  }
+}
+
+.card {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background-color: hsl(var(--card) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.5);
+  backdrop-filter: blur(4px);
+  @include transition(border-color, box-shadow);
+
+  &:hover {
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.cardGradient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  @include transition(opacity);
+
+  .card:hover & {
+    opacity: 1;
+  }
+}
+
+.cardGlow {
+  position: absolute;
+  top: -4rem;
+  right: -4rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary) / 0.3);
+  filter: blur(48px);
+  pointer-events: none;
+  opacity: 0;
+  @include transition(opacity);
+
+  .card:hover & {
+    opacity: 1;
+  }
+}
+
+.cardHeader {
+  position: relative;
+  padding-bottom: space(4);
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+}
+
+.cardHeaderTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: radius('xl');
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+.cardIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.cardStep {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: hsl(var(--muted-foreground));
+}
+
+.cardIllustration {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 12rem;
+  height: 12rem;
+  border-radius: radius('2xl');
+  padding: space(4);
+  background: linear-gradient(to bottom right, hsl(var(--muted) / 0.3), hsl(var(--muted) / 0.1));
+  @include transition(transform);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  @include respond-to('sm') {
+    width: 14rem;
+    height: 14rem;
+  }
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+}
+
+.cardTitleSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  text-align: center;
+}
+
+.cardTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('sm') {
+    font-size: font-size('3xl');
+  }
+}
+
+.cardDescription {
+  font-size: 1rem;
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+}
+
+.cardContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+  padding-top: space(2);
+}
+
+.bulletsList {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+}
+
+.bulletItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.bulletDot {
+  margin-top: 0.375rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary) / 0.7);
+}
+
+.ctaSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  padding-top: space(2);
+}
+
+.ctaButtonWrapper {
+  @include transition(transform);
+
+  &:hover {
+    transform: scale(1.02);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.ctaButton {
+  width: 100%;
+  font-size: 1rem;
+  font-weight: font-weight('semibold');
+}
+
+.ctaArrowIcon {
+  margin-left: space(2);
+  width: 1rem;
+  height: 1rem;
+  @include transition(transform);
+
+  .ctaButton:hover & {
+    transform: translateX(0.25rem);
+  }
+}
+
+.secondaryPrompt {
+  text-align: center;
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.secondaryLink {
+  color: hsl(var(--primary));
+  font-weight: font-weight('medium');
+  text-underline-offset: 4px;
+  @include transition(color);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.footerNote {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  text-align: center;
+  font-size: font-size('sm');
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+}
+
+// Gradient variants for cards
+.gradientEmerald {
+  background: linear-gradient(to bottom right, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.1), transparent);
+}
+
+.gradientViolet {
+  background: linear-gradient(to bottom right, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+}
+
+// ===========================================
+// AUTH FORM SHELL
+// ===========================================
+.formShell {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+}
+
+.formShellHeader {
+  text-align: center;
+}
+
+.formShellKicker {
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.formShellSecondary {
+  margin-top: space(2);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.formShellFooter {
+  text-align: center;
+  font-size: font-size('xs');
+  color: hsl(var(--muted-foreground));
+}
+
+// ===========================================
+// AUTH MARKETING PANEL
+// ===========================================
+.marketingPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(8);
+}
+
+.marketingGlow {
+  position: absolute;
+  top: 25%;
+  left: -5rem;
+  width: 16rem;
+  height: 16rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary) / 0.1);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.marketingHeaderSection {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.marketingTitle {
+  background: linear-gradient(
+    to right,
+    hsl(var(--foreground)),
+    hsl(var(--foreground) / 0.9),
+    hsl(var(--foreground) / 0.7)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('5xl');
+  }
+}
+
+.marketingSubtitle {
+  font-size: 1rem;
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+
+  @include respond-to('sm') {
+    font-size: font-size('lg');
+  }
+}
+
+.marketingTrustBadges {
+  margin-top: space(4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+}
+
+.marketingCard {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 28rem;
+  overflow: hidden;
+  border-radius: radius('2xl');
+  border: 1px solid hsl(var(--border) / 0.5);
+  padding: space(6);
+  background-color: hsl(var(--card) / 0.4);
+  backdrop-filter: blur(4px);
+
+  @include respond-to('lg') {
+    margin-left: 0;
+  }
+}
+
+.marketingCardGlowPrimary {
+  position: absolute;
+  top: -5rem;
+  left: -5rem;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary) / 0.15);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.marketingCardGlowSecondary {
+  position: absolute;
+  bottom: -5rem;
+  right: -5rem;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--secondary) / 0.15);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.marketingIllustration {
+  position: relative;
+}
+
+.marketingImage {
+  margin-left: auto;
+  margin-right: auto;
+  width: 12rem;
+  height: 12rem;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+
+  @include respond-to('sm') {
+    width: 14rem;
+    height: 14rem;
+  }
+}
+
+.marketingBulletSection {
+  margin-top: space(6);
+}
+
+// ===========================================
+// AUTH TRUST BADGES ROW
+// ===========================================
+.trustBadgesRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+}
+
+// ===========================================
+// AUTH BULLET LIST
+// ===========================================
+.authBulletList {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.authBulletListSpaced {
+  gap: space(3);
+}
+
+.authBulletItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+}
+
+.authBulletDot {
+  margin-top: 0.5rem;
+  display: inline-block;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary) / 0.7);
+}
+
+.authBulletDotAnimated {
+  margin-top: 0.375rem;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary) / 0.7);
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import type {ReactNode} from "react";
+import styles from "../Auth.module.scss";
 
 export type AuthBulletListProps = Readonly<{
   bullets: ReadonlyArray<string>;
@@ -12,16 +13,16 @@ export default function AuthBulletList(props: AuthBulletListProps): React.JSX.El
   const bulletAdornment = props.bulletAdornment ?? (
     <span
       aria-hidden='true'
-      className='bg-primary/70 mt-2 inline-block h-1.5 w-1.5 rounded-full'
+      className={styles["authBulletDot"]}
     />
   );
 
   return (
-    <ul className={props.className ?? "text-muted-foreground space-y-2 text-sm"}>
+    <ul className={props.className ?? styles["authBulletList"]}>
       {props.bullets.map((bullet) => (
         <li
           key={bullet}
-          className='flex items-start gap-2'>
+          className={styles["authBulletItem"]}>
           {bulletAdornment}
           <span>{bullet}</span>
         </li>

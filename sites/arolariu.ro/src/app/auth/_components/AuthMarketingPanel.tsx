@@ -2,6 +2,7 @@
 
 import {motion, type Variants} from "motion/react";
 import Image from "next/image";
+import styles from "../Auth.module.scss";
 import AuthBulletList from "./AuthBulletList";
 import AuthTrustBadgesRow from "./AuthTrustBadgesRow";
 
@@ -68,14 +69,14 @@ const floatingAnimation = {
 export default function AuthMarketingPanel(props: AuthMarketingPanelProps): React.JSX.Element {
   return (
     <motion.div
-      className='relative space-y-8'
+      className={styles["marketingPanel"]}
       variants={containerVariants}
       initial='hidden'
       animate='visible'>
       {/* Background glow effects */}
       <motion.div
         aria-hidden='true'
-        className='bg-primary/10 pointer-events-none absolute top-1/4 -left-20 h-64 w-64 rounded-full blur-3xl'
+        className={styles["marketingGlow"]}
         animate={{
           scale: [1, 1.1, 1],
           opacity: [0.3, 0.5, 0.3],
@@ -89,17 +90,17 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
 
       {/* Header section */}
       <motion.div
-        className='relative space-y-4'
+        className={styles["marketingHeaderSection"]}
         variants={itemVariants}>
-        <h1 className='from-foreground via-foreground/90 to-foreground/70 bg-linear-to-r bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl lg:text-5xl'>
+        <h1 className={styles["marketingTitle"]}>
           {props.title}
         </h1>
-        <p className='text-muted-foreground text-base leading-relaxed sm:text-lg'>{props.subtitle}</p>
+        <p className={styles["marketingSubtitle"]}>{props.subtitle}</p>
 
         {props.trustBadges && props.trustBadges.length > 0 ? (
           <motion.div variants={itemVariants}>
             <AuthTrustBadgesRow
-              className='mt-4 flex flex-wrap items-center gap-2'
+              className={styles["marketingTrustBadges"]}
               badges={props.trustBadges}
             />
           </motion.div>
@@ -109,11 +110,11 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
       {/* Illustration card */}
       <motion.div
         variants={itemVariants}
-        className='bg-card/40 border-border/50 relative mx-auto max-w-md overflow-hidden rounded-2xl border p-6 backdrop-blur-sm lg:mx-0'>
+        className={styles["marketingCard"]}>
         {/* Gradient glows */}
         <motion.div
           aria-hidden='true'
-          className='bg-primary/15 pointer-events-none absolute -top-20 -left-20 h-56 w-56 rounded-full blur-3xl'
+          className={styles["marketingCardGlowPrimary"]}
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.4, 0.6, 0.4],
@@ -126,7 +127,7 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
         />
         <motion.div
           aria-hidden='true'
-          className='bg-secondary/15 pointer-events-none absolute -right-20 -bottom-20 h-56 w-56 rounded-full blur-3xl'
+          className={styles["marketingCardGlowSecondary"]}
           animate={{
             scale: [1, 1.15, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -142,27 +143,27 @@ export default function AuthMarketingPanel(props: AuthMarketingPanelProps): Reac
         {/* Floating illustration */}
         <motion.div
           animate={floatingAnimation}
-          className='relative'>
+          className={styles["marketingIllustration"]}>
           <Image
             src={props.illustrationSrc}
             alt={props.illustrationAlt}
             width={320}
             height={320}
-            className='mx-auto h-48 w-48 object-contain drop-shadow-lg sm:h-56 sm:w-56'
+            className={styles["marketingImage"]}
             priority
           />
         </motion.div>
 
         {/* Animated bullet list */}
         <motion.div
-          className='mt-6'
+          className={styles["marketingBulletSection"]}
           variants={itemVariants}>
           <AuthBulletList
-            className='text-muted-foreground space-y-3 text-sm'
+            className={`${styles["authBulletList"]} ${styles["authBulletListSpaced"]}`}
             bullets={props.bullets}
             bulletAdornment={
               <motion.span
-                className='bg-primary/70 mt-1.5 inline-block h-2 w-2 rounded-full'
+                className={styles["authBulletDotAnimated"]}
                 aria-hidden='true'
                 animate={{
                   scale: [1, 1.2, 1],
