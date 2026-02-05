@@ -15,7 +15,7 @@ export type AuthFormShellProps = Readonly<{
 export default function AuthFormShell(props: AuthFormShellProps): React.JSX.Element {
   return (
     <div className={styles["formShell"]}>
-      <div className={styles["formShellHeader"]}>
+      <div>
         <p className={styles["formShellKicker"]}>{props.kicker}</p>
         <p className={styles["formShellSecondary"]}>
           {props.secondaryPrompt}{" "}

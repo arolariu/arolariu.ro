@@ -5,7 +5,7 @@ import {motion, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
-import styles from "./styles.module.scss";
+import styles from "../../_components/styles.module.scss";
 
 const containerVariants: Variants = {
   hidden: {opacity: 0, y: 30, scale: 0.9},
@@ -23,24 +23,12 @@ const containerVariants: Variants = {
 };
 
 /**
- * Enhanced sign up client component with immersive animations.
+ * Sign up page client component.
  *
  * @remarks
  * **Rendering Context**: Client Component wrapping Clerk's SignUp.
  *
- * **Animation Features**:
- * - Smooth entrance with spring physics
- * - Scale-up effect with easing
- * - Hover state with glow enhancement
- * - Gradient accents
- *
- * **Styling**:
- * - Glassmorphism card design
- * - Gradient background effects
- * - Dark mode optimized
- * - Responsive padding
- *
- * @returns The animated sign up component with Clerk authentication
+ * @returns The sign up component with Clerk authentication
  */
 export default function RenderAuthSignUpPage(): React.JSX.Element {
   const t = useTranslations("Authentication.SignUp");
@@ -48,7 +36,7 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
 
   return (
     <div className={styles["grid"]}>
-      <div>
+      <div className={styles["column"]}>
         <AuthMarketingPanel
           title={t("hero.title")}
           subtitle={t("hero.subtitle")}
@@ -59,7 +47,7 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
         />
       </div>
 
-      <div>
+      <div className={styles["column"]}>
         <AuthFormShell
           kicker={t("form.kicker")}
           secondaryPrompt={t("form.secondaryPrompt")}
@@ -71,28 +59,28 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
             initial='hidden'
             animate='visible'
             className={styles["formContainer"]}>
-            {/* Background glow - static for performance */}
+            {/* Background glow */}
             <div
               aria-hidden='true'
-              className={styles["backgroundGlow"]}
+              className={`${styles["glow"]} ${styles["glowBackground"]} ${styles["glowBackgroundSecondary"]}`}
             />
 
-            {/* Card container */}
+            {/* Card */}
             <motion.div
-              className={styles["card"]}
+              className={`${styles["card"]} ${styles["cardSecondary"]}`}
               whileHover={{
                 boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
               }}>
-              {/* Corner accent top - static for performance */}
+              {/* Corner accent top-left */}
               <div
                 aria-hidden='true'
-                className={styles["cornerAccentTop"]}
+                className={`${styles["glow"]} ${styles["glowCorner"]} ${styles["glowCornerTopLeft"]}`}
               />
 
-              {/* Corner accent bottom - static for performance */}
+              {/* Corner accent bottom-right */}
               <div
                 aria-hidden='true'
-                className={styles["cornerAccentBottom"]}
+                className={`${styles["glow"]} ${styles["glowCornerBottomRight"]}`}
               />
 
               <SignUp />

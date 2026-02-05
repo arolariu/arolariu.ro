@@ -1,23 +1,145 @@
 // ===========================================
-// AUTH SHARED COMPONENTS STYLES
-// Used by _components/ (AuthFormShell, AuthMarketingPanel, etc.)
+// AUTH SHARED STYLES
+// Used by all auth routes and components
 // ===========================================
 @use '../../../styles/abstracts' as *;
+
+// ===========================================
+// SHARED LAYOUT
+// ===========================================
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: space(10);
+  width: 100%;
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.column {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.columnReverse {
+  order: 2;
+
+  @include respond-to('lg') {
+    order: 1;
+  }
+}
+
+.columnForward {
+  order: 1;
+
+  @include respond-to('lg') {
+    order: 2;
+  }
+}
+
+// ===========================================
+// FORM CONTAINER & CARD (shared)
+// ===========================================
+.formContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  overflow: hidden;
+  border-radius: radius('2xl');
+  border: 1px solid hsl(var(--border) / 0.5);
+  padding: space(3);
+  background-color: hsl(var(--card) / 0.6);
+  backdrop-filter: blur(12px);
+  @include shadow('2xl');
+  @include transition(border-color, box-shadow);
+
+  @include respond-to('sm') {
+    padding: space(4);
+  }
+}
+
+.cardPrimary:hover {
+  border-color: hsl(var(--primary) / 0.3);
+  box-shadow: 0 25px 50px -12px hsl(var(--primary) / 0.1);
+}
+
+.cardSecondary:hover {
+  border-color: hsl(var(--secondary) / 0.3);
+  box-shadow: 0 25px 50px -12px hsl(var(--secondary) / 0.1);
+}
+
+// ===========================================
+// GLOW EFFECTS (shared)
+// ===========================================
+.glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.glowBackground {
+  inset: -1rem;
+  border-radius: radius('3xl');
+  opacity: 0.4;
+}
+
+.glowBackgroundPrimary {
+  background-color: hsl(var(--primary) / 0.2);
+}
+
+.glowBackgroundSecondary {
+  background-color: hsl(var(--secondary) / 0.2);
+}
+
+.glowCorner {
+  width: 6rem;
+  height: 6rem;
+  opacity: 0.6;
+}
+
+.glowCornerTopRight {
+  top: -2.5rem;
+  right: -2.5rem;
+  background: linear-gradient(to bottom right, hsl(var(--primary) / 0.2), transparent);
+}
+
+.glowCornerTopLeft {
+  top: -2.5rem;
+  left: -2.5rem;
+  background: linear-gradient(to bottom right, hsl(var(--secondary) / 0.2), transparent);
+}
+
+.glowCornerBottomRight {
+  bottom: -2.5rem;
+  right: -2.5rem;
+  width: 8rem;
+  height: 8rem;
+  opacity: 0.5;
+  background: linear-gradient(to top left, hsl(var(--primary) / 0.15), transparent);
+}
 
 // ===========================================
 // AUTH FORM SHELL
 // ===========================================
 .formShell {
-  margin-left: auto;
-  margin-right: auto;
   width: 100%;
   max-width: 28rem;
   display: flex;
   flex-direction: column;
   gap: space(6);
-}
-
-.formShellHeader {
   text-align: center;
 }
 
@@ -33,7 +155,6 @@
 }
 
 .formShellFooter {
-  text-align: center;
   font-size: font-size('xs');
   color: hsl(var(--muted-foreground));
 }
@@ -56,19 +177,32 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: space(8);
+  text-align: center;
+
+  @include respond-to('lg') {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
 
 .marketingGlow {
   position: absolute;
   top: 25%;
-  left: -5rem;
+  left: 50%;
+  transform: translateX(-50%);
   width: 16rem;
   height: 16rem;
   border-radius: 9999px;
   background-color: hsl(var(--primary) / 0.1);
   filter: blur(48px);
   pointer-events: none;
+
+  @include respond-to('lg') {
+    left: -5rem;
+    transform: none;
+  }
 }
 
 .marketingHeaderSection {
@@ -116,13 +250,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: space(2);
+
+  @include respond-to('lg') {
+    justify-content: flex-start;
+  }
 }
 
 .marketingCard {
   position: relative;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
   max-width: 28rem;
   overflow: hidden;
   border-radius: radius('2xl');
@@ -130,10 +268,6 @@
   padding: space(6);
   background-color: hsl(var(--card) / 0.4);
   backdrop-filter: blur(4px);
-
-  @include respond-to('lg') {
-    margin-left: 0;
-  }
 }
 
 .marketingCardGlowPrimary {
@@ -162,11 +296,11 @@
 
 .marketingIllustration {
   position: relative;
+  display: flex;
+  justify-content: center;
 }
 
 .marketingImage {
-  margin-left: auto;
-  margin-right: auto;
   width: 12rem;
   height: 12rem;
   object-fit: contain;
@@ -189,7 +323,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: space(2);
+
+  @include respond-to('lg') {
+    justify-content: flex-start;
+  }
 }
 
 // ===========================================
@@ -201,6 +340,7 @@
   gap: space(2);
   font-size: font-size('sm');
   color: hsl(var(--muted-foreground));
+  text-align: left;
 }
 
 .authBulletListSpaced {
@@ -218,6 +358,7 @@
   display: inline-block;
   width: 0.375rem;
   height: 0.375rem;
+  flex-shrink: 0;
   border-radius: 9999px;
   background-color: hsl(var(--primary) / 0.7);
 }
