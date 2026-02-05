@@ -73,15 +73,15 @@
 
   @include respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 4rem;
-  }
-
-  @include respond-to('xl') {
     column-gap: 6rem;
   }
 
-  @include respond-to('2xl') {
+  @include respond-to('xl') {
     column-gap: 10rem;
+  }
+
+  @include respond-to('2xl') {
+    column-gap: 14rem;
   }
 }
 
@@ -188,15 +188,15 @@
   }
 
   @include respond-to('lg') {
-    gap: 2.5rem;
+    gap: 4rem;
   }
 
   @include respond-to('xl') {
-    gap: 3rem;
+    gap: 5rem;
   }
 
   @include respond-to('2xl') {
-    gap: 4rem;
+    gap: 6rem;
   }
 }
 
