@@ -95,10 +95,7 @@ export default async function AuthHomepage(_props: Readonly<PageProps<"/auth">>)
   if (isAuthenticated) return redirect("/");
   return (
     <main className='container mx-auto px-5 py-24'>
-      <DotBackground
-        glow
-        className='opacity-30'
-      />
+      <DotBackground className='opacity-30' />
       <RenderAuthScreen />
     </main>
   );
