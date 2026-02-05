@@ -123,7 +123,7 @@ function FooterComponent(): React.JSX.Element {
               <Image
                 src={logo}
                 alt='The `arolariu.ro` logo.'
-                className='footer__brand-logo'
+                className='footer__logo'
                 width={40}
                 height={40}
               />
@@ -131,7 +131,7 @@ function FooterComponent(): React.JSX.Element {
             </Link>
             <div className='footer__brand-description'>
               <RichText
-                className='prose text-pretty text-white'
+                className='footer__rich-text prose'
                 sectionKey='Footer'
                 textKey='subtitle'
               />
