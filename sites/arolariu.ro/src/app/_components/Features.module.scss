@@ -1,0 +1,122 @@
+// ===========================================
+// HOME PAGE - FEATURES COMPONENT
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+.section {
+  padding: space(12) 0;
+
+  @include respond-to('sm') {
+    padding-bottom: space(16);
+  }
+
+  @include respond-to('lg') {
+    padding-bottom: space(20);
+  }
+
+  @include respond-to('xl') {
+    padding-bottom: space(24);
+  }
+}
+
+.article {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80rem; // --breakpoint-xl
+  padding: space(8) space(4);
+
+  @include respond-to('sm') {
+    padding: space(12) space(6);
+  }
+
+  @include respond-to('lg') {
+    padding: space(16) space(8);
+  }
+}
+
+.titleWrapper {
+  font-size: font-size('5xl');
+  font-weight: font-weight('bold');
+}
+
+.titleWord {
+  display: inline-block;
+  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cursorClass {
+  height: 2.5rem; // h-10
+  display: none;
+
+  @include respond-to('md') {
+    display: block;
+  }
+}
+
+.description {
+  margin-top: space(4);
+  text-align: center;
+  color: rgb(107, 114, 128); // gray-500
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(8);
+  margin-top: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.card {
+  border-radius: radius('xl');
+  border: 1px solid rgb(31, 41, 55); // gray-800
+  padding: space(8);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); // shadow-xl
+  @include transition(border-color, box-shadow);
+
+  &:hover {
+    border-color: rgba(236, 72, 153, 0.1); // pink-500/10
+    box-shadow: 0 25px 50px -12px rgba(236, 72, 153, 0.1); // shadow-pink-500/10
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  padding-bottom: space(4);
+}
+
+.cardIcon {
+  display: inline;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.cardTitle {
+  margin-left: space(2);
+  font-size: font-size('xl');
+}
+
+.cardDescription {
+  margin-top: space(3);
+  font-size: 1rem;
+  color: rgb(107, 114, 128); // gray-500
+}
+
+.learnMoreLink {
+  display: block;
+  margin-top: space(8);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
