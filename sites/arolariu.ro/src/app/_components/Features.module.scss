@@ -59,7 +59,7 @@
 .description {
   margin-top: space(4);
   text-align: center;
-  color: rgb(107, 114, 128); // gray-500
+  color: hsl(var(--muted-foreground));
 }
 
 .grid {
@@ -79,14 +79,14 @@
 
 .card {
   border-radius: radius('xl');
-  border: 1px solid rgb(31, 41, 55); // gray-800
+  border: 1px solid hsl(var(--border));
   padding: space(8);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); // shadow-xl
+  @include shadow('2xl');
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: rgba(236, 72, 153, 0.1); // pink-500/10
-    box-shadow: 0 25px 50px -12px rgba(236, 72, 153, 0.1); // shadow-pink-500/10
+    border-color: hsl(var(--primary) / 0.1);
+    box-shadow: 0 25px 50px -12px hsl(var(--primary) / 0.1);
   }
 }
 
@@ -109,8 +109,8 @@
 
 .cardDescription {
   margin-top: space(3);
-  font-size: 1rem;
-  color: rgb(107, 114, 128); // gray-500
+  font-size: font-size('base');
+  color: hsl(var(--muted-foreground));
 }
 
 .learnMoreLink {
