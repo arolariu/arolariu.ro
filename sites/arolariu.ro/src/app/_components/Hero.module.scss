@@ -119,7 +119,7 @@
   padding-top: space(6);
   border-top: 1px solid rgb(31, 41, 55); // gray-800
 
-  :global(.dark) & {
+  @include dark {
     border-color: rgb(209, 213, 219); // gray-300
   }
 }

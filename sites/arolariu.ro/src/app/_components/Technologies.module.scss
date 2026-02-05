@@ -19,7 +19,7 @@
   );
   backdrop-filter: blur(2px);
 
-  :global(.dark) & {
+  @include dark {
     background: linear-gradient(
       to bottom,
       hsl(var(--background)),
