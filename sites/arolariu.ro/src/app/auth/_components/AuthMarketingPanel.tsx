@@ -2,11 +2,11 @@
 
 import {motion, type Variants} from "motion/react";
 import Image from "next/image";
-import styles from "./styles.module.scss";
 import AuthBulletList from "./AuthBulletList";
+import styles from "./AuthMarketingPanel.module.scss";
 import AuthTrustBadgesRow from "./AuthTrustBadgesRow";
 
-export type AuthMarketingPanelProps = Readonly<{
+type Props = Readonly<{
   title: string;
   subtitle: string;
   illustrationSrc: string;
@@ -39,96 +39,66 @@ const itemVariants: Variants = {
   },
 };
 
-
 /**
- * Enhanced marketing panel for authentication pages with animations.
- *
- * @remarks
- * **Rendering Context**: Client Component with motion animations.
- *
- * **Features**:
- * - Staggered entrance animations
- * - Floating illustration effect
- * - Gradient glow backgrounds
- * - Trust badge integration
- * - Animated bullet points
- *
- * @param props - Component properties
- *
- * @returns Animated marketing panel JSX element
+ * Marketing panel for authentication pages with animations.
  */
-export default function AuthMarketingPanel(props: AuthMarketingPanelProps): React.JSX.Element {
+export default function AuthMarketingPanel(props: Readonly<Props>): React.JSX.Element {
   return (
     <motion.div
-      className={styles["marketingPanel"]}
+      className={styles["panel"]}
       variants={containerVariants}
       initial='hidden'
       animate='visible'>
-      {/* Background glow effect - static for performance */}
+      {/* Background glow */}
       <div
         aria-hidden='true'
-        className={styles["marketingGlow"]}
+        className={styles["glow"]}
       />
 
-      {/* Header section */}
+      {/* Header */}
       <motion.div
-        className={styles["marketingHeaderSection"]}
+        className={styles["header"]}
         variants={itemVariants}>
-        <h1 className={styles["marketingTitle"]}>
-          {props.title}
-        </h1>
-        <p className={styles["marketingSubtitle"]}>{props.subtitle}</p>
+        <h1 className={styles["title"]}>{props.title}</h1>
+        <p className={styles["subtitle"]}>{props.subtitle}</p>
 
-        {props.trustBadges && props.trustBadges.length > 0 ? (
-          <motion.div variants={itemVariants}>
-            <AuthTrustBadgesRow
-              className={styles["marketingTrustBadges"]}
-              badges={props.trustBadges}
-            />
+        {props.trustBadges && props.trustBadges.length > 0 && (
+          <motion.div
+            className={styles["trustBadges"]}
+            variants={itemVariants}>
+            <AuthTrustBadgesRow badges={props.trustBadges} />
           </motion.div>
-        ) : null}
+        )}
       </motion.div>
 
       {/* Illustration card */}
       <motion.div
-        variants={itemVariants}
-        className={styles["marketingCard"]}>
-        {/* Gradient glows - static for performance */}
+        className={styles["card"]}
+        variants={itemVariants}>
         <div
           aria-hidden='true'
-          className={styles["marketingCardGlowPrimary"]}
+          className={styles["cardGlowPrimary"]}
         />
         <div
           aria-hidden='true'
-          className={styles["marketingCardGlowSecondary"]}
+          className={styles["cardGlowSecondary"]}
         />
 
-        {/* Illustration */}
-        <div className={styles["marketingIllustration"]}>
+        <div className={styles["illustration"]}>
           <Image
             src={props.illustrationSrc}
             alt={props.illustrationAlt}
             width={320}
             height={320}
-            className={styles["marketingImage"]}
+            className={styles["image"]}
             priority
           />
         </div>
 
-        {/* Bullet list */}
         <motion.div
-          className={styles["marketingBulletSection"]}
+          className={styles["bullets"]}
           variants={itemVariants}>
-          <AuthBulletList
-            className={`${styles["authBulletList"]} ${styles["authBulletListSpaced"]}`}
-            bullets={props.bullets}
-            bulletAdornment={
-              <span
-                className={styles["authBulletDot"]}
-                aria-hidden='true'
-              />
-            }
-          />
+          <AuthBulletList bullets={props.bullets} />
         </motion.div>
       </motion.div>
     </motion.div>

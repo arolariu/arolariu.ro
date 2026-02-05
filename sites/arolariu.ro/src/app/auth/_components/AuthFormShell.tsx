@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import styles from "./styles.module.scss";
+import styles from "./AuthFormShell.module.scss";
 
-export type AuthFormShellProps = Readonly<{
+type Props = Readonly<{
   kicker: string;
   secondaryPrompt: string;
   secondaryAction: string;
@@ -12,12 +12,12 @@ export type AuthFormShellProps = Readonly<{
   children: React.ReactNode;
 }>;
 
-export default function AuthFormShell(props: AuthFormShellProps): React.JSX.Element {
+export default function AuthFormShell(props: Readonly<Props>): React.JSX.Element {
   return (
-    <div className={styles["formShell"]}>
+    <div className={styles["shell"]}>
       <div>
-        <p className={styles["formShellKicker"]}>{props.kicker}</p>
-        <p className={styles["formShellSecondary"]}>
+        <p className={styles["kicker"]}>{props.kicker}</p>
+        <p className={styles["secondary"]}>
           {props.secondaryPrompt}{" "}
           <Link
             href={props.secondaryHref}
@@ -29,7 +29,7 @@ export default function AuthFormShell(props: AuthFormShellProps): React.JSX.Elem
 
       {props.children}
 
-      <p className={styles["formShellFooter"]}>{props.footer}</p>
+      <p className={styles["footer"]}>{props.footer}</p>
     </div>
   );
 }

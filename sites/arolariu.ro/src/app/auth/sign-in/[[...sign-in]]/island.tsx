@@ -1,36 +1,47 @@
 "use client";
 
+import {SignIn} from "@clerk/nextjs";
 import {motion, type Variants} from "motion/react";
-import dynamic from "next/dynamic";
 import {useTranslations} from "next-intl";
+import dynamic from "next/dynamic";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
 import styles from "./styles.module.scss";
 
-function AuthSkeleton(): React.JSX.Element {
+/** Skeleton displayed while Clerk's SignIn component is mounting */
+function ClerkSkeleton(): React.JSX.Element {
   return (
-    <div className={styles["skeleton"]}>
-      <div className={styles["skeletonHeader"]}>
-        <div className={`${styles["skeletonLogo"]} ${styles["shimmer"]}`} />
-        <div className={`${styles["skeletonTitle"]} ${styles["shimmer"]}`} />
-        <div className={`${styles["skeletonSubtitle"]} ${styles["shimmer"]}`} />
+    <div className={styles["clerkSkeleton"]}>
+      <div className={styles["clerkSkeletonHeader"]}>
+        <div className={`${styles["clerkSkeletonLogo"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonTitle"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonSubtitle"]} ${styles["clerkShimmer"]}`} />
       </div>
-      <div className={`${styles["skeletonInput"]} ${styles["shimmer"]}`} />
-      <div className={`${styles["skeletonInput"]} ${styles["shimmer"]}`} />
-      <div className={`${styles["skeletonButton"]} ${styles["shimmer"]}`} />
-      <div className={`${styles["skeletonDivider"]} ${styles["shimmer"]}`} />
-      <div className={styles["skeletonSocial"]}>
-        <div className={`${styles["skeletonSocialButton"]} ${styles["shimmer"]}`} />
-        <div className={`${styles["skeletonSocialButton"]} ${styles["shimmer"]}`} />
-        <div className={`${styles["skeletonSocialButton"]} ${styles["shimmer"]}`} />
+      <div className={styles["clerkSkeletonSocial"]}>
+        <div className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
+      </div>
+      <div className={`${styles["clerkSkeletonDivider"]} ${styles["clerkShimmer"]}`} />
+      <div className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
+      <div className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
+      <div className={`${styles["clerkSkeletonButton"]} ${styles["clerkShimmer"]}`} />
+      <div className={styles["clerkSkeletonFooter"]}>
+        <div className={`${styles["clerkSkeletonFooterText"]} ${styles["clerkShimmer"]}`} />
       </div>
     </div>
   );
 }
 
-const SignIn = dynamic(() => import("@clerk/nextjs").then((mod) => mod.SignIn), {
+/** Wrapper using Clerk's fallback prop for loading state */
+function SignInWithFallback(): React.JSX.Element {
+  return <SignIn fallback={<ClerkSkeleton />} />;
+}
+
+/** Dynamic import with ssr:false to prevent hydration errors */
+const DynamicSignIn = dynamic(() => Promise.resolve(SignInWithFallback), {
   ssr: false,
-  loading: () => <AuthSkeleton />,
+  loading: () => <ClerkSkeleton />,
 });
 
 const containerVariants: Variants = {
@@ -97,13 +108,7 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
               whileHover={{
                 boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
               }}>
-              {/* Corner accent */}
-              <div
-                aria-hidden='true'
-                className={`${styles["glow"]} ${styles["glowCorner"]}`}
-              />
-
-              <SignIn />
+              <DynamicSignIn />
             </motion.div>
           </motion.div>
         </AuthFormShell>

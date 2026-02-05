@@ -1,52 +1,10 @@
 // ===========================================
-// AUTH SHARED COMPONENT STYLES
-// Used only by _components/ (AuthFormShell, AuthMarketingPanel, etc.)
+// AUTH MARKETING PANEL
+// Marketing content panel with illustration and features
 // ===========================================
 @use '../../../styles/abstracts' as *;
 
-// ===========================================
-// AUTH FORM SHELL
-// ===========================================
-.formShell {
-  width: 100%;
-  max-width: 28rem;
-  display: flex;
-  flex-direction: column;
-  gap: space(6);
-  text-align: center;
-}
-
-.formShellKicker {
-  font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
-}
-
-.formShellSecondary {
-  margin-top: space(2);
-  font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
-}
-
-.formShellFooter {
-  font-size: font-size('xs');
-  color: hsl(var(--muted-foreground));
-}
-
-.secondaryLink {
-  color: hsl(var(--primary));
-  font-weight: font-weight('medium');
-  text-underline-offset: 4px;
-  @include transition(color);
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-// ===========================================
-// AUTH MARKETING PANEL
-// ===========================================
-.marketingPanel {
+.panel {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -60,7 +18,7 @@
   }
 }
 
-.marketingGlow {
+.glow {
   position: absolute;
   top: 25%;
   left: 50%;
@@ -78,14 +36,14 @@
   }
 }
 
-.marketingHeaderSection {
+.header {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: space(4);
 }
 
-.marketingTitle {
+.title {
   background: linear-gradient(
     to right,
     hsl(var(--foreground)),
@@ -108,7 +66,7 @@
   }
 }
 
-.marketingSubtitle {
+.subtitle {
   font-size: font-size('base');
   line-height: line-height('relaxed');
   color: hsl(var(--muted-foreground));
@@ -118,20 +76,14 @@
   }
 }
 
-.marketingTrustBadges {
+.trustBadges {
   margin-top: space(4);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: space(2);
-
-  @include respond-to('lg') {
-    justify-content: flex-start;
-  }
 }
 
-.marketingCard {
+// ===========================================
+// ILLUSTRATION CARD
+// ===========================================
+.card {
   position: relative;
   width: 100%;
   max-width: 28rem;
@@ -143,7 +95,7 @@
   backdrop-filter: blur(4px);
 }
 
-.marketingCardGlowPrimary {
+.cardGlowPrimary {
   position: absolute;
   top: -5rem;
   left: -5rem;
@@ -155,7 +107,7 @@
   pointer-events: none;
 }
 
-.marketingCardGlowSecondary {
+.cardGlowSecondary {
   position: absolute;
   bottom: -5rem;
   right: -5rem;
@@ -167,13 +119,13 @@
   pointer-events: none;
 }
 
-.marketingIllustration {
+.illustration {
   position: relative;
   display: flex;
   justify-content: center;
 }
 
-.marketingImage {
+.image {
   width: 12rem;
   height: 12rem;
   object-fit: contain;
@@ -185,53 +137,6 @@
   }
 }
 
-.marketingBulletSection {
+.bullets {
   margin-top: space(6);
-}
-
-// ===========================================
-// AUTH TRUST BADGES ROW
-// ===========================================
-.trustBadgesRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: space(2);
-
-  @include respond-to('lg') {
-    justify-content: flex-start;
-  }
-}
-
-// ===========================================
-// AUTH BULLET LIST
-// ===========================================
-.authBulletList {
-  display: flex;
-  flex-direction: column;
-  gap: space(2);
-  font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
-  text-align: left;
-}
-
-.authBulletListSpaced {
-  gap: space(3);
-}
-
-.authBulletItem {
-  display: flex;
-  align-items: flex-start;
-  gap: space(2);
-}
-
-.authBulletDot {
-  margin-top: space(2);
-  display: inline-block;
-  width: 0.375rem;
-  height: 0.375rem;
-  flex-shrink: 0;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.7);
 }
