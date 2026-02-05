@@ -15,6 +15,9 @@ import "@arolariu/components/styles.css";
 // @ts-ignore -- css file has no typings.
 import "./globals.css";
 
+// @ts-ignore -- scss file has no typings.
+import "@/styles/main.scss";
+
 export {metadata} from "@/metadata";
 
 /**

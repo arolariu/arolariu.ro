@@ -1,0 +1,14 @@
+// ===========================================
+// SCSS Entry Point - arolariu.ro
+// ===========================================
+// Verification test - remove after confirming SCSS works
+
+$test-color: #3490dc;
+
+.scss-verification-test {
+  color: $test-color;
+
+  &:hover {
+    color: darken($test-color, 10%);
+  }
+}
