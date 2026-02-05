@@ -107,6 +107,7 @@
     "jsdom": "*",
     "msw": "*",
     "postcss": "*",
+    "sass": "*",
     "tailwindcss": "*",
     "tailwindcss-animate": "*",
     "typescript": "*",
