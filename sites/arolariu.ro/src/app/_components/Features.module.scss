@@ -41,7 +41,7 @@
 
 .titleWord {
   display: inline-block;
-  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

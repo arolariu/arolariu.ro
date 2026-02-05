@@ -57,7 +57,7 @@
 .badge {
   font-size: font-size('base');
   border-radius: radius('xl');
-  background: linear-gradient(to right, var(--gradient-from), var(--gradient-via), var(--gradient-to));
+  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-via)), hsl(var(--gradient-to)));
 }
 
 .title {

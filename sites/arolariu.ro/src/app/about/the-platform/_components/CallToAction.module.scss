@@ -107,9 +107,9 @@
 .titleHighlight {
   background: linear-gradient(
     to right,
-    var(--gradient-from, #3b82f6),
-    var(--gradient-via, #a855f7),
-    var(--gradient-to, #ec4899)
+    hsl(var(--gradient-from)),
+    hsl(var(--gradient-via)),
+    hsl(var(--gradient-to))
   );
   -webkit-background-clip: text;
   background-clip: text;

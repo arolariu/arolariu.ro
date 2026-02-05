@@ -56,7 +56,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -94,7 +94,7 @@
   position: absolute;
   inset: -1px;
   border-radius: 9999px;
-  background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
   @include transition(box-shadow);
 }
 
@@ -111,17 +111,13 @@
 // Appreciation section
 .appreciation {
   margin-top: space(8);
+  padding-top: space(6);
+  border-top: 1px solid hsl(var(--border));
 }
 
 .appreciationInner {
   display: inline-flex;
   align-items: center;
-  padding-top: space(6);
-  border-top: 1px solid hsl(var(--border));
-
-  @include dark {
-    border-color: hsl(var(--border));
-  }
 }
 
 .appreciationIcon {
