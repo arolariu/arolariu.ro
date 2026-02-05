@@ -97,7 +97,9 @@ export default async function AuthHomepage(_props: Readonly<PageProps<"/auth">>)
   return (
     <main className={styles["main"]}>
       <DotBackground className={styles["dotBackground"]} />
-      <RenderAuthScreen />
+      <div className={styles["content"]}>
+        <RenderAuthScreen />
+      </div>
     </main>
   );
 }
