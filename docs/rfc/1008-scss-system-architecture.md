@@ -409,9 +409,40 @@ All mixins are defined in `src/styles/abstracts/_mixins.scss`.
     @content;
   }
 }
+
+// Reduced motion (accessibility)
+// Usage: @include reduced-motion { animation: none; }
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
 ```
 
-### 4.6 Mixin Usage Examples
+### 4.6 Decorative Element Mixins
+
+```scss
+// Animated orb/blob background element
+// Usage: @include orb(10rem, 48px, hsl(var(--primary) / 0.2))
+@mixin orb($size: 10rem, $blur: 48px, $color: hsl(var(--primary) / 0.2)) {
+  position: absolute;
+  width: $size;
+  height: $size;
+  border-radius: 9999px;
+  background-color: $color;
+  filter: blur($blur);
+  pointer-events: none;
+}
+
+// Image drop shadow (for illustrations/photos)
+// Usage: @include image-drop-shadow
+@mixin image-drop-shadow {
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04))
+          drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+}
+```
+
+### 4.7 Mixin Usage Examples
 
 ```scss
 // Real example from Hero.module.scss
@@ -997,24 +1028,32 @@ For backgrounds that differ significantly between themes:
 
 ### 8.5 Animated Background Orbs
 
+Use the `@include orb()` mixin for decorative blur orbs:
+
 ```scss
+// Using the orb mixin (PREFERRED)
 .orbPrimary {
+  @include orb(10rem, 48px, hsl(var(--primary) / 0.2));
+  top: -5rem;
+  left: -5rem;
+}
+
+.orbSecondary {
+  @include orb(8rem, 48px, rgb(168, 85, 247, 0.2));  // purple-500/20
+  bottom: -5rem;
+  right: -5rem;
+}
+
+// Manual implementation (if custom positioning needed)
+.orbCustom {
   position: absolute;
   width: 10rem;
   height: 10rem;
   border-radius: 9999px;
   background-color: hsl(var(--primary) / 0.2);
   filter: blur(48px);
+  pointer-events: none;
   // Position with top/left/right/bottom
-}
-
-.orbSecondary {
-  position: absolute;
-  width: 8rem;
-  height: 8rem;
-  border-radius: 9999px;
-  background-color: rgb(168, 85, 247, 0.2);  // purple-500/20
-  filter: blur(48px);
 }
 ```
 
@@ -1044,6 +1083,53 @@ For backgrounds that differ significantly between themes:
     border-color: hsl(var(--ring));
     box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
   }
+}
+```
+
+### 8.7 Image and Illustration Styling
+
+```scss
+// Use the image-drop-shadow mixin for illustrations
+.illustration {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  @include image-drop-shadow;
+}
+
+// Marketing card with illustration
+.marketingImage {
+  margin-left: auto;
+  margin-right: auto;
+  width: 12rem;
+  height: 12rem;
+  object-fit: contain;
+  @include image-drop-shadow;
+
+  @include respond-to('sm') {
+    width: 14rem;
+    height: 14rem;
+  }
+}
+```
+
+### 8.8 Accessibility Patterns
+
+```scss
+// Reduced motion support
+.animatedElement {
+  @include transition(transform);
+  animation: pulse 2s infinite;
+
+  @include reduced-motion {
+    animation: none;
+    transition: none;
+  }
+}
+
+// Keyboard focus styles
+.interactiveElement {
+  @include focus-ring;
 }
 ```
 
