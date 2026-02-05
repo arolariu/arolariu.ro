@@ -1,0 +1,345 @@
+// ===========================================
+// THE PLATFORM - HERO COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+  overflow: hidden;
+}
+
+// Background layers
+.bgLayers {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.bgGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    hsl(var(--background)),
+    hsl(var(--background)),
+    hsl(var(--primary) / 0.05)
+  );
+}
+
+// Animated orbs container
+.bgOrbs {
+  position: absolute;
+  inset: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+}
+
+.orbPrimary {
+  composes: orb;
+  top: 25%;
+  left: 16.67%;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+}
+
+.orbSecondary {
+  composes: orb;
+  right: 16.67%;
+  bottom: 25%;
+  width: 600px;
+  height: 600px;
+  background: linear-gradient(to top left, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.1), transparent);
+}
+
+.orbAccent {
+  composes: orb;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(to right, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.05), transparent);
+}
+
+// Grid pattern
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(128, 128, 128, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(128, 128, 128, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+// Main content
+.content {
+  position: relative;
+  z-index: 10;
+  margin-left: auto;
+  margin-right: auto;
+  padding: space(20) space(4);
+}
+
+.contentInner {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: space(8);
+}
+
+// Status badge
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: space(3);
+  padding: space(2) space(5);
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--primary) / 0.2);
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  backdrop-filter: blur(8px);
+}
+
+.statusDot {
+  position: relative;
+  display: flex;
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+.statusDotPing {
+  position: absolute;
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: #22c55e;
+  opacity: 0.75;
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.statusDotInner {
+  position: relative;
+  display: inline-flex;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  background-color: #22c55e;
+}
+
+.statusIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+// Title
+.titleWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.title {
+  font-size: font-size('5xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('md') {
+    font-size: font-size('6xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('7xl');
+  }
+
+  @include respond-to('xl') {
+    font-size: font-size('8xl');
+  }
+}
+
+.titleLine {
+  display: block;
+  margin-bottom: space(2);
+}
+
+.gradientTitle {
+  font-size: font-size('6xl');
+  font-weight: 800;
+
+  @include respond-to('md') {
+    font-size: font-size('7xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('8xl');
+  }
+
+  @include respond-to('xl') {
+    font-size: font-size('9xl');
+  }
+}
+
+// Subtitle
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 48rem;
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+
+  @include respond-to('md') {
+    font-size: font-size('xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('2xl');
+  }
+}
+
+// Feature pills
+.featurePills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: space(3);
+  padding-top: space(2);
+}
+
+.featurePill {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  padding: space(2) space(4);
+  border-radius: 9999px;
+  background-color: hsl(var(--muted) / 0.5);
+  color: hsl(var(--muted-foreground));
+  font-size: font-size('sm');
+  backdrop-filter: blur(8px);
+}
+
+.featurePillIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+// CTA buttons
+.cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: space(4);
+  padding-top: space(8);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.ctaButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: space(3);
+  height: 3.5rem;
+  padding: 0 space(8);
+  overflow: hidden;
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  cursor: pointer;
+}
+
+.ctaIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  @include transition(transform);
+}
+
+.ctaButton:hover .ctaIcon {
+  transform: rotate(12deg);
+}
+
+.ctaArrow {
+  width: 1.25rem;
+  height: 1.25rem;
+  @include transition(transform);
+}
+
+.ctaButton:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+.ctaOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.05));
+}
+
+// Scroll indicator
+.scrollIndicator {
+  padding-top: space(16);
+}
+
+.scrollInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(2);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scrollText {
+  font-size: font-size('xs');
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: hsl(var(--muted-foreground));
+}
+
+.scrollMouse {
+  width: 1.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 2px solid hsl(var(--muted-foreground) / 0.3);
+  padding: 0.25rem;
+}
+
+.scrollDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: hsl(var(--primary));
+}
+
+// Bottom fade
+.bottomFade {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 8rem;
+  background: linear-gradient(to top, hsl(var(--background)), transparent);
+  pointer-events: none;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}

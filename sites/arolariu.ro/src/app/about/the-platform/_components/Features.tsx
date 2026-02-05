@@ -19,79 +19,50 @@ import {
   TbShieldCheck,
   TbToolsKitchen2,
 } from "react-icons/tb";
+import styles from "./Features.module.scss";
 
 interface FeatureConfig {
   id: string;
   icon: React.ComponentType<{className?: string}>;
-  color: string;
-  gradient: string;
+  colorKey: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "red" | "indigo" | "amber";
   link: string;
 }
 
+// Color class maps for SCSS
+const colorClassMap = {
+  blue: "colorBlue",
+  purple: "colorPurple",
+  green: "colorGreen",
+  orange: "colorOrange",
+  pink: "colorPink",
+  cyan: "colorCyan",
+  red: "colorRed",
+  indigo: "colorIndigo",
+  amber: "colorAmber",
+} as const;
+
+const gradientClassMap = {
+  blue: "gradientBlue",
+  purple: "gradientPurple",
+  green: "gradientGreen",
+  orange: "gradientOrange",
+  pink: "gradientPink",
+  cyan: "gradientCyan",
+  red: "gradientRed",
+  indigo: "gradientIndigo",
+  amber: "gradientAmber",
+} as const;
+
 const featureConfigs: FeatureConfig[] = [
-  {
-    id: "invoices",
-    icon: TbFileInvoice,
-    color: "text-blue-500",
-    gradient: "from-blue-500/20 via-blue-500/10 to-transparent",
-    link: "/domains/invoices",
-  },
-  {
-    id: "merchants",
-    icon: TbReceipt,
-    color: "text-purple-500",
-    gradient: "from-purple-500/20 via-purple-500/10 to-transparent",
-    link: "/domains/invoices/view-merchants",
-  },
-  {
-    id: "budgets",
-    icon: TbCurrencyDollar,
-    color: "text-green-500",
-    gradient: "from-green-500/20 via-green-500/10 to-transparent",
-    link: "/domains/invoices",
-  },
-  {
-    id: "analytics",
-    icon: TbChartBar,
-    color: "text-orange-500",
-    gradient: "from-orange-500/20 via-orange-500/10 to-transparent",
-    link: "/domains/invoices",
-  },
-  {
-    id: "recipes",
-    icon: TbToolsKitchen2,
-    color: "text-pink-500",
-    gradient: "from-pink-500/20 via-pink-500/10 to-transparent",
-    link: "/domains/recipes",
-  },
-  {
-    id: "ai",
-    icon: TbBrain,
-    color: "text-cyan-500",
-    gradient: "from-cyan-500/20 via-cyan-500/10 to-transparent",
-    link: "/domains",
-  },
-  {
-    id: "security",
-    icon: TbShieldCheck,
-    color: "text-red-500",
-    gradient: "from-red-500/20 via-red-500/10 to-transparent",
-    link: "/about/the-platform",
-  },
-  {
-    id: "i18n",
-    icon: TbLanguage,
-    color: "text-indigo-500",
-    gradient: "from-indigo-500/20 via-indigo-500/10 to-transparent",
-    link: "/about/the-platform",
-  },
-  {
-    id: "auth",
-    icon: TbLock,
-    color: "text-amber-500",
-    gradient: "from-amber-500/20 via-amber-500/10 to-transparent",
-    link: "/auth/sign-in",
-  },
+  {id: "invoices", icon: TbFileInvoice, colorKey: "blue", link: "/domains/invoices"},
+  {id: "merchants", icon: TbReceipt, colorKey: "purple", link: "/domains/invoices/view-merchants"},
+  {id: "budgets", icon: TbCurrencyDollar, colorKey: "green", link: "/domains/invoices"},
+  {id: "analytics", icon: TbChartBar, colorKey: "orange", link: "/domains/invoices"},
+  {id: "recipes", icon: TbToolsKitchen2, colorKey: "pink", link: "/domains/recipes"},
+  {id: "ai", icon: TbBrain, colorKey: "cyan", link: "/domains"},
+  {id: "security", icon: TbShieldCheck, colorKey: "red", link: "/about/the-platform"},
+  {id: "i18n", icon: TbLanguage, colorKey: "indigo", link: "/about/the-platform"},
+  {id: "auth", icon: TbLock, colorKey: "amber", link: "/auth/sign-in"},
 ];
 
 /**
@@ -109,16 +80,16 @@ export default function Features(): React.JSX.Element {
   return (
     <section
       ref={ref}
-      className='relative py-24'>
+      className={styles["section"]}>
       {/* Background */}
-      <div className='absolute inset-0 -z-10'>
-        <div className='from-background via-primary/5 to-background absolute inset-0 bg-gradient-to-b' />
+      <div className={styles["bgLayer"]}>
+        <div className={styles["bgGradient"]} />
       </div>
 
-      <div className='container mx-auto px-4'>
+      <div className={styles["container"]}>
         {/* Section Header */}
         <motion.div
-          className='mx-auto mb-16 max-w-3xl text-center'
+          className={styles["header"]}
           initial={{opacity: 0, y: 30}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
@@ -128,21 +99,18 @@ export default function Features(): React.JSX.Element {
             transition={{duration: 0.5}}>
             <Badge
               variant='outline'
-              className='mb-4 px-4 py-1 text-sm'>
+              className={styles["badge"]}>
               {t("badge")}
             </Badge>
           </motion.div>
-          <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
-            {t("title")}{" "}
-            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent'>
-              {t("titleHighlight")}
-            </span>
+          <h2 className={styles["title"]}>
+            {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}</span>
           </h2>
-          <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
+          <p className={styles["description"]}>{t("description")}</p>
         </motion.div>
 
         {/* Features Grid */}
-        <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
+        <div className={styles["grid"]}>
           {featureConfigs.map((feature, index) => (
             <motion.div
               key={feature.id}
@@ -155,26 +123,23 @@ export default function Features(): React.JSX.Element {
               onHoverEnd={() => setHoveredFeature(null)}
               // eslint-disable-next-line react/jsx-no-bind -- simple page
               onClick={() => setSelectedFeature(feature)}>
-              <Card
-                className={`group relative h-full cursor-pointer overflow-hidden transition-all duration-300 ${
-                  hoveredFeature === feature.id ? "border-primary shadow-primary/10 shadow-lg" : "hover:border-primary/30"
-                }`}>
+              <Card className={hoveredFeature === feature.id ? styles["cardActive"] : styles["card"]}>
                 {/* Gradient background on hover */}
                 <motion.div
-                  className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 transition-opacity duration-300`}
+                  className={`${styles["cardGradient"]} ${styles[gradientClassMap[feature.colorKey]]}`}
                   animate={{opacity: hoveredFeature === feature.id ? 1 : 0}}
                 />
 
-                <CardHeader className='relative'>
-                  <div className='mb-4 flex items-center justify-between'>
+                <CardHeader className={styles["cardHeader"]}>
+                  <div className={styles["cardHeaderInner"]}>
                     <motion.div
-                      className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${feature.gradient}`}
+                      className={`${styles["iconWrapper"]} ${styles[gradientClassMap[feature.colorKey]]}`}
                       animate={{
                         scale: hoveredFeature === feature.id ? 1.1 : 1,
                         rotate: hoveredFeature === feature.id ? 5 : 0,
                       }}
                       transition={{duration: 0.3}}>
-                      <feature.icon className={`h-7 w-7 ${feature.color}`} />
+                      <feature.icon className={`${styles["icon"]} ${styles[colorClassMap[feature.colorKey]]}`} />
                     </motion.div>
                     <motion.div
                       animate={{
@@ -182,22 +147,22 @@ export default function Features(): React.JSX.Element {
                         opacity: hoveredFeature === feature.id ? 1 : 0,
                       }}
                       transition={{duration: 0.3}}>
-                      <TbArrowRight className={`h-5 w-5 ${feature.color}`} />
+                      <TbArrowRight className={`${styles["arrowIcon"]} ${styles[colorClassMap[feature.colorKey]]}`} />
                     </motion.div>
                   </div>
-                  <CardTitle className='text-xl'>{t(`items.${feature.id}.title` as Parameters<typeof t>[0])}</CardTitle>
-                  <CardDescription className='text-base'>{t(`items.${feature.id}.description` as Parameters<typeof t>[0])}</CardDescription>
+                  <CardTitle className={styles["cardTitle"]}>{t(`items.${feature.id}.title` as Parameters<typeof t>[0])}</CardTitle>
+                  <CardDescription className={styles["cardDescription"]}>{t(`items.${feature.id}.description` as Parameters<typeof t>[0])}</CardDescription>
                 </CardHeader>
 
-                <CardContent className='relative'>
-                  <div className='flex flex-wrap gap-2'>
+                <CardContent className={styles["cardContent"]}>
+                  <div className={styles["tags"]}>
                     {t(`items.${feature.id}.tags` as Parameters<typeof t>[0])
                       .split(",")
                       .map((tag) => (
                         <Badge
                           key={tag}
                           variant='secondary'
-                          className='text-xs'>
+                          className={styles["tag"]}>
                           {tag}
                         </Badge>
                       ))}
@@ -213,34 +178,34 @@ export default function Features(): React.JSX.Element {
       <AnimatePresence>
         {selectedFeature !== null && (
           <motion.div
-            className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm'
+            className={styles["modal"]}
             initial={{opacity: 0}}
             animate={{opacity: 1}}
             exit={{opacity: 0}}
             // eslint-disable-next-line react/jsx-no-bind -- simple modal
             onClick={() => setSelectedFeature(null)}>
             <motion.div
-              className='bg-background relative max-h-[80vh] w-full max-w-2xl overflow-auto rounded-2xl p-8 shadow-2xl'
+              className={styles["modalContent"]}
               initial={{scale: 0.9, y: 20}}
               animate={{scale: 1, y: 0}}
               exit={{scale: 0.9, y: 20}}
               // eslint-disable-next-line react/jsx-no-bind -- simple modal
               onClick={(e) => e.stopPropagation()}>
-              <div className='mb-6 flex items-start gap-4'>
-                <div className={`flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br ${selectedFeature.gradient}`}>
-                  <selectedFeature.icon className={`h-8 w-8 ${selectedFeature.color}`} />
+              <div className={styles["modalHeader"]}>
+                <div className={`${styles["modalIconWrapper"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
+                  <selectedFeature.icon className={`${styles["modalIcon"]} ${styles[colorClassMap[selectedFeature.colorKey]]}`} />
                 </div>
                 <div>
-                  <h3 className='text-2xl font-bold'>{t(`items.${selectedFeature.id}.title` as Parameters<typeof t>[0])}</h3>
-                  <p className='text-muted-foreground'>{t(`items.${selectedFeature.id}.description` as Parameters<typeof t>[0])}</p>
+                  <h3 className={styles["modalTitle"]}>{t(`items.${selectedFeature.id}.title` as Parameters<typeof t>[0])}</h3>
+                  <p className={styles["modalSubtitle"]}>{t(`items.${selectedFeature.id}.description` as Parameters<typeof t>[0])}</p>
                 </div>
               </div>
 
-              <p className='text-muted-foreground mb-6 text-lg leading-relaxed'>
+              <p className={styles["modalDescription"]}>
                 {t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}
               </p>
 
-              <div className='mb-6 flex flex-wrap gap-2'>
+              <div className={styles["modalTags"]}>
                 {t(`items.${selectedFeature.id}.tags` as Parameters<typeof t>[0])
                   .split(",")
                   .map((tag) => (
@@ -252,18 +217,18 @@ export default function Features(): React.JSX.Element {
                   ))}
               </div>
 
-              <div className='flex gap-4'>
+              <div className={styles["modalActions"]}>
                 <Link
                   href={selectedFeature.link}
-                  className={`inline-flex items-center gap-2 rounded-lg bg-gradient-to-r ${selectedFeature.gradient} px-6 py-3 font-medium transition-transform hover:scale-105`}>
+                  className={`${styles["modalLink"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
                   {t("modal.exploreFeature")}
-                  <TbArrowRight className='h-5 w-5' />
+                  <TbArrowRight className={styles["modalLinkIcon"]} />
                 </Link>
                 <Button
                   variant='ghost'
                   // eslint-disable-next-line react/jsx-no-bind -- simple modal close
                   onClick={() => setSelectedFeature(null)}
-                  className='text-muted-foreground hover:text-foreground px-6 py-3'>
+                  className={styles["modalClose"]}>
                   {t("modal.close")}
                 </Button>
               </div>

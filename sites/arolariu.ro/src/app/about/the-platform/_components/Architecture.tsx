@@ -18,23 +18,41 @@ import {
   TbServer,
   TbWorldWww,
 } from "react-icons/tb";
+import styles from "./Architecture.module.scss";
 
 interface LayerConfig {
   id: string;
   icon: React.ComponentType<{className?: string}>;
-  color: string;
+  colorKey: "blueCyan" | "greenEmerald" | "purpleViolet" | "orangeAmber" | "redPink" | "indigoBlue" | "cyanTeal" | "slateZinc";
   position: "left" | "center" | "right";
 }
 
+const gradientClassMap = {
+  blueCyan: "gradientBlueCyan",
+  greenEmerald: "gradientGreenEmerald",
+  purpleViolet: "gradientPurpleViolet",
+  orangeAmber: "gradientOrangeAmber",
+  redPink: "gradientRedPink",
+  indigoBlue: "gradientIndigoBlue",
+  cyanTeal: "gradientCyanTeal",
+  slateZinc: "gradientSlateZinc",
+} as const;
+
+const positionClassMap = {
+  left: "",
+  center: "colStart2",
+  right: "colStart3",
+} as const;
+
 const layerConfigs: LayerConfig[] = [
-  {id: "client", icon: TbDeviceDesktop, color: "from-blue-500 to-cyan-500", position: "left"},
-  {id: "cdn", icon: TbWorldWww, color: "from-green-500 to-emerald-500", position: "center"},
-  {id: "api", icon: TbApi, color: "from-purple-500 to-violet-500", position: "right"},
-  {id: "services", icon: TbServer, color: "from-orange-500 to-amber-500", position: "left"},
-  {id: "auth", icon: TbLock, color: "from-red-500 to-pink-500", position: "center"},
-  {id: "data", icon: TbDatabase, color: "from-indigo-500 to-blue-500", position: "right"},
-  {id: "ai", icon: TbBrandAzure, color: "from-cyan-500 to-teal-500", position: "left"},
-  {id: "infra", icon: TbCloudComputing, color: "from-slate-500 to-zinc-500", position: "center"},
+  {id: "client", icon: TbDeviceDesktop, colorKey: "blueCyan", position: "left"},
+  {id: "cdn", icon: TbWorldWww, colorKey: "greenEmerald", position: "center"},
+  {id: "api", icon: TbApi, colorKey: "purpleViolet", position: "right"},
+  {id: "services", icon: TbServer, colorKey: "orangeAmber", position: "left"},
+  {id: "auth", icon: TbLock, colorKey: "redPink", position: "center"},
+  {id: "data", icon: TbDatabase, colorKey: "indigoBlue", position: "right"},
+  {id: "ai", icon: TbBrandAzure, colorKey: "cyanTeal", position: "left"},
+  {id: "infra", icon: TbCloudComputing, colorKey: "slateZinc", position: "center"},
 ];
 
 const principleIcons = [TbBrandReact, TbBrandNextjs, TbCloud];
@@ -54,17 +72,17 @@ export default function Architecture(): React.JSX.Element {
   return (
     <section
       ref={ref}
-      className='relative py-24'>
+      className={styles["section"]}>
       {/* Background */}
-      <div className='absolute inset-0 -z-10'>
-        <div className='from-background to-background via-muted/30 absolute inset-0 bg-gradient-to-b' />
-        <div className='absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]' />
+      <div className={styles["bgLayer"]}>
+        <div className={styles["bgGradient"]} />
+        <div className={styles["bgGrid"]} />
       </div>
 
-      <div className='container mx-auto px-4'>
+      <div className={styles["container"]}>
         {/* Section Header */}
         <motion.div
-          className='mx-auto mb-16 max-w-3xl text-center'
+          className={styles["header"]}
           initial={{opacity: 0, y: 30}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
@@ -74,24 +92,21 @@ export default function Architecture(): React.JSX.Element {
             transition={{duration: 0.5}}>
             <Badge
               variant='outline'
-              className='mb-4 px-4 py-1 text-sm'>
+              className={styles["badge"]}>
               {t("badge")}
             </Badge>
           </motion.div>
-          <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
-            {t("title")}{" "}
-            <span className='bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 bg-clip-text text-transparent'>
-              {t("titleHighlight")}
-            </span>
+          <h2 className={styles["title"]}>
+            {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}</span>
           </h2>
-          <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
+          <p className={styles["description"]}>{t("description")}</p>
         </motion.div>
 
         {/* Architecture Diagram */}
-        <div className='relative mx-auto max-w-6xl'>
+        <div className={styles["diagram"]}>
           {/* Connection Lines */}
           <svg
-            className='pointer-events-none absolute inset-0 h-full w-full'
+            className={styles["connections"]}
             style={{zIndex: 0}}>
             <defs>
               <linearGradient
@@ -121,6 +136,7 @@ export default function Architecture(): React.JSX.Element {
               stroke='url(#lineGradient)'
               strokeWidth='2'
               strokeDasharray='8 4'
+              className={styles["connectionLine"]}
               initial={{pathLength: 0}}
               animate={isInView ? {pathLength: 1} : {}}
               transition={{duration: 2, delay: 0.5}}
@@ -128,14 +144,13 @@ export default function Architecture(): React.JSX.Element {
           </svg>
 
           {/* Architecture Layers Grid */}
-          <div className='relative grid gap-6 md:grid-cols-3'>
+          <div className={styles["layersGrid"]}>
             {layerConfigs.map((layer, index) => {
-              // eslint-disable-next-line unicorn/no-nested-ternary, sonarjs/no-nested-conditional -- grid positioning
-              const colStartClass = layer.position === "center" ? "md:col-start-2" : layer.position === "right" ? "md:col-start-3" : "";
+              const positionClass = positionClassMap[layer.position];
               return (
                 <motion.div
                   key={layer.id}
-                  className={colStartClass}
+                  className={positionClass ? styles[positionClass] : undefined}
                   initial={{opacity: 0, y: 30}}
                   animate={isInView ? {opacity: 1, y: 0} : {}}
                   transition={{duration: 0.5, delay: index * 0.1}}
@@ -143,36 +158,33 @@ export default function Architecture(): React.JSX.Element {
                   onHoverStart={() => setHoveredLayer(layer.id)}
                   // eslint-disable-next-line react/jsx-no-bind -- simple page
                   onHoverEnd={() => setHoveredLayer(null)}>
-                  <Card
-                    className={`group relative overflow-hidden transition-all duration-300 ${
-                      hoveredLayer === layer.id ? "border-primary shadow-primary/10 scale-105 shadow-lg" : "hover:border-primary/30"
-                    }`}>
+                  <Card className={hoveredLayer === layer.id ? styles["layerCardActive"] : styles["layerCard"]}>
                     {/* Gradient overlay */}
                     <motion.div
-                      className={`absolute inset-0 bg-gradient-to-br ${layer.color} opacity-0 transition-opacity duration-300`}
+                      className={`${styles["layerGradient"]} ${styles[gradientClassMap[layer.colorKey]]}`}
                       style={{opacity: hoveredLayer === layer.id ? 0.1 : 0}}
                     />
 
-                    <CardContent className='relative p-6'>
+                    <CardContent className={styles["layerContent"]}>
                       {/* Icon and Title */}
-                      <div className='mb-4 flex items-center gap-4'>
+                      <div className={styles["layerHeader"]}>
                         <motion.div
-                          className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${layer.color}`}
+                          className={`${styles["layerIconWrapper"]} ${styles[gradientClassMap[layer.colorKey]]}`}
                           animate={{
                             scale: hoveredLayer === layer.id ? 1.1 : 1,
                             rotate: hoveredLayer === layer.id ? 5 : 0,
                           }}
                           transition={{duration: 0.3}}>
-                          <layer.icon className='h-6 w-6 text-white' />
+                          <layer.icon className={styles["layerIcon"]} />
                         </motion.div>
                         <div>
-                          <h3 className='font-bold'>{t(`layers.${layer.id}.name` as Parameters<typeof t>[0])}</h3>
-                          <p className='text-muted-foreground text-sm'>{t(`layers.${layer.id}.description` as Parameters<typeof t>[0])}</p>
+                          <h3 className={styles["layerName"]}>{t(`layers.${layer.id}.name` as Parameters<typeof t>[0])}</h3>
+                          <p className={styles["layerDescription"]}>{t(`layers.${layer.id}.description` as Parameters<typeof t>[0])}</p>
                         </div>
                       </div>
 
                       {/* Technologies */}
-                      <div className='flex flex-wrap gap-2'>
+                      <div className={styles["technologies"]}>
                         {t(`layers.${layer.id}.technologies` as Parameters<typeof t>[0])
                           .split(",")
                           .map((tech, techIndex) => (
@@ -183,7 +195,7 @@ export default function Architecture(): React.JSX.Element {
                               transition={{duration: 0.3, delay: index * 0.1 + techIndex * 0.05}}>
                               <Badge
                                 variant='secondary'
-                                className='text-xs'>
+                                className={styles["techBadge"]}>
                                 {tech}
                               </Badge>
                             </motion.div>
@@ -193,7 +205,7 @@ export default function Architecture(): React.JSX.Element {
 
                     {/* Animated border */}
                     <motion.div
-                      className={`absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r ${layer.color}`}
+                      className={`${styles["layerBorder"]} ${styles[gradientClassMap[layer.colorKey]]}`}
                       initial={{scaleX: 0}}
                       animate={{scaleX: hoveredLayer === layer.id ? 1 : 0}}
                       transition={{duration: 0.3}}
@@ -207,7 +219,7 @@ export default function Architecture(): React.JSX.Element {
 
           {/* Key Architecture Principles */}
           <motion.div
-            className='mt-16 grid gap-6 md:grid-cols-3'
+            className={styles["principles"]}
             initial={{opacity: 0, y: 30}}
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.6, delay: 0.8}}>
@@ -216,16 +228,16 @@ export default function Architecture(): React.JSX.Element {
               return (
                 <motion.div
                   key={principleId}
-                  className='bg-muted/30 flex items-start gap-4 rounded-xl p-6 backdrop-blur-sm'
+                  className={styles["principleCard"]}
                   initial={{opacity: 0, y: 20}}
                   animate={isInView ? {opacity: 1, y: 0} : {}}
                   transition={{duration: 0.5, delay: 1 + index * 0.1}}>
-                  <div className='bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg'>
-                    {IconComponent !== undefined && <IconComponent className='text-primary h-5 w-5' />}
+                  <div className={styles["principleIconWrapper"]}>
+                    {IconComponent !== undefined && <IconComponent className={styles["principleIcon"]} />}
                   </div>
                   <div>
-                    <h4 className='mb-1 font-semibold'>{t(`principles.${principleId}.title` as Parameters<typeof t>[0])}</h4>
-                    <p className='text-muted-foreground text-sm'>{t(`principles.${principleId}.description` as Parameters<typeof t>[0])}</p>
+                    <h4 className={styles["principleTitle"]}>{t(`principles.${principleId}.title` as Parameters<typeof t>[0])}</h4>
+                    <p className={styles["principleDescription"]}>{t(`principles.${principleId}.description` as Parameters<typeof t>[0])}</p>
                   </div>
                 </motion.div>
               );

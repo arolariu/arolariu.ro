@@ -7,22 +7,45 @@ import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef, useState} from "react";
 import {TbBrandGithub, TbCode, TbDatabase, TbGlobe, TbServer, TbStar, TbUsers, TbWorld} from "react-icons/tb";
+import styles from "./Statistics.module.scss";
 
 interface StatConfig {
   id: string;
   icon: React.ComponentType<{className?: string}>;
-  gradient: string;
+  gradientKey: "blue" | "purple" | "green" | "orange" | "pink" | "indigo" | "yellow" | "teal";
 }
 
+const iconClassMap = {
+  blue: "iconBlue",
+  purple: "iconPurple",
+  green: "iconGreen",
+  orange: "iconOrange",
+  pink: "iconPink",
+  indigo: "iconIndigo",
+  yellow: "iconYellow",
+  teal: "iconTeal",
+} as const;
+
+const borderClassMap = {
+  blue: "borderBlue",
+  purple: "borderPurple",
+  green: "borderGreen",
+  orange: "borderOrange",
+  pink: "borderPink",
+  indigo: "borderIndigo",
+  yellow: "borderYellow",
+  teal: "borderTeal",
+} as const;
+
 const statConfigs: StatConfig[] = [
-  {id: "projects", icon: TbCode, gradient: "from-blue-500 to-cyan-500"},
-  {id: "commits", icon: TbBrandGithub, gradient: "from-purple-500 to-violet-500"},
-  {id: "linesOfCode", icon: TbDatabase, gradient: "from-green-500 to-emerald-500"},
-  {id: "apis", icon: TbServer, gradient: "from-orange-500 to-amber-500"},
-  {id: "users", icon: TbUsers, gradient: "from-pink-500 to-rose-500"},
-  {id: "countries", icon: TbWorld, gradient: "from-indigo-500 to-blue-500"},
-  {id: "stars", icon: TbStar, gradient: "from-yellow-500 to-amber-500"},
-  {id: "contributors", icon: TbGlobe, gradient: "from-teal-500 to-cyan-500"},
+  {id: "projects", icon: TbCode, gradientKey: "blue"},
+  {id: "commits", icon: TbBrandGithub, gradientKey: "purple"},
+  {id: "linesOfCode", icon: TbDatabase, gradientKey: "green"},
+  {id: "apis", icon: TbServer, gradientKey: "orange"},
+  {id: "users", icon: TbUsers, gradientKey: "pink"},
+  {id: "countries", icon: TbWorld, gradientKey: "indigo"},
+  {id: "stars", icon: TbStar, gradientKey: "yellow"},
+  {id: "contributors", icon: TbGlobe, gradientKey: "teal"},
 ];
 
 /**
@@ -39,17 +62,17 @@ export default function Statistics(): React.JSX.Element {
   return (
     <section
       ref={ref}
-      className='relative py-24'>
+      className={styles["section"]}>
       {/* Background */}
-      <div className='absolute inset-0 -z-10'>
-        <div className='from-background via-muted/20 to-background absolute inset-0 bg-gradient-to-b' />
-        <div className='absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]' />
+      <div className={styles["bgLayer"]}>
+        <div className={styles["bgGradient"]} />
+        <div className={styles["bgGrid"]} />
       </div>
 
-      <div className='container mx-auto px-4'>
+      <div className={styles["container"]}>
         {/* Section Header */}
         <motion.div
-          className='mx-auto mb-16 max-w-3xl text-center'
+          className={styles["header"]}
           initial={{opacity: 0, y: 30}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
@@ -59,21 +82,18 @@ export default function Statistics(): React.JSX.Element {
             transition={{duration: 0.5}}>
             <Badge
               variant='outline'
-              className='mb-4 px-4 py-1 text-sm'>
+              className={styles["badge"]}>
               {t("badge")}
             </Badge>
           </motion.div>
-          <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
-            {t("title")}{" "}
-            <span className='bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent'>
-              {t("titleHighlight")}
-            </span>
+          <h2 className={styles["title"]}>
+            {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}</span>
           </h2>
-          <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
+          <p className={styles["description"]}>{t("description")}</p>
         </motion.div>
 
         {/* Statistics Grid */}
-        <div className='mx-auto grid max-w-6xl gap-6 sm:grid-cols-2 lg:grid-cols-4'>
+        <div className={styles["statsGrid"]}>
           {statConfigs.map((stat, index) => (
             <motion.div
               key={stat.id}
@@ -84,30 +104,27 @@ export default function Statistics(): React.JSX.Element {
               onHoverStart={() => setHoveredStat(stat.id)}
               // eslint-disable-next-line react/jsx-no-bind -- simple page
               onHoverEnd={() => setHoveredStat(null)}>
-              <Card
-                className={`group relative h-full overflow-hidden transition-all duration-300 ${
-                  hoveredStat === stat.id ? "border-primary shadow-primary/10 shadow-lg" : "hover:border-primary/30"
-                }`}>
+              <Card className={hoveredStat === stat.id ? styles["statCardActive"] : styles["statCard"]}>
                 {/* Gradient overlay */}
                 <motion.div
-                  className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 transition-opacity duration-300`}
+                  className={`${styles["statCardGradient"]} ${styles[iconClassMap[stat.gradientKey]]}`}
                   style={{opacity: hoveredStat === stat.id ? 0.1 : 0}}
                 />
 
-                <CardContent className='relative flex flex-col items-center p-6 text-center'>
+                <CardContent className={styles["statCardContent"]}>
                   {/* Icon */}
                   <motion.div
-                    className={`mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${stat.gradient}`}
+                    className={`${styles["statIconWrapper"]} ${styles[iconClassMap[stat.gradientKey]]}`}
                     animate={{
                       scale: hoveredStat === stat.id ? 1.1 : 1,
                       rotate: hoveredStat === stat.id ? 5 : 0,
                     }}
                     transition={{duration: 0.3}}>
-                    <stat.icon className='h-7 w-7 text-white' />
+                    <stat.icon className={styles["statIcon"]} />
                   </motion.div>
 
                   {/* Animated Number */}
-                  <div className='text-primary mb-2 text-4xl font-bold'>
+                  <div className={styles["statValue"]}>
                     <CountingNumber
                       number={Number(t(`items.${stat.id}.value` as Parameters<typeof t>[0]))}
                       inView
@@ -116,13 +133,13 @@ export default function Statistics(): React.JSX.Element {
                   </div>
 
                   {/* Label */}
-                  <h3 className='mb-1 text-lg font-semibold'>{t(`items.${stat.id}.label` as Parameters<typeof t>[0])}</h3>
-                  <p className='text-muted-foreground text-sm'>{t(`items.${stat.id}.description` as Parameters<typeof t>[0])}</p>
+                  <h3 className={styles["statLabel"]}>{t(`items.${stat.id}.label` as Parameters<typeof t>[0])}</h3>
+                  <p className={styles["statDescription"]}>{t(`items.${stat.id}.description` as Parameters<typeof t>[0])}</p>
                 </CardContent>
 
                 {/* Animated border */}
                 <motion.div
-                  className={`absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r ${stat.gradient}`}
+                  className={`${styles["statCardBorder"]} ${styles[borderClassMap[stat.gradientKey]]}`}
                   initial={{scaleX: 0}}
                   animate={{scaleX: hoveredStat === stat.id ? 1 : 0}}
                   transition={{duration: 0.3}}
