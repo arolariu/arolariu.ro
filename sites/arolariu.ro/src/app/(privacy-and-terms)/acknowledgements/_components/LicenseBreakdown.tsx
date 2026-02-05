@@ -5,6 +5,7 @@ import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef} from "react";
 import {TbLicense, TbScale} from "react-icons/tb";
+import styles from "./LicenseBreakdown.module.scss";
 
 /**
  * License distribution visualization showing MIT vs Apache breakdown.
@@ -21,51 +22,51 @@ export default function LicenseBreakdown(): React.JSX.Element {
   return (
     <section
       ref={ref}
-      className='relative w-full px-4 py-16'>
-      <div className='mx-auto max-w-4xl'>
+      className={styles["licenseSection"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
-          className='mb-12 text-center'
+          className={styles["sectionHeader"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className='mb-4 text-3xl font-bold'>
-            <span className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>{t("title")}</span>
+          <h2 className={styles["title"]}>
+            <span className={styles["titleGradient"]}>{t("title")}</span>
           </h2>
         </motion.div>
 
         {/* License cards */}
-        <div className='grid gap-6 md:grid-cols-2'>
+        <div className={styles["licenseGrid"]}>
           {/* MIT License */}
           <motion.div
             initial={{opacity: 0, x: -30}}
             animate={isInView ? {opacity: 1, x: 0} : {}}
             transition={{delay: 0.2, duration: 0.5}}>
             <Card className='hover:border-primary/30 h-full transition-all duration-300 hover:-translate-y-1'>
-              <CardContent className='p-6'>
-                <div className='mb-4 flex items-center gap-3'>
-                  <div className='rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 p-3'>
-                    <TbLicense className='h-6 w-6 text-white' />
+              <CardContent className={styles["cardContent"]}>
+                <div className={styles["cardHeader"]}>
+                  <div className={`${styles["iconWrapper"]} ${styles["gradientCyanBlue"]}`}>
+                    <TbLicense className={styles["icon"]} />
                   </div>
-                  <div>
-                    <h3 className='font-semibold'>{t("mit")}</h3>
-                    <p className='text-muted-foreground text-sm'>69 packages</p>
+                  <div className={styles["licenseInfo"]}>
+                    <h3 className={styles["licenseName"]}>{t("mit")}</h3>
+                    <p className={styles["packageCount"]}>69 packages</p>
                   </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className='bg-muted mb-3 h-3 overflow-hidden rounded-full'>
+                <div className={styles["progressBar"]}>
                   <motion.div
-                    className='h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500'
+                    className={styles["progressFillCyan"]}
                     initial={{width: 0}}
                     animate={isInView ? {width: `${mitPercentage}%`} : {}}
                     transition={{delay: 0.5, duration: 1, ease: "easeOut"}}
                   />
                 </div>
 
-                <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground text-sm'>{t("mitDescription")}</span>
-                  <span className='text-lg font-bold'>{mitPercentage}%</span>
+                <div className={styles["cardFooter"]}>
+                  <span className={styles["description"]}>{t("mitDescription")}</span>
+                  <span className={styles["percentage"]}>{mitPercentage}%</span>
                 </div>
               </CardContent>
             </Card>
@@ -77,30 +78,30 @@ export default function LicenseBreakdown(): React.JSX.Element {
             animate={isInView ? {opacity: 1, x: 0} : {}}
             transition={{delay: 0.3, duration: 0.5}}>
             <Card className='hover:border-primary/30 h-full transition-all duration-300 hover:-translate-y-1'>
-              <CardContent className='p-6'>
-                <div className='mb-4 flex items-center gap-3'>
-                  <div className='rounded-full bg-gradient-to-br from-orange-500 to-red-500 p-3'>
-                    <TbScale className='h-6 w-6 text-white' />
+              <CardContent className={styles["cardContent"]}>
+                <div className={styles["cardHeader"]}>
+                  <div className={`${styles["iconWrapper"]} ${styles["gradientOrangeRed"]}`}>
+                    <TbScale className={styles["icon"]} />
                   </div>
-                  <div>
-                    <h3 className='font-semibold'>{t("apache")}</h3>
-                    <p className='text-muted-foreground text-sm'>17 packages</p>
+                  <div className={styles["licenseInfo"]}>
+                    <h3 className={styles["licenseName"]}>{t("apache")}</h3>
+                    <p className={styles["packageCount"]}>17 packages</p>
                   </div>
                 </div>
 
                 {/* Progress bar */}
-                <div className='bg-muted mb-3 h-3 overflow-hidden rounded-full'>
+                <div className={styles["progressBar"]}>
                   <motion.div
-                    className='h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500'
+                    className={styles["progressFillOrange"]}
                     initial={{width: 0}}
                     animate={isInView ? {width: `${apachePercentage}%`} : {}}
                     transition={{delay: 0.6, duration: 1, ease: "easeOut"}}
                   />
                 </div>
 
-                <div className='flex items-center justify-between'>
-                  <span className='text-muted-foreground text-sm'>{t("apacheDescription")}</span>
-                  <span className='text-lg font-bold'>{apachePercentage}%</span>
+                <div className={styles["cardFooter"]}>
+                  <span className={styles["description"]}>{t("apacheDescription")}</span>
+                  <span className={styles["percentage"]}>{apachePercentage}%</span>
                 </div>
               </CardContent>
             </Card>

@@ -1,0 +1,118 @@
+// ===========================================
+// STATS COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// SECTION
+// ===========================================
+.statsSection {
+  position: relative;
+  width: 100%;
+  padding: space(16) space(4);
+}
+
+.container {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// ===========================================
+// HEADER
+// ===========================================
+.sectionHeader {
+  margin-bottom: space(12);
+  text-align: center;
+}
+
+.title {
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+}
+
+.titleGradient {
+  background: linear-gradient(to right, #06b6d4, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  color: hsl(var(--muted-foreground));
+}
+
+// ===========================================
+// GRID
+// ===========================================
+.statsGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// ===========================================
+// CARD CONTENT
+// ===========================================
+.cardContent {
+  @include flex-center;
+  flex-direction: column;
+  padding: space(6);
+  text-align: center;
+}
+
+.iconWrapper {
+  margin-bottom: space(4);
+  padding: space(3);
+  border-radius: 9999px;
+}
+
+// Gradient variants for icons
+.gradientCyanBlue {
+  background: linear-gradient(to bottom right, #06b6d4, #3b82f6);
+}
+
+.gradientGreenEmerald {
+  background: linear-gradient(to bottom right, #22c55e, #10b981);
+}
+
+.gradientAmberOrange {
+  background: linear-gradient(to bottom right, #f59e0b, #f97316);
+}
+
+.gradientPurplePink {
+  background: linear-gradient(to bottom right, #a855f7, #ec4899);
+}
+
+.icon {
+  height: 1.5rem;
+  width: 1.5rem;
+  color: white;
+}
+
+.statValue {
+  margin-bottom: space(1);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+}
+
+.statLabel {
+  margin-bottom: space(1);
+  font-weight: font-weight('semibold');
+}
+
+.statDescription {
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}

@@ -1,0 +1,141 @@
+// ===========================================
+// LICENSE BREAKDOWN COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// SECTION
+// ===========================================
+.licenseSection {
+  position: relative;
+  width: 100%;
+  padding: space(16) space(4);
+}
+
+.container {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// ===========================================
+// HEADER
+// ===========================================
+.sectionHeader {
+  margin-bottom: space(12);
+  text-align: center;
+}
+
+.title {
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+}
+
+.titleGradient {
+  background: linear-gradient(to right, #06b6d4, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+// ===========================================
+// GRID
+// ===========================================
+.licenseGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// ===========================================
+// CARD CONTENT
+// ===========================================
+.cardContent {
+  padding: space(6);
+}
+
+.cardHeader {
+  @include flex-center;
+  justify-content: flex-start;
+  gap: space(3);
+  margin-bottom: space(4);
+}
+
+.iconWrapper {
+  padding: space(3);
+  border-radius: 9999px;
+}
+
+.gradientCyanBlue {
+  background: linear-gradient(to bottom right, #06b6d4, #3b82f6);
+}
+
+.gradientOrangeRed {
+  background: linear-gradient(to bottom right, #f97316, #ef4444);
+}
+
+.icon {
+  height: 1.5rem;
+  width: 1.5rem;
+  color: white;
+}
+
+.licenseInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.licenseName {
+  font-weight: font-weight('semibold');
+}
+
+.packageCount {
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+// ===========================================
+// PROGRESS BAR
+// ===========================================
+.progressBar {
+  height: 0.75rem;
+  margin-bottom: space(3);
+  overflow: hidden;
+  border-radius: 9999px;
+  background-color: hsl(var(--muted));
+}
+
+.progressFillCyan {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #06b6d4, #3b82f6);
+}
+
+.progressFillOrange {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #f97316, #ef4444);
+}
+
+// ===========================================
+// FOOTER
+// ===========================================
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.description {
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.percentage {
+  font-size: font-size('lg');
+  font-weight: font-weight('bold');
+}

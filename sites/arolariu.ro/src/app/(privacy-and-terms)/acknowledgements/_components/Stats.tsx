@@ -5,12 +5,13 @@ import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef} from "react";
 import {TbBox, TbCode, TbLicense, TbTools} from "react-icons/tb";
+import styles from "./Stats.module.scss";
 
 const stats = [
-  {key: "total", icon: TbBox, gradient: "from-cyan-500 to-blue-500"},
-  {key: "production", icon: TbCode, gradient: "from-green-500 to-emerald-500"},
-  {key: "development", icon: TbTools, gradient: "from-amber-500 to-orange-500"},
-  {key: "mitLicense", icon: TbLicense, gradient: "from-purple-500 to-pink-500"},
+  {key: "total", icon: TbBox, gradientClass: styles["gradientCyanBlue"]},
+  {key: "production", icon: TbCode, gradientClass: styles["gradientGreenEmerald"]},
+  {key: "development", icon: TbTools, gradientClass: styles["gradientAmberOrange"]},
+  {key: "mitLicense", icon: TbLicense, gradientClass: styles["gradientPurplePink"]},
 ] as const;
 
 /**
@@ -24,22 +25,22 @@ export default function Stats(): React.JSX.Element {
   return (
     <section
       ref={ref}
-      className='relative w-full px-4 py-16'>
-      <div className='mx-auto max-w-6xl'>
+      className={styles["statsSection"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
-          className='mb-12 text-center'
+          className={styles["sectionHeader"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <h2 className='mb-4 text-3xl font-bold'>
-            <span className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>{t("title")}</span>
+          <h2 className={styles["title"]}>
+            <span className={styles["titleGradient"]}>{t("title")}</span>
           </h2>
-          <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
 
         {/* Stats grid */}
-        <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-4'>
+        <div className={styles["statsGrid"]}>
           {stats.map((stat, index) => (
             <motion.div
               key={stat.key}
@@ -47,15 +48,15 @@ export default function Stats(): React.JSX.Element {
               animate={isInView ? {opacity: 1, y: 0} : {}}
               transition={{delay: 0.2 + index * 0.1, duration: 0.5}}>
               <Card className='group hover:border-primary/30 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg'>
-                <CardContent className='flex flex-col items-center p-6 text-center'>
+                <CardContent className={styles["cardContent"]}>
                   {/* Icon */}
-                  <div className={`mb-4 rounded-full bg-gradient-to-br ${stat.gradient} p-3`}>
-                    <stat.icon className='h-6 w-6 text-white' />
+                  <div className={`${styles["iconWrapper"]} ${stat.gradientClass}`}>
+                    <stat.icon className={styles["icon"]} />
                   </div>
 
                   {/* Value */}
                   <motion.span
-                    className='mb-1 text-4xl font-bold'
+                    className={styles["statValue"]}
                     initial={{opacity: 0, scale: 0.5}}
                     animate={isInView ? {opacity: 1, scale: 1} : {}}
                     transition={{delay: 0.4 + index * 0.1, duration: 0.5, type: "spring"}}>
@@ -63,10 +64,10 @@ export default function Stats(): React.JSX.Element {
                   </motion.span>
 
                   {/* Label */}
-                  <span className='mb-1 font-semibold'>{t(`${stat.key}.label`)}</span>
+                  <span className={styles["statLabel"]}>{t(`${stat.key}.label`)}</span>
 
                   {/* Description */}
-                  <span className='text-muted-foreground text-sm'>{t(`${stat.key}.description`)}</span>
+                  <span className={styles["statDescription"]}>{t(`${stat.key}.description`)}</span>
                 </CardContent>
               </Card>
             </motion.div>

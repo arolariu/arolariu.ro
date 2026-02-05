@@ -1,0 +1,357 @@
+// ===========================================
+// PACKAGES SCREEN COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// CONTAINER
+// ===========================================
+.container {
+  @include container(80rem);
+  padding-top: space(10);
+  padding-bottom: space(10);
+  color: black;
+}
+
+// ===========================================
+// FILTERS
+// ===========================================
+.filtersContainer {
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(6);
+
+  > * + * {
+    margin-top: space(4);
+  }
+}
+
+.searchContainer {
+  position: relative;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.searchInput {
+  padding-left: space(10);
+}
+
+.filterRow {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.filterItem {
+  flex: 1;
+}
+
+// ===========================================
+// TABS
+// ===========================================
+.tabsContainer {
+  width: 100%;
+}
+
+.tabsList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(8);
+}
+
+.tabsContentWrapper {
+  min-height: 600px;
+}
+
+// ===========================================
+// GRID VIEW
+// ===========================================
+.packagesGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: font-size('xl');
+}
+
+.versionBadge {
+  padding: space(1) space(2);
+  font-size: font-size('xs');
+  border-radius: 9999px;
+  background-color: hsl(var(--muted));
+}
+
+.badgeContainer {
+  display: flex;
+  align-items: center;
+  margin-top: space(2);
+}
+
+.cardDetails {
+  display: flex;
+  flex-direction: column;
+
+  > * + * {
+    margin-top: space(2);
+  }
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  font-size: font-size('sm');
+}
+
+.detailLabel {
+  margin-right: space(2);
+  font-weight: font-weight('medium');
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: space(4);
+}
+
+.websiteLink {
+  display: flex;
+  align-items: center;
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+  @include transition(color);
+
+  &:hover {
+    color: hsl(var(--primary));
+  }
+}
+
+.linkIcon {
+  margin-right: space(1);
+  height: 1rem;
+  width: 1rem;
+}
+
+// ===========================================
+// TABLE VIEW
+// ===========================================
+.tableContainer {
+  border-radius: radius('md');
+  border: 1px solid hsl(var(--border));
+  color: black;
+
+  .dark & {
+    color: white;
+  }
+}
+
+.hiddenMd {
+  display: none;
+
+  @include respond-to('md') {
+    display: table-cell;
+  }
+}
+
+.hiddenLg {
+  display: none;
+
+  @include respond-to('lg') {
+    display: table-cell;
+  }
+}
+
+.hiddenXl {
+  display: none;
+
+  @include respond-to('xl') {
+    display: table-cell;
+  }
+}
+
+.hiddenSm {
+  display: none;
+
+  @include respond-to('sm') {
+    display: table-cell;
+  }
+}
+
+.packageName {
+  font-weight: font-weight('bold');
+}
+
+.descriptionText {
+  max-width: 28rem;
+  text-wrap: pretty;
+}
+
+.tableLinkIcon {
+  height: 1rem;
+  width: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tableLink {
+  padding: space(2);
+  border-radius: radius('md');
+  @include transition(background-color);
+
+  &:hover {
+    background-color: hsl(var(--muted));
+  }
+}
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyState {
+  padding-top: space(12);
+  padding-bottom: space(12);
+  text-align: center;
+}
+
+.emptyIcon {
+  height: 3rem;
+  width: 3rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(4);
+  color: hsl(var(--muted-foreground));
+}
+
+.emptyText {
+  color: hsl(var(--muted-foreground));
+}
+
+// ===========================================
+// BADGES
+// ===========================================
+.productionBadge {
+  display: inline-block;
+  padding: space(1.5) space(3);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  border-radius: 9999px;
+  background-color: #dcfce7; // green-100
+  color: #166534; // green-800
+  @include transition(background-color);
+
+  &:hover {
+    background-color: #bbf7d0; // green-200
+  }
+
+  .dark & {
+    background-color: #14532d; // green-900
+    color: #dcfce7; // green-100
+
+    &:hover {
+      background-color: #166534; // green-800
+    }
+  }
+}
+
+.developmentBadge {
+  display: inline-block;
+  padding: space(1.5) space(3);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  border-radius: 9999px;
+  background-color: #fef3c7; // amber-100
+  color: #92400e; // amber-800
+  @include transition(background-color);
+
+  &:hover {
+    background-color: #fde68a; // amber-200
+  }
+
+  .dark & {
+    background-color: #78350f; // amber-900
+    color: #fef3c7; // amber-100
+
+    &:hover {
+      background-color: #92400e; // amber-800
+    }
+  }
+}
+
+// ===========================================
+// FOOTER
+// ===========================================
+.footer {
+  margin-top: space(16);
+  text-align: center;
+}
+
+.footerHeader {
+  @include flex-center;
+  margin-bottom: space(4);
+}
+
+.footerIcon {
+  margin-right: space(2);
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.footerTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('semibold');
+}
+
+.footerDescription {
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  color: hsl(var(--muted-foreground));
+}
+
+// ===========================================
+// DIALOG
+// ===========================================
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 425px;
+  }
+
+  @include respond-to('md') {
+    max-width: 600px;
+  }
+}
+
+.dialogScrollArea {
+  max-height: 300px;
+  overflow-y: auto;
+}

@@ -38,6 +38,7 @@ import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbExternalLink, TbPackage} from "react-icons/tb";
 import {usePackageFilters} from "../_hooks/usePackageFilters";
+import styles from "./PackagesScreen.module.scss";
 
 type Props = Readonly<{packages: NodePackagesJSON}>;
 
@@ -53,11 +54,11 @@ function PackageBadge({type}: Readonly<{type: PackageType}>): React.JSX.Element 
   const t = useTranslations("Acknowledgements.packagesScreen.badge");
 
   return type === "production" ? (
-    <span className='rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800 transition-colors duration-200 hover:bg-green-200 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-800'>
+    <span className={styles["productionBadge"]}>
       {t("production")}
     </span>
   ) : (
-    <span className='rounded-full bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 transition-colors duration-200 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-100 dark:hover:bg-amber-800'>
+    <span className={styles["developmentBadge"]}>
       {t("development")}
     </span>
   );
@@ -79,7 +80,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
           {t("card.viewDependencies")}
         </Button>
       </DialogTrigger>
-      <DialogContent className='sm:max-w-[425px] md:max-w-[600px]'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("dialog.dependencies", {name: pkg.name})}</DialogTitle>
           <DialogDescription>
@@ -87,7 +88,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
             {t("dialog.dependenciesCount", {count: String(pkg.dependents?.length ?? 0)})}
           </DialogDescription>
         </DialogHeader>
-        <div className='max-h-[300px] overflow-y-auto'>
+        <div className={styles["dialogScrollArea"]}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -163,19 +164,19 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   return (
-    <div className='container mx-auto max-w-7xl py-10 text-black'>
-      <div className='mx-auto mb-6 space-y-4'>
-        <div className='relative mx-auto max-w-md'>
+    <div className={styles["container"]}>
+      <div className={styles["filtersContainer"]}>
+        <div className={styles["searchContainer"]}>
           <Input
             type='text'
             placeholder={t("search.placeholder")}
             value={searchQuery}
             onChange={handleSearch}
-            className='pl-10'
+            className={styles["searchInput"]}
           />
         </div>
-        <div className='mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row'>
-          <div className='flex-1'>
+        <div className={styles["filterRow"]}>
+          <div className={styles["filterItem"]}>
             <Select
               value={packageType}
               onValueChange={handlePackageType}>
@@ -190,7 +191,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
             </Select>
           </div>
 
-          <div className='flex-1'>
+          <div className={styles["filterItem"]}>
             <Select
               value={sortField}
               onValueChange={handleSortField}>
@@ -205,7 +206,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
             </Select>
           </div>
 
-          <div className='flex-1'>
+          <div className={styles["filterItem"]}>
             <Select
               value={sortDirection}
               onValueChange={handleSortDirection}>
@@ -223,18 +224,18 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
 
       <Tabs
         defaultValue='grid'
-        className='w-full'>
-        <TabsList className='mx-auto mb-8 grid w-full max-w-md grid-cols-2'>
+        className={styles["tabsContainer"]}>
+        <TabsList className={styles["tabsList"]}>
           <TabsTrigger value='grid'>{t("views.gridView")}</TabsTrigger>
           <TabsTrigger value='table'>{t("views.tableView")}</TabsTrigger>
         </TabsList>
 
-        <div className='min-h-[600px]'>
+        <div className={styles["tabsContentWrapper"]}>
           <TabsContent
             value='grid'
-            className='w-full'>
+            className={styles["tabsContainer"]}>
             {filteredAndSortedPackages.length > 0 ? (
-              <div className='grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
+              <div className={styles["packagesGrid"]}>
                 {filteredAndSortedPackages.map((pkg, index) => (
                   <motion.div
                     key={`${pkg.name}#${pkg.version}#${pkg.dependents?.length ?? 0}`}
@@ -243,32 +244,32 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                     transition={{duration: 0.3, delay: index * 0.1}}>
                     <Card className='h-full'>
                       <CardHeader>
-                        <div className='flex items-center justify-between'>
-                          <CardTitle className='text-xl'>{pkg.name}</CardTitle>
-                          <span className='bg-muted rounded-full px-2 py-1 text-xs'>{pkg.version}</span>
+                        <div className={styles["cardHeaderRow"]}>
+                          <CardTitle className={styles["cardTitle"]}>{pkg.name}</CardTitle>
+                          <span className={styles["versionBadge"]}>{pkg.version}</span>
                         </div>
-                        <div className='mt-2 flex items-center'>
+                        <div className={styles["badgeContainer"]}>
                           <PackageBadge type={extractPackageType(pkg)} />
                         </div>
                         <CardDescription>{pkg.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className='flex flex-col space-y-2'>
-                          <div className='flex items-center text-sm'>
-                            <span className='mr-2 font-medium'>{t("card.license")}</span> {pkg.license}
+                        <div className={styles["cardDetails"]}>
+                          <div className={styles["detailRow"]}>
+                            <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}
                           </div>
-                          <div className='flex items-center text-sm'>
-                            <span className='mr-2 font-medium'>
+                          <div className={styles["detailRow"]}>
+                            <span className={styles["detailLabel"]}>
                               {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
                             </span>
                           </div>
-                          <div className='mt-4 flex items-center justify-between'>
+                          <div className={styles["cardActions"]}>
                             <a
                               href={pkg.homepage}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='text-muted-foreground hover:text-primary flex items-center text-sm transition-colors'>
-                              <TbExternalLink className='mr-1 h-4 w-4' />
+                              className={styles["websiteLink"]}>
+                              <TbExternalLink className={styles["linkIcon"]} />
                               <span>{t("card.website")}</span>
                             </a>
                             <DependenciesDialog pkg={pkg} />
@@ -280,10 +281,10 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 ))}
               </div>
             ) : (
-              <div className='py-12 text-center'>
-                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
-                <p className='text-muted-foreground'>{t("emptyState.title")}</p>
-                <p className='text-muted-foreground'>{t("emptyState.subtitle")}</p>
+              <div className={styles["emptyState"]}>
+                <TbPackage className={styles["emptyIcon"]} />
+                <p className={styles["emptyText"]}>{t("emptyState.title")}</p>
+                <p className={styles["emptyText"]}>{t("emptyState.subtitle")}</p>
               </div>
             )}
           </TabsContent>
@@ -294,32 +295,32 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 initial={{opacity: 0}}
                 animate={{opacity: 1}}
                 transition={{duration: 0.5}}
-                className='rounded-md border text-black dark:text-white'>
+                className={styles["tableContainer"]}>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("table.package")}</TableHead>
-                      <TableHead className='hidden md:table-cell'>{t("table.version")}</TableHead>
-                      <TableHead className='hidden md:table-cell'>{t("table.type")}</TableHead>
-                      <TableHead className='hidden lg:table-cell'>{t("table.description")}</TableHead>
-                      <TableHead className='hidden xl:table-cell'>{t("table.license")}</TableHead>
-                      <TableHead className='hidden sm:table-cell'>{t("table.dependencies")}</TableHead>
+                      <TableHead className={styles["hiddenMd"]}>{t("table.version")}</TableHead>
+                      <TableHead className={styles["hiddenMd"]}>{t("table.type")}</TableHead>
+                      <TableHead className={styles["hiddenLg"]}>{t("table.description")}</TableHead>
+                      <TableHead className={styles["hiddenXl"]}>{t("table.license")}</TableHead>
+                      <TableHead className={styles["hiddenSm"]}>{t("table.dependencies")}</TableHead>
                       <TableHead>{t("table.website")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredAndSortedPackages.map((pkg) => (
                       <TableRow key={`${pkg.name}#${pkg.version}#${pkg.dependents?.length ?? 0}`}>
-                        <TableCell className='font-bold'>{pkg.name}</TableCell>
-                        <TableCell className='hidden md:table-cell'>{pkg.version}</TableCell>
-                        <TableCell className='hidden md:table-cell'>
+                        <TableCell className={styles["packageName"]}>{pkg.name}</TableCell>
+                        <TableCell className={styles["hiddenMd"]}>{pkg.version}</TableCell>
+                        <TableCell className={styles["hiddenMd"]}>
                           <PackageBadge type={extractPackageType(pkg)} />
                         </TableCell>
-                        <TableCell className='hidden lg:table-cell'>
-                          <p className='max-w-md text-pretty'>{pkg.description}</p>
+                        <TableCell className={styles["hiddenLg"]}>
+                          <p className={styles["descriptionText"]}>{pkg.description}</p>
                         </TableCell>
-                        <TableCell className='hidden xl:table-cell'>{pkg.license}</TableCell>
-                        <TableCell className='hidden sm:table-cell'>
+                        <TableCell className={styles["hiddenXl"]}>{pkg.license}</TableCell>
+                        <TableCell className={styles["hiddenSm"]}>
                           <DependenciesDialog pkg={pkg} />
                         </TableCell>
                         <TableCell>
@@ -327,9 +328,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             href={pkg.homepage}
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='hover:bg-muted rounded-md p-2 transition-colors'
+                            className={styles["tableLink"]}
                             title={t("table.website")}>
-                            <TbExternalLink className='mx-auto h-4 w-4' />
+                            <TbExternalLink className={styles["tableLinkIcon"]} />
                             <span className='sr-only'>{t("table.website")}</span>
                           </a>
                         </TableCell>
@@ -339,10 +340,10 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 </Table>
               </motion.div>
             ) : (
-              <div className='py-12 text-center'>
-                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
-                <p className='text-muted-foreground'>{t("emptyState.title")}</p>
-                <p className='text-muted-foreground'>{t("emptyState.subtitle")}</p>
+              <div className={styles["emptyState"]}>
+                <TbPackage className={styles["emptyIcon"]} />
+                <p className={styles["emptyText"]}>{t("emptyState.title")}</p>
+                <p className={styles["emptyText"]}>{t("emptyState.subtitle")}</p>
               </div>
             )}
           </TabsContent>
@@ -353,12 +354,12 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         initial={{opacity: 0}}
         animate={{opacity: 1}}
         transition={{duration: 0.5, delay: 0.5}}
-        className='mt-16 text-center'>
-        <div className='mb-4 flex items-center justify-center'>
-          <TbPackage className='mr-2 h-6 w-6' />
-          <h2 className='text-xl font-semibold'>{t("openSource.title")}</h2>
+        className={styles["footer"]}>
+        <div className={styles["footerHeader"]}>
+          <TbPackage className={styles["footerIcon"]} />
+          <h2 className={styles["footerTitle"]}>{t("openSource.title")}</h2>
         </div>
-        <p className='text-muted-foreground mx-auto max-w-2xl'>{t("openSource.description")}</p>
+        <p className={styles["footerDescription"]}>{t("openSource.description")}</p>
       </motion.div>
     </div>
   );

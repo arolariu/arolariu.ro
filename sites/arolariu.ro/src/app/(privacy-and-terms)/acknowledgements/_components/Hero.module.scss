@@ -1,0 +1,114 @@
+// ===========================================
+// HERO COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// SECTION
+// ===========================================
+.heroSection {
+  position: relative;
+  @include flex-center;
+  flex-direction: column;
+  min-height: 50vh;
+  width: 100%;
+  overflow: hidden;
+  padding: space(20) space(4);
+}
+
+// ===========================================
+// ANIMATED BACKGROUND
+// ===========================================
+.backgroundContainer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.backgroundBlobLeft {
+  position: absolute;
+  top: -10rem;
+  left: -10rem;
+  height: 20rem;
+  width: 20rem;
+  border-radius: 9999px;
+  background: linear-gradient(to bottom right, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
+  filter: blur(48px);
+}
+
+.backgroundBlobRight {
+  position: absolute;
+  bottom: -10rem;
+  right: -10rem;
+  height: 20rem;
+  width: 20rem;
+  border-radius: 9999px;
+  background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+  filter: blur(48px);
+}
+
+// ===========================================
+// CONTENT
+// ===========================================
+.contentContainer {
+  position: relative;
+  z-index: 10;
+  @include flex-center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.badge {
+  margin-bottom: space(6);
+  padding: space(2) space(4);
+  font-size: font-size('sm');
+}
+
+.badgeIcon {
+  margin-right: space(2);
+  height: 1rem;
+  width: 1rem;
+  color: #ef4444; // red-500
+}
+
+.title {
+  margin-bottom: space(6);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+}
+
+.titleGradient {
+  background: linear-gradient(to right, #06b6d4, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  margin-bottom: space(8);
+  max-width: 42rem;
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+  color: hsl(var(--muted-foreground));
+}
+
+.lastUpdated {
+  @include flex-center;
+  gap: space(2);
+  font-size: font-size('sm');
+  color: hsl(var(--muted-foreground));
+}
+
+.lastUpdatedIcon {
+  height: 1rem;
+  width: 1rem;
+}
