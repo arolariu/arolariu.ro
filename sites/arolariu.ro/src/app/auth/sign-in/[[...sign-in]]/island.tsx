@@ -5,6 +5,7 @@ import {motion, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
+import styles from "./styles.module.scss";
 
 const containerVariants: Variants = {
   hidden: {opacity: 0, y: 30, scale: 0.9},
@@ -35,7 +36,7 @@ const containerVariants: Variants = {
  *
  * **Styling**:
  * - Glassmorphism card design
- * - Animated gradient borders
+ * - Gradient borders
  * - Dark mode optimized
  * - Responsive padding
  *
@@ -46,8 +47,8 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
   const trust = useTranslations("Authentication.Island.trust");
 
   return (
-    <div className='grid w-full grid-cols-1 items-center gap-10 lg:grid-cols-2'>
-      <div className='order-2 lg:order-1'>
+    <div className={styles["grid"]}>
+      <div className={styles["marketingColumn"]}>
         <AuthMarketingPanel
           title={t("hero.title")}
           subtitle={t("hero.subtitle")}
@@ -58,7 +59,7 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
         />
       </div>
 
-      <div className='order-1 lg:order-2'>
+      <div className={styles["formColumn"]}>
         <AuthFormShell
           kicker={t("form.kicker")}
           secondaryPrompt={t("form.secondaryPrompt")}
@@ -69,23 +70,23 @@ export default function RenderAuthSignInPage(): React.JSX.Element {
             variants={containerVariants}
             initial='hidden'
             animate='visible'
-            className='relative mx-auto flex justify-center'>
+            className={styles["formContainer"]}>
             {/* Background glow - static for performance */}
             <div
               aria-hidden='true'
-              className='bg-primary/20 pointer-events-none absolute -inset-4 rounded-3xl blur-2xl opacity-40'
+              className={styles["backgroundGlow"]}
             />
 
             {/* Card container */}
             <motion.div
-              className='border-border/50 bg-card/60 hover:border-primary/30 hover:shadow-primary/10 relative w-full overflow-hidden rounded-2xl border p-3 shadow-2xl backdrop-blur-md transition-all duration-500 sm:p-4'
+              className={styles["card"]}
               whileHover={{
                 boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
               }}>
               {/* Corner accent - static for performance */}
               <div
                 aria-hidden='true'
-                className='from-primary/20 pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-linear-to-br to-transparent blur-2xl opacity-60'
+                className={styles["cornerAccent"]}
               />
 
               <SignIn />

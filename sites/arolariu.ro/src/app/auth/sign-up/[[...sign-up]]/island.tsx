@@ -5,6 +5,7 @@ import {motion, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
+import styles from "./styles.module.scss";
 
 const containerVariants: Variants = {
   hidden: {opacity: 0, y: 30, scale: 0.9},
@@ -31,7 +32,7 @@ const containerVariants: Variants = {
  * - Smooth entrance with spring physics
  * - Scale-up effect with easing
  * - Hover state with glow enhancement
- * - Animated gradient accents
+ * - Gradient accents
  *
  * **Styling**:
  * - Glassmorphism card design
@@ -46,7 +47,7 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
   const trust = useTranslations("Authentication.Island.trust");
 
   return (
-    <div className='grid w-full grid-cols-1 items-center gap-10 lg:grid-cols-2'>
+    <div className={styles["grid"]}>
       <div>
         <AuthMarketingPanel
           title={t("hero.title")}
@@ -69,29 +70,29 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
             variants={containerVariants}
             initial='hidden'
             animate='visible'
-            className='relative mx-auto flex justify-center'>
+            className={styles["formContainer"]}>
             {/* Background glow - static for performance */}
             <div
               aria-hidden='true'
-              className='bg-secondary/20 pointer-events-none absolute -inset-4 rounded-3xl blur-2xl opacity-40'
+              className={styles["backgroundGlow"]}
             />
 
             {/* Card container */}
             <motion.div
-              className='border-border/50 bg-card/60 hover:border-secondary/30 hover:shadow-secondary/10 relative w-full overflow-hidden rounded-2xl border p-3 shadow-2xl backdrop-blur-md transition-all duration-500 sm:p-4'
+              className={styles["card"]}
               whileHover={{
                 boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.25)",
               }}>
-              {/* Corner accent - static for performance */}
+              {/* Corner accent top - static for performance */}
               <div
                 aria-hidden='true'
-                className='from-secondary/20 pointer-events-none absolute -top-10 -left-10 h-24 w-24 rounded-full bg-linear-to-br to-transparent blur-2xl opacity-60'
+                className={styles["cornerAccentTop"]}
               />
 
-              {/* Bottom accent - static for performance */}
+              {/* Corner accent bottom - static for performance */}
               <div
                 aria-hidden='true'
-                className='from-primary/15 pointer-events-none absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-linear-to-tl to-transparent blur-2xl opacity-50'
+                className={styles["cornerAccentBottom"]}
               />
 
               <SignUp />
