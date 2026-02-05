@@ -1,25 +1,54 @@
 // ===========================================
 // SCSS Entry Point - arolariu.ro
-// 7-1 Architecture Pattern (adapted)
 // ===========================================
+// Architecture: 7-1 Pattern (adapted)
+//
+// This file is imported in layout.tsx AFTER:
+// - @arolariu/components/styles.css (Tailwind-based component library)
+// - globals.css (CSS variables for theming)
+//
+// SCSS styles should have higher specificity than Tailwind utilities
+// for gradual migration purposes.
 
-// 1. Abstracts (no CSS output - variables, mixins, functions)
+// ===========================================
+// 1. ABSTRACTS (No CSS output)
+// Variables, mixins, functions used by other partials
+// ===========================================
 @use 'abstracts' as *;
 
-// 2. Base styles (reset, element defaults)
+// ===========================================
+// 2. BASE
+// Reset, element defaults
+// ===========================================
 @use 'base';
 
-// 3. Theme definitions (CSS variable declarations)
+// ===========================================
+// 3. THEMES
+// Theme variable documentation and preset-specific overrides
+// (Actual CSS variables defined in globals.css)
+// ===========================================
 @use 'themes';
 
-// 4. Utility classes
-@use 'utilities';
-
-// 5. Shared component styles
-@use 'components';
-
-// 6. Animations
+// ===========================================
+// 4. ANIMATIONS
+// Keyframes and transition utilities
+// ===========================================
 @use 'animations';
 
-// 7. Page-specific global styles
-@use 'pages';
+// ===========================================
+// 5. UTILITIES (Optional - for gradual migration)
+// Utility classes if needed during transition
+// ===========================================
+// @use 'utilities';
+
+// ===========================================
+// 6. COMPONENTS
+// Shared component styles (BEM)
+// ===========================================
+// @use 'components';
+
+// ===========================================
+// 7. PAGES
+// Page-specific global styles
+// ===========================================
+// @use 'pages';
