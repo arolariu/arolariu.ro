@@ -1,5 +1,145 @@
 // ===========================================
-// ELEMENTS
-// Base element styles
+// BASE ELEMENT STYLES
 // ===========================================
-// Populated in Task 3.2
+@use '../abstracts' as *;
+
+// ===========================================
+// BODY
+// ===========================================
+body {
+  font-family: $font-family-default;
+  font-size: font-size('base');
+  font-weight: font-weight('normal');
+  line-height: line-height('normal');
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
+// ===========================================
+// HEADINGS
+// ===========================================
+h1, h2, h3, h4, h5, h6 {
+  font-weight: font-weight('semibold');
+  line-height: line-height('tight');
+  color: hsl(var(--foreground));
+}
+
+h1 {
+  font-size: font-size('4xl');
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+}
+
+h2 {
+  font-size: font-size('3xl');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+h3 {
+  font-size: font-size('2xl');
+
+  @include respond-to('md') {
+    font-size: font-size('3xl');
+  }
+}
+
+h4 {
+  font-size: font-size('xl');
+
+  @include respond-to('md') {
+    font-size: font-size('2xl');
+  }
+}
+
+h5 {
+  font-size: font-size('lg');
+}
+
+h6 {
+  font-size: font-size('base');
+}
+
+// ===========================================
+// PARAGRAPHS
+// ===========================================
+p {
+  margin-bottom: space(4);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// ===========================================
+// LINKS
+// ===========================================
+a {
+  color: hsl(var(--primary));
+  @include transition(color, opacity);
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+// ===========================================
+// CODE
+// ===========================================
+code {
+  font-family: $font-family-mono;
+  font-size: 0.875em;
+  background-color: hsl(var(--muted));
+  padding: 0.125rem 0.25rem;
+  border-radius: radius('sm');
+}
+
+pre {
+  font-family: $font-family-mono;
+  font-size: font-size('sm');
+  background-color: hsl(var(--muted));
+  padding: space(4);
+  border-radius: radius('lg');
+  overflow-x: auto;
+
+  code {
+    background: none;
+    padding: 0;
+  }
+}
+
+// ===========================================
+// OTHER ELEMENTS
+// ===========================================
+small {
+  font-size: font-size('sm');
+}
+
+strong {
+  font-weight: font-weight('semibold');
+}
+
+blockquote {
+  border-left: 4px solid hsl(var(--border));
+  padding-left: space(4);
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: space(8) 0;
+}
+
+// ===========================================
+// SELECTION
+// ===========================================
+::selection {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
