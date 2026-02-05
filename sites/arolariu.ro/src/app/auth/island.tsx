@@ -113,10 +113,9 @@ export default function RenderAuthScreen(): React.JSX.Element {
             <p className={styles["heroSubtitle"]}>{t("hero.subtitle")}</p>
           </div>
 
-          <AuthTrustBadgesRow
-            className={styles["trustBadgesCenter"]}
-            badges={trustBadges}
-          />
+          <div className={styles["trustBadgesCenter"]}>
+            <AuthTrustBadgesRow badges={trustBadges} />
+          </div>
         </div>
 
         <div className={styles["cardsGrid"]}>

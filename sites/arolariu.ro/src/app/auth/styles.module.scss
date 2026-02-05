@@ -9,10 +9,24 @@
 // ===========================================
 .section {
   position: relative;
-  margin-left: auto;
-  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: space(10) space(4);
+
+  @include respond-to('sm') {
+    padding-left: space(6);
+    padding-right: space(6);
+  }
+
+  @include respond-to('lg') {
+    padding: space(14) space(8);
+  }
 }
 
 .container {
