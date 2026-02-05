@@ -1,5 +1,57 @@
 // ===========================================
-// FUNCTIONS
-// Utility functions
+// SCSS FUNCTIONS
 // ===========================================
-// Populated in Task 1.5
+
+// ===========================================
+// UNIT FUNCTIONS
+// ===========================================
+
+// Convert pixels to rem
+@function rem($pixels, $base: 16) {
+  @return #{calc($pixels / $base)}rem;
+}
+
+// Convert pixels to em
+@function em($pixels, $base: 16) {
+  @return #{calc($pixels / $base)}em;
+}
+
+// Strip unit from value
+@function strip-unit($value) {
+  @return calc($value / ($value * 0 + 1));
+}
+
+// ===========================================
+// MAP FUNCTIONS
+// ===========================================
+
+// Get value from nested map
+@function map-deep-get($map, $keys...) {
+  @each $key in $keys {
+    @if type-of($map) != 'map' {
+      @return null;
+    }
+    $map: map-get($map, $key);
+  }
+  @return $map;
+}
+
+// Check if value exists in list
+@function list-contains($list, $value) {
+  @return index($list, $value) != null;
+}
+
+// ===========================================
+// STRING FUNCTIONS
+// ===========================================
+
+// Replace string
+@function str-replace($string, $search, $replace: '') {
+  $index: str-index($string, $search);
+
+  @if $index {
+    @return str-slice($string, 1, $index - 1) + $replace + str-replace(str-slice($string, $index + str-length($search)), $search, $replace);
+  }
+
+  @return $string;
+}
