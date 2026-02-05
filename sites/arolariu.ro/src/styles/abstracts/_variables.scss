@@ -1,5 +1,118 @@
 // ===========================================
-// VARIABLES
-// Core design tokens - spacing, breakpoints, z-index, radius
+// SPACING SCALE
+// Matches current Tailwind usage patterns
 // ===========================================
-// Populated in Task 1.1
+$spacing: (
+  0: 0,
+  0.5: 0.125rem,   // 2px
+  1: 0.25rem,      // 4px
+  1.5: 0.375rem,   // 6px
+  2: 0.5rem,       // 8px
+  2.5: 0.625rem,   // 10px
+  3: 0.75rem,      // 12px
+  3.5: 0.875rem,   // 14px
+  4: 1rem,         // 16px
+  5: 1.25rem,      // 20px
+  6: 1.5rem,       // 24px
+  7: 1.75rem,      // 28px
+  8: 2rem,         // 32px
+  9: 2.25rem,      // 36px
+  10: 2.5rem,      // 40px
+  11: 2.75rem,     // 44px
+  12: 3rem,        // 48px
+  14: 3.5rem,      // 56px
+  16: 4rem,        // 64px
+  20: 5rem,        // 80px
+  24: 6rem,        // 96px
+  28: 7rem,        // 112px
+  32: 8rem,        // 128px
+  36: 9rem,        // 144px
+  40: 10rem,       // 160px
+  44: 11rem,       // 176px
+  48: 12rem,       // 192px
+  52: 13rem,       // 208px
+  56: 14rem,       // 224px
+  60: 15rem,       // 240px
+  64: 16rem,       // 256px
+  72: 18rem,       // 288px
+  80: 20rem,       // 320px
+  96: 24rem,       // 384px
+);
+
+// Helper function to get spacing value
+@function space($key) {
+  @if map-has-key($spacing, $key) {
+    @return map-get($spacing, $key);
+  }
+  @error "Unknown spacing key: #{$key}. Available: #{map-keys($spacing)}";
+}
+
+// ===========================================
+// BREAKPOINTS
+// Matches current custom Tailwind breakpoints exactly
+// ===========================================
+$breakpoints: (
+  '2xsm': 320px,   // Mobile-first (custom)
+  'xsm': 480px,    // Small phones (custom)
+  'sm': 640px,     // Standard mobile
+  'md': 768px,     // Tablets
+  'lg': 1024px,    // Small desktop
+  'xl': 1280px,    // Desktop
+  '2xl': 1440px,   // Large desktop (custom)
+  '3xl': 1976px,   // Ultra-wide (custom)
+);
+
+// Helper function to get breakpoint value
+@function breakpoint($key) {
+  @if map-has-key($breakpoints, $key) {
+    @return map-get($breakpoints, $key);
+  }
+  @error "Unknown breakpoint: #{$key}. Available: #{map-keys($breakpoints)}";
+}
+
+// ===========================================
+// Z-INDEX SCALE
+// Organized layering system
+// ===========================================
+$z-index: (
+  'base': 0,
+  'dropdown': 1000,
+  'sticky': 1020,
+  'fixed': 1030,
+  'modal-backdrop': 1040,
+  'modal': 1050,
+  'popover': 1060,
+  'tooltip': 1070,
+  'toast': 1080,
+);
+
+@function z($key) {
+  @if map-has-key($z-index, $key) {
+    @return map-get($z-index, $key);
+  }
+  @error "Unknown z-index key: #{$key}. Available: #{map-keys($z-index)}";
+}
+
+// ===========================================
+// BORDER RADIUS
+// Uses CSS variable for base (matches Tailwind config)
+// ===========================================
+$radius-base: 0.5rem; // Fallback, actual value from --radius CSS var
+
+$border-radius: (
+  'none': 0,
+  'sm': 0.125rem,     // 2px
+  'md': 0.375rem,     // 6px
+  'lg': 0.5rem,       // 8px (default)
+  'xl': 0.75rem,      // 12px
+  '2xl': 1rem,        // 16px
+  '3xl': 1.5rem,      // 24px
+  'full': 9999px,
+);
+
+@function radius($key) {
+  @if map-has-key($border-radius, $key) {
+    @return map-get($border-radius, $key);
+  }
+  @error "Unknown radius key: #{$key}. Available: #{map-keys($border-radius)}";
+}
