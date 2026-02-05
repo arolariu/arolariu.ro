@@ -1,7 +1,9 @@
 "use client";
 
-import {SignUp} from "@clerk/nextjs";
 import {motion, type Variants} from "motion/react";
+import dynamic from "next/dynamic";
+
+const SignUp = dynamic(() => import("@clerk/nextjs").then((mod) => mod.SignUp), {ssr: false});
 import {useTranslations} from "next-intl";
 import AuthFormShell from "../../_components/AuthFormShell";
 import AuthMarketingPanel from "../../_components/AuthMarketingPanel";
