@@ -1,8 +1,29 @@
 // ===========================================
 // SIGN-IN PAGE STYLES
-// Route-specific additions (if needed)
-// Shared styles imported directly in TSX from _components/styles.module.scss
+// Scoped to /auth/sign-in route
 // ===========================================
 @use '../../../../styles/abstracts' as *;
 
-// Add any sign-in specific styles here
+// ===========================================
+// PAGE SECTION
+// ===========================================
+.pageSection {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: space(10) space(4);
+
+  @include respond-to('sm') {
+    padding-left: space(6);
+    padding-right: space(6);
+  }
+
+  @include respond-to('lg') {
+    padding: space(14) space(8);
+  }
+}
