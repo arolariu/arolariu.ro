@@ -2,4 +2,6 @@
 // COMPONENTS
 // Reusable component styles (BEM)
 // ===========================================
-// Add @forward statements as components are created
+@forward 'header';
+@forward 'navigation';
+@forward 'footer';

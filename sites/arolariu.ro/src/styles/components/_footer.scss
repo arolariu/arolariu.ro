@@ -1,0 +1,229 @@
+// ===========================================
+// FOOTER COMPONENT STYLES
+// ===========================================
+@use '../abstracts' as *;
+
+.footer {
+  position: relative;
+  bottom: 0;
+  width: 100%;
+  background-color: hsl(var(--footer-bg));
+
+  @media print {
+    display: none;
+  }
+}
+
+.footer__wave {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 1.5rem;
+  margin-top: -1.25rem;
+  color: hsl(var(--footer-bg));
+
+  @include respond-to('sm') {
+    height: 4rem;
+    margin-top: -2.5rem;
+  }
+}
+
+.footer__container {
+  max-width: breakpoint('xl');
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: space(12);
+  color: white;
+
+  @include respond-to('md') {
+    padding-left: space(24);
+    padding-right: space(24);
+  }
+
+  @include respond-to('lg') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+.footer__grid {
+  display: grid;
+  gap: space(8);
+  margin-bottom: space(8);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.footer__brand-section {
+  @include respond-to('md') {
+    grid-column: span 1;
+  }
+
+  @include respond-to('lg') {
+    grid-column: span 2;
+  }
+}
+
+.footer__brand-link {
+  display: inline-flex;
+  align-items: center;
+  transform: scale(1);
+  @include transition(transform, color);
+  margin-left: 20%;
+
+  &:hover {
+    transform: scale(1.1);
+    color: #eab308; // yellow-500
+  }
+
+  @include respond-to('md') {
+    margin-left: 0;
+  }
+}
+
+.footer__brand-logo {
+  border-radius: 9999px;
+}
+
+.footer__brand-name {
+  margin-left: space(2);
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  text-transform: uppercase;
+  letter-spacing: letter-spacing('wide');
+}
+
+.footer__brand-description {
+  margin-top: space(4);
+  font-size: font-size('sm');
+  padding-left: space(4);
+  padding-right: space(4);
+  text-align: center;
+
+  @include respond-to('md') {
+    padding-left: 0;
+    padding-right: 0;
+    text-align: left;
+  }
+}
+
+.footer__nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: space(8);
+  text-align: center;
+
+  @include respond-to('lg') {
+    flex-direction: row;
+    text-align: left;
+  }
+}
+
+.footer__nav-title {
+  font-weight: font-weight('semibold');
+  letter-spacing: letter-spacing('wide');
+  color: white;
+  cursor: default;
+  @include transition(color);
+
+  &:hover {
+    color: #eab308; // yellow-500
+  }
+}
+
+.footer__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: space(2);
+
+  > * + * {
+    margin-top: space(2);
+  }
+}
+
+.footer__nav-link {
+  color: rgba(255, 255, 255, 0.9);
+  @include transition(color);
+
+  &:hover {
+    color: #5eead4; // teal-accent-400 equivalent
+  }
+}
+
+.footer__meta {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: space(8);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: space(5);
+  padding-bottom: space(5);
+}
+
+.footer__copyright {
+  font-size: font-size('sm');
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+
+  @include respond-to('md') {
+    text-align: left;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.footer__source-link {
+  color: #eab308; // yellow-500
+  font-style: italic;
+}
+
+.footer__social {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: space(8);
+  margin-left: auto;
+  margin-right: auto;
+
+  @include respond-to('md') {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.footer__social-icon {
+  height: 1.75rem;
+  width: 1.75rem;
+  @include transition(color);
+
+  &:hover {
+    color: #eab308; // yellow-500
+  }
+}
+
+.footer__build-info {
+  font-size: font-size('sm');
+  color: #cbd5e1; // slate-300
+  text-align: center;
+
+  @include respond-to('md') {
+    text-align: right;
+  }
+}
+
+.footer__build-tooltip {
+  cursor: help;
+}
+
+.footer__commit-link {
+  font-style: italic;
+}

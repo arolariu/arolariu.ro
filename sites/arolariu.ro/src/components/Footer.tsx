@@ -101,9 +101,9 @@ function FooterComponent(): React.JSX.Element {
   const siteName = SITE_NAME.toUpperCase();
 
   return (
-    <footer className='bg-footer-bg relative bottom-0 w-full print:hidden'>
+    <footer className='footer'>
       <svg
-        className='text-footer-bg absolute top-0 -mt-5 h-6 w-full sm:-mt-10 sm:h-16'
+        className='footer__wave'
         preserveAspectRatio='none'
         viewBox='0 0 1440 54'>
         <path
@@ -112,39 +112,39 @@ function FooterComponent(): React.JSX.Element {
         />
       </svg>
 
-      <div className='mx-auto pt-12 text-white md:px-24 lg:max-w-(--breakpoint-xl) lg:px-8'>
-        <div className='mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3'>
-          <div className='md:col-span-1 lg:col-span-2'>
+      <div className='footer__container'>
+        <div className='footer__grid'>
+          <div className='footer__brand-section'>
             <Link
               href='/'
               aria-label='Go home'
               title='AROLARIU.RO'
-              className='2xsm:ml-[20%] inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-yellow-500 md:ml-0'>
+              className='footer__brand-link'>
               <Image
                 src={logo}
                 alt='The `arolariu.ro` logo.'
-                className='rounded-full'
+                className='footer__brand-logo'
                 width={40}
                 height={40}
               />
-              <span className='ml-2 text-xl font-bold tracking-wide uppercase'>{siteName}</span>
+              <span className='footer__brand-name'>{siteName}</span>
             </Link>
-            <div className='2xsm:px-4 2xsm:text-center mt-4 text-sm md:px-0 md:text-left'>
+            <div className='footer__brand-description'>
               <RichText
-                className='prose 2xsm:text-center text-pretty text-white md:text-start'
+                className='prose text-pretty text-white'
                 sectionKey='Footer'
                 textKey='subtitle'
               />
             </div>
           </div>
-          <div className='2xsm:flex-col 2xsm:text-center flex gap-8 lg:flex-row lg:text-left'>
+          <div className='footer__nav-section'>
             <div>
-              <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>{t("navigation.subdomains")}</p>
-              <ul className='mt-2 space-y-2'>
+              <p className='footer__nav-title'>{t("navigation.subdomains")}</p>
+              <ul className='footer__nav-list'>
                 <li>
                   <Link
                     href='https://cv.arolariu.ro'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    className='footer__nav-link'>
                     <code>cv.arolariu.ro</code>
                   </Link>
                 </li>
@@ -152,7 +152,7 @@ function FooterComponent(): React.JSX.Element {
                   <li>
                     <Link
                       href='https://dev.arolariu.ro'
-                      className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                      className='footer__nav-link'>
                       <code>dev.arolariu.ro</code>
                     </Link>
                   </li>
@@ -160,7 +160,7 @@ function FooterComponent(): React.JSX.Element {
                   <li>
                     <Link
                       href='https://arolariu.ro'
-                      className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                      className='footer__nav-link'>
                       <code>arolariu.ro</code>
                     </Link>
                   </li>
@@ -168,47 +168,47 @@ function FooterComponent(): React.JSX.Element {
                 <li>
                   <Link
                     href='https://api.arolariu.ro'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    className='footer__nav-link'>
                     <code>api.arolariu.ro</code>
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='https://docs.arolariu.ro'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    className='footer__nav-link'>
                     <code>docs.arolariu.ro</code>
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>{t("navigation.about")}</p>
-              <ul className='mt-2 space-y-2'>
+              <p className='footer__nav-title'>{t("navigation.about")}</p>
+              <ul className='footer__nav-list'>
                 <li>
                   <Link
                     href='/about'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    className='footer__nav-link'>
                     {t("navigation.what")}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/acknowledgements'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    className='footer__nav-link'>
                     {t("navigation.acknowledgements")}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/terms-of-service'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    className='footer__nav-link'>
                     {t("navigation.termsOfService")}
                   </Link>
                 </li>
                 <li>
                   <Link
                     href='/privacy-policy'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    className='footer__nav-link'>
                     {t("navigation.privacyPolicy")}
                   </Link>
                 </li>
@@ -218,44 +218,44 @@ function FooterComponent(): React.JSX.Element {
         </div>
 
         {/* Footer metadata information */}
-        <div className='flex flex-row flex-wrap justify-between gap-8 border-t py-5'>
-          <p className='2xsm:text-center 2xsm:mx-auto text-sm md:mx-0 md:text-left'>
+        <div className='footer__meta'>
+          <p className='footer__copyright'>
             &copy; {t("copyright")} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
             <span className='ml-4'>
               {t("sourceCode")}
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
                 target='_blank'
-                className='text-yellow-500 italic'>
+                className='footer__source-link'>
                 {t("sourceCodeAnchor")}
               </Link>
             </span>
           </p>
-          <div className='2xsm:mx-auto flex flex-row items-center space-x-8 md:mx-0'>
+          <div className='footer__social'>
             <Link
               href='https://github.com/arolariu'
               target='_blank'
               about='GitHub'
               aria-label={t("socialLinks.github")}>
-              <TbBrandGithub className='h-7 w-7 hover:text-yellow-500' />
+              <TbBrandGithub className='footer__social-icon' />
             </Link>
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
               target='_blank'
               about='LinkedIn'
               aria-label={t("socialLinks.linkedin")}>
-              <TbBrandLinkedin className='h-7 w-7 hover:text-yellow-500' />
+              <TbBrandLinkedin className='footer__social-icon' />
             </Link>
           </div>
         </div>
-        <div className='2xsm:text-center text-sm text-slate-300 md:text-end'>
+        <div className='footer__build-info'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className='cursor-help'>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
+                <span className='footer__build-tooltip'>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
               </TooltipTrigger>
               <TooltipContent>
-                <code className='cursor-help'>{new Date(TIMESTAMP).toUTCString()}</code>
+                <code className='footer__build-tooltip'>{new Date(TIMESTAMP).toUTCString()}</code>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -265,7 +265,7 @@ function FooterComponent(): React.JSX.Element {
             <Link
               href={`https://github.com/arolariu/arolariu.ro/commit/${COMMIT_SHA}`}
               target='_blank'
-              className='italic'>
+              className='footer__commit-link'>
               <code>{COMMIT_SHA.slice(0, 20)}</code>
             </Link>
           </span>
