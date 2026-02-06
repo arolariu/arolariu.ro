@@ -1,127 +1,91 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
+import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {TbBrain, TbBuilding, TbCloud, TbFileInvoice, TbReceipt, TbScan} from "react-icons/tb";
 import {formatStorageSize} from "../_utils/helpers";
 import type {UserStatistics} from "../_utils/types";
+import styles from "./QuickStats.module.scss";
 
 type Props = Readonly<{
   statistics: UserStatistics;
 }>;
+
+const STAT_CARDS = [
+  {key: "invoices", icon: TbFileInvoice, field: "totalInvoices"},
+  {key: "merchants", icon: TbBuilding, field: "totalMerchants"},
+  {key: "scans", icon: TbScan, field: "totalScans"},
+  {key: "saved", icon: TbReceipt, field: "totalSaved", prefix: "$", decimals: 2},
+  {key: "monthly", icon: TbReceipt, field: "monthlyAverage", prefix: "$", decimals: 2},
+  {key: "aiQueries", icon: TbBrain, field: "aiQueriesUsed"},
+] as const;
 
 export function QuickStats({statistics}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.stats");
 
   const storagePercentage = (statistics.storageUsed / statistics.storageLimit) * 100;
 
+  const formatValue = (card: (typeof STAT_CARDS)[number]): string => {
+    const value = statistics[card.field as keyof UserStatistics] as number;
+    const formatted = "decimals" in card ? value.toFixed(card.decimals) : value.toString();
+    return "prefix" in card ? `${card.prefix}${formatted}` : formatted;
+  };
+
   return (
-    <main className='space-y-6'>
-      <main>
-        <h2 className='text-2xl font-bold'>{t("title")}</h2>
-        <p className='text-muted-foreground'>{t("description")}</p>
-      </main>
+    <section className={styles["section"]}>
+      <div className={styles["header"]}>
+        <h2>{t("title")}</h2>
+        <p>{t("description")}</p>
+      </div>
 
-      <main className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-        {/* Total Invoices */}
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium'>{t("invoices.title")}</CardTitle>
-            <TbFileInvoice className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <main className='text-2xl font-bold'>{statistics.totalInvoices}</main>
-            <p className='text-muted-foreground text-xs'>{t("invoices.description")}</p>
-          </CardContent>
-        </Card>
-
-        {/* Total Merchants */}
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium'>{t("merchants.title")}</CardTitle>
-            <TbBuilding className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <main className='text-2xl font-bold'>{statistics.totalMerchants}</main>
-            <p className='text-muted-foreground text-xs'>{t("merchants.description")}</p>
-          </CardContent>
-        </Card>
-
-        {/* Total Scans */}
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium'>{t("scans.title")}</CardTitle>
-            <TbScan className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <main className='text-2xl font-bold'>{statistics.totalScans}</main>
-            <p className='text-muted-foreground text-xs'>{t("scans.description")}</p>
-          </CardContent>
-        </Card>
-
-        {/* Total Saved */}
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium'>{t("saved.title")}</CardTitle>
-            <TbReceipt className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <main className='text-2xl font-bold'>${statistics.totalSaved.toFixed(2)}</main>
-            <p className='text-muted-foreground text-xs'>{t("saved.description")}</p>
-          </CardContent>
-        </Card>
-
-        {/* Monthly Average */}
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium'>{t("monthly.title")}</CardTitle>
-            <TbReceipt className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <main className='text-2xl font-bold'>${statistics.monthlyAverage.toFixed(2)}</main>
-            <p className='text-muted-foreground text-xs'>{t("monthly.description")}</p>
-          </CardContent>
-        </Card>
-
-        {/* AI Queries */}
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium'>{t("aiQueries.title")}</CardTitle>
-            <TbBrain className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <main className='text-2xl font-bold'>{statistics.aiQueriesUsed}</main>
-            <p className='text-muted-foreground text-xs'>{t("aiQueries.description")}</p>
-          </CardContent>
-        </Card>
-      </main>
+      <div className={styles["grid"]}>
+        {STAT_CARDS.map((card, index) => (
+          <motion.div
+            key={card.key}
+            initial={{opacity: 0, scale: 0.95}}
+            animate={{opacity: 1, scale: 1}}
+            transition={{duration: 0.3, delay: index * 0.05}}>
+            <Card className={styles["statCard"]}>
+              <CardHeader className='flex flex-row items-center justify-between pb-2'>
+                <CardTitle className='text-sm font-medium'>{t(`${card.key}.title`)}</CardTitle>
+                <card.icon className={styles["cardIcon"]} />
+              </CardHeader>
+              <CardContent>
+                <div className={styles["statValue"]}>{formatValue(card)}</div>
+                <p className={styles["statDescription"]}>{t(`${card.key}.description`)}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
 
       {/* Storage Usage */}
       <Card>
         <CardHeader>
-          <main className='flex items-center justify-between'>
-            <main>
+          <div className={styles["storageHeader"]}>
+            <div className={styles["storageInfo"]}>
               <CardTitle className='flex items-center gap-2 text-base'>
                 <TbCloud className='h-4 w-4' />
                 {t("storage.title")}
               </CardTitle>
               <CardDescription>{t("storage.description")}</CardDescription>
-            </main>
-            <span className='text-muted-foreground text-sm'>
+            </div>
+            <span className={styles["storageSize"]}>
               {formatStorageSize(statistics.storageUsed)} / {formatStorageSize(statistics.storageLimit)}
             </span>
-          </main>
+          </div>
         </CardHeader>
         <CardContent>
           <Progress
             value={storagePercentage}
             className='h-2'
           />
-          <p className='text-muted-foreground mt-2 text-xs'>
+          <p className={styles["storageHint"]}>
             {storagePercentage.toFixed(1)}% {t("storage.used")}
           </p>
         </CardContent>
       </Card>
-    </main>
+    </section>
   );
 }
