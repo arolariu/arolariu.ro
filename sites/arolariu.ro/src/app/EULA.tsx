@@ -32,6 +32,8 @@ import {useCallback, useEffect, useState} from "react";
 import {TbCheck, TbCookie, TbGlobe, TbInfoCircleFilled, TbLock, TbShield} from "react-icons/tb";
 import RenderPrivacyPolicyScreen from "./(privacy-and-terms)/privacy-policy/island";
 import RenderTermsOfServiceScreen from "./(privacy-and-terms)/terms-of-service/island";
+import styles from "./EULA.module.scss";
+import EulaShimmer from "./EULA.shimmers";
 
 type CookieState = {
   essential: boolean;
@@ -39,49 +41,6 @@ type CookieState = {
 };
 
 type Props = {locale: string};
-
-/**
- * A shimmer for the EULA component.
- * @returns The EULA loading component.
- */
-function EulaLoading(): React.JSX.Element {
-  return (
-    <Card className='border-2 shadow-lg'>
-      <CardHeader className='space-y-4 text-center'>
-        <div className='flex justify-center'>
-          <div className='h-12 w-12 animate-pulse rounded-full bg-gray-200' />
-        </div>
-        <div className='mx-auto h-4 w-48 animate-pulse rounded-md bg-gray-200' />
-
-        <div className='mx-auto w-full max-w-xs'>
-          <div className='h-10 animate-pulse rounded-md bg-gray-200' />
-        </div>
-      </CardHeader>
-
-      <CardContent className='space-y-6'>
-        <div className='h-16 animate-pulse rounded-md bg-gray-200' />
-
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-          <div className='h-48 animate-pulse rounded-md bg-gray-200' />
-          <div className='h-48 animate-pulse rounded-md bg-gray-200' />
-        </div>
-
-        <div className='h-1 animate-pulse rounded-md bg-gray-200' />
-
-        <div className='space-y-4'>
-          <div className='h-8 animate-pulse rounded-md bg-gray-200' />
-          <div className='h-24 animate-pulse rounded-md bg-gray-200' />
-          <div className='h-24 animate-pulse rounded-md bg-gray-200' />
-        </div>
-      </CardContent>
-
-      <CardFooter className='flex flex-col space-y-4'>
-        <div className='h-12 w-full animate-pulse rounded-md bg-gray-200' />
-        <div className='mx-auto h-4 w-3/4 animate-pulse rounded-md bg-gray-200' />
-      </CardFooter>
-    </Card>
-  );
-}
 
 /**
  * EULA component to display the End User License Agreement.
@@ -115,6 +74,10 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
     handleLocale("ro");
   }, [handleLocale]);
 
+  const handleLocaleFrClick = useCallback(() => {
+    handleLocale("fr");
+  }, [handleLocale]);
+
   const handleAnalyticsCheckedChange = useCallback((checked: boolean) => {
     setCookieState((prev) => ({...prev, analytics: checked}));
   }, []);
@@ -134,97 +97,108 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
 
   if (eulaCookie === null) {
     return (
-      <main className='mx-auto w-full max-w-4xl px-4 py-20'>
+      <main className={styles["main"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5}}>
-          <EulaLoading />
+          <EulaShimmer />
         </motion.div>
       </main>
     );
   }
 
   return (
-    <main className='mx-auto w-full max-w-4xl px-4 py-20'>
+    <main className={styles["main"]}>
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
         transition={{duration: 0.5}}>
-        <Card className='border-2 shadow-lg'>
-          <CardHeader className='space-y-2 text-center'>
+        <Card className={styles["card"]}>
+          <CardHeader className={styles["headerCenter"]}>
             <motion.div
               initial={{scale: 0.9}}
               animate={{scale: 1}}
               transition={{duration: 0.5}}
-              className='flex justify-center'>
-              <TbShield className='text-primary h-12 w-12' />
+              className={styles["shieldIcon"]}>
+              <TbShield className={styles["shieldIconSvg"]} />
             </motion.div>
             <CardTitle>
-              <h1 className='text-2xl font-bold md:text-3xl'>{t("title")}</h1>
+              <h1 className={styles["title"]}>{t("title")}</h1>
             </CardTitle>
-            <CardDescription className='text-base'>{t("subtitle")}</CardDescription>
+            <CardDescription className={styles["subtitle"]}>{t("subtitle")}</CardDescription>
 
             <Tabs
               defaultValue={locale}
-              className='mx-auto flex w-full max-w-xs flex-row items-center justify-center justify-items-center'>
-              <TabsList className='flex flex-row items-center justify-center justify-items-center gap-2'>
+              className={styles["tabsWrapper"]}>
+              <TabsList className={styles["tabsList"]}>
                 <TabsTrigger
                   value='en'
                   onClick={handleLocaleEnClick}
-                  className='flex cursor-pointer items-center gap-2'>
-                  <TbGlobe className='h-4 w-4' />
+                  className={styles["tabsTrigger"]}>
+                  <TbGlobe className={styles["globeIcon"]} />
                   English (EN)
                 </TabsTrigger>
                 <Separator
                   orientation='vertical'
-                  className='border-muted-foreground/50 h-6 rounded-xl border-2'
+                  className={styles["tabsSeparator"]}
                 />
                 <TabsTrigger
                   value='ro'
                   onClick={handleLocaleRoClick}
-                  className='flex cursor-pointer items-center gap-2'>
-                  <TbGlobe className='h-4 w-4' />
+                  className={styles["tabsTrigger"]}>
+                  <TbGlobe className={styles["globeIcon"]} />
                   Română (RO)
+                </TabsTrigger>
+                <Separator
+                  orientation='vertical'
+                  className={styles["tabsSeparator"]}
+                />
+                <TabsTrigger
+                  value='fr'
+                  onClick={handleLocaleFrClick}
+                  className={styles["tabsTrigger"]}>
+                  <TbGlobe className={styles["globeIcon"]} />
+                  Français (FR)
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </CardHeader>
 
-          <CardContent className='space-y-6'>
+          <CardContent className={styles["contentArea"]}>
             <motion.div
               initial={{opacity: 0}}
               animate={{opacity: 1}}
               transition={{delay: 0.2}}
-              className='px-4 text-center'>
-              <span className='text-muted-foreground'>{t("content")}</span>
+              className={styles["contentText"]}>
+              <span>{t("content")}</span>
             </motion.div>
 
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <div className={styles["policyGrid"]}>
               <motion.div
                 whileHover={{scale: 1.02}}
                 transition={{type: "spring", stiffness: 400, damping: 10}}>
-                <Card className='hover:border-primary h-full transition-colors'>
-                  <CardHeader className='pb-2'>
-                    <CardTitle className='flex items-center gap-2'>
-                      <TbLock className='text-primary h-5 w-5' />
+                <Card className={styles["policyCard"]}>
+                  <CardHeader className={styles["policyCardHeader"]}>
+                    <CardTitle className={styles["policyCardTitle"]}>
+                      <TbLock className={styles["policyIcon"]} />
                       {t("termsOfService.title")}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className='text-muted-foreground text-sm'>{t("termsOfService.subtitle")}</CardContent>
+                  <CardContent className={styles["policyCardContent"]}>{t("termsOfService.subtitle")}</CardContent>
                   <CardFooter>
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
                           variant='outline'
                           title={t("termsOfService.cta")}
-                          className='w-full cursor-pointer'>
+                          className={styles["policyButton"]}>
                           {t("termsOfService.cta")}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className='2xsm:max-h-[90vh] 2xsm:max-w-[90vw] overflow-y-scroll md:max-h-[75vh] md:max-w-[75vw]'>
+                      <DialogContent className={styles["dialogContent"]}>
                         <DialogHeader>
-                          <DialogTitle className='text-center'>{t("termsOfService.cta")}</DialogTitle>
+                          <DialogTitle className={styles["dialogTitle"]}>{t("termsOfService.cta")}</DialogTitle>
                           <RenderTermsOfServiceScreen />
                         </DialogHeader>
                       </DialogContent>
@@ -236,27 +210,27 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               <motion.div
                 whileHover={{scale: 1.02}}
                 transition={{type: "spring", stiffness: 400, damping: 10}}>
-                <Card className='hover:border-primary h-full transition-colors'>
-                  <CardHeader className='pb-2'>
-                    <CardTitle className='flex items-center gap-2'>
-                      <TbShield className='text-primary h-5 w-5' />
+                <Card className={styles["policyCard"]}>
+                  <CardHeader className={styles["policyCardHeader"]}>
+                    <CardTitle className={styles["policyCardTitle"]}>
+                      <TbShield className={styles["policyIcon"]} />
                       {t("privacyPolicy.title")}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className='text-muted-foreground text-sm'>{t("privacyPolicy.subtitle")}</CardContent>
+                  <CardContent className={styles["policyCardContent"]}>{t("privacyPolicy.subtitle")}</CardContent>
                   <CardFooter>
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
                           variant='outline'
                           title={t("privacyPolicy.cta")}
-                          className='w-full cursor-pointer'>
+                          className={styles["policyButton"]}>
                           {t("privacyPolicy.cta")}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className='2xsm:max-h-[90vh] 2xsm:max-w-[90vw] overflow-y-scroll md:max-h-[75vh] md:max-w-[75vw]'>
+                      <DialogContent className={styles["dialogContent"]}>
                         <DialogHeader>
-                          <DialogTitle className='text-center'>{t("privacyPolicy.cta")}</DialogTitle>
+                          <DialogTitle className={styles["dialogTitle"]}>{t("privacyPolicy.cta")}</DialogTitle>
                           <RenderPrivacyPolicyScreen />
                         </DialogHeader>
                       </DialogContent>
@@ -266,38 +240,38 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               </motion.div>
             </div>
 
-            <Separator className='my-6' />
+            <Separator className={styles["separator"]} />
 
             <motion.div
               initial={{opacity: 0, y: 10}}
               animate={{opacity: 1, y: 0}}
               transition={{delay: 0.4}}>
-              <div className='space-y-4'>
-                <div className='flex items-center justify-between'>
-                  <h3 className='flex items-center gap-2 text-lg font-medium'>
-                    <TbCookie className='text-primary h-5 w-5' />
+              <div className={styles["cookiesSection"]}>
+                <div className={styles["cookiesHeader"]}>
+                  <h3 className={styles["cookiesTitle"]}>
+                    <TbCookie className={styles["cookieIcon"]} />
                     {t("cookiesPolicy.title")}
                   </h3>
                 </div>
 
-                <span className='text-muted-foreground text-sm'>{t("cookiesPolicy.subtitle")}</span>
+                <span className={styles["cookiesSubtitle"]}>{t("cookiesPolicy.subtitle")}</span>
 
                 <Accordion
                   type='single'
                   collapsible
-                  className='w-full'>
+                  className={styles["accordion"]}>
                   <AccordionItem value='essential'>
-                    <AccordionTrigger className='hover:no-underline'>
-                      <div className='flex items-center gap-2'>
-                        <TbLock className='text-primary h-4 w-4' />
+                    <AccordionTrigger className={styles["accordionTrigger"]}>
+                      <div className={styles["accordionTriggerContent"]}>
+                        <TbLock className={styles["accordionIcon"]} />
                         <span>{t("cookiesPolicy.cookies.essential.title")}</span>
-                        <Badge className='bg-primary ml-2'>Required</Badge>
+                        <Badge className={styles["badgeRequired"]}>Required</Badge>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className='space-y-4 p-2'>
-                        <p className='text-muted-foreground text-sm'>{t("cookiesPolicy.cookies.essential.description")}</p>
-                        <div className='flex items-center space-x-2'>
+                      <div className={styles["accordionBody"]}>
+                        <p className={styles["accordionDescription"]}>{t("cookiesPolicy.cookies.essential.description")}</p>
+                        <div className={styles["switchRow"]}>
                           <Switch
                             id='essential'
                             checked
@@ -305,7 +279,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           />
                           <Label
                             htmlFor='essential'
-                            className='text-sm font-medium'>
+                            className={styles["switchLabel"]}>
                             {t("cookiesPolicy.cookies.essential.checkbox")}
                           </Label>
                         </div>
@@ -314,21 +288,21 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   </AccordionItem>
 
                   <AccordionItem value='analytics'>
-                    <AccordionTrigger className='hover:no-underline'>
-                      <div className='flex items-center gap-2'>
-                        <TbInfoCircleFilled className='text-primary h-4 w-4' />
+                    <AccordionTrigger className={styles["accordionTrigger"]}>
+                      <div className={styles["accordionTriggerContent"]}>
+                        <TbInfoCircleFilled className={styles["accordionIcon"]} />
                         <span>{t("cookiesPolicy.cookies.analytics.title")}</span>
                         <Badge
-                          className='ml-2'
+                          className={styles["badgeOptional"]}
                           variant='outline'>
                           Optional
                         </Badge>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className='space-y-4 p-2'>
-                        <p className='text-muted-foreground text-sm'>{t("cookiesPolicy.cookies.analytics.description")}</p>
-                        <div className='flex items-center space-x-2'>
+                      <div className={styles["accordionBody"]}>
+                        <p className={styles["accordionDescription"]}>{t("cookiesPolicy.cookies.analytics.description")}</p>
+                        <div className={styles["switchRow"]}>
                           <Switch
                             id='analytics'
                             checked={cookieState.analytics}
@@ -336,7 +310,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           />
                           <Label
                             htmlFor='analytics'
-                            className='text-sm font-medium'>
+                            className={styles["switchLabel"]}>
                             {t("cookiesPolicy.cookies.analytics.checkbox")}
                           </Label>
                         </div>
@@ -348,19 +322,19 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             </motion.div>
           </CardContent>
 
-          <CardFooter className='flex flex-col space-y-4'>
+          <CardFooter className={styles["footer"]}>
             <motion.div
               whileHover={{scale: 1.03}}
               whileTap={{scale: 0.97}}
-              className='w-full'>
+              className={styles["acceptButtonWrapper"]}>
               <Button
                 onClick={handleAccept}
-                className='bg-primary hover:bg-primary/90 w-full cursor-pointer'
+                className={styles["acceptButton"]}
                 size='lg'>
-                <TbCheck className='mr-2 h-4 w-4' /> {t("accept")}
+                <TbCheck className={styles["acceptIcon"]} /> {t("accept")}
               </Button>
             </motion.div>
-            <p className='text-muted-foreground text-center text-xs'>{t("content").split(".")[0]}.</p>
+            <p className={styles["footerNote"]}>{t("content").split(".")[0]}.</p>
           </CardFooter>
         </Card>
       </motion.div>
