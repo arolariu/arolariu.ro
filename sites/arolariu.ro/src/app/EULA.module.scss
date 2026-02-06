@@ -225,6 +225,11 @@
 
 .accordion {
   width: 100%;
+
+  > :global([data-orientation='vertical']) {
+    padding-top: space(2);
+    padding-bottom: space(2);
+  }
 }
 
 .accordionTrigger {
