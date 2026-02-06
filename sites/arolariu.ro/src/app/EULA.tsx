@@ -20,11 +20,6 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Separator,
   Switch,
 } from "@arolariu/components";
@@ -69,8 +64,8 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
   }, [cookieState, locale]);
 
   const handleLocaleChange = useCallback(
-    (value: string) => {
-      handleLocale(value);
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      handleLocale(event.target.value);
     },
     [handleLocale],
   );
@@ -132,20 +127,15 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <TbGlobe className={styles["globeIcon"]} />
                 {t("language")}
               </Label>
-              <Select
+              <select
+                id='locale-select'
                 defaultValue={locale}
-                onValueChange={handleLocaleChange}>
-                <SelectTrigger
-                  id='locale-select'
-                  className={styles["localeSelect"]}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position='popper'>
-                  <SelectItem value='en'>English (EN)</SelectItem>
-                  <SelectItem value='ro'>Română (RO)</SelectItem>
-                  <SelectItem value='fr'>Français (FR)</SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={handleLocaleChange}
+                className={styles["localeSelect"]}>
+                <option value='en'>English (EN)</option>
+                <option value='ro'>Română (RO)</option>
+                <option value='fr'>Français (FR)</option>
+              </select>
             </div>
           </CardHeader>
 
