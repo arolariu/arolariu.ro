@@ -1,0 +1,78 @@
+// ===========================================
+// SETTINGS SECURITY STYLES
+// Scoped to SettingsSecurity.tsx only
+// ===========================================
+@use '../../../styles/abstracts' as *;
+@use 'settings-shared' as settings;
+
+.section { @include settings.settings-section; }
+.header  { @include settings.settings-header; }
+.grid    { @include settings.settings-grid; }
+.fullWidthCard { @include settings.settings-card-full; }
+.toggleRow     { @include settings.settings-toggle-row; }
+.toggleLabel   { @include settings.settings-toggle-label; }
+.infoBox       { @include settings.settings-info-box; }
+
+// ===========================================
+// SECURITY-SPECIFIC
+// ===========================================
+.twoFactorActive {
+  @include settings.settings-info-box;
+  margin-top: space(4);
+
+  p {
+    display: flex;
+    align-items: center;
+    gap: space(2);
+    font-size: font-size('sm');
+    font-weight: font-weight('medium');
+    color: #16a34a; // green-600
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.devicesList {
+  @include flex-column;
+  gap: space(3);
+}
+
+.deviceItem {
+  @include flex-between;
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(3);
+}
+
+.deviceInfo {
+  display: block;
+
+  p:first-child {
+    font-weight: font-weight('medium');
+  }
+
+  p:last-child {
+    font-size: font-size('xs');
+    color: color('muted-foreground');
+  }
+}
+
+.deviceActions {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.devicesEmpty {
+  @include settings.settings-info-box;
+  padding: space(4);
+  text-align: center;
+
+  p {
+    font-size: font-size('sm');
+    color: color('muted-foreground');
+  }
+}

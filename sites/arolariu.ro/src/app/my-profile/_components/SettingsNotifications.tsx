@@ -15,11 +15,13 @@ import {
   Separator,
   Switch,
 } from "@arolariu/components";
+import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback} from "react";
+import {useCallback, useRef} from "react";
 import {TbBell, TbMail, TbReport, TbShield, TbSparkles, TbWallet} from "react-icons/tb";
 import {REPORT_FREQUENCIES} from "../_utils/constants";
 import type {NotificationSettings} from "../_utils/types";
+import styles from "./SettingsNotifications.module.scss";
 
 type Props = Readonly<{
   settings: NotificationSettings;
@@ -28,6 +30,8 @@ type Props = Readonly<{
 
 export function SettingsNotifications({settings, onSettingsChange}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.settings.notifications");
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, {once: true});
 
   const handleFrequencyChange = useCallback(
     (value: string) => {
@@ -57,191 +61,222 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
   );
 
   return (
-    <main className='space-y-6'>
-      <main>
-        <h2 className='text-2xl font-bold'>{t("title")}</h2>
-        <p className='text-muted-foreground'>{t("description")}</p>
-      </main>
+    <motion.section
+      ref={sectionRef}
+      className={styles["section"]}
+      initial={{opacity: 0}}
+      animate={isInView ? {opacity: 1} : {opacity: 0}}
+      transition={{duration: 0.3}}>
+      <div className={styles["header"]}>
+        <h2>{t("title")}</h2>
+        <p>{t("description")}</p>
+      </div>
 
-      <main className='grid gap-6 md:grid-cols-2'>
+      <div className={styles["grid"]}>
         {/* Email Master Toggle */}
-        <Card className='md:col-span-2'>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbMail className='h-4 w-4' />
-              {t("email.title")}
-            </CardTitle>
-            <CardDescription>{t("email.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("email.enabled")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("email.enabledHint")}</p>
-              </main>
-              <Switch
-                checked={settings.emailEnabled}
-                onCheckedChange={handleToggle("emailEnabled")}
-              />
-            </main>
-          </CardContent>
-        </Card>
+        <motion.div
+          className={styles["fullWidthCard"]}
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.05}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbMail className='h-4 w-4' />
+                {t("email.title")}
+              </CardTitle>
+              <CardDescription>{t("email.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("email.enabled")}</Label>
+                  <p>{t("email.enabledHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.emailEnabled}
+                  onCheckedChange={handleToggle("emailEnabled")}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Report Frequency */}
-        <Card>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbReport className='h-4 w-4' />
-              {t("reports.title")}
-            </CardTitle>
-            <CardDescription>{t("reports.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            <Select
-              value={settings.reportFrequency}
-              onValueChange={handleFrequencyChange}
-              disabled={!settings.emailEnabled}>
-              <SelectTrigger className='cursor-pointer'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REPORT_FREQUENCIES.map((freq) => (
-                  <SelectItem
-                    key={freq.id}
-                    value={freq.id}>
-                    {freq.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Separator />
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("reports.weeklyDigest")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("reports.weeklyDigestHint")}</p>
-              </main>
-              <Switch
-                checked={settings.weeklyDigest}
-                onCheckedChange={handleToggle("weeklyDigest")}
-                disabled={!settings.emailEnabled}
-              />
-            </main>
-            <Separator />
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("reports.monthlyReport")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("reports.monthlyReportHint")}</p>
-              </main>
-              <Switch
-                checked={settings.monthlyReport}
-                onCheckedChange={handleToggle("monthlyReport")}
-                disabled={!settings.emailEnabled}
-              />
-            </main>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.1}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbReport className='h-4 w-4' />
+                {t("reports.title")}
+              </CardTitle>
+              <CardDescription>{t("reports.description")}</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <Select
+                value={settings.reportFrequency}
+                onValueChange={handleFrequencyChange}
+                disabled={!settings.emailEnabled}>
+                <SelectTrigger className='cursor-pointer'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {REPORT_FREQUENCIES.map((freq) => (
+                    <SelectItem
+                      key={freq.id}
+                      value={freq.id}>
+                      {freq.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Separator />
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("reports.weeklyDigest")}</Label>
+                  <p>{t("reports.weeklyDigestHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.weeklyDigest}
+                  onCheckedChange={handleToggle("weeklyDigest")}
+                  disabled={!settings.emailEnabled}
+                />
+              </div>
+              <Separator />
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("reports.monthlyReport")}</Label>
+                  <p>{t("reports.monthlyReportHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.monthlyReport}
+                  onCheckedChange={handleToggle("monthlyReport")}
+                  disabled={!settings.emailEnabled}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Financial Alerts */}
-        <Card>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbWallet className='h-4 w-4' />
-              {t("financial.title")}
-            </CardTitle>
-            <CardDescription>{t("financial.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("financial.spendingAlerts")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("financial.spendingAlertsHint")}</p>
-              </main>
-              <Switch
-                checked={settings.spendingAlerts}
-                onCheckedChange={handleToggle("spendingAlerts")}
-                disabled={!settings.emailEnabled}
-              />
-            </main>
-            <Separator />
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("financial.budgetAlerts")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("financial.budgetAlertsHint")}</p>
-              </main>
-              <Switch
-                checked={settings.budgetAlerts}
-                onCheckedChange={handleToggle("budgetAlerts")}
-                disabled={!settings.emailEnabled}
-              />
-            </main>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.15}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbWallet className='h-4 w-4' />
+                {t("financial.title")}
+              </CardTitle>
+              <CardDescription>{t("financial.description")}</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("financial.spendingAlerts")}</Label>
+                  <p>{t("financial.spendingAlertsHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.spendingAlerts}
+                  onCheckedChange={handleToggle("spendingAlerts")}
+                  disabled={!settings.emailEnabled}
+                />
+              </div>
+              <Separator />
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("financial.budgetAlerts")}</Label>
+                  <p>{t("financial.budgetAlertsHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.budgetAlerts}
+                  onCheckedChange={handleToggle("budgetAlerts")}
+                  disabled={!settings.emailEnabled}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Product Updates */}
-        <Card>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbSparkles className='h-4 w-4' />
-              {t("updates.title")}
-            </CardTitle>
-            <CardDescription>{t("updates.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("updates.newFeatures")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("updates.newFeaturesHint")}</p>
-              </main>
-              <Switch
-                checked={settings.newFeatures}
-                onCheckedChange={handleToggle("newFeatures")}
-                disabled={!settings.emailEnabled}
-              />
-            </main>
-            <Separator />
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("updates.marketing")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("updates.marketingHint")}</p>
-              </main>
-              <Switch
-                checked={settings.marketingEmails}
-                onCheckedChange={handleToggle("marketingEmails")}
-                disabled={!settings.emailEnabled}
-              />
-            </main>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.2}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbSparkles className='h-4 w-4' />
+                {t("updates.title")}
+              </CardTitle>
+              <CardDescription>{t("updates.description")}</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("updates.newFeatures")}</Label>
+                  <p>{t("updates.newFeaturesHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.newFeatures}
+                  onCheckedChange={handleToggle("newFeatures")}
+                  disabled={!settings.emailEnabled}
+                />
+              </div>
+              <Separator />
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("updates.marketing")}</Label>
+                  <p>{t("updates.marketingHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.marketingEmails}
+                  onCheckedChange={handleToggle("marketingEmails")}
+                  disabled={!settings.emailEnabled}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Security Notifications */}
-        <Card>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbShield className='h-4 w-4' />
-              {t("security.title")}
-            </CardTitle>
-            <CardDescription>{t("security.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <main className='flex items-center justify-between'>
-              <main>
-                <Label>{t("security.securityAlerts")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("security.securityAlertsHint")}</p>
-              </main>
-              <Switch
-                checked={settings.securityAlerts}
-                onCheckedChange={handleToggle("securityAlerts")}
-              />
-            </main>
-            <main className='bg-muted/50 mt-4 rounded-lg p-3'>
-              <p className='text-muted-foreground flex items-center gap-2 text-xs'>
-                <TbBell className='h-4 w-4' />
-                {t("security.alwaysOnNote")}
-              </p>
-            </main>
-          </CardContent>
-        </Card>
-      </main>
-    </main>
+        <motion.div
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.25}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbShield className='h-4 w-4' />
+                {t("security.title")}
+              </CardTitle>
+              <CardDescription>{t("security.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("security.securityAlerts")}</Label>
+                  <p>{t("security.securityAlertsHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.securityAlerts}
+                  onCheckedChange={handleToggle("securityAlerts")}
+                />
+              </div>
+              <div className={styles["alwaysOnNote"]}>
+                <p>
+                  <TbBell />
+                  {t("security.alwaysOnNote")}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </motion.section>
   );
 }
