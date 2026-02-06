@@ -33,9 +33,9 @@ export default function Hero(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Background Layers */}
-      <main className={styles["bgLayers"]}>
+      <div className={styles["bgLayers"]}>
         {/* Gradient base */}
-        <main className={styles["bgGradient"]} />
+        <div className={styles["bgGradient"]} />
 
         {/* Animated gradient orbs */}
         <motion.div
@@ -94,17 +94,17 @@ export default function Hero(): React.JSX.Element {
         </motion.div>
 
         {/* Grid pattern overlay */}
-        <main className={styles["bgGrid"]} />
+        <div className={styles["bgGrid"]} />
 
         {/* Background beams */}
-        <BackgroundBeams className='opacity-40' />
-      </main>
+        <BackgroundBeams className={styles["beamsOpacity"]} />
+      </div>
 
       {/* Main Content */}
       <motion.div
         className={styles["content"]}
         style={{y, opacity, scale}}>
-        <main className={styles["contentInner"]}>
+        <div className={styles["contentInner"]}>
           {/* Status Badge */}
           <motion.div
             initial={{opacity: 0, y: 30}}
@@ -149,6 +149,7 @@ export default function Hero(): React.JSX.Element {
                 neon
                 className={styles["gradientTitle"]}
                 gradient='linear-gradient(90deg, #3b82f6 0%, #8b5cf6 25%, #d946ef 50%, #8b5cf6 75%, #3b82f6 100%)'
+                transition={{duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
               />
             </h1>
           </motion.div>
@@ -252,20 +253,20 @@ export default function Hero(): React.JSX.Element {
               animate={{y: [0, 10, 0]}}
               transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}>
               <span className={styles["scrollText"]}>{t("scrollIndicator")}</span>
-              <main className={styles["scrollMouse"]}>
+              <div className={styles["scrollMouse"]}>
                 <motion.div
                   className={styles["scrollDot"]}
                   animate={{y: [0, 16, 0]}}
                   transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}
                 />
-              </main>
+              </div>
             </motion.div>
           </motion.div>
-        </main>
+        </div>
       </motion.div>
 
       {/* Bottom gradient fade */}
-      <main className={styles["bottomFade"]} />
+      <div className={styles["bottomFade"]} />
     </section>
   );
 }

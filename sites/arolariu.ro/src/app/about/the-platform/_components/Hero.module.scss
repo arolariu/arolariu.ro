@@ -80,6 +80,11 @@
   background-size: 48px 48px;
 }
 
+// Background beams opacity
+.beamsOpacity {
+  opacity: 0.4;
+}
+
 // Main content
 .content {
   position: relative;
@@ -262,6 +267,11 @@
   font-size: font-size('lg');
   font-weight: font-weight('semibold');
   cursor: pointer;
+
+  // Override global a{color: hsl(var(--primary))} for asChild Link usage
+  &:any-link {
+    color: inherit;
+  }
 }
 
 .ctaIcon {

@@ -113,8 +113,9 @@
 // Event icon on timeline
 .eventIcon {
   position: absolute;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   z-index: 20;
   display: flex;
   align-items: center;
