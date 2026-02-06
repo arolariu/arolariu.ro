@@ -110,7 +110,7 @@ export default function Perspectives(): React.JSX.Element {
     <section
       ref={sectionRef}
       className={styles["section"]}>
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={inView ? {opacity: 1, y: 0} : {opacity: 0, y: 20}}
@@ -134,11 +134,11 @@ export default function Perspectives(): React.JSX.Element {
               variants={itemVariants}>
               <Card className={styles["card"]}>
                 <CardContent className={styles["cardContent"]}>
-                  <main className={styles["quoteIconWrapper"]}>
+                  <div className={styles["quoteIconWrapper"]}>
                     <TbQuote className={styles["quoteIcon"]} />
-                  </main>
+                  </div>
                   <p className={styles["quote"]}>&ldquo;{perspective.quote}&rdquo;</p>
-                  <main className={styles["authorInfo"]}>
+                  <div className={styles["authorInfo"]}>
                     <Avatar>
                       <AvatarImage
                         src={perspective.avatar}
@@ -151,19 +151,19 @@ export default function Perspectives(): React.JSX.Element {
                           .join("")}
                       </AvatarFallback>
                     </Avatar>
-                    <main>
+                    <div>
                       <p className={styles["authorName"]}>{perspective.author}</p>
                       <p className={styles["authorPosition"]}>
                         {perspective.position} - {perspective.company}
                       </p>
-                    </main>
-                  </main>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
         </motion.div>
-      </main>
+      </div>
     </section>
   );
 }

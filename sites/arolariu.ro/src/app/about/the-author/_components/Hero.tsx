@@ -39,7 +39,7 @@ export default function Hero(): React.JSX.Element {
       <motion.div
         style={{y, opacity}}
         className={styles["content"]}>
-        <main className={styles["contentInner"]}>
+        <div className={styles["contentInner"]}>
           <motion.div
             initial={{scale: 0.8, opacity: 0}}
             animate={{scale: 1, opacity: 1}}
@@ -49,7 +49,7 @@ export default function Hero(): React.JSX.Element {
               src='/images/about/the-author/author.jpeg'
               alt='Alexandru Olariu'
               fill
-              className='object-cover'
+              className={styles["imageObjectCover"]}
               quality={100}
               priority
             />
@@ -59,7 +59,7 @@ export default function Hero(): React.JSX.Element {
             <TypewriterTextSmooth
               words={words}
               className={styles["title"]}
-              cursorClassName='hidden'
+              cursorClassName={styles["cursorHidden"]}
             />
           </motion.div>
 
@@ -70,7 +70,7 @@ export default function Hero(): React.JSX.Element {
             className='blue-underline'>
             <span className={styles["subtitle"]}>{t("subtitle")}</span>
           </motion.div>
-        </main>
+        </div>
       </motion.div>
     </section>
   );

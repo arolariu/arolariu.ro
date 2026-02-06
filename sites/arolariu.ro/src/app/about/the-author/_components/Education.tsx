@@ -147,7 +147,7 @@ export default function Education(): React.JSX.Element {
             data-index={index}
             onMouseEnter={handleCardMouseEnter}
             onMouseLeave={handleCardMouseLeave}>
-            <main className={styles["cardContainer"]}>
+            <div className={styles["cardContainer"]}>
               <AnimatePresence
                 initial={false}
                 mode='wait'>
@@ -161,7 +161,7 @@ export default function Education(): React.JSX.Element {
                     className={styles["card"]}>
                     <Card className={styles["cardInner"]}>
                       <CardContent className={styles["cardContent"]}>
-                        <main className={styles["cardLeft"]}>
+                        <div className={styles["cardLeft"]}>
                           <motion.div
                             className={styles["schoolIconWrapper"]}
                             whileHover={{scale: 1.1, rotate: 5}}
@@ -170,20 +170,20 @@ export default function Education(): React.JSX.Element {
                             <TbSchool className={styles["schoolIcon"]} />
                           </motion.div>
                           <h3 className={styles["degree"]}>{item.degree}</h3>
-                          <main className={styles["metaItem"]}>
+                          <div className={styles["metaItem"]}>
                             <TbCalendar className={styles["metaIcon"]} />
                             <span>{item.period}</span>
-                          </main>
-                          <main className={styles["metaItem"]}>
+                          </div>
+                          <div className={styles["metaItem"]}>
                             <TbMap className={styles["metaIcon"]} />
                             <span>{item.location}</span>
-                          </main>
-                          <main className={styles["metaItem"]}>
+                          </div>
+                          <div className={styles["metaItem"]}>
                             <TbBuildingCommunity className={styles["metaIcon"]} />
                             <span>{item.institution}</span>
-                          </main>
-                        </main>
-                        <main className={styles["cardRight"]}>
+                          </div>
+                        </div>
+                        <div className={styles["cardRight"]}>
                           <h4 className={styles["coursesHeader"]}>
                             <TbBook className={styles["coursesIcon"]} />
                             {item.coursesTitle}
@@ -215,7 +215,7 @@ export default function Education(): React.JSX.Element {
                             <TbInfoCircle className={styles["ctaIcon"]} />
                             {item.aboutTheProgramCta}
                           </Button>
-                        </main>
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -229,7 +229,7 @@ export default function Education(): React.JSX.Element {
                     className={styles["card"]}>
                     <Card className={styles["cardInner"]}>
                       <CardContent className={styles["backCard"]}>
-                        <main className={styles["backHeader"]}>
+                        <div className={styles["backHeader"]}>
                           <h3 className={styles["backTitle"]}>{item.institution}</h3>
                           <Button
                             variant='ghost'
@@ -239,15 +239,15 @@ export default function Education(): React.JSX.Element {
                             onClick={handleToggleFlipClick}>
                             <TbArrowLeft className={styles["backIcon"]} />
                           </Button>
-                        </main>
+                        </div>
 
-                        <main className={styles["scrollContent"]}>
-                          <main className={styles["scrollSection"]}>
+                        <div className={styles["scrollContent"]}>
+                          <div className={styles["scrollSection"]}>
                             <h4 className={styles["scrollSectionTitle"]}>{item.aboutTheProgramTitle}</h4>
                             <p>{item.aboutTheProgramDescription}</p>
-                          </main>
+                          </div>
 
-                          <main className={styles["scrollSection"]}>
+                          <div className={styles["scrollSection"]}>
                             <h4 className={styles["scrollSectionTitle"]}>{item.aboutTheProgramLearningsTitle}</h4>
                             <ul className={styles["courseList"]}>
                               {item.aboutTheProgramLearnings.map((learning) => (
@@ -265,14 +265,14 @@ export default function Education(): React.JSX.Element {
                                 </motion.li>
                               ))}
                             </ul>
-                          </main>
-                        </main>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </main>
+            </div>
             {activeIndex === index && !isFlipped.includes(index) && (
               <motion.div
                 className={styles["glowEffect"]}

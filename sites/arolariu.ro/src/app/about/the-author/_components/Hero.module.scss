@@ -50,27 +50,50 @@
 // Title container
 .titleWrapper {
   text-align: center;
+  justify-content: center;
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+
+  // Override TypewriterTextSmooth internal text sizing
+  div {
+    font-size: inherit;
+  }
 }
 
 .title {
   text-align: center;
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
-
-  @include respond-to('md') {
-    font-size: font-size('6xl');
-  }
 }
 
 // Gradient word styling (for typewriter)
 .gradientWord {
   display: inline-block;
   text-align: center;
-  font-size: font-size('xl');
   background: linear-gradient(to right, #3b82f6, #a855f7);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+// Image object-fit
+.imageObjectCover {
+  object-fit: cover;
+}
+
+// Hidden cursor for typewriter
+.cursorHidden {
+  display: none;
 }
 
 // Subtitle

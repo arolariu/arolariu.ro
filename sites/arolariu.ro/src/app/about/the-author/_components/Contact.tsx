@@ -11,28 +11,28 @@ const contactLinks = [
   {
     id: "email",
     label: "admin@arolariu.ro",
-    icon: <TbMail className='h-5 w-5' />,
+    icon: <TbMail className={styles["linkIcon"]} />,
     href: "mailto:admin@arolariu.ro",
     color: "#D14836",
   },
   {
     id: "linkedin",
     label: "/olariu-alexandru",
-    icon: <TbBrandLinkedin className='h-5 w-5' />,
+    icon: <TbBrandLinkedin className={styles["linkIcon"]} />,
     href: "https://www.linkedin.com/in/olariu-alexandru/",
     color: "#0077B5",
   },
   {
     id: "github",
     label: "/arolariu",
-    icon: <TbBrandGithub className='h-5 w-5' />,
+    icon: <TbBrandGithub className={styles["linkIcon"]} />,
     href: "https://github.com/arolariu",
     color: "#333",
   },
   {
     id: "website",
     label: "arolariu.ro",
-    icon: <TbWorld className='h-5 w-5' />,
+    icon: <TbWorld className={styles["linkIcon"]} />,
     href: "https://arolariu.ro",
     color: "#1e90ff",
   },
@@ -100,7 +100,7 @@ export default function Contact(): React.JSX.Element {
         className={styles["grid"]}>
         <motion.div variants={itemVariants}>
           <Card className={styles["card"]}>
-            <main className={styles["cardAccent"]} />
+            <div className={styles["cardAccent"]} />
 
             <CardHeader>
               <CardTitle className={styles["cardTitle"]}>{t("socials.title")}</CardTitle>
@@ -108,7 +108,7 @@ export default function Contact(): React.JSX.Element {
             </CardHeader>
 
             <CardContent className={styles["linksContainer"]}>
-              <main className={styles["linksGrid"]}>
+              <div className={styles["linksGrid"]}>
                 {contactLinks.map((link, index) => (
                   <motion.div
                     key={link.id}
@@ -119,25 +119,25 @@ export default function Contact(): React.JSX.Element {
                     onMouseEnter={handleLinkMouseEnter}
                     onMouseLeave={handleLinkMouseLeave}
                     className={styles["linkItemWrapper"]}>
-                    <main
+                    <div
                       className={`${styles["linkBg"]} ${hoveredLink === link.id ? styles["linkBgActive"] : ""}`}
                       style={{backgroundColor: link.color}}
                     />
 
-                    <main className={styles["linkContent"]}>
-                      <main className={styles["linkInfo"]}>
-                        <main
+                    <div className={styles["linkContent"]}>
+                      <div className={styles["linkInfo"]}>
+                        <div
                           className={styles["linkIconWrapper"]}
                           style={{
                             backgroundColor: hoveredLink === link.id ? link.color : "rgba(var(--primary), 0.1)",
                             color: hoveredLink === link.id ? "white" : "hsl(var(--primary))",
                           }}>
                           {link.icon}
-                        </main>
+                        </div>
                         <span className={styles["linkLabel"]}>{link.label}</span>
-                      </main>
+                      </div>
 
-                      <main className={styles["linkActions"]}>
+                      <div className={styles["linkActions"]}>
                         {link.id === "email" && (
                           <motion.button
                             onClick={copyEmail}
@@ -157,7 +157,7 @@ export default function Contact(): React.JSX.Element {
                           whileTap={{scale: 0.95}}>
                           <TbExternalLink className={styles["actionIcon"]} />
                         </motion.a>
-                      </main>
+                      </div>
 
                       <motion.div
                         className={styles["linkProgress"]}
@@ -165,22 +165,22 @@ export default function Contact(): React.JSX.Element {
                         animate={{width: hoveredLink === link.id ? "100%" : "0%"}}
                         transition={{duration: 0.3}}
                       />
-                    </main>
+                    </div>
                   </motion.div>
                 ))}
-              </main>
+              </div>
 
-              <main className={styles["linksFooter"]}>
+              <div className={styles["linksFooter"]}>
                 <span className={styles["linksFooterText"]}>{t("socials.footer")}</span>
-              </main>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div variants={itemVariants}>
           <Card className={styles["collaborateCard"]}>
-            <main className={styles["gridPattern"]} />
-            <main className={styles["cardAccent"]} />
+            <div className={styles["gridPattern"]} />
+            <div className={styles["cardAccent"]} />
 
             <CardHeader>
               <CardTitle className={styles["cardTitle"]}>{t("collaborate.title")}</CardTitle>
@@ -188,7 +188,7 @@ export default function Contact(): React.JSX.Element {
             </CardHeader>
 
             <CardContent>
-              <main className={styles["disciplinesGrid"]}>
+              <div className={styles["disciplinesGrid"]}>
                 {[
                   t("collaborate.discipline1"),
                   t("collaborate.discipline2"),
@@ -205,7 +205,7 @@ export default function Contact(): React.JSX.Element {
                     <span className={styles["disciplineText"]}>{field}</span>
                   </motion.div>
                 ))}
-              </main>
+              </div>
 
               <p className={styles["footerText"]}>{t("collaborate.footer")}</p>
 

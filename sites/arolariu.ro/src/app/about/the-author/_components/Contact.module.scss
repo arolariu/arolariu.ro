@@ -98,6 +98,12 @@
   gap: space(4);
 }
 
+// Link icon size (replaces h-5 w-5)
+.linkIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 // Link item wrapper
 .linkItemWrapper {
   position: relative;

@@ -1,0 +1,271 @@
+// ===========================================
+// THE AUTHOR LOADING SKELETON STYLES
+// Mirrors page.tsx + component layout 1:1
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+// ===========================================
+// PAGE WRAPPER
+// ===========================================
+.page {
+  position: relative;
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.inner {
+  padding-bottom: space(12);
+}
+
+// ===========================================
+// HERO SECTION
+// ===========================================
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: space(6);
+}
+
+.heroAvatar {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 9999px;
+
+  @include respond-to('md') {
+    width: 10rem;
+    height: 10rem;
+  }
+}
+
+.heroTitle {
+  height: 3rem;
+  width: 20rem;
+  border-radius: radius('lg');
+
+  @include respond-to('md') {
+    height: 4rem;
+    width: 28rem;
+  }
+}
+
+.heroSubtitle {
+  height: 1.5rem;
+  width: 16rem;
+  border-radius: radius('lg');
+
+  @include respond-to('md') {
+    width: 24rem;
+  }
+}
+
+// ===========================================
+// SECTION SKELETON (reusable)
+// ===========================================
+.section {
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+.sectionMuted {
+  composes: section;
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+.sectionContainer {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+.sectionHeader {
+  @include flex-column-center;
+  gap: space(3);
+  margin-bottom: space(16);
+}
+
+.sectionTitle {
+  height: 2.5rem;
+  width: 14rem;
+  border-radius: radius('lg');
+}
+
+.sectionSubtitle {
+  height: 1.25rem;
+  width: 20rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// BIOGRAPHY
+// ===========================================
+.biographyCard {
+  border-radius: radius('xl');
+  border: 1px solid hsl(var(--border) / 0.5);
+  padding: space(6);
+  @include flex-column;
+  gap: space(4);
+
+  @include respond-to('md') {
+    padding: space(8);
+  }
+}
+
+.biographyLine {
+  height: 3rem;
+  width: 100%;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// COMPETENCIES
+// ===========================================
+.competenciesGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.competencyCard {
+  height: 10rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// EXPERIENCE
+// ===========================================
+.experienceGrid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+.timelineSkeleton {
+  @include flex-column;
+  gap: space(6);
+}
+
+.timelineItem {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+}
+
+.timelineCircle {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.timelineLines {
+  @include flex-column;
+  gap: space(2);
+  flex: 1;
+}
+
+.timelineLine1 {
+  height: 1.25rem;
+  width: 80%;
+  border-radius: radius('md');
+}
+
+.timelineLine2 {
+  height: 1rem;
+  width: 60%;
+  border-radius: radius('md');
+}
+
+.experienceCardSkeleton {
+  height: 24rem;
+  border-radius: radius('xl');
+}
+
+// ===========================================
+// EDUCATION
+// ===========================================
+.educationGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.educationCard {
+  height: 16rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// CERTIFICATIONS
+// ===========================================
+.certificationsGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.certificationCard {
+  height: 18rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// PERSPECTIVES
+// ===========================================
+.perspectivesGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.perspectiveCard {
+  height: 12rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// CONTACT
+// ===========================================
+.contactGrid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.contactCard {
+  height: 20rem;
+  border-radius: radius('lg');
+}

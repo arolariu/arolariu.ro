@@ -137,7 +137,7 @@ export default function Experience(): React.JSX.Element {
 
   return (
     <section className={styles["section"]}>
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
@@ -147,10 +147,10 @@ export default function Experience(): React.JSX.Element {
           <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
 
-        <main className={styles["grid"]}>
+        <div className={styles["grid"]}>
           {/* Timeline Navigation */}
-          <main className={styles["timelineNav"]}>
-            <main className={styles["timelineLine"]} />
+          <div className={styles["timelineNav"]}>
+            <div className={styles["timelineLine"]} />
 
             {experiences.map((experience, index) => (
               <motion.div
@@ -164,29 +164,29 @@ export default function Experience(): React.JSX.Element {
                   data-index={index}
                   onClick={handleExperienceClick}
                   className={activeExpIndex === index ? styles["timelineButtonActive"] : styles["timelineButtonInactive"]}>
-                  <main className={activeExpIndex === index ? styles["timelineIconActive"] : styles["timelineIconInactive"]}>
-                    <main className={activeExpIndex === index ? styles["timelineIconInnerActive"] : styles["timelineIconInnerInactive"]}>
+                  <div className={activeExpIndex === index ? styles["timelineIconActive"] : styles["timelineIconInactive"]}>
+                    <div className={activeExpIndex === index ? styles["timelineIconInnerActive"] : styles["timelineIconInnerInactive"]}>
                       <TbBriefcase className={styles["timelineIconSvg"]} />
-                    </main>
-                  </main>
+                    </div>
+                  </div>
 
-                  <main className={styles["timelineContent"]}>
+                  <div className={styles["timelineContent"]}>
                     <h3 className={activeExpIndex === index ? styles["timelineCompanyActive"] : styles["timelineCompany"]}>
                       {experience.company}
                     </h3>
                     <p className={styles["timelineRole"]}>{experience.role}</p>
-                    <main className={styles["timelineMeta"]}>
+                    <div className={styles["timelineMeta"]}>
                       <TbCalendar className={styles["timelineMetaIcon"]} />
                       <span>{experience.period}</span>
-                    </main>
-                  </main>
+                    </div>
+                  </div>
                 </Button>
               </motion.div>
             ))}
-          </main>
+          </div>
 
           {/* Timeline Content */}
-          <main className={styles["experienceCard"]}>
+          <div className={styles["experienceCard"]}>
             <AnimatePresence mode='wait'>
               <motion.div
                 initial={{opacity: 0, x: 20}}
@@ -194,28 +194,28 @@ export default function Experience(): React.JSX.Element {
                 exit={{opacity: 0, x: -20}}
                 transition={{duration: 0.3}}
                 className={styles["card"]}>
-                <main className={styles["cardAccentTop"]} />
+                <div className={styles["cardAccentTop"]} />
 
-                <main className={styles["cardHeader"]}>
-                  <main>
+                <div className={styles["cardHeader"]}>
+                  <div>
                     <h3 className={styles["cardTitle"]}>{currentExperience.role}</h3>
-                    <main className={styles["cardCompany"]}>
+                    <div className={styles["cardCompany"]}>
                       <span>{currentExperience.company}</span>
-                    </main>
-                    <main className={styles["cardLocation"]}>
+                    </div>
+                    <div className={styles["cardLocation"]}>
                       <TbMap className={styles["cardMetaIcon"]} />
                       <span>{currentExperience.location}</span>
-                    </main>
-                  </main>
+                    </div>
+                  </div>
 
-                  <main className={styles["logoWrapper"]}>
+                  <div className={styles["logoWrapper"]}>
                     <motion.div className={styles["logoInner"]}>{currentExperience.logo}</motion.div>
-                  </main>
-                </main>
+                  </div>
+                </div>
 
                 <p className={styles["cardDescription"]}>{currentExperience.description}</p>
 
-                <main className={styles["cardSection"]}>
+                <div className={styles["cardSection"]}>
                   <h4 className={styles["cardSectionTitle"]}>{t("responsibilitiesLabel")}</h4>
                   <ul className={styles["list"]}>
                     {currentExperience.responsibilities.map((responsability, i) => (
@@ -230,9 +230,9 @@ export default function Experience(): React.JSX.Element {
                       </motion.li>
                     ))}
                   </ul>
-                </main>
+                </div>
 
-                <main className={styles["cardSection"]}>
+                <div className={styles["cardSection"]}>
                   <h4 className={styles["cardSectionTitle"]}>{t("achievementsLabel")}</h4>
                   <ul className={styles["list"]}>
                     {currentExperience.achievements.map((achievement, i) => (
@@ -247,11 +247,11 @@ export default function Experience(): React.JSX.Element {
                       </motion.li>
                     ))}
                   </ul>
-                </main>
+                </div>
 
-                <main>
+                <div>
                   <h4 className={styles["cardSectionTitle"]}>{t("techSkillsLabel")}</h4>
-                  <main className={styles["skills"]}>
+                  <div className={styles["skills"]}>
                     {currentExperience.skills.map((skill, i) => (
                       <motion.div
                         key={`${skill.slice(0, 20)}`}
@@ -265,8 +265,8 @@ export default function Experience(): React.JSX.Element {
                         </Badge>
                       </motion.div>
                     ))}
-                  </main>
-                </main>
+                  </div>
+                </div>
 
                 <motion.div
                   className={styles["cardAccentBottom"]}
@@ -276,9 +276,9 @@ export default function Experience(): React.JSX.Element {
                 />
               </motion.div>
             </AnimatePresence>
-          </main>
-        </main>
-      </main>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
