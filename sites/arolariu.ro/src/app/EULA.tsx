@@ -20,11 +20,13 @@ import {
   DialogTitle,
   DialogTrigger,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
   Switch,
-  Tabs,
-  TabsList,
-  TabsTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {type Locale, useTranslations} from "next-intl";
@@ -66,17 +68,12 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
     setEulaCookie(true);
   }, [cookieState, locale]);
 
-  const handleLocaleEnClick = useCallback(() => {
-    handleLocale("en");
-  }, [handleLocale]);
-
-  const handleLocaleRoClick = useCallback(() => {
-    handleLocale("ro");
-  }, [handleLocale]);
-
-  const handleLocaleFrClick = useCallback(() => {
-    handleLocale("fr");
-  }, [handleLocale]);
+  const handleLocaleChange = useCallback(
+    (value: string) => {
+      handleLocale(value);
+    },
+    [handleLocale],
+  );
 
   const handleAnalyticsCheckedChange = useCallback((checked: boolean) => {
     setCookieState((prev) => ({...prev, analytics: checked}));
@@ -128,41 +125,28 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             </CardTitle>
             <CardDescription className={styles["subtitle"]}>{t("subtitle")}</CardDescription>
 
-            <Tabs
-              defaultValue={locale}
-              className={styles["tabsWrapper"]}>
-              <TabsList className={styles["tabsList"]}>
-                <TabsTrigger
-                  value='en'
-                  onClick={handleLocaleEnClick}
-                  className={styles["tabsTrigger"]}>
-                  <TbGlobe className={styles["globeIcon"]} />
-                  English (EN)
-                </TabsTrigger>
-                <Separator
-                  orientation='vertical'
-                  className={styles["tabsSeparator"]}
-                />
-                <TabsTrigger
-                  value='ro'
-                  onClick={handleLocaleRoClick}
-                  className={styles["tabsTrigger"]}>
-                  <TbGlobe className={styles["globeIcon"]} />
-                  Română (RO)
-                </TabsTrigger>
-                <Separator
-                  orientation='vertical'
-                  className={styles["tabsSeparator"]}
-                />
-                <TabsTrigger
-                  value='fr'
-                  onClick={handleLocaleFrClick}
-                  className={styles["tabsTrigger"]}>
-                  <TbGlobe className={styles["globeIcon"]} />
-                  Français (FR)
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className={styles["localePicker"]}>
+              <Label
+                htmlFor='locale-select'
+                className={styles["localeLabel"]}>
+                <TbGlobe className={styles["globeIcon"]} />
+                {t("language", {fallback: "Language"})}
+              </Label>
+              <Select
+                defaultValue={locale}
+                onValueChange={handleLocaleChange}>
+                <SelectTrigger
+                  id='locale-select'
+                  className={styles["localeSelect"]}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='en'>English (EN)</SelectItem>
+                  <SelectItem value='ro'>Română (RO)</SelectItem>
+                  <SelectItem value='fr'>Français (FR)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
 
           <CardContent className={styles["contentArea"]}>

@@ -1501,6 +1501,7 @@
   },
   "EULA": {
     "accept": "Accept acest acord",
+    "language": "Limbă",
     "content": "Acest acord de licență pentru utilizatorul final („EULA”) reprezintă un acord între dvs. și AROLARIU.RO și reglementează utilizarea acestui software. Vă rugăm să citiți cu atenție următoarele documente înainte de a utiliza site-ul web:",
     "cookiesPolicy": {
       "cookies": {

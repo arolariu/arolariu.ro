@@ -1501,6 +1501,7 @@
   },
   "EULA": {
     "accept": "Accepter le CLUF",
+    "language": "Langue",
     "content": "En utilisant ce site web, vous acceptez les termes et conditions et la politique de confidentialité du Contrat de Licence Utilisateur Final (CLUF). Veuillez lire attentivement les documents suivants avant d'utiliser le site web :",
     "cookiesPolicy": {
       "cookies": {

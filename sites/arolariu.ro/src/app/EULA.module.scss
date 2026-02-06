@@ -58,39 +58,33 @@
 }
 
 // ===========================================
-// LOCALE TABS
+// LOCALE PICKER
 // ===========================================
-.tabsWrapper {
+.localePicker {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: space(3);
   width: 100%;
-  max-width: 24rem;
+  max-width: 20rem;
   margin-left: auto;
   margin-right: auto;
 }
 
-.tabsList {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: space(2);
-}
-
-.tabsTrigger {
+.localeLabel {
   display: flex;
   align-items: center;
   gap: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.tabsSeparator {
-  height: 1.5rem;
-  border-width: 2px;
-  border-radius: radius('xl');
-  border-color: hsl(var(--muted-foreground) / 0.5);
+.localeSelect {
+  width: 100%;
+  cursor: pointer;
 }
 
 .globeIcon {

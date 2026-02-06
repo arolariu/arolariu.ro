@@ -1501,6 +1501,7 @@
   },
   "EULA": {
     "accept": "Accept EULA",
+    "language": "Language",
     "content": "By using this website, you agree to the terms and conditions and to the privacy policy of the End User License Agreement (EULA). Please read the following documents carefully before using the website:",
     "cookiesPolicy": {
       "cookies": {

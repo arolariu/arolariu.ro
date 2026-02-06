@@ -14,7 +14,7 @@ export default function EulaShimmer(): React.JSX.Element {
         </div>
         <Skeleton className={styles["shimmerTitle"]} />
 
-        <div className={styles["tabsWrapper"]}>
+        <div className={styles["localePicker"]}>
           <Skeleton className={styles["shimmerTabs"]} />
         </div>
       </CardHeader>
