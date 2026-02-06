@@ -44,6 +44,7 @@
   margin-bottom: space(4);
   font-size: font-size('3xl');
   font-weight: font-weight('bold');
+  @include gradient-text;
 
   @include respond-to('sm') {
     font-size: font-size('4xl');
@@ -60,19 +61,31 @@
 
 // Accordion
 .accordion {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
   width: 100%;
 }
 
 .accordionItem {
-  border-bottom: 1px solid hsl(var(--border) / 0.5);
-  @include transition(border-color);
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: radius('lg');
+  padding: space(2) space(4);
+  @include transition(border-color, box-shadow);
 
   &:hover {
     border-color: hsl(var(--primary) / 0.3);
   }
+
+  &[data-state='open'] {
+    border-color: hsl(var(--primary) / 0.2);
+    @include shadow('sm');
+  }
 }
 
 .accordionTrigger {
+  padding: space(4) 0;
+
   &:hover {
     text-decoration: none;
   }
@@ -85,6 +98,7 @@
 }
 
 .answer {
+  padding-bottom: space(4);
   line-height: line-height('relaxed');
   color: hsl(var(--muted-foreground));
 }

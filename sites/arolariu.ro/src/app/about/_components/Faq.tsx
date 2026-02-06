@@ -21,19 +21,19 @@ export default function Faq(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["section"]}>
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["header"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <main className={styles["iconWrapper"]}>
-            <main className={styles["iconInner"]}>
+          <div className={styles["iconWrapper"]}>
+            <div className={styles["iconInner"]}>
               <TbQuestionMark className={styles["icon"]} />
-            </main>
-          </main>
-          <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
+            </div>
+          </div>
+          <h2 className={styles["title"]}>{t("title")}</h2>
           <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
 
@@ -66,7 +66,7 @@ export default function Faq(): React.JSX.Element {
             ))}
           </Accordion>
         </motion.div>
-      </main>
+      </div>
     </section>
   );
 }

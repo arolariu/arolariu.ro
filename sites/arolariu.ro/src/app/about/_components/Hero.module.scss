@@ -137,6 +137,11 @@
 .ctaButton {
   padding-left: space(8);
   padding-right: space(8);
+
+  // Override global a{color: hsl(var(--primary))} for asChild Link usage
+  &:any-link {
+    color: inherit;
+  }
 }
 
 .ctaIcon {
