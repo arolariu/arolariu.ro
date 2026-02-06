@@ -5,31 +5,35 @@
  * page content also renders a main element during streaming/hydration.
  * @returns A loading component.
  */
+
+import {Skeleton} from "@arolariu/components";
+import styles from "./loading.module.scss";
+
 export default function Loading(): React.JSX.Element {
   return (
-    <div className='bg-background min-h-screen'>
+    <div className={styles["page"]}>
       {/* Hero section skeleton */}
-      <section className='relative min-h-screen overflow-hidden pt-20'>
-        <div className='container mx-auto px-4'>
-          <div className='grid min-h-[80vh] grid-cols-1 items-center gap-12 lg:grid-cols-2'>
-            {/* Left side - Text with visible h1 */}
-            <div className='relative z-10'>
-              <div className='bg-muted mb-6 h-6 w-40 animate-pulse rounded' />
-              <h1 className='text-muted-foreground mb-4 text-4xl font-bold sm:text-5xl lg:text-6xl'>Loading...</h1>
-              <div className='bg-muted mb-8 h-6 w-full max-w-lg animate-pulse rounded' />
-              <div className='bg-muted mb-8 h-6 w-full max-w-lg animate-pulse rounded' />
-              <div className='flex flex-wrap gap-4'>
-                <div className='bg-muted h-10 w-36 animate-pulse rounded' />
-                <div className='bg-muted h-10 w-36 animate-pulse rounded' />
+      <section className={styles["heroSection"]}>
+        <div className={styles["heroContainer"]}>
+          <div className={styles["heroGrid"]}>
+            {/* Left side - Text */}
+            <div className={styles["heroText"]}>
+              <Skeleton className={styles["heroBadge"]} />
+              <h1 className={styles["heroTitle"]}>Loading...</h1>
+              <Skeleton className={styles["heroLine"]} />
+              <Skeleton className={styles["heroLine"]} />
+              <div className={styles["heroButtons"]}>
+                <Skeleton className={styles["heroButton"]} />
+                <Skeleton className={styles["heroButton"]} />
               </div>
             </div>
 
-            {/* Right side - Sphere placeholder with CSS animation */}
-            <div className='relative flex flex-col items-center justify-center'>
-              <div className='relative mx-auto w-full max-w-[400px]'>
-                <div className='bg-muted aspect-square w-full animate-pulse rounded-full opacity-50' />
-                <div className='border-primary/30 absolute inset-0 animate-spin rounded-full border-2 [animation-duration:8s]' />
-                <div className='border-primary/20 absolute inset-0 animate-spin rounded-full border [animation-direction:reverse] [animation-duration:10s]' />
+            {/* Right side - Sphere placeholder */}
+            <div className={styles["heroVisual"]}>
+              <div className={styles["sphereWrapper"]}>
+                <Skeleton className={styles["sphere"]} />
+                <div className={styles["orbitRing"]} />
+                <div className={styles["orbitRingReverse"]} />
               </div>
             </div>
           </div>
@@ -37,19 +41,19 @@ export default function Loading(): React.JSX.Element {
       </section>
 
       {/* Technology cards section */}
-      <section className='relative py-20'>
-        <div className='container mx-auto px-4'>
-          <div className='mb-16 text-center'>
-            <div className='bg-muted mx-auto mb-4 h-6 w-40 animate-pulse rounded' />
-            <div className='bg-muted mx-auto mb-6 h-10 w-64 animate-pulse rounded' />
-            <div className='bg-muted mx-auto h-5 w-96 animate-pulse rounded' />
+      <section className={styles["cardsSection"]}>
+        <div className={styles["cardsContainer"]}>
+          <div className={styles["cardsHeader"]}>
+            <Skeleton className={styles["cardsHeaderBadge"]} />
+            <Skeleton className={styles["cardsHeaderTitle"]} />
+            <Skeleton className={styles["cardsHeaderSubtitle"]} />
           </div>
 
-          <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
+          <div className={styles["cardsGrid"]}>
             {[1, 2, 3, 4, 5, 6].map((key) => (
-              <div
+              <Skeleton
                 key={key}
-                className='bg-muted h-64 w-full animate-pulse rounded-lg'
+                className={styles["cardSkeleton"]}
               />
             ))}
           </div>
