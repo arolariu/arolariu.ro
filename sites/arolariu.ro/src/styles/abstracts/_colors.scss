@@ -1,3 +1,5 @@
+@use 'sass:map';
+
 // ===========================================
 // COLOR SYSTEM
 // ===========================================
@@ -58,18 +60,18 @@ $color-vars: (
 // Get color as HSL CSS variable
 // Usage: color: color('primary');
 @function color($name) {
-  @if map-has-key($color-vars, $name) {
-    $var-name: map-get($color-vars, $name);
+  @if map.has-key($color-vars, $name) {
+    $var-name: map.get($color-vars, $name);
     @return hsl(var(#{$var-name}));
   }
-  @error "Unknown color: #{$name}. Available: #{map-keys($color-vars)}";
+  @error "Unknown color: #{$name}. Available: #{map.keys($color-vars)}";
 }
 
 // Get color with alpha
 // Usage: background: color-alpha('primary', 0.5);
 @function color-alpha($name, $alpha) {
-  @if map-has-key($color-vars, $name) {
-    $var-name: map-get($color-vars, $name);
+  @if map.has-key($color-vars, $name) {
+    $var-name: map.get($color-vars, $name);
     @return hsl(var(#{$var-name}) / #{$alpha});
   }
   @error "Unknown color: #{$name}";
@@ -87,8 +89,8 @@ $static-colors: (
 );
 
 @function static-color($name) {
-  @if map-has-key($static-colors, $name) {
-    @return map-get($static-colors, $name);
+  @if map.has-key($static-colors, $name) {
+    @return map.get($static-colors, $name);
   }
   @error "Unknown static color: #{$name}";
 }
