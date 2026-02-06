@@ -97,12 +97,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
       transition={{duration: 0.2}}>
       <Card className='group transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between pb-2'>
-          <div>
+          <main>
             <CardTitle>Recipes You Can Make</CardTitle>
             <CardDescription>Based on items in this invoice</CardDescription>
-          </div>
+          </main>
           <TooltipProvider>
-            <div className='flex flex-row gap-4'>
+            <main className='flex flex-row gap-4'>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -132,21 +132,21 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                   <p>Create a new recipe with these ingredients</p>
                 </TooltipContent>
               </Tooltip>
-            </div>
+            </main>
           </TooltipProvider>
         </CardHeader>
         <CardContent>
           {paginatedItems.length > 0 ? (
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <main className='grid grid-cols-1 gap-4 md:grid-cols-2'>
               {recipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.name}
                   recipe={recipe}
                 />
               ))}
-            </div>
+            </main>
           ) : (
-            <div className='py-8 text-center'>
+            <main className='py-8 text-center'>
               <p className='text-muted-foreground mb-4'>No recipes available yet</p>
               <Button
                 onClick={handleCreateFirstRecipe}
@@ -155,10 +155,10 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 <TbPlus className='mr-2 h-4 w-4' />
                 Create Your First Recipe
               </Button>
-            </div>
+            </main>
           )}
           {totalPages > 1 && (
-            <div className='flex items-center justify-between pt-4'>
+            <main className='flex items-center justify-between pt-4'>
               <Button
                 variant='ghost'
                 size='sm'
@@ -166,9 +166,9 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 disabled={currentPage === 1}>
                 Previous
               </Button>
-              <div className='text-sm'>
+              <main className='text-sm'>
                 Page {currentPage} of {totalPages}
-              </div>
+              </main>
               <Button
                 variant='ghost'
                 size='sm'
@@ -176,7 +176,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 disabled={currentPage === totalPages}>
                 Next
               </Button>
-            </div>
+            </main>
           )}
         </CardContent>
       </Card>

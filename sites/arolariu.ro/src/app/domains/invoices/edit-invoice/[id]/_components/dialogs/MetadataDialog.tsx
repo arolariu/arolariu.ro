@@ -60,8 +60,8 @@ const AddDialog = () => {
           <DialogDescription>Add additional information to this invoice</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4 py-2'>
-          <div className='space-y-2'>
+        <main className='space-y-4 py-2'>
+          <main className='space-y-2'>
             <Label htmlFor='key'>Metadata Key</Label>
             <Input
               id='key'
@@ -70,9 +70,9 @@ const AddDialog = () => {
               onChange={handleChange}
               placeholder='Enter key'
             />
-          </div>
+          </main>
 
-          <div className='space-y-2'>
+          <main className='space-y-2'>
             <Label htmlFor='value'>Metadata Value</Label>
             <Input
               id='value'
@@ -81,8 +81,8 @@ const AddDialog = () => {
               onChange={handleChange}
               placeholder='Enter value'
             />
-          </div>
-        </div>
+          </main>
+        </main>
 
         <DialogFooter>
           <Button
@@ -128,17 +128,17 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           <DialogDescription>Update the value of this metadata field</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4 py-2'>
-          <div className='space-y-2'>
+        <main className='space-y-4 py-2'>
+          <main className='space-y-2'>
             <Label htmlFor='key'>Metadata Field</Label>
             <Input
               id='key'
               value={editedMetadata["key"]}
               disabled
             />
-          </div>
+          </main>
 
-          <div className='space-y-2'>
+          <main className='space-y-2'>
             <Label htmlFor='value'>Value</Label>
             <Input
               id='value'
@@ -146,8 +146,8 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
               onChange={handleChange}
               placeholder='Enter value'
             />
-          </div>
-        </div>
+          </main>
+        </main>
 
         <DialogFooter>
           <Button

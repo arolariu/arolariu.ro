@@ -96,7 +96,7 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
           {/* Header */}
           <InvoiceHeader />
 
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+          <main className='grid grid-cols-1 gap-6 md:grid-cols-3'>
             <motion.div
               variants={containerVariants}
               initial='hidden'
@@ -166,7 +166,7 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
                 </motion.div>
               </motion.div>
             </motion.div>
-          </div>
+          </main>
         </section>
       </EditInvoiceContextProvider>
       <DialogContainer />

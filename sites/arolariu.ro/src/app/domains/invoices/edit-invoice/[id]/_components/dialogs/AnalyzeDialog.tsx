@@ -271,7 +271,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0, y: -20}}
               className='space-y-6 py-8'>
-              <div className='flex flex-col items-center justify-center space-y-4'>
+              <main className='flex flex-col items-center justify-center space-y-4'>
                 <motion.div
                   animate={{rotate: 360}}
                   transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
@@ -280,14 +280,14 @@ export default function AnalyzeDialog(): React.JSX.Element {
                 </motion.div>
                 <h3 className='text-lg font-semibold'>Analyzing Invoice</h3>
                 <p className='text-muted-foreground text-sm'>{currentStep}</p>
-              </div>
-              <div className='mx-auto max-w-md space-y-2'>
+              </main>
+              <main className='mx-auto max-w-md space-y-2'>
                 <Progress
                   value={progress}
                   className='h-2'
                 />
                 <p className='text-muted-foreground text-center text-xs'>{Math.round(progress)}% complete</p>
-              </div>
+              </main>
             </motion.div>
           ) : (
             <motion.div
@@ -297,9 +297,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className='space-y-6'>
               {/* Analysis Type Selection */}
-              <div className='space-y-3'>
+              <main className='space-y-3'>
                 <Label className='text-base font-medium'>Analysis Type</Label>
-                <div className='grid gap-3 sm:grid-cols-2'>
+                <main className='grid gap-3 sm:grid-cols-2'>
                   {ANALYSIS_OPTIONS.map((option) => (
                     <Card
                       key={option.id}
@@ -311,11 +311,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
                           : "hover:bg-muted/50 hover:border-purple-300"
                       }`}>
                       <CardHeader className='pb-2'>
-                        <div className='flex items-start justify-between'>
-                          <div className={`rounded-lg p-2 ${selectedOption === option.id ? "bg-purple-500 text-white" : "bg-muted"}`}>
+                        <main className='flex items-start justify-between'>
+                          <main className={`rounded-lg p-2 ${selectedOption === option.id ? "bg-purple-500 text-white" : "bg-muted"}`}>
                             {option.icon}
-                          </div>
-                          <div className='flex items-center gap-2'>
+                          </main>
+                          <main className='flex items-center gap-2'>
                             {option.recommended ? (
                               <Badge
                                 variant='secondary'
@@ -324,21 +324,21 @@ export default function AnalyzeDialog(): React.JSX.Element {
                               </Badge>
                             ) : null}
                             {selectedOption === option.id && <TbCheck className='h-5 w-5 text-purple-500' />}
-                          </div>
-                        </div>
+                          </main>
+                        </main>
                         <CardTitle className='text-base'>{option.title}</CardTitle>
                         <CardDescription className='text-xs'>{option.description}</CardDescription>
                       </CardHeader>
                       <CardContent className='pt-0'>
-                        <div className='text-muted-foreground flex items-center gap-1 text-xs'>
+                        <main className='text-muted-foreground flex items-center gap-1 text-xs'>
                           <TbClock className='h-3 w-3' />
                           <span>{option.estimatedTime}</span>
-                        </div>
+                        </main>
                       </CardContent>
                     </Card>
                   ))}
-                </div>
-              </div>
+                </main>
+              </main>
 
               {/* Selected Option Features */}
               {selectedConfig ? (
@@ -347,7 +347,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   animate={{opacity: 1, height: "auto"}}
                   className='space-y-2'>
                   <Label className='text-sm font-medium'>Included Features</Label>
-                  <div className='flex flex-wrap gap-2'>
+                  <main className='flex flex-wrap gap-2'>
                     {selectedConfig.features.map((feature) => (
                       <Badge
                         key={feature}
@@ -357,18 +357,18 @@ export default function AnalyzeDialog(): React.JSX.Element {
                         {feature}
                       </Badge>
                     ))}
-                  </div>
+                  </main>
                 </motion.div>
               ) : null}
 
               <Separator />
 
               {/* Analysis Enhancements */}
-              <div className='space-y-3'>
+              <main className='space-y-3'>
                 <Label className='text-base font-medium'>Enhancements (Optional)</Label>
-                <div className='space-y-3'>
+                <main className='space-y-3'>
                   {ANALYSIS_ENHANCEMENTS.map((enhancement) => (
-                    <div
+                    <main
                       key={enhancement.id}
                       className='hover:bg-muted/50 flex items-start space-x-3 rounded-lg border p-3 transition-colors'>
                       <Checkbox
@@ -377,38 +377,38 @@ export default function AnalyzeDialog(): React.JSX.Element {
                         // eslint-disable-next-line react/jsx-no-bind -- simple toggle handler
                         onCheckedChange={() => handleEnhancementToggle(enhancement.id)}
                       />
-                      <div className='flex flex-1 items-start gap-3'>
-                        <div className='text-muted-foreground mt-0.5'>{enhancement.icon}</div>
-                        <div className='space-y-1'>
+                      <main className='flex flex-1 items-start gap-3'>
+                        <main className='text-muted-foreground mt-0.5'>{enhancement.icon}</main>
+                        <main className='space-y-1'>
                           <Label
                             htmlFor={enhancement.id}
                             className='cursor-pointer font-medium'>
                             {enhancement.label}
                           </Label>
                           <p className='text-muted-foreground text-xs'>{enhancement.description}</p>
-                        </div>
-                      </div>
-                    </div>
+                        </main>
+                      </main>
+                    </main>
                   ))}
-                </div>
-              </div>
+                </main>
+              </main>
 
               {/* Analysis Summary */}
               <Card className='bg-muted/30'>
                 <CardContent className='flex items-center justify-between py-4'>
-                  <div className='flex items-center gap-3'>
+                  <main className='flex items-center gap-3'>
                     <TbFileAnalytics className='h-8 w-8 text-purple-500' />
-                    <div>
+                    <main>
                       <p className='font-medium'>{selectedConfig?.title}</p>
                       <p className='text-muted-foreground text-sm'>
                         {selectedEnhancements.length > 0 ? `+ ${selectedEnhancements.length} enhancement(s)` : "No enhancements selected"}
                       </p>
-                    </div>
-                  </div>
-                  <div className='text-right'>
+                    </main>
+                  </main>
+                  <main className='text-right'>
                     <p className='text-muted-foreground text-sm'>Estimated time</p>
                     <p className='font-semibold'>{selectedConfig?.estimatedTime}</p>
-                  </div>
+                  </main>
                 </CardContent>
               </Card>
             </motion.div>

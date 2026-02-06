@@ -48,11 +48,11 @@ function formatFileSize(bytes: number): string {
 /** Mini scan preview thumbnail */
 function ScanThumbnail({scan}: Readonly<{scan: CachedScan}>): React.JSX.Element {
   return (
-    <div className='relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800'>
+    <main className='relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800'>
       {scan.mimeType === "application/pdf" ? (
-        <div className='flex h-full items-center justify-center'>
+        <main className='flex h-full items-center justify-center'>
           <TbFileTypePdf className='h-6 w-6 text-red-500' />
-        </div>
+        </main>
       ) : (
         <Image
           src={scan.blobUrl}
@@ -62,7 +62,7 @@ function ScanThumbnail({scan}: Readonly<{scan: CachedScan}>): React.JSX.Element 
           unoptimized
         />
       )}
-    </div>
+    </main>
   );
 }
 
@@ -87,16 +87,16 @@ function ProcessStep({
   };
 
   return (
-    <div className={`flex items-start gap-3 ${isActive ? "opacity-100" : "opacity-50"}`}>
-      <div
+    <main className={`flex items-start gap-3 ${isActive ? "opacity-100" : "opacity-50"}`}>
+      <main
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors ${getClasses()}`}>
         {isComplete ? <TbCheck className='h-4 w-4' /> : step}
-      </div>
-      <div className='flex-1'>
+      </main>
+      <main className='flex-1'>
         <p className='text-sm font-medium text-gray-900 dark:text-white'>{title}</p>
         <p className='text-xs text-gray-500 dark:text-gray-400'>{description}</p>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }
 
@@ -210,16 +210,16 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       </DialogHeader>
 
       {/* Scans Preview */}
-      <div className='mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50'>
-        <div className='mb-3 flex items-center justify-between'>
+      <main className='mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50'>
+        <main className='mb-3 flex items-center justify-between'>
           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
             {t("selectedScans")} ({selectedScans.length})
           </span>
           <span className='text-xs text-gray-500 dark:text-gray-400'>
             {formatFileSize(totalSize)} {t("totalSize")}
           </span>
-        </div>
-        <div className='flex flex-wrap gap-2'>
+        </main>
+        <main className='flex flex-wrap gap-2'>
           {selectedScans.slice(0, 6).map((scan) => (
             <ScanThumbnail
               key={scan.id}
@@ -227,22 +227,22 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             />
           ))}
           {selectedScans.length > 6 ? (
-            <div className='flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400'>
+            <main className='flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400'>
               +{selectedScans.length - 6}
-            </div>
+            </main>
           ) : null}
-        </div>
-      </div>
+        </main>
+      </main>
 
       {/* Mode Selection for multiple scans */}
       {selectedScans.length > 1 ? (
-        <div className='mt-4'>
+        <main className='mt-4'>
           <p className='mb-3 text-sm font-medium text-gray-700 dark:text-gray-300'>{t("chooseMode")}</p>
           <RadioGroup
             value={mode}
             onValueChange={(v) => setMode(v as CreationMode)}>
             {/* Single mode option */}
-            <div
+            <main
               role='button'
               tabIndex={0}
               className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all ${
@@ -257,7 +257,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 id='single'
                 className='mt-0.5'
               />
-              <div className='flex-1'>
+              <main className='flex-1'>
                 <Label
                   htmlFor='single'
                   className='flex cursor-pointer items-center gap-2 font-medium'>
@@ -267,10 +267,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
                   {t("singleMode.description", {count: String(selectedScans.length)})}
                 </p>
-              </div>
-            </div>
+              </main>
+            </main>
             {/* Batch mode option */}
-            <div
+            <main
               role='button'
               tabIndex={0}
               className={`mt-2 flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all ${
@@ -285,7 +285,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 id='batch'
                 className='mt-0.5'
               />
-              <div className='flex-1'>
+              <main className='flex-1'>
                 <Label
                   htmlFor='batch'
                   className='flex cursor-pointer items-center gap-2 font-medium'>
@@ -295,21 +295,21 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
                   {t("batchMode.description", {count: String(selectedScans.length)})}
                 </p>
-              </div>
-            </div>
+              </main>
+            </main>
           </RadioGroup>
-        </div>
+        </main>
       ) : (
         /* Single scan info banner */
-        <div className='mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20'>
-          <div className='flex items-start gap-3'>
+        <main className='mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20'>
+          <main className='flex items-start gap-3'>
             <TbSparkles className='mt-0.5 h-5 w-5 shrink-0 text-blue-500' />
-            <div>
+            <main>
               <p className='font-medium text-blue-900 dark:text-blue-100'>{t("singleScanInfo.title")}</p>
               <p className='mt-1 text-sm text-blue-700 dark:text-blue-300'>{t("singleScanInfo.description")}</p>
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
       )}
 
       <DialogFooter className='mt-6'>
@@ -338,10 +338,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}
       className='py-6'>
-      <div className='text-center'>
-        <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/50'>
+      <main className='text-center'>
+        <main className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/50'>
           <TbLoader2 className='h-8 w-8 animate-spin text-purple-500' />
-        </div>
+        </main>
         <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
           {mode === "single" && selectedScans.length > 1 ? t("creating.titlePlural") : t("creating.title")}
         </h3>
@@ -350,17 +350,17 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             ? t("creating.processingPlural", {count: String(selectedScans.length)})
             : t("creating.processing", {count: String(selectedScans.length)})}
         </p>
-      </div>
+      </main>
 
-      <div className='mt-6'>
+      <main className='mt-6'>
         <Progress
           value={progress}
           className='h-2'
         />
         <p className='mt-2 text-center text-xs text-gray-500 dark:text-gray-400'>{progress}%</p>
-      </div>
+      </main>
 
-      <div className='mt-6 space-y-3'>
+      <main className='mt-6 space-y-3'>
         <ProcessStep
           step={1}
           title={t("creating.step1Title")}
@@ -382,7 +382,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           isActive={progress >= 70}
           isComplete={progress >= 100}
         />
-      </div>
+      </main>
     </motion.div>
   );
 
@@ -395,9 +395,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         initial={{opacity: 0, scale: 0.95}}
         animate={{opacity: 1, scale: 1}}
         className='py-6 text-center'>
-        <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50'>
+        <main className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50'>
           <TbCheck className='h-8 w-8 text-green-500' />
-        </div>
+        </main>
         <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
           {isPlural ? t("complete.titlePlural", {count: String(createdCount)}) : t("complete.title", {count: String(createdCount)})}
         </h3>
@@ -405,12 +405,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           {isPlural ? t("complete.descriptionPlural") : t("complete.description")}
         </p>
 
-        <div className='mt-6 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20'>
+        <main className='mt-6 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20'>
           <p className='text-sm text-green-700 dark:text-green-300'>
             <strong>{t("complete.nextSteps")}</strong>{" "}
             {isPlural ? t("complete.nextStepsDescriptionPlural") : t("complete.nextStepsDescription")}
           </p>
-        </div>
+        </main>
 
         <DialogFooter className='mt-6 justify-center'>
           <Button

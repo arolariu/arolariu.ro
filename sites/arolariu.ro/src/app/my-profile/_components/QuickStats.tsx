@@ -16,13 +16,13 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
   const storagePercentage = (statistics.storageUsed / statistics.storageLimit) * 100;
 
   return (
-    <div className='space-y-6'>
-      <div>
+    <main className='space-y-6'>
+      <main>
         <h2 className='text-2xl font-bold'>{t("title")}</h2>
         <p className='text-muted-foreground'>{t("description")}</p>
-      </div>
+      </main>
 
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      <main className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {/* Total Invoices */}
         <Card>
           <CardHeader className='flex flex-row items-center justify-between pb-2'>
@@ -30,7 +30,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <TbFileInvoice className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{statistics.totalInvoices}</div>
+            <main className='text-2xl font-bold'>{statistics.totalInvoices}</main>
             <p className='text-muted-foreground text-xs'>{t("invoices.description")}</p>
           </CardContent>
         </Card>
@@ -42,7 +42,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <TbBuilding className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{statistics.totalMerchants}</div>
+            <main className='text-2xl font-bold'>{statistics.totalMerchants}</main>
             <p className='text-muted-foreground text-xs'>{t("merchants.description")}</p>
           </CardContent>
         </Card>
@@ -54,7 +54,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <TbScan className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{statistics.totalScans}</div>
+            <main className='text-2xl font-bold'>{statistics.totalScans}</main>
             <p className='text-muted-foreground text-xs'>{t("scans.description")}</p>
           </CardContent>
         </Card>
@@ -66,7 +66,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <TbReceipt className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>${statistics.totalSaved.toFixed(2)}</div>
+            <main className='text-2xl font-bold'>${statistics.totalSaved.toFixed(2)}</main>
             <p className='text-muted-foreground text-xs'>{t("saved.description")}</p>
           </CardContent>
         </Card>
@@ -78,7 +78,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <TbReceipt className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>${statistics.monthlyAverage.toFixed(2)}</div>
+            <main className='text-2xl font-bold'>${statistics.monthlyAverage.toFixed(2)}</main>
             <p className='text-muted-foreground text-xs'>{t("monthly.description")}</p>
           </CardContent>
         </Card>
@@ -90,27 +90,27 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             <TbBrain className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{statistics.aiQueriesUsed}</div>
+            <main className='text-2xl font-bold'>{statistics.aiQueriesUsed}</main>
             <p className='text-muted-foreground text-xs'>{t("aiQueries.description")}</p>
           </CardContent>
         </Card>
-      </div>
+      </main>
 
       {/* Storage Usage */}
       <Card>
         <CardHeader>
-          <div className='flex items-center justify-between'>
-            <div>
+          <main className='flex items-center justify-between'>
+            <main>
               <CardTitle className='flex items-center gap-2 text-base'>
                 <TbCloud className='h-4 w-4' />
                 {t("storage.title")}
               </CardTitle>
               <CardDescription>{t("storage.description")}</CardDescription>
-            </div>
+            </main>
             <span className='text-muted-foreground text-sm'>
               {formatStorageSize(statistics.storageUsed)} / {formatStorageSize(statistics.storageLimit)}
             </span>
-          </div>
+          </main>
         </CardHeader>
         <CardContent>
           <Progress
@@ -122,6 +122,6 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 }

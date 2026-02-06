@@ -29,7 +29,7 @@ export default function Contributors(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["contributorsSection"]}>
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["sectionHeader"]}
@@ -43,7 +43,7 @@ export default function Contributors(): React.JSX.Element {
         </motion.div>
 
         {/* Contributors grid */}
-        <div className={styles["contributorsGrid"]}>
+        <main className={styles["contributorsGrid"]}>
           {contributors.map((key, index) => (
             <motion.div
               key={key}
@@ -67,10 +67,10 @@ export default function Contributors(): React.JSX.Element {
                   <h3 className={styles["contributorName"]}>{t(`items.${key}.name`)}</h3>
 
                   {/* Package count */}
-                  <div className={styles["packageCount"]}>
+                  <main className={styles["packageCount"]}>
                     <TbPackage className={styles["packageIcon"]} />
                     <span>{t(`items.${key}.packages`)} packages</span>
-                  </div>
+                  </main>
 
                   {/* Description */}
                   <p className={styles["description"]}>{t(`items.${key}.description`)}</p>
@@ -78,8 +78,8 @@ export default function Contributors(): React.JSX.Element {
               </Card>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

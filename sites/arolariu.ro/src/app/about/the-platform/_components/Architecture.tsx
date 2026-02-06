@@ -74,12 +74,12 @@ export default function Architecture(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Background */}
-      <div className={styles["bgLayer"]}>
-        <div className={styles["bgGradient"]} />
-        <div className={styles["bgGrid"]} />
-      </div>
+      <main className={styles["bgLayer"]}>
+        <main className={styles["bgGradient"]} />
+        <main className={styles["bgGrid"]} />
+      </main>
 
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         {/* Section Header */}
         <motion.div
           className={styles["header"]}
@@ -103,7 +103,7 @@ export default function Architecture(): React.JSX.Element {
         </motion.div>
 
         {/* Architecture Diagram */}
-        <div className={styles["diagram"]}>
+        <main className={styles["diagram"]}>
           {/* Connection Lines */}
           <svg
             className={styles["connections"]}
@@ -144,7 +144,7 @@ export default function Architecture(): React.JSX.Element {
           </svg>
 
           {/* Architecture Layers Grid */}
-          <div className={styles["layersGrid"]}>
+          <main className={styles["layersGrid"]}>
             {layerConfigs.map((layer, index) => {
               const positionClass = positionClassMap[layer.position];
               return (
@@ -167,7 +167,7 @@ export default function Architecture(): React.JSX.Element {
 
                     <CardContent className={styles["layerContent"]}>
                       {/* Icon and Title */}
-                      <div className={styles["layerHeader"]}>
+                      <main className={styles["layerHeader"]}>
                         <motion.div
                           className={`${styles["layerIconWrapper"]} ${styles[gradientClassMap[layer.colorKey]]}`}
                           animate={{
@@ -177,14 +177,14 @@ export default function Architecture(): React.JSX.Element {
                           transition={{duration: 0.3}}>
                           <layer.icon className={styles["layerIcon"]} />
                         </motion.div>
-                        <div>
+                        <main>
                           <h3 className={styles["layerName"]}>{t(`layers.${layer.id}.name` as Parameters<typeof t>[0])}</h3>
                           <p className={styles["layerDescription"]}>{t(`layers.${layer.id}.description` as Parameters<typeof t>[0])}</p>
-                        </div>
-                      </div>
+                        </main>
+                      </main>
 
                       {/* Technologies */}
-                      <div className={styles["technologies"]}>
+                      <main className={styles["technologies"]}>
                         {t(`layers.${layer.id}.technologies` as Parameters<typeof t>[0])
                           .split(",")
                           .map((tech, techIndex) => (
@@ -200,7 +200,7 @@ export default function Architecture(): React.JSX.Element {
                               </Badge>
                             </motion.div>
                           ))}
-                      </div>
+                      </main>
                     </CardContent>
 
                     {/* Animated border */}
@@ -215,7 +215,7 @@ export default function Architecture(): React.JSX.Element {
                 </motion.div>
               );
             })}
-          </div>
+          </main>
 
           {/* Key Architecture Principles */}
           <motion.div
@@ -232,21 +232,21 @@ export default function Architecture(): React.JSX.Element {
                   initial={{opacity: 0, y: 20}}
                   animate={isInView ? {opacity: 1, y: 0} : {}}
                   transition={{duration: 0.5, delay: 1 + index * 0.1}}>
-                  <div className={styles["principleIconWrapper"]}>
+                  <main className={styles["principleIconWrapper"]}>
                     {IconComponent !== undefined && <IconComponent className={styles["principleIcon"]} />}
-                  </div>
-                  <div>
+                  </main>
+                  <main>
                     <h4 className={styles["principleTitle"]}>{t(`principles.${principleId}.title` as Parameters<typeof t>[0])}</h4>
                     <p className={styles["principleDescription"]}>
                       {t(`principles.${principleId}.description` as Parameters<typeof t>[0])}
                     </p>
-                  </div>
+                  </main>
                 </motion.div>
               );
             })}
           </motion.div>
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

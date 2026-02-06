@@ -49,28 +49,28 @@ export function InvoiceTabs(): React.JSX.Element {
             value='recipes'
             className='mt-0'>
             {invoice.possibleRecipes.length > 0 ? (
-              <div className='grid gap-4 sm:grid-cols-2'>
+              <main className='grid gap-4 sm:grid-cols-2'>
                 {invoice.possibleRecipes.map((recipe) => (
                   <Card
                     key={recipe.name}
                     className='transition-shadow duration-300 hover:shadow-md'>
                     <CardHeader className='pb-2'>
-                      <div className='flex items-start justify-between gap-2'>
+                      <main className='flex items-start justify-between gap-2'>
                         <CardTitle className='text-base'>{recipe.name}</CardTitle>
                         <Badge variant={getComplexityVariant(recipe.complexity)}>{formatEnum(RecipeComplexity, recipe.complexity)}</Badge>
-                      </div>
+                      </main>
                     </CardHeader>
                     <CardContent className='space-y-3'>
                       <p className='text-muted-foreground line-clamp-2 text-sm'>{recipe.description}</p>
-                      <div className='flex items-center gap-4 text-sm'>
-                        <div className='text-muted-foreground flex items-center gap-1'>
+                      <main className='flex items-center gap-4 text-sm'>
+                        <main className='text-muted-foreground flex items-center gap-1'>
                           <TbClock className='h-4 w-4' />
                           <span>{recipe.duration} min</span>
-                        </div>
-                        <div className='text-muted-foreground'>
+                        </main>
+                        <main className='text-muted-foreground'>
                           Prep: {recipe.preparationTime}m • Cook: {recipe.cookingTime}m
-                        </div>
-                      </div>
+                        </main>
+                      </main>
                       {Boolean(recipe.referenceForMoreDetails) && (
                         <Button
                           variant='link'
@@ -88,12 +88,12 @@ export function InvoiceTabs(): React.JSX.Element {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+              </main>
             ) : (
-              <div className='flex flex-col items-center justify-center py-8 text-center'>
+              <main className='flex flex-col items-center justify-center py-8 text-center'>
                 <TbChefHat className='text-muted-foreground/50 h-12 w-12' />
                 <p className='text-muted-foreground mt-2'>No recipe suggestions available</p>
-              </div>
+              </main>
             )}
           </TabsContent>
           <TabsContent
@@ -102,19 +102,19 @@ export function InvoiceTabs(): React.JSX.Element {
             {Object.keys(invoice.additionalMetadata).length > 0 ? (
               <dl className='space-y-3'>
                 {Object.entries(invoice.additionalMetadata).map(([key, value]) => (
-                  <div
+                  <main
                     key={key}
                     className='border-border flex justify-between gap-4 border-b pb-2 last:border-0'>
                     <dt className='text-muted-foreground text-sm font-medium'>{key}</dt>
                     <dd className='text-right text-sm'>{value}</dd>
-                  </div>
+                  </main>
                 ))}
               </dl>
             ) : (
-              <div className='flex flex-col items-center justify-center py-8 text-center'>
+              <main className='flex flex-col items-center justify-center py-8 text-center'>
                 <TbInfoCircle className='text-muted-foreground/50 h-12 w-12' />
                 <p className='text-muted-foreground mt-2'>No additional information available</p>
-              </div>
+              </main>
             )}
           </TabsContent>
         </CardContent>

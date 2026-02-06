@@ -6,7 +6,7 @@ import Link from "next/link";
  */
 export default function InvoicesNotFound() {
   return (
-    <div className='mb-20 flex w-full flex-col text-center'>
+    <main className='mb-20 flex w-full flex-col text-center'>
       <h1 className='mb-4 text-2xl font-medium sm:text-3xl'>Something is missing here... 😰</h1>
       <article className='mx-auto text-base leading-relaxed lg:w-2/3'>
         It seems that you do not have any invoices associated with your account... <br />
@@ -17,6 +17,6 @@ export default function InvoicesNotFound() {
         className='mx-auto mt-8 inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
         Upload an invoice here.
       </Link>
-    </div>
+    </main>
   );
 }

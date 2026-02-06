@@ -57,7 +57,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
             </section>
             <section>
               <span className='text-center text-xs'>{t("falsePositive")}</span>
-              <div className='2xsm:flex-col mt-4 flex items-center justify-between justify-items-center gap-4 md:flex-row'>
+              <main className='2xsm:flex-col mt-4 flex items-center justify-between justify-items-center gap-4 md:flex-row'>
                 <Link
                   href='/'
                   className='btn btn-secondary mx-auto'>
@@ -68,7 +68,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
                   className='btn btn-primary mx-auto'>
                   {t("buttons.returnButton")}
                 </Link>
-              </div>
+              </main>
             </section>
           </main>
           <Footer />

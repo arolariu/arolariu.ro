@@ -21,7 +21,7 @@ export default function CallToAction(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Animated background */}
-      <div className={styles["bgOrbs"]}>
+      <main className={styles["bgOrbs"]}>
         <motion.div
           className={styles["orbBlue"]}
           animate={{
@@ -46,16 +46,16 @@ export default function CallToAction(): React.JSX.Element {
             ease: "easeInOut",
           }}
         />
-      </div>
+      </main>
 
       {/* Grid pattern */}
-      <div
+      <main
         className={styles["gridPattern"]}
         aria-hidden='true'
       />
 
       {/* Content */}
-      <div className={styles["content"]}>
+      <main className={styles["content"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
@@ -104,7 +104,7 @@ export default function CallToAction(): React.JSX.Element {
           transition={{delay: 0.4, duration: 0.5}}>
           {t("footer")}
         </motion.p>
-      </div>
+      </main>
     </section>
   );
 }

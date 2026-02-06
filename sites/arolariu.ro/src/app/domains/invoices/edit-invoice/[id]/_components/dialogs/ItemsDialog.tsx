@@ -170,8 +170,8 @@ export default function ItemsDialog(): React.JSX.Element {
           <DialogDescription>Update quantities, prices, or add new items to this invoice</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4'>
-          <div className='overflow-hidden rounded-md border'>
+        <main className='space-y-4'>
+          <main className='overflow-hidden rounded-md border'>
             <Table className='divide-border min-w-full divide-y'>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
@@ -302,10 +302,10 @@ export default function ItemsDialog(): React.JSX.Element {
                 </TableRow>
               </TableFooter>
             </Table>
-          </div>
+          </main>
 
           {/* Controls */}
-          <div className='flex justify-between'>
+          <main className='flex justify-between'>
             <Button
               type='button'
               variant='outline'
@@ -314,14 +314,14 @@ export default function ItemsDialog(): React.JSX.Element {
               <TbPlus className='mr-2 h-4 w-4' />
               Add Item
             </Button>
-            <div
+            <main
               className='text-muted-foreground text-sm'
               role='status'
               aria-live='polite'>
               {items.length} {items.length === 1 ? "item" : "items"} in total
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
 
         <DialogFooter>
           <Button

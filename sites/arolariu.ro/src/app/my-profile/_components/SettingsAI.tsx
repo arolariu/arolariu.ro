@@ -69,13 +69,13 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
   const selectedModel = AI_MODELS.find((m) => m.id === settings.model);
 
   return (
-    <div className='space-y-6'>
-      <div>
+    <main className='space-y-6'>
+      <main>
         <h2 className='text-2xl font-bold'>{t("title")}</h2>
         <p className='text-muted-foreground'>{t("description")}</p>
-      </div>
+      </main>
 
-      <div className='grid gap-6 md:grid-cols-2'>
+      <main className='grid gap-6 md:grid-cols-2'>
         {/* AI Model Selection */}
         <Card className='md:col-span-2'>
           <CardHeader className='pb-4'>
@@ -97,23 +97,23 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   <SelectItem
                     key={model.id}
                     value={model.id}>
-                    <div className='flex items-center gap-2'>
+                    <main className='flex items-center gap-2'>
                       <span>{model.name}</span>
                       <Badge
                         variant={model.tier === "premium" ? "default" : "secondary"}
                         className='text-xs'>
                         {model.tier}
                       </Badge>
-                    </div>
+                    </main>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {selectedModel ? (
-              <div className='bg-muted/50 rounded-lg p-3'>
+              <main className='bg-muted/50 rounded-lg p-3'>
                 <p className='text-sm font-medium'>{selectedModel.name}</p>
                 <p className='text-muted-foreground text-xs'>{selectedModel.description}</p>
-              </div>
+              </main>
             ) : null}
           </CardContent>
         </Card>
@@ -160,11 +160,11 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardDescription>{t("temperature.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
+            <main className='flex items-center justify-between'>
               <span className='text-muted-foreground text-sm'>{t("temperature.precise")}</span>
               <span className='font-medium'>{settings.temperature.toFixed(1)}</span>
               <span className='text-muted-foreground text-sm'>{t("temperature.creative")}</span>
-            </div>
+            </main>
             <Slider
               value={[settings.temperature]}
               onValueChange={handleTemperatureChange}
@@ -186,11 +186,11 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardDescription>{t("maxTokens.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
+            <main className='flex items-center justify-between'>
               <span className='text-muted-foreground text-sm'>512</span>
               <span className='font-medium'>{settings.maxTokens}</span>
               <span className='text-muted-foreground text-sm'>4096</span>
-            </div>
+            </main>
             <Slider
               value={[settings.maxTokens]}
               onValueChange={handleMaxTokensChange}
@@ -212,38 +212,38 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardDescription>{t("features.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("features.autoSuggest")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("features.autoSuggestHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.autoSuggestEnabled}
                 onCheckedChange={handleToggle("autoSuggestEnabled")}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("features.contextAwareness")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("features.contextAwarenessHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.contextAwareness}
                 onCheckedChange={handleToggle("contextAwareness")}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("features.memory")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("features.memoryHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.memoryEnabled}
                 onCheckedChange={handleToggle("memoryEnabled")}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -257,19 +257,19 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
             <CardDescription>{t("voice.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("voice.enabled")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("voice.enabledHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.voiceEnabled}
                 onCheckedChange={handleToggle("voiceEnabled")}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

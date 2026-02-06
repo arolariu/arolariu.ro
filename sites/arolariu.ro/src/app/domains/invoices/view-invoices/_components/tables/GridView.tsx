@@ -45,9 +45,9 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <div className='flex flex-col items-center justify-center py-10'>
-        <div className='text-muted-foreground mb-2'>No invoices found</div>
-      </div>
+      <main className='flex flex-col items-center justify-center py-10'>
+        <main className='text-muted-foreground mb-2'>No invoices found</main>
+      </main>
     );
   }
 
@@ -59,10 +59,10 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
       transition={{duration: 0.2}}
       className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
       {invoices.map((invoice) => (
-        <div
+        <main
           key={invoice.id}
           className='relative'>
-          <div className='absolute top-2 left-2 z-10 print:hidden'>
+          <main className='absolute top-2 left-2 z-10 print:hidden'>
             <Checkbox
               checked={selectedInvoices.includes(invoice)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
@@ -70,9 +70,9 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               aria-label={`Select invoice ${invoice.name}`}
               className='bg-background/80 backdrop-blur-sm'
             />
-          </div>
+          </main>
           <Card className='overflow-hidden'>
-            <div className='relative'>
+            <main className='relative'>
               <Image
                 src={invoice.scans[0]?.location || "/placeholder.svg"}
                 alt={invoice.name}
@@ -80,7 +80,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                 width={400}
                 height={400}
               />
-              <div className='absolute right-2 bottom-2 z-10 flex gap-1 print:hidden'>
+              <main className='absolute right-2 bottom-2 z-10 flex gap-1 print:hidden'>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
@@ -97,31 +97,31 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                   </Tooltip>
                 </TooltipProvider>
                 <TableViewActions invoice={invoice} />
-              </div>
-            </div>
+              </main>
+            </main>
             <CardHeader className='pt-4 pb-2'>
               <CardTitle className='text-lg'>{invoice.name}</CardTitle>
               <CardDescription>{invoice.description}</CardDescription>
             </CardHeader>
             <CardContent className='pb-2'>
-              <div className='flex items-center justify-between'>
-                <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+              <main className='flex items-center justify-between'>
+                <main className='text-muted-foreground flex items-center gap-1 text-sm'>
                   <TbCalendar className='h-3.5 w-3.5' />
                   <span>{formatDate(invoice.createdAt, {dateStyle: "full", locale})}</span>
-                </div>
-                <div className='text-lg font-medium'>
+                </main>
+                <main className='text-lg font-medium'>
                   {formatCurrency(invoice.paymentInformation.totalCostAmount, {
                     currencyCode: invoice.paymentInformation.currency.code,
                     locale,
                   })}
-                </div>
-              </div>
+                </main>
+              </main>
             </CardContent>
             <CardFooter className='flex justify-between pt-2'>
-              <div className='text-muted-foreground text-sm'>{invoice.items?.length || 0} items</div>
+              <main className='text-muted-foreground text-sm'>{invoice.items?.length || 0} items</main>
             </CardFooter>
           </Card>
-        </div>
+        </main>
       ))}
     </motion.div>
   );

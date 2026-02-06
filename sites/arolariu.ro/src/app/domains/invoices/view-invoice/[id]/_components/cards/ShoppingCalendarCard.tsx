@@ -77,7 +77,7 @@ function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element 
   if (data.invoiceNames.length === 0) return null;
 
   return (
-    <div className='border-border border-t pt-1'>
+    <main className='border-border border-t pt-1'>
       {data.invoiceNames.slice(0, 3).map((name) => (
         <p
           key={name}
@@ -86,7 +86,7 @@ function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element 
         </p>
       ))}
       {data.invoiceNames.length > 3 && <p className='text-muted-foreground'>+{data.invoiceNames.length - 3} more</p>}
-    </div>
+    </main>
   );
 }
 
@@ -96,11 +96,11 @@ function HistoricalComparisonSection({historicalData}: Readonly<{historicalData:
   const colorClass = historicalData.isAboveAverage ? "text-red-500" : "text-green-500";
 
   return (
-    <div className='border-border flex items-center gap-1 border-t pt-1'>
+    <main className='border-border flex items-center gap-1 border-t pt-1'>
       <ArrowIcon className={`h-3 w-3 ${colorClass}`} />
       <span className={colorClass}>{Math.abs(historicalData.percentageDiff).toFixed(0)}%</span>
       <span className='text-muted-foreground'>vs avg ({historicalData.yearsWithData}y data)</span>
-    </div>
+    </main>
   );
 }
 
@@ -112,12 +112,12 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
     <TooltipContent
       side='top'
       className='max-w-xs space-y-2 text-xs'>
-      <div className='space-y-1'>
+      <main className='space-y-1'>
         <p className='font-semibold'>{formatCurrency(amount, {currencyCode: currency.code, locale})}</p>
         <p className='text-muted-foreground'>
           {count} {count === 1 ? "invoice" : "invoices"}
         </p>
-      </div>
+      </main>
       {data ? <InvoiceNamesList data={data} /> : null}
       {historicalData ? <HistoricalComparisonSection historicalData={historicalData} /> : null}
       {isCurrentInvoiceDate ? <Badge className='mt-1'>Current invoice</Badge> : null}
@@ -253,41 +253,41 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             />
 
             {/* Legend */}
-            <div className='text-muted-foreground flex items-center justify-center gap-2 text-xs'>
+            <main className='text-muted-foreground flex items-center justify-center gap-2 text-xs'>
               <span>Less</span>
-              <div className='flex gap-0.5'>
-                <div className='bg-muted/50 h-3 w-3 rounded-sm' />
-                <div className='bg-primary/20 h-3 w-3 rounded-sm' />
-                <div className='bg-primary/40 h-3 w-3 rounded-sm' />
-                <div className='bg-primary/60 h-3 w-3 rounded-sm' />
-                <div className='bg-primary/80 h-3 w-3 rounded-sm' />
-              </div>
+              <main className='flex gap-0.5'>
+                <main className='bg-muted/50 h-3 w-3 rounded-sm' />
+                <main className='bg-primary/20 h-3 w-3 rounded-sm' />
+                <main className='bg-primary/40 h-3 w-3 rounded-sm' />
+                <main className='bg-primary/60 h-3 w-3 rounded-sm' />
+                <main className='bg-primary/80 h-3 w-3 rounded-sm' />
+              </main>
               <span>More</span>
-            </div>
+            </main>
 
             <Separator />
 
             {/* Month Statistics */}
-            <div className='grid w-full grid-cols-2 gap-3 text-sm'>
-              <div className='border-border flex items-center gap-2 rounded-lg border p-2'>
+            <main className='grid w-full grid-cols-2 gap-3 text-sm'>
+              <main className='border-border flex items-center gap-2 rounded-lg border p-2'>
                 <TbShoppingCart className='text-muted-foreground h-4 w-4 shrink-0' />
-                <div>
+                <main>
                   <p className='text-muted-foreground text-xs'>Month Total</p>
                   <p className='font-medium'>{formatCurrency(patterns.monthTotal, {currencyCode: currency.code, locale})}</p>
-                </div>
-              </div>
-              <div className='border-border flex items-center gap-2 rounded-lg border p-2'>
+                </main>
+              </main>
+              <main className='border-border flex items-center gap-2 rounded-lg border p-2'>
                 <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
-                <div>
+                <main>
                   <p className='text-muted-foreground text-xs'>Shopping Days</p>
                   <p className='font-medium'>{patterns.shoppingDaysCount}</p>
-                </div>
-              </div>
-            </div>
+                </main>
+              </main>
+            </main>
 
             {/* Shopping Pattern Insight */}
             {patterns.avgDaysBetween > 0 ? (
-              <div className='border-border flex w-full items-center gap-2 rounded-lg border p-3'>
+              <main className='border-border flex w-full items-center gap-2 rounded-lg border p-3'>
                 <TbTrendingUp className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className='text-muted-foreground text-xs'>
                   You shop every <span className='text-foreground font-medium'>{patterns.avgDaysBetween.toFixed(0)} days</span> on average
@@ -301,17 +301,17 @@ export function ShoppingCalendarCard(): React.JSX.Element {
                     </>
                   ) : null}
                 </p>
-              </div>
+              </main>
             ) : null}
 
             {/* Most Active Day Insight */}
             {invoices.length > 5 ? (
-              <div className='border-border flex w-full items-center gap-2 rounded-lg border p-3'>
+              <main className='border-border flex w-full items-center gap-2 rounded-lg border p-3'>
                 <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className='text-muted-foreground text-xs'>
                   Most active on <span className='text-foreground font-medium'>{getWeekdayName(patterns.mostActiveWeekday, locale)}s</span>
                 </p>
-              </div>
+              </main>
             ) : null}
           </CardContent>
         </Card>

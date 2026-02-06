@@ -9,31 +9,31 @@ export default function EulaShimmer(): React.JSX.Element {
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["headerCenter"]}>
-        <div className={styles["shieldIcon"]}>
+        <main className={styles["shieldIcon"]}>
           <Skeleton className={styles["shimmerCircle"]} />
-        </div>
+        </main>
         <Skeleton className={styles["shimmerTitle"]} />
 
-        <div className={styles["localePicker"]}>
+        <main className={styles["localePicker"]}>
           <Skeleton className={styles["shimmerTabs"]} />
-        </div>
+        </main>
       </CardHeader>
 
       <CardContent className={styles["contentArea"]}>
         <Skeleton className={styles["shimmerContentBlock"]} />
 
-        <div className={styles["policyGrid"]}>
+        <main className={styles["policyGrid"]}>
           <Skeleton className={styles["shimmerPolicyCard"]} />
           <Skeleton className={styles["shimmerPolicyCard"]} />
-        </div>
+        </main>
 
         <Skeleton className={styles["shimmerSeparator"]} />
 
-        <div className={styles["cookiesSection"]}>
+        <main className={styles["cookiesSection"]}>
           <Skeleton className={styles["shimmerCookiesHeader"]} />
           <Skeleton className={styles["shimmerAccordionItem"]} />
           <Skeleton className={styles["shimmerAccordionItem"]} />
-        </div>
+        </main>
       </CardContent>
 
       <CardFooter className={styles["footer"]}>

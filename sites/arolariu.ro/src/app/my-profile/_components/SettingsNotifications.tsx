@@ -57,13 +57,13 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
   );
 
   return (
-    <div className='space-y-6'>
-      <div>
+    <main className='space-y-6'>
+      <main>
         <h2 className='text-2xl font-bold'>{t("title")}</h2>
         <p className='text-muted-foreground'>{t("description")}</p>
-      </div>
+      </main>
 
-      <div className='grid gap-6 md:grid-cols-2'>
+      <main className='grid gap-6 md:grid-cols-2'>
         {/* Email Master Toggle */}
         <Card className='md:col-span-2'>
           <CardHeader className='pb-4'>
@@ -74,16 +74,16 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardDescription>{t("email.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("email.enabled")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("email.enabledHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.emailEnabled}
                 onCheckedChange={handleToggle("emailEnabled")}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -115,29 +115,29 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
               </SelectContent>
             </Select>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("reports.weeklyDigest")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("reports.weeklyDigestHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.weeklyDigest}
                 onCheckedChange={handleToggle("weeklyDigest")}
                 disabled={!settings.emailEnabled}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("reports.monthlyReport")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("reports.monthlyReportHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.monthlyReport}
                 onCheckedChange={handleToggle("monthlyReport")}
                 disabled={!settings.emailEnabled}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -151,29 +151,29 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardDescription>{t("financial.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("financial.spendingAlerts")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("financial.spendingAlertsHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.spendingAlerts}
                 onCheckedChange={handleToggle("spendingAlerts")}
                 disabled={!settings.emailEnabled}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("financial.budgetAlerts")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("financial.budgetAlertsHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.budgetAlerts}
                 onCheckedChange={handleToggle("budgetAlerts")}
                 disabled={!settings.emailEnabled}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -187,29 +187,29 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardDescription>{t("updates.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("updates.newFeatures")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("updates.newFeaturesHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.newFeatures}
                 onCheckedChange={handleToggle("newFeatures")}
                 disabled={!settings.emailEnabled}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("updates.marketing")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("updates.marketingHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.marketingEmails}
                 onCheckedChange={handleToggle("marketingEmails")}
                 disabled={!settings.emailEnabled}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -223,25 +223,25 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
             <CardDescription>{t("security.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("security.securityAlerts")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("security.securityAlertsHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.securityAlerts}
                 onCheckedChange={handleToggle("securityAlerts")}
               />
-            </div>
-            <div className='bg-muted/50 mt-4 rounded-lg p-3'>
+            </main>
+            <main className='bg-muted/50 mt-4 rounded-lg p-3'>
               <p className='text-muted-foreground flex items-center gap-2 text-xs'>
                 <TbBell className='h-4 w-4' />
                 {t("security.alwaysOnNote")}
               </p>
-            </div>
+            </main>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

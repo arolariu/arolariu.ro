@@ -18,9 +18,9 @@ export function InvoiceHeader(): React.JSX.Element {
 
   return (
     <TooltipProvider>
-      <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
-        <div className='space-y-1'>
-          <div className='flex items-center gap-2'>
+      <main className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+        <main className='space-y-1'>
+          <main className='flex items-center gap-2'>
             <h1 className='text-3xl font-bold tracking-tight'>{invoice.name}</h1>
             {Boolean(invoice.isImportant) && (
               <Tooltip>
@@ -32,10 +32,10 @@ export function InvoiceHeader(): React.JSX.Element {
                 </TooltipContent>
               </Tooltip>
             )}
-          </div>
+          </main>
           <p className='text-muted-foreground font-mono text-sm'>ID: {invoice.id}</p>
-        </div>
-        <div className='flex flex-wrap gap-2'>
+        </main>
+        <main className='flex flex-wrap gap-2'>
           {Boolean(isOwner) && (
             <>
               <Tooltip>
@@ -79,8 +79,8 @@ export function InvoiceHeader(): React.JSX.Element {
               <p>Print this invoice</p>
             </TooltipContent>
           </Tooltip>
-        </div>
-      </div>
+        </main>
+      </main>
     </TooltipProvider>
   );
 }

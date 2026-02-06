@@ -73,7 +73,7 @@ export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/
   return (
     <main className='bg-background text-foreground relative min-h-screen'>
       <ScrollToTop />
-      <div>
+      <main>
         {/* Hero Section - Full viewport intro with animated background */}
         <Hero />
 
@@ -94,7 +94,7 @@ export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/
 
         {/* Call to Action Section - Footer CTA */}
         <CallToAction />
-      </div>
+      </main>
     </main>
   );
 }

@@ -118,15 +118,15 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   isTransitioning ? "opacity-50 blur-sm" : "blur-0 opacity-100"
                 }`}
               />
-              <div className='bg-background/80 absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/image:opacity-100'>
+              <main className='bg-background/80 absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/image:opacity-100'>
                 <TbZoomIn className='h-8 w-8' />
-              </div>
+              </main>
             </Button>
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
               </DialogHeader>
-              <div className='relative flex max-h-[80vh] justify-center overflow-auto'>
+              <main className='relative flex max-h-[80vh] justify-center overflow-auto'>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1} - full size`}
@@ -134,7 +134,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   height={1200}
                   className='w-full object-contain'
                 />
-              </div>
+              </main>
             </DialogContent>
           </Dialog>
         </CardContent>
@@ -157,7 +157,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
 
           {/* Navigation buttons */}
           {totalScans > 1 && (
-            <div className='flex w-full gap-2'>
+            <main className='flex w-full gap-2'>
               {currentScanIndex > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -190,11 +190,11 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   </TooltipContent>
                 </Tooltip>
               )}
-            </div>
+            </main>
           )}
 
           {/* Add/Remove buttons */}
-          <div className='flex w-full gap-2'>
+          <main className='flex w-full gap-2'>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -224,7 +224,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 <p>Remove the current receipt scan</p>
               </TooltipContent>
             </Tooltip>
-          </div>
+          </main>
         </CardFooter>
       </Card>
     </TooltipProvider>

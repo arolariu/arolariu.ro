@@ -60,45 +60,45 @@ export function VehicleCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Expense Type Badge */}
-        <div className='flex items-center gap-2'>
+        <main className='flex items-center gap-2'>
           <TbGasStation className='h-4 w-4 text-amber-500' />
           <span className='text-sm font-medium'>Expense Type: Fuel</span>
-        </div>
+        </main>
 
         {/* Fuel Details Grid */}
-        <div className='grid grid-cols-2 gap-2'>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+        <main className='grid grid-cols-2 gap-2'>
+          <main className='flex items-center gap-2 rounded-lg border p-2.5'>
             <TbGasStation className='h-4 w-4 text-amber-500' />
-            <div>
+            <main>
               <p className='text-muted-foreground text-xs'>Liters</p>
               <p className='text-sm font-semibold'>~{liters}L</p>
-            </div>
-          </div>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+            </main>
+          </main>
+          <main className='flex items-center gap-2 rounded-lg border p-2.5'>
             <TbCurrencyDollar className='h-4 w-4 text-green-500' />
-            <div>
+            <main>
               <p className='text-muted-foreground text-xs'>Price/L</p>
               <p className='text-sm font-semibold'>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
-            </div>
-          </div>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+            </main>
+          </main>
+          <main className='flex items-center gap-2 rounded-lg border p-2.5'>
             <TbMapPin className='h-4 w-4 text-red-500' />
-            <div>
+            <main>
               <p className='text-muted-foreground text-xs'>Station</p>
               <p className='text-sm font-semibold'>{station}</p>
-            </div>
-          </div>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+            </main>
+          </main>
+          <main className='flex items-center gap-2 rounded-lg border p-2.5'>
             <TbCar className='h-4 w-4 text-blue-500' />
-            <div>
+            <main>
               <p className='text-muted-foreground text-xs'>Vehicle</p>
               <p className='text-muted-foreground text-sm font-semibold'>Not set</p>
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
 
         {/* Monthly Fuel Spending Chart */}
-        <div className='space-y-2'>
+        <main className='space-y-2'>
           <h4 className='text-muted-foreground text-sm font-medium'>Monthly Fuel Spending</h4>
           <ChartContainer
             config={{
@@ -152,36 +152,36 @@ export function VehicleCard(): React.JSX.Element {
               </AreaChart>
             </ResponsiveContainer>
           </ChartContainer>
-        </div>
+        </main>
 
         {/* Stats Cards */}
-        <div className='grid grid-cols-3 gap-2'>
-          <div className='bg-card rounded-lg border p-2.5 text-center'>
+        <main className='grid grid-cols-3 gap-2'>
+          <main className='bg-card rounded-lg border p-2.5 text-center'>
             <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
             <p className='text-muted-foreground text-xs'>This Month</p>
             <p className='text-sm font-semibold'>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
             <p className='text-muted-foreground text-xs'>{fillUps} fill-ups</p>
-          </div>
-          <div className='bg-card rounded-lg border p-2.5 text-center'>
+          </main>
+          <main className='bg-card rounded-lg border p-2.5 text-center'>
             <TbGauge className='mx-auto mb-1 h-4 w-4 text-green-500' />
             <p className='text-muted-foreground text-xs'>Cost/km</p>
             <p className='text-sm font-semibold'>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
             <p className='text-muted-foreground text-xs'>estimated</p>
-          </div>
-          <div className='bg-card rounded-lg border p-2.5 text-center'>
+          </main>
+          <main className='bg-card rounded-lg border p-2.5 text-center'>
             <TbTrendingUp className='mx-auto mb-1 h-4 w-4 text-red-500' />
             <p className='text-muted-foreground text-xs'>Fuel Price</p>
             <p className='text-sm font-semibold text-red-500'>+{priceChange}%</p>
             <p className='text-muted-foreground text-xs'>this month</p>
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* Maintenance Reminders */}
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2'>
+        <main className='space-y-2'>
+          <main className='flex items-center gap-2'>
             <TbBarrel className='h-4 w-4 text-gray-500' />
             <h4 className='text-sm font-medium'>Maintenance Reminders</h4>
-          </div>
+          </main>
           <ul className='text-muted-foreground space-y-1 text-sm'>
             {reminders.map((r) => (
               <li
@@ -192,21 +192,21 @@ export function VehicleCard(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </div>
+        </main>
 
         {/* Cheapest Nearby */}
-        <div className='flex items-start gap-2 rounded-lg border border-green-200 bg-green-500/10 p-3 dark:border-green-800'>
+        <main className='flex items-start gap-2 rounded-lg border border-green-200 bg-green-500/10 p-3 dark:border-green-800'>
           <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-green-600' />
-          <div>
+          <main>
             <p className='text-sm font-medium'>Cheapest Nearby</p>
             <p className='text-muted-foreground text-sm'>
               {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/L
             </p>
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* CTA Buttons */}
-        <div className='flex gap-2'>
+        <main className='flex gap-2'>
           <Button
             variant='outline'
             size='sm'
@@ -219,7 +219,7 @@ export function VehicleCard(): React.JSX.Element {
             className='flex-1 bg-transparent'>
             Full Report
           </Button>
-        </div>
+        </main>
       </CardContent>
     </Card>
   );

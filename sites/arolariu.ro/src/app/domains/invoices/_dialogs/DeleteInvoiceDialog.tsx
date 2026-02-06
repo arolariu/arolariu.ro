@@ -157,18 +157,18 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className='space-y-4'>
               {/* Invoice Summary Card */}
-              <div className='bg-muted/30 rounded-lg border p-4'>
-                <div className='flex items-start gap-3'>
-                  <div className='rounded-lg bg-red-100 p-2 dark:bg-red-900/30'>
+              <main className='bg-muted/30 rounded-lg border p-4'>
+                <main className='flex items-start gap-3'>
+                  <main className='rounded-lg bg-red-100 p-2 dark:bg-red-900/30'>
                     <TbReceipt className='h-6 w-6 text-red-500' />
-                  </div>
-                  <div className='min-w-0 flex-1'>
+                  </main>
+                  <main className='min-w-0 flex-1'>
                     <p className='truncate font-semibold'>{invoiceName}</p>
                     <p className='text-muted-foreground font-mono text-xs'>{invoice.id}</p>
                     {invoice.description ? <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>{invoice.description}</p> : null}
-                  </div>
-                </div>
-              </div>
+                  </main>
+                </main>
+              </main>
 
               {/* Deletion Impact Warning */}
               <Alert
@@ -208,8 +208,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <Separator />
 
               {/* Confirmation Input */}
-              <div className='space-y-3'>
-                <div className='space-y-2'>
+              <main className='space-y-3'>
+                <main className='space-y-2'>
                   <Label htmlFor='confirm-name'>
                     Type <span className='font-semibold text-red-600 dark:text-red-400'>{invoiceName}</span> to confirm:
                   </Label>
@@ -221,16 +221,16 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                     className={confirmText === invoiceName ? "border-green-500 focus-visible:ring-green-500" : ""}
                     autoComplete='off'
                   />
-                </div>
+                </main>
 
                 {/* Understanding Checkbox */}
-                <div className='flex items-start space-x-3 rounded-lg border p-3'>
+                <main className='flex items-start space-x-3 rounded-lg border p-3'>
                   <Checkbox
                     id='understand-deletion'
                     checked={understoodCheckbox}
                     onCheckedChange={handleCheckboxChange}
                   />
-                  <div className='space-y-1'>
+                  <main className='space-y-1'>
                     <Label
                       htmlFor='understand-deletion'
                       className='cursor-pointer text-sm leading-none font-medium'>
@@ -239,9 +239,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                     <p className='text-muted-foreground text-xs'>
                       This invoice and all its data will be permanently deleted and cannot be recovered.
                     </p>
-                  </div>
-                </div>
-              </div>
+                  </main>
+                </main>
+              </main>
             </motion.div>
           )}
         </AnimatePresence>

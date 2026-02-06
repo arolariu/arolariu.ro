@@ -38,14 +38,14 @@ import {Skeleton} from "@arolariu/components";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <div className='px-5 py-24'>
+    <main className='px-5 py-24'>
       {/* Hero Section Skeleton */}
       <section className='flex flex-col items-center justify-center justify-items-center text-center'>
         {/* Top SVG Illustration Skeleton */}
         <Skeleton className='h-[500px] w-[500px] object-fill object-center md:mx-auto md:h-full lg:h-1/2' />
 
         {/* Content Area */}
-        <div className='mt-2 w-full lg:w-2/3'>
+        <main className='mt-2 w-full lg:w-2/3'>
           {/* Title Skeleton */}
           <Skeleton className='mx-auto mb-4 h-10 w-3/4 sm:h-12' />
 
@@ -57,45 +57,45 @@ export default function Loading(): React.JSX.Element {
           </article>
 
           {/* CTA Buttons Skeleton */}
-          <div className='flex flex-col items-center justify-center justify-items-center gap-4 md:flex-row'>
+          <main className='flex flex-col items-center justify-center justify-items-center gap-4 md:flex-row'>
             <Skeleton className='h-11 w-40 rounded' />
             <Skeleton className='h-11 w-32 rounded' />
-          </div>
-        </div>
+          </main>
+        </main>
       </section>
 
       {/* Steps and Bottom Image Section Skeleton */}
       <section className='flex flex-col items-center justify-center justify-items-center pt-16 md:flex-row'>
         {/* Steps Timeline Skeleton */}
-        <div className='md:w-1/2 md:py-6 md:pr-10 lg:w-2/5'>
+        <main className='md:w-1/2 md:py-6 md:pr-10 lg:w-2/5'>
           {/* 5 Steps */}
           {[1, 2, 3, 4, 5].map((stepNumber) => (
-            <div
+            <main
               className='relative flex pb-12'
               key={`step-${stepNumber}`}>
               {/* Vertical Line */}
-              <div className='absolute inset-0 flex h-full w-10 items-center justify-center'>
-                {stepNumber < 5 && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
-              </div>
+              <main className='absolute inset-0 flex h-full w-10 items-center justify-center'>
+                {stepNumber < 5 && <main className='pointer-events-none h-full w-1 bg-gray-200' />}
+              </main>
 
               {/* Circle Icon */}
               <Skeleton className='relative z-10 h-10 w-10 shrink-0 rounded-full' />
 
               {/* Step Content */}
-              <div className='grow space-y-2 pl-4'>
+              <main className='grow space-y-2 pl-4'>
                 <Skeleton className='h-4 w-32' />
                 <Skeleton className='h-3 w-full' />
                 <Skeleton className='h-3 w-5/6' />
-              </div>
-            </div>
+              </main>
+            </main>
           ))}
-        </div>
+        </main>
 
         {/* Bottom SVG Illustration Skeleton */}
-        <div>
+        <main>
           <Skeleton className='h-[500px] w-[500px] object-fill object-center md:mx-auto md:h-full lg:h-1/2' />
-        </div>
+        </main>
       </section>
-    </div>
+    </main>
   );
 }

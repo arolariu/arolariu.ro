@@ -20,7 +20,7 @@ type Props = {
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
   return (
-    <div className='space-y-4'>
+    <main className='space-y-4'>
       {messages.map((message, index) => (
         <motion.div
           key={message.id}
@@ -45,12 +45,12 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
               </>
             )}
           </Avatar>
-          <div className='flex-1 space-y-1'>
-            <div className='flex items-center gap-2'>
+          <main className='flex-1 space-y-1'>
+            <main className='flex items-center gap-2'>
               <p className='text-sm font-medium'>{message.role === "assistant" ? "AI Assistant" : "You"}</p>
               <span className='text-muted-foreground text-xs'>{new Date(message.timestamp).toLocaleTimeString()}</span>
-            </div>
-            <div className='prose prose-sm dark:prose-invert'>
+            </main>
+            <main className='prose prose-sm dark:prose-invert'>
               {message.content.split("\n").map((line) => (
                 <p
                   key={line}
@@ -58,10 +58,10 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
                   {line}
                 </p>
               ))}
-            </div>
-          </div>
+            </main>
+          </main>
         </motion.div>
       ))}
-    </div>
+    </main>
   );
 }

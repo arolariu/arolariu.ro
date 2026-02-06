@@ -52,13 +52,13 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
   );
 
   return (
-    <div className='space-y-6'>
-      <div>
+    <main className='space-y-6'>
+      <main>
         <h2 className='text-2xl font-bold'>{t("title")}</h2>
         <p className='text-muted-foreground'>{t("description")}</p>
-      </div>
+      </main>
 
-      <div className='grid gap-6 md:grid-cols-2'>
+      <main className='grid gap-6 md:grid-cols-2'>
         {/* Data Retention */}
         <Card>
           <CardHeader className='pb-4'>
@@ -99,18 +99,18 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardDescription>{t("backup.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("backup.autoBackup")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("backup.autoBackupHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.autoBackup}
                 onCheckedChange={handleToggle("autoBackup")}
               />
-            </div>
+            </main>
             <Separator />
-            <div>
+            <main>
               <Label>{t("backup.frequency")}</Label>
               <Select
                 value={settings.backupFrequency}
@@ -129,7 +129,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -143,16 +143,16 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardDescription>{t("privacy.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("privacy.shareAnonymous")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("privacy.shareAnonymousHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.shareAnonymousData}
                 onCheckedChange={handleToggle("shareAnonymousData")}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -186,23 +186,23 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
             <CardDescription>{t("danger.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between rounded-lg border border-dashed p-4'>
-              <div>
+            <main className='flex items-center justify-between rounded-lg border border-dashed p-4'>
+              <main>
                 <p className='font-medium'>{t("danger.deleteData")}</p>
                 <p className='text-muted-foreground text-xs'>{t("danger.deleteDataHint")}</p>
-              </div>
+              </main>
               <Button
                 variant='destructive'
                 className='cursor-pointer'>
                 <TbTrash className='mr-2 h-4 w-4' />
                 {t("danger.deleteButton")}
               </Button>
-            </div>
-            <div className='flex items-center justify-between rounded-lg border border-dashed p-4'>
-              <div>
+            </main>
+            <main className='flex items-center justify-between rounded-lg border border-dashed p-4'>
+              <main>
                 <p className='font-medium'>{t("danger.deleteAccount")}</p>
                 <p className='text-muted-foreground text-xs'>{t("danger.deleteAccountHint")}</p>
-              </div>
+              </main>
               <Button
                 variant='outline'
                 className='cursor-pointer'
@@ -214,10 +214,10 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   {t("danger.manageAccount")}
                 </a>
               </Button>
-            </div>
+            </main>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

@@ -57,13 +57,13 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
   );
 
   return (
-    <div className='space-y-6'>
-      <div>
+    <main className='space-y-6'>
+      <main>
         <h2 className='text-2xl font-bold'>{t("title")}</h2>
         <p className='text-muted-foreground'>{t("description")}</p>
-      </div>
+      </main>
 
-      <div className='grid gap-6 md:grid-cols-2'>
+      <main className='grid gap-6 md:grid-cols-2'>
         {/* Master Toggle */}
         <Card className='md:col-span-2'>
           <CardHeader className='pb-4'>
@@ -74,16 +74,16 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardDescription>{t("enabled.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("enabled.label")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("enabled.hint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.enabled}
                 onCheckedChange={handleToggle("enabled")}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -152,41 +152,41 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardDescription>{t("tracking.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("tracking.spending")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("tracking.spendingHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.trackSpending}
                 onCheckedChange={handleToggle("trackSpending")}
                 disabled={!settings.enabled}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("tracking.categories")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("tracking.categoriesHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.trackCategories}
                 onCheckedChange={handleToggle("trackCategories")}
                 disabled={!settings.enabled}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("tracking.merchants")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("tracking.merchantsHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.trackMerchants}
                 onCheckedChange={handleToggle("trackMerchants")}
                 disabled={!settings.enabled}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -200,29 +200,29 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             <CardDescription>{t("advanced.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("advanced.benchmarking")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("advanced.benchmarkingHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.benchmarking}
                 onCheckedChange={handleToggle("benchmarking")}
                 disabled={!settings.enabled}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("advanced.predictive")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("advanced.predictiveHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.predictiveAnalysis}
                 onCheckedChange={handleToggle("predictiveAnalysis")}
                 disabled={!settings.enabled}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -235,12 +235,12 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='bg-muted/50 rounded-lg p-4'>
+            <main className='bg-muted/50 rounded-lg p-4'>
               <p className='text-muted-foreground text-sm'>{t("dataUsage.info")}</p>
-            </div>
+            </main>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

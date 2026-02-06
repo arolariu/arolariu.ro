@@ -54,11 +54,11 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
     <Card className='relative overflow-hidden'>
       <CardContent className='p-0'>
         {/* Preview */}
-        <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <main className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
           {mimeType === "application/pdf" ? (
-            <div className='flex h-full items-center justify-center'>
+            <main className='flex h-full items-center justify-center'>
               <TbFileTypePdf className='h-16 w-16 text-red-500' />
-            </div>
+            </main>
           ) : (
             <Image
               src={preview}
@@ -71,23 +71,23 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
 
           {/* Status overlay */}
           {status === "uploading" && (
-            <div className='absolute inset-0 flex items-center justify-center bg-black/50'>
+            <main className='absolute inset-0 flex items-center justify-center bg-black/50'>
               <TbLoader2 className='h-10 w-10 animate-spin text-white' />
-            </div>
+            </main>
           )}
           {status === "completed" && (
-            <div className='absolute inset-0 flex items-center justify-center bg-green-500/50'>
+            <main className='absolute inset-0 flex items-center justify-center bg-green-500/50'>
               <TbCheck className='h-10 w-10 text-white' />
-            </div>
+            </main>
           )}
           {status === "failed" && (
-            <div className='absolute inset-0 flex items-center justify-center bg-red-500/50'>
+            <main className='absolute inset-0 flex items-center justify-center bg-red-500/50'>
               <TbX className='h-10 w-10 text-white' />
-            </div>
+            </main>
           )}
 
           {/* Status badge */}
-          <div className='absolute top-2 right-2'>
+          <main className='absolute top-2 right-2'>
             {status === "idle" && (
               <Badge
                 variant='secondary'
@@ -116,7 +116,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
                 Failed
               </Badge>
             )}
-          </div>
+          </main>
 
           {/* Remove button */}
           {(status === "idle" || status === "failed") && (
@@ -135,10 +135,10 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
               </Tooltip>
             </TooltipProvider>
           )}
-        </div>
+        </main>
 
         {/* File info */}
-        <div className='p-3'>
+        <main className='p-3'>
           <p
             className='truncate text-sm font-medium text-gray-900 dark:text-white'
             title={name}>
@@ -146,7 +146,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
           </p>
           <p className='text-xs text-gray-500 dark:text-gray-400'>{formatFileSize(size)}</p>
           {error ? <p className='mt-1 truncate text-xs text-red-500'>{error}</p> : null}
-        </div>
+        </main>
       </CardContent>
     </Card>
   );
@@ -164,12 +164,12 @@ export default function UploadPreview(): React.JSX.Element | null {
   }
 
   return (
-    <div className='mb-8'>
-      <div className='mb-4 flex items-center justify-between'>
+    <main className='mb-8'>
+      <main className='mb-4 flex items-center justify-between'>
         <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>Pending Uploads ({pendingUploads.length})</h2>
-      </div>
+      </main>
 
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+      <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
         {pendingUploads.map((upload) => (
           <UploadCard
             key={upload.id}
@@ -183,7 +183,7 @@ export default function UploadPreview(): React.JSX.Element | null {
             onRemove={removeFiles}
           />
         ))}
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

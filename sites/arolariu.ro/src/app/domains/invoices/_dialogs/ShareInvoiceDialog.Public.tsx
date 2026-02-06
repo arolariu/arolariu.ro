@@ -77,7 +77,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
       <TabsContent
         value='link'
         className='mt-4 space-y-4'>
-        <div className='flex items-center space-x-2'>
+        <main className='flex items-center space-x-2'>
           <Input
             value={shareUrl}
             readOnly
@@ -89,7 +89,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             variant='outline'>
             {copied ? <TbCheck className='size-4' /> : <TbCopy className='size-4' />}
           </Button>
-        </div>
+        </main>
         <p className='text-muted-foreground text-xs'>
           Copy this link and share it. Anyone who receives it will be able to view the invoice.
         </p>
@@ -98,8 +98,8 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
       <TabsContent
         value='qr'
         className='mt-4'>
-        <div className='flex flex-col items-center justify-center space-y-4'>
-          <div className='rounded-lg border bg-white p-4 shadow-sm'>
+        <main className='flex flex-col items-center justify-center space-y-4'>
+          <main className='rounded-lg border bg-white p-4 shadow-sm'>
             <QRCode
               id='invoice-qr-code'
               value={shareUrl}
@@ -108,7 +108,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
               className='rounded-md'
               level='L'
             />
-          </div>
+          </main>
           <p className='text-muted-foreground text-center text-xs'>Anyone who scans this QR code will be directed to view the invoice.</p>
           <Button
             variant='outline'
@@ -117,7 +117,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             <TbCopy className='mr-2 size-4' />
             Copy QR Code as Image
           </Button>
-        </div>
+        </main>
       </TabsContent>
     </Tabs>
   );
@@ -144,7 +144,7 @@ export function AlreadyPublicMode({
   isRevoking,
 }: AlreadyPublicModeProps): React.JSX.Element {
   return (
-    <div className='space-y-4'>
+    <main className='space-y-4'>
       <Alert
         variant='destructive'
         className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
@@ -163,7 +163,7 @@ export function AlreadyPublicMode({
         onCopyQRCode={onCopyQRCode}
       />
 
-      <div className='border-t pt-4'>
+      <main className='border-t pt-4'>
         <Button
           variant='destructive'
           onClick={onRevokeAccess}
@@ -175,8 +175,8 @@ export function AlreadyPublicMode({
         <p className='text-muted-foreground mt-2 text-center text-xs'>
           This will make the invoice private. Existing links will stop working.
         </p>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }
 
@@ -194,7 +194,7 @@ export function AlreadyPublicMode({
  */
 export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}: PublicModeProps): React.JSX.Element {
   return (
-    <div className='space-y-4'>
+    <main className='space-y-4'>
       <Button
         variant='ghost'
         size='sm'
@@ -221,6 +221,6 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         onCopyLink={onCopyLink}
         onCopyQRCode={onCopyQRCode}
       />
-    </div>
+    </main>
   );
 }

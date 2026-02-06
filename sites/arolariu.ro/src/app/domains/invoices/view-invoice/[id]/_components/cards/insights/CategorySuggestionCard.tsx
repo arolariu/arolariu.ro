@@ -71,7 +71,7 @@ export function CategorySuggestionCard(): React.JSX.Element {
         </p>
 
         {/* Main Categories Grid */}
-        <div className='grid grid-cols-5 gap-2'>
+        <main className='grid grid-cols-5 gap-2'>
           {mainCategories.map((category) => (
             <CategoryButton
               key={category.id}
@@ -81,12 +81,12 @@ export function CategorySuggestionCard(): React.JSX.Element {
               variant='main'
             />
           ))}
-        </div>
+        </main>
 
         {/* More Categories Grid */}
-        <div className='space-y-2'>
+        <main className='space-y-2'>
           <p className='text-muted-foreground text-sm'>More categories:</p>
-          <div className='grid grid-cols-3 gap-2'>
+          <main className='grid grid-cols-3 gap-2'>
             {extendedCategories.map((category) => (
               <CategoryButton
                 key={category.id}
@@ -96,16 +96,16 @@ export function CategorySuggestionCard(): React.JSX.Element {
                 variant='extended'
               />
             ))}
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* Gamification */}
-        <div className='space-y-2 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-500/10 to-orange-500/10 p-3 dark:border-amber-800'>
-          <div className='flex items-center gap-2'>
+        <main className='space-y-2 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-500/10 to-orange-500/10 p-3 dark:border-amber-800'>
+          <main className='flex items-center gap-2'>
             <TbGift className='h-4 w-4 text-amber-600' />
             <span className='text-sm font-medium'>Categorize {goal} invoices to unlock detailed insights!</span>
-          </div>
-          <div className='flex items-center gap-3'>
+          </main>
+          <main className='flex items-center gap-3'>
             <Progress
               value={(categorizedCount / goal) * 100}
               className='h-2 flex-1'
@@ -113,8 +113,8 @@ export function CategorySuggestionCard(): React.JSX.Element {
             <span className='text-muted-foreground text-sm font-medium'>
               {categorizedCount}/{goal}
             </span>
-          </div>
-        </div>
+          </main>
+        </main>
       </CardContent>
     </Card>
   );

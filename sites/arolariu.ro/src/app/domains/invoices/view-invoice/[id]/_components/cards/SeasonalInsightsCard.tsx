@@ -185,37 +185,37 @@ export function SeasonalInsightsCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Month comparison */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between text-sm'>
+        <main className='space-y-2'>
+          <main className='flex items-center justify-between text-sm'>
             <span className='text-muted-foreground'>{monthName} so far</span>
             <span className='font-medium'>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
-          </div>
+          </main>
           <Progress
             value={percentOfAverage}
             className='h-2'
           />
-          <div className='text-muted-foreground flex items-center justify-between text-xs'>
+          <main className='text-muted-foreground flex items-center justify-between text-xs'>
             <span>
               vs {monthName} avg: {formatCurrency(decemberAverage, {currencyCode: currency.code, locale})}
             </span>
             <span>{percentOfAverage.toFixed(0)}%</span>
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* Insights list */}
-        <div className='space-y-2'>
+        <main className='space-y-2'>
           {insights.map((insight) => (
-            <div
+            <main
               key={insight.id}
               className={`flex items-start gap-3 rounded-lg border p-3 ${getInsightContainerClasses(insight.type)}`}>
-              <div className={`mt-0.5 ${getInsightIconColorClass(insight.type)}`}>{insight.icon}</div>
-              <div className='min-w-0 flex-1'>
+              <main className={`mt-0.5 ${getInsightIconColorClass(insight.type)}`}>{insight.icon}</main>
+              <main className='min-w-0 flex-1'>
                 <p className='text-sm leading-tight font-medium'>{insight.title}</p>
                 <p className='text-muted-foreground text-xs'>{insight.description}</p>
-              </div>
-            </div>
+              </main>
+            </main>
           ))}
-        </div>
+        </main>
       </CardContent>
     </Card>
   );

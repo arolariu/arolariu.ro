@@ -14,8 +14,8 @@ type Props = Readonly<{
 
 export default function AuthFormShell(props: Readonly<Props>): React.JSX.Element {
   return (
-    <div className={styles["shell"]}>
-      <div>
+    <main className={styles["shell"]}>
+      <main>
         <p className={styles["kicker"]}>{props.kicker}</p>
         <p className={styles["secondary"]}>
           {props.secondaryPrompt}{" "}
@@ -25,11 +25,11 @@ export default function AuthFormShell(props: Readonly<Props>): React.JSX.Element
             {props.secondaryAction}
           </Link>
         </p>
-      </div>
+      </main>
 
       {props.children}
 
       <p className={styles["footer"]}>{props.footer}</p>
-    </div>
+    </main>
   );
 }

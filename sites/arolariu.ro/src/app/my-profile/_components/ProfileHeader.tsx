@@ -33,13 +33,13 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
 
   return (
     <Card className='overflow-hidden'>
-      <div className='from-primary/20 via-primary/10 relative h-32 bg-gradient-to-r to-transparent'>
-        <div className='bg-primary/10 absolute -top-10 -right-10 h-40 w-40 rounded-full blur-3xl' />
-      </div>
+      <main className='from-primary/20 via-primary/10 relative h-32 bg-gradient-to-r to-transparent'>
+        <main className='bg-primary/10 absolute -top-10 -right-10 h-40 w-40 rounded-full blur-3xl' />
+      </main>
       <CardContent className='relative -mt-16 px-6 pb-6'>
-        <div className='flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'>
-          <div className='flex flex-col items-center gap-4 sm:flex-row sm:items-end'>
-            <div className='relative'>
+        <main className='flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'>
+          <main className='flex flex-col items-center gap-4 sm:flex-row sm:items-end'>
+            <main className='relative'>
               <Avatar className='border-background ring-primary/20 h-24 w-24 border-4 shadow-xl ring-2'>
                 <AvatarImage
                   src={user?.imageUrl}
@@ -47,13 +47,13 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                 />
                 <AvatarFallback className='text-2xl'>{getInitials(user?.firstName, user?.lastName)}</AvatarFallback>
               </Avatar>
-              <div className='ring-background absolute -right-1 -bottom-1 rounded-full bg-green-500 p-1.5 ring-2'>
+              <main className='ring-background absolute -right-1 -bottom-1 rounded-full bg-green-500 p-1.5 ring-2'>
                 <TbCheck className='h-3 w-3 text-white' />
-              </div>
-            </div>
+              </main>
+            </main>
 
-            <div className='text-center sm:text-left'>
-              <div className='flex flex-col items-center gap-2 sm:flex-row'>
+            <main className='text-center sm:text-left'>
+              <main className='flex flex-col items-center gap-2 sm:flex-row'>
                 <h1 className='text-2xl font-bold'>
                   {user?.firstName ?? ""} {user?.lastName ?? ""}
                 </h1>
@@ -63,10 +63,10 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                   <TbSparkles className='h-3 w-3' />
                   {t("header.premium")}
                 </Badge>
-              </div>
+              </main>
               <p className='text-muted-foreground mt-1'>{user?.primaryEmailAddress?.emailAddress}</p>
 
-              <div className='mt-3 flex flex-wrap justify-center gap-2 sm:justify-start'>
+              <main className='mt-3 flex flex-wrap justify-center gap-2 sm:justify-start'>
                 <Badge variant='outline'>
                   <TbUser className='mr-1 h-3 w-3' />
                   {t("header.memberSince", {date: user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"})}
@@ -79,11 +79,11 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                   <TbCalendar className='mr-1 h-3 w-3' />
                   {accountAgeDays} {t("header.daysActive")}
                 </Badge>
-              </div>
-            </div>
-          </div>
+              </main>
+            </main>
+          </main>
 
-          <div className='flex items-center gap-2'>
+          <main className='flex items-center gap-2'>
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -99,7 +99,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                   <SheetTitle>{t("header.editProfileTitle")}</SheetTitle>
                   <SheetDescription>{t("header.editProfileDescription")}</SheetDescription>
                 </SheetHeader>
-                <div className='mt-6 space-y-4'>
+                <main className='mt-6 space-y-4'>
                   <p className='text-muted-foreground text-sm'>{t("header.editProfileClerkNote")}</p>
                   <Button
                     className='w-full cursor-pointer'
@@ -111,23 +111,23 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                       {t("header.manageOnClerk")}
                     </a>
                   </Button>
-                </div>
+                </main>
               </SheetContent>
             </Sheet>
-          </div>
-        </div>
+          </main>
+        </main>
 
-        <div className='mt-6 max-w-md'>
-          <div className='mb-2 flex items-center justify-between text-sm'>
+        <main className='mt-6 max-w-md'>
+          <main className='mb-2 flex items-center justify-between text-sm'>
             <span className='text-muted-foreground'>{t("header.profileCompletion")}</span>
             <span className='font-medium'>{profileCompletion}%</span>
-          </div>
+          </main>
           <Progress
             value={profileCompletion}
             className='h-2'
           />
           {profileCompletion < 100 && <p className='text-muted-foreground mt-2 text-xs'>{t("header.completionHint")}</p>}
-        </div>
+        </main>
       </CardContent>
     </Card>
   );

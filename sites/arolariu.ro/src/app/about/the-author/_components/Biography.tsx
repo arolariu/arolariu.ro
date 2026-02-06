@@ -77,7 +77,7 @@ export default function Biography(): React.JSX.Element {
 
   return (
     <section className={styles["section"]}>
-      <div className={styles["bgOrbs"]}>
+      <main className={styles["bgOrbs"]}>
         <motion.div
           className={styles["orbBlue"]}
           animate={{
@@ -94,7 +94,7 @@ export default function Biography(): React.JSX.Element {
           }}
           transition={{duration: 8, repeat: Number.POSITIVE_INFINITY, delay: 2}}
         />
-      </div>
+      </main>
 
       <motion.div
         ref={sectionRef}
@@ -109,8 +109,8 @@ export default function Biography(): React.JSX.Element {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <div className={styles["card"]}>
-            <div className={styles["accentTop"]} />
+          <main className={styles["card"]}>
+            <main className={styles["accentTop"]} />
             {bioSections.map((section) => (
               <motion.div
                 key={section.content.slice(0, 20)}
@@ -127,7 +127,7 @@ export default function Biography(): React.JSX.Element {
               transition={{duration: 1.5, ease: "easeOut"}}
               viewport={{once: false}}
             />
-          </div>
+          </main>
         </motion.div>
       </motion.div>
     </section>

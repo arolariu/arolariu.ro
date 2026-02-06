@@ -78,17 +78,17 @@ export default function InvoiceHeader(): React.JSX.Element {
       animate={{opacity: 1, y: 0}}
       transition={{duration: 0.5}}
       className='mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center'>
-      <div className='flex items-center gap-2'>
-        <div>
+      <main className='flex items-center gap-2'>
+        <main>
           <Input
             type='text'
             value={invoiceName}
             onChange={handleNameChange}
             className='w-full border-0 text-3xl font-bold tracking-tight focus-visible:border-0 focus-visible:ring-0'
           />
-        </div>
-      </div>
-      <div className='flex flex-wrap items-center gap-2'>
+        </main>
+      </main>
+      <main className='flex flex-wrap items-center gap-2'>
         <TooltipProvider>
           {/* Save & Discard buttons - only show when there are changes */}
           {hasChanges ? (
@@ -170,7 +170,7 @@ export default function InvoiceHeader(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
+      </main>
     </motion.div>
   );
 }

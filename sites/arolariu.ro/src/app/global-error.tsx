@@ -122,9 +122,9 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
           <main className='container mx-auto flex min-h-screen flex-col items-center justify-center px-5 py-24'>
             {/* Hero Section - Error Icon */}
             <section className='mb-8 text-center'>
-              <div className='mb-4 inline-flex items-center justify-center rounded-full bg-red-100 p-6 dark:bg-red-900/20'>
+              <main className='mb-4 inline-flex items-center justify-center rounded-full bg-red-100 p-6 dark:bg-red-900/20'>
                 <TbAlertTriangle className='h-16 w-16 text-red-600 dark:text-red-400' />
-              </div>
+              </main>
               <h1 className='mb-2 text-4xl font-bold text-red-600 dark:text-red-400'>Something Went Wrong</h1>
               <p className='text-lg text-gray-600 dark:text-gray-400'>
                 An unexpected error occurred. Our team has been automatically notified.
@@ -162,25 +162,25 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                 </Alert>
 
                 {/* What to do section */}
-                <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900'>
+                <main className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900'>
                   <h3 className='mb-2 font-semibold'>What can you do?</h3>
                   <ul className='space-y-1 text-sm text-gray-600 dark:text-gray-400'>
                     <li>• Try refreshing the page using the button below</li>
                     <li>• Go back to the home page and start over</li>
                     <li>• Contact support if the problem persists</li>
                   </ul>
-                </div>
+                </main>
 
                 {/* QR Code with Diagnostic Data */}
                 {Boolean(errorContext) && (
-                  <div className='flex flex-col items-center space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-black'>
+                  <main className='flex flex-col items-center space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-black'>
                     <p className='text-sm text-gray-600 dark:text-gray-400'>Scan for diagnostic information:</p>
                     <QRCode
                       value={errorContext}
                       size={128}
                       className='rounded border-2 border-gray-200 p-2 dark:border-gray-800'
                     />
-                  </div>
+                  </main>
                 )}
 
                 {/* Technical Details (Collapsible) */}
@@ -188,7 +188,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                   <summary className='cursor-pointer p-4 font-semibold hover:bg-gray-50 dark:hover:bg-gray-900'>
                     Technical Information (for developers)
                   </summary>
-                  <div className='border-t border-gray-200 p-4 dark:border-gray-800'>
+                  <main className='border-t border-gray-200 p-4 dark:border-gray-800'>
                     <pre className='overflow-x-auto text-xs text-gray-600 dark:text-gray-400'>
                       <code>{errorContext || "Loading diagnostic information..."}</code>
                     </pre>
@@ -200,7 +200,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                         </pre>
                       </>
                     )}
-                  </div>
+                  </main>
                 </details>
               </CardContent>
 

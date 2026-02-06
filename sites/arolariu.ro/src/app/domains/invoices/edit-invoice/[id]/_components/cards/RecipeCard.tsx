@@ -156,7 +156,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
       <CardContent className='h-full p-4'>
         <p className='text-muted-foreground mb-2 text-sm'>{description}</p>
 
-        <div className='space-y-4'>
+        <main className='space-y-4'>
           <h4 className='text-muted-foreground text-sm'>Ingredients:</h4>
           <ul className='list-disc pl-5 text-sm'>
             {ingredients.slice(0, 3).map((ingredient) => (
@@ -180,17 +180,17 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               </TooltipProvider>
             )}
           </ul>
-        </div>
+        </main>
 
         {/** Prep + Cook times */}
-        <div className='text-muted-foreground flex cursor-help gap-4 pt-4 text-xs'>
+        <main className='text-muted-foreground flex cursor-help gap-4 pt-4 text-xs'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className='flex items-center'>
+                <main className='flex items-center'>
                   <TbClock className='mr-1 h-3 w-3' />
                   Prep: {preparationTime}&lsquo;
-                </div>
+                </main>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
                 <p>Preparation time is {preparationTime} minutes.</p>
@@ -198,17 +198,17 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className='flex items-center'>
+                <main className='flex items-center'>
                   <TbToolsKitchen className='mr-1 h-3 w-3' />
                   Cook: {cookingTime}&lsquo;
-                </div>
+                </main>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
                 <p>Cooking time is {cookingTime} minutes.</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
+        </main>
       </CardContent>
 
       <CardFooter className='bg-muted/50 flex items-center justify-center justify-items-center gap-2 px-4 py-2'>

@@ -98,9 +98,9 @@ export default function RenderAuthScreen(): React.JSX.Element {
 
   return (
     <section className={styles["section"]}>
-      <div className={styles["container"]}>
-        <div className={styles["heroSection"]}>
-          <div className={styles["heroInner"]}>
+      <main className={styles["container"]}>
+        <main className={styles["heroSection"]}>
+          <main className={styles["heroInner"]}>
             <Badge
               variant='secondary'
               className={styles["heroBadge"]}>
@@ -111,42 +111,42 @@ export default function RenderAuthScreen(): React.JSX.Element {
             <h1 className={styles["heroTitle"]}>{t("hero.title")}</h1>
 
             <p className={styles["heroSubtitle"]}>{t("hero.subtitle")}</p>
-          </div>
+          </main>
 
-          <div className={styles["trustBadgesCenter"]}>
+          <main className={styles["trustBadgesCenter"]}>
             <AuthTrustBadgesRow badges={trustBadges} />
-          </div>
-        </div>
+          </main>
+        </main>
 
-        <div className={styles["cardsGrid"]}>
+        <main className={styles["cardsGrid"]}>
           {cards.map((card, index) => (
-            <div
+            <main
               key={card.key}
               className={styles["cardWrapper"]}>
               <Card className={styles["card"]}>
                 {/* Gradient overlay */}
-                <div
+                <main
                   className={`${styles["cardGradient"]} ${styles[gradientClassMap[card.gradientKey]]}`}
                   aria-hidden='true'
                 />
 
                 {/* Corner glow */}
-                <div
+                <main
                   aria-hidden='true'
                   className={styles["cardGlow"]}
                 />
 
                 <CardHeader className={styles["cardHeader"]}>
                   {/* Icon badge */}
-                  <div className={styles["cardHeaderTop"]}>
-                    <div className={styles["cardIconWrapper"]}>
+                  <main className={styles["cardHeaderTop"]}>
+                    <main className={styles["cardIconWrapper"]}>
                       <card.icon className={styles["cardIcon"]} />
-                    </div>
-                    <div className={styles["cardStep"]}>{index === 0 ? t("step1") : t("step2")}</div>
-                  </div>
+                    </main>
+                    <main className={styles["cardStep"]}>{index === 0 ? t("step1") : t("step2")}</main>
+                  </main>
 
                   {/* Illustration */}
-                  <div className={styles["cardIllustration"]}>
+                  <main className={styles["cardIllustration"]}>
                     <Image
                       src={card.imageSrc}
                       alt={card.illustrationAlt}
@@ -155,12 +155,12 @@ export default function RenderAuthScreen(): React.JSX.Element {
                       className={styles["cardImage"]}
                       priority={index === 0}
                     />
-                  </div>
+                  </main>
 
-                  <div className={styles["cardTitleSection"]}>
+                  <main className={styles["cardTitleSection"]}>
                     <CardTitle className={styles["cardTitle"]}>{card.title}</CardTitle>
                     <CardDescription className={styles["cardDescription"]}>{card.description}</CardDescription>
-                  </div>
+                  </main>
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
@@ -180,8 +180,8 @@ export default function RenderAuthScreen(): React.JSX.Element {
                   </ul>
 
                   {/* CTA Section */}
-                  <div className={styles["ctaSection"]}>
-                    <div className={styles["ctaButtonWrapper"]}>
+                  <main className={styles["ctaSection"]}>
+                    <main className={styles["ctaButtonWrapper"]}>
                       <Button
                         asChild
                         size='lg'
@@ -191,7 +191,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
                           <TbArrowRight className={styles["ctaArrowIcon"]} />
                         </Link>
                       </Button>
-                    </div>
+                    </main>
 
                     <p className={styles["secondaryPrompt"]}>
                       {card.secondaryPrompt}{" "}
@@ -201,16 +201,16 @@ export default function RenderAuthScreen(): React.JSX.Element {
                         {card.secondaryAction}
                       </Link>
                     </p>
-                  </div>
+                  </main>
                 </CardContent>
               </Card>
-            </div>
+            </main>
           ))}
-        </div>
+        </main>
 
         {/* Section footer note */}
         <p className={styles["footerNote"]}>{t("footer")}</p>
-      </div>
+      </main>
     </section>
   );
 }

@@ -92,14 +92,14 @@ export default function Competencies(): React.JSX.Element {
               scale: 1.03,
               transition: {duration: 0.2},
             }}>
-            <div className={styles["card"]}>
-              <div className={styles["accentTop"]} />
-              <div className={styles["cardHeader"]}>
-                <div className={styles["iconWrapper"]}>{skill.icon}</div>
+            <main className={styles["card"]}>
+              <main className={styles["accentTop"]} />
+              <main className={styles["cardHeader"]}>
+                <main className={styles["iconWrapper"]}>{skill.icon}</main>
                 <h3 className={styles["cardTitle"]}>{skill.title}</h3>
-              </div>
+              </main>
               <p className={styles["cardDescription"]}>{skill.description}</p>
-            </div>
+            </main>
           </motion.div>
         ))}
       </motion.div>

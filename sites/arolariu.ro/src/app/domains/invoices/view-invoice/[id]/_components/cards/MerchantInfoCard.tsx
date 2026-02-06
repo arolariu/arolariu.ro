@@ -14,19 +14,19 @@ export function MerchantInfoCard(): React.JSX.Element {
         <CardTitle className='text-lg'>{merchant.name}</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <div className='flex items-start gap-2'>
+        <main className='flex items-start gap-2'>
           <TbMapPin className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
           <span className='text-sm'>{merchant.address.address}</span>
-        </div>
-        <div className='flex items-center gap-2'>
+        </main>
+        <main className='flex items-center gap-2'>
           <TbPhone className='text-muted-foreground h-4 w-4' />
           <span className='text-sm'>{merchant.address.phoneNumber}</span>
-        </div>
-        <div className='flex items-center gap-2'>
+        </main>
+        <main className='flex items-center gap-2'>
           <Badge variant='outline'>{formatEnum(MerchantCategory, merchant.category)}</Badge>
-        </div>
+        </main>
         {Boolean(merchant.address.website) && (
-          <div className='flex items-center gap-2'>
+          <main className='flex items-center gap-2'>
             <TbGlobe className='text-muted-foreground h-4 w-4' />
             <a
               href={merchant.address.website}
@@ -35,7 +35,7 @@ export function MerchantInfoCard(): React.JSX.Element {
               className='text-primary text-sm underline-offset-4 hover:underline'>
               {merchant.address.website.replace(/^https?:\/\//u, "")}
             </a>
-          </div>
+          </main>
         )}
       </CardContent>
       <CardFooter>

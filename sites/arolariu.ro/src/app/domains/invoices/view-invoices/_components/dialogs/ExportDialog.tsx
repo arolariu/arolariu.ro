@@ -63,14 +63,14 @@ export default function ExportDialog(): React.JSX.Element {
           <DialogDescription>Export {invoicesToExport.length} invoices in your preferred format.</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4 py-4'>
-          <div className='space-y-2'>
+        <main className='space-y-4 py-4'>
+          <main className='space-y-2'>
             <h3 className='text-sm font-medium'>Export Format</h3>
             <RadioGroup
               defaultValue={exportOptions.format}
               // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
               onValueChange={(format) => handleOptionsChange("format", format)}>
-              <div className='flex items-center space-x-2'>
+              <main className='flex items-center space-x-2'>
                 <RadioGroupItem
                   value='csv'
                   id='csv'
@@ -81,8 +81,8 @@ export default function ExportDialog(): React.JSX.Element {
                   <TbFileSpreadsheet className='h-4 w-4' />
                   CSV
                 </Label>
-              </div>
-              <div className='flex items-center space-x-2'>
+              </main>
+              <main className='flex items-center space-x-2'>
                 <RadioGroupItem
                   value='json'
                   id='json'
@@ -93,8 +93,8 @@ export default function ExportDialog(): React.JSX.Element {
                   <TbJson className='h-4 w-4' />
                   JSON
                 </Label>
-              </div>
-              <div className='flex items-center space-x-2'>
+              </main>
+              <main className='flex items-center space-x-2'>
                 <RadioGroupItem
                   value='pdf'
                   id='pdf'
@@ -105,13 +105,13 @@ export default function ExportDialog(): React.JSX.Element {
                   <TbFileText className='h-4 w-4' />
                   PDF
                 </Label>
-              </div>
+              </main>
             </RadioGroup>
-          </div>
+          </main>
 
-          <div className='space-y-2'>
+          <main className='space-y-2'>
             <h3 className='text-sm font-medium'>Options</h3>
-            <div className='flex items-center space-x-2'>
+            <main className='flex items-center space-x-2'>
               <Checkbox
                 id='include-metadata'
                 checked={exportOptions.includeMetadata}
@@ -119,8 +119,8 @@ export default function ExportDialog(): React.JSX.Element {
                 onCheckedChange={(checked) => handleOptionsChange("includeMetadata", checked === true)}
               />
               <Label htmlFor='include-metadata'>Include metadata</Label>
-            </div>
-            <div className='flex items-center space-x-2'>
+            </main>
+            <main className='flex items-center space-x-2'>
               <Checkbox
                 id='include-items'
                 checked={exportOptions.includeProducts}
@@ -128,8 +128,8 @@ export default function ExportDialog(): React.JSX.Element {
                 onCheckedChange={(checked) => handleOptionsChange("includeProducts", checked === true)}
               />
               <Label htmlFor='include-items'>Include products</Label>
-            </div>
-            <div className='flex items-center space-x-2'>
+            </main>
+            <main className='flex items-center space-x-2'>
               <Checkbox
                 id='include-merchant'
                 checked={exportOptions.includeMerchant}
@@ -137,10 +137,10 @@ export default function ExportDialog(): React.JSX.Element {
                 onCheckedChange={(checked) => handleOptionsChange("includeMerchant", checked === true)}
               />
               <Label htmlFor='include-merchant'>Include merchant</Label>
-            </div>
+            </main>
             {exportOptions.format === "csv" && (
               <>
-                <div className='flex items-center space-x-2'>
+                <main className='flex items-center space-x-2'>
                   <Checkbox
                     id='csv-include-headers'
                     checked={exportOptions.csvOptions?.includeHeaders}
@@ -148,7 +148,7 @@ export default function ExportDialog(): React.JSX.Element {
                     onCheckedChange={(checked) => handleOptionsChange("csvOptions", {...exportOptions.csvOptions, includeHeaders: checked})}
                   />
                   <Label htmlFor='csv-include-headers'>Include CSV Headers</Label>
-                </div>
+                </main>
                 <Label htmlFor='csv-delimiter'>CSV Delimiter Override (optional):</Label>
                 <Input
                   className='w-1/2'
@@ -161,7 +161,7 @@ export default function ExportDialog(): React.JSX.Element {
               </>
             )}
             {exportOptions.format === "json" && (
-              <div className='flex items-center space-x-2'>
+              <main className='flex items-center space-x-2'>
                 <Checkbox
                   id='json-pretty-print'
                   checked={exportOptions.jsonOptions?.prettyPrint}
@@ -169,10 +169,10 @@ export default function ExportDialog(): React.JSX.Element {
                   onCheckedChange={(checked) => handleOptionsChange("jsonOptions", {...exportOptions.jsonOptions, prettyPrint: checked})}
                 />
                 <Label htmlFor='json-pretty-print'>Pretty Print (2 spaces)</Label>
-              </div>
+              </main>
             )}
-          </div>
-        </div>
+          </main>
+        </main>
 
         <DialogFooter>
           <Button

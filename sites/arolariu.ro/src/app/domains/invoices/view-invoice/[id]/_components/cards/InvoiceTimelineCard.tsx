@@ -26,29 +26,29 @@ export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Eleme
       </CardHeader>
       <CardContent className='space-y-4'>
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-          <div
+          <main
             key={dateKey}
             className='space-y-2'>
             <p className='text-muted-foreground text-xs font-medium'>{dateKey}</p>
-            <div className='border-border space-y-2 border-l-2 pl-4'>
+            <main className='border-border space-y-2 border-l-2 pl-4'>
               {dateEvents.map((event) => (
-                <div
+                <main
                   key={event.id}
                   className='relative'>
-                  <div className='bg-primary text-primary-foreground absolute -left-[21px] flex h-4 w-4 items-center justify-center rounded-full'>
+                  <main className='bg-primary text-primary-foreground absolute -left-[21px] flex h-4 w-4 items-center justify-center rounded-full'>
                     {event.icon ?? getEventIcon(event)}
-                  </div>
-                  <div className='flex items-start justify-between gap-2'>
-                    <div className='min-w-0'>
+                  </main>
+                  <main className='flex items-start justify-between gap-2'>
+                    <main className='min-w-0'>
                       <p className='text-sm leading-tight font-medium'>{event.title}</p>
                       <p className='text-muted-foreground text-xs'>{event.description}</p>
-                    </div>
+                    </main>
                     <span className='text-muted-foreground shrink-0 text-xs'>{formatDate(event.date, {locale})}</span>
-                  </div>
-                </div>
+                  </main>
+                </main>
               ))}
-            </div>
-          </div>
+            </main>
+          </main>
         ))}
       </CardContent>
     </Card>

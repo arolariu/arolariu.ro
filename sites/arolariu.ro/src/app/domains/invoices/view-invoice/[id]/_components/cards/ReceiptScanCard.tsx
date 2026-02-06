@@ -68,7 +68,7 @@ export function ReceiptScanCard(): React.JSX.Element {
             open={isOpen}
             onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <div className='group cursor-pointer overflow-hidden rounded-lg border'>
+              <main className='group cursor-pointer overflow-hidden rounded-lg border'>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1}`}
@@ -78,13 +78,13 @@ export function ReceiptScanCard(): React.JSX.Element {
                     isTransitioning ? "opacity-50 blur-sm" : "blur-0 opacity-100"
                   }`}
                 />
-              </div>
+              </main>
             </DialogTrigger>
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
               </DialogHeader>
-              <div className='relative flex max-h-[80vh] justify-center overflow-auto'>
+              <main className='relative flex max-h-[80vh] justify-center overflow-auto'>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1} - full size`}
@@ -92,7 +92,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   height={1200}
                   className='w-full object-contain'
                 />
-              </div>
+              </main>
             </DialogContent>
           </Dialog>
         </CardContent>
@@ -112,7 +112,7 @@ export function ReceiptScanCard(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
           {totalScans > 1 && (
-            <div className='flex w-full gap-2'>
+            <main className='flex w-full gap-2'>
               {currentScanIndex > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -143,7 +143,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   </TooltipContent>
                 </Tooltip>
               )}
-            </div>
+            </main>
           )}
         </CardFooter>
       </Card>

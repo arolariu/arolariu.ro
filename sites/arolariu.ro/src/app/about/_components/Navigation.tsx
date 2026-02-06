@@ -46,7 +46,7 @@ export default function Navigation(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["section"]}>
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["header"]}
@@ -58,7 +58,7 @@ export default function Navigation(): React.JSX.Element {
         </motion.div>
 
         {/* Navigation cards */}
-        <div className={styles["grid"]}>
+        <main className={styles["grid"]}>
           {navigationItems.map((item, index) => (
             <motion.div
               key={item.key}
@@ -67,14 +67,14 @@ export default function Navigation(): React.JSX.Element {
               transition={{delay: 0.3 + index * 0.15, duration: 0.5}}>
               <Card className={styles["card"]}>
                 {/* Gradient overlay */}
-                <div
+                <main
                   className={`${styles["cardGradient"]} ${styles[gradientClassMap[item.key]]}`}
                   aria-hidden='true'
                 />
 
                 <CardHeader className={styles["cardHeader"]}>
                   {/* Image container */}
-                  <div className={styles["imageWrapper"]}>
+                  <main className={styles["imageWrapper"]}>
                     <Image
                       src={item.image}
                       alt={t(`${item.key}.title`)}
@@ -82,15 +82,15 @@ export default function Navigation(): React.JSX.Element {
                       height={120}
                       className={styles["image"]}
                     />
-                  </div>
+                  </main>
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
-                  <div className={styles["cardContentInner"]}>
-                    <div className={styles["cardTextCenter"]}>
+                  <main className={styles["cardContentInner"]}>
+                    <main className={styles["cardTextCenter"]}>
                       <h3 className={styles["cardTitle"]}>{t(`${item.key}.title`)}</h3>
                       <p className={styles["cardSubtitle"]}>{t(`${item.key}.subtitle`)}</p>
-                    </div>
+                    </main>
 
                     {/* Feature list */}
                     <ul className={styles["featureList"]}>
@@ -107,7 +107,7 @@ export default function Navigation(): React.JSX.Element {
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </main>
                 </CardContent>
 
                 <CardFooter className={styles["cardFooter"]}>
@@ -124,8 +124,8 @@ export default function Navigation(): React.JSX.Element {
               </Card>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

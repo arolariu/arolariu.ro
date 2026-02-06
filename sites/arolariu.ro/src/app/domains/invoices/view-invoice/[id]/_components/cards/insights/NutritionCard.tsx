@@ -161,83 +161,83 @@ export function NutritionCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-6'>
         {/* Food Balance Score */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
+        <main className='space-y-2'>
+          <main className='flex items-center justify-between'>
             <span className='text-sm font-medium'>Food Balance Score</span>
             <span className={`text-sm font-semibold ${scoreColor}`}>
               {balanceScore}/100 - {scoreLabel}
             </span>
-          </div>
+          </main>
           <Progress
             value={balanceScore}
             className='h-2'
           />
-        </div>
+        </main>
 
         {/* Basket Composition */}
-        <div className='space-y-3'>
+        <main className='space-y-3'>
           <h4 className='text-muted-foreground text-sm font-medium tracking-wide uppercase'>Your Basket Composition</h4>
-          <div className='space-y-2'>
-            <div className='flex items-center gap-3'>
+          <main className='space-y-2'>
+            <main className='flex items-center gap-3'>
               <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
               <span className='w-24 shrink-0 text-sm'>Whole Foods</span>
-              <div className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
-                <div
+              <main className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
+                <main
                   className='h-full bg-green-500 transition-all'
                   style={{width: `${wholeFoodPct}%`}}
                 />
-              </div>
+              </main>
               <span className='text-muted-foreground w-10 text-right text-sm'>{wholeFoodPct}%</span>
-            </div>
-            <div className='flex items-center gap-3'>
+            </main>
+            <main className='flex items-center gap-3'>
               <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
               <span className='w-24 shrink-0 text-sm'>Processed</span>
-              <div className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
-                <div
+              <main className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
+                <main
                   className='h-full bg-amber-500 transition-all'
                   style={{width: `${processedPct}%`}}
                 />
-              </div>
+              </main>
               <span className='text-muted-foreground w-10 text-right text-sm'>{processedPct}%</span>
-            </div>
-            <div className='flex items-center gap-3'>
+            </main>
+            <main className='flex items-center gap-3'>
               <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
               <span className='w-24 shrink-0 text-sm'>Dairy/Other</span>
-              <div className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
-                <div
+              <main className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
+                <main
                   className='h-full bg-blue-500 transition-all'
                   style={{width: `${dairySnackPct}%`}}
                 />
-              </div>
+              </main>
               <span className='text-muted-foreground w-10 text-right text-sm'>{dairySnackPct}%</span>
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
 
         {/* Food Groups Grid */}
-        <div className='grid grid-cols-2 gap-3'>
+        <main className='grid grid-cols-2 gap-3'>
           {foodGroups.map((group) => (
-            <div
+            <main
               key={group.name}
               className='bg-card rounded-lg border p-3 text-center'>
-              <div className='mb-1 flex justify-center'>{group.icon}</div>
+              <main className='mb-1 flex justify-center'>{group.icon}</main>
               <p className='text-muted-foreground text-xs'>{group.name}</p>
               <p className='text-sm font-semibold'>
                 {group.items} item{group.items === 1 ? "" : "s"}
               </p>
               <p className='text-muted-foreground text-xs'>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
-            </div>
+            </main>
           ))}
-        </div>
+        </main>
 
         {/* Allergens */}
         {allergens.length > 0 && (
-          <div className='space-y-2'>
-            <div className='flex items-center gap-2'>
+          <main className='space-y-2'>
+            <main className='flex items-center gap-2'>
               <TbAlertTriangle className='h-4 w-4 text-amber-500' />
               <h4 className='text-sm font-medium'>Allergens Detected</h4>
-            </div>
-            <div className='flex flex-wrap gap-2'>
+            </main>
+            <main className='flex flex-wrap gap-2'>
               <TooltipProvider>
                 {allergens.map(([name, count]) => (
                   <Tooltip key={name}>
@@ -258,15 +258,15 @@ export function NutritionCard(): React.JSX.Element {
                   </Tooltip>
                 ))}
               </TooltipProvider>
-            </div>
-          </div>
+            </main>
+          </main>
         )}
 
         {/* Suggestion */}
-        <div className='bg-muted/50 flex items-start gap-2 rounded-lg p-3'>
+        <main className='bg-muted/50 flex items-start gap-2 rounded-lg p-3'>
           <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
           <p className='text-muted-foreground text-sm'>{suggestion}</p>
-        </div>
+        </main>
       </CardContent>
     </Card>
   );

@@ -37,13 +37,13 @@ function FileTypeCard({
   extensions: string;
 }>): React.JSX.Element {
   return (
-    <div className='flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50'>
-      <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-700'>{icon}</div>
-      <div>
+    <main className='flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50'>
+      <main className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm dark:bg-gray-700'>{icon}</main>
+      <main>
         <p className='text-sm font-medium text-gray-900 dark:text-white'>{label}</p>
         <p className='text-xs text-gray-500 dark:text-gray-400'>{extensions}</p>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }
 
@@ -85,42 +85,42 @@ function UploadStats(): React.JSX.Element | null {
       initial={{opacity: 0, y: 10}}
       animate={{opacity: 1, y: 0}}
       className='mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800'>
-      <div className='flex flex-wrap items-center justify-between gap-4'>
-        <div className='flex items-center gap-6'>
+      <main className='flex flex-wrap items-center justify-between gap-4'>
+        <main className='flex items-center gap-6'>
           {/* Session total */}
-          <div className='text-center'>
+          <main className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>{totalAdded}</p>
             <p className='text-xs text-gray-500 dark:text-gray-400'>{t("stats.added")}</p>
-          </div>
+          </main>
           {/* Pending in current batch */}
           {pending > 0 && (
-            <div className='text-center'>
+            <main className='text-center'>
               <p className='text-2xl font-bold text-amber-500'>{pending}</p>
               <p className='text-xs text-gray-500 dark:text-gray-400'>{t("stats.pending")}</p>
-            </div>
+            </main>
           )}
           {/* Currently uploading */}
           {uploading > 0 && (
-            <div className='text-center'>
+            <main className='text-center'>
               <p className='text-2xl font-bold text-blue-500'>{uploading}</p>
               <p className='text-xs text-gray-500 dark:text-gray-400'>{t("stats.uploading")}</p>
-            </div>
+            </main>
           )}
           {/* Session completed (persistent) */}
           {totalCompleted > 0 && (
-            <div className='text-center'>
+            <main className='text-center'>
               <p className='text-2xl font-bold text-green-500'>{totalCompleted}</p>
               <p className='text-xs text-gray-500 dark:text-gray-400'>{t("stats.completed")}</p>
-            </div>
+            </main>
           )}
           {/* Session failed (persistent) + current queue failures */}
           {(totalFailed > 0 || failedInQueue > 0) && (
-            <div className='text-center'>
+            <main className='text-center'>
               <p className='text-2xl font-bold text-red-500'>{totalFailed + failedInQueue}</p>
               <p className='text-xs text-gray-500 dark:text-gray-400'>{t("stats.failed")}</p>
-            </div>
+            </main>
           )}
-        </div>
+        </main>
 
         {allDone ? (
           <Button
@@ -132,7 +132,7 @@ function UploadStats(): React.JSX.Element | null {
             </Link>
           </Button>
         ) : null}
-      </div>
+      </main>
     </motion.div>
   );
 }
@@ -147,22 +147,22 @@ function UploadContent(): React.JSX.Element {
   return (
     <section className='mx-auto max-w-7xl'>
       {/* Breadcrumb */}
-      <div className='mb-6'>
+      <main className='mb-6'>
         <Link
           href='/domains/invoices'
           className='inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'>
           <TbArrowLeft className='h-4 w-4' />
           {t("breadcrumb")}
         </Link>
-      </div>
+      </main>
 
       {/* Header */}
-      <div className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-        <div className='flex items-start gap-2'>
-          <div>
+      <main className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+        <main className='flex items-start gap-2'>
+          <main>
             <h1 className='text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white'>{t("header.title")}</h1>
             <p className='text-sm text-gray-500 dark:text-gray-400'>{t("header.description")}</p>
-          </div>
+          </main>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -180,9 +180,9 @@ function UploadContent(): React.JSX.Element {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
+        </main>
 
-        <div className='flex gap-2'>
+        <main className='flex gap-2'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -218,27 +218,27 @@ function UploadContent(): React.JSX.Element {
               <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
-      </div>
+        </main>
+      </main>
 
       {/* Upload Stats (when there are pending uploads) */}
       <UploadStats />
 
       {/* Main Content Area */}
-      <div className='grid gap-8 lg:grid-cols-3'>
+      <main className='grid gap-8 lg:grid-cols-3'>
         {/* Upload Area - Takes 2 columns */}
-        <div className='lg:col-span-2'>
+        <main className='lg:col-span-2'>
           <UploadPreview />
           <UploadArea />
-        </div>
+        </main>
 
         {/* Sidebar - Info Cards */}
-        <div className='space-y-6'>
+        <main className='space-y-6'>
           {/* Supported Formats */}
           <Card>
             <CardContent className='p-4'>
               <h3 className='mb-4 font-semibold text-gray-900 dark:text-white'>{t("sidebar.formats.title")}</h3>
-              <div className='space-y-3'>
+              <main className='space-y-3'>
                 <FileTypeCard
                   icon={<TbPhoto className='text-accent-primary h-5 w-5' />}
                   label={t("sidebar.formats.images")}
@@ -249,7 +249,7 @@ function UploadContent(): React.JSX.Element {
                   label={t("sidebar.formats.documents")}
                   extensions={t("sidebar.formats.documentExtensions")}
                 />
-              </div>
+              </main>
               <p className='mt-3 text-xs text-gray-500 dark:text-gray-400'>{t("sidebar.formats.maxSize")}</p>
             </CardContent>
           </Card>
@@ -271,13 +271,13 @@ function UploadContent(): React.JSX.Element {
           {/* Security Note */}
           <Card className='border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'>
             <CardContent className='p-4'>
-              <div className='flex items-start gap-3'>
+              <main className='flex items-start gap-3'>
                 <TbShieldCheck className='mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400' />
-                <div>
+                <main>
                   <h3 className='font-semibold text-green-900 dark:text-green-100'>{t("sidebar.security.title")}</h3>
                   <p className='mt-1 text-sm text-green-700 dark:text-green-300'>{t("sidebar.security.description")}</p>
-                </div>
-              </div>
+                </main>
+              </main>
             </CardContent>
           </Card>
 
@@ -304,8 +304,8 @@ function UploadContent(): React.JSX.Element {
               </Card>
             </motion.div>
           )}
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

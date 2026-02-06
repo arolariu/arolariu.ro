@@ -31,9 +31,9 @@ export default function TechnologiesSection(): React.JSX.Element {
 
   return (
     <section className={styles["section"]}>
-      <div className={styles["bgGradient"]} />
-      <div className={styles["container"]}>
-        <div className={styles["grid"]}>
+      <main className={styles["bgGradient"]} />
+      <main className={styles["container"]}>
+        <main className={styles["grid"]}>
           <motion.div
             initial={{opacity: 0, x: -30}}
             whileInView={{opacity: 1, x: 0}}
@@ -64,8 +64,8 @@ export default function TechnologiesSection(): React.JSX.Element {
             viewport={{once: true}}
             transition={{duration: 0.8}}
             className={styles["visual"]}>
-            <div className={styles["codeBlock"]}>
-              <div className={styles["codeLabel"]}>architecture.tsx</div>
+            <main className={styles["codeBlock"]}>
+              <main className={styles["codeLabel"]}>architecture.tsx</main>
               <pre className={styles["codePre"]}>
                 <code className={styles["codeContent"]}>
                   {`const platform = {
@@ -92,14 +92,14 @@ export default function TechnologiesSection(): React.JSX.Element {
 } satisfies arolariu.ro; // ✅`}
                 </code>
               </pre>
-            </div>
+            </main>
 
             {/* Decorative elements */}
-            <div className={styles["decorOrbPrimary"]} />
-            <div className={styles["decorOrbPurple"]} />
+            <main className={styles["decorOrbPrimary"]} />
+            <main className={styles["decorOrbPurple"]} />
           </motion.div>
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

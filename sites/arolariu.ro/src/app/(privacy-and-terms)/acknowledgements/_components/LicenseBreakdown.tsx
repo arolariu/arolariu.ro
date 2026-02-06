@@ -23,7 +23,7 @@ export default function LicenseBreakdown(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["licenseSection"]}>
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["sectionHeader"]}
@@ -36,7 +36,7 @@ export default function LicenseBreakdown(): React.JSX.Element {
         </motion.div>
 
         {/* License cards */}
-        <div className={styles["licenseGrid"]}>
+        <main className={styles["licenseGrid"]}>
           {/* MIT License */}
           <motion.div
             initial={{opacity: 0, x: -30}}
@@ -44,30 +44,30 @@ export default function LicenseBreakdown(): React.JSX.Element {
             transition={{delay: 0.2, duration: 0.5}}>
             <Card className='hover:border-primary/30 h-full transition-all duration-300 hover:-translate-y-1'>
               <CardContent className={styles["cardContent"]}>
-                <div className={styles["cardHeader"]}>
-                  <div className={`${styles["iconWrapper"]} ${styles["gradientCyanBlue"]}`}>
+                <main className={styles["cardHeader"]}>
+                  <main className={`${styles["iconWrapper"]} ${styles["gradientCyanBlue"]}`}>
                     <TbLicense className={styles["icon"]} />
-                  </div>
-                  <div className={styles["licenseInfo"]}>
+                  </main>
+                  <main className={styles["licenseInfo"]}>
                     <h3 className={styles["licenseName"]}>{t("mit")}</h3>
                     <p className={styles["packageCount"]}>69 packages</p>
-                  </div>
-                </div>
+                  </main>
+                </main>
 
                 {/* Progress bar */}
-                <div className={styles["progressBar"]}>
+                <main className={styles["progressBar"]}>
                   <motion.div
                     className={styles["progressFillCyan"]}
                     initial={{width: 0}}
                     animate={isInView ? {width: `${mitPercentage}%`} : {}}
                     transition={{delay: 0.5, duration: 1, ease: "easeOut"}}
                   />
-                </div>
+                </main>
 
-                <div className={styles["cardFooter"]}>
+                <main className={styles["cardFooter"]}>
                   <span className={styles["description"]}>{t("mitDescription")}</span>
                   <span className={styles["percentage"]}>{mitPercentage}%</span>
-                </div>
+                </main>
               </CardContent>
             </Card>
           </motion.div>
@@ -79,35 +79,35 @@ export default function LicenseBreakdown(): React.JSX.Element {
             transition={{delay: 0.3, duration: 0.5}}>
             <Card className='hover:border-primary/30 h-full transition-all duration-300 hover:-translate-y-1'>
               <CardContent className={styles["cardContent"]}>
-                <div className={styles["cardHeader"]}>
-                  <div className={`${styles["iconWrapper"]} ${styles["gradientOrangeRed"]}`}>
+                <main className={styles["cardHeader"]}>
+                  <main className={`${styles["iconWrapper"]} ${styles["gradientOrangeRed"]}`}>
                     <TbScale className={styles["icon"]} />
-                  </div>
-                  <div className={styles["licenseInfo"]}>
+                  </main>
+                  <main className={styles["licenseInfo"]}>
                     <h3 className={styles["licenseName"]}>{t("apache")}</h3>
                     <p className={styles["packageCount"]}>17 packages</p>
-                  </div>
-                </div>
+                  </main>
+                </main>
 
                 {/* Progress bar */}
-                <div className={styles["progressBar"]}>
+                <main className={styles["progressBar"]}>
                   <motion.div
                     className={styles["progressFillOrange"]}
                     initial={{width: 0}}
                     animate={isInView ? {width: `${apachePercentage}%`} : {}}
                     transition={{delay: 0.6, duration: 1, ease: "easeOut"}}
                   />
-                </div>
+                </main>
 
-                <div className={styles["cardFooter"]}>
+                <main className={styles["cardFooter"]}>
                   <span className={styles["description"]}>{t("apacheDescription")}</span>
                   <span className={styles["percentage"]}>{apachePercentage}%</span>
-                </div>
+                </main>
               </CardContent>
             </Card>
           </motion.div>
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

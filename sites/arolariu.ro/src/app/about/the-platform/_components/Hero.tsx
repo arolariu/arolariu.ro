@@ -33,9 +33,9 @@ export default function Hero(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Background Layers */}
-      <div className={styles["bgLayers"]}>
+      <main className={styles["bgLayers"]}>
         {/* Gradient base */}
-        <div className={styles["bgGradient"]} />
+        <main className={styles["bgGradient"]} />
 
         {/* Animated gradient orbs */}
         <motion.div
@@ -94,17 +94,17 @@ export default function Hero(): React.JSX.Element {
         </motion.div>
 
         {/* Grid pattern overlay */}
-        <div className={styles["bgGrid"]} />
+        <main className={styles["bgGrid"]} />
 
         {/* Background beams */}
         <BackgroundBeams className='opacity-40' />
-      </div>
+      </main>
 
       {/* Main Content */}
       <motion.div
         className={styles["content"]}
         style={{y, opacity, scale}}>
-        <div className={styles["contentInner"]}>
+        <main className={styles["contentInner"]}>
           {/* Status Badge */}
           <motion.div
             initial={{opacity: 0, y: 30}}
@@ -252,20 +252,20 @@ export default function Hero(): React.JSX.Element {
               animate={{y: [0, 10, 0]}}
               transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}>
               <span className={styles["scrollText"]}>{t("scrollIndicator")}</span>
-              <div className={styles["scrollMouse"]}>
+              <main className={styles["scrollMouse"]}>
                 <motion.div
                   className={styles["scrollDot"]}
                   animate={{y: [0, 16, 0]}}
                   transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}
                 />
-              </div>
+              </main>
             </motion.div>
           </motion.div>
-        </div>
+        </main>
       </motion.div>
 
       {/* Bottom gradient fade */}
-      <div className={styles["bottomFade"]} />
+      <main className={styles["bottomFade"]} />
     </section>
   );
 }

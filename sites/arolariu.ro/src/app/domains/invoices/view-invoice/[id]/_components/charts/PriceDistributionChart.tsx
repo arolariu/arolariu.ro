@@ -23,14 +23,14 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
+    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='font-medium'>
         {data.range} {data.currency}
       </p>
       <p className='text-muted-foreground text-sm'>
         {data.count} item{data.count === 1 ? "" : "s"}
       </p>
-    </div>
+    </main>
   );
 }
 

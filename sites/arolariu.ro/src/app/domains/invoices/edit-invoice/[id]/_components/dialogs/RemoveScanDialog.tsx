@@ -108,8 +108,8 @@ export default function RemoveScanDialog(): React.JSX.Element {
         </DialogHeader>
 
         {scan ? (
-          <div className='py-4'>
-            <div className='bg-muted overflow-hidden rounded-md border'>
+          <main className='py-4'>
+            <main className='bg-muted overflow-hidden rounded-md border'>
               <Image
                 src={scan.location}
                 alt={`Scan ${scanIndex + 1}`}
@@ -117,16 +117,16 @@ export default function RemoveScanDialog(): React.JSX.Element {
                 height={300}
                 className='h-48 w-full object-cover'
               />
-            </div>
+            </main>
             <p className='text-muted-foreground mt-2 text-center text-xs'>Scan {scanIndex + 1}</p>
-          </div>
+          </main>
         ) : null}
 
         {isLastScan ? (
-          <div className='bg-destructive/10 text-destructive rounded-md p-3'>
+          <main className='bg-destructive/10 text-destructive rounded-md p-3'>
             <p className='text-sm font-medium'>Cannot remove last scan</p>
             <p className='text-xs'>Every invoice must have at least one scan attached. Add another scan before removing this one.</p>
-          </div>
+          </main>
         ) : null}
 
         <DialogFooter>

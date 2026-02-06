@@ -54,13 +54,13 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
   );
 
   return (
-    <div className='space-y-6'>
-      <div>
+    <main className='space-y-6'>
+      <main>
         <h2 className='text-2xl font-bold'>{t("title")}</h2>
         <p className='text-muted-foreground'>{t("description")}</p>
-      </div>
+      </main>
 
-      <div className='grid gap-6 md:grid-cols-2'>
+      <main className='grid gap-6 md:grid-cols-2'>
         {/* Two-Factor Authentication */}
         <Card className='md:col-span-2'>
           <CardHeader className='pb-4'>
@@ -71,23 +71,23 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
             <CardDescription>{t("twoFactor.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("twoFactor.enabled")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("twoFactor.enabledHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.twoFactorEnabled}
                 onCheckedChange={handleToggle("twoFactorEnabled")}
               />
-            </div>
+            </main>
             {settings.twoFactorEnabled ? (
-              <div className='bg-muted/50 mt-4 rounded-lg p-3'>
+              <main className='bg-muted/50 mt-4 rounded-lg p-3'>
                 <p className='flex items-center gap-2 text-sm font-medium text-green-600'>
                   <TbShieldCheck className='h-4 w-4' />
                   {t("twoFactor.activeMessage")}
                 </p>
-              </div>
+              </main>
             ) : null}
           </CardContent>
         </Card>
@@ -102,7 +102,7 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
             <CardDescription>{t("session.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div>
+            <main>
               <Label>{t("session.timeout")}</Label>
               <Select
                 value={settings.sessionTimeout.toString()}
@@ -118,18 +118,18 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                   <SelectItem value='480'>8 {t("session.hours")}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("session.loginNotifications")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("session.loginNotificationsHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.loginNotifications}
                 onCheckedChange={handleToggle("loginNotifications")}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -169,18 +169,18 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
           </CardHeader>
           <CardContent>
             {settings.trustedDevices.length > 0 ? (
-              <div className='space-y-3'>
+              <main className='space-y-3'>
                 {settings.trustedDevices.map((device) => (
-                  <div
+                  <main
                     key={device.id}
                     className='flex items-center justify-between rounded-lg border p-3'>
-                    <div>
+                    <main>
                       <p className='font-medium'>{device.name}</p>
                       <p className='text-muted-foreground text-xs'>
                         {t("devices.lastUsed")}: {new Date(device.lastUsed).toLocaleDateString()}
                       </p>
-                    </div>
-                    <div className='flex items-center gap-2'>
+                    </main>
+                    <main className='flex items-center gap-2'>
                       {device.isCurrent ? (
                         <Badge variant='secondary'>{t("devices.current")}</Badge>
                       ) : (
@@ -196,18 +196,18 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                           />
                         </Button>
                       )}
-                    </div>
-                  </div>
+                    </main>
+                  </main>
                 ))}
-              </div>
+              </main>
             ) : (
-              <div className='bg-muted/50 rounded-lg p-4 text-center'>
+              <main className='bg-muted/50 rounded-lg p-4 text-center'>
                 <p className='text-muted-foreground text-sm'>{t("devices.empty")}</p>
-              </div>
+              </main>
             )}
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

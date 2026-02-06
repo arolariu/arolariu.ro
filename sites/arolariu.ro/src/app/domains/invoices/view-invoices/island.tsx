@@ -21,16 +21,16 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
     return (
       <section className='flex flex-col gap-6'>
         <Skeleton className='h-24 w-full' />
-        <div className='flex gap-4'>
+        <main className='flex gap-4'>
           <Skeleton className='h-10 w-24' />
           <Skeleton className='h-10 w-24' />
           <Skeleton className='h-10 w-24' />
-        </div>
-        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+        </main>
+        <main className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
           <Skeleton className='h-48 w-full' />
           <Skeleton className='h-48 w-full' />
           <Skeleton className='h-48 w-full' />
-        </div>
+        </main>
       </section>
     );
   }

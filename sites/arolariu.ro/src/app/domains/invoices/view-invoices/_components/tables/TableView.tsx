@@ -78,9 +78,9 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <div className='flex flex-col items-center justify-center py-10'>
-        <div className='text-muted-foreground mb-2'>No invoices found</div>
-      </div>
+      <main className='flex flex-col items-center justify-center py-10'>
+        <main className='text-muted-foreground mb-2'>No invoices found</main>
+      </main>
     );
   }
 
@@ -160,7 +160,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 })}
               </TableCell>
               <TableCell className='relative text-right'>
-                <div className='flex justify-end gap-2'>
+                <main className='flex justify-end gap-2'>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger
@@ -176,7 +176,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                     </Tooltip>
                   </TooltipProvider>
                   <TableViewActions invoice={invoice} />
-                </div>
+                </main>
               </TableCell>
             </TableRow>
           ))}
@@ -185,7 +185,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={4}>
-              <div className='flex items-center gap-2'>
+              <main className='flex items-center gap-2'>
                 <span className='text-muted-foreground text-sm'>Rows per page:</span>
                 <Select
                   value={String(pageSize)}
@@ -209,7 +209,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 <span className='text-muted-foreground text-sm'>
                   Page {currentPage} of {totalPages}
                 </span>
-              </div>
+              </main>
             </TableCell>
             <TableCell
               colSpan={1}

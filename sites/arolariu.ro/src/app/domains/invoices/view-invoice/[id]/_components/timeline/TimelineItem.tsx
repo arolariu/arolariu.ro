@@ -45,24 +45,24 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
   const tooltipContent = getEventTooltipContent(event.type, event.metadata);
 
   return (
-    <div className={cn("relative pb-4", isLast && "pb-0")}>
+    <main className={cn("relative pb-4", isLast && "pb-0")}>
       {/* Connector line */}
-      {!isLast && <div className='bg-border absolute top-4 left-[7px] h-full w-0.5' />}
+      {!isLast && <main className='bg-border absolute top-4 left-[7px] h-full w-0.5' />}
 
-      <div className='flex gap-3'>
+      <main className='flex gap-3'>
         {/* Icon circle */}
-        <div
+        <main
           className={cn(
             "relative z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
             event.completed ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
           )}>
           {icon}
-        </div>
+        </main>
 
         {/* Content */}
-        <div className='min-w-0 flex-1'>
-          <div className='flex items-start justify-between gap-2'>
-            <div className='flex min-w-0 items-center gap-1.5'>
+        <main className='min-w-0 flex-1'>
+          <main className='flex items-start justify-between gap-2'>
+            <main className='flex min-w-0 items-center gap-1.5'>
               <p className='truncate text-sm leading-tight font-medium'>{event.title}</p>
               {/* Info icon with tooltip */}
               <TooltipProvider delayDuration={200}>
@@ -86,13 +86,13 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </div>
+            </main>
             <span className='text-muted-foreground shrink-0 text-xs'>{formatDate(event.date, {locale})}</span>
-          </div>
+          </main>
           <p className='text-muted-foreground mt-0.5 text-xs'>{event.description}</p>
           <p className='text-muted-foreground/70 mt-0.5 text-xs'>{getRelativeTime(event.date)}</p>
-        </div>
-      </div>
-    </div>
+        </main>
+      </main>
+    </main>
   );
 }

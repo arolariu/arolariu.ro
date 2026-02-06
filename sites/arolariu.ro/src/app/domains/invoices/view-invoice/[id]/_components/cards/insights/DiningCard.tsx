@@ -65,54 +65,54 @@ export function DiningCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Estimated Nutrition */}
-        <div className='space-y-2'>
+        <main className='space-y-2'>
           <h4 className='text-muted-foreground text-sm font-medium'>Estimated Nutrition</h4>
-          <div className='grid grid-cols-2 gap-2'>
-            <div className='flex items-center gap-2 rounded-lg border p-2'>
+          <main className='grid grid-cols-2 gap-2'>
+            <main className='flex items-center gap-2 rounded-lg border p-2'>
               <TbFlame className='h-4 w-4 text-orange-500' />
-              <div>
+              <main>
                 <p className='text-muted-foreground text-xs'>Calories</p>
                 <p className='text-sm font-semibold'>~{estimatedCalories} kcal</p>
-              </div>
-            </div>
-            <div className='flex items-center gap-2 rounded-lg border p-2'>
+              </main>
+            </main>
+            <main className='flex items-center gap-2 rounded-lg border p-2'>
               <TbMeat className='h-4 w-4 text-red-500' />
-              <div>
+              <main>
                 <p className='text-muted-foreground text-xs'>Protein</p>
                 <p className='text-sm font-semibold'>~{estimatedProtein}g</p>
-              </div>
-            </div>
-            <div className='flex items-center gap-2 rounded-lg border p-2'>
+              </main>
+            </main>
+            <main className='flex items-center gap-2 rounded-lg border p-2'>
               <TbAlertTriangle className={`h-4 w-4 ${sodiumLevel === "High" ? "text-red-500" : "text-yellow-500"}`} />
-              <div>
+              <main>
                 <p className='text-muted-foreground text-xs'>Sodium</p>
                 <p className='flex items-center gap-1 text-sm font-semibold'>
                   {sodiumLevel}
                   {sodiumLevel === "High" && <span className='text-red-500'>!</span>}
                 </p>
-              </div>
-            </div>
-            <div className='flex items-center gap-2 rounded-lg border p-2'>
+              </main>
+            </main>
+            <main className='flex items-center gap-2 rounded-lg border p-2'>
               <TbCookie className='h-4 w-4 text-amber-500' />
-              <div>
+              <main>
                 <p className='text-muted-foreground text-xs'>Carbs</p>
                 <p className='text-sm font-semibold'>~{estimatedCarbs}g</p>
-              </div>
-            </div>
-          </div>
-        </div>
+              </main>
+            </main>
+          </main>
+        </main>
 
         {/* Fast Food Habits */}
-        <div className='space-y-2'>
+        <main className='space-y-2'>
           <h4 className='text-muted-foreground text-sm font-medium'>Your Fast Food Habits</h4>
-          <div className='grid grid-cols-3 gap-2'>
-            <div className='bg-card rounded-lg border p-3 text-center'>
+          <main className='grid grid-cols-3 gap-2'>
+            <main className='bg-card rounded-lg border p-3 text-center'>
               <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
               <p className='text-muted-foreground text-xs'>Frequency</p>
               <p className='text-sm font-semibold'>{fastFoodFrequency}x/month</p>
               <p className='text-muted-foreground text-xs'>+1 vs avg</p>
-            </div>
-            <div className='bg-card rounded-lg border p-3 text-center'>
+            </main>
+            <main className='bg-card rounded-lg border p-3 text-center'>
               <TbUserDollar className='mx-auto mb-1 h-4 w-4 text-green-500' />
               <p className='text-muted-foreground text-xs'>Avg Spend</p>
               <p className='text-sm font-semibold'>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
@@ -120,22 +120,22 @@ export function DiningCard(): React.JSX.Element {
                 {spendDiff > 0 ? "+" : ""}
                 {spendDiff.toFixed(0)}%
               </p>
-            </div>
-            <div className='bg-card rounded-lg border p-3 text-center'>
+            </main>
+            <main className='bg-card rounded-lg border p-3 text-center'>
               <TbMapPin className='mx-auto mb-1 h-4 w-4 text-red-500' />
               <p className='text-muted-foreground text-xs'>Favorite</p>
               <p className='truncate text-sm font-semibold'>{favoritePlace}</p>
               <p className='text-muted-foreground text-xs'>{visits} visits</p>
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
 
         {/* Healthier Swaps */}
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2'>
+        <main className='space-y-2'>
+          <main className='flex items-center gap-2'>
             <TbBulb className='h-4 w-4 text-amber-500' />
             <h4 className='text-sm font-medium'>Healthier Swaps</h4>
-          </div>
+          </main>
           <ul className='space-y-1.5'>
             {swaps.map((s) => (
               <li
@@ -153,12 +153,12 @@ export function DiningCard(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </div>
+        </main>
 
         {/* Challenge */}
-        <div className='flex items-start gap-3 rounded-lg border border-purple-200 bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-3 dark:border-purple-800'>
+        <main className='flex items-start gap-3 rounded-lg border border-purple-200 bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-3 dark:border-purple-800'>
           <TbTarget className='mt-0.5 h-5 w-5 shrink-0 text-purple-500' />
-          <div>
+          <main>
             <p className='text-sm font-medium'>Weekly Challenge</p>
             <p className='text-muted-foreground text-sm'>
               Skip fast food for 7 days and save{" "}
@@ -166,8 +166,8 @@ export function DiningCard(): React.JSX.Element {
                 {formatCurrency(challengeSavings, {currencyCode: currency.code, locale})}
               </span>
             </p>
-          </div>
-        </div>
+          </main>
+        </main>
       </CardContent>
     </Card>
   );

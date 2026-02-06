@@ -177,7 +177,7 @@ export default function UploadArea(): React.JSX.Element {
 
   if (pendingUploads.length === 0) {
     return (
-      <div
+      <main
         className={`mb-16 rounded-lg border-2 border-dashed p-16 text-center transition-all duration-300 ${
           isDragActive
             ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
@@ -220,13 +220,13 @@ export default function UploadArea(): React.JSX.Element {
             Choose Files
           </Button>
         </motion.div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className='mt-8 flex flex-col gap-4'>
-      <div
+    <main className='mt-8 flex flex-col gap-4'>
+      <main
         className={`rounded-lg border-2 border-dashed p-6 text-center transition-all duration-300 ${
           isDragActive
             ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
@@ -249,18 +249,18 @@ export default function UploadArea(): React.JSX.Element {
           className='hidden'
           aria-label='Upload files'
         />
-        <div className='flex items-center justify-center gap-4'>
-          <div className='flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
+        <main className='flex items-center justify-center gap-4'>
+          <main className='flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
             <TbUpload className='h-6 w-6 text-gray-500 dark:text-gray-400' />
-          </div>
-          <div className='text-left'>
+          </main>
+          <main className='text-left'>
             <p className='text-base font-medium text-gray-900 dark:text-white'>{isDragActive ? "Drop to add..." : "Add more scans"}</p>
             <p className='text-sm text-gray-500 dark:text-gray-400'>JPG, PNG, PDF up to 10MB</p>
-          </div>
-        </div>
-      </div>
+          </main>
+        </main>
+      </main>
 
-      <div className='flex justify-end gap-4'>
+      <main className='flex justify-end gap-4'>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -290,7 +290,7 @@ export default function UploadArea(): React.JSX.Element {
             <TooltipContent>Upload all pending scans to your account</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

@@ -64,12 +64,12 @@ export default function Statistics(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Background */}
-      <div className={styles["bgLayer"]}>
-        <div className={styles["bgGradient"]} />
-        <div className={styles["bgGrid"]} />
-      </div>
+      <main className={styles["bgLayer"]}>
+        <main className={styles["bgGradient"]} />
+        <main className={styles["bgGrid"]} />
+      </main>
 
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         {/* Section Header */}
         <motion.div
           className={styles["header"]}
@@ -93,7 +93,7 @@ export default function Statistics(): React.JSX.Element {
         </motion.div>
 
         {/* Statistics Grid */}
-        <div className={styles["statsGrid"]}>
+        <main className={styles["statsGrid"]}>
           {statConfigs.map((stat, index) => (
             <motion.div
               key={stat.id}
@@ -124,13 +124,13 @@ export default function Statistics(): React.JSX.Element {
                   </motion.div>
 
                   {/* Animated Number */}
-                  <div className={styles["statValue"]}>
+                  <main className={styles["statValue"]}>
                     <CountingNumber
                       number={Number(t(`items.${stat.id}.value` as Parameters<typeof t>[0]))}
                       inView
                     />
                     {t(`items.${stat.id}.suffix` as Parameters<typeof t>[0])}
-                  </div>
+                  </main>
 
                   {/* Label */}
                   <h3 className={styles["statLabel"]}>{t(`items.${stat.id}.label` as Parameters<typeof t>[0])}</h3>
@@ -148,8 +148,8 @@ export default function Statistics(): React.JSX.Element {
               </Card>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

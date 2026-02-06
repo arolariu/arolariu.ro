@@ -117,11 +117,11 @@ export default function TechSphere(): React.JSX.Element {
   }, []);
 
   return (
-    <div className='relative mx-auto w-full max-w-[600px] overflow-hidden'>
-      <div
+    <main className='relative mx-auto w-full max-w-[600px] overflow-hidden'>
+      <main
         ref={containerRef}
         className='aspect-square w-full'
       />
-    </div>
+    </main>
   );
 }

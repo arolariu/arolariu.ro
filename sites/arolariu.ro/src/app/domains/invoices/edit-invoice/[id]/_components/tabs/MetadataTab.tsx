@@ -73,10 +73,10 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
       transition={{duration: 0.2}}>
       <Card className='group transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between pb-2'>
-          <div>
+          <main>
             <CardTitle>Additional Information</CardTitle>
             <CardDescription>Metadata associated with this invoice</CardDescription>
-          </div>
+          </main>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -96,7 +96,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
         </CardHeader>
         <CardContent>
           {Object.keys(metadata).length > 0 ? (
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+            <main className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               {Object.entries(metadata).map(([key, value], index) => (
                 <motion.div
                   key={key}
@@ -114,7 +114,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                   </span>
                   <span>{value}</span>
 
-                  <div className='absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100'>
+                  <main className='absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100'>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -140,12 +140,12 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </div>
+                  </main>
                 </motion.div>
               ))}
-            </div>
+            </main>
           ) : (
-            <div className='py-8 text-center'>
+            <main className='py-8 text-center'>
               <p className='text-muted-foreground mb-4'>No metadata fields added yet</p>
               <Button
                 onClick={openAddDialog}
@@ -153,7 +153,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                 <TbPlus className='mr-2 h-4 w-4' />
                 Add Your First Metadata Field
               </Button>
-            </div>
+            </main>
           )}
         </CardContent>
       </Card>

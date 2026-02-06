@@ -62,11 +62,11 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
       animate={{opacity: 1}}
       transition={{duration: 0.5}}
       className='space-y-6'>
-      <div className='flex items-center justify-between'>
-        <div>
+      <main className='flex items-center justify-between'>
+        <main>
           <h2 className='text-2xl font-bold tracking-tight'>Live Analysis</h2>
           <p className='text-muted-foreground'>Chat with AI to analyze your invoices and get insights</p>
-        </div>
+        </main>
         <Button
           variant='outline'
           size='sm'
@@ -74,7 +74,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           <TbHelpCircle className='h-4 w-4' />
           <span>Help</span>
         </Button>
-      </div>
+      </main>
 
       <Tabs
         defaultValue='chat'
@@ -104,13 +104,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='flex h-[600px] flex-col overflow-hidden rounded-lg border'>
-                <div className='flex-1 overflow-y-auto p-4'>
+              <main className='flex h-[600px] flex-col overflow-hidden rounded-lg border'>
+                <main className='flex-1 overflow-y-auto p-4'>
                   <MessageList messages={messages} />
-                  <div ref={messagesEndRef} />
-                </div>
-                <div className='border-t p-4' />
-              </div>
+                  <main ref={messagesEndRef} />
+                </main>
+                <main className='border-t p-4' />
+              </main>
             </CardContent>
           </Card>
         </TabsContent>
@@ -123,8 +123,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               <CardDescription>Configure your AI assistant preferences</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='space-y-4'>
-                <div className='grid gap-2'>
+              <main className='space-y-4'>
+                <main className='grid gap-2'>
                   <Label htmlFor='history'>Chat History</Label>
                   <Select defaultValue='30'>
                     <SelectTrigger id='history'>
@@ -137,11 +137,11 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       <SelectItem value='0'>Don&apos;t save history</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </main>
 
-                <div className='grid gap-2'>
+                <main className='grid gap-2'>
                   <span className='text-sm font-medium'>Data Access</span>
-                  <div className='flex items-center space-x-2'>
+                  <main className='flex items-center space-x-2'>
                     <Checkbox
                       id='access-invoices'
                       defaultChecked
@@ -151,8 +151,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       className='text-sm font-normal'>
                       Allow access to invoice data
                     </Label>
-                  </div>
-                  <div className='flex items-center space-x-2'>
+                  </main>
+                  <main className='flex items-center space-x-2'>
                     <Checkbox
                       id='access-merchants'
                       defaultChecked
@@ -162,12 +162,12 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       className='text-sm font-normal'>
                       Allow access to merchant data
                     </Label>
-                  </div>
-                </div>
+                  </main>
+                </main>
 
-                <div className='grid gap-2'>
+                <main className='grid gap-2'>
                   <span className='text-sm font-medium'>Notification Preferences</span>
-                  <div className='flex items-center space-x-2'>
+                  <main className='flex items-center space-x-2'>
                     <Checkbox
                       id='notify-insights'
                       defaultChecked
@@ -177,11 +177,11 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       className='text-sm font-normal'>
                       Notify me about new insights
                     </Label>
-                  </div>
-                </div>
+                  </main>
+                </main>
 
                 <Button className='w-full'>Save Settings</Button>
-              </div>
+              </main>
             </CardContent>
           </Card>
         </TabsContent>

@@ -32,82 +32,82 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Current vs Average */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
+        <main className='space-y-2'>
+          <main className='flex items-center justify-between'>
+            <main className='flex items-center gap-2'>
               <TbTarget className='text-muted-foreground h-4 w-4' />
               <span className='text-sm'>vs Average</span>
-            </div>
-            <div className='flex items-center gap-1'>
+            </main>
+            <main className='flex items-center gap-1'>
               {getTrendIcon(stats.percentageDiff)}
               <span className={cn("text-sm font-medium", getTrendColor(stats.percentageDiff))}>
                 {stats.percentageDiff > 0 ? "+" : ""}
                 {stats.percentageDiff}%
               </span>
-            </div>
-          </div>
-          <div className='text-muted-foreground flex justify-between text-xs'>
+            </main>
+          </main>
+          <main className='text-muted-foreground flex justify-between text-xs'>
             <span>
               Avg: {stats.averageAmount.toFixed(2)} {currency}
             </span>
             <span>
               This: {stats.currentAmount.toFixed(2)} {currency}
             </span>
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* Spending Range Progress */}
-        <div className='space-y-2'>
-          <div className='text-muted-foreground flex justify-between text-xs'>
+        <main className='space-y-2'>
+          <main className='text-muted-foreground flex justify-between text-xs'>
             <span>Min: {stats.minAmount.toFixed(0)}</span>
             <span>Max: {stats.maxAmount.toFixed(0)}</span>
-          </div>
+          </main>
           <Progress
             value={percentageProgress}
             className='h-2'
           />
           <p className='text-muted-foreground text-center text-xs'>Your position in spending range</p>
-        </div>
+        </main>
 
         {/* Item Count Comparison */}
-        <div className='flex items-center justify-between border-t pt-2'>
-          <div className='flex items-center gap-2'>
+        <main className='flex items-center justify-between border-t pt-2'>
+          <main className='flex items-center gap-2'>
             <TbShoppingBag className='text-muted-foreground h-4 w-4' />
             <span className='text-sm'>Item Count</span>
-          </div>
-          <div className='text-right'>
-            <div className='flex items-center gap-1'>
+          </main>
+          <main className='text-right'>
+            <main className='flex items-center gap-1'>
               {getTrendIcon(stats.itemCountDiff)}
               <span className={cn("text-sm font-medium", getTrendColor(stats.itemCountDiff))}>
                 {stats.itemCountDiff > 0 ? "+" : ""}
                 {stats.itemCountDiff}%
               </span>
-            </div>
+            </main>
             <span className='text-muted-foreground text-xs'>
               {stats.currentItemCount} vs avg {stats.averageItemCount}
             </span>
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* Same Merchant Comparison */}
-        <div className='flex items-center justify-between border-t pt-2'>
-          <div className='flex items-center gap-2'>
+        <main className='flex items-center justify-between border-t pt-2'>
+          <main className='flex items-center gap-2'>
             <TbBuildingStore className='text-muted-foreground h-4 w-4' />
             <span className='text-sm'>Same Store</span>
-          </div>
-          <div className='text-right'>
-            <div className='flex items-center gap-1'>
+          </main>
+          <main className='text-right'>
+            <main className='flex items-center gap-1'>
               {getTrendIcon(stats.sameMerchantDiff)}
               <span className={cn("text-sm font-medium", getTrendColor(stats.sameMerchantDiff))}>
                 {stats.sameMerchantDiff > 0 ? "+" : ""}
                 {stats.sameMerchantDiff}%
               </span>
-            </div>
+            </main>
             <span className='text-muted-foreground text-xs'>
               vs avg {stats.sameMerchantAvg.toFixed(0)} {currency}
             </span>
-          </div>
-        </div>
+          </main>
+        </main>
       </CardContent>
     </Card>
   );

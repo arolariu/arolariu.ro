@@ -112,9 +112,9 @@ function FooterComponent(): React.JSX.Element {
         />
       </svg>
 
-      <div className='footer__container'>
-        <div className='footer__grid'>
-          <div className='footer__brand-section'>
+      <main className='footer__container'>
+        <main className='footer__grid'>
+          <main className='footer__brand-section'>
             <Link
               href='/'
               aria-label='Go home'
@@ -129,16 +129,16 @@ function FooterComponent(): React.JSX.Element {
               />
               <span className='footer__brand-name'>{siteName}</span>
             </Link>
-            <div className='footer__brand-description'>
+            <main className='footer__brand-description'>
               <RichText
                 className='footer__rich-text prose'
                 sectionKey='Footer'
                 textKey='subtitle'
               />
-            </div>
-          </div>
-          <div className='footer__nav-section'>
-            <div>
+            </main>
+          </main>
+          <main className='footer__nav-section'>
+            <main>
               <p className='footer__nav-title'>{t("navigation.subdomains")}</p>
               <ul className='footer__nav-list'>
                 <li>
@@ -180,8 +180,8 @@ function FooterComponent(): React.JSX.Element {
                   </Link>
                 </li>
               </ul>
-            </div>
-            <div>
+            </main>
+            <main>
               <p className='footer__nav-title'>{t("navigation.about")}</p>
               <ul className='footer__nav-list'>
                 <li>
@@ -213,12 +213,12 @@ function FooterComponent(): React.JSX.Element {
                   </Link>
                 </li>
               </ul>
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
 
         {/* Footer metadata information */}
-        <div className='footer__meta'>
+        <main className='footer__meta'>
           <p className='footer__copyright'>
             &copy; {t("copyright")} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
             <span className='ml-4'>
@@ -231,7 +231,7 @@ function FooterComponent(): React.JSX.Element {
               </Link>
             </span>
           </p>
-          <div className='footer__social'>
+          <main className='footer__social'>
             <Link
               href='https://github.com/arolariu'
               target='_blank'
@@ -246,9 +246,9 @@ function FooterComponent(): React.JSX.Element {
               aria-label={t("socialLinks.linkedin")}>
               <TbBrandLinkedin className='footer__social-icon' />
             </Link>
-          </div>
-        </div>
-        <div className='footer__build-info'>
+          </main>
+        </main>
+        <main className='footer__build-info'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -269,8 +269,8 @@ function FooterComponent(): React.JSX.Element {
               <code>{COMMIT_SHA.slice(0, 20)}</code>
             </Link>
           </span>
-        </div>
-      </div>
+        </main>
+      </main>
     </footer>
   );
 }

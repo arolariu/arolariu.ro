@@ -23,15 +23,15 @@ import {useScans} from "./_hooks/useScans";
  */
 function QuickTip({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <div className='flex items-start gap-3'>
-      <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-400'>
+    <main className='flex items-start gap-3'>
+      <main className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/50 dark:text-purple-400'>
         {icon}
-      </div>
-      <div>
+      </main>
+      <main>
         <p className='text-sm font-medium text-gray-900 dark:text-white'>{title}</p>
         <p className='text-xs text-gray-500 dark:text-gray-400'>{description}</p>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }
 
@@ -40,10 +40,10 @@ function QuickTip({icon, title, description}: Readonly<{icon: React.ReactNode; t
  */
 function StatsCard({value, label, color}: Readonly<{value: number; label: string; color: string}>): React.JSX.Element {
   return (
-    <div className='text-center'>
+    <main className='text-center'>
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
       <p className='text-xs text-gray-500 dark:text-gray-400'>{label}</p>
-    </div>
+    </main>
   );
 }
 
@@ -62,8 +62,8 @@ function ScanStats(): React.JSX.Element | null {
       initial={{opacity: 0, y: 10}}
       animate={{opacity: 1, y: 0}}
       className='mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800'>
-      <div className='flex flex-wrap items-center justify-between gap-6'>
-        <div className='flex items-center gap-8'>
+      <main className='flex flex-wrap items-center justify-between gap-6'>
+        <main className='flex items-center gap-8'>
           <StatsCard
             value={scans.length}
             label={t("stats.totalScans")}
@@ -79,7 +79,7 @@ function ScanStats(): React.JSX.Element | null {
             label={t("stats.selected")}
             color='text-purple-500'
           />
-        </div>
+        </main>
 
         {selectedScans.length === 0 && scans.length > 0 && (
           <p className='text-sm text-gray-500 dark:text-gray-400'>
@@ -87,7 +87,7 @@ function ScanStats(): React.JSX.Element | null {
             <span className='sm:hidden'>{t("stats.tapHint")}</span>
           </p>
         )}
-      </div>
+      </main>
     </motion.div>
   );
 }
@@ -103,12 +103,12 @@ function Sidebar(): React.JSX.Element | null {
   if (scans.length === 0) return null;
 
   return (
-    <div className='space-y-6'>
+    <main className='space-y-6'>
       {/* How to Use */}
       <Card>
         <CardContent className='p-4'>
           <h3 className='mb-4 font-semibold text-gray-900 dark:text-white'>{t("sidebar.howTo.title")}</h3>
-          <div className='space-y-4'>
+          <main className='space-y-4'>
             <QuickTip
               icon={<TbClick className='h-4 w-4' />}
               title={t("sidebar.howTo.step1Title")}
@@ -124,7 +124,7 @@ function Sidebar(): React.JSX.Element | null {
               title={t("sidebar.howTo.step3Title")}
               description={t("sidebar.howTo.step3Description")}
             />
-          </div>
+          </main>
         </CardContent>
       </Card>
 
@@ -135,11 +135,11 @@ function Sidebar(): React.JSX.Element | null {
           animate={{opacity: 1, scale: 1}}>
           <Card className='border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20'>
             <CardContent className='p-4'>
-              <div className='flex items-center gap-3'>
-                <div className='flex h-10 w-10 items-center justify-center rounded-full bg-purple-200 dark:bg-purple-800'>
+              <main className='flex items-center gap-3'>
+                <main className='flex h-10 w-10 items-center justify-center rounded-full bg-purple-200 dark:bg-purple-800'>
                   <TbCheck className='h-5 w-5 text-purple-600 dark:text-purple-300' />
-                </div>
-                <div>
+                </main>
+                <main>
                   <p className='font-semibold text-purple-900 dark:text-purple-100'>
                     {selectedScans.length}{" "}
                     {selectedScans.length > 1 ? t("sidebar.selectionStatus.plural") : t("sidebar.selectionStatus.singular")}
@@ -147,8 +147,8 @@ function Sidebar(): React.JSX.Element | null {
                   <p className='text-sm text-purple-700 dark:text-purple-300'>
                     {selectedScans.length > 1 ? t("sidebar.selectionStatus.readyPlural") : t("sidebar.selectionStatus.readySingular")}
                   </p>
-                </div>
-              </div>
+                </main>
+              </main>
             </CardContent>
           </Card>
         </motion.div>
@@ -157,24 +157,24 @@ function Sidebar(): React.JSX.Element | null {
       {/* Quick Upload Link */}
       <Card>
         <CardContent className='p-4'>
-          <div className='flex items-center gap-3'>
-            <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50'>
+          <main className='flex items-center gap-3'>
+            <main className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50'>
               <TbPhoto className='h-5 w-5 text-blue-600 dark:text-blue-400' />
-            </div>
-            <div className='flex-1'>
+            </main>
+            <main className='flex-1'>
               <p className='text-sm font-medium text-gray-900 dark:text-white'>{t("sidebar.quickUpload.title")}</p>
               <p className='text-xs text-gray-500 dark:text-gray-400'>{t("sidebar.quickUpload.description")}</p>
-            </div>
+            </main>
             <Button
               asChild
               size='sm'
               variant='outline'>
               <Link href='/domains/invoices/upload-scans'>{t("sidebar.quickUpload.button")}</Link>
             </Button>
-          </div>
+          </main>
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 }
 
@@ -193,14 +193,14 @@ function ViewScansContent(): React.JSX.Element {
   return (
     <section className='mx-auto max-w-7xl'>
       {/* Breadcrumb */}
-      <div className='mb-6'>
+      <main className='mb-6'>
         <Link
           href='/domains/invoices'
           className='inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'>
           <TbArrowLeft className='h-4 w-4' />
           {t("breadcrumb")}
         </Link>
-      </div>
+      </main>
 
       <ScansHeader />
 
@@ -208,20 +208,20 @@ function ViewScansContent(): React.JSX.Element {
       <ScanStats />
 
       {/* Main Content */}
-      <div className={`grid gap-8 ${scans.length > 0 ? "lg:grid-cols-4" : ""}`}>
+      <main className={`grid gap-8 ${scans.length > 0 ? "lg:grid-cols-4" : ""}`}>
         {/* Scans Grid - Takes 3 columns when there are scans */}
-        <div className={scans.length > 0 ? "lg:col-span-3" : ""}>
+        <main className={scans.length > 0 ? "lg:col-span-3" : ""}>
           <ScansGrid />
-        </div>
+        </main>
 
         {/* Sidebar */}
         <Sidebar />
-      </div>
+      </main>
 
       <ScanSelectionToolbar onCreateInvoice={handleOpenCreateInvoice} />
       <DialogContainer />
       {/* Add padding at bottom when toolbar is visible */}
-      {selectedScans.length > 0 ? <div className='h-24' /> : null}
+      {selectedScans.length > 0 ? <main className='h-24' /> : null}
     </section>
   );
 }

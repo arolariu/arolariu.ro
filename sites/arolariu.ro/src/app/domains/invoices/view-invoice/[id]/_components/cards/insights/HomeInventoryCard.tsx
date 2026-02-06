@@ -134,51 +134,51 @@ export function HomeInventoryCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Supply Stock Levels */}
-        <div className='space-y-3'>
+        <main className='space-y-3'>
           <h4 className='text-muted-foreground text-sm font-medium'>Supply Stock Levels (estimated)</h4>
-          <div className='space-y-3'>
+          <main className='space-y-3'>
             {supplies.map((supply) => {
               const pct = (supply.daysRemaining / supply.maxDays) * 100;
               const color = getSupplyProgressColor(pct);
               return (
-                <div
+                <main
                   key={supply.id}
                   className='space-y-1'>
-                  <div className='flex items-center justify-between text-sm'>
-                    <div className='flex items-center gap-2'>
+                  <main className='flex items-center justify-between text-sm'>
+                    <main className='flex items-center gap-2'>
                       {supply.icon}
                       <span>{supply.name}</span>
-                    </div>
+                    </main>
                     <span className='text-muted-foreground'>~{supply.daysRemaining} days</span>
-                  </div>
-                  <div className='bg-muted h-2 overflow-hidden rounded-full'>
-                    <div
+                  </main>
+                  <main className='bg-muted h-2 overflow-hidden rounded-full'>
+                    <main
                       className={`h-full ${color} transition-all`}
                       style={{width: `${pct}%`}}
                     />
-                  </div>
-                </div>
+                  </main>
+                </main>
               );
             })}
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* Eco-Friendliness Score */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
+        <main className='space-y-2'>
+          <main className='flex items-center justify-between'>
+            <main className='flex items-center gap-2'>
               <TbLeaf className='h-4 w-4 text-green-500' />
               <span className='text-sm font-medium'>Eco-Friendliness Score</span>
-            </div>
-            <div className='flex items-center gap-1'>
+            </main>
+            <main className='flex items-center gap-1'>
               {[1, 2, 3, 4, 5].map((star) => (
                 <TbStar
                   key={star}
                   className={`h-4 w-4 ${star <= ecoScore ? "fill-green-500 text-green-500" : "text-muted-foreground"}`}
                 />
               ))}
-            </div>
-          </div>
+            </main>
+          </main>
           <ul className='text-muted-foreground space-y-1 pl-6 text-sm'>
             <li className='flex items-center gap-2'>
               <span className='text-muted-foreground'>•</span>
@@ -193,18 +193,18 @@ export function HomeInventoryCard(): React.JSX.Element {
               <span className='text-green-600'>Tip: Eco alternatives save 2kg plastic/year</span>
             </li>
           </ul>
-        </div>
+        </main>
 
         {/* Bulk Buying Savings */}
-        <div className='bg-muted/30 flex items-start gap-2 rounded-lg border p-3'>
+        <main className='bg-muted/30 flex items-start gap-2 rounded-lg border p-3'>
           <TbPackage className='mt-0.5 h-4 w-4 shrink-0 text-blue-500' />
-          <div>
+          <main>
             <p className='text-sm font-medium'>Bulk Buying Savings</p>
             <p className='text-muted-foreground text-sm'>
               5L detergent vs 2L saves 18% ({formatCurrency(potentialSavings, {currencyCode: currency.code, locale})}/year)
             </p>
-          </div>
-        </div>
+          </main>
+        </main>
       </CardContent>
     </Card>
   );

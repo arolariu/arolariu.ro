@@ -26,7 +26,7 @@ export default function Stats(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["statsSection"]}>
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["sectionHeader"]}
@@ -40,7 +40,7 @@ export default function Stats(): React.JSX.Element {
         </motion.div>
 
         {/* Stats grid */}
-        <div className={styles["statsGrid"]}>
+        <main className={styles["statsGrid"]}>
           {stats.map((stat, index) => (
             <motion.div
               key={stat.key}
@@ -50,9 +50,9 @@ export default function Stats(): React.JSX.Element {
               <Card className='group hover:border-primary/30 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg'>
                 <CardContent className={styles["cardContent"]}>
                   {/* Icon */}
-                  <div className={`${styles["iconWrapper"]} ${stat.gradientClass}`}>
+                  <main className={`${styles["iconWrapper"]} ${stat.gradientClass}`}>
                     <stat.icon className={styles["icon"]} />
-                  </div>
+                  </main>
 
                   {/* Value */}
                   <motion.span
@@ -72,8 +72,8 @@ export default function Stats(): React.JSX.Element {
               </Card>
             </motion.div>
           ))}
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

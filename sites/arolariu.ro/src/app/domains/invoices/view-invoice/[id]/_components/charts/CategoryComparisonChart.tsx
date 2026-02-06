@@ -24,9 +24,9 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
+    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='text-sm font-medium'>{data.category}</p>
-      <div className='mt-1 space-y-0.5'>
+      <main className='mt-1 space-y-0.5'>
         <p className='text-xs'>
           <span className='text-muted-foreground'>Current: </span>
           <span className='font-medium'>
@@ -39,8 +39,8 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
             {data.average.toFixed(2)} {currency}
           </span>
         </p>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }
 

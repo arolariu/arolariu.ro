@@ -105,18 +105,18 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           className='border-primary/20 bg-primary/10 rounded-md border p-3'
           whileHover={{scale: 1.02}}
           transition={{type: "spring", stiffness: 400, damping: 10}}>
-          <div className='flex items-center justify-between'>
+          <main className='flex items-center justify-between'>
             <p className='text-sm font-medium'>Potential Savings</p>
             <p className='text-lg font-bold'>
               {formatCurrency(totalPotentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
             </p>
-          </div>
+          </main>
           <p className='text-muted-foreground mt-1 text-xs'>Apply these tips to save on your next visit to {merchant.name}</p>
         </motion.div>
 
         <Separator />
 
-        <div className='space-y-3'>
+        <main className='space-y-3'>
           {savingsTips.map((tip, index) => (
             <motion.div
               key={tip.id}
@@ -125,54 +125,54 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
               animate={{opacity: 1, y: 0}}
               transition={{delay: index * 0.1}}
               whileHover={{scale: 1.02, backgroundColor: "hsl(var(--muted) / 0.5)"}}>
-              <div className='flex items-start gap-3'>
-                <div className='bg-primary/10 text-primary mt-0.5 rounded-md p-1.5'>{tip.icon}</div>
-                <div className='flex-1'>
-                  <div className='flex items-start justify-between'>
-                    <div>
+              <main className='flex items-start gap-3'>
+                <main className='bg-primary/10 text-primary mt-0.5 rounded-md p-1.5'>{tip.icon}</main>
+                <main className='flex-1'>
+                  <main className='flex items-start justify-between'>
+                    <main>
                       <h3 className='text-sm font-medium'>{tip.title}</h3>
                       <Badge
                         variant={tip.difficulty === "EASY" ? "default" : "secondary"}
                         className='mt-1 text-xs'>
                         {tip.difficulty}
                       </Badge>
-                    </div>
+                    </main>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className='text-success flex items-center text-sm font-medium'>
+                          <main className='text-success flex items-center text-sm font-medium'>
                             <span>
                               {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
                             </span>
                             <TbThumbUp className='ml-1 h-3.5 w-3.5' />
-                          </div>
+                          </main>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Estimated savings with this tip</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  </div>
+                  </main>
                   <p className='text-muted-foreground mt-1 text-sm'>{tip.description}</p>
-                </div>
-              </div>
+                </main>
+              </main>
             </motion.div>
           ))}
-        </div>
+        </main>
 
-        <div className='pt-2'>
+        <main className='pt-2'>
           <Button
             variant='outline'
             className='group w-full'>
             <span>View More Savings Tips</span>
             <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
           </Button>
-        </div>
+        </main>
 
-        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
+        <main className='text-muted-foreground flex items-center gap-2 text-xs'>
           <TbAlertCircle className='h-3.5 w-3.5' />
           <span>Savings are estimates based on average prices and promotions</span>
-        </div>
+        </main>
       </CardContent>
     </Card>
   );

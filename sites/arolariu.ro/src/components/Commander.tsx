@@ -304,10 +304,10 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectHome}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbHome className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.homepage")}</span>
-            </div>
+            </main>
             <CommandShortcut>H</CommandShortcut>
           </CommandItem>
         </CommandGroup>
@@ -318,28 +318,28 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectThemeLight}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbSun className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.light")}</span>
-            </div>
+            </main>
             <CommandShortcut>L</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectThemeDark}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbMoon className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.dark")}</span>
-            </div>
+            </main>
             <CommandShortcut>D</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectThemeSystem}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbSettings className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.system")}</span>
-            </div>
+            </main>
           </CommandItem>
         </CommandGroup>
 
@@ -349,28 +349,28 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectLangEnglish}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
               <span>English</span>
-            </div>
+            </main>
             <CommandShortcut>EN</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectLangRomanian}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
               <span>Română</span>
-            </div>
+            </main>
             <CommandShortcut>RO</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectLangFrench}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
               <span>Français</span>
-            </div>
+            </main>
             <CommandShortcut>FR</CommandShortcut>
           </CommandItem>
         </CommandGroup>
@@ -381,18 +381,18 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectFontNormal}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbTypeface className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.fontNormal")}</span>
-            </div>
+            </main>
           </CommandItem>
           <CommandItem
             onSelect={onSelectFontDyslexic}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbAccessible className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.fontDyslexic")}</span>
-            </div>
+            </main>
           </CommandItem>
         </CommandGroup>
 
@@ -402,26 +402,26 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectRainbow}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbPalette className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.rainbow")}</span>
-            </div>
+            </main>
           </CommandItem>
           <CommandItem
             onSelect={onSelectDisco}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbConfetti className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.disco")}</span>
-            </div>
+            </main>
           </CommandItem>
           <CommandItem
             onSelect={onSelectMatrix}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbCode className='mr-3 h-4 w-4 opacity-70' />
               <span>{t("items.matrix")}</span>
-            </div>
+            </main>
           </CommandItem>
         </CommandGroup>
 
@@ -431,10 +431,10 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectGithub}
             className='flex items-center justify-between'>
-            <div className='flex items-center'>
+            <main className='flex items-center'>
               <TbBrandGithub className='mr-3 h-4 w-4 opacity-70' />
               <span>GitHub</span>
-            </div>
+            </main>
             <CommandShortcut>G</CommandShortcut>
           </CommandItem>
         </CommandGroup>

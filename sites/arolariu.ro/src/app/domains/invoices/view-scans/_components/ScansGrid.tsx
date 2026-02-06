@@ -51,18 +51,18 @@ function EmptyStateStep({
   description,
 }: Readonly<{step: number; icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <div className='flex items-start gap-4'>
-      <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-pink-500 text-sm font-bold text-white'>
+    <main className='flex items-start gap-4'>
+      <main className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-pink-500 text-sm font-bold text-white'>
         {step}
-      </div>
-      <div className='flex-1'>
-        <div className='mb-1 flex items-center gap-2'>
+      </main>
+      <main className='flex-1'>
+        <main className='mb-1 flex items-center gap-2'>
           {icon}
           <h4 className='font-medium text-gray-900 dark:text-white'>{title}</h4>
-        </div>
+        </main>
         <p className='text-sm text-gray-500 dark:text-gray-400'>{description}</p>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }
 
@@ -76,14 +76,14 @@ export default function ScansGrid(): React.JSX.Element {
   // Show loading state
   if (!hasHydrated || (isSyncing && scans.length === 0)) {
     return (
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+      <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
         {SKELETON_KEYS.map((skeletonKey) => (
-          <div
+          <main
             key={skeletonKey}
             className='aspect-[4/3] animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700'
           />
         ))}
-      </div>
+      </main>
     );
   }
 
@@ -96,15 +96,15 @@ export default function ScansGrid(): React.JSX.Element {
         className='py-8'>
         <Card className='mx-auto max-w-2xl'>
           <CardContent className='p-8'>
-            <div className='mb-8 text-center'>
-              <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-cyan-500'>
+            <main className='mb-8 text-center'>
+              <main className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-cyan-500'>
                 <TbPhoto className='h-8 w-8 text-white' />
-              </div>
+              </main>
               <h3 className='mb-2 text-2xl font-bold text-gray-900 dark:text-white'>{t("emptyState.title")}</h3>
               <p className='text-gray-600 dark:text-gray-300'>{t("emptyState.description")}</p>
-            </div>
+            </main>
 
-            <div className='mb-8 space-y-6'>
+            <main className='mb-8 space-y-6'>
               <EmptyStateStep
                 step={1}
                 icon={<TbUpload className='text-accent-primary h-4 w-4' />}
@@ -123,9 +123,9 @@ export default function ScansGrid(): React.JSX.Element {
                 title={t("emptyState.step3Title")}
                 description={t("emptyState.step3Description")}
               />
-            </div>
+            </main>
 
-            <div className='flex flex-col items-center gap-4 sm:flex-row sm:justify-center'>
+            <main className='flex flex-col items-center gap-4 sm:flex-row sm:justify-center'>
               <Button
                 asChild
                 size='lg'
@@ -144,7 +144,7 @@ export default function ScansGrid(): React.JSX.Element {
                   <TbArrowRight className='ml-2 h-4 w-4' />
                 </Link>
               </Button>
-            </div>
+            </main>
           </CardContent>
         </Card>
       </motion.div>
@@ -152,7 +152,7 @@ export default function ScansGrid(): React.JSX.Element {
   }
 
   return (
-    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+    <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
       {scans.map((scan) => (
         <ScanCardWrapper
           key={scan.id}
@@ -161,6 +161,6 @@ export default function ScansGrid(): React.JSX.Element {
           onToggleSelection={toggleSelection}
         />
       ))}
-    </div>
+    </main>
   );
 }

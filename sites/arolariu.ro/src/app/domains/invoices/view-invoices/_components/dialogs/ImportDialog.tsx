@@ -130,7 +130,7 @@ export default function ImportDialog(): React.JSX.Element {
             <TabsTrigger value='xlsx'>Excel</TabsTrigger>
           </TabsList>
 
-          <div
+          <main
             className={`mt-4 cursor-pointer rounded-lg border-2 border-dashed p-6 transition-all duration-200 ${
               isDragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
             }`}
@@ -140,7 +140,7 @@ export default function ImportDialog(): React.JSX.Element {
               // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading input props for proper file upload functionality
               {...getInputProps()}
             />
-            <div className='flex flex-col items-center justify-center space-y-2 text-center'>
+            <main className='flex flex-col items-center justify-center space-y-2 text-center'>
               <motion.div
                 className='bg-primary/10 rounded-full p-3'
                 animate={isDragActive ? {scale: 1.1} : {scale: 1}}
@@ -154,21 +154,21 @@ export default function ImportDialog(): React.JSX.Element {
                 {activeTab === "pdf" && "Accepts .pdf files (max 10MB)"}
                 {activeTab === "xlsx" && "Accepts .xlsx and .xls files (max 10MB)"}
               </p>
-            </div>
-          </div>
+            </main>
+          </main>
 
           {files.length > 0 && (
-            <div className='mt-4 space-y-2'>
+            <main className='mt-4 space-y-2'>
               <h4 className='text-sm font-medium'>Selected Files</h4>
-              <div className='max-h-[150px] space-y-2 overflow-y-auto'>
+              <main className='max-h-[150px] space-y-2 overflow-y-auto'>
                 {files.map((file, index) => (
-                  <div
+                  <main
                     key={fileKey(file)}
                     className='bg-muted/50 flex items-center justify-between rounded-md p-2'>
-                    <div className='flex items-center space-x-2'>
+                    <main className='flex items-center space-x-2'>
                       {getFileIcon(file.name)}
                       <span className='max-w-[300px] truncate text-sm'>{file.name}</span>
-                    </div>
+                    </main>
                     <Button
                       variant='ghost'
                       size='sm'
@@ -176,10 +176,10 @@ export default function ImportDialog(): React.JSX.Element {
                       onClick={handleRemoveClick}>
                       Remove
                     </Button>
-                  </div>
+                  </main>
                 ))}
-              </div>
-            </div>
+              </main>
+            </main>
           )}
         </Tabs>
 

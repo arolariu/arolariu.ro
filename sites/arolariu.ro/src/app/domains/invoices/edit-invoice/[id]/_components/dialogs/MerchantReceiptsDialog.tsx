@@ -122,9 +122,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
           <DialogDescription>View and filter all your receipts from this merchant</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4'>
-          <div className='flex flex-col gap-3 sm:flex-row'>
-            <div className='relative flex-1'>
+        <main className='space-y-4'>
+          <main className='flex flex-col gap-3 sm:flex-row'>
+            <main className='relative flex-1'>
               <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
               <Input
                 placeholder='Search receipts...'
@@ -132,9 +132,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
-            <div className='flex gap-2'>
-              <div className='w-40'>
+            </main>
+            <main className='flex gap-2'>
+              <main className='w-40'>
                 <Select onValueChange={handleDateFilterChange}>
                   <SelectTrigger>
                     <TbCalendar className='mr-2 h-4 w-4' />
@@ -147,8 +147,8 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                     <SelectItem value='thisYear'>This Year</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className='w-40'>
+              </main>
+              <main className='w-40'>
                 <Select onValueChange={handleSortChange}>
                   <SelectTrigger>
                     <TbArrowsUpDown className='mr-2 h-4 w-4' />
@@ -159,12 +159,12 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                     <SelectItem value='date-asc'>Oldest First</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-          </div>
+              </main>
+            </main>
+          </main>
 
-          <div className='overflow-hidden rounded-md border'>
-            <div className='overflow-x-auto'>
+          <main className='overflow-hidden rounded-md border'>
+            <main className='overflow-x-auto'>
               <Table>
                 <TableHeader>
                   <TableRow className='bg-muted/50'>
@@ -231,9 +231,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                   </TableRow>
                 </TableFooter>
               </Table>
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
       </DialogContent>
     </Dialog>
   );

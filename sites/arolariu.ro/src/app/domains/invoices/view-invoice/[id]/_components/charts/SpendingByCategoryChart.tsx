@@ -33,7 +33,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
+    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
       <p className='font-medium'>{data.category}</p>
       <p className='text-muted-foreground text-sm'>
         {data.amount.toFixed(2)} {currency}
@@ -41,25 +41,25 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className='text-muted-foreground text-xs'>
         {data.count} item{data.count === 1 ? "" : "s"}
       </p>
-    </div>
+    </main>
   );
 }
 
 function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
   return (
-    <div className='mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1'>
+    <main className='mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1'>
       {payload.map((entry) => (
-        <div
+        <main
           key={`legend-${entry.value}`}
           className='flex items-center gap-1'>
-          <div
+          <main
             className='h-2.5 w-2.5 rounded-full'
             style={{backgroundColor: entry.color}}
           />
           <span className='text-muted-foreground text-xs'>{entry.value}</span>
-        </div>
+        </main>
       ))}
-    </div>
+    </main>
   );
 }
 
@@ -121,12 +121,12 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
-        <div className='mt-2 text-center'>
+        <main className='mt-2 text-center'>
           <p className='text-xl font-bold'>
             {total.toFixed(2)} {currency}
           </p>
           <p className='text-muted-foreground text-xs'>Total Spending</p>
-        </div>
+        </main>
       </CardContent>
     </Card>
   );

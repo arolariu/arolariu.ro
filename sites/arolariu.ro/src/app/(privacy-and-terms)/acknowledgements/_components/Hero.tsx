@@ -24,7 +24,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
       ref={ref}
       className={styles["heroSection"]}>
       {/* Animated background */}
-      <div className={styles["backgroundContainer"]}>
+      <main className={styles["backgroundContainer"]}>
         <motion.div
           className={styles["backgroundBlobLeft"]}
           animate={{
@@ -49,7 +49,7 @@ export default function Hero({lastUpdatedDate}: Readonly<Props>): React.JSX.Elem
             ease: "easeInOut",
           }}
         />
-      </div>
+      </main>
 
       {/* Content */}
       <motion.div

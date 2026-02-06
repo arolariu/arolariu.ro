@@ -39,7 +39,7 @@ export default function Hero(): React.JSX.Element {
       <motion.div
         style={{y, opacity}}
         className={styles["content"]}>
-        <div className={styles["contentInner"]}>
+        <main className={styles["contentInner"]}>
           <motion.div
             initial={{scale: 0.8, opacity: 0}}
             animate={{scale: 1, opacity: 1}}
@@ -70,7 +70,7 @@ export default function Hero(): React.JSX.Element {
             className='blue-underline'>
             <span className={styles["subtitle"]}>{t("subtitle")}</span>
           </motion.div>
-        </div>
+        </main>
       </motion.div>
     </section>
   );

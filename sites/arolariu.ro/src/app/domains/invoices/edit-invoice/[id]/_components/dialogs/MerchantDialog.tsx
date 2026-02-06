@@ -77,61 +77,61 @@ export default function MerchantDialog(): React.JSX.Element {
           <DialogTitle>Merchant Details</DialogTitle>
           <DialogDescription>Information about {merchant.name}</DialogDescription>
         </DialogHeader>
-        <div className='space-y-4 py-2'>
-          <div className='flex items-center space-x-3'>
-            <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full'>
+        <main className='space-y-4 py-2'>
+          <main className='flex items-center space-x-3'>
+            <main className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full'>
               <TbBuilding className='text-primary h-6 w-6' />
-            </div>
-            <div>
+            </main>
+            <main>
               <h3 className='text-lg font-medium'>{merchant.name}</h3>
               <Badge
                 variant='outline'
                 className='text-muted-foreground'>
                 {merchantCategoryAsString}
               </Badge>
-            </div>
-          </div>
+            </main>
+          </main>
 
           <Table>
             <TableBody>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <div className='flex items-center'>
+                  <main className='flex items-center'>
                     <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Address</span>
-                  </div>
+                  </main>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.address}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <div className='flex items-center'>
+                  <main className='flex items-center'>
                     <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Phone</span>
-                  </div>
+                  </main>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.phoneNumber}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <div className='flex items-center'>
+                  <main className='flex items-center'>
                     <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Parent Company</span>
-                  </div>
+                  </main>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.parentCompanyId}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
-        </div>
+        </main>
 
-        <div className='flex flex-col items-center justify-center justify-items-center gap-2'>
+        <main className='flex flex-col items-center justify-center justify-items-center gap-2'>
           <Button
             type='button'
             className='w-full'>
             Open in Maps
           </Button>
-        </div>
+        </main>
       </DialogContent>
     </Dialog>
   );

@@ -91,8 +91,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   }, [currentPage]);
 
   return (
-    <div>
-      <div className='mb-2 flex items-center justify-between'>
+    <main>
+      <main className='mb-2 flex items-center justify-between'>
         <h3 className='text-sm font-medium'>Items</h3>
         <TooltipProvider>
           <Tooltip>
@@ -111,8 +111,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
-      <div className='overflow-hidden rounded-md border'>
+      </main>
+      <main className='overflow-hidden rounded-md border'>
         <Table className='divide-border min-w-full divide-y'>
           <TableHeader>
             <TableRow className='bg-muted/50'>
@@ -176,11 +176,11 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
         {/* Pagination controls - only show when more than one page */}
         {totalPages > 1 && (
-          <div className='bg-popover flex items-center justify-between border-t p-4'>
-            <div className='text-muted-foreground text-sm'>
+          <main className='bg-popover flex items-center justify-between border-t p-4'>
+            <main className='text-muted-foreground text-sm'>
               {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
-            </div>
-            <div className='flex items-center gap-2'>
+            </main>
+            <main className='flex items-center gap-2'>
               <Button
                 variant='outline'
                 className='cursor-pointer'
@@ -198,10 +198,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 onClick={handleNextPage}>
                 Next
               </Button>
-            </div>
-          </div>
+            </main>
+          </main>
         )}
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

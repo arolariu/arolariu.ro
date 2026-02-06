@@ -41,15 +41,15 @@ export function InvoiceAnalytics(): React.JSX.Element {
   const merchantBreakdown = getMerchantBreakdown();
 
   return (
-    <div className='space-y-6'>
+    <main className='space-y-6'>
       <Tabs
         defaultValue='current'
         className='w-full'>
-        <div className='mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-          <div className='flex items-center gap-2'>
+        <main className='mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+          <main className='flex items-center gap-2'>
             <TbChartBar className='text-muted-foreground h-5 w-5' />
             <h2 className='text-xl font-semibold'>Analytics & Insights</h2>
-          </div>
+          </main>
           <TabsList className='grid w-full grid-cols-2 sm:w-auto'>
             <TabsTrigger
               value='current'
@@ -66,45 +66,45 @@ export function InvoiceAnalytics(): React.JSX.Element {
               </TabsTrigger>
             )}
           </TabsList>
-        </div>
+        </main>
 
         {/* Current Invoice Analytics */}
         <TabsContent
           value='current'
           className='mt-0'>
-          <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
             {/* Summary Stats */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
+            <main className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
               <SummaryStatsCard
                 summary={summary}
                 currency={currency}
               />
-            </div>
+            </main>
 
             {/* Spending by Category */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300'>
+            <main className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300'>
               <SpendingByCategoryChart
                 data={categoryData}
                 currency={currency}
               />
-            </div>
+            </main>
 
             {/* Price Distribution */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300'>
+            <main className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300'>
               <PriceDistributionChart
                 data={priceData}
                 currency={currency}
               />
-            </div>
+            </main>
 
             {/* Items Breakdown - Full Width on larger screens */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300 sm:col-span-2 lg:col-span-3'>
+            <main className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300 sm:col-span-2 lg:col-span-3'>
               <ItemsBreakdownChart
                 data={quantityData}
                 currency={currency}
               />
-            </div>
-          </div>
+            </main>
+          </main>
         </TabsContent>
 
         {/* Comparison Analytics */}
@@ -112,43 +112,43 @@ export function InvoiceAnalytics(): React.JSX.Element {
           <TabsContent
             value='compare'
             className='mt-0'>
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+            <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
               {/* Comparison Stats */}
-              <div className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
+              <main className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
                 <ComparisonStatsCard
                   stats={comparisonStats}
                   currency={currency}
                 />
-              </div>
+              </main>
 
               {/* Spending Trend */}
-              <div className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300 sm:col-span-1 lg:col-span-2'>
+              <main className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300 sm:col-span-1 lg:col-span-2'>
                 <SpendingTrendChart
                   data={trendData}
                   currency={currency}
                 />
-              </div>
+              </main>
 
               {/* Category Comparison */}
-              <div className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300 sm:col-span-2 lg:col-span-2'>
+              <main className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300 sm:col-span-2 lg:col-span-2'>
                 <CategoryComparisonChart
                   data={categoryComparison}
                   currency={currency}
                 />
-              </div>
+              </main>
 
               {/* Merchant Breakdown */}
-              <div className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300'>
+              <main className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300'>
                 <MerchantBreakdownChart
                   data={merchantBreakdown}
                   currency={currency}
                   currentMerchant={merchant.name}
                 />
-              </div>
-            </div>
+              </main>
+            </main>
           </TabsContent>
         )}
       </Tabs>
-    </div>
+    </main>
   );
 }

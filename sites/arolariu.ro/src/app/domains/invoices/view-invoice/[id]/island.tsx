@@ -45,66 +45,66 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
       invoice={invoice}
       merchant={merchant}>
       <DialogProvider>
-        <div className='animate-in fade-in container mx-auto px-4 py-8 duration-500 sm:py-12'>
+        <main className='animate-in fade-in container mx-auto px-4 py-8 duration-500 sm:py-12'>
           {/* Header */}
-          <div className='animate-in slide-in-from-bottom-4 mb-8 duration-500'>
+          <main className='animate-in slide-in-from-bottom-4 mb-8 duration-500'>
             {Boolean(!isOwner && !isLoadingUserInformation) && <InvoiceGuestBanner />}
             <InvoiceHeader />
-          </div>
+          </main>
 
-          <div className='grid grid-cols-1 gap-6 lg:grid-cols-12'>
+          <main className='grid grid-cols-1 gap-6 lg:grid-cols-12'>
             {/* Left Column - Timeline (hidden on mobile, shown on lg+) */}
-            <div className='hidden space-y-6 lg:col-span-3 lg:block'>
-              <div className='animate-in slide-in-from-left-4 sticky top-6 delay-100 duration-500'>
+            <main className='hidden space-y-6 lg:col-span-3 lg:block'>
+              <main className='animate-in slide-in-from-left-4 sticky top-6 delay-100 duration-500'>
                 <InvoiceTimeline />
-              </div>
-            </div>
+              </main>
+            </main>
 
             {/* Main Content - Center Column */}
-            <div className='space-y-6 lg:col-span-6'>
-              <div className='animate-in slide-in-from-bottom-4 delay-100 duration-500'>
+            <main className='space-y-6 lg:col-span-6'>
+              <main className='animate-in slide-in-from-bottom-4 delay-100 duration-500'>
                 <InvoiceDetailsCard />
-              </div>
+              </main>
 
-              <div className='animate-in slide-in-from-bottom-4 delay-150 duration-500'>
+              <main className='animate-in slide-in-from-bottom-4 delay-150 duration-500'>
                 <CategoryInsightsCardContainer />
-              </div>
+              </main>
 
-              <div className='animate-in slide-in-from-bottom-4 delay-200 duration-500'>
+              <main className='animate-in slide-in-from-bottom-4 delay-200 duration-500'>
                 <InvoiceTabs />
-              </div>
+              </main>
 
               {/* Timeline on mobile/tablet (shown below main content) */}
-              <div className='animate-in slide-in-from-bottom-4 delay-250 duration-500 lg:hidden'>
+              <main className='animate-in slide-in-from-bottom-4 delay-250 duration-500 lg:hidden'>
                 <InvoiceTimeline />
-              </div>
-            </div>
+              </main>
+            </main>
 
             {/* Sidebar - Right Column */}
-            <div className='space-y-6 lg:col-span-3'>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-100 duration-500'>
+            <main className='space-y-6 lg:col-span-3'>
+              <main className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-100 duration-500'>
                 <ReceiptScanCard />
-              </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-150 duration-500'>
+              </main>
+              <main className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-150 duration-500'>
                 {Boolean(isOwner && !isLoadingUserInformation) && <ShoppingCalendarCard />}
-              </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-200 duration-500'>
+              </main>
+              <main className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-200 duration-500'>
                 {Boolean(isOwner && !isLoadingUserInformation) && <BudgetImpactCard />}
-              </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-250 duration-500'>
+              </main>
+              <main className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-250 duration-500'>
                 {Boolean(isOwner && !isLoadingUserInformation) && <SeasonalInsightsCard />}
-              </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-300 duration-500'>
+              </main>
+              <main className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-300 duration-500'>
                 <MerchantInfoCard />
-              </div>
-            </div>
-          </div>
+              </main>
+            </main>
+          </main>
 
           {/* Analytics Section */}
-          <div className='border-border mt-8 border-t pt-8 sm:mt-12 sm:pt-12'>
+          <main className='border-border mt-8 border-t pt-8 sm:mt-12 sm:pt-12'>
             <InvoiceAnalytics />
-          </div>
-        </div>
+          </main>
+        </main>
         <DialogContainer />
       </DialogProvider>
     </InvoiceContextProvider>

@@ -191,9 +191,9 @@ export default function AddScanDialog(): React.JSX.Element {
         </DialogHeader>
 
         {/* eslint-disable react/jsx-props-no-spreading, react/jsx-handler-names -- react-dropzone library requires spread props */}
-        <div className='grid gap-4 py-4'>
+        <main className='grid gap-4 py-4'>
           {/* Dropzone - using react-dropzone library pattern with spread props */}
-          <div
+          <main
             {...getRootProps()}
             className={cn(
               "flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors",
@@ -214,18 +214,18 @@ export default function AddScanDialog(): React.JSX.Element {
               </>
             )}
             <p className='text-muted-foreground mt-2 text-xs'>JPEG, PNG, PDF (max 10MB)</p>
-          </div>
+          </main>
 
           {/* Selected file preview */}
           {file ? (
-            <div className='bg-muted flex items-center justify-between rounded-md p-3'>
-              <div className='flex items-center gap-3'>
+            <main className='bg-muted flex items-center justify-between rounded-md p-3'>
+              <main className='flex items-center gap-3'>
                 <TbFile className='h-8 w-8 shrink-0' />
-                <div className='min-w-0'>
+                <main className='min-w-0'>
                   <p className='truncate text-sm font-medium'>{file.name}</p>
                   <p className='text-muted-foreground text-xs'>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
-              </div>
+                </main>
+              </main>
               <Button
                 type='button'
                 variant='ghost'
@@ -235,12 +235,12 @@ export default function AddScanDialog(): React.JSX.Element {
                 className='h-8 w-8 shrink-0'>
                 <TbX className='h-4 w-4' />
               </Button>
-            </div>
+            </main>
           ) : null}
 
           {/* Scan type selector */}
           {file ? (
-            <div className='grid gap-2'>
+            <main className='grid gap-2'>
               <Label htmlFor='scan-type'>Scan Type</Label>
               <Select
                 value={String(scanType)}
@@ -256,9 +256,9 @@ export default function AddScanDialog(): React.JSX.Element {
                   <SelectItem value={String(InvoiceScanType.OTHER)}>Other</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </main>
           ) : null}
-        </div>
+        </main>
         {/* eslint-enable react/jsx-props-no-spreading, react/jsx-handler-names */}
 
         <DialogFooter>

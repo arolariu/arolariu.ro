@@ -35,16 +35,16 @@ export default function ScansHeader(): React.JSX.Element {
   const {scans, isSyncing, lastSyncTimestamp, syncScans} = useScans();
 
   return (
-    <div className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-      <div className='flex items-start gap-2'>
-        <div>
+    <main className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+      <main className='flex items-start gap-2'>
+        <main>
           <h1 className='text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white'>
             {t("titleWithCount", {count: String(scans.length)})}
           </h1>
           {lastSyncTimestamp ? (
             <p className='text-sm text-gray-500 dark:text-gray-400'>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p>
           ) : null}
-        </div>
+        </main>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -62,9 +62,9 @@ export default function ScansHeader(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
+      </main>
 
-      <div className='flex gap-2'>
+      <main className='flex gap-2'>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -115,7 +115,7 @@ export default function ScansHeader(): React.JSX.Element {
             <TooltipContent>{t("syncTooltip")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

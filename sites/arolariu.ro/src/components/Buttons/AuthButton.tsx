@@ -50,13 +50,13 @@ function AuthButton(): React.JSX.Element {
   const {isSignedIn, isLoaded} = useAuth();
 
   if (!isLoaded) {
-    return <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />;
+    return <main className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />;
   }
 
   if (isSignedIn) {
     return (
       <SignedIn>
-        <UserButton fallback={<div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />} />
+        <UserButton fallback={<main className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />} />
       </SignedIn>
     );
   }

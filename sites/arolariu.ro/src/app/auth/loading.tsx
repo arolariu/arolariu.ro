@@ -12,117 +12,117 @@ import styles from "./loading.module.scss";
 export default function Loading(): React.JSX.Element {
   return (
     <section className={styles["loadingSection"]}>
-      <div className={styles["loadingContainer"]}>
+      <main className={styles["loadingContainer"]}>
         {/* Hero Header Skeleton */}
         <header className={styles["loadingHeader"]}>
-          <div className={styles["loadingBadge"]}>
+          <main className={styles["loadingBadge"]}>
             <Skeleton className='h-8 w-32 rounded-full' />
-          </div>
+          </main>
 
           <Skeleton className={`${styles["loadingTitle"]} h-14 w-80 max-w-full sm:h-16 lg:h-20`} />
 
-          <div className={styles["loadingSubtitle"]}>
+          <main className={styles["loadingSubtitle"]}>
             <Skeleton className='mx-auto h-5 w-full' />
             <Skeleton className='mx-auto h-5 w-4/5' />
-          </div>
+          </main>
 
-          <div className={styles["loadingTrustBadges"]}>
+          <main className={styles["loadingTrustBadges"]}>
             <Skeleton className='h-7 w-24 rounded-full' />
             <Skeleton className='h-7 w-28 rounded-full' />
             <Skeleton className='h-7 w-20 rounded-full' />
-          </div>
+          </main>
         </header>
 
         {/* Separator */}
-        <div className={styles["loadingSeparator"]}>
+        <main className={styles["loadingSeparator"]}>
           <Skeleton className='h-px w-full' />
-        </div>
+        </main>
 
         {/* Cards Grid Skeleton */}
-        <div className={styles["loadingCardsGrid"]}>
+        <main className={styles["loadingCardsGrid"]}>
           {/* Card 1 - Sign Up */}
           <article className={styles["loadingCard"]}>
-            <div className={styles["loadingCardHeader"]}>
+            <main className={styles["loadingCardHeader"]}>
               <Skeleton className='h-12 w-12 rounded-xl' />
               <Skeleton className='h-5 w-14' />
-            </div>
+            </main>
 
-            <div className={styles["loadingCardIllustration"]}>
+            <main className={styles["loadingCardIllustration"]}>
               <Skeleton className='h-48 w-48 rounded-2xl sm:h-56 sm:w-56' />
-            </div>
+            </main>
 
-            <div className={styles["loadingCardContent"]}>
+            <main className={styles["loadingCardContent"]}>
               <Skeleton className='mx-auto h-9 w-48' />
               <Skeleton className='mx-auto h-5 w-full max-w-xs' />
               <Skeleton className='mx-auto h-5 w-4/5 max-w-xs' />
-            </div>
+            </main>
 
-            <div className={styles["loadingCardBullets"]}>
-              <div className={styles["loadingCardBulletItem"]}>
+            <main className={styles["loadingCardBullets"]}>
+              <main className={styles["loadingCardBulletItem"]}>
                 <Skeleton className='h-2 w-2 rounded-full' />
                 <Skeleton className='h-4 w-full' />
-              </div>
-              <div className={styles["loadingCardBulletItem"]}>
+              </main>
+              <main className={styles["loadingCardBulletItem"]}>
                 <Skeleton className='h-2 w-2 rounded-full' />
                 <Skeleton className='h-4 w-5/6' />
-              </div>
-              <div className={styles["loadingCardBulletItem"]}>
+              </main>
+              <main className={styles["loadingCardBulletItem"]}>
                 <Skeleton className='h-2 w-2 rounded-full' />
                 <Skeleton className='h-4 w-4/5' />
-              </div>
-            </div>
+              </main>
+            </main>
 
-            <div className={styles["loadingCardCta"]}>
+            <main className={styles["loadingCardCta"]}>
               <Skeleton className='h-12 w-full rounded-lg' />
               <Skeleton className='mx-auto h-4 w-48' />
-            </div>
+            </main>
           </article>
 
           {/* Card 2 - Sign In */}
           <article className={styles["loadingCard"]}>
-            <div className={styles["loadingCardHeader"]}>
+            <main className={styles["loadingCardHeader"]}>
               <Skeleton className='h-12 w-12 rounded-xl' />
               <Skeleton className='h-5 w-14' />
-            </div>
+            </main>
 
-            <div className={styles["loadingCardIllustration"]}>
+            <main className={styles["loadingCardIllustration"]}>
               <Skeleton className='h-48 w-48 rounded-2xl sm:h-56 sm:w-56' />
-            </div>
+            </main>
 
-            <div className={styles["loadingCardContent"]}>
+            <main className={styles["loadingCardContent"]}>
               <Skeleton className='mx-auto h-9 w-44' />
               <Skeleton className='mx-auto h-5 w-full max-w-xs' />
               <Skeleton className='mx-auto h-5 w-3/4 max-w-xs' />
-            </div>
+            </main>
 
-            <div className={styles["loadingCardBullets"]}>
-              <div className={styles["loadingCardBulletItem"]}>
+            <main className={styles["loadingCardBullets"]}>
+              <main className={styles["loadingCardBulletItem"]}>
                 <Skeleton className='h-2 w-2 rounded-full' />
                 <Skeleton className='h-4 w-full' />
-              </div>
-              <div className={styles["loadingCardBulletItem"]}>
+              </main>
+              <main className={styles["loadingCardBulletItem"]}>
                 <Skeleton className='h-2 w-2 rounded-full' />
                 <Skeleton className='h-4 w-5/6' />
-              </div>
-              <div className={styles["loadingCardBulletItem"]}>
+              </main>
+              <main className={styles["loadingCardBulletItem"]}>
                 <Skeleton className='h-2 w-2 rounded-full' />
                 <Skeleton className='h-4 w-3/4' />
-              </div>
-            </div>
+              </main>
+            </main>
 
-            <div className={styles["loadingCardCta"]}>
+            <main className={styles["loadingCardCta"]}>
               <Skeleton className='h-12 w-full rounded-lg' />
               <Skeleton className='mx-auto h-4 w-44' />
-            </div>
+            </main>
           </article>
-        </div>
+        </main>
 
         {/* Footer */}
-        <div className={styles["loadingFooter"]}>
+        <main className={styles["loadingFooter"]}>
           <Skeleton className='mx-auto h-4 w-full' />
           <Skeleton className='mx-auto h-4 w-3/4' />
-        </div>
-      </div>
+        </main>
+      </main>
     </section>
   );
 }

@@ -61,17 +61,17 @@ export function GeneralExpenseCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Auto-detected Category */}
-        <div className='space-y-2'>
+        <main className='space-y-2'>
           <h4 className='text-muted-foreground text-sm font-medium'>Auto-detected Category</h4>
-          <div className='rounded-lg border p-3'>
-            <div className='mb-2 flex items-center justify-between'>
-              <div className='flex items-center gap-2'>
+          <main className='rounded-lg border p-3'>
+            <main className='mb-2 flex items-center justify-between'>
+              <main className='flex items-center gap-2'>
                 <TbTag className='h-4 w-4 text-indigo-500' />
                 <span className='font-medium'>{detectedCategory}</span>
-              </div>
+              </main>
               <Badge variant='secondary'>Confidence: {confidence}%</Badge>
-            </div>
-            <div className='flex gap-2'>
+            </main>
+            <main className='flex gap-2'>
               <Button
                 variant='outline'
                 size='sm'
@@ -88,36 +88,36 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 <TbRefresh className='h-3 w-3' />
                 Change
               </Button>
-            </div>
-          </div>
-        </div>
+            </main>
+          </main>
+        </main>
 
         {/* Budget Impact */}
-        <div className='space-y-3'>
+        <main className='space-y-3'>
           <h4 className='text-muted-foreground text-sm font-medium'>Budget Impact</h4>
-          <div className='space-y-3'>
+          <main className='space-y-3'>
             {budgets.map((budget) => {
               const pct = (budget.spent / budget.limit) * 100;
               const isNearLimit = pct >= 90;
               return (
-                <div
+                <main
                   key={budget.name}
                   className='space-y-1'>
-                  <div className='flex items-center justify-between text-sm'>
+                  <main className='flex items-center justify-between text-sm'>
                     <span>{budget.name}</span>
                     <span className={isNearLimit ? "font-medium text-red-500" : "text-muted-foreground"}>
                       {formatCurrency(budget.spent, {currencyCode: currency.code, locale})} /{" "}
                       {formatCurrency(budget.limit, {currencyCode: currency.code, locale})}
                     </span>
-                  </div>
+                  </main>
                   <Progress
                     value={pct}
                     className='h-2'
                   />
-                </div>
+                </main>
               );
             })}
-          </div>
+          </main>
           {nearLimitBudget ? (
             <p
               className='flex items-center gap-1 text-xs text-amber-600'
@@ -127,16 +127,16 @@ export function GeneralExpenseCard(): React.JSX.Element {
               {nearLimitBudget.name}: {Math.round((nearLimitBudget.spent / nearLimitBudget.limit) * 100)}% used (10 days left in month)
             </p>
           ) : null}
-        </div>
+        </main>
 
         {/* Tax & Business Options */}
-        <div className='space-y-3'>
+        <main className='space-y-3'>
           <h4 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
             <TbFileText className='h-4 w-4' />
             Tax & Business Options
           </h4>
-          <div className='space-y-2'>
-            <div className='flex items-center gap-2'>
+          <main className='space-y-2'>
+            <main className='flex items-center gap-2'>
               <Checkbox
                 id='business'
                 checked={businessExpense}
@@ -147,8 +147,8 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 className='cursor-pointer text-sm font-normal'>
                 Mark as business expense
               </Label>
-            </div>
-            <div className='flex items-center gap-2'>
+            </main>
+            <main className='flex items-center gap-2'>
               <Checkbox
                 id='warranty'
                 checked={trackWarranty}
@@ -159,8 +159,8 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 className='cursor-pointer text-sm font-normal'>
                 Track warranty (24 months standard)
               </Label>
-            </div>
-            <div className='flex items-center gap-2'>
+            </main>
+            <main className='flex items-center gap-2'>
               <Checkbox
                 id='insurance'
                 checked={insuranceInventory}
@@ -171,22 +171,22 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 className='cursor-pointer text-sm font-normal'>
                 Add to insurance inventory
               </Label>
-            </div>
-          </div>
+            </main>
+          </main>
           {businessExpense ? (
             <p className='flex items-center gap-1 text-sm text-green-600'>
               <TbBriefcase className='h-3 w-3' />
               VAT Reclaimable: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
             </p>
           ) : null}
-        </div>
+        </main>
 
         {/* Similar Past Purchases */}
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2'>
+        <main className='space-y-2'>
+          <main className='flex items-center gap-2'>
             <TbHistory className='h-4 w-4 text-gray-500' />
             <h4 className='text-sm font-medium'>Similar Past Purchases</h4>
-          </div>
+          </main>
           <ul className='text-muted-foreground space-y-1.5 text-sm'>
             {pastPurchases.map((p) => (
               <li
@@ -197,10 +197,10 @@ export function GeneralExpenseCard(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </div>
+        </main>
 
         {/* CTA Buttons */}
-        <div className='flex gap-2'>
+        <main className='flex gap-2'>
           <Button
             variant='outline'
             size='sm'
@@ -217,7 +217,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
             <TbDownload className='h-3 w-3' />
             Export
           </Button>
-        </div>
+        </main>
       </CardContent>
     </Card>
   );

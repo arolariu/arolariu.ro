@@ -124,9 +124,9 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
     );
 
   return (
-    <div className='space-y-4'>
-      <div className='flex flex-col justify-between gap-4 sm:flex-row print:hidden'>
-        <div className='relative flex-1'>
+    <main className='space-y-4'>
+      <main className='flex flex-col justify-between gap-4 sm:flex-row print:hidden'>
+        <main className='relative flex-1'>
           <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
           <Input
             placeholder='Search invoices...'
@@ -134,16 +134,16 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             value={searchQuery}
             onChange={handleSearch}
           />
-        </div>
-        <div className='flex flex-wrap items-center gap-2'>
+        </main>
+        <main className='flex flex-wrap items-center gap-2'>
           <Select
             value={filters.category}
             onValueChange={handleFilters}>
             <SelectTrigger className='w-[150px] cursor-pointer'>
-              <div className='flex items-center gap-2'>
+              <main className='flex items-center gap-2'>
                 <TbCategory className='h-4 w-4' />
                 <span>Category</span>
-              </div>
+              </main>
             </SelectTrigger>
             <SelectContent>
               <SelectItem
@@ -188,10 +188,10 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             value={filters.time}
             onValueChange={handleFilters}>
             <SelectTrigger className='w-[150px] cursor-pointer'>
-              <div className='flex items-center gap-2'>
+              <main className='flex items-center gap-2'>
                 <TbClock className='h-4 w-4' />
                 <span>Time of Day</span>
-              </div>
+              </main>
             </SelectTrigger>
             <SelectContent>
               <SelectItem
@@ -202,18 +202,18 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
               <SelectItem
                 className='cursor-pointer'
                 value='day'>
-                <div className='flex items-center gap-2'>
+                <main className='flex items-center gap-2'>
                   <TbSun className='h-4 w-4 text-yellow-500' />
                   <span>Daytime (6am-6pm)</span>
-                </div>
+                </main>
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='night'>
-                <div className='flex items-center gap-2'>
+                <main className='flex items-center gap-2'>
                   <TbMoon className='h-4 w-4 text-blue-500' />
                   <span>Nighttime (6pm-6am)</span>
-                </div>
+                </main>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -244,7 +244,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             </Popover>
           )}
 
-          <div className='flex rounded-md border'>
+          <main className='flex rounded-md border'>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
@@ -277,10 +277,10 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                 <TooltipContent>Grid View</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
-        </div>
-      </div>
+          </main>
+        </main>
+      </main>
       {viewContent}
-    </div>
+    </main>
   );
 }

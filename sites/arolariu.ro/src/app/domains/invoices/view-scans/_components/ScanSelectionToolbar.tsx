@@ -27,9 +27,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
   }
 
   return (
-    <div className='fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900'>
-      <div className='mx-auto flex max-w-7xl items-center justify-between'>
-        <div className='flex items-center gap-4'>
+    <main className='fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900'>
+      <main className='mx-auto flex max-w-7xl items-center justify-between'>
+        <main className='flex items-center gap-4'>
           <span className='font-medium text-gray-900 dark:text-white'>
             {selectedScans.length} {t("selected")}
           </span>
@@ -48,9 +48,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
               <TooltipContent>{t("clearSelection")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
+        </main>
 
-        <div className='flex items-center gap-3'>
+        <main className='flex items-center gap-3'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -65,8 +65,8 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
               <TooltipContent>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </div>
-      </div>
-    </div>
+        </main>
+      </main>
+    </main>
   );
 }

@@ -72,7 +72,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AboutTheAuthorPage(_props: Readonly<PageProps<"/about/the-author">>): Promise<React.JSX.Element> {
   return (
-    <div
+    <main
       className='bg-background text-foreground relative min-h-screen'
       style={{
         cursor:
@@ -90,6 +90,6 @@ export default async function AboutTheAuthorPage(_props: Readonly<PageProps<"/ab
         <Perspectives />
         <Contact />
       </main>
-    </div>
+    </main>
   );
 }

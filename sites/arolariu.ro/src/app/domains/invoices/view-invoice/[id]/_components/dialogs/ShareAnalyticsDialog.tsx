@@ -128,18 +128,18 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
           <TabsContent
             value='image'
             className='py-4'>
-            <div className='space-y-4'>
+            <main className='space-y-4'>
               <p className='text-muted-foreground text-sm'>
                 Download or copy the analytics graph as a PNG image that you can share or save.
               </p>
-              <div className='flex justify-center'>
-                <div className='w-full max-w-xs rounded-md border p-4'>
-                  <div className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</div>
-                </div>
-              </div>
-            </div>
+              <main className='flex justify-center'>
+                <main className='w-full max-w-xs rounded-md border p-4'>
+                  <main className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</main>
+                </main>
+              </main>
+            </main>
             <DialogFooter className='mt-4'>
-              <div className='flex w-full flex-col gap-2'>
+              <main className='flex w-full flex-col gap-2'>
                 <Button
                   onClick={handleDownloadImage}
                   className='w-full'>
@@ -153,16 +153,16 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                   <TbCopy className='mr-2 h-4 w-4' />
                   Copy graph to clipboard
                 </Button>
-              </div>
+              </main>
             </DialogFooter>
           </TabsContent>
 
           <TabsContent
             value='email'
             className='py-4'>
-            <div className='space-y-4'>
+            <main className='space-y-4'>
               <p className='text-muted-foreground text-sm'>Send the analytics to an email address.</p>
-              <div className='space-y-2'>
+              <main className='space-y-2'>
                 <Label htmlFor='email'>Email address</Label>
                 <Input
                   id='email'
@@ -172,8 +172,8 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                   // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
                   onChange={(e) => setEmail(e.target.value)}
                 />
-              </div>
-            </div>
+              </main>
+            </main>
             <DialogFooter className='mt-4'>
               <Button
                 onClick={handleSendEmail}

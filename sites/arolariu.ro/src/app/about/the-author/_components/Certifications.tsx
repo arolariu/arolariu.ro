@@ -70,7 +70,7 @@ export default function Certifications(): React.JSX.Element {
     <section
       ref={sectionRef}
       className={styles["section"]}>
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
@@ -94,32 +94,32 @@ export default function Certifications(): React.JSX.Element {
                 scale: 1.03,
                 transition: {duration: 0.2},
               }}>
-              <div className={styles["card"]}>
-                <div className={styles["cardHeader"]}>
-                  <div className={styles["awardIconWrapper"]}>
+              <main className={styles["card"]}>
+                <main className={styles["cardHeader"]}>
+                  <main className={styles["awardIconWrapper"]}>
                     <TbAward className={styles["awardIcon"]} />
-                  </div>
+                  </main>
                   <Badge
                     variant='outline'
                     className={styles["codeBadge"]}>
                     {cert.code}
                   </Badge>
-                </div>
+                </main>
 
                 <h3 className={styles["cardTitle"]}>{cert.name}</h3>
 
-                <div className={styles["issuerInfo"]}>
+                <main className={styles["issuerInfo"]}>
                   <span>{cert.issuer}</span>
                   <span className={styles["issuerSeparator"]}>•</span>
                   <span>{cert.issueDate}</span>
-                </div>
+                </main>
 
-                <div className={styles["scrollContent"]}>
+                <main className={styles["scrollContent"]}>
                   <p className={styles["description"]}>{cert.description}</p>
 
-                  <div className={styles["skillsSection"]}>
+                  <main className={styles["skillsSection"]}>
                     <h4 className={styles["skillsTitle"]}>{t("coreSkillsLabel")}</h4>
-                    <div className={styles["skillsList"]}>
+                    <main className={styles["skillsList"]}>
                       {cert.coreSkills.map((skill, i) => (
                         <motion.div
                           key={`${skill.slice(0, 10)}`}
@@ -131,11 +131,11 @@ export default function Certifications(): React.JSX.Element {
                           <span className={styles["skillText"]}>{skill}</span>
                         </motion.div>
                       ))}
-                    </div>
-                  </div>
-                </div>
+                    </main>
+                  </main>
+                </main>
 
-                <div className={styles["cardFooter"]}>
+                <main className={styles["cardFooter"]}>
                   <motion.a
                     href={cert.link}
                     target='_blank'
@@ -145,14 +145,14 @@ export default function Certifications(): React.JSX.Element {
                     {t("viewCertification")}
                     <TbExternalLink className={styles["viewLinkIcon"]} />
                   </motion.a>
-                </div>
+                </main>
 
                 <motion.div
                   className={styles["progressBar"]}
                   initial={{width: "0%"}}
                   transition={{duration: 0.3}}
                 />
-              </div>
+              </main>
 
               <motion.div
                 className={styles["glowEffect"]}
@@ -164,7 +164,7 @@ export default function Certifications(): React.JSX.Element {
             </motion.div>
           ))}
         </motion.div>
-      </div>
+      </main>
     </section>
   );
 }

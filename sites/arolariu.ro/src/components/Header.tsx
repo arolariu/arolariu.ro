@@ -19,7 +19,7 @@ function Header(): React.JSX.Element {
   return (
     <header className='header'>
       <nav className='header__nav'>
-        <div className='header__start'>
+        <main className='header__start'>
           {Boolean(isMobile) && <MobileNavigation />}
 
           <Link
@@ -34,14 +34,14 @@ function Header(): React.JSX.Element {
             />
             <span className='header__title'>arolariu.ro</span>
           </Link>
-        </div>
+        </main>
 
-        <div className='header__center'>{Boolean(isDesktop) && <DesktopNavigation />}</div>
+        <main className='header__center'>{Boolean(isDesktop) && <DesktopNavigation />}</main>
 
-        <div className='header__end'>
+        <main className='header__end'>
           <AuthButton />
           <ThemeButton />
-        </div>
+        </main>
       </nav>
     </header>
   );

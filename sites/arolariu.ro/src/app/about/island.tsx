@@ -45,7 +45,7 @@ import Values from "./_components/Values";
  */
 export default function RenderAboutScreen(): React.JSX.Element {
   return (
-    <div className='flex w-full flex-col'>
+    <main className='flex w-full flex-col'>
       <Hero />
       <Mission />
       <Values />
@@ -53,6 +53,6 @@ export default function RenderAboutScreen(): React.JSX.Element {
       <Navigation />
       <Faq />
       <CallToAction />
-    </div>
+    </main>
   );
 }

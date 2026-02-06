@@ -101,13 +101,13 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   );
 
   return (
-    <div className='space-y-6'>
-      <div>
+    <main className='space-y-6'>
+      <main>
         <h2 className='text-2xl font-bold'>{t("title")}</h2>
         <p className='text-muted-foreground'>{t("description")}</p>
-      </div>
+      </main>
 
-      <div className='grid gap-6 md:grid-cols-2'>
+      <main className='grid gap-6 md:grid-cols-2'>
         {/* Theme Card */}
         <Card>
           <CardHeader className='pb-4'>
@@ -118,7 +118,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardDescription>{t("theme.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='flex gap-2'>
+            <main className='flex gap-2'>
               <Button
                 variant={theme === "light" ? "default" : "outline"}
                 size='sm'
@@ -143,7 +143,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                 <TbSettings className='mr-1.5 h-4 w-4' />
                 {t("theme.system")}
               </Button>
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -157,7 +157,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardDescription>{t("font.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-3'>
-            <div className='flex gap-2'>
+            <main className='flex gap-2'>
               <Button
                 variant={fontType === "normal" ? "default" : "outline"}
                 size='sm'
@@ -172,7 +172,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                 onClick={handleFontDyslexicClick}>
                 {t("font.dyslexic")}
               </Button>
-            </div>
+            </main>
             <p className='text-muted-foreground text-xs'>{t("font.dyslexicHint")}</p>
           </CardContent>
         </Card>
@@ -187,16 +187,16 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardDescription>{t("colors.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='grid gap-4 sm:grid-cols-2'>
+            <main className='grid gap-4 sm:grid-cols-2'>
               {/* Primary Color */}
-              <div className='flex items-center justify-between'>
+              <main className='flex items-center justify-between'>
                 <Label>{t("colors.primary")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant='outline'
                       className='h-10 w-28 cursor-pointer gap-2 px-3'>
-                      <div
+                      <main
                         className='h-5 w-5 rounded-full border'
                         style={{backgroundColor: settings.primaryColor}}
                       />
@@ -204,7 +204,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className='w-64'>
-                    <div className='grid grid-cols-4 gap-2'>
+                    <main className='grid grid-cols-4 gap-2'>
                       {COLOR_PALETTE.map((color) => (
                         <TooltipProvider key={color.value}>
                           <Tooltip>
@@ -215,7 +215,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                                 className='h-10 w-10 cursor-pointer rounded-full p-0'
                                 data-color={color.value}
                                 onClick={handleColorChange("primaryColor")}>
-                                <div
+                                <main
                                   className='h-6 w-6 rounded-full'
                                   style={{backgroundColor: color.value}}
                                 />
@@ -226,20 +226,20 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                           </Tooltip>
                         </TooltipProvider>
                       ))}
-                    </div>
+                    </main>
                   </PopoverContent>
                 </Popover>
-              </div>
+              </main>
 
               {/* Secondary Color */}
-              <div className='flex items-center justify-between'>
+              <main className='flex items-center justify-between'>
                 <Label>{t("colors.secondary")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant='outline'
                       className='h-10 w-28 cursor-pointer gap-2 px-3'>
-                      <div
+                      <main
                         className='h-5 w-5 rounded-full border'
                         style={{backgroundColor: settings.secondaryColor}}
                       />
@@ -247,7 +247,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className='w-64'>
-                    <div className='grid grid-cols-4 gap-2'>
+                    <main className='grid grid-cols-4 gap-2'>
                       {COLOR_PALETTE.map((color) => (
                         <TooltipProvider key={color.value}>
                           <Tooltip>
@@ -258,7 +258,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                                 className='h-10 w-10 cursor-pointer rounded-full p-0'
                                 data-color={color.value}
                                 onClick={handleColorChange("secondaryColor")}>
-                                <div
+                                <main
                                   className='h-6 w-6 rounded-full'
                                   style={{backgroundColor: color.value}}
                                 />
@@ -269,17 +269,17 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                           </Tooltip>
                         </TooltipProvider>
                       ))}
-                    </div>
+                    </main>
                   </PopoverContent>
                 </Popover>
-              </div>
-            </div>
+              </main>
+            </main>
 
             {/* Gradient Preview */}
             <Separator />
-            <div className='space-y-2'>
+            <main className='space-y-2'>
               <Label>{t("colors.preview")}</Label>
-              <div
+              <main
                 className='h-16 w-full rounded-lg'
                 style={{
                   background: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
@@ -292,7 +292,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                 }}>
                 {t("colors.previewText")}
               </p>
-            </div>
+            </main>
           </CardContent>
         </Card>
 
@@ -331,30 +331,30 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardDescription>{t("advanced.description")}</CardDescription>
           </CardHeader>
           <CardContent className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("advanced.compactMode")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("advanced.compactModeHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.compactMode}
                 onCheckedChange={handleToggle("compactMode")}
               />
-            </div>
+            </main>
             <Separator />
-            <div className='flex items-center justify-between'>
-              <div>
+            <main className='flex items-center justify-between'>
+              <main>
                 <Label>{t("advanced.animations")}</Label>
                 <p className='text-muted-foreground text-xs'>{t("advanced.animationsHint")}</p>
-              </div>
+              </main>
               <Switch
                 checked={settings.animationsEnabled}
                 onCheckedChange={handleToggle("animationsEnabled")}
               />
-            </div>
+            </main>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }

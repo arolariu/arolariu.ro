@@ -65,15 +65,15 @@ function WorkflowCard({
       transition={{duration: 0.5, delay}}>
       <Card className='group relative h-full overflow-hidden border-2 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg dark:hover:border-indigo-700'>
         {/* Step number badge */}
-        <div
+        <main
           className={`absolute -top-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br ${gradient} text-2xl font-bold text-white opacity-20 transition-opacity group-hover:opacity-30`}>
           {step}
-        </div>
+        </main>
 
         <CardHeader className='pb-2'>
-          <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br ${gradient} text-white shadow-md`}>
+          <main className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br ${gradient} text-white shadow-md`}>
             {icon}
-          </div>
+          </main>
           <CardTitle className='text-xl'>{title}</CardTitle>
           <CardDescription className='text-base'>{description}</CardDescription>
         </CardHeader>
@@ -100,15 +100,15 @@ function WorkflowCard({
  */
 function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <div className='flex items-start gap-4'>
-      <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400'>
+    <main className='flex items-start gap-4'>
+      <main className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400'>
         {icon}
-      </div>
-      <div>
+      </main>
+      <main>
         <h3 className='font-semibold text-gray-900 dark:text-white'>{title}</h3>
         <p className='text-sm text-gray-600 dark:text-gray-400'>{description}</p>
-      </div>
-    </div>
+      </main>
+    </main>
   );
 }
 
@@ -146,7 +146,7 @@ function BentoSection({
     <section
       ref={ref}
       className='bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 dark:bg-gray-900/50'>
-      <div className='mx-auto max-w-5xl'>
+      <main className='mx-auto max-w-5xl'>
         {/* Section header */}
         <motion.div
           className='mb-12 text-center'
@@ -158,7 +158,7 @@ function BentoSection({
         </motion.div>
 
         {/* Bento grid */}
-        <div className='grid auto-rows-[120px] grid-cols-2 gap-4 md:grid-cols-3'>
+        <main className='grid auto-rows-[120px] grid-cols-2 gap-4 md:grid-cols-3'>
           {bentoItemsConfig.map((item, index) => (
             <motion.div
               key={item.key}
@@ -168,7 +168,7 @@ function BentoSection({
               transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
               whileHover={{scale: 1.02}}>
               {/* Shimmer effect on hover */}
-              <div className='absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full' />
+              <main className='absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full' />
 
               {/* Floating particles */}
               <motion.div
@@ -183,20 +183,20 @@ function BentoSection({
               />
 
               {/* Content */}
-              <div className='relative flex h-full flex-col justify-between p-4'>
+              <main className='relative flex h-full flex-col justify-between p-4'>
                 <motion.div
                   whileHover={{scale: 1.1, rotate: 5}}
                   transition={{duration: 0.3}}>
                   <item.icon className='h-8 w-8 text-white' />
                 </motion.div>
-                <div>
+                <main>
                   <h3 className='text-base font-bold text-white'>{translations.items[item.key].title}</h3>
                   <p className='text-sm text-white/80'>{translations.items[item.key].description}</p>
-                </div>
-              </div>
+                </main>
+              </main>
             </motion.div>
           ))}
-        </div>
+        </main>
 
         {/* Mobile highlight */}
         <motion.div
@@ -207,7 +207,7 @@ function BentoSection({
           <TbDeviceMobile className='h-5 w-5' />
           <span className='text-sm'>{translations.mobile}</span>
         </motion.div>
-      </div>
+      </main>
     </section>
   );
 }
@@ -234,7 +234,7 @@ function EnhancedCTA({
       ref={ref}
       className='relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8'>
       {/* Animated background */}
-      <div className='absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500'>
+      <main className='absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500'>
         {/* Floating orbs */}
         <motion.div
           className='absolute top-10 left-10 h-32 w-32 rounded-full bg-white/10 blur-2xl'
@@ -261,11 +261,11 @@ function EnhancedCTA({
         />
 
         {/* Grid pattern overlay */}
-        <div className='absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]' />
-      </div>
+        <main className='absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]' />
+      </main>
 
       {/* Content */}
-      <div className='relative mx-auto max-w-4xl text-center'>
+      <main className='relative mx-auto max-w-4xl text-center'>
         {/* Sparkle icon */}
         <motion.div
           className='mb-6 inline-flex items-center justify-center'
@@ -328,20 +328,20 @@ function EnhancedCTA({
           initial={{opacity: 0}}
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.5, duration: 0.5}}>
-          <div className='flex items-center gap-2'>
+          <main className='flex items-center gap-2'>
             <TbLock className='h-4 w-4' />
             <span>{translations.badges.secure}</span>
-          </div>
-          <div className='flex items-center gap-2'>
+          </main>
+          <main className='flex items-center gap-2'>
             <TbCloud className='h-4 w-4' />
             <span>{translations.badges.cloud}</span>
-          </div>
-          <div className='flex items-center gap-2'>
+          </main>
+          <main className='flex items-center gap-2'>
             <TbBrain className='h-4 w-4' />
             <span>{translations.badges.ai}</span>
-          </div>
+          </main>
         </motion.div>
-      </div>
+      </main>
     </section>
   );
 }
@@ -390,10 +390,10 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
     <main className='min-h-screen'>
       {/* Hero Section */}
       <section className='relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8'>
-        <div className='mx-auto max-w-7xl'>
-          <div className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
+        <main className='mx-auto max-w-7xl'>
+          <main className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
             {/* Left: Content */}
-            <div className='flex-1 text-center lg:text-left'>
+            <main className='flex-1 text-center lg:text-left'>
               <motion.div
                 initial={{opacity: 0, y: 20}}
                 animate={{opacity: 1, y: 0}}
@@ -407,7 +407,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 </h1>
                 <p className='mb-8 max-w-2xl text-lg text-gray-600 lg:text-xl dark:text-gray-300'>{t("hero.description")}</p>
 
-                <div className='flex flex-col items-center gap-4 sm:flex-row lg:justify-start'>
+                <main className='flex flex-col items-center gap-4 sm:flex-row lg:justify-start'>
                   <Button
                     asChild
                     size='lg'
@@ -428,9 +428,9 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                       </Link>
                     </Button>
                   ) : null}
-                </div>
+                </main>
               </motion.div>
-            </div>
+            </main>
 
             {/* Right: Image */}
             <motion.div
@@ -447,13 +447,13 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 priority
               />
             </motion.div>
-          </div>
-        </div>
+          </main>
+        </main>
       </section>
 
       {/* Workflow Section */}
       <section className='bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 dark:bg-gray-900/50'>
-        <div className='mx-auto max-w-7xl'>
+        <main className='mx-auto max-w-7xl'>
           <motion.div
             className='mb-12 text-center'
             initial={{opacity: 0, y: 20}}
@@ -463,7 +463,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
             <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>{t("workflow.description")}</p>
           </motion.div>
 
-          <div className='grid gap-8 md:grid-cols-3'>
+          <main className='grid gap-8 md:grid-cols-3'>
             <WorkflowCard
               step={1}
               title={t("workflow.step1.title")}
@@ -496,14 +496,14 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               gradient='from-green-500 to-emerald-500'
               delay={0.3}
             />
-          </div>
-        </div>
+          </main>
+        </main>
       </section>
 
       {/* Features Section */}
       <section className='px-4 py-16 sm:px-6 lg:px-8'>
-        <div className='mx-auto max-w-7xl'>
-          <div className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
+        <main className='mx-auto max-w-7xl'>
+          <main className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
             {/* Left: Image */}
             <motion.div
               className='flex-1'
@@ -525,12 +525,12 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               initial={{opacity: 0, x: 20}}
               animate={{opacity: 1, x: 0}}
               transition={{duration: 0.6, delay: 0.2}}>
-              <div>
+              <main>
                 <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>{t("features.title")}</h2>
                 <p className='text-lg text-gray-600 dark:text-gray-400'>{t("features.description")}</p>
-              </div>
+              </main>
 
-              <div className='space-y-6'>
+              <main className='space-y-6'>
                 <FeatureItem
                   icon={<TbPhoto className='h-5 w-5' />}
                   title={t("features.ocr.title")}
@@ -546,18 +546,18 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                   title={t("features.batch.title")}
                   description={t("features.batch.description")}
                 />
-              </div>
+              </main>
 
               {!isAuthenticated && (
-                <div className='rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-900/30'>
+                <main className='rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-900/30'>
                   <p className='text-sm text-indigo-800 dark:text-indigo-200'>
                     <strong>Sign in</strong> {t("features.signInPrompt")}
                   </p>
-                </div>
+                </main>
               )}
             </motion.div>
-          </div>
-        </div>
+          </main>
+        </main>
       </section>
 
       {/* Bento Grid Section */}
@@ -567,7 +567,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       <EnhancedCTA translations={ctaTranslations} />
 
       {/* Footer spacing */}
-      <div className='h-16 bg-gradient-to-b from-pink-500/10 to-transparent dark:from-purple-900/20' />
+      <main className='h-16 bg-gradient-to-b from-pink-500/10 to-transparent dark:from-purple-900/20' />
     </main>
   );
 }

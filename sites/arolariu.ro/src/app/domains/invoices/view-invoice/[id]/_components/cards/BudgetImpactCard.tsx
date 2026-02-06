@@ -50,53 +50,53 @@ export function BudgetImpactCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Budget progress */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between text-sm'>
+        <main className='space-y-2'>
+          <main className='flex items-center justify-between text-sm'>
             <span className='text-muted-foreground'>Monthly Budget</span>
             <span className='font-medium'>{formatCurrency(monthlyBudget, {currencyCode: currency.code, locale})}</span>
-          </div>
+          </main>
           <Progress
             value={Math.min(percentUsed, 100)}
             className={`h-3 ${getProgressColorClass()}`}
           />
-          <div className='text-muted-foreground flex items-center justify-between text-xs'>
+          <main className='text-muted-foreground flex items-center justify-between text-xs'>
             <span>{formatCurrency(totalSpent, {currencyCode: currency.code, locale})} spent</span>
             <span>{percentUsed.toFixed(0)}%</span>
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* This invoice impact */}
-        <div className='border-border bg-muted/30 space-y-1 rounded-lg border p-3'>
+        <main className='border-border bg-muted/30 space-y-1 rounded-lg border p-3'>
           <p className='text-muted-foreground text-xs'>This invoice used</p>
           <p className='text-2xl font-semibold tabular-nums'>{thisInvoicePercent.toFixed(1)}%</p>
           <p className='text-muted-foreground text-xs'>of your monthly budget</p>
-        </div>
+        </main>
 
         {/* Remaining stats */}
-        <div className='grid grid-cols-2 gap-3'>
-          <div className='space-y-1'>
+        <main className='grid grid-cols-2 gap-3'>
+          <main className='space-y-1'>
             <p className='text-muted-foreground text-xs'>Remaining</p>
             <p className={`text-lg font-semibold tabular-nums ${isOverBudget ? "text-destructive" : ""}`}>
               {formatCurrency(Math.abs(remaining), {currencyCode: currency.code, locale})}
             </p>
             {isOverBudget ? <p className='text-destructive text-xs'>Over budget</p> : null}
-          </div>
-          <div className='space-y-1'>
+          </main>
+          <main className='space-y-1'>
             <p className='text-muted-foreground text-xs'>Days Left</p>
             <p className='text-lg font-semibold tabular-nums'>{daysRemaining}</p>
             <p className='text-muted-foreground text-xs'>in {monthName}</p>
-          </div>
-        </div>
+          </main>
+        </main>
 
         {/* Daily allowance */}
         {!isOverBudget && (
-          <div className='border-border flex items-center justify-between rounded-lg border p-3'>
-            <div className='space-y-0.5'>
+          <main className='border-border flex items-center justify-between rounded-lg border p-3'>
+            <main className='space-y-0.5'>
               <p className='text-muted-foreground text-xs'>Daily Allowance</p>
               <p className='text-sm font-medium'>{formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})}/day</p>
-            </div>
+            </main>
             {getDailyAllowanceIcon()}
-          </div>
+          </main>
         )}
       </CardContent>
     </Card>

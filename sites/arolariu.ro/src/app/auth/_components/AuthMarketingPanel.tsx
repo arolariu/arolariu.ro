@@ -50,7 +50,7 @@ export default function AuthMarketingPanel(props: Readonly<Props>): React.JSX.El
       initial='hidden'
       animate='visible'>
       {/* Background glow */}
-      <div
+      <main
         aria-hidden='true'
         className={styles["glow"]}
       />
@@ -75,16 +75,16 @@ export default function AuthMarketingPanel(props: Readonly<Props>): React.JSX.El
       <motion.div
         className={styles["card"]}
         variants={itemVariants}>
-        <div
+        <main
           aria-hidden='true'
           className={styles["cardGlowPrimary"]}
         />
-        <div
+        <main
           aria-hidden='true'
           className={styles["cardGlowSecondary"]}
         />
 
-        <div className={styles["illustration"]}>
+        <main className={styles["illustration"]}>
           <Image
             src={props.illustrationSrc}
             alt={props.illustrationAlt}
@@ -93,7 +93,7 @@ export default function AuthMarketingPanel(props: Readonly<Props>): React.JSX.El
             className={styles["image"]}
             priority
           />
-        </div>
+        </main>
 
         <motion.div
           className={styles["bullets"]}

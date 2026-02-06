@@ -126,11 +126,11 @@ export default function TechStack(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Background */}
-      <div className={styles["bgLayer"]}>
-        <div className={styles["bgGradient"]} />
-      </div>
+      <main className={styles["bgLayer"]}>
+        <main className={styles["bgGradient"]} />
+      </main>
 
-      <div className={styles["container"]}>
+      <main className={styles["container"]}>
         {/* Section Header */}
         <motion.div
           className={styles["header"]}
@@ -197,12 +197,12 @@ export default function TechStack(): React.JSX.Element {
                   exit={{opacity: 0, y: -20}}
                   transition={{duration: 0.3}}>
                   {/* Category Description */}
-                  <div className={styles["categoryDescription"]}>
+                  <main className={styles["categoryDescription"]}>
                     <p>{t(`categories.${category.id}.description` as Parameters<typeof t>[0])}</p>
-                  </div>
+                  </main>
 
                   {/* Technologies Grid */}
-                  <div className={styles["techGrid"]}>
+                  <main className={styles["techGrid"]}>
                     {category.technologies.map((tech, index) => (
                       <motion.div
                         key={tech.id}
@@ -233,8 +233,8 @@ export default function TechStack(): React.JSX.Element {
                             </motion.div>
 
                             {/* Content */}
-                            <div className={styles["techInfo"]}>
-                              <div className={styles["techName"]}>
+                            <main className={styles["techInfo"]}>
+                              <main className={styles["techName"]}>
                                 <h3>{t(`technologies.${tech.id}.name` as Parameters<typeof t>[0])}</h3>
                                 {tech.version !== undefined && (
                                   <Badge
@@ -243,11 +243,11 @@ export default function TechStack(): React.JSX.Element {
                                     v{tech.version}
                                   </Badge>
                                 )}
-                              </div>
+                              </main>
                               <p className={styles["techDescription"]}>
                                 {t(`technologies.${tech.id}.description` as Parameters<typeof t>[0])}
                               </p>
-                            </div>
+                            </main>
                           </CardContent>
 
                           {/* Animated border */}
@@ -261,7 +261,7 @@ export default function TechStack(): React.JSX.Element {
                         </Card>
                       </motion.div>
                     ))}
-                  </div>
+                  </main>
                 </motion.div>
               </TabsContent>
             ))}
@@ -282,13 +282,13 @@ export default function TechStack(): React.JSX.Element {
               animate={isInView ? {opacity: 1, y: 0} : {}}
               transition={{duration: 0.5, delay: 0.6 + index * 0.1}}
               whileHover={{scale: 1.05, transition: {duration: 0.2}}}>
-              <div className={styles["statValue"]}>{t(`stats.${statId}.value` as Parameters<typeof t>[0])}</div>
-              <div className={styles["statLabel"]}>{t(`stats.${statId}.label` as Parameters<typeof t>[0])}</div>
-              <div className={styles["statDescription"]}>{t(`stats.${statId}.description` as Parameters<typeof t>[0])}</div>
+              <main className={styles["statValue"]}>{t(`stats.${statId}.value` as Parameters<typeof t>[0])}</main>
+              <main className={styles["statLabel"]}>{t(`stats.${statId}.label` as Parameters<typeof t>[0])}</main>
+              <main className={styles["statDescription"]}>{t(`stats.${statId}.description` as Parameters<typeof t>[0])}</main>
             </motion.div>
           ))}
         </motion.div>
-      </div>
+      </main>
     </section>
   );
 }

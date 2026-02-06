@@ -40,20 +40,20 @@ import {Skeleton} from "@arolariu/components";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <div className='container mx-auto px-5 py-24'>
+    <main className='container mx-auto px-5 py-24'>
       {/* Header Section Skeleton */}
       <section className='flex flex-col'>
         {/* Progress Bar */}
-        <div className='h-1 overflow-hidden rounded bg-gray-200'>
+        <main className='h-1 overflow-hidden rounded bg-gray-200'>
           <Skeleton className='h-full w-24' />
-        </div>
+        </main>
 
         {/* Title and Subtitle Container */}
-        <div className='mb-12 flex flex-col flex-wrap py-6 sm:flex-row'>
+        <main className='mb-12 flex flex-col flex-wrap py-6 sm:flex-row'>
           {/* Title Skeleton */}
-          <div className='mb-2 sm:mb-0 sm:w-2/5'>
+          <main className='mb-2 sm:mb-0 sm:w-2/5'>
             <Skeleton className='mx-auto h-14 w-4/5 sm:mx-0' />
-          </div>
+          </main>
 
           {/* Subtitle Skeleton */}
           <article className='2xsm:mt-8 space-y-2 pl-0 sm:w-3/5 sm:pl-10 md:mt-0'>
@@ -61,7 +61,7 @@ export default function Loading(): React.JSX.Element {
             <Skeleton className='h-4 w-5/6' />
             <Skeleton className='h-4 w-4/5' />
           </article>
-        </div>
+        </main>
       </section>
 
       {/* Service Cards Grid Skeleton */}
@@ -79,10 +79,10 @@ export default function Loading(): React.JSX.Element {
             <Skeleton className='mx-auto mt-5 h-7 w-3/4' />
 
             {/* Description Lines */}
-            <div className='space-y-2'>
+            <main className='space-y-2'>
               <Skeleton className='h-4 w-full' />
               <Skeleton className='h-4 w-5/6' />
-            </div>
+            </main>
 
             {/* Call to Action Link */}
             <Skeleton className='mt-3 h-4 w-32' />
@@ -96,10 +96,10 @@ export default function Loading(): React.JSX.Element {
           </article>
           <article className='space-y-3'>
             <Skeleton className='mx-auto mt-5 h-7 w-3/4' />
-            <div className='space-y-2'>
+            <main className='space-y-2'>
               <Skeleton className='h-4 w-full' />
               <Skeleton className='h-4 w-5/6' />
-            </div>
+            </main>
             <Skeleton className='mt-3 h-4 w-32' />
           </article>
         </section>
@@ -110,14 +110,14 @@ export default function Loading(): React.JSX.Element {
           </article>
           <article className='space-y-3'>
             <Skeleton className='mx-auto mt-5 h-7 w-3/4' />
-            <div className='space-y-2'>
+            <main className='space-y-2'>
               <Skeleton className='h-4 w-full' />
               <Skeleton className='h-4 w-5/6' />
-            </div>
+            </main>
             <Skeleton className='mt-3 h-4 w-32' />
           </article>
         </section>
       </section>
-    </div>
+    </main>
   );
 }

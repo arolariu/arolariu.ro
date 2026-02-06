@@ -37,10 +37,10 @@ export default function RenderDomainsScreen(): React.JSX.Element {
   return (
     <main className='container mx-auto px-5 py-24'>
       <section className='flex flex-col'>
-        <div className='h-1 overflow-hidden rounded bg-gray-200'>
-          <div className='h-full w-24 bg-indigo-700' />
-        </div>
-        <div className='mb-12 flex flex-col flex-wrap py-6 sm:flex-row'>
+        <main className='h-1 overflow-hidden rounded bg-gray-200'>
+          <main className='h-full w-24 bg-indigo-700' />
+        </main>
+        <main className='mb-12 flex flex-col flex-wrap py-6 sm:flex-row'>
           <h1 className='align-center mb-2 justify-items-center bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-center text-5xl font-bold text-transparent sm:mb-0 sm:w-2/5'>
             {t("title")}
           </h1>
@@ -50,7 +50,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
               textKey='subtitle'
             />
           </article>
-        </div>
+        </main>
       </section>
 
       <section className='2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center flex flex-row flex-wrap gap-4 md:items-baseline md:justify-normal md:justify-items-start'>

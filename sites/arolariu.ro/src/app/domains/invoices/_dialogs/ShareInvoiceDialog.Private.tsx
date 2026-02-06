@@ -40,7 +40,7 @@ export interface PrivateModeProps {
  */
 export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: PrivateModeProps): React.JSX.Element {
   return (
-    <div className='space-y-4'>
+    <main className='space-y-4'>
       <Button
         variant='ghost'
         size='sm'
@@ -64,7 +64,7 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
       <form
         onSubmit={onSendEmail}
         className='space-y-4'>
-        <div className='space-y-2'>
+        <main className='space-y-2'>
           <Label htmlFor='email'>Recipient&apos;s Email Address</Label>
           <Input
             id='email'
@@ -78,7 +78,7 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
           <p className='text-muted-foreground text-xs'>
             An email invitation will be sent to this address with a private link to view the invoice.
           </p>
-        </div>
+        </main>
         <Button
           type='submit'
           // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
@@ -88,6 +88,6 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
           Send Private Invitation
         </Button>
       </form>
-    </div>
+    </main>
   );
 }

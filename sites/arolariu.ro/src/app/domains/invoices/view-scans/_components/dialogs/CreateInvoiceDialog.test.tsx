@@ -127,7 +127,7 @@ vi.mock("@arolariu/components", () => ({
   ),
   Dialog: ({children, open, onOpenChange}: {children: ReactNode; open: boolean; onOpenChange: (open: boolean) => void}) =>
     open ? (
-      <div
+      <main
         role='dialog'
         data-testid='dialog'>
         {children}
@@ -136,18 +136,18 @@ vi.mock("@arolariu/components", () => ({
           onClick={() => onOpenChange(false)}>
           Close
         </button>
-      </div>
+      </main>
     ) : null,
-  DialogContent: ({children, className}: {children: ReactNode; className?: string}) => <div className={className}>{children}</div>,
+  DialogContent: ({children, className}: {children: ReactNode; className?: string}) => <main className={className}>{children}</main>,
   DialogDescription: ({children}: {children: ReactNode}) => <p data-testid='dialog-description'>{children}</p>,
   DialogFooter: ({children, className}: {children: ReactNode; className?: string}) => (
-    <div
+    <main
       data-testid='dialog-footer'
       className={className}>
       {children}
-    </div>
+    </main>
   ),
-  DialogHeader: ({children}: {children: ReactNode}) => <div data-testid='dialog-header'>{children}</div>,
+  DialogHeader: ({children}: {children: ReactNode}) => <main data-testid='dialog-header'>{children}</main>,
   DialogTitle: ({children, className}: {children: ReactNode; className?: string}) => (
     <h2
       data-testid='dialog-title'
@@ -163,18 +163,18 @@ vi.mock("@arolariu/components", () => ({
     </label>
   ),
   Progress: ({value, className}: {value: number; className?: string}) => (
-    <div
+    <main
       data-testid='progress'
       data-value={value}
       className={className}
     />
   ),
   RadioGroup: ({children, value, onValueChange}: {children: ReactNode; value: string; onValueChange: (v: string) => void}) => (
-    <div
+    <main
       data-testid='radio-group'
       data-value={value}>
       {children}
-    </div>
+    </main>
   ),
   RadioGroupItem: ({value, id, className}: {value: string; id: string; className?: string}) => (
     <input
@@ -196,11 +196,11 @@ vi.mock("motion/react", () => ({
   AnimatePresence: ({children}: {children: ReactNode}) => <>{children}</>,
   motion: {
     div: ({children, className, key}: {children: ReactNode; className?: string; key?: string}) => (
-      <div
+      <main
         className={className}
         data-key={key}>
         {children}
-      </div>
+      </main>
     ),
   },
 }));

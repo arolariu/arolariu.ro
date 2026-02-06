@@ -53,14 +53,14 @@ export default function ImageDialog(): React.JSX.Element {
       <DialogContent className='h-full min-w-11/12'>
         <DialogHeader>
           <DialogTitle>Image ({image})</DialogTitle>
-          <div className='relative h-full w-full'>
+          <main className='relative h-full w-full'>
             <Image
               src={image}
               fill
               alt='Photo of receipt'
               className='h-full w-full rounded-md border object-cover'
             />
-          </div>
+          </main>
         </DialogHeader>
       </DialogContent>
     </Dialog>

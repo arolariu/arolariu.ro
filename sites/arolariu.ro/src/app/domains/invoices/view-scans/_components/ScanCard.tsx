@@ -112,11 +112,11 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         onClick={onToggleSelect}>
         <CardContent className='p-0'>
           {/* Preview */}
-          <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+          <main className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
             {scan.mimeType === "application/pdf" ? (
-              <div className='flex h-full items-center justify-center'>
+              <main className='flex h-full items-center justify-center'>
                 <TbFileTypePdf className='h-16 w-16 text-red-500' />
-              </div>
+              </main>
             ) : (
               <Image
                 src={scan.blobUrl}
@@ -128,7 +128,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             )}
 
             {/* Selection checkbox */}
-            <div
+            <main
               role='button'
               tabIndex={0}
               className='absolute top-2 left-2'
@@ -139,10 +139,10 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 onCheckedChange={onToggleSelect}
                 className='h-5 w-5 border-2 border-white bg-white/80 data-[state=checked]:bg-purple-500'
               />
-            </div>
+            </main>
 
             {/* Actions menu */}
-            <div
+            <main
               role='button'
               tabIndex={0}
               className='absolute top-2 right-2'
@@ -166,31 +166,31 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
+            </main>
 
             {/* Used by invoice badge */}
             {isUsedByInvoice ? (
-              <div className='absolute right-2 bottom-2'>
-                <div className='flex items-center gap-1 rounded-full bg-blue-500/90 px-2 py-0.5 text-xs font-medium text-white'>
+              <main className='absolute right-2 bottom-2'>
+                <main className='flex items-center gap-1 rounded-full bg-blue-500/90 px-2 py-0.5 text-xs font-medium text-white'>
                   <TbLink className='h-3 w-3' />
                   {t("linked")}
-                </div>
-              </div>
+                </main>
+              </main>
             ) : null}
-          </div>
+          </main>
 
           {/* File info */}
-          <div className='p-3'>
+          <main className='p-3'>
             <p
               className='truncate text-sm font-medium text-gray-900 dark:text-white'
               title={scan.name}>
               {scan.name}
             </p>
-            <div className='mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400'>
+            <main className='mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400'>
               <span>{formatFileSize(scan.sizeInBytes)}</span>
               <span>{formatDate(scan.uploadedAt)}</span>
-            </div>
-          </div>
+            </main>
+          </main>
         </CardContent>
       </Card>
 

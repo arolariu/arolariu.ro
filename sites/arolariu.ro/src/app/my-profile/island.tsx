@@ -90,29 +90,29 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
   }
 
   return (
-    <div className='container mx-auto max-w-7xl px-4 py-8'>
+    <main className='container mx-auto max-w-7xl px-4 py-8'>
       {/* Bento Grid Header Section */}
-      <div className='mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      <main className='mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {/* Profile Card - spans 2 columns on large screens */}
-        <div className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm md:col-span-2 lg:col-span-2'>
+        <main className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm md:col-span-2 lg:col-span-2'>
           <ProfileHeader
             user={user}
             userIdentifier={user.id}
           />
-        </div>
+        </main>
 
         {/* Quick Stats Summary Card */}
-        <div className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm'>
-          <div className='flex flex-col items-center justify-center space-y-2 text-center'>
-            <div className='text-primary text-4xl font-bold'>{statistics.totalInvoices}</div>
+        <main className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm'>
+          <main className='flex flex-col items-center justify-center space-y-2 text-center'>
+            <main className='text-primary text-4xl font-bold'>{statistics.totalInvoices}</main>
             <p className='text-muted-foreground text-sm'>Total Invoices</p>
-            <div className='text-muted-foreground mt-2 flex gap-4 text-xs'>
+            <main className='text-muted-foreground mt-2 flex gap-4 text-xs'>
               <span>{statistics.totalMerchants} merchants</span>
               <span>{statistics.totalScans} scans</span>
-            </div>
-          </div>
-        </div>
-      </div>
+            </main>
+          </main>
+        </main>
+      </main>
 
       {/* Tabs Navigation */}
       <Tabs
@@ -136,7 +136,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
         </TabsList>
 
         {/* Tab Content - All content panels */}
-        <div className='bg-background rounded-xl border p-4 shadow-sm md:p-6'>
+        <main className='bg-background rounded-xl border p-4 shadow-sm md:p-6'>
           <TabsContent
             value='profile'
             className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
@@ -196,8 +196,8 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
               onSettingsChange={handleDataChange}
             />
           </TabsContent>
-        </div>
+        </main>
       </Tabs>
-    </div>
+    </main>
   );
 }

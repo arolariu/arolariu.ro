@@ -174,11 +174,11 @@ export default function FeedbackDialog(): React.JSX.Element {
           <DialogDescription>Help us improve our analytics by sharing your thoughts</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-6 py-4'>
+        <main className='space-y-6 py-4'>
           {/* Star Rating */}
-          <div className='space-y-2'>
+          <main className='space-y-2'>
             <h4 className='text-sm font-medium'>How would you rate the analytics?</h4>
-            <div className='flex justify-center'>
+            <main className='flex justify-center'>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Button
                   key={star}
@@ -193,13 +193,13 @@ export default function FeedbackDialog(): React.JSX.Element {
                   />
                 </Button>
               ))}
-            </div>
-          </div>
+            </main>
+          </main>
 
           {/* Feature Selection */}
-          <div className='space-y-2'>
+          <main className='space-y-2'>
             <h4 className='text-sm font-medium'>Which features were most helpful? (Select all that apply)</h4>
-            <div className='flex flex-wrap gap-2'>
+            <main className='flex flex-wrap gap-2'>
               {features.map((feature) => (
                 <Badge
                   key={feature}
@@ -210,11 +210,11 @@ export default function FeedbackDialog(): React.JSX.Element {
                   {feature}
                 </Badge>
               ))}
-            </div>
-          </div>
+            </main>
+          </main>
 
           {/* Written Feedback */}
-          <div className='space-y-2'>
+          <main className='space-y-2'>
             <h4 className='text-sm font-medium'>Additional comments (optional)</h4>
             <Textarea
               placeholder='Share your thoughts about the analytics...'
@@ -222,8 +222,8 @@ export default function FeedbackDialog(): React.JSX.Element {
               onChange={handleFeedbackChange}
               rows={4}
             />
-          </div>
-        </div>
+          </main>
+        </main>
 
         <DialogFooter>
           <form

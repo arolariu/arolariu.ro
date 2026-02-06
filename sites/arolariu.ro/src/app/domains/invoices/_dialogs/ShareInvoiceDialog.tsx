@@ -58,23 +58,23 @@ interface SelectionModeProps {
  */
 function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): React.JSX.Element {
   return (
-    <div className='space-y-4'>
+    <main className='space-y-4'>
       <p className='text-muted-foreground text-sm'>Choose how you want to share this invoice. Your choice affects who can access it.</p>
 
-      <div className='grid gap-4'>
+      <main className='grid gap-4'>
         <Card
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPublic}>
           <CardHeader className='flex flex-row items-start gap-4 space-y-0 pb-4'>
-            <div className='flex size-12 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30'>
+            <main className='flex size-12 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30'>
               <TbGlobe className='size-6 text-orange-600 dark:text-orange-400' />
-            </div>
-            <div className='flex-1 space-y-1'>
+            </main>
+            <main className='flex-1 space-y-1'>
               <CardTitle className='text-base'>Public Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Generate a link or QR code that <strong>anyone</strong> can use to view this invoice.
               </CardDescription>
-            </div>
+            </main>
           </CardHeader>
         </Card>
 
@@ -82,18 +82,18 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPrivate}>
           <CardHeader className='flex flex-row items-start gap-4 space-y-0 pb-4'>
-            <div className='flex size-12 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30'>
+            <main className='flex size-12 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30'>
               <TbLock className='size-6 text-green-600 dark:text-green-400' />
-            </div>
-            <div className='flex-1 space-y-1'>
+            </main>
+            <main className='flex-1 space-y-1'>
               <CardTitle className='text-base'>Private Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Send an email invitation to a <strong>specific person</strong>. Only they will have access.
               </CardDescription>
-            </div>
+            </main>
           </CardHeader>
         </Card>
-      </div>
+      </main>
 
       <Alert
         variant='default'
@@ -104,7 +104,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
           Public links can be accessed by anyone who has the URL. Private sharing restricts access to the specific recipient.
         </AlertDescription>
       </Alert>
-    </div>
+    </main>
   );
 }
 
