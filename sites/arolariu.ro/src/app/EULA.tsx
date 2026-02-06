@@ -130,7 +130,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 htmlFor='locale-select'
                 className={styles["localeLabel"]}>
                 <TbGlobe className={styles["globeIcon"]} />
-                {t("language", {fallback: "Language"})}
+                {t("language")}
               </Label>
               <Select
                 defaultValue={locale}
@@ -140,7 +140,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   className={styles["localeSelect"]}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position='popper'>
                   <SelectItem value='en'>English (EN)</SelectItem>
                   <SelectItem value='ro'>Română (RO)</SelectItem>
                   <SelectItem value='fr'>Français (FR)</SelectItem>
