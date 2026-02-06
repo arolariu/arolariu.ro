@@ -15,11 +15,6 @@
   margin: 0;
 }
 
-// 2b. Prevent layout shift when modals/selects lock scroll
-html {
-  scrollbar-gutter: stable;
-}
-
 // 3. Improve text rendering
 body {
   line-height: 1.5;
