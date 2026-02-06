@@ -81,12 +81,7 @@ export default function Features(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["section"]}>
-      {/* Background */}
-      <main className={styles["bgLayer"]}>
-        <main className={styles["bgGradient"]} />
-      </main>
-
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         {/* Section Header */}
         <motion.div
           className={styles["header"]}
@@ -110,7 +105,7 @@ export default function Features(): React.JSX.Element {
         </motion.div>
 
         {/* Features Grid */}
-        <main className={styles["grid"]}>
+        <div className={styles["grid"]}>
           {featureConfigs.map((feature, index) => (
             <motion.div
               key={feature.id}
@@ -123,7 +118,7 @@ export default function Features(): React.JSX.Element {
               onHoverEnd={() => setHoveredFeature(null)}
               // eslint-disable-next-line react/jsx-no-bind -- simple page
               onClick={() => setSelectedFeature(feature)}>
-              <Card className={hoveredFeature === feature.id ? styles["cardActive"] : styles["card"]}>
+              <Card className={hoveredFeature === feature.id ? styles["cardActive"] : index === 0 ? styles["cardHero"] : styles["card"]}>
                 {/* Gradient background on hover */}
                 <motion.div
                   className={`${styles["cardGradient"]} ${styles[gradientClassMap[feature.colorKey]]}`}
@@ -131,7 +126,7 @@ export default function Features(): React.JSX.Element {
                 />
 
                 <CardHeader className={styles["cardHeader"]}>
-                  <main className={styles["cardHeaderInner"]}>
+                  <div className={styles["cardHeaderInner"]}>
                     <motion.div
                       className={`${styles["iconWrapper"]} ${styles[gradientClassMap[feature.colorKey]]}`}
                       animate={{
@@ -149,7 +144,7 @@ export default function Features(): React.JSX.Element {
                       transition={{duration: 0.3}}>
                       <TbArrowRight className={`${styles["arrowIcon"]} ${styles[colorClassMap[feature.colorKey]]}`} />
                     </motion.div>
-                  </main>
+                  </div>
                   <CardTitle className={styles["cardTitle"]}>{t(`items.${feature.id}.title` as Parameters<typeof t>[0])}</CardTitle>
                   <CardDescription className={styles["cardDescription"]}>
                     {t(`items.${feature.id}.description` as Parameters<typeof t>[0])}
@@ -157,7 +152,7 @@ export default function Features(): React.JSX.Element {
                 </CardHeader>
 
                 <CardContent className={styles["cardContent"]}>
-                  <main className={styles["tags"]}>
+                  <div className={styles["tags"]}>
                     {t(`items.${feature.id}.tags` as Parameters<typeof t>[0])
                       .split(",")
                       .map((tag) => (
@@ -168,13 +163,13 @@ export default function Features(): React.JSX.Element {
                           {tag}
                         </Badge>
                       ))}
-                  </main>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
-        </main>
-      </main>
+        </div>
+      </div>
 
       {/* Feature Detail Modal */}
       <AnimatePresence>
@@ -193,19 +188,19 @@ export default function Features(): React.JSX.Element {
               exit={{scale: 0.9, y: 20}}
               // eslint-disable-next-line react/jsx-no-bind -- simple modal
               onClick={(e) => e.stopPropagation()}>
-              <main className={styles["modalHeader"]}>
-                <main className={`${styles["modalIconWrapper"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
+              <div className={styles["modalHeader"]}>
+                <div className={`${styles["modalIconWrapper"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
                   <selectedFeature.icon className={`${styles["modalIcon"]} ${styles[colorClassMap[selectedFeature.colorKey]]}`} />
-                </main>
-                <main>
+                </div>
+                <div>
                   <h3 className={styles["modalTitle"]}>{t(`items.${selectedFeature.id}.title` as Parameters<typeof t>[0])}</h3>
                   <p className={styles["modalSubtitle"]}>{t(`items.${selectedFeature.id}.description` as Parameters<typeof t>[0])}</p>
-                </main>
-              </main>
+                </div>
+              </div>
 
               <p className={styles["modalDescription"]}>{t(`items.${selectedFeature.id}.longDescription` as Parameters<typeof t>[0])}</p>
 
-              <main className={styles["modalTags"]}>
+              <div className={styles["modalTags"]}>
                 {t(`items.${selectedFeature.id}.tags` as Parameters<typeof t>[0])
                   .split(",")
                   .map((tag) => (
@@ -215,9 +210,9 @@ export default function Features(): React.JSX.Element {
                       {tag}
                     </Badge>
                   ))}
-              </main>
+              </div>
 
-              <main className={styles["modalActions"]}>
+              <div className={styles["modalActions"]}>
                 <Link
                   href={selectedFeature.link}
                   className={`${styles["modalLink"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
@@ -231,7 +226,7 @@ export default function Features(): React.JSX.Element {
                   className={styles["modalClose"]}>
                   {t("modal.close")}
                 </Button>
-              </main>
+              </div>
             </motion.div>
           </motion.div>
         )}

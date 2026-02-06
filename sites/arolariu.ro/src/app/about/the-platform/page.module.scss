@@ -15,6 +15,10 @@
   color: hsl(var(--foreground));
 }
 
+.platformMain {
+  padding-bottom: space(12);
+}
+
 // ===========================================
 // SECTIONS
 // ===========================================
@@ -76,7 +80,7 @@
 }
 
 .sectionTitleHighlight {
-  background: linear-gradient(to right, #3b82f6, #a855f7, #f97316);
+  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -472,83 +476,6 @@
 }
 
 .techStatDescription {
-  font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
-}
-
-// ===========================================
-// STATISTICS SECTION
-// ===========================================
-
-.statsGrid {
-  display: grid;
-  gap: space(6);
-  max-width: 72rem;
-  margin: 0 auto;
-
-  @include respond-to('sm') {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @include respond-to('lg') {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.statCard {
-  position: relative;
-  padding: space(6);
-  border-radius: radius('xl');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
-  text-align: center;
-  overflow: hidden;
-  @include transition(transform, box-shadow);
-
-  &:hover {
-    transform: translateY(-4px);
-    @include shadow('xl');
-  }
-}
-
-.statCardGradient {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  @include transition(opacity);
-  pointer-events: none;
-
-  .statCard:hover & {
-    opacity: 0.05;
-  }
-}
-
-.statIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  margin: 0 auto space(4);
-  border-radius: radius('xl');
-}
-
-.statValue {
-  margin-bottom: space(2);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.statLabel {
-  margin-bottom: space(1);
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
-}
-
-.statDescription {
   font-size: font-size('sm');
   color: hsl(var(--muted-foreground));
 }

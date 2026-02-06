@@ -17,9 +17,9 @@ import Architecture from "./_components/Architecture";
 import CallToAction from "./_components/CallToAction";
 import Features from "./_components/Features";
 import Hero from "./_components/Hero";
-import Statistics from "./_components/Statistics";
 import TechStack from "./_components/TechStack";
 import Timeline from "./_components/Timeline";
+import styles from "./page.module.scss";
 
 /**
  * Generates localized metadata for the Platform page.
@@ -71,9 +71,9 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/about/the-platform">>): Promise<React.JSX.Element> {
   return (
-    <main className='bg-background text-foreground relative min-h-screen'>
+    <main className={styles["platformPage"]}>
       <ScrollToTop />
-      <main>
+      <div className={styles["platformMain"]}>
         {/* Hero Section - Full viewport intro with animated background */}
         <Hero />
 
@@ -83,18 +83,15 @@ export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/
         {/* Architecture Section - Technical architecture diagram */}
         <Architecture />
 
-        {/* Tech Stack Section - Technologies used */}
+        {/* Tech Stack Section - Technologies used (with merged statistics) */}
         <TechStack />
-
-        {/* Statistics Section - Platform metrics with animated counters */}
-        <Statistics />
 
         {/* Timeline Section - Development journey */}
         <Timeline />
 
         {/* Call to Action Section - Footer CTA */}
         <CallToAction />
-      </main>
+      </div>
     </main>
   );
 }

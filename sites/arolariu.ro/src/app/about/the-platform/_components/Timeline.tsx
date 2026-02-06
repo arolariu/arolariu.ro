@@ -79,11 +79,11 @@ export default function Timeline(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Background */}
-      <main className={styles["bgLayer"]}>
-        <main className={styles["bgGradient"]} />
-      </main>
+      <div className={styles["bgLayer"]}>
+        <div className={styles["bgGradient"]} />
+      </div>
 
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         {/* Section Header */}
         <motion.div
           className={styles["header"]}
@@ -107,7 +107,7 @@ export default function Timeline(): React.JSX.Element {
         </motion.div>
 
         {/* Timeline */}
-        <main className={styles["timeline"]}>
+        <div className={styles["timeline"]}>
           {/* Center Line */}
           <motion.div
             className={styles["centerLine"]}
@@ -118,7 +118,7 @@ export default function Timeline(): React.JSX.Element {
           />
 
           {/* Timeline Events */}
-          <main className={styles["events"]}>
+          <div className={styles["events"]}>
             {eventConfigs.map((event, index) => {
               const isLeft = index % 2 === 0;
               const isExpanded = expandedEvent === event.id;
@@ -176,7 +176,7 @@ export default function Timeline(): React.JSX.Element {
 
                       <CardContent className={styles["eventCardContent"]}>
                         {/* Tags */}
-                        <main className={styles["tags"]}>
+                        <div className={styles["tags"]}>
                           {t(`events.${event.id}.tags` as Parameters<typeof t>[0])
                             .split(",")
                             .map((tag) => (
@@ -187,7 +187,7 @@ export default function Timeline(): React.JSX.Element {
                                 {tag}
                               </Badge>
                             ))}
-                        </main>
+                        </div>
 
                         {/* Expandable Details */}
                         <motion.div
@@ -198,7 +198,7 @@ export default function Timeline(): React.JSX.Element {
                           }}
                           transition={{duration: 0.3}}
                           className={styles["expandableDetails"]}>
-                          <main className={styles["detailsInner"]}>
+                          <div className={styles["detailsInner"]}>
                             <h4 className={styles["detailsTitle"]}>{t("keyAchievements")}</h4>
                             <ul className={styles["detailsList"]}>
                               {t(`events.${event.id}.details` as Parameters<typeof t>[0])
@@ -215,11 +215,11 @@ export default function Timeline(): React.JSX.Element {
                                   </motion.li>
                                 ))}
                             </ul>
-                          </main>
+                          </div>
                         </motion.div>
 
                         {/* Expand/Collapse indicator */}
-                        <main className={styles["expandHint"]}>{isExpanded ? t("collapseHint") : t("expandHint")}</main>
+                        <div className={styles["expandHint"]}>{isExpanded ? t("collapseHint") : t("expandHint")}</div>
                       </CardContent>
 
                       {/* Animated border */}
@@ -234,7 +234,7 @@ export default function Timeline(): React.JSX.Element {
                 </motion.div>
               );
             })}
-          </main>
+          </div>
 
           {/* Future Indicator */}
           <motion.div
@@ -257,8 +257,8 @@ export default function Timeline(): React.JSX.Element {
             </motion.div>
             <p className={styles["futureText"]}>{t("futureIndicator")}</p>
           </motion.div>
-        </main>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }

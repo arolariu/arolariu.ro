@@ -32,9 +32,9 @@ export default function CallToAction(): React.JSX.Element {
       ref={ref}
       className={styles["section"]}>
       {/* Background */}
-      <main className={styles["bgLayer"]}>
+      <div className={styles["bgLayer"]}>
         {/* Gradient base */}
-        <main className={styles["bgGradient"]} />
+        <div className={styles["bgGradient"]} />
 
         {/* Animated gradient orbs */}
         <motion.div
@@ -71,14 +71,14 @@ export default function CallToAction(): React.JSX.Element {
         </motion.div>
 
         {/* Grid pattern */}
-        <main className={styles["bgGrid"]} />
+        <div className={styles["bgGrid"]} />
 
         {/* Background beams */}
         <BackgroundBeams className={styles["beamsWrapper"]} />
-      </main>
+      </div>
 
-      <main className={styles["container"]}>
-        <main className={styles["contentWrapper"]}>
+      <div className={styles["container"]}>
+        <div className={styles["contentWrapper"]}>
           {/* Heading */}
           <motion.div
             initial={{opacity: 0, y: 30}}
@@ -193,7 +193,7 @@ export default function CallToAction(): React.JSX.Element {
                 animate={isInView ? {opacity: 1, y: 0} : {}}
                 transition={{duration: 0.5, delay: 0.6 + index * 0.1}}
                 whileHover={{scale: 1.05, transition: {duration: 0.2}}}>
-                <main className={`${styles["trustAccent"]} ${styles[trustAccentClassMap[trustId]]}`} />
+                <div className={`${styles["trustAccent"]} ${styles[trustAccentClassMap[trustId]]}`} />
                 <h3 className={styles["trustTitle"]}>{t(`trust.${trustId}.title` as Parameters<typeof t>[0])}</h3>
                 <p className={styles["trustDescription"]}>{t(`trust.${trustId}.description` as Parameters<typeof t>[0])}</p>
               </motion.div>
@@ -216,8 +216,8 @@ export default function CallToAction(): React.JSX.Element {
               {t("footerRole")}
             </p>
           </motion.div>
-        </main>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }
