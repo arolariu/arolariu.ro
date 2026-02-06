@@ -39,7 +39,20 @@
       "mcp__filesystem__*",
       "mcp__memory__*",
       "mcp__fetch__*",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npm test)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:dev.arolariu.ro)",
+      "Bash(timeout:*)",
+      "Bash(node -e:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 28004 /F\")",
+      "Bash(cmd /c \"netstat -ano | findstr :3000\")",
+      "Bash(netstat:*)",
+      "Bash(npm ls:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "WebFetch(domain:clerk.com)",
+      "Bash(gh pr create:*)"
     ],
     "deny": []
   },

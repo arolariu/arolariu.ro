@@ -256,7 +256,7 @@
   justify-content: space-between;
   width: 100%; // Ensure full width for space-between to work
   gap: 2rem; // gap-8
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid white;
   padding-top: 1.25rem; // py-5
   padding-bottom: 1.25rem;
 }
@@ -331,17 +331,8 @@
 // Original: cursor-help
 .footer__build-tooltip {
   cursor: help;
-}
-
-// Tooltip content - override dark mode styling for footer context
-.footer__tooltip-content {
-  background-color: rgb(23, 23, 23); // neutral-900
-  color: rgb(250, 250, 250); // neutral-50
-
-  @include dark {
-    background-color: rgb(23, 23, 23); // Keep dark bg in dark mode
-    color: rgb(250, 250, 250); // Keep light text in dark mode
-  }
+  background-color: transparent !important;
+  color: white !important;
 }
 
 // Commit SHA link
