@@ -32,7 +32,7 @@ export default function Mission(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["section"]}>
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["header"]}
@@ -51,7 +51,7 @@ export default function Mission(): React.JSX.Element {
         </motion.div>
 
         {/* Pillars grid */}
-        <main className={styles["grid"]}>
+        <div className={styles["grid"]}>
           {pillars.map((pillar, index) => (
             <motion.div
               key={pillar.key}
@@ -59,19 +59,19 @@ export default function Mission(): React.JSX.Element {
               animate={isInView ? {opacity: 1, y: 0} : {}}
               transition={{delay: 0.3 + index * 0.1, duration: 0.5}}>
               <Card className={styles["card"]}>
-                <main className={styles["cardGradient"]} />
+                <div className={styles["cardGradient"]} />
                 <CardContent className={styles["cardContent"]}>
-                  <main className={`${styles["iconWrapper"]} ${styles[gradientClassMap[pillar.key]]}`}>
+                  <div className={`${styles["iconWrapper"]} ${styles[gradientClassMap[pillar.key]]}`}>
                     <pillar.icon className={styles["icon"]} />
-                  </main>
+                  </div>
                   <h3 className={styles["cardTitle"]}>{t(`pillars.${pillar.key}.title`)}</h3>
                   <p className={styles["cardDescription"]}>{t(`pillars.${pillar.key}.description`)}</p>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
-        </main>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }

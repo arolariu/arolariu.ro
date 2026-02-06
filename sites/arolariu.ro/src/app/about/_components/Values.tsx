@@ -38,7 +38,7 @@ export default function Values(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["section"]}>
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["header"]}
@@ -50,7 +50,7 @@ export default function Values(): React.JSX.Element {
         </motion.div>
 
         {/* Values grid */}
-        <main className={styles["grid"]}>
+        <div className={styles["grid"]}>
           {values.map((value, index) => (
             <motion.div
               key={value.key}
@@ -59,19 +59,19 @@ export default function Values(): React.JSX.Element {
               transition={{delay: 0.2 + index * 0.1, duration: 0.5}}>
               <Card className={styles["card"]}>
                 <CardContent className={styles["cardContent"]}>
-                  <main className={styles["cardHeader"]}>
-                    <main className={styles[colorClassMap[value.colorKey]]}>
+                  <div className={styles["cardHeader"]}>
+                    <div className={styles[colorClassMap[value.colorKey]]}>
                       <value.icon className={styles["icon"]} />
-                    </main>
+                    </div>
                     <h3 className={styles["cardTitle"]}>{t(`items.${value.key}.title`)}</h3>
-                  </main>
+                  </div>
                   <p className={styles["cardDescription"]}>{t(`items.${value.key}.description`)}</p>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
-        </main>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }

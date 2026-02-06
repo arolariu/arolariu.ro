@@ -17,7 +17,7 @@ export default function Hero(): React.JSX.Element {
   return (
     <section className={styles["section"]}>
       {/* Animated background orbs */}
-      <main className={styles["bgOrbs"]}>
+      <div className={styles["bgOrbs"]}>
         <motion.div
           className={styles["orbBlue"]}
           animate={{
@@ -56,10 +56,10 @@ export default function Hero(): React.JSX.Element {
             ease: "easeInOut",
           }}
         />
-      </main>
+      </div>
 
       {/* Grid pattern overlay */}
-      <main
+      <div
         className={styles["gridPattern"]}
         aria-hidden='true'
       />

@@ -32,6 +32,7 @@
   margin-bottom: space(4);
   font-size: font-size('3xl');
   font-weight: font-weight('bold');
+  @include gradient-text;
 
   @include respond-to('sm') {
     font-size: font-size('4xl');

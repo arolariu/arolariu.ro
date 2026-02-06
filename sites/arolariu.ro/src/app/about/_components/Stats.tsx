@@ -34,7 +34,7 @@ export default function Stats(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["section"]}>
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["header"]}
@@ -46,7 +46,7 @@ export default function Stats(): React.JSX.Element {
         </motion.div>
 
         {/* Stats grid */}
-        <main className={styles["grid"]}>
+        <div className={styles["grid"]}>
           {stats.map((stat, index) => {
             const classes = gradientClassMap[stat.key];
             return (
@@ -58,14 +58,14 @@ export default function Stats(): React.JSX.Element {
                 <Card className={styles["card"]}>
                   <CardContent className={styles["cardContent"]}>
                     {/* Background gradient */}
-                    <main className={styles["cardGradient"]} />
+                    <div className={styles["cardGradient"]} />
 
                     {/* Icon */}
-                    <main className={styles["iconWrapper"]}>
-                      <main className={`${styles["iconInner"]} ${styles[classes.gradient]}`}>
+                    <div className={styles["iconWrapper"]}>
+                      <div className={`${styles["iconInner"]} ${styles[classes.gradient]}`}>
                         <stat.icon className={styles["icon"]} />
-                      </main>
-                    </main>
+                      </div>
+                    </div>
 
                     {/* Value */}
                     <motion.div
@@ -86,8 +86,8 @@ export default function Stats(): React.JSX.Element {
               </motion.div>
             );
           })}
-        </main>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }
