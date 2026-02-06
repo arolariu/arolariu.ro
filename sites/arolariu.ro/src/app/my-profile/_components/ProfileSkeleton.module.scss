@@ -1,0 +1,95 @@
+// ===========================================
+// PROFILE SKELETON STYLES
+// Scoped to ProfileSkeleton.tsx only
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.wrapper {
+  @include flex-column;
+  gap: space(6);
+}
+
+// ===========================================
+// HEADER SKELETON
+// ===========================================
+.banner {
+  height: 8rem;
+  background: linear-gradient(to right, color-alpha('primary', 0.2), color-alpha('primary', 0.1), transparent);
+}
+
+.headerBody {
+  margin-top: -4rem;
+  padding: 0 space(6) space(6);
+}
+
+.headerRow {
+  @include flex-column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+.textGroup {
+  @include flex-column;
+  gap: space(2);
+}
+
+.badgeRow {
+  display: flex;
+  gap: space(2);
+}
+
+.progressGroup {
+  margin-top: space(6);
+  max-width: 28rem;
+  @include flex-column;
+  gap: space(2);
+}
+
+// ===========================================
+// LAYOUT SKELETON
+// ===========================================
+.layoutRow {
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+
+  @include respond-to('lg') {
+    flex-direction: row;
+  }
+}
+
+.sidebarSkeleton {
+  display: none;
+
+  @include respond-to('lg') {
+    @include flex-column;
+    width: 16rem;
+    flex-shrink: 0;
+    gap: space(2);
+    padding: space(3);
+    border: 1px solid color('border');
+    border-radius: radius('xl');
+  }
+}
+
+.sidebarPill {
+  height: 2.5rem;
+  border-radius: radius('lg');
+}
+
+.contentArea {
+  flex: 1;
+  min-width: 0;
+}
+
+.contentGrid {
+  @include grid(1, space(6));
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

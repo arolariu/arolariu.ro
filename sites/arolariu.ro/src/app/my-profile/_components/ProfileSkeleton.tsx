@@ -1,51 +1,65 @@
 "use client";
 
 import {Card, CardContent, CardHeader, Skeleton} from "@arolariu/components";
+import styles from "./ProfileSkeleton.module.scss";
 
 export function ProfileSkeleton(): React.JSX.Element {
   return (
-    <main className='space-y-6'>
+    <div className={styles["wrapper"]}>
       {/* Header Skeleton */}
       <Card>
-        <main className='from-primary/20 via-primary/10 h-32 bg-gradient-to-r to-transparent' />
-        <CardContent className='-mt-16 px-6 pb-6'>
-          <main className='flex flex-col gap-4 sm:flex-row sm:items-end'>
+        <div className={styles["banner"]} />
+        <CardContent className={styles["headerBody"]}>
+          <div className={styles["headerRow"]}>
             <Skeleton className='h-24 w-24 rounded-full' />
-            <main className='space-y-2'>
+            <div className={styles["textGroup"]}>
               <Skeleton className='h-6 w-48' />
               <Skeleton className='h-4 w-32' />
-              <main className='flex gap-2'>
+              <div className={styles["badgeRow"]}>
                 <Skeleton className='h-5 w-24' />
                 <Skeleton className='h-5 w-24' />
                 <Skeleton className='h-5 w-24' />
-              </main>
-            </main>
-          </main>
-          <main className='mt-6 max-w-md space-y-2'>
+              </div>
+            </div>
+          </div>
+          <div className={styles["progressGroup"]}>
             <Skeleton className='h-4 w-full' />
             <Skeleton className='h-2 w-full' />
-          </main>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Content Skeleton */}
-      <main className='grid gap-6 md:grid-cols-2'>
-        {Array.from({length: 4}).map((_, index) => (
-          <Card key={`skeleton-card-${index.toString()}`}>
-            <CardHeader>
-              <main className='flex items-center gap-2'>
-                <Skeleton className='h-4 w-4' />
-                <Skeleton className='h-4 w-32' />
-              </main>
-              <Skeleton className='h-3 w-48' />
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <Skeleton className='h-10 w-full' />
-              <Skeleton className='h-10 w-full' />
-            </CardContent>
-          </Card>
-        ))}
-      </main>
-    </main>
+      {/* Layout Skeleton: sidebar + content */}
+      <div className={styles["layoutRow"]}>
+        <div className={styles["sidebarSkeleton"]}>
+          {Array.from({length: 7}).map((_, index) => (
+            <Skeleton
+              key={`sidebar-pill-${index.toString()}`}
+              className={styles["sidebarPill"]}
+            />
+          ))}
+        </div>
+
+        <div className={styles["contentArea"]}>
+          <div className={styles["contentGrid"]}>
+            {Array.from({length: 4}).map((_, index) => (
+              <Card key={`skeleton-card-${index.toString()}`}>
+                <CardHeader>
+                  <div className='flex items-center gap-2'>
+                    <Skeleton className='h-4 w-4' />
+                    <Skeleton className='h-4 w-32' />
+                  </div>
+                  <Skeleton className='h-3 w-48' />
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                  <Skeleton className='h-10 w-full' />
+                  <Skeleton className='h-10 w-full' />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
