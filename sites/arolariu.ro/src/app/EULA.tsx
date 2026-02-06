@@ -27,7 +27,7 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useTranslations} from "next-intl";
+import {type Locale, useTranslations} from "next-intl";
 import {useCallback, useEffect, useState} from "react";
 import {TbCheck, TbCookie, TbGlobe, TbInfoCircleFilled, TbLock, TbShield} from "react-icons/tb";
 import RenderPrivacyPolicyScreen from "./(privacy-and-terms)/privacy-policy/island";
@@ -40,7 +40,7 @@ type CookieState = {
   analytics: boolean;
 };
 
-type Props = {locale: string};
+type Props = {locale: Locale};
 
 /**
  * EULA component to display the End User License Agreement.
@@ -55,7 +55,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
     analytics: true,
   });
 
-  const handleLocale = useCallback((locale: string) => {
+  const handleLocale = useCallback((locale: Locale) => {
     void setCookie("locale", locale);
   }, []);
 
@@ -259,6 +259,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <Accordion
                   type='single'
                   collapsible
+                  defaultValue='essential'
                   className={styles["accordion"]}>
                   <AccordionItem value='essential'>
                     <AccordionTrigger className={styles["accordionTrigger"]}>

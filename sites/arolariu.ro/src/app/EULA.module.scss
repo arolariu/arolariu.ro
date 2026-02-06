@@ -96,6 +96,7 @@
 .globeIcon {
   width: 1rem;
   height: 1rem;
+  flex-shrink: 0;
 }
 
 // ===========================================
@@ -236,11 +237,13 @@
   display: flex;
   align-items: center;
   gap: space(2);
+  font-size: font-size('sm');
 }
 
 .accordionIcon {
   width: 1rem;
   height: 1rem;
+  flex-shrink: 0;
   color: hsl(var(--primary));
 }
 
@@ -268,7 +271,18 @@
 .switchRow {
   display: flex;
   align-items: center;
-  gap: space(2);
+  gap: space(3);
+
+  // Ensure the Switch toggle track has visible background colors
+  // (Tailwind data-attribute classes may not generate for library components)
+  button[role='switch'] {
+    flex-shrink: 0;
+    background-color: hsl(var(--input));
+
+    &[data-state='checked'] {
+      background-color: hsl(var(--primary));
+    }
+  }
 }
 
 .switchLabel {
