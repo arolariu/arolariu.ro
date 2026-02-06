@@ -51,7 +51,7 @@
   width: 10rem;
   height: 1.5rem;
   margin-bottom: space(6);
-  border-radius: radius('default');
+  border-radius: radius('md');
 }
 
 .heroTitle {
@@ -74,7 +74,7 @@
   max-width: 32rem;
   height: 1.5rem;
   margin-bottom: space(8);
-  border-radius: radius('default');
+  border-radius: radius('md');
 }
 
 .heroButtons {
@@ -86,7 +86,7 @@
 .heroButton {
   width: 9rem;
   height: 2.5rem;
-  border-radius: radius('default');
+  border-radius: radius('md');
 }
 
 // ===========================================
@@ -168,7 +168,7 @@
   margin-left: auto;
   margin-right: auto;
   margin-bottom: space(4);
-  border-radius: radius('default');
+  border-radius: radius('md');
 }
 
 .cardsHeaderTitle {
@@ -177,7 +177,7 @@
   margin-left: auto;
   margin-right: auto;
   margin-bottom: space(6);
-  border-radius: radius('default');
+  border-radius: radius('md');
 }
 
 .cardsHeaderSubtitle {
@@ -185,7 +185,7 @@
   height: 1.25rem;
   margin-left: auto;
   margin-right: auto;
-  border-radius: radius('default');
+  border-radius: radius('md');
 }
 
 .cardsGrid {
