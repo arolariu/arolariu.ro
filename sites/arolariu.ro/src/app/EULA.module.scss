@@ -312,27 +312,64 @@
 }
 
 // ===========================================
-// SHIMMER / SKELETON
+// SKELETON SHIMMERS (used by EULA.shimmers.tsx)
+// Sizing only — animation comes from <Skeleton />
 // ===========================================
-.shimmerBlock {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--muted) / 0.3) 0%,
-    hsl(var(--muted) / 0.5) 50%,
-    hsl(var(--muted) / 0.3) 100%
-  );
-  background-size: 200% 100%;
+.shimmerCircle {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
 }
 
-.shimmerAnimate {
-  animation: eulaShimmer 1.5s infinite;
+.shimmerTitle {
+  width: 12rem;
+  height: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: radius('md');
 }
 
-@keyframes eulaShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+.shimmerTabs {
+  width: 100%;
+  height: 2.5rem;
+  border-radius: radius('md');
+}
+
+.shimmerContentBlock {
+  height: 4rem;
+  border-radius: radius('md');
+}
+
+.shimmerPolicyCard {
+  height: 12rem;
+  border-radius: radius('md');
+}
+
+.shimmerSeparator {
+  height: 0.25rem;
+  border-radius: radius('md');
+}
+
+.shimmerCookiesHeader {
+  height: 2rem;
+  border-radius: radius('md');
+}
+
+.shimmerAccordionItem {
+  height: 6rem;
+  border-radius: radius('md');
+}
+
+.shimmerButton {
+  width: 100%;
+  height: 3rem;
+  border-radius: radius('md');
+}
+
+.shimmerFooterNote {
+  width: 75%;
+  height: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: radius('md');
 }

@@ -1,10 +1,5 @@
-import {Card, CardContent, CardFooter, CardHeader} from "@arolariu/components";
+import {Card, CardContent, CardFooter, CardHeader, Skeleton} from "@arolariu/components";
 import styles from "./EULA.module.scss";
-
-// ===========================================
-// SHIMMER BASE
-// ===========================================
-const shimmer = `${styles["shimmerBlock"]} ${styles["shimmerAnimate"]}`;
 
 /**
  * Skeleton loading state for the EULA component.
@@ -15,38 +10,35 @@ export default function EulaShimmer(): React.JSX.Element {
     <Card className={styles["card"]}>
       <CardHeader className={styles["headerCenter"]}>
         <div className={styles["shieldIcon"]}>
-          <div className={shimmer} style={{width: "3rem", height: "3rem", borderRadius: "9999px"}} />
+          <Skeleton className={styles["shimmerCircle"]} />
         </div>
-        <div className={shimmer} style={{width: "12rem", height: "1rem", borderRadius: "0.375rem", marginInline: "auto"}} />
+        <Skeleton className={styles["shimmerTitle"]} />
 
         <div className={styles["tabsWrapper"]}>
-          <div className={shimmer} style={{width: "100%", height: "2.5rem", borderRadius: "0.375rem"}} />
+          <Skeleton className={styles["shimmerTabs"]} />
         </div>
       </CardHeader>
 
       <CardContent className={styles["contentArea"]}>
-        <div className={shimmer} style={{height: "4rem", borderRadius: "0.375rem"}} />
+        <Skeleton className={styles["shimmerContentBlock"]} />
 
         <div className={styles["policyGrid"]}>
-          <div className={shimmer} style={{height: "12rem", borderRadius: "0.375rem"}} />
-          <div className={shimmer} style={{height: "12rem", borderRadius: "0.375rem"}} />
+          <Skeleton className={styles["shimmerPolicyCard"]} />
+          <Skeleton className={styles["shimmerPolicyCard"]} />
         </div>
 
-        <div className={shimmer} style={{height: "0.25rem", borderRadius: "0.375rem"}} />
+        <Skeleton className={styles["shimmerSeparator"]} />
 
         <div className={styles["cookiesSection"]}>
-          <div className={shimmer} style={{height: "2rem", borderRadius: "0.375rem"}} />
-          <div className={shimmer} style={{height: "6rem", borderRadius: "0.375rem"}} />
-          <div className={shimmer} style={{height: "6rem", borderRadius: "0.375rem"}} />
+          <Skeleton className={styles["shimmerCookiesHeader"]} />
+          <Skeleton className={styles["shimmerAccordionItem"]} />
+          <Skeleton className={styles["shimmerAccordionItem"]} />
         </div>
       </CardContent>
 
       <CardFooter className={styles["footer"]}>
-        <div className={shimmer} style={{width: "100%", height: "3rem", borderRadius: "0.375rem"}} />
-        <div
-          className={shimmer}
-          style={{width: "75%", height: "1rem", borderRadius: "0.375rem", marginInline: "auto"}}
-        />
+        <Skeleton className={styles["shimmerButton"]} />
+        <Skeleton className={styles["shimmerFooterNote"]} />
       </CardFooter>
     </Card>
   );
