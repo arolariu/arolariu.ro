@@ -1,0 +1,135 @@
+// ===========================================
+// MY-PROFILE LOADING SKELETON STYLES
+// Scoped to loading.tsx only
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+.page {
+  @include container(87.5rem);
+  padding-top: space(8);
+  padding-bottom: space(8);
+}
+
+// ===========================================
+// HEADER SKELETON
+// ===========================================
+.headerGrid {
+  display: grid;
+  gap: space(4);
+  margin-bottom: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.profileCard {
+  border: 1px solid color('border');
+  border-radius: radius('xl');
+  padding: space(6);
+  overflow: hidden;
+
+  @include respond-to('md') {
+    grid-column: span 2;
+  }
+}
+
+.profileBanner {
+  height: 8rem;
+  border-radius: radius('lg');
+  margin-bottom: space(4);
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+.avatarSkeleton {
+  width: 6rem;
+  height: 6rem;
+  border-radius: radius('full');
+  flex-shrink: 0;
+}
+
+.textLines {
+  @include flex-column;
+  gap: space(2);
+  flex: 1;
+}
+
+.badgeRow {
+  display: flex;
+  gap: space(2);
+}
+
+.statsCard {
+  border: 1px solid color('border');
+  border-radius: radius('xl');
+  padding: space(6);
+  @include flex-column-center;
+  gap: space(2);
+}
+
+// ===========================================
+// LAYOUT SKELETON
+// ===========================================
+.layoutRow {
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+
+  @include respond-to('lg') {
+    flex-direction: row;
+  }
+}
+
+.sidebarSkeleton {
+  display: none;
+
+  @include respond-to('lg') {
+    @include flex-column;
+    width: 16rem;
+    flex-shrink: 0;
+    gap: space(2);
+    padding: space(3);
+    border: 1px solid color('border');
+    border-radius: radius('xl');
+  }
+}
+
+.sidebarPill {
+  height: 2.5rem;
+  border-radius: radius('lg');
+}
+
+.contentSkeleton {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid color('border');
+  border-radius: radius('xl');
+  padding: space(6);
+}
+
+.contentGrid {
+  @include grid(1, space(6));
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.cardSkeleton {
+  height: 10rem;
+  border-radius: radius('lg');
+}
