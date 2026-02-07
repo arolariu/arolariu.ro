@@ -56,7 +56,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
+  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -66,7 +66,7 @@
   margin-top: space(4);
   max-width: 32rem;
   font-size: font-size('xl');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
   text-align: center;
 
   @include respond-to('md') {
@@ -93,8 +93,8 @@
 .ctaGlow {
   position: absolute;
   inset: -1px;
-  border-radius: 9999px;
-  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
+  border-radius: radius('full');
+  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
   @include transition(box-shadow);
 }
 
@@ -102,7 +102,7 @@
   position: relative;
   display: inline-flex;
   padding: space(3) space(8);
-  border-radius: 9999px;
+  border-radius: radius('full');
   border: 1px solid transparent;
   background-color: black;
   color: white;
@@ -145,25 +145,15 @@
 
 // Animated orbs
 .orbPrimary {
-  position: absolute;
+  @include orb(10rem, 48px, color-alpha('primary', 0.2));
   top: -5rem;
   left: -5rem;
-  width: 10rem;
-  height: 10rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.2);
-  filter: blur(48px);
 }
 
 .orbPurple {
-  position: absolute;
+  @include orb(10rem, 48px, rgb(168 85 247 / 0.2)); // purple-500/20
   bottom: -5rem;
   right: -5rem;
-  width: 10rem;
-  height: 10rem;
-  border-radius: 9999px;
-  background-color: rgb(168, 85, 247, 0.2); // purple-500/20
-  filter: blur(48px);
 }
 
 // Desktop TechSphere container
@@ -195,10 +185,5 @@
 }
 
 .mobileOrb {
-  position: absolute;
-  width: 8rem;
-  height: 8rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.2);
-  filter: blur(24px);
+  @include orb(8rem, 24px, color-alpha('primary', 0.2));
 }

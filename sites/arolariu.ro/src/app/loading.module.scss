@@ -6,7 +6,7 @@
 
 .page {
   min-height: 100vh;
-  background-color: hsl(var(--background));
+  background-color: color('background');
 }
 
 // ===========================================
@@ -58,7 +58,7 @@
   margin-bottom: space(4);
   font-size: font-size('4xl');
   font-weight: font-weight('bold');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('sm') {
     font-size: font-size('5xl');
@@ -111,23 +111,23 @@
 .sphere {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 9999px;
+  border-radius: radius('full');
   opacity: 0.5;
 }
 
 .orbitRing {
   position: absolute;
   inset: 0;
-  border-radius: 9999px;
-  border: 2px solid hsl(var(--primary) / 0.3);
+  border-radius: radius('full');
+  border: 2px solid color-alpha('primary', 0.3);
   animation: spin 8s linear infinite;
 }
 
 .orbitRingReverse {
   position: absolute;
   inset: 0;
-  border-radius: 9999px;
-  border: 1px solid hsl(var(--primary) / 0.2);
+  border-radius: radius('full');
+  border: 1px solid color-alpha('primary', 0.2);
   animation: spin 10s linear infinite reverse;
 }
 

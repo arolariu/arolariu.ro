@@ -60,7 +60,7 @@
 
 .titleWord {
   display: inline-block;
-  background: linear-gradient(to right, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
+  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -85,34 +85,24 @@
 .description {
   margin-top: space(4);
   text-align: center;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: space(8);
+  @include responsive-grid(1, 2, 3, space(8));
   margin-top: space(8);
-
-  @include respond-to('md') {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @include respond-to('lg') {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .card {
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border));
+  border: 1px solid color('border');
   padding: space(8);
   @include shadow('2xl');
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary) / 0.1);
-    box-shadow: 0 25px 50px -12px hsl(var(--primary) / 0.1);
+    border-color: color-alpha('primary', 0.1);
+    box-shadow: 0 25px 50px -12px color-alpha('primary', 0.1);
   }
 }
 
@@ -136,7 +126,7 @@
 .cardDescription {
   margin-top: space(3);
   font-size: font-size('base');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .learnMoreLink {

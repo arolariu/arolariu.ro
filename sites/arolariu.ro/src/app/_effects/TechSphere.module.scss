@@ -1,0 +1,17 @@
+// ===========================================
+// TECH SPHERE COMPONENT STYLES
+// ===========================================
+
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: hidden;
+}
+
+.canvas {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+}
