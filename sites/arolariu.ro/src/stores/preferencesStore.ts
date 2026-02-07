@@ -273,3 +273,54 @@ const createProdStore = () => create<PreferencesStore>()(persist((set, get) => c
  * ```
  */
 export const usePreferencesStore = process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();
+
+// ===========================================
+// CROSS-TAB SYNCHRONIZATION
+// ===========================================
+
+/**
+ * Sets up cross-tab sync via BroadcastChannel.
+ * When preferences change in one tab, other tabs rehydrate from IndexedDB.
+ */
+function setupCrossTabSync(): void {
+  if (typeof BroadcastChannel === "undefined") return;
+
+  const channel = new BroadcastChannel("zustand-preferences-sync");
+  let isSyncing = false;
+
+  // When another tab changes preferences, re-read from IndexedDB
+  channel.addEventListener("message", () => {
+    isSyncing = true;
+    void usePreferencesStore.persist.rehydrate();
+    // Allow rehydration's state merge to settle before re-enabling broadcast
+    setTimeout(() => {
+      isSyncing = false;
+    }, 100);
+  });
+
+  // When this tab changes preferences, notify other tabs
+  usePreferencesStore.subscribe(() => {
+    if (!isSyncing) {
+      // eslint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel.postMessage has no targetOrigin parameter
+      channel.postMessage("sync");
+    }
+  });
+}
+
+/**
+ * Fallback: rehydrate when tab becomes visible.
+ * Catches any updates missed by BroadcastChannel.
+ */
+function setupVisibilitySync(): void {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      void usePreferencesStore.persist.rehydrate();
+    }
+  });
+}
+
+// Initialize cross-tab sync in browser environment
+if (typeof globalThis.window !== "undefined") {
+  setupCrossTabSync();
+  setupVisibilitySync();
+}

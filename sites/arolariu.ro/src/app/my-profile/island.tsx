@@ -1,9 +1,10 @@
 "use client";
 
 import type {User} from "@clerk/nextjs/server";
+import {usePreferencesStore} from "@/stores/preferencesStore";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {TbBell, TbBrain, TbChartBar, TbDatabase, TbPalette, TbShield, TbUser} from "react-icons/tb";
 
 import {ProfileHeader} from "./_components/ProfileHeader";
@@ -45,6 +46,35 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [settings, setSettings] = useState<UserSettings>(getDefaultSettings);
   const statistics = getMockStatistics();
+
+  // Derive appearance settings from the Zustand preferences store (persisted in IndexedDB).
+  // After hydration, the store is the source of truth — including cross-tab sync updates.
+  const prefsStore = usePreferencesStore();
+  const appearanceSettings = useMemo(
+    () =>
+      prefsStore.hasHydrated
+        ? {
+            theme: prefsStore.theme,
+            primaryColor: prefsStore.primaryColor,
+            secondaryColor: prefsStore.secondaryColor,
+            fontType: prefsStore.fontType,
+            locale: prefsStore.locale,
+            compactMode: prefsStore.compactMode,
+            animationsEnabled: prefsStore.animationsEnabled,
+          }
+        : settings.appearance,
+    [
+      prefsStore.hasHydrated,
+      prefsStore.theme,
+      prefsStore.primaryColor,
+      prefsStore.secondaryColor,
+      prefsStore.fontType,
+      prefsStore.locale,
+      prefsStore.compactMode,
+      prefsStore.animationsEnabled,
+      settings.appearance,
+    ],
+  );
 
   const handleSectionChange = useCallback((value: SettingsSection) => {
     setActiveSection(value);
@@ -103,7 +133,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
       case "appearance":
         return (
           <SettingsAppearance
-            settings={settings.appearance}
+            settings={appearanceSettings}
             onSettingsChange={handleAppearanceChange}
           />
         );

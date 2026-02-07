@@ -45,7 +45,16 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   const t = useTranslations("MyProfile.settings.appearance");
   const {theme, setTheme} = useTheme();
   const {fontType, setFont} = useFontContext();
-  const {setPrimaryColor, setSecondaryColor, setThemePreset} = usePreferencesStore();
+  const {
+    setPrimaryColor,
+    setSecondaryColor,
+    setThemePreset,
+    setTheme: storeSetTheme,
+    setLocale: storeSetLocale,
+    setFontType: storeSetFontType,
+    setCompactMode: storeSetCompactMode,
+    setAnimationsEnabled: storeSetAnimationsEnabled,
+  } = usePreferencesStore();
   const themePreset = usePreferencesStore((s) => s.themePreset);
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
@@ -53,17 +62,19 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   const handleThemeChange = useCallback(
     (newTheme: "light" | "dark" | "system") => {
       setTheme(newTheme);
+      storeSetTheme(newTheme);
       onSettingsChange({theme: newTheme});
     },
-    [setTheme, onSettingsChange],
+    [setTheme, storeSetTheme, onSettingsChange],
   );
 
   const handleFontChange = useCallback(
     (newFont: "normal" | "dyslexic") => {
       setFont(newFont);
+      storeSetFontType(newFont);
       onSettingsChange({fontType: newFont});
     },
-    [setFont, onSettingsChange],
+    [setFont, storeSetFontType, onSettingsChange],
   );
 
   const handleColorChange = useCallback(
@@ -101,16 +112,19 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   const handleLocaleChange = useCallback(
     (locale: string) => {
       void setCookie("locale", locale);
+      storeSetLocale(locale as "en" | "ro" | "fr");
       onSettingsChange({locale});
     },
-    [onSettingsChange],
+    [storeSetLocale, onSettingsChange],
   );
 
   const handleToggle = useCallback(
     (key: "compactMode" | "animationsEnabled") => (checked: boolean) => {
+      if (key === "compactMode") storeSetCompactMode(checked);
+      else storeSetAnimationsEnabled(checked);
       onSettingsChange({[key]: checked});
     },
-    [onSettingsChange],
+    [storeSetCompactMode, storeSetAnimationsEnabled, onSettingsChange],
   );
 
   return (
