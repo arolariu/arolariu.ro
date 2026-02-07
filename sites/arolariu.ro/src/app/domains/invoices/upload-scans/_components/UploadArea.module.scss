@@ -1,0 +1,212 @@
+// ===========================================
+// UPLOAD AREA COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+// ===========================================
+// EMPTY DROPZONE (no pending uploads)
+// ===========================================
+.dropzoneEmpty {
+  margin-bottom: space(16);
+  border-radius: radius('lg');
+  border: 2px dashed #d1d5db; // gray-300
+  padding: space(16);
+  text-align: center;
+  @include transition(all, 300ms);
+  cursor: pointer;
+  background-color: #f9fafb; // gray-50
+
+  &:hover {
+    border-color: #c084fc; // purple-400
+    background-color: #faf5ff; // purple-50
+  }
+
+  @include dark {
+    border-color: #4b5563; // gray-600
+    background-color: rgba(17, 24, 39, 0.5); // gray-900/50
+
+    &:hover {
+      background-color: rgba(88, 28, 135, 0.2); // purple-900/20
+    }
+  }
+}
+
+.dropzoneEmptyActive {
+  transform: scale(1.05);
+  border-color: #c084fc; // purple-400
+  background-color: #faf5ff; // purple-50
+
+  @include dark {
+    background-color: rgba(88, 28, 135, 0.2); // purple-900/20
+  }
+}
+
+.iconCircle {
+  @include flex-center;
+  margin-inline: auto;
+  margin-bottom: space(6);
+  height: space(20);
+  width: space(20);
+  border-radius: radius('full');
+  background: linear-gradient(to right, #3b82f6, #06b6d4); // blue-500 → cyan-500
+}
+
+.iconCircleIcon {
+  height: space(10);
+  width: space(10);
+  color: white;
+}
+
+.dropzoneTitle {
+  margin-bottom: space(4);
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  color: #111827; // gray-900
+
+  @include respond-to('lg') {
+    font-size: font-size('3xl');
+  }
+
+  @include dark {
+    color: white;
+  }
+}
+
+.dropzoneSubtitle {
+  margin-bottom: space(6);
+  font-size: font-size('lg');
+  color: #4b5563; // gray-600
+
+  @include dark {
+    color: #d1d5db; // gray-300
+  }
+}
+
+.dropzoneFormats {
+  margin-bottom: space(4);
+  font-size: font-size('sm');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.dropzoneNote {
+  margin-bottom: space(8);
+  font-size: font-size('xs');
+  color: #9ca3af; // gray-400
+
+  @include dark {
+    color: #6b7280; // gray-500
+  }
+}
+
+.hiddenInput {
+  display: none;
+}
+
+// ===========================================
+// COMPACT DROPZONE (when files are pending)
+// ===========================================
+.wrapper {
+  margin-top: space(8);
+  @include flex-column;
+  gap: space(4);
+}
+
+.dropzoneCompact {
+  border-radius: radius('lg');
+  border: 2px dashed #d1d5db; // gray-300
+  padding: space(6);
+  text-align: center;
+  @include transition(all, 300ms);
+  cursor: pointer;
+  background-color: transparent;
+
+  &:hover {
+    border-color: #60a5fa; // blue-400
+    background-color: #eff6ff; // blue-50
+  }
+
+  @include dark {
+    border-color: #374151; // gray-700
+
+    &:hover {
+      background-color: rgba(30, 58, 138, 0.2); // blue-900/20
+    }
+  }
+}
+
+.dropzoneCompactActive {
+  border-color: #60a5fa; // blue-400
+  background-color: #eff6ff; // blue-50
+
+  @include dark {
+    background-color: rgba(30, 58, 138, 0.2); // blue-900/20
+  }
+}
+
+.dropzoneCompactDisabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.compactContent {
+  @include flex-center;
+  gap: space(4);
+}
+
+.compactIconCircle {
+  @include flex-center;
+  height: space(12);
+  width: space(12);
+  border-radius: radius('full');
+  background-color: #f3f4f6; // gray-100
+
+  @include dark {
+    background-color: #1f2937; // gray-800
+  }
+}
+
+.compactIcon {
+  height: space(6);
+  width: space(6);
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.compactTextBlock {
+  text-align: left;
+}
+
+.compactTitle {
+  font-size: font-size('base');
+  font-weight: font-weight('medium');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.compactSubtitle {
+  font-size: font-size('sm');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+// ===========================================
+// ACTION BUTTONS
+// ===========================================
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: space(4);
+}

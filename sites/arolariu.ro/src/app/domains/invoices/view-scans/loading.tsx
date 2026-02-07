@@ -1,31 +1,32 @@
 import {Skeleton} from "@arolariu/components";
+import styles from "./loading.module.scss";
 
 /**
  * Loading skeleton for the view scans page.
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className='min-h-screen px-5 py-24'>
-      <section className='mx-auto max-w-7xl'>
+    <main className={styles["wrapper"]}>
+      <section className={styles["container"]}>
         {/* Header skeleton */}
-        <main className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+        <main className={styles["headerRow"]}>
           <main>
-            <Skeleton className='mb-2 h-8 w-48' />
-            <Skeleton className='h-4 w-32' />
+            <Skeleton style={{height: "2rem", width: "12rem", marginBottom: "0.5rem"}} />
+            <Skeleton style={{height: "1rem", width: "8rem"}} />
           </main>
-          <Skeleton className='h-10 w-40' />
+          <Skeleton style={{height: "2.5rem", width: "10rem"}} />
         </main>
 
         {/* Grid skeleton */}
-        <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+        <main className={styles["grid"]}>
           {Array.from({length: 8}).map((_, i) => (
             <main
               key={`skeleton-${String(i)}`}
-              className='overflow-hidden rounded-lg border'>
-              <Skeleton className='aspect-[4/3]' />
-              <main className='p-3'>
-                <Skeleton className='mb-2 h-4 w-3/4' />
-                <Skeleton className='h-3 w-1/2' />
+              className={styles["skeletonCard"]}>
+              <Skeleton style={{aspectRatio: "4 / 3"}} />
+              <main className={styles["skeletonCardBody"]}>
+                <Skeleton style={{height: "1rem", width: "75%", marginBottom: "0.5rem"}} />
+                <Skeleton style={{height: "0.75rem", width: "50%"}} />
               </main>
             </main>
           ))}

@@ -1,0 +1,45 @@
+// ===========================================
+// UPLOAD SCANS LOADING SKELETON STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.wrapper {
+  @include flex(column, center, center, wrap);
+  padding: space(24) space(5);
+  text-align: center;
+}
+
+.headerBlock {
+  width: 100%;
+  max-width: 28rem;
+  margin-bottom: space(8);
+}
+
+.titleSkeleton {
+  margin-inline: auto;
+  margin-bottom: space(2);
+}
+
+.subtitleSkeleton {
+  margin-inline: auto;
+}
+
+.contentSection {
+  @include container(80rem);
+  padding-bottom: space(8);
+
+  @include respond-to('sm') {
+    padding-inline: space(6);
+    padding-bottom: space(12);
+  }
+
+  @include respond-to('lg') {
+    padding-inline: space(8);
+  }
+}
+
+.bodySkeleton {
+  margin-bottom: space(16);
+  width: 100%;
+  border-radius: radius('lg');
+}

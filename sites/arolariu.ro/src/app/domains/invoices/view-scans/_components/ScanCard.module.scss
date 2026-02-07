@@ -1,0 +1,121 @@
+// ===========================================
+// SCAN CARD COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+// ===========================================
+// PREVIEW AREA
+// ===========================================
+.previewArea {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background-color: #f3f4f6; // gray-100
+
+  @include dark {
+    background-color: #1f2937; // gray-800
+  }
+}
+
+.pdfPlaceholder {
+  @include flex-center;
+  height: 100%;
+}
+
+.pdfIcon {
+  height: space(16);
+  width: space(16);
+  color: #ef4444; // red-500
+}
+
+.imagePreview {
+  object-fit: cover;
+}
+
+// ===========================================
+// SELECTION CHECKBOX
+// ===========================================
+.checkboxPosition {
+  position: absolute;
+  top: space(2);
+  left: space(2);
+}
+
+// ===========================================
+// ACTIONS MENU
+// ===========================================
+.actionsPosition {
+  position: absolute;
+  top: space(2);
+  right: space(2);
+}
+
+// ===========================================
+// LINKED BADGE
+// ===========================================
+.linkedBadgePosition {
+  position: absolute;
+  right: space(2);
+  bottom: space(2);
+}
+
+.linkedBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  border-radius: radius('full');
+  background-color: rgba(59, 130, 246, 0.9); // blue-500/90
+  padding: space(0.5) space(2);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  color: white;
+}
+
+.linkedIcon {
+  height: space(3);
+  width: space(3);
+}
+
+// ===========================================
+// FILE INFO
+// ===========================================
+.fileInfo {
+  padding: space(3);
+}
+
+.fileName {
+  @include truncate;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.fileMeta {
+  margin-top: space(1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: font-size('xs');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+// ===========================================
+// DELETE DIALOG
+// ===========================================
+.linkedWarning {
+  display: block;
+  margin-bottom: space(2);
+  font-weight: font-weight('medium');
+  color: #d97706; // amber-600
+
+  @include dark {
+    color: #fbbf24; // amber-400
+  }
+}

@@ -1,0 +1,173 @@
+// ===========================================
+// SCANS GRID COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LOADING SKELETON GRID
+// ===========================================
+.skeletonGrid {
+  @include grid(1, space(4));
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.skeletonItem {
+  aspect-ratio: 4 / 3;
+  border-radius: radius('lg');
+  background-color: #e5e7eb; // gray-200
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @include dark {
+    background-color: #374151; // gray-700
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyWrapper {
+  padding-block: space(8);
+}
+
+.emptyCenter {
+  margin-bottom: space(8);
+  text-align: center;
+}
+
+.emptyIconCircle {
+  @include flex-center;
+  margin-inline: auto;
+  margin-bottom: space(4);
+  height: space(16);
+  width: space(16);
+  border-radius: radius('full');
+  background: linear-gradient(to bottom right, #3b82f6, #06b6d4); // blue-500 → cyan-500
+}
+
+.emptyIcon {
+  height: space(8);
+  width: space(8);
+  color: white;
+}
+
+.emptyTitle {
+  margin-bottom: space(2);
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.emptyDescription {
+  color: #4b5563; // gray-600
+
+  @include dark {
+    color: #d1d5db; // gray-300
+  }
+}
+
+// ===========================================
+// EMPTY STATE STEP
+// ===========================================
+.emptyStepsList {
+  margin-bottom: space(8);
+
+  & > * + * {
+    margin-top: space(6);
+  }
+}
+
+.emptyStep {
+  display: flex;
+  align-items: flex-start;
+  gap: space(4);
+}
+
+.emptyStepNumber {
+  @include flex-center;
+  height: space(10);
+  width: space(10);
+  flex-shrink: 0;
+  border-radius: radius('full');
+  background: linear-gradient(to bottom right, #a855f7, #ec4899); // purple-500 → pink-500
+  font-size: font-size('sm');
+  font-weight: font-weight('bold');
+  color: white;
+}
+
+.emptyStepContent {
+  flex: 1;
+}
+
+.emptyStepTitleRow {
+  margin-bottom: space(1);
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.emptyStepTitle {
+  font-weight: font-weight('medium');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.emptyStepDescription {
+  font-size: font-size('sm');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+// ===========================================
+// EMPTY STATE ACTIONS
+// ===========================================
+.emptyActions {
+  @include flex-column;
+  align-items: center;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+// ===========================================
+// SCANS GRID
+// ===========================================
+.scansGrid {
+  @include grid(1, space(4));
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

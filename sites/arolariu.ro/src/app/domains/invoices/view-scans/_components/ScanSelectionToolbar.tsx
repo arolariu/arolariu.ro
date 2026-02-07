@@ -9,6 +9,7 @@ import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "
 import {useTranslations} from "next-intl";
 import {TbFileInvoice, TbX} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
+import styles from "./ScanSelectionToolbar.module.scss";
 
 type ScanSelectionToolbarProps = {
   onCreateInvoice: () => void;
@@ -27,10 +28,10 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
   }
 
   return (
-    <main className='fixed right-0 bottom-0 left-0 z-50 border-t border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900'>
-      <main className='mx-auto flex max-w-7xl items-center justify-between'>
-        <main className='flex items-center gap-4'>
-          <span className='font-medium text-gray-900 dark:text-white'>
+    <main className={styles["toolbar"]}>
+      <main className={styles["toolbarContent"]}>
+        <main className={styles["toolbarLeft"]}>
+          <span className={styles["selectedCount"]}>
             {selectedScans.length} {t("selected")}
           </span>
           <TooltipProvider>
@@ -42,7 +43,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                   onClick={clearSelection}
                   className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'>
                   <TbX className='mr-1 h-4 w-4' />
-                  <span className='hidden sm:inline'>{t("clearSelection")}</span>
+                  <span className={styles["hiddenMobile"]}>{t("clearSelection")}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t("clearSelection")}</TooltipContent>
@@ -50,7 +51,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
           </TooltipProvider>
         </main>
 
-        <main className='flex items-center gap-3'>
+        <main className={styles["toolbarRight"]}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -58,8 +59,8 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                   onClick={onCreateInvoice}
                   className='bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'>
                   <TbFileInvoice className='mr-2 h-4 w-4' />
-                  <span className='hidden sm:inline'>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</span>
-                  <span className='sm:hidden'>{t("createInvoice").split(" ")[0]}</span>
+                  <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</span>
+                  <span className={styles["visibleMobile"]}>{t("createInvoice").split(" ")[0]}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</TooltipContent>

@@ -14,6 +14,7 @@ import {useCallback} from "react";
 import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
 import ScanCard from "./ScanCard";
+import styles from "./ScansGrid.module.scss";
 
 /** Pre-generated skeleton keys for loading state to avoid array index as key */
 const SKELETON_KEYS = ["skeleton-1", "skeleton-2", "skeleton-3", "skeleton-4", "skeleton-5", "skeleton-6"] as const;
@@ -51,16 +52,16 @@ function EmptyStateStep({
   description,
 }: Readonly<{step: number; icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <main className='flex items-start gap-4'>
-      <main className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-pink-500 text-sm font-bold text-white'>
+    <main className={styles["emptyStep"]}>
+      <main className={styles["emptyStepNumber"]}>
         {step}
       </main>
-      <main className='flex-1'>
-        <main className='mb-1 flex items-center gap-2'>
+      <main className={styles["emptyStepContent"]}>
+        <main className={styles["emptyStepTitleRow"]}>
           {icon}
-          <h4 className='font-medium text-gray-900 dark:text-white'>{title}</h4>
+          <h4 className={styles["emptyStepTitle"]}>{title}</h4>
         </main>
-        <p className='text-sm text-gray-500 dark:text-gray-400'>{description}</p>
+        <p className={styles["emptyStepDescription"]}>{description}</p>
       </main>
     </main>
   );
@@ -76,11 +77,11 @@ export default function ScansGrid(): React.JSX.Element {
   // Show loading state
   if (!hasHydrated || (isSyncing && scans.length === 0)) {
     return (
-      <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+      <main className={styles["skeletonGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
           <main
             key={skeletonKey}
-            className='aspect-[4/3] animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700'
+            className={styles["skeletonItem"]}
           />
         ))}
       </main>
@@ -93,18 +94,18 @@ export default function ScansGrid(): React.JSX.Element {
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
-        className='py-8'>
+        className={styles["emptyWrapper"]}>
         <Card className='mx-auto max-w-2xl'>
           <CardContent className='p-8'>
-            <main className='mb-8 text-center'>
-              <main className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-cyan-500'>
-                <TbPhoto className='h-8 w-8 text-white' />
+            <main className={styles["emptyCenter"]}>
+              <main className={styles["emptyIconCircle"]}>
+                <TbPhoto className={styles["emptyIcon"]} />
               </main>
-              <h3 className='mb-2 text-2xl font-bold text-gray-900 dark:text-white'>{t("emptyState.title")}</h3>
-              <p className='text-gray-600 dark:text-gray-300'>{t("emptyState.description")}</p>
+              <h3 className={styles["emptyTitle"]}>{t("emptyState.title")}</h3>
+              <p className={styles["emptyDescription"]}>{t("emptyState.description")}</p>
             </main>
 
-            <main className='mb-8 space-y-6'>
+            <main className={styles["emptyStepsList"]}>
               <EmptyStateStep
                 step={1}
                 icon={<TbUpload className='text-accent-primary h-4 w-4' />}
@@ -125,7 +126,7 @@ export default function ScansGrid(): React.JSX.Element {
               />
             </main>
 
-            <main className='flex flex-col items-center gap-4 sm:flex-row sm:justify-center'>
+            <main className={styles["emptyActions"]}>
               <Button
                 asChild
                 size='lg'
@@ -152,7 +153,7 @@ export default function ScansGrid(): React.JSX.Element {
   }
 
   return (
-    <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+    <main className={styles["scansGrid"]}>
       {scans.map((scan) => (
         <ScanCardWrapper
           key={scan.id}

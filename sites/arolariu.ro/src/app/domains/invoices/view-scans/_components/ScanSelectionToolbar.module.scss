@@ -1,0 +1,62 @@
+// ===========================================
+// SCAN SELECTION TOOLBAR COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+.toolbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: z('fixed');
+  border-top: 1px solid #e5e7eb; // gray-200
+  background-color: white;
+  padding: space(4);
+  @include shadow('lg');
+
+  @include dark {
+    border-color: #374151; // gray-700
+    background-color: #111827; // gray-900
+  }
+}
+
+.toolbarContent {
+  @include flex-between;
+  margin-inline: auto;
+  max-width: 80rem; // max-w-7xl
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+}
+
+.selectedCount {
+  font-weight: font-weight('medium');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.hiddenMobile {
+  display: none;
+
+  @include respond-to('sm') {
+    display: inline;
+  }
+}
+
+.visibleMobile {
+  @include respond-to('sm') {
+    display: none;
+  }
+}

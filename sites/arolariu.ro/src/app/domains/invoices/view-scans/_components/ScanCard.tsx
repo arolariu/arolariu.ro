@@ -31,6 +31,7 @@ import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useState} from "react";
 import {TbDotsVertical, TbFileTypePdf, TbLink, TbTrash} from "react-icons/tb";
+import styles from "./ScanCard.module.scss";
 
 type ScanCardProps = {
   scan: CachedScan;
@@ -112,17 +113,17 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         onClick={onToggleSelect}>
         <CardContent className='p-0'>
           {/* Preview */}
-          <main className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+          <main className={styles["previewArea"]}>
             {scan.mimeType === "application/pdf" ? (
-              <main className='flex h-full items-center justify-center'>
-                <TbFileTypePdf className='h-16 w-16 text-red-500' />
+              <main className={styles["pdfPlaceholder"]}>
+                <TbFileTypePdf className={styles["pdfIcon"]} />
               </main>
             ) : (
               <Image
                 src={scan.blobUrl}
                 alt={scan.name}
                 fill
-                className='object-cover'
+                className={styles["imagePreview"]}
                 unoptimized
               />
             )}
@@ -131,7 +132,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <main
               role='button'
               tabIndex={0}
-              className='absolute top-2 left-2'
+              className={styles["checkboxPosition"]}
               onClick={handleStopPropagation}
               onKeyDown={handleKeyDown}>
               <Checkbox
@@ -145,7 +146,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <main
               role='button'
               tabIndex={0}
-              className='absolute top-2 right-2'
+              className={styles["actionsPosition"]}
               onClick={handleStopPropagation}
               onKeyDown={handleKeyDown}>
               <DropdownMenu>
@@ -170,9 +171,9 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
 
             {/* Used by invoice badge */}
             {isUsedByInvoice ? (
-              <main className='absolute right-2 bottom-2'>
-                <main className='flex items-center gap-1 rounded-full bg-blue-500/90 px-2 py-0.5 text-xs font-medium text-white'>
-                  <TbLink className='h-3 w-3' />
+              <main className={styles["linkedBadgePosition"]}>
+                <main className={styles["linkedBadge"]}>
+                  <TbLink className={styles["linkedIcon"]} />
                   {t("linked")}
                 </main>
               </main>
@@ -180,13 +181,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
           </main>
 
           {/* File info */}
-          <main className='p-3'>
+          <main className={styles["fileInfo"]}>
             <p
-              className='truncate text-sm font-medium text-gray-900 dark:text-white'
+              className={styles["fileName"]}
               title={scan.name}>
               {scan.name}
             </p>
-            <main className='mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400'>
+            <main className={styles["fileMeta"]}>
               <span>{formatFileSize(scan.sizeInBytes)}</span>
               <span>{formatDate(scan.uploadedAt)}</span>
             </main>
@@ -204,7 +205,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <AlertDialogDescription>
               {isUsedByInvoice ? (
                 <>
-                  <span className='mb-2 block font-medium text-amber-600 dark:text-amber-400'>{t("deleteDialog.linkedWarning")}</span>
+                  <span className={styles["linkedWarning"]}>{t("deleteDialog.linkedWarning")}</span>
                   {t("deleteDialog.linkedDescription")}
                 </>
               ) : (
