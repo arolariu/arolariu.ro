@@ -1,0 +1,13 @@
+@use '../styles/abstracts' as *;
+
+.commandItemContent {
+  display: flex;
+  align-items: center;
+}
+
+.commandIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(3);
+  opacity: 0.7;
+}

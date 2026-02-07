@@ -1,6 +1,7 @@
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
+import styles from "./Commander.module.scss";
 import {setCookie} from "@/lib/actions/cookies";
 import {
   CommandDialog,
@@ -304,10 +305,10 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectHome}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbHome className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbHome className={styles["commandIcon"]} />
               <span>{t("items.homepage")}</span>
-            </main>
+            </div>
             <CommandShortcut>H</CommandShortcut>
           </CommandItem>
         </CommandGroup>
@@ -318,28 +319,28 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectThemeLight}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbSun className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbSun className={styles["commandIcon"]} />
               <span>{t("items.light")}</span>
-            </main>
+            </div>
             <CommandShortcut>L</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectThemeDark}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbMoon className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbMoon className={styles["commandIcon"]} />
               <span>{t("items.dark")}</span>
-            </main>
+            </div>
             <CommandShortcut>D</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectThemeSystem}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbSettings className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbSettings className={styles["commandIcon"]} />
               <span>{t("items.system")}</span>
-            </main>
+            </div>
           </CommandItem>
         </CommandGroup>
 
@@ -349,28 +350,28 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectLangEnglish}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbLanguage className={styles["commandIcon"]} />
               <span>English</span>
-            </main>
+            </div>
             <CommandShortcut>EN</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectLangRomanian}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbLanguage className={styles["commandIcon"]} />
               <span>Română</span>
-            </main>
+            </div>
             <CommandShortcut>RO</CommandShortcut>
           </CommandItem>
           <CommandItem
             onSelect={onSelectLangFrench}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbLanguage className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbLanguage className={styles["commandIcon"]} />
               <span>Français</span>
-            </main>
+            </div>
             <CommandShortcut>FR</CommandShortcut>
           </CommandItem>
         </CommandGroup>
@@ -381,18 +382,18 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectFontNormal}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbTypeface className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbTypeface className={styles["commandIcon"]} />
               <span>{t("items.fontNormal")}</span>
-            </main>
+            </div>
           </CommandItem>
           <CommandItem
             onSelect={onSelectFontDyslexic}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbAccessible className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbAccessible className={styles["commandIcon"]} />
               <span>{t("items.fontDyslexic")}</span>
-            </main>
+            </div>
           </CommandItem>
         </CommandGroup>
 
@@ -402,26 +403,26 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectRainbow}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbPalette className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbPalette className={styles["commandIcon"]} />
               <span>{t("items.rainbow")}</span>
-            </main>
+            </div>
           </CommandItem>
           <CommandItem
             onSelect={onSelectDisco}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbConfetti className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbConfetti className={styles["commandIcon"]} />
               <span>{t("items.disco")}</span>
-            </main>
+            </div>
           </CommandItem>
           <CommandItem
             onSelect={onSelectMatrix}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbCode className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbCode className={styles["commandIcon"]} />
               <span>{t("items.matrix")}</span>
-            </main>
+            </div>
           </CommandItem>
         </CommandGroup>
 
@@ -431,10 +432,10 @@ function Commander(): React.JSX.Element {
           <CommandItem
             onSelect={onSelectGithub}
             className='flex items-center justify-between'>
-            <main className='flex items-center'>
-              <TbBrandGithub className='mr-3 h-4 w-4 opacity-70' />
+            <div className={styles["commandItemContent"]}>
+              <TbBrandGithub className={styles["commandIcon"]} />
               <span>GitHub</span>
-            </main>
+            </div>
             <CommandShortcut>G</CommandShortcut>
           </CommandItem>
         </CommandGroup>
