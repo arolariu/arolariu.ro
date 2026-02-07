@@ -241,6 +241,7 @@ function MobileNavigationComponent(): React.JSX.Element {
   return (
     <>
       <Button
+        variant='ghost'
         onClick={toggleMobile}
         aria-expanded={mobileOpen}
         aria-controls='mobile-navigation'
@@ -265,6 +266,7 @@ function MobileNavigationComponent(): React.JSX.Element {
             <div className='mobile-nav__header'>
               <h3 className='mobile-nav__title'>{t("title")}</h3>
               <Button
+                variant='ghost'
                 onClick={toggleMobile}
                 aria-label={t("closeNavigation")}
                 className='mobile-nav__close'>
