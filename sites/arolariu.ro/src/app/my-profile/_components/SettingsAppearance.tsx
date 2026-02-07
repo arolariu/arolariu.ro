@@ -2,6 +2,7 @@
 
 import {useFontContext} from "@/contexts/FontContext";
 import {setCookie} from "@/lib/actions/cookies";
+import {THEME_PRESETS, type ThemePresetName} from "@/lib/theme-presets";
 import {usePreferencesStore} from "@/stores/preferencesStore";
 import {
   Button,
@@ -44,7 +45,8 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   const t = useTranslations("MyProfile.settings.appearance");
   const {theme, setTheme} = useTheme();
   const {fontType, setFont} = useFontContext();
-  const {setPrimaryColor, setSecondaryColor} = usePreferencesStore();
+  const {setPrimaryColor, setSecondaryColor, setThemePreset} = usePreferencesStore();
+  const themePreset = usePreferencesStore((s) => s.themePreset);
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 
@@ -71,6 +73,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
         void setCookie(`theme-${type.replace("Color", "-color")}`, color);
         document.documentElement.style.setProperty(`--color-${type.replace("Color", "")}`, color);
         onSettingsChange({[type]: color});
+        setThemePreset("custom");
 
         if (type === "primaryColor") {
           setPrimaryColor(color);
@@ -79,7 +82,14 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
         }
       }
     },
-    [onSettingsChange, setPrimaryColor, setSecondaryColor],
+    [onSettingsChange, setPrimaryColor, setSecondaryColor, setThemePreset],
+  );
+
+  const handlePresetChange = useCallback(
+    (preset: ThemePresetName | "custom") => {
+      setThemePreset(preset);
+    },
+    [setThemePreset],
   );
 
   const handleThemeLightClick = useCallback(() => handleThemeChange("light"), [handleThemeChange]);
@@ -195,7 +205,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
           </Card>
         </motion.div>
 
-        {/* Custom Colors Card */}
+        {/* Theme Presets Card */}
         <motion.div
           className={styles["fullWidthCard"]}
           initial={{opacity: 0, y: 10}}
@@ -205,120 +215,172 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             <CardHeader className='pb-4'>
               <CardTitle className='flex items-center gap-2 text-base'>
                 <TbPalette className='h-4 w-4' />
-                {t("colors.title")}
+                {t("presets.title")}
               </CardTitle>
-              <CardDescription>{t("colors.description")}</CardDescription>
+              <CardDescription>{t("presets.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className={styles["colorGrid"]}>
-                {/* Primary Color */}
-                <div className={styles["colorRow"]}>
-                  <Label>{t("colors.primary")}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant='outline'
-                        className='h-10 w-28 cursor-pointer gap-2 px-3'>
-                        <div
-                          className={styles["colorSwatch"]}
-                          style={{backgroundColor: settings.primaryColor}}
+            <CardContent>
+              <div className={styles["presetGrid"]}>
+                {Object.entries(THEME_PRESETS).map(([key, preset]) => (
+                  <button
+                    key={key}
+                    type='button'
+                    className={styles["presetCard"]}
+                    data-selected={themePreset === key}
+                    onClick={() => handlePresetChange(key as ThemePresetName)}>
+                    <div className={styles["presetPreview"]}>
+                      {preset.preview.map((color) => (
+                        <span
+                          key={color}
+                          className={styles["presetDot"]}
+                          style={{backgroundColor: color}}
                         />
-                        <span className='text-muted-foreground text-xs'>{settings.primaryColor}</span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className='w-64'>
-                      <div className={styles["paletteGrid"]}>
-                        {COLOR_PALETTE.map((color) => (
-                          <TooltipProvider key={color.value}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={settings.primaryColor === color.value ? "default" : "outline"}
-                                  size='icon'
-                                  className='h-10 w-10 cursor-pointer rounded-full p-0'
-                                  data-color={color.value}
-                                  onClick={handleColorChange("primaryColor")}>
-                                  <div
-                                    className={styles["colorSwatchLarge"]}
-                                    style={{backgroundColor: color.value}}
-                                  />
-                                  {settings.primaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>{color.name}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Secondary Color */}
-                <div className={styles["colorRow"]}>
-                  <Label>{t("colors.secondary")}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant='outline'
-                        className='h-10 w-28 cursor-pointer gap-2 px-3'>
-                        <div
-                          className={styles["colorSwatch"]}
-                          style={{backgroundColor: settings.secondaryColor}}
-                        />
-                        <span className='text-muted-foreground text-xs'>{settings.secondaryColor}</span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className='w-64'>
-                      <div className={styles["paletteGrid"]}>
-                        {COLOR_PALETTE.map((color) => (
-                          <TooltipProvider key={color.value}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={settings.secondaryColor === color.value ? "default" : "outline"}
-                                  size='icon'
-                                  className='h-10 w-10 cursor-pointer rounded-full p-0'
-                                  data-color={color.value}
-                                  onClick={handleColorChange("secondaryColor")}>
-                                  <div
-                                    className={styles["colorSwatchLarge"]}
-                                    style={{backgroundColor: color.value}}
-                                  />
-                                  {settings.secondaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>{color.name}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              {/* Gradient Preview */}
-              <Separator />
-              <div className={styles["gradientPreview"]}>
-                <Label>{t("colors.preview")}</Label>
-                <div
-                  className={styles["gradientBar"]}
-                  style={{
-                    background: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
-                  }}
-                />
-                <p
-                  className={styles["gradientText"]}
-                  style={{
-                    backgroundImage: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
-                  }}>
-                  {t("colors.previewText")}
-                </p>
+                      ))}
+                    </div>
+                    <span className={styles["presetName"]}>{preset.name}</span>
+                    <span className={styles["presetDescription"]}>{preset.description}</span>
+                  </button>
+                ))}
+                <button
+                  type='button'
+                  className={styles["customPresetCard"]}
+                  data-selected={themePreset === "custom"}
+                  onClick={() => handlePresetChange("custom")}>
+                  <TbBrush className='h-5 w-5' />
+                  <span className={styles["presetName"]}>{t("presets.custom")}</span>
+                  <span className={styles["presetDescription"]}>{t("presets.customDescription")}</span>
+                </button>
               </div>
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Custom Colors Card — only shown when preset is "custom" */}
+        {themePreset === "custom" && (
+          <motion.div
+            className={styles["fullWidthCard"]}
+            initial={{opacity: 0, y: 10}}
+            animate={{opacity: 1, y: 0}}
+            transition={{duration: 0.3}}>
+            <Card>
+              <CardHeader className='pb-4'>
+                <CardTitle className='flex items-center gap-2 text-base'>
+                  <TbPalette className='h-4 w-4' />
+                  {t("colors.title")}
+                </CardTitle>
+                <CardDescription>{t("colors.description")}</CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-4'>
+                <div className={styles["colorGrid"]}>
+                  {/* Primary Color */}
+                  <div className={styles["colorRow"]}>
+                    <Label>{t("colors.primary")}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant='outline'
+                          className='h-10 w-28 cursor-pointer gap-2 px-3'>
+                          <div
+                            className={styles["colorSwatch"]}
+                            style={{backgroundColor: settings.primaryColor}}
+                          />
+                          <span className='text-muted-foreground text-xs'>{settings.primaryColor}</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className='w-64'>
+                        <div className={styles["paletteGrid"]}>
+                          {COLOR_PALETTE.map((color) => (
+                            <TooltipProvider key={color.value}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={settings.primaryColor === color.value ? "default" : "outline"}
+                                    size='icon'
+                                    className='h-10 w-10 cursor-pointer rounded-full p-0'
+                                    data-color={color.value}
+                                    onClick={handleColorChange("primaryColor")}>
+                                    <div
+                                      className={styles["colorSwatchLarge"]}
+                                      style={{backgroundColor: color.value}}
+                                    />
+                                    {settings.primaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{color.name}</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Secondary Color */}
+                  <div className={styles["colorRow"]}>
+                    <Label>{t("colors.secondary")}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant='outline'
+                          className='h-10 w-28 cursor-pointer gap-2 px-3'>
+                          <div
+                            className={styles["colorSwatch"]}
+                            style={{backgroundColor: settings.secondaryColor}}
+                          />
+                          <span className='text-muted-foreground text-xs'>{settings.secondaryColor}</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className='w-64'>
+                        <div className={styles["paletteGrid"]}>
+                          {COLOR_PALETTE.map((color) => (
+                            <TooltipProvider key={color.value}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={settings.secondaryColor === color.value ? "default" : "outline"}
+                                    size='icon'
+                                    className='h-10 w-10 cursor-pointer rounded-full p-0'
+                                    data-color={color.value}
+                                    onClick={handleColorChange("secondaryColor")}>
+                                    <div
+                                      className={styles["colorSwatchLarge"]}
+                                      style={{backgroundColor: color.value}}
+                                    />
+                                    {settings.secondaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{color.name}</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                {/* Gradient Preview */}
+                <Separator />
+                <div className={styles["gradientPreview"]}>
+                  <Label>{t("colors.preview")}</Label>
+                  <div
+                    className={styles["gradientBar"]}
+                    style={{
+                      background: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
+                    }}
+                  />
+                  <p
+                    className={styles["gradientText"]}
+                    style={{
+                      backgroundImage: `linear-gradient(to right, ${settings.primaryColor}, ${settings.secondaryColor})`,
+                    }}>
+                    {t("colors.previewText")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Language Card */}
         <motion.div

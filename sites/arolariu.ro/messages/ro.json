@@ -2076,6 +2076,12 @@
           "dyslexic": "Prietenos pentru dislexici",
           "dyslexicHint": "Font OpenDyslexic pentru lizibilitate îmbunătățită"
         },
+        "presets": {
+          "title": "Presetare Temă",
+          "description": "Alegeți o schemă de culori predefinită sau creați-o pe a voastră",
+          "custom": "Personalizat",
+          "customDescription": "Creați-vă propria schemă de culori"
+        },
         "colors": {
           "title": "Culori Personalizate",
           "description": "Personalizați schema de culori",

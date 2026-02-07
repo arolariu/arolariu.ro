@@ -2076,6 +2076,12 @@
           "dyslexic": "Adapté aux dyslexiques",
           "dyslexicHint": "Police OpenDyslexic pour une meilleure lisibilité"
         },
+        "presets": {
+          "title": "Thème Prédéfini",
+          "description": "Choisissez un jeu de couleurs prédéfini ou créez le vôtre",
+          "custom": "Personnalisé",
+          "customDescription": "Créez votre propre jeu de couleurs"
+        },
         "colors": {
           "title": "Couleurs Personnalisées",
           "description": "Personnalisez votre palette de couleurs",

@@ -2076,6 +2076,12 @@
           "dyslexic": "Dyslexic-friendly",
           "dyslexicHint": "OpenDyslexic font for improved readability"
         },
+        "presets": {
+          "title": "Theme Preset",
+          "description": "Choose a pre-designed color scheme or create your own",
+          "custom": "Custom",
+          "customDescription": "Create your own color scheme"
+        },
         "colors": {
           "title": "Custom Colors",
           "description": "Personalize your color scheme",
