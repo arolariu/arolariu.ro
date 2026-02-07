@@ -52,6 +52,19 @@
 }
 
 // ===========================================
+// CARD
+// ===========================================
+.licenseCard {
+  height: 100%;
+  @include transition(all, 300ms);
+
+  &:hover {
+    transform: translateY(-0.25rem);
+    border-color: color-alpha('primary', 0.3);
+  }
+}
+
+// ===========================================
 // CARD CONTENT
 // ===========================================
 .cardContent {
@@ -67,7 +80,7 @@
 
 .iconWrapper {
   padding: space(3);
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .gradientCyanBlue {
@@ -95,7 +108,7 @@
 
 .packageCount {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -105,19 +118,19 @@
   height: 0.75rem;
   margin-bottom: space(3);
   overflow: hidden;
-  border-radius: 9999px;
-  background-color: hsl(var(--muted));
+  border-radius: radius('full');
+  background-color: color('muted');
 }
 
 .progressFillCyan {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: radius('full');
   background: linear-gradient(to right, #06b6d4, #3b82f6);
 }
 
 .progressFillOrange {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: radius('full');
   background: linear-gradient(to right, #f97316, #ef4444);
 }
 
@@ -132,7 +145,7 @@
 
 .description {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .percentage {

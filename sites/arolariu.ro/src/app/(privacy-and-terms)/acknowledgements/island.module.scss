@@ -38,7 +38,7 @@
 }
 
 .packagesSubtitle {
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
   font-size: font-size('lg');
   max-width: 42rem;
   margin-left: auto;

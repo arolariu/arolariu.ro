@@ -64,9 +64,9 @@
 .heroTitle {
   background: linear-gradient(
     to right,
-    hsl(var(--foreground)),
-    hsl(var(--foreground) / 0.9),
-    hsl(var(--foreground) / 0.7)
+    color('foreground'),
+    color-alpha('foreground', 0.9),
+    color-alpha('foreground', 0.7)
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -91,7 +91,7 @@
   max-width: 42rem;
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('sm') {
     font-size: font-size('xl');
@@ -135,13 +135,13 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  background-color: hsl(var(--card) / 0.5);
-  border: 1px solid hsl(var(--border) / 0.5);
+  background-color: color-alpha('card', 0.5);
+  border: 1px solid color-alpha('border', 0.5);
   backdrop-filter: blur(4px);
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary) / 0.4);
+    border-color: color-alpha('primary', 0.4);
     @include shadow('2xl');
   }
 }
@@ -164,8 +164,8 @@
   right: -4rem;
   width: 8rem;
   height: 8rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.3);
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.3);
   filter: blur(48px);
   pointer-events: none;
   opacity: 0;
@@ -197,8 +197,8 @@
   width: 3rem;
   height: 3rem;
   border-radius: radius('xl');
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
 }
 
 .cardIcon {
@@ -209,7 +209,7 @@
 .cardStep {
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .cardIllustration {
@@ -223,7 +223,7 @@
   height: 12rem;
   border-radius: radius('2xl');
   padding: space(4);
-  background: linear-gradient(to bottom right, hsl(var(--muted) / 0.3), hsl(var(--muted) / 0.1));
+  background: linear-gradient(to bottom right, color-alpha('muted', 0.3), color-alpha('muted', 0.1));
   @include transition(transform);
 
   &:hover {
@@ -263,7 +263,7 @@
 .cardDescription {
   font-size: font-size('base');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .cardContent {
@@ -285,7 +285,7 @@
   align-items: flex-start;
   gap: space(3);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .bulletDot {
@@ -293,8 +293,8 @@
   width: 0.5rem;
   height: 0.5rem;
   flex-shrink: 0;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.7);
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.7);
 }
 
 // ===========================================
@@ -339,11 +339,11 @@
 .secondaryPrompt {
   text-align: center;
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .secondaryLink {
-  color: hsl(var(--primary));
+  color: color('primary');
   font-weight: font-weight('medium');
   text-underline-offset: 4px;
   @include transition(color);
@@ -360,7 +360,7 @@
   text-align: center;
   font-size: font-size('sm');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================

@@ -85,9 +85,9 @@
   position: relative;
   overflow: hidden;
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border) / 0.5);
+  border: 1px solid color-alpha('border', 0.5);
   padding: space(6);
-  background-color: hsl(var(--card) / 0.5);
+  background-color: color-alpha('card', 0.5);
 }
 
 .loadingCardHeader {

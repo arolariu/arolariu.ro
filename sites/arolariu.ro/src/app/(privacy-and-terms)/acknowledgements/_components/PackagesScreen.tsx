@@ -84,7 +84,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
             {t("dialog.dependenciesCount", {count: String(pkg.dependents?.length ?? 0)})}
           </DialogDescription>
         </DialogHeader>
-        <main className={styles["dialogScrollArea"]}>
+        <div className={styles["dialogScrollArea"]}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -101,7 +101,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
               ))}
             </TableBody>
           </Table>
-        </main>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -160,9 +160,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
   );
 
   return (
-    <main className={styles["container"]}>
-      <main className={styles["filtersContainer"]}>
-        <main className={styles["searchContainer"]}>
+    <div className={styles["container"]}>
+      <div className={styles["filtersContainer"]}>
+        <div className={styles["searchContainer"]}>
           <Input
             type='text'
             placeholder={t("search.placeholder")}
@@ -170,9 +170,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
             onChange={handleSearch}
             className={styles["searchInput"]}
           />
-        </main>
-        <main className={styles["filterRow"]}>
-          <main className={styles["filterItem"]}>
+        </div>
+        <div className={styles["filterRow"]}>
+          <div className={styles["filterItem"]}>
             <Select
               value={packageType}
               onValueChange={handlePackageType}>
@@ -185,9 +185,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 <SelectItem value='development'>{t("filters.developmentOnly")}</SelectItem>
               </SelectContent>
             </Select>
-          </main>
+          </div>
 
-          <main className={styles["filterItem"]}>
+          <div className={styles["filterItem"]}>
             <Select
               value={sortField}
               onValueChange={handleSortField}>
@@ -200,9 +200,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 <SelectItem value='type'>{t("filters.packageType")}</SelectItem>
               </SelectContent>
             </Select>
-          </main>
+          </div>
 
-          <main className={styles["filterItem"]}>
+          <div className={styles["filterItem"]}>
             <Select
               value={sortDirection}
               onValueChange={handleSortDirection}>
@@ -214,9 +214,9 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 <SelectItem value='desc'>{t("filters.descending")}</SelectItem>
               </SelectContent>
             </Select>
-          </main>
-        </main>
-      </main>
+          </div>
+        </div>
+      </div>
 
       <Tabs
         defaultValue='grid'
@@ -226,40 +226,40 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
           <TabsTrigger value='table'>{t("views.tableView")}</TabsTrigger>
         </TabsList>
 
-        <main className={styles["tabsContentWrapper"]}>
+        <div className={styles["tabsContentWrapper"]}>
           <TabsContent
             value='grid'
             className={styles["tabsContainer"]}>
             {filteredAndSortedPackages.length > 0 ? (
-              <main className={styles["packagesGrid"]}>
+              <div className={styles["packagesGrid"]}>
                 {filteredAndSortedPackages.map((pkg, index) => (
                   <motion.div
                     key={`${pkg.name}#${pkg.version}#${pkg.dependents?.length ?? 0}`}
                     initial={{opacity: 0, y: 20}}
                     animate={{opacity: 1, y: 0}}
                     transition={{duration: 0.3, delay: index * 0.1}}>
-                    <Card className='h-full'>
+                    <Card className={styles["packageCard"]}>
                       <CardHeader>
-                        <main className={styles["cardHeaderRow"]}>
+                        <div className={styles["cardHeaderRow"]}>
                           <CardTitle className={styles["cardTitle"]}>{pkg.name}</CardTitle>
                           <span className={styles["versionBadge"]}>{pkg.version}</span>
-                        </main>
-                        <main className={styles["badgeContainer"]}>
+                        </div>
+                        <div className={styles["badgeContainer"]}>
                           <PackageBadge type={extractPackageType(pkg)} />
-                        </main>
+                        </div>
                         <CardDescription>{pkg.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <main className={styles["cardDetails"]}>
-                          <main className={styles["detailRow"]}>
+                        <div className={styles["cardDetails"]}>
+                          <div className={styles["detailRow"]}>
                             <span className={styles["detailLabel"]}>{t("card.license")}</span> {pkg.license}
-                          </main>
-                          <main className={styles["detailRow"]}>
+                          </div>
+                          <div className={styles["detailRow"]}>
                             <span className={styles["detailLabel"]}>
                               {t("card.dependencies")} {pkg.dependents?.length ?? "N/A"}
                             </span>
-                          </main>
-                          <main className={styles["cardActions"]}>
+                          </div>
+                          <div className={styles["cardActions"]}>
                             <a
                               href={pkg.homepage}
                               target='_blank'
@@ -269,19 +269,19 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                               <span>{t("card.website")}</span>
                             </a>
                             <DependenciesDialog pkg={pkg} />
-                          </main>
-                        </main>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>
                 ))}
-              </main>
+              </div>
             ) : (
-              <main className={styles["emptyState"]}>
+              <div className={styles["emptyState"]}>
                 <TbPackage className={styles["emptyIcon"]} />
                 <p className={styles["emptyText"]}>{t("emptyState.title")}</p>
                 <p className={styles["emptyText"]}>{t("emptyState.subtitle")}</p>
-              </main>
+              </div>
             )}
           </TabsContent>
 
@@ -327,7 +327,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             className={styles["tableLink"]}
                             title={t("table.website")}>
                             <TbExternalLink className={styles["tableLinkIcon"]} />
-                            <span className='sr-only'>{t("table.website")}</span>
+                            <span className={styles["srOnly"]}>{t("table.website")}</span>
                           </a>
                         </TableCell>
                       </TableRow>
@@ -336,14 +336,14 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 </Table>
               </motion.div>
             ) : (
-              <main className={styles["emptyState"]}>
+              <div className={styles["emptyState"]}>
                 <TbPackage className={styles["emptyIcon"]} />
                 <p className={styles["emptyText"]}>{t("emptyState.title")}</p>
                 <p className={styles["emptyText"]}>{t("emptyState.subtitle")}</p>
-              </main>
+              </div>
             )}
           </TabsContent>
-        </main>
+        </div>
       </Tabs>
 
       <motion.div
@@ -351,12 +351,12 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
         animate={{opacity: 1}}
         transition={{duration: 0.5, delay: 0.5}}
         className={styles["footer"]}>
-        <main className={styles["footerHeader"]}>
+        <div className={styles["footerHeader"]}>
           <TbPackage className={styles["footerIcon"]} />
           <h2 className={styles["footerTitle"]}>{t("openSource.title")}</h2>
-        </main>
+        </div>
         <p className={styles["footerDescription"]}>{t("openSource.description")}</p>
       </motion.div>
-    </main>
+    </div>
   );
 }

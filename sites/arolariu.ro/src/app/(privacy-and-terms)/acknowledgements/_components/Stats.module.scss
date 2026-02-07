@@ -43,7 +43,7 @@
   max-width: 42rem;
   margin-left: auto;
   margin-right: auto;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -63,6 +63,20 @@
 }
 
 // ===========================================
+// CARD
+// ===========================================
+.statCard {
+  height: 100%;
+  @include transition(all, 300ms);
+
+  &:hover {
+    transform: translateY(-0.25rem);
+    border-color: color-alpha('primary', 0.3);
+    @include shadow('lg');
+  }
+}
+
+// ===========================================
 // CARD CONTENT
 // ===========================================
 .cardContent {
@@ -75,7 +89,7 @@
 .iconWrapper {
   margin-bottom: space(4);
   padding: space(3);
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 // Gradient variants for icons
@@ -114,5 +128,5 @@
 
 .statDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

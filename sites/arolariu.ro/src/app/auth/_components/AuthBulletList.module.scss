@@ -9,7 +9,7 @@
   flex-direction: column;
   gap: space(3);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
   text-align: left;
 }
 
@@ -22,9 +22,9 @@
 .dot {
   margin-top: space(2);
   display: inline-block;
-  width: 0.375rem;
-  height: 0.375rem;
+  width: space(1.5);
+  height: space(1.5);
   flex-shrink: 0;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.7);
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.7);
 }

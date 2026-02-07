@@ -44,7 +44,7 @@
   max-width: 42rem;
   margin-left: auto;
   margin-right: auto;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -60,6 +60,20 @@
 
   @include respond-to('lg') {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// ===========================================
+// CARD
+// ===========================================
+.contributorCard {
+  height: 100%;
+  @include transition(all, 300ms);
+
+  &:hover {
+    transform: translateY(-0.25rem);
+    border-color: color-alpha('primary', 0.3);
+    @include shadow('lg');
   }
 }
 
@@ -113,7 +127,7 @@
   margin-bottom: space(2);
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .packageIcon {
@@ -123,5 +137,5 @@
 
 .description {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

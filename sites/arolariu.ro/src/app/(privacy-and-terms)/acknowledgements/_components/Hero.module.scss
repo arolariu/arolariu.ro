@@ -32,7 +32,7 @@
   left: -10rem;
   height: 20rem;
   width: 20rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   background: linear-gradient(to bottom right, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
   filter: blur(48px);
 }
@@ -43,7 +43,7 @@
   right: -10rem;
   height: 20rem;
   width: 20rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
   filter: blur(48px);
 }
@@ -98,14 +98,14 @@
   max-width: 42rem;
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .lastUpdated {
   @include flex-center;
   gap: space(2);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .lastUpdatedIcon {

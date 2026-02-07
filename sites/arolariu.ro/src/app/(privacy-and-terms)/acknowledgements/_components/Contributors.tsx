@@ -29,7 +29,7 @@ export default function Contributors(): React.JSX.Element {
     <section
       ref={ref}
       className={styles["contributorsSection"]}>
-      <main className={styles["container"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
           className={styles["sectionHeader"]}
@@ -43,14 +43,14 @@ export default function Contributors(): React.JSX.Element {
         </motion.div>
 
         {/* Contributors grid */}
-        <main className={styles["contributorsGrid"]}>
+        <div className={styles["contributorsGrid"]}>
           {contributors.map((key, index) => (
             <motion.div
               key={key}
               initial={{opacity: 0, y: 30}}
               animate={isInView ? {opacity: 1, y: 0} : {}}
               transition={{delay: 0.2 + index * 0.1, duration: 0.5}}>
-              <Card className='group hover:border-primary/30 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg'>
+              <Card className={styles["contributorCard"]}>
                 <CardContent className={styles["cardContent"]}>
                   {/* Avatar */}
                   <Avatar className={styles["avatar"]}>
@@ -67,10 +67,10 @@ export default function Contributors(): React.JSX.Element {
                   <h3 className={styles["contributorName"]}>{t(`items.${key}.name`)}</h3>
 
                   {/* Package count */}
-                  <main className={styles["packageCount"]}>
+                  <div className={styles["packageCount"]}>
                     <TbPackage className={styles["packageIcon"]} />
                     <span>{t(`items.${key}.packages`)} packages</span>
-                  </main>
+                  </div>
 
                   {/* Description */}
                   <p className={styles["description"]}>{t(`items.${key}.description`)}</p>
@@ -78,8 +78,8 @@ export default function Contributors(): React.JSX.Element {
               </Card>
             </motion.div>
           ))}
-        </main>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }

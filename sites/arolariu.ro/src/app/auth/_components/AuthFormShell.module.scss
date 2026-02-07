@@ -15,17 +15,17 @@
 
 .kicker {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .secondary {
   margin-top: space(2);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .secondaryLink {
-  color: hsl(var(--primary));
+  color: color('primary');
   font-weight: font-weight('medium');
   text-underline-offset: 4px;
   @include transition(color);
@@ -37,5 +37,5 @@
 
 .footer {
   font-size: font-size('xs');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

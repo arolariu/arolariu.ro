@@ -65,12 +65,12 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
 
       {/* NPM packages browser */}
       <section className={styles["packagesSection"]}>
-        <main className={styles["packagesSectionHeader"]}>
+        <div className={styles["packagesSectionHeader"]}>
           <h2 className={styles["packagesTitle"]}>
             <span className={styles["packagesTitleGradient"]}>{t("packages.title")}</span>
           </h2>
           <p className={styles["packagesSubtitle"]}>{t("packages.subtitle")}</p>
-        </main>
+        </div>
         <PackagesScreen packages={packages} />
       </section>
     </main>
