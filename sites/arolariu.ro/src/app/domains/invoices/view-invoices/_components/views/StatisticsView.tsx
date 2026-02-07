@@ -16,13 +16,13 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   console.log(invoices);
 
   return (
-    <main className={styles["container"]}>
-      <main className={styles["header"]}>
-        <main className={styles["headerContent"]}>
+    <div className={styles["container"]}>
+      <div className={styles["header"]}>
+        <div className={styles["headerContent"]}>
           <h1 className={styles["title"]}>Invoice Statistics</h1>
           <p className={styles["subtitle"]}>Manage your receipts and track your spending habits</p>
-        </main>
-      </main>
-    </main>
+        </div>
+      </div>
+    </div>
   );
 }

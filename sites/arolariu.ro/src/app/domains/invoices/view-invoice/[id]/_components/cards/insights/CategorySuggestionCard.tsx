@@ -72,7 +72,7 @@ export function CategorySuggestionCard(): React.JSX.Element {
         </p>
 
         {/* Main Categories Grid */}
-        <main className={styles["mainGrid"]}>
+        <div className={styles["mainGrid"]}>
           {mainCategories.map((category) => (
             <CategoryButton
               key={category.id}
@@ -82,12 +82,12 @@ export function CategorySuggestionCard(): React.JSX.Element {
               variant='main'
             />
           ))}
-        </main>
+        </div>
 
         {/* More Categories Grid */}
-        <main className={styles["moreSection"]}>
+        <div className={styles["moreSection"]}>
           <p className={styles["moreLabel"]}>More categories:</p>
-          <main className={styles["moreGrid"]}>
+          <div className={styles["moreGrid"]}>
             {extendedCategories.map((category) => (
               <CategoryButton
                 key={category.id}
@@ -97,16 +97,16 @@ export function CategorySuggestionCard(): React.JSX.Element {
                 variant='extended'
               />
             ))}
-          </main>
-        </main>
+          </div>
+        </div>
 
         {/* Gamification */}
-        <main className={styles["gamificationBox"]}>
-          <main className={styles["gamificationHeader"]}>
+        <div className={styles["gamificationBox"]}>
+          <div className={styles["gamificationHeader"]}>
             <TbGift className='h-4 w-4 text-amber-600' />
             <span className={styles["gamificationLabel"]}>Categorize {goal} invoices to unlock detailed insights!</span>
-          </main>
-          <main className={styles["gamificationProgress"]}>
+          </div>
+          <div className={styles["gamificationProgress"]}>
             <Progress
               value={(categorizedCount / goal) * 100}
               className='h-2 flex-1'
@@ -114,8 +114,8 @@ export function CategorySuggestionCard(): React.JSX.Element {
             <span className={styles["gamificationCount"]}>
               {categorizedCount}/{goal}
             </span>
-          </main>
-        </main>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

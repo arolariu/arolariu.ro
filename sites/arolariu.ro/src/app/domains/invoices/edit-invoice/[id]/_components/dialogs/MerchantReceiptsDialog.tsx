@@ -123,9 +123,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
           <DialogDescription>View and filter all your receipts from this merchant</DialogDescription>
         </DialogHeader>
 
-        <main className={styles["body"]}>
-          <main className={styles["filterRow"]}>
-            <main className={styles["searchWrapper"]}>
+        <div className={styles["body"]}>
+          <div className={styles["filterRow"]}>
+            <div className={styles["searchWrapper"]}>
               <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
               <Input
                 placeholder='Search receipts...'
@@ -133,9 +133,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </main>
-            <main className={styles["filterControls"]}>
-              <main className={styles["selectWrapper"]}>
+            </div>
+            <div className={styles["filterControls"]}>
+              <div className={styles["selectWrapper"]}>
                 <Select onValueChange={handleDateFilterChange}>
                   <SelectTrigger>
                     <TbCalendar className='mr-2 h-4 w-4' />
@@ -148,8 +148,8 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                     <SelectItem value='thisYear'>This Year</SelectItem>
                   </SelectContent>
                 </Select>
-              </main>
-              <main className={styles["selectWrapper"]}>
+              </div>
+              <div className={styles["selectWrapper"]}>
                 <Select onValueChange={handleSortChange}>
                   <SelectTrigger>
                     <TbArrowsUpDown className='mr-2 h-4 w-4' />
@@ -160,12 +160,12 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                     <SelectItem value='date-asc'>Oldest First</SelectItem>
                   </SelectContent>
                 </Select>
-              </main>
-            </main>
-          </main>
+              </div>
+            </div>
+          </div>
 
-          <main className={styles["tableOuter"]}>
-            <main className={styles["tableScroll"]}>
+          <div className={styles["tableOuter"]}>
+            <div className={styles["tableScroll"]}>
               <Table>
                 <TableHeader>
                   <TableRow className='bg-muted/50'>
@@ -232,9 +232,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                   </TableRow>
                 </TableFooter>
               </Table>
-            </main>
-          </main>
-        </main>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

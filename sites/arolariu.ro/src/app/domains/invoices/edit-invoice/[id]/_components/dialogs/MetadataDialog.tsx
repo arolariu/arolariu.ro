@@ -61,8 +61,8 @@ const AddDialog = () => {
           <DialogDescription>Add additional information to this invoice</DialogDescription>
         </DialogHeader>
 
-        <main className={styles["formBody"]}>
-          <main className={styles["fieldGroup"]}>
+        <div className={styles["formBody"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='key'>Metadata Key</Label>
             <Input
               id='key'
@@ -71,9 +71,9 @@ const AddDialog = () => {
               onChange={handleChange}
               placeholder='Enter key'
             />
-          </main>
+          </div>
 
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='value'>Metadata Value</Label>
             <Input
               id='value'
@@ -82,8 +82,8 @@ const AddDialog = () => {
               onChange={handleChange}
               placeholder='Enter value'
             />
-          </main>
-        </main>
+          </div>
+        </div>
 
         <DialogFooter>
           <Button
@@ -129,17 +129,17 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           <DialogDescription>Update the value of this metadata field</DialogDescription>
         </DialogHeader>
 
-        <main className={styles["formBody"]}>
-          <main className={styles["fieldGroup"]}>
+        <div className={styles["formBody"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='key'>Metadata Field</Label>
             <Input
               id='key'
               value={editedMetadata["key"]}
               disabled
             />
-          </main>
+          </div>
 
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='value'>Value</Label>
             <Input
               id='value'
@@ -147,8 +147,8 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
               onChange={handleChange}
               placeholder='Enter value'
             />
-          </main>
-        </main>
+          </div>
+        </div>
 
         <DialogFooter>
           <Button

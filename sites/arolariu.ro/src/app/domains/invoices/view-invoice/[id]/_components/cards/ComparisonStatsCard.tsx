@@ -33,82 +33,82 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Current vs Average */}
-        <main className={styles["section"]}>
-          <main className={styles["row"]}>
-            <main className={styles["rowWithIcon"]}>
+        <div className={styles["section"]}>
+          <div className={styles["row"]}>
+            <div className={styles["rowWithIcon"]}>
               <TbTarget className='text-muted-foreground h-4 w-4' />
               <span className={styles["label"]}>vs Average</span>
-            </main>
-            <main className={styles["trendRow"]}>
+            </div>
+            <div className={styles["trendRow"]}>
               {getTrendIcon(stats.percentageDiff)}
               <span className={`${styles["trendValue"]} ${getTrendColor(stats.percentageDiff)}`}>
                 {stats.percentageDiff > 0 ? "+" : ""}
                 {stats.percentageDiff}%
               </span>
-            </main>
-          </main>
-          <main className={styles["mutedRow"]}>
+            </div>
+          </div>
+          <div className={styles["mutedRow"]}>
             <span>
               Avg: {stats.averageAmount.toFixed(2)} {currency}
             </span>
             <span>
               This: {stats.currentAmount.toFixed(2)} {currency}
             </span>
-          </main>
-        </main>
+          </div>
+        </div>
 
         {/* Spending Range Progress */}
-        <main className={styles["section"]}>
-          <main className={styles["mutedRow"]}>
+        <div className={styles["section"]}>
+          <div className={styles["mutedRow"]}>
             <span>Min: {stats.minAmount.toFixed(0)}</span>
             <span>Max: {stats.maxAmount.toFixed(0)}</span>
-          </main>
+          </div>
           <Progress
             value={percentageProgress}
             className='h-2'
           />
           <p className={styles["positionLabel"]}>Your position in spending range</p>
-        </main>
+        </div>
 
         {/* Item Count Comparison */}
-        <main className={styles["borderTopRow"]}>
-          <main className={styles["rowWithIcon"]}>
+        <div className={styles["borderTopRow"]}>
+          <div className={styles["rowWithIcon"]}>
             <TbShoppingBag className='text-muted-foreground h-4 w-4' />
             <span className={styles["label"]}>Item Count</span>
-          </main>
-          <main className={styles["rightAlign"]}>
-            <main className={styles["trendRow"]}>
+          </div>
+          <div className={styles["rightAlign"]}>
+            <div className={styles["trendRow"]}>
               {getTrendIcon(stats.itemCountDiff)}
               <span className={`${styles["trendValue"]} ${getTrendColor(stats.itemCountDiff)}`}>
                 {stats.itemCountDiff > 0 ? "+" : ""}
                 {stats.itemCountDiff}%
               </span>
-            </main>
+            </div>
             <span className={styles["subLabel"]}>
               {stats.currentItemCount} vs avg {stats.averageItemCount}
             </span>
-          </main>
-        </main>
+          </div>
+        </div>
 
         {/* Same Merchant Comparison */}
-        <main className={styles["borderTopRow"]}>
-          <main className={styles["rowWithIcon"]}>
+        <div className={styles["borderTopRow"]}>
+          <div className={styles["rowWithIcon"]}>
             <TbBuildingStore className='text-muted-foreground h-4 w-4' />
             <span className={styles["label"]}>Same Store</span>
-          </main>
-          <main className={styles["rightAlign"]}>
-            <main className={styles["trendRow"]}>
+          </div>
+          <div className={styles["rightAlign"]}>
+            <div className={styles["trendRow"]}>
               {getTrendIcon(stats.sameMerchantDiff)}
               <span className={`${styles["trendValue"]} ${getTrendColor(stats.sameMerchantDiff)}`}>
                 {stats.sameMerchantDiff > 0 ? "+" : ""}
                 {stats.sameMerchantDiff}%
               </span>
-            </main>
+            </div>
             <span className={styles["subLabel"]}>
               vs avg {stats.sameMerchantAvg.toFixed(0)} {currency}
             </span>
-          </main>
-        </main>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -52,18 +52,18 @@ function EmptyStateStep({
   description,
 }: Readonly<{step: number; icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <main className={styles["emptyStep"]}>
-      <main className={styles["emptyStepNumber"]}>
+    <div className={styles["emptyStep"]}>
+      <div className={styles["emptyStepNumber"]}>
         {step}
-      </main>
-      <main className={styles["emptyStepContent"]}>
-        <main className={styles["emptyStepTitleRow"]}>
+      </div>
+      <div className={styles["emptyStepContent"]}>
+        <div className={styles["emptyStepTitleRow"]}>
           {icon}
           <h4 className={styles["emptyStepTitle"]}>{title}</h4>
-        </main>
+        </div>
         <p className={styles["emptyStepDescription"]}>{description}</p>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }
 
@@ -77,14 +77,14 @@ export default function ScansGrid(): React.JSX.Element {
   // Show loading state
   if (!hasHydrated || (isSyncing && scans.length === 0)) {
     return (
-      <main className={styles["skeletonGrid"]}>
+      <div className={styles["skeletonGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
-          <main
+          <div 
             key={skeletonKey}
             className={styles["skeletonItem"]}
           />
         ))}
-      </main>
+      </div>
     );
   }
 
@@ -97,15 +97,15 @@ export default function ScansGrid(): React.JSX.Element {
         className={styles["emptyWrapper"]}>
         <Card className='mx-auto max-w-2xl'>
           <CardContent className='p-8'>
-            <main className={styles["emptyCenter"]}>
-              <main className={styles["emptyIconCircle"]}>
+            <div className={styles["emptyCenter"]}>
+              <div className={styles["emptyIconCircle"]}>
                 <TbPhoto className={styles["emptyIcon"]} />
-              </main>
+              </div>
               <h3 className={styles["emptyTitle"]}>{t("emptyState.title")}</h3>
               <p className={styles["emptyDescription"]}>{t("emptyState.description")}</p>
-            </main>
+            </div>
 
-            <main className={styles["emptyStepsList"]}>
+            <div className={styles["emptyStepsList"]}>
               <EmptyStateStep
                 step={1}
                 icon={<TbUpload className={styles["iconAccent"]} />}
@@ -124,9 +124,9 @@ export default function ScansGrid(): React.JSX.Element {
                 title={t("emptyState.step3Title")}
                 description={t("emptyState.step3Description")}
               />
-            </main>
+            </div>
 
-            <main className={styles["emptyActions"]}>
+            <div className={styles["emptyActions"]}>
               <Button
                 asChild
                 size='lg'
@@ -145,7 +145,7 @@ export default function ScansGrid(): React.JSX.Element {
                   <TbArrowRight className={styles["iconArrowRight"]} />
                 </Link>
               </Button>
-            </main>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
@@ -153,7 +153,7 @@ export default function ScansGrid(): React.JSX.Element {
   }
 
   return (
-    <main className={styles["scansGrid"]}>
+    <div className={styles["scansGrid"]}>
       {scans.map((scan) => (
         <ScanCardWrapper
           key={scan.id}
@@ -162,6 +162,6 @@ export default function ScansGrid(): React.JSX.Element {
           onToggleSelection={toggleSelection}
         />
       ))}
-    </main>
+    </div>
   );
 }

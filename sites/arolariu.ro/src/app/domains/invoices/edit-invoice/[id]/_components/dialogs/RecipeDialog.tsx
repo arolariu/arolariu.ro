@@ -78,10 +78,10 @@ const CreateDialog = () => {
         </DialogHeader>
 
         <form className={styles["formBody"]}>
-          <main className={styles["fieldGroup"]}>
-            <main className={styles["fieldHeader"]}>
+          <div className={styles["fieldGroup"]}>
+            <div className={styles["fieldHeader"]}>
               <Label htmlFor='name'>Recipe Name</Label>
-              <main>
+              <div>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -100,8 +100,8 @@ const CreateDialog = () => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </main>
-            </main>
+              </div>
+            </div>
             <Input
               id='name'
               name='name'
@@ -109,10 +109,10 @@ const CreateDialog = () => {
               onChange={handleChange}
               placeholder='Enter recipe name'
             />
-          </main>
+          </div>
 
           {/* Add description field */}
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='description'>Description</Label>
             <Textarea
               id='description'
@@ -122,10 +122,10 @@ const CreateDialog = () => {
               placeholder='Enter a brief description of the recipe'
               rows={2}
             />
-          </main>
+          </div>
 
-          <main className={styles["fieldGroup"]}>
-            <main className={styles["fieldHeader"]}>
+          <div className={styles["fieldGroup"]}>
+            <div className={styles["fieldHeader"]}>
               <Label>Ingredients</Label>
               <Button
                 type='button'
@@ -134,20 +134,20 @@ const CreateDialog = () => {
                 <TbPlus className='mr-1 h-4 w-4' />
                 Add
               </Button>
-            </main>
+            </div>
 
-            <main className={styles["fieldGroup"]}>
+            <div className={styles["fieldGroup"]}>
               {recipe.ingredients.map((ingredient, idx) => (
-                <main
+                <div 
                   key={idx}
                   className={styles["ingredientItem"]}>
-                  <main className={styles["ingredientRow"]}>
-                    <main className={styles["ingredientInput"]}>
+                  <div className={styles["ingredientRow"]}>
+                    <div className={styles["ingredientInput"]}>
                       <Input
                         value={ingredient.rawName}
                         placeholder={`Ingredient ${idx + 1} (from receipt or custom)`}
                       />
-                    </main>
+                    </div>
                     <Button
                       type='button'
                       variant='ghost'
@@ -155,14 +155,14 @@ const CreateDialog = () => {
                       disabled={recipe.ingredients.length <= 1}>
                       <TbX className='h-4 w-4' />
                     </Button>
-                  </main>
-                </main>
+                  </div>
+                </div>
               ))}
-            </main>
-          </main>
+            </div>
+          </div>
 
           {/* Add difficulty selector */}
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>Difficulty Level</Label>
             <Select
               value={RecipeComplexity[recipe.complexity]}
@@ -182,11 +182,11 @@ const CreateDialog = () => {
                 <SelectItem value='HARD'>Hard</SelectItem>
               </SelectContent>
             </Select>
-          </main>
+          </div>
 
           {/* Add instructions field */}
-          <main className={styles["fieldGroup"]}>
-            <main className={styles["fieldHeader"]}>
+          <div className={styles["fieldGroup"]}>
+            <div className={styles["fieldHeader"]}>
               <Label htmlFor='instructions'>Instructions</Label>
               <TooltipProvider>
                 <Tooltip>
@@ -205,7 +205,7 @@ const CreateDialog = () => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </main>
+            </div>
             <Textarea
               id='instructions'
               name='instructions'
@@ -214,13 +214,13 @@ const CreateDialog = () => {
               placeholder='Enter cooking instructions'
               rows={4}
             />
-          </main>
+          </div>
 
           {/* Add preparation time field */}
-          <main className={styles["timeGrid"]}>
-            <main className={styles["fieldGroup"]}>
+          <div className={styles["timeGrid"]}>
+            <div className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>Prep Time</Label>
-              <main className={styles["timeRow"]}>
+              <div className={styles["timeRow"]}>
                 <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
@@ -229,13 +229,13 @@ const CreateDialog = () => {
                   onChange={handleChange}
                   placeholder='e.g. 15 minutes'
                 />
-              </main>
-            </main>
+              </div>
+            </div>
 
             {/* Add cooking time field */}
-            <main className={styles["fieldGroup"]}>
+            <div className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>Cook Time</Label>
-              <main className={styles["timeRow"]}>
+              <div className={styles["timeRow"]}>
                 <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
@@ -244,13 +244,13 @@ const CreateDialog = () => {
                   onChange={handleChange}
                   placeholder='e.g. 30 minutes'
                 />
-              </main>
-            </main>
-          </main>
+              </div>
+            </div>
+          </div>
         </form>
 
         <DialogFooter className='flex items-center justify-between sm:justify-between'>
-          <main className={styles["footerActions"]}>
+          <div className={styles["footerActions"]}>
             <Button
               type='button'
               variant='outline'
@@ -263,7 +263,7 @@ const CreateDialog = () => {
               <TbDisc className='mr-2 h-4 w-4' />
               Save
             </Button>
-          </main>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -284,14 +284,14 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           <DialogDescription>Recipe details and cooking instructions</DialogDescription>
         </DialogHeader>
 
-        <main className={styles["formBody"]}>
+        <div className={styles["formBody"]}>
           {/* Add description field */}
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='description'>Description</Label>
             <p className={styles["readText"]}>{recipe?.description || "No description provided."}</p>
-          </main>
+          </div>
 
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label>Ingredients</Label>
             <ul className={styles["ingredientReadList"]}>
               {recipe?.ingredients.map((ingredient, idx) => (
@@ -302,9 +302,9 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 </li>
               ))}
             </ul>
-          </main>
+          </div>
 
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='complexity'>Complexity Level</Label>
             <Badge
               variant={
@@ -316,24 +316,24 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               }>
               {recipe?.complexity || "MEDIUM"}
             </Badge>
-          </main>
+          </div>
 
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='instructions'>Instructions</Label>
 
-            <main className={styles["timeGrid"]}>
+            <div className={styles["timeGrid"]}>
               <Label htmlFor='preparationTime'>Prep Time</Label>
               <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
               <span>{recipe?.preparationTime || "Not specified"}</span>
-            </main>
-          </main>
+            </div>
+          </div>
 
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='cookingTime'>Cook Time</Label>
             <TbToolsKitchen3 className='text-muted-foreground mr-2 h-4 w-4' />
             <span>{recipe?.cookingTime || "Not specified"}</span>
-          </main>
-        </main>
+          </div>
+        </div>
 
         <DialogFooter className='flex items-center justify-between sm:justify-between'>
           <Button
@@ -376,10 +376,10 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
         </DialogHeader>
 
         <form className={styles["formBody"]}>
-          <main className={styles["fieldGroup"]}>
-            <main className={styles["fieldHeader"]}>
+          <div className={styles["fieldGroup"]}>
+            <div className={styles["fieldHeader"]}>
               <Label htmlFor='name'>Recipe Name</Label>
-              <main>
+              <div>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -398,8 +398,8 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </main>
-            </main>
+              </div>
+            </div>
             <Input
               id='name'
               name='name'
@@ -407,10 +407,10 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               onChange={handleChange}
               placeholder='Enter recipe name'
             />
-          </main>
+          </div>
 
           {/* Add description field */}
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='description'>Description</Label>
             <Textarea
               id='description'
@@ -420,11 +420,11 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               placeholder='Enter a brief description of the recipe'
               rows={2}
             />
-          </main>
+          </div>
 
           {/* Add ingredients field */}
-          <main className={styles["fieldGroup"]}>
-            <main className={styles["fieldHeader"]}>
+          <div className={styles["fieldGroup"]}>
+            <div className={styles["fieldHeader"]}>
               <Label>Ingredients</Label>
               <Button
                 type='button'
@@ -433,20 +433,20 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 <TbPlus className='mr-1 h-4 w-4' />
                 Add
               </Button>
-            </main>
+            </div>
 
-            <main className={styles["fieldGroup"]}>
+            <div className={styles["fieldGroup"]}>
               {recipeDetails.ingredients.map((ingredient, idx) => (
-                <main
+                <div 
                   key={ingredient.rawName}
                   className={styles["ingredientItem"]}>
-                  <main className={styles["ingredientRow"]}>
-                    <main className={styles["ingredientInput"]}>
+                  <div className={styles["ingredientRow"]}>
+                    <div className={styles["ingredientInput"]}>
                       <Input
                         value={ingredient.rawName}
                         placeholder={`Ingredient ${idx + 1} (from receipt or custom)`}
                       />
-                    </main>
+                    </div>
                     <Button
                       type='button'
                       variant='ghost'
@@ -454,14 +454,14 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                       disabled={recipeDetails.ingredients.length <= 1}>
                       <TbX className='h-4 w-4' />
                     </Button>
-                  </main>
-                </main>
+                  </div>
+                </div>
               ))}
-            </main>
-          </main>
+            </div>
+          </div>
 
           {/* Add difficulty selector */}
-          <main className={styles["fieldGroup"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>Difficulty Level</Label>
             <Select
               value={RecipeComplexity[recipe.complexity]}
@@ -481,11 +481,11 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 <SelectItem value='HARD'>Hard</SelectItem>
               </SelectContent>
             </Select>
-          </main>
+          </div>
 
           {/* Add instructions field */}
-          <main className={styles["fieldGroup"]}>
-            <main className={styles["fieldHeader"]}>
+          <div className={styles["fieldGroup"]}>
+            <div className={styles["fieldHeader"]}>
               <Label htmlFor='instructions'>Instructions</Label>
               <TooltipProvider>
                 <Tooltip>
@@ -504,7 +504,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </main>
+            </div>
             <Textarea
               id='instructions'
               name='instructions'
@@ -513,13 +513,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               placeholder='Enter cooking instructions'
               rows={4}
             />
-          </main>
+          </div>
 
           {/* Add preparation time field */}
-          <main className={styles["timeGrid"]}>
-            <main className={styles["fieldGroup"]}>
+          <div className={styles["timeGrid"]}>
+            <div className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>Prep Time</Label>
-              <main className={styles["timeRow"]}>
+              <div className={styles["timeRow"]}>
                 <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
@@ -528,13 +528,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                   onChange={handleChange}
                   placeholder='e.g. 15 minutes'
                 />
-              </main>
-            </main>
+              </div>
+            </div>
 
             {/* Add cooking time field */}
-            <main className={styles["fieldGroup"]}>
+            <div className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>Cook Time</Label>
-              <main className={styles["timeRow"]}>
+              <div className={styles["timeRow"]}>
                 <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
@@ -543,13 +543,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                   onChange={handleChange}
                   placeholder='e.g. 30 minutes'
                 />
-              </main>
-            </main>
-          </main>
+              </div>
+            </div>
+          </div>
         </form>
 
         <DialogFooter className='flex items-center justify-between sm:justify-between'>
-          <main className={styles["footerActions"]}>
+          <div className={styles["footerActions"]}>
             <Button
               type='button'
               variant='outline'
@@ -562,7 +562,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               <TbDisc className='mr-2 h-4 w-4' />
               Save
             </Button>
-          </main>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

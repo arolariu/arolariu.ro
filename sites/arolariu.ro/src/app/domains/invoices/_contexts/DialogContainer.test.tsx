@@ -13,12 +13,12 @@ import {describe, expect, test, vi} from "vitest";
 
 // Mock @arolariu/components to avoid path alias resolution issues in tests
 vi.mock("@arolariu/components", () => ({
-  Dialog: ({children}: {children: React.ReactNode}) => <main>{children}</main>,
-  DialogContent: ({children}: {children: React.ReactNode}) => <main>{children}</main>,
-  DialogHeader: ({children}: {children: React.ReactNode}) => <main>{children}</main>,
-  DialogTitle: ({children}: {children: React.ReactNode}) => <main>{children}</main>,
-  DialogDescription: ({children}: {children: React.ReactNode}) => <main>{children}</main>,
-  DialogFooter: ({children}: {children: React.ReactNode}) => <main>{children}</main>,
+  Dialog: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogContent: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogHeader: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogTitle: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogDescription: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
+  DialogFooter: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
   Button: ({children}: {children: React.ReactNode}) => <button>{children}</button>,
   Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
   Label: ({children}: {children: React.ReactNode}) => <label>{children}</label>,
@@ -34,63 +34,63 @@ vi.mock("./DialogContext", () => ({
 
 // Mock all dialog components to return simple identifiable elements
 vi.mock("../_dialogs/DeleteInvoiceDialog", () => ({
-  default: () => <main data-testid='delete-invoice-dialog'>DeleteInvoiceDialog</main>,
+  default: () => <div data-testid='delete-invoice-dialog'>DeleteInvoiceDialog</div>,
 }));
 
 vi.mock("../_dialogs/ShareInvoiceDialog", () => ({
-  default: () => <main data-testid='share-invoice-dialog'>ShareInvoiceDialog</main>,
+  default: () => <div data-testid='share-invoice-dialog'>ShareInvoiceDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/AnalyzeDialog", () => ({
-  default: () => <main data-testid='analyze-dialog'>AnalyzeDialog</main>,
+  default: () => <div data-testid='analyze-dialog'>AnalyzeDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/FeedbackDialog", () => ({
-  default: () => <main data-testid='feedback-dialog'>InvoiceFeedbackDialog</main>,
+  default: () => <div data-testid='feedback-dialog'>InvoiceFeedbackDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/ImageDialog", () => ({
-  default: () => <main data-testid='image-dialog'>InvoiceImageDialog</main>,
+  default: () => <div data-testid='image-dialog'>InvoiceImageDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/ItemsDialog", () => ({
-  default: () => <main data-testid='items-dialog'>InvoiceItemsDialog</main>,
+  default: () => <div data-testid='items-dialog'>InvoiceItemsDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/MerchantDialog", () => ({
-  default: () => <main data-testid='merchant-dialog'>InvoiceMerchantDialog</main>,
+  default: () => <div data-testid='merchant-dialog'>InvoiceMerchantDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog", () => ({
-  default: () => <main data-testid='merchant-receipts-dialog'>InvoiceMerchantReceiptsDialog</main>,
+  default: () => <div data-testid='merchant-receipts-dialog'>InvoiceMerchantReceiptsDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/MetadataDialog", () => ({
-  default: () => <main data-testid='metadata-dialog'>InvoiceMetadataDialog</main>,
+  default: () => <div data-testid='metadata-dialog'>InvoiceMetadataDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/RecipeDialog", () => ({
-  default: () => <main data-testid='recipe-dialog'>InvoiceRecipeDialog</main>,
+  default: () => <div data-testid='recipe-dialog'>InvoiceRecipeDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/AddScanDialog", () => ({
-  default: () => <main data-testid='add-scan-dialog'>AddScanDialog</main>,
+  default: () => <div data-testid='add-scan-dialog'>AddScanDialog</div>,
 }));
 
 vi.mock("../edit-invoice/[id]/_components/dialogs/RemoveScanDialog", () => ({
-  default: () => <main data-testid='remove-scan-dialog'>RemoveScanDialog</main>,
+  default: () => <div data-testid='remove-scan-dialog'>RemoveScanDialog</div>,
 }));
 
 vi.mock("../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog", () => ({
-  default: () => <main data-testid='share-analytics-dialog'>ShareAnalyticsDialog</main>,
+  default: () => <div data-testid='share-analytics-dialog'>ShareAnalyticsDialog</div>,
 }));
 
 vi.mock("../view-invoices/_components/dialogs/ExportDialog", () => ({
-  default: () => <main data-testid='export-dialog'>InvoicesExportDialog</main>,
+  default: () => <div data-testid='export-dialog'>InvoicesExportDialog</div>,
 }));
 
 vi.mock("../view-invoices/_components/dialogs/ImportDialog", () => ({
-  default: () => <main data-testid='import-dialog'>InvoicesImportDialog</main>,
+  default: () => <div data-testid='import-dialog'>InvoicesImportDialog</div>,
 }));
 
 // Import the component after mocks are set up

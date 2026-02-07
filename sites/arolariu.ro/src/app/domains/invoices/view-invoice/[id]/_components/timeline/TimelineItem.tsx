@@ -46,20 +46,20 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
   const tooltipContent = getEventTooltipContent(event.type, event.metadata);
 
   return (
-    <main className={`${styles["item"]} ${isLast ? styles["isLast"] : ""}`}>
+    <div className={`${styles["item"]} ${isLast ? styles["isLast"] : ""}`}>
       {/* Connector line */}
-      {!isLast && <main className={styles["connectorLine"]} />}
+      {!isLast && <div className={styles["connectorLine"]} />}
 
-      <main className={styles["contentRow"]}>
+      <div className={styles["contentRow"]}>
         {/* Icon circle */}
-        <main className={`${styles["iconCircle"]} ${event.completed ? styles["iconCompleted"] : styles["iconPending"]}`}>
+        <div className={`${styles["iconCircle"]} ${event.completed ? styles["iconCompleted"] : styles["iconPending"]}`}>
           {icon}
-        </main>
+        </div>
 
         {/* Content */}
-        <main className={styles["contentBody"]}>
-          <main className={styles["titleRow"]}>
-            <main className={styles["titleContent"]}>
+        <div className={styles["contentBody"]}>
+          <div className={styles["titleRow"]}>
+            <div className={styles["titleContent"]}>
               <p className={styles["eventTitle"]}>{event.title}</p>
               {/* Info icon with tooltip */}
               <TooltipProvider delayDuration={200}>
@@ -83,13 +83,13 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </main>
+            </div>
             <span className={styles["dateLabel"]}>{formatDate(event.date, {locale})}</span>
-          </main>
+          </div>
           <p className={styles["description"]}>{event.description}</p>
           <p className={styles["relativeTime"]}>{getRelativeTime(event.date)}</p>
-        </main>
-      </main>
-    </main>
+        </div>
+      </div>
+    </div>
   );
 }

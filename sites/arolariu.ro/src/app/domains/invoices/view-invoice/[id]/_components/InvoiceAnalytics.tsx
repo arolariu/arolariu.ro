@@ -42,15 +42,15 @@ export function InvoiceAnalytics(): React.JSX.Element {
   const merchantBreakdown = getMerchantBreakdown();
 
   return (
-    <main className={styles["container"]}>
+    <div className={styles["container"]}>
       <Tabs
         defaultValue='current'
         className='w-full'>
-        <main className={styles["tabHeader"]}>
-          <main className={styles["sectionTitle"]}>
+        <div className={styles["tabHeader"]}>
+          <div className={styles["sectionTitle"]}>
             <TbChartBar className='text-muted-foreground h-5 w-5' />
             <h2 className={styles["sectionTitleText"]}>Analytics & Insights</h2>
-          </main>
+          </div>
           <TabsList className='grid w-full grid-cols-2 sm:w-auto'>
             <TabsTrigger
               value='current'
@@ -67,45 +67,45 @@ export function InvoiceAnalytics(): React.JSX.Element {
               </TabsTrigger>
             )}
           </TabsList>
-        </main>
+        </div>
 
         {/* Current Invoice Analytics */}
         <TabsContent
           value='current'
           className='mt-0'>
-          <main className={styles["analyticsGrid"]}>
+          <div className={styles["analyticsGrid"]}>
             {/* Summary Stats */}
-            <main className={styles["gridItem"]}>
+            <div className={styles["gridItem"]}>
               <SummaryStatsCard
                 summary={summary}
                 currency={currency}
               />
-            </main>
+            </div>
 
             {/* Spending by Category */}
-            <main className={styles["gridItem"]}>
+            <div className={styles["gridItem"]}>
               <SpendingByCategoryChart
                 data={categoryData}
                 currency={currency}
               />
-            </main>
+            </div>
 
             {/* Price Distribution */}
-            <main className={styles["gridItem"]}>
+            <div className={styles["gridItem"]}>
               <PriceDistributionChart
                 data={priceData}
                 currency={currency}
               />
-            </main>
+            </div>
 
             {/* Items Breakdown - Full Width on larger screens */}
-            <main className={styles["gridItemFullWidth"]}>
+            <div className={styles["gridItemFullWidth"]}>
               <ItemsBreakdownChart
                 data={quantityData}
                 currency={currency}
               />
-            </main>
-          </main>
+            </div>
+          </div>
         </TabsContent>
 
         {/* Comparison Analytics */}
@@ -113,43 +113,43 @@ export function InvoiceAnalytics(): React.JSX.Element {
           <TabsContent
             value='compare'
             className='mt-0'>
-            <main className={styles["analyticsGrid"]}>
+            <div className={styles["analyticsGrid"]}>
               {/* Comparison Stats */}
-              <main className={styles["gridItem"]}>
+              <div className={styles["gridItem"]}>
                 <ComparisonStatsCard
                   stats={comparisonStats}
                   currency={currency}
                 />
-              </main>
+              </div>
 
               {/* Spending Trend */}
-              <main className={styles["gridItemWide"]}>
+              <div className={styles["gridItemWide"]}>
                 <SpendingTrendChart
                   data={trendData}
                   currency={currency}
                 />
-              </main>
+              </div>
 
               {/* Category Comparison */}
-              <main className={styles["gridItemWide"]}>
+              <div className={styles["gridItemWide"]}>
                 <CategoryComparisonChart
                   data={categoryComparison}
                   currency={currency}
                 />
-              </main>
+              </div>
 
               {/* Merchant Breakdown */}
-              <main className={styles["gridItem"]}>
+              <div className={styles["gridItem"]}>
                 <MerchantBreakdownChart
                   data={merchantBreakdown}
                   currency={currency}
                   currentMerchant={merchant.name}
                 />
-              </main>
-            </main>
+              </div>
+            </div>
           </TabsContent>
         )}
       </Tabs>
-    </main>
+    </div>
   );
 }

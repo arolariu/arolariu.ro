@@ -109,8 +109,8 @@ export default function RemoveScanDialog(): React.JSX.Element {
         </DialogHeader>
 
         {scan ? (
-          <main className={styles["previewSection"]}>
-            <main className={styles["previewImage"]}>
+          <div className={styles["previewSection"]}>
+            <div className={styles["previewImage"]}>
               <Image
                 src={scan.location}
                 alt={`Scan ${scanIndex + 1}`}
@@ -118,16 +118,16 @@ export default function RemoveScanDialog(): React.JSX.Element {
                 height={300}
                 className={styles["scanPreviewImage"]}
               />
-            </main>
+            </div>
             <p className={styles["previewCaption"]}>Scan {scanIndex + 1}</p>
-          </main>
+          </div>
         ) : null}
 
         {isLastScan ? (
-          <main className={styles["warningBox"]}>
+          <div className={styles["warningBox"]}>
             <p className={styles["warningTitle"]}>Cannot remove last scan</p>
             <p className={styles["warningText"]}>Every invoice must have at least one scan attached. Add another scan before removing this one.</p>
-          </main>
+          </div>
         ) : null}
 
         <DialogFooter>

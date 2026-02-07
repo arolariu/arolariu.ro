@@ -186,37 +186,37 @@ export function SeasonalInsightsCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Month comparison */}
-        <main className={styles["monthSection"]}>
-          <main className={styles["monthRow"]}>
+        <div className={styles["monthSection"]}>
+          <div className={styles["monthRow"]}>
             <span className={styles["monthLabel"]}>{monthName} so far</span>
             <span className={styles["monthValue"]}>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
-          </main>
+          </div>
           <Progress
             value={percentOfAverage}
             className='h-2'
           />
-          <main className={styles["monthMeta"]}>
+          <div className={styles["monthMeta"]}>
             <span>
               vs {monthName} avg: {formatCurrency(decemberAverage, {currencyCode: currency.code, locale})}
             </span>
             <span>{percentOfAverage.toFixed(0)}%</span>
-          </main>
-        </main>
+          </div>
+        </div>
 
         {/* Insights list */}
-        <main className={styles["insightsList"]}>
+        <div className={styles["insightsList"]}>
           {insights.map((insight) => (
-            <main
+            <div 
               key={insight.id}
               className={`${styles["insightItem"]} ${getInsightContainerClass(insight.type)}`}>
-              <main className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</main>
-              <main className={styles["insightContent"]}>
+              <div className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</div>
+              <div className={styles["insightContent"]}>
                 <p className={styles["insightTitle"]}>{insight.title}</p>
                 <p className={styles["insightDescription"]}>{insight.description}</p>
-              </main>
-            </main>
+              </div>
+            </div>
           ))}
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

@@ -36,7 +36,7 @@ export function InvoiceTimeline(): React.JSX.Element {
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-4'>
-        <main className={styles["headerRow"]}>
+        <div className={styles["headerRow"]}>
           <CardTitle className='flex items-center gap-2 text-lg'>
             <TbCalendar className='text-muted-foreground h-4 w-4' />
             Invoice Timeline
@@ -46,18 +46,18 @@ export function InvoiceTimeline(): React.JSX.Element {
             className='text-xs'>
             {totalEvents} {totalEvents === 1 ? "event" : "events"}
           </Badge>
-        </main>
+        </div>
         <p className={styles["subtitle"]}>Complete history of actions and changes</p>
       </CardHeader>
 
       <CardContent className='space-y-6'>
         {/* Timeline events grouped by date */}
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-          <main
+          <div 
             key={dateKey}
             className={styles["dateGroup"]}>
             <p className={styles["dateLabel"]}>{dateKey}</p>
-            <main className={styles["eventsContainer"]}>
+            <div className={styles["eventsContainer"]}>
               {dateEvents.map((event, idx) => (
                 <TimelineItem
                   key={event.id}
@@ -66,8 +66,8 @@ export function InvoiceTimeline(): React.JSX.Element {
                   isLast={idx === dateEvents.length - 1}
                 />
               ))}
-            </main>
-          </main>
+            </div>
+          </div>
         ))}
 
         {/* Shared with section */}

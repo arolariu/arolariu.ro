@@ -63,11 +63,11 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
       animate={{opacity: 1}}
       transition={{duration: 0.5}}
       className={styles["container"]}>
-      <main className={styles["header"]}>
-        <main>
+      <div className={styles["header"]}>
+        <div>
           <h2 className={styles["title"]}>Live Analysis</h2>
           <p className={styles["subtitle"]}>Chat with AI to analyze your invoices and get insights</p>
-        </main>
+        </div>
         <Button
           variant='outline'
           size='sm'
@@ -75,7 +75,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           <TbHelpCircle className={styles["actionIcon"]} />
           <span>Help</span>
         </Button>
-      </main>
+      </div>
 
       <Tabs
         defaultValue='chat'
@@ -105,13 +105,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <main className={styles["chatContainer"]}>
-                <main className={styles["chatMessages"]}>
+              <div className={styles["chatContainer"]}>
+                <div className={styles["chatMessages"]}>
                   <MessageList messages={messages} />
-                  <main ref={messagesEndRef} />
-                </main>
-                <main className={styles["chatInput"]} />
-              </main>
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className={styles["chatInput"]} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -124,8 +124,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               <CardDescription>Configure your AI assistant preferences</CardDescription>
             </CardHeader>
             <CardContent>
-              <main className={styles["settingsContainer"]}>
-                <main className={styles["settingsField"]}>
+              <div className={styles["settingsContainer"]}>
+                <div className={styles["settingsField"]}>
                   <Label htmlFor='history'>Chat History</Label>
                   <Select defaultValue='30'>
                     <SelectTrigger id='history'>
@@ -138,11 +138,11 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       <SelectItem value='0'>Don&apos;t save history</SelectItem>
                     </SelectContent>
                   </Select>
-                </main>
+                </div>
 
-                <main className={styles["settingsField"]}>
+                <div className={styles["settingsField"]}>
                   <span className={styles["settingsLabel"]}>Data Access</span>
-                  <main className={styles["checkboxRow"]}>
+                  <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='access-invoices'
                       defaultChecked
@@ -152,8 +152,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       className='text-sm font-normal'>
                       Allow access to invoice data
                     </Label>
-                  </main>
-                  <main className={styles["checkboxRow"]}>
+                  </div>
+                  <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='access-merchants'
                       defaultChecked
@@ -163,12 +163,12 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       className='text-sm font-normal'>
                       Allow access to merchant data
                     </Label>
-                  </main>
-                </main>
+                  </div>
+                </div>
 
-                <main className={styles["settingsField"]}>
+                <div className={styles["settingsField"]}>
                   <span className={styles["settingsLabel"]}>Notification Preferences</span>
-                  <main className={styles["checkboxRow"]}>
+                  <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='notify-insights'
                       defaultChecked
@@ -178,11 +178,11 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       className='text-sm font-normal'>
                       Notify me about new insights
                     </Label>
-                  </main>
-                </main>
+                  </div>
+                </div>
 
                 <Button className='w-full'>Save Settings</Button>
-              </main>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

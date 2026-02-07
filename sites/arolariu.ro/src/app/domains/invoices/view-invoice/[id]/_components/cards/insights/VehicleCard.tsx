@@ -61,45 +61,45 @@ export function VehicleCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Expense Type Badge */}
-        <main className={styles["expenseType"]}>
+        <div className={styles["expenseType"]}>
           <TbGasStation className='h-4 w-4 text-amber-500' />
           <span className={styles["expenseTypeLabel"]}>Expense Type: Fuel</span>
-        </main>
+        </div>
 
         {/* Fuel Details Grid */}
-        <main className={styles["detailsGrid"]}>
-          <main className={styles["detailItem"]}>
+        <div className={styles["detailsGrid"]}>
+          <div className={styles["detailItem"]}>
             <TbGasStation className='h-4 w-4 text-amber-500' />
-            <main>
+            <div>
               <p className={styles["detailLabel"]}>Liters</p>
               <p className={styles["detailValue"]}>~{liters}L</p>
-            </main>
-          </main>
-          <main className={styles["detailItem"]}>
+            </div>
+          </div>
+          <div className={styles["detailItem"]}>
             <TbCurrencyDollar className='h-4 w-4 text-green-500' />
-            <main>
+            <div>
               <p className={styles["detailLabel"]}>Price/L</p>
               <p className={styles["detailValue"]}>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
-            </main>
-          </main>
-          <main className={styles["detailItem"]}>
+            </div>
+          </div>
+          <div className={styles["detailItem"]}>
             <TbMapPin className='h-4 w-4 text-red-500' />
-            <main>
+            <div>
               <p className={styles["detailLabel"]}>Station</p>
               <p className={styles["detailValue"]}>{station}</p>
-            </main>
-          </main>
-          <main className={styles["detailItem"]}>
+            </div>
+          </div>
+          <div className={styles["detailItem"]}>
             <TbCar className='h-4 w-4 text-blue-500' />
-            <main>
+            <div>
               <p className={styles["detailLabel"]}>Vehicle</p>
               <p className={styles["detailValueMuted"]}>Not set</p>
-            </main>
-          </main>
-        </main>
+            </div>
+          </div>
+        </div>
 
         {/* Monthly Fuel Spending Chart */}
-        <main className={styles["chartSection"]}>
+        <div className={styles["chartSection"]}>
           <h4 className={styles["chartTitle"]}>Monthly Fuel Spending</h4>
           <ChartContainer
             config={{
@@ -153,36 +153,36 @@ export function VehicleCard(): React.JSX.Element {
               </AreaChart>
             </ResponsiveContainer>
           </ChartContainer>
-        </main>
+        </div>
 
         {/* Stats Cards */}
-        <main className={styles["statsGrid"]}>
-          <main className={styles["statCard"]}>
+        <div className={styles["statsGrid"]}>
+          <div className={styles["statCard"]}>
             <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
             <p className={styles["statLabel"]}>This Month</p>
             <p className={styles["statValue"]}>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
             <p className={styles["statSub"]}>{fillUps} fill-ups</p>
-          </main>
-          <main className={styles["statCard"]}>
+          </div>
+          <div className={styles["statCard"]}>
             <TbGauge className='mx-auto mb-1 h-4 w-4 text-green-500' />
             <p className={styles["statLabel"]}>Cost/km</p>
             <p className={styles["statValue"]}>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
             <p className={styles["statSub"]}>estimated</p>
-          </main>
-          <main className={styles["statCard"]}>
+          </div>
+          <div className={styles["statCard"]}>
             <TbTrendingUp className='mx-auto mb-1 h-4 w-4 text-red-500' />
             <p className={styles["statLabel"]}>Fuel Price</p>
             <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>+{priceChange}%</p>
             <p className={styles["statSub"]}>this month</p>
-          </main>
-        </main>
+          </div>
+        </div>
 
         {/* Maintenance Reminders */}
-        <main>
-          <main className={styles["remindersHeader"]}>
+        <div>
+          <div className={styles["remindersHeader"]}>
             <TbBarrel className='h-4 w-4 text-gray-500' />
             <h4 className={styles["remindersTitle"]}>Maintenance Reminders</h4>
-          </main>
+          </div>
           <ul className={styles["remindersList"]}>
             {reminders.map((r) => (
               <li
@@ -193,21 +193,21 @@ export function VehicleCard(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </main>
+        </div>
 
         {/* Cheapest Nearby */}
-        <main className={styles["tipBox"]}>
+        <div className={styles["tipBox"]}>
           <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-green-600' />
-          <main>
+          <div>
             <p className={styles["tipTitle"]}>Cheapest Nearby</p>
             <p className={styles["tipDescription"]}>
               {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/L
             </p>
-          </main>
-        </main>
+          </div>
+        </div>
 
         {/* CTA Buttons */}
-        <main className={styles["ctaButtons"]}>
+        <div className={styles["ctaButtons"]}>
           <Button
             variant='outline'
             size='sm'
@@ -220,7 +220,7 @@ export function VehicleCard(): React.JSX.Element {
             className='flex-1 bg-transparent'>
             Full Report
           </Button>
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

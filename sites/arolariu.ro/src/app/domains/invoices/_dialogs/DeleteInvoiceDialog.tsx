@@ -158,18 +158,18 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["confirmBody"]}>
               {/* Invoice Summary Card */}
-              <main className={styles["summaryCard"]}>
-                <main className={styles["summaryRow"]}>
-                  <main className={styles["summaryIconBox"]}>
+              <div className={styles["summaryCard"]}>
+                <div className={styles["summaryRow"]}>
+                  <div className={styles["summaryIconBox"]}>
                     <TbReceipt className={styles["summaryIcon"]} />
-                  </main>
-                  <main className={styles["summaryContent"]}>
+                  </div>
+                  <div className={styles["summaryContent"]}>
                     <p className={styles["summaryName"]}>{invoiceName}</p>
                     <p className={styles["summaryId"]}>{invoice.id}</p>
                     {invoice.description ? <p className={styles["summaryDescription"]}>{invoice.description}</p> : null}
-                  </main>
-                </main>
-              </main>
+                  </div>
+                </div>
+              </div>
 
               {/* Deletion Impact Warning */}
               <Alert
@@ -209,8 +209,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <Separator />
 
               {/* Confirmation Input */}
-              <main className={styles["confirmSection"]}>
-                <main className={styles["confirmField"]}>
+              <div className={styles["confirmSection"]}>
+                <div className={styles["confirmField"]}>
                   <Label htmlFor='confirm-name'>
                     Type <span className={styles["confirmHighlight"]}>{invoiceName}</span> to confirm:
                   </Label>
@@ -222,16 +222,16 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                     className={confirmText === invoiceName ? "border-green-500 focus-visible:ring-green-500" : ""}
                     autoComplete='off'
                   />
-                </main>
+                </div>
 
                 {/* Understanding Checkbox */}
-                <main className={styles["checkboxCard"]}>
+                <div className={styles["checkboxCard"]}>
                   <Checkbox
                     id='understand-deletion'
                     checked={understoodCheckbox}
                     onCheckedChange={handleCheckboxChange}
                   />
-                  <main className={styles["checkboxContent"]}>
+                  <div className={styles["checkboxContent"]}>
                     <Label
                       htmlFor='understand-deletion'
                       className='cursor-pointer text-sm leading-none font-medium'>
@@ -240,9 +240,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                     <p className={styles["checkboxDescription"]}>
                       This invoice and all its data will be permanently deleted and cannot be recovered.
                     </p>
-                  </main>
-                </main>
-              </main>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

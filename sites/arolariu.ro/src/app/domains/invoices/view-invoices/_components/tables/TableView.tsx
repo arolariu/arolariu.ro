@@ -79,9 +79,9 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <main className={styles["emptyState"]}>
-        <main className={styles["emptyMessage"]}>No invoices found</main>
-      </main>
+      <div className={styles["emptyState"]}>
+        <div className={styles["emptyMessage"]}>No invoices found</div>
+      </div>
     );
   }
 
@@ -161,7 +161,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 })}
               </TableCell>
               <TableCell className={styles["actionsCell"]}>
-                <main className={styles["actionsRow"]}>
+                <div className={styles["actionsRow"]}>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger
@@ -177,7 +177,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                     </Tooltip>
                   </TooltipProvider>
                   <TableViewActions invoice={invoice} />
-                </main>
+                </div>
               </TableCell>
             </TableRow>
           ))}
@@ -186,7 +186,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={4}>
-              <main className={styles["footerContent"]}>
+              <div className={styles["footerContent"]}>
                 <span className={styles["footerLabel"]}>Rows per page:</span>
                 <Select
                   value={String(pageSize)}
@@ -210,7 +210,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 <span className={styles["footerLabel"]}>
                   Page {currentPage} of {totalPages}
                 </span>
-              </main>
+              </div>
             </TableCell>
             <TableCell
               colSpan={1}

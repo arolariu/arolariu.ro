@@ -191,9 +191,9 @@ export default function AddScanDialog(): React.JSX.Element {
         </DialogHeader>
 
         {/* eslint-disable react/jsx-props-no-spreading, react/jsx-handler-names -- react-dropzone library requires spread props */}
-        <main className={styles["body"]}>
+        <div className={styles["body"]}>
           {/* Dropzone - using react-dropzone library pattern with spread props */}
-          <main
+          <div 
             {...getRootProps()}
             className={
               isUploading
@@ -217,18 +217,18 @@ export default function AddScanDialog(): React.JSX.Element {
               </>
             )}
             <p className={styles["dropFormats"]}>JPEG, PNG, PDF (max 10MB)</p>
-          </main>
+          </div>
 
           {/* Selected file preview */}
           {file ? (
-            <main className={styles["filePreview"]}>
-              <main className={styles["fileInfo"]}>
+            <div className={styles["filePreview"]}>
+              <div className={styles["fileInfo"]}>
                 <TbFile className={styles["fileIcon"]} />
-                <main className={styles["fileTextWrapper"]}>
+                <div className={styles["fileTextWrapper"]}>
                   <p className={styles["fileName"]}>{file.name}</p>
                   <p className={styles["fileSize"]}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                </main>
-              </main>
+                </div>
+              </div>
               <Button
                 type='button'
                 variant='ghost'
@@ -238,12 +238,12 @@ export default function AddScanDialog(): React.JSX.Element {
                 className='h-8 w-8 shrink-0'>
                 <TbX className='h-4 w-4' />
               </Button>
-            </main>
+            </div>
           ) : null}
 
           {/* Scan type selector */}
           {file ? (
-            <main className={styles["scanTypeGrid"]}>
+            <div className={styles["scanTypeGrid"]}>
               <Label htmlFor='scan-type'>Scan Type</Label>
               <Select
                 value={String(scanType)}
@@ -259,9 +259,9 @@ export default function AddScanDialog(): React.JSX.Element {
                   <SelectItem value={String(InvoiceScanType.OTHER)}>Other</SelectItem>
                 </SelectContent>
               </Select>
-            </main>
+            </div>
           ) : null}
-        </main>
+        </div>
         {/* eslint-enable react/jsx-props-no-spreading, react/jsx-handler-names */}
 
         <DialogFooter>

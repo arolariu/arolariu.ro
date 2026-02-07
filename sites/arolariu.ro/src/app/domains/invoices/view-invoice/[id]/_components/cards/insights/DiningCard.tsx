@@ -66,54 +66,54 @@ export function DiningCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Estimated Nutrition */}
-        <main>
+        <div>
           <h4 className={styles["sectionTitle"]}>Estimated Nutrition</h4>
-          <main className={styles["nutritionGrid"]}>
-            <main className={styles["nutritionItem"]}>
+          <div className={styles["nutritionGrid"]}>
+            <div className={styles["nutritionItem"]}>
               <TbFlame className='h-4 w-4 text-orange-500' />
-              <main>
+              <div>
                 <p className={styles["nutritionLabel"]}>Calories</p>
                 <p className={styles["nutritionValue"]}>~{estimatedCalories} kcal</p>
-              </main>
-            </main>
-            <main className={styles["nutritionItem"]}>
+              </div>
+            </div>
+            <div className={styles["nutritionItem"]}>
               <TbMeat className='h-4 w-4 text-red-500' />
-              <main>
+              <div>
                 <p className={styles["nutritionLabel"]}>Protein</p>
                 <p className={styles["nutritionValue"]}>~{estimatedProtein}g</p>
-              </main>
-            </main>
-            <main className={styles["nutritionItem"]}>
+              </div>
+            </div>
+            <div className={styles["nutritionItem"]}>
               <TbAlertTriangle className={`h-4 w-4 ${sodiumLevel === "High" ? "text-red-500" : "text-yellow-500"}`} />
-              <main>
+              <div>
                 <p className={styles["nutritionLabel"]}>Sodium</p>
                 <p className={styles["nutritionValue"]}>
                   {sodiumLevel}
                   {sodiumLevel === "High" && <span className={styles["sodiumWarning"]}>!</span>}
                 </p>
-              </main>
-            </main>
-            <main className={styles["nutritionItem"]}>
+              </div>
+            </div>
+            <div className={styles["nutritionItem"]}>
               <TbCookie className='h-4 w-4 text-amber-500' />
-              <main>
+              <div>
                 <p className={styles["nutritionLabel"]}>Carbs</p>
                 <p className={styles["nutritionValue"]}>~{estimatedCarbs}g</p>
-              </main>
-            </main>
-          </main>
-        </main>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Fast Food Habits */}
-        <main>
+        <div>
           <h4 className={styles["sectionTitle"]}>Your Fast Food Habits</h4>
-          <main className={styles["habitsGrid"]}>
-            <main className={styles["habitCard"]}>
+          <div className={styles["habitsGrid"]}>
+            <div className={styles["habitCard"]}>
               <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
               <p className={styles["habitLabel"]}>Frequency</p>
               <p className={styles["habitValue"]}>{fastFoodFrequency}x/month</p>
               <p className={styles["habitSub"]}>+1 vs avg</p>
-            </main>
-            <main className={styles["habitCard"]}>
+            </div>
+            <div className={styles["habitCard"]}>
               <TbUserDollar className='mx-auto mb-1 h-4 w-4 text-green-500' />
               <p className={styles["habitLabel"]}>Avg Spend</p>
               <p className={styles["habitValue"]}>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
@@ -121,22 +121,22 @@ export function DiningCard(): React.JSX.Element {
                 {spendDiff > 0 ? "+" : ""}
                 {spendDiff.toFixed(0)}%
               </p>
-            </main>
-            <main className={styles["habitCard"]}>
+            </div>
+            <div className={styles["habitCard"]}>
               <TbMapPin className='mx-auto mb-1 h-4 w-4 text-red-500' />
               <p className={styles["habitLabel"]}>Favorite</p>
               <p className={styles["habitValue"]}>{favoritePlace}</p>
               <p className={styles["habitSub"]}>{visits} visits</p>
-            </main>
-          </main>
-        </main>
+            </div>
+          </div>
+        </div>
 
         {/* Healthier Swaps */}
-        <main>
-          <main className={styles["swapsHeader"]}>
+        <div>
+          <div className={styles["swapsHeader"]}>
             <TbBulb className='h-4 w-4 text-amber-500' />
             <h4 className={styles["swapsTitle"]}>Healthier Swaps</h4>
-          </main>
+          </div>
           <ul className={styles["swapsList"]}>
             {swaps.map((s) => (
               <li
@@ -154,12 +154,12 @@ export function DiningCard(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </main>
+        </div>
 
         {/* Challenge */}
-        <main className={styles["challengeBox"]}>
+        <div className={styles["challengeBox"]}>
           <TbTarget className='mt-0.5 h-5 w-5 shrink-0 text-purple-500' />
-          <main>
+          <div>
             <p className={styles["challengeTitle"]}>Weekly Challenge</p>
             <p className={styles["challengeDescription"]}>
               Skip fast food for 7 days and save{" "}
@@ -167,8 +167,8 @@ export function DiningCard(): React.JSX.Element {
                 {formatCurrency(challengeSavings, {currencyCode: currency.code, locale})}
               </span>
             </p>
-          </main>
-        </main>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

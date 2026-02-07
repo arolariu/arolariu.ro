@@ -157,7 +157,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
       <CardContent className='h-full p-4'>
         <p className={styles["description"]}>{description}</p>
 
-        <main className={styles["ingredientsSection"]}>
+        <div className={styles["ingredientsSection"]}>
           <h4 className={styles["ingredientsLabel"]}>Ingredients:</h4>
           <ul className={styles["ingredientsList"]}>
             {ingredients.slice(0, 3).map((ingredient) => (
@@ -181,17 +181,17 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               </TooltipProvider>
             )}
           </ul>
-        </main>
+        </div>
 
         {/** Prep + Cook times */}
-        <main className={styles["timingRow"]}>
+        <div className={styles["timingRow"]}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <main className={styles["timeItem"]}>
+                <div className={styles["timeItem"]}>
                   <TbClock className='mr-1 h-3 w-3' />
                   Prep: {preparationTime}&lsquo;
-                </main>
+                </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
                 <p>Preparation time is {preparationTime} minutes.</p>
@@ -199,17 +199,17 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <main className={styles["timeItem"]}>
+                <div className={styles["timeItem"]}>
                   <TbToolsKitchen className='mr-1 h-3 w-3' />
                   Cook: {cookingTime}&lsquo;
-                </main>
+                </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
                 <p>Cooking time is {cookingTime} minutes.</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </main>
+        </div>
       </CardContent>
 
       <CardFooter className='bg-muted/50 flex items-center justify-center justify-items-center gap-2 px-4 py-2'>

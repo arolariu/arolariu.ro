@@ -7,7 +7,7 @@ import styles from "./InvoicesNotFound.module.scss";
  */
 export default function InvoicesNotFound() {
   return (
-    <main className={styles["container"]}>
+    <div className={styles["container"]}>
       <h1 className={styles["title"]}>Something is missing here...</h1>
       <article className={styles["description"]}>
         It seems that you do not have any invoices associated with your account... <br />
@@ -18,6 +18,6 @@ export default function InvoicesNotFound() {
         className={styles["ctaLink"]}>
         Upload an invoice here.
       </Link>
-    </main>
+    </div>
   );
 }

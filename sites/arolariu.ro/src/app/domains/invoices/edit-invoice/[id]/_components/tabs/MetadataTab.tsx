@@ -74,10 +74,10 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
       transition={{duration: 0.2}}>
       <Card className='group transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between pb-2'>
-          <main>
+          <div>
             <CardTitle>Additional Information</CardTitle>
             <CardDescription>Metadata associated with this invoice</CardDescription>
-          </main>
+          </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -97,7 +97,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
         </CardHeader>
         <CardContent>
           {Object.keys(metadata).length > 0 ? (
-            <main className={styles["metadataGrid"]}>
+            <div className={styles["metadataGrid"]}>
               {Object.entries(metadata).map(([key, value], index) => (
                 <motion.div
                   key={key}
@@ -115,7 +115,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                   </span>
                   <span>{value}</span>
 
-                  <main className={styles["editButton"]}>
+                  <div className={styles["editButton"]}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -141,12 +141,12 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </main>
+                  </div>
                 </motion.div>
               ))}
-            </main>
+            </div>
           ) : (
-            <main className={styles["emptyState"]}>
+            <div className={styles["emptyState"]}>
               <p className={styles["emptyText"]}>No metadata fields added yet</p>
               <Button
                 onClick={openAddDialog}
@@ -154,7 +154,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                 <TbPlus className='mr-2 h-4 w-4' />
                 Add Your First Metadata Field
               </Button>
-            </main>
+            </div>
           )}
         </CardContent>
       </Card>

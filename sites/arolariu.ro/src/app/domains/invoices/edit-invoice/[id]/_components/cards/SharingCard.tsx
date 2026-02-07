@@ -131,8 +131,8 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
         <CardTitle>Sharing</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <main className={styles["ownerRow"]}>
-          <main className={styles["ownerAvatar"]}>
+        <div className={styles["ownerRow"]}>
+          <div className={styles["ownerAvatar"]}>
             {userInformation?.user?.imageUrl ? (
               <Image
                 src={userInformation?.user?.imageUrl!}
@@ -145,12 +145,12 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             ) : (
               <TbUser className='text-primary h-5 w-5' />
             )}
-          </main>
-          <main>
+          </div>
+          <div>
             <p className={styles["ownerName"]}>Owner</p>
             <p className={styles["ownerUsername"]}>{userInformation?.user?.username}</p>
-          </main>
-          <main className={styles["manageArea"]}>
+          </div>
+          <div className={styles["manageArea"]}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -167,8 +167,8 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </main>
-        </main>
+          </div>
+        </div>
 
         <Separator />
 
@@ -184,10 +184,10 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
           </Alert>
         )}
 
-        <main>
+        <div>
           <h3 className={styles["sharedTitle"]}>Shared With</h3>
           {sharedUsers.length > 0 ? (
-            <main className={styles["sharedList"]}>
+            <div className={styles["sharedList"]}>
               {sharedUsers.map((userId, index) => (
                 <motion.div
                   key={userId}
@@ -196,9 +196,9 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   animate={{opacity: 1, x: 0}}
                   transition={{delay: index * 0.1}}
                   whileHover={{x: 5}}>
-                  <main className={styles["sharedUserAvatar"]}>
+                  <div className={styles["sharedUserAvatar"]}>
                     <TbUser className='h-4 w-4' />
-                  </main>
+                  </div>
                   <span className={styles["sharedUserName"]}>User {userId}</span>
                   <TooltipProvider>
                     <Tooltip>
@@ -217,13 +217,13 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   </TooltipProvider>
                 </motion.div>
               ))}
-            </main>
+            </div>
           ) : (
             <p className={styles["emptyShared"]}>
               {isInvoicePublic ? "No additional users have direct access" : "Not shared with anyone"}
             </p>
           )}
-        </main>
+        </div>
       </CardContent>
       <CardFooter className='flex flex-col gap-4'>
         <TooltipProvider>

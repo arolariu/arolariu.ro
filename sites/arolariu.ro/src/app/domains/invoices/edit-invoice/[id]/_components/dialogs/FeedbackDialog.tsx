@@ -175,11 +175,11 @@ export default function FeedbackDialog(): React.JSX.Element {
           <DialogDescription>Help us improve our analytics by sharing your thoughts</DialogDescription>
         </DialogHeader>
 
-        <main className={styles["body"]}>
+        <div className={styles["body"]}>
           {/* Star Rating */}
-          <main className={styles["section"]}>
+          <div className={styles["section"]}>
             <h4 className={styles["sectionHeading"]}>How would you rate the analytics?</h4>
-            <main className={styles["starRow"]}>
+            <div className={styles["starRow"]}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Button
                   key={star}
@@ -194,13 +194,13 @@ export default function FeedbackDialog(): React.JSX.Element {
                   />
                 </Button>
               ))}
-            </main>
-          </main>
+            </div>
+          </div>
 
           {/* Feature Selection */}
-          <main className={styles["section"]}>
+          <div className={styles["section"]}>
             <h4 className={styles["sectionHeading"]}>Which features were most helpful? (Select all that apply)</h4>
-            <main className={styles["featuresWrap"]}>
+            <div className={styles["featuresWrap"]}>
               {features.map((feature) => (
                 <Badge
                   key={feature}
@@ -211,11 +211,11 @@ export default function FeedbackDialog(): React.JSX.Element {
                   {feature}
                 </Badge>
               ))}
-            </main>
-          </main>
+            </div>
+          </div>
 
           {/* Written Feedback */}
-          <main className={styles["section"]}>
+          <div className={styles["section"]}>
             <h4 className={styles["sectionHeading"]}>Additional comments (optional)</h4>
             <Textarea
               placeholder='Share your thoughts about the analytics...'
@@ -223,8 +223,8 @@ export default function FeedbackDialog(): React.JSX.Element {
               onChange={handleFeedbackChange}
               rows={4}
             />
-          </main>
-        </main>
+          </div>
+        </div>
 
         <DialogFooter>
           <form

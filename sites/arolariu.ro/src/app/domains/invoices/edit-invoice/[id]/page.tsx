@@ -142,11 +142,11 @@ export default async function EditInvoicePage(
   const merchant = merchantResult.data;
 
   return (
-    <main className={styles["page"]}>
+    <div className={styles["page"]}>
       <RenderEditInvoiceScreen
         invoice={invoice}
         merchant={merchant}
       />
-    </main>
+    </div>
   );
 }

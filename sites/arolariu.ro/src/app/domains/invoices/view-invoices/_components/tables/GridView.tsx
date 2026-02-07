@@ -46,9 +46,9 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <main className={styles["emptyState"]}>
-        <main className={styles["emptyMessage"]}>No invoices found</main>
-      </main>
+      <div className={styles["emptyState"]}>
+        <div className={styles["emptyMessage"]}>No invoices found</div>
+      </div>
     );
   }
 
@@ -60,10 +60,10 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
       transition={{duration: 0.2}}
       className={styles["grid"]}>
       {invoices.map((invoice) => (
-        <main
+        <div 
           key={invoice.id}
           className={styles["cardWrapper"]}>
-          <main className={styles["checkboxOverlay"]}>
+          <div className={styles["checkboxOverlay"]}>
             <Checkbox
               checked={selectedInvoices.includes(invoice)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
@@ -71,9 +71,9 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               aria-label={`Select invoice ${invoice.name}`}
               className='bg-background/80 backdrop-blur-sm'
             />
-          </main>
+          </div>
           <Card className='overflow-hidden'>
-            <main className={styles["imageContainer"]}>
+            <div className={styles["imageContainer"]}>
               <Image
                 src={invoice.scans[0]?.location || "/placeholder.svg"}
                 alt={invoice.name}
@@ -81,7 +81,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                 width={400}
                 height={400}
               />
-              <main className={styles["imageActions"]}>
+              <div className={styles["imageActions"]}>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
@@ -98,31 +98,31 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                   </Tooltip>
                 </TooltipProvider>
                 <TableViewActions invoice={invoice} />
-              </main>
-            </main>
+              </div>
+            </div>
             <CardHeader className='pt-4 pb-2'>
               <CardTitle className='text-lg'>{invoice.name}</CardTitle>
               <CardDescription>{invoice.description}</CardDescription>
             </CardHeader>
             <CardContent className='pb-2'>
-              <main className={styles["contentRow"]}>
-                <main className={styles["dateRow"]}>
+              <div className={styles["contentRow"]}>
+                <div className={styles["dateRow"]}>
                   <TbCalendar className={styles["calendarIcon"]} />
                   <span>{formatDate(invoice.createdAt, {dateStyle: "full", locale})}</span>
-                </main>
-                <main className={styles["amount"]}>
+                </div>
+                <div className={styles["amount"]}>
                   {formatCurrency(invoice.paymentInformation.totalCostAmount, {
                     currencyCode: invoice.paymentInformation.currency.code,
                     locale,
                   })}
-                </main>
-              </main>
+                </div>
+              </div>
             </CardContent>
             <CardFooter className='flex justify-between pt-2'>
-              <main className={styles["itemCount"]}>{invoice.items?.length || 0} items</main>
+              <div className={styles["itemCount"]}>{invoice.items?.length || 0} items</div>
             </CardFooter>
           </Card>
-        </main>
+        </div>
       ))}
     </motion.div>
   );

@@ -45,48 +45,48 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
         <CardDescription className='text-xs'>Key statistics at a glance</CardDescription>
       </CardHeader>
       <CardContent>
-        <main className={styles["statsGrid"]}>
+        <div className={styles["statsGrid"]}>
           {stats.map((stat) => (
-            <main
+            <div 
               key={stat.label}
               className={styles["statItem"]}>
-              <main className={styles["statLabel"]}>
+              <div className={styles["statLabel"]}>
                 <stat.icon className='h-3.5 w-3.5' />
                 <span className={styles["statLabelText"]}>{stat.label}</span>
-              </main>
+              </div>
               <p className={styles["statValue"]}>{stat.value}</p>
               <p className={styles["statDescription"]}>{stat.description}</p>
-            </main>
+            </div>
           ))}
-        </main>
+        </div>
 
-        <main className={styles["extremesSection"]}>
-          <main className={styles["extremeRow"]}>
-            <main className={styles["extremeLabel"]}>
+        <div className={styles["extremesSection"]}>
+          <div className={styles["extremeRow"]}>
+            <div className={styles["extremeLabel"]}>
               <TbTrendingUp className='h-3.5 w-3.5 text-emerald-500' />
               <span className={styles["extremeLabelText"]}>Highest</span>
-            </main>
-            <main className={styles["extremeRight"]}>
+            </div>
+            <div className={styles["extremeRight"]}>
               <p className={styles["extremePrice"]}>
                 {summary.highestItem.price.toFixed(2)} {currency}
               </p>
               <p className={styles["extremeName"]}>{summary.highestItem.name}</p>
-            </main>
-          </main>
+            </div>
+          </div>
 
-          <main className={styles["extremeRow"]}>
-            <main className={styles["extremeLabel"]}>
+          <div className={styles["extremeRow"]}>
+            <div className={styles["extremeLabel"]}>
               <TbTrendingDown className='h-3.5 w-3.5 text-blue-500' />
               <span className={styles["extremeLabelText"]}>Lowest</span>
-            </main>
-            <main className={styles["extremeRight"]}>
+            </div>
+            <div className={styles["extremeRight"]}>
               <p className={styles["extremePrice"]}>
                 {summary.lowestItem.price.toFixed(2)} {currency}
               </p>
               <p className={styles["extremeName"]}>{summary.lowestItem.name}</p>
-            </main>
-          </main>
-        </main>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

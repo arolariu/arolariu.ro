@@ -27,11 +27,11 @@ export default function InvoicesHeader(): React.JSX.Element {
       animate={{y: 0, opacity: 1}}
       transition={{duration: 0.3}}
       className={styles["header"]}>
-      <main>
+      <div>
         <h1 className={styles["title"]}>Invoice Management</h1>
         <p className={styles["description"]}>Manage your receipts and track your spending habits</p>
-      </main>
-      <main className={styles["actions"]}>
+      </div>
+      <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -95,7 +95,7 @@ export default function InvoicesHeader(): React.JSX.Element {
             <TooltipContent>Create a new invoice</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </main>
+      </div>
     </motion.article>
   );
 }

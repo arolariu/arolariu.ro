@@ -37,8 +37,8 @@ export default async function ViewScansPage(_props: Readonly<PageProps<"/domains
   }
 
   return (
-    <main className={styles["page"]}>
+    <div className={styles["page"]}>
       <RenderViewScansScreen />
-    </main>
+    </div>
   );
 }

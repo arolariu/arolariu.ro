@@ -161,7 +161,7 @@ export default function InvoiceCard(): React.JSX.Element {
     <motion.div variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}>
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='pb-3'>
-          <main className={styles["headerRow"]}>
+          <div className={styles["headerRow"]}>
             <CardTitle>Invoice Details</CardTitle>
             <TooltipProvider>
               <Tooltip>
@@ -179,7 +179,7 @@ export default function InvoiceCard(): React.JSX.Element {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </main>
+          </div>
           <CardDescription>
             From {merchant.name}
             <Separator className='my-2' />
@@ -193,12 +193,12 @@ export default function InvoiceCard(): React.JSX.Element {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <main className={styles["detailsGrid"]}>
+          <div className={styles["detailsGrid"]}>
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className={styles["detailLabel"]}>Date (UTC)</h3>
-              <main className={styles["dateRow"]}>
+              <div className={styles["dateRow"]}>
                 <TbCalendar className='text-muted-foreground mr-2 h-4 w-4' />
                 <Popover>
                   <PopoverTrigger asChild>
@@ -222,8 +222,8 @@ export default function InvoiceCard(): React.JSX.Element {
                       className='w-64 rounded-md border [--cell-size:2.5rem]'
                     />
                     <Separator className='my-3' />
-                    <main className={styles["timePicker"]}>
-                      <main className={styles["timeColumn"]}>
+                    <div className={styles["timePicker"]}>
+                      <div className={styles["timeColumn"]}>
                         <Label
                           htmlFor='hours'
                           className={styles["timeLabel"]}>
@@ -238,9 +238,9 @@ export default function InvoiceCard(): React.JSX.Element {
                           onChange={handleHoursChange}
                           className='h-9 w-16 text-center'
                         />
-                      </main>
+                      </div>
                       <span className={styles["timeSeparator"]}>:</span>
-                      <main className={styles["timeColumn"]}>
+                      <div className={styles["timeColumn"]}>
                         <Label
                           htmlFor='minutes'
                           className={styles["timeLabel"]}>
@@ -255,18 +255,18 @@ export default function InvoiceCard(): React.JSX.Element {
                           onChange={handleMinutesChange}
                           className='h-9 w-16 text-center'
                         />
-                      </main>
+                      </div>
                       <span className={styles["timeUtc"]}>UTC</span>
-                    </main>
+                    </div>
                   </PopoverContent>
                 </Popover>
-              </main>
+              </div>
             </motion.div>
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className={styles["detailLabel"]}>Category</h3>
-              <main className={styles["categoryRow"]}>
+              <div className={styles["categoryRow"]}>
                 <TbTag className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentCategory)}
@@ -284,13 +284,13 @@ export default function InvoiceCard(): React.JSX.Element {
                     ))}
                   </SelectContent>
                 </Select>
-              </main>
+              </div>
             </motion.div>
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className={styles["detailLabel"]}>Payment Method</h3>
-              <main className={styles["paymentRow"]}>
+              <div className={styles["paymentRow"]}>
                 <TbCreditCard className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentPaymentType)}
@@ -308,7 +308,7 @@ export default function InvoiceCard(): React.JSX.Element {
                     ))}
                   </SelectContent>
                 </Select>
-              </main>
+              </div>
             </motion.div>
             <motion.div
               whileHover={{scale: 1.02}}
@@ -318,7 +318,7 @@ export default function InvoiceCard(): React.JSX.Element {
                 {formatCurrency(paymentInformation.totalCostAmount, {currencyCode: paymentInformation.currency.code, locale})}
               </p>
             </motion.div>
-          </main>
+          </div>
 
           <Separator />
 

@@ -125,9 +125,9 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
     );
 
   return (
-    <main className={styles["container"]}>
-      <main className={styles["toolbar"]}>
-        <main className={styles["searchWrapper"]}>
+    <div className={styles["container"]}>
+      <div className={styles["toolbar"]}>
+        <div className={styles["searchWrapper"]}>
           <TbSearch className={styles["searchIcon"]} />
           <Input
             placeholder='Search invoices...'
@@ -135,16 +135,16 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             value={searchQuery}
             onChange={handleSearch}
           />
-        </main>
-        <main className={styles["filtersRow"]}>
+        </div>
+        <div className={styles["filtersRow"]}>
           <Select
             value={filters.category}
             onValueChange={handleFilters}>
             <SelectTrigger className='w-[150px] cursor-pointer'>
-              <main className={styles["filterTriggerContent"]}>
+              <div className={styles["filterTriggerContent"]}>
                 <TbCategory className={styles["filterIcon"]} />
                 <span>Category</span>
-              </main>
+              </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem
@@ -189,10 +189,10 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             value={filters.time}
             onValueChange={handleFilters}>
             <SelectTrigger className='w-[150px] cursor-pointer'>
-              <main className={styles["filterTriggerContent"]}>
+              <div className={styles["filterTriggerContent"]}>
                 <TbClock className={styles["filterIcon"]} />
                 <span>Time of Day</span>
-              </main>
+              </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem
@@ -203,18 +203,18 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
               <SelectItem
                 className='cursor-pointer'
                 value='day'>
-                <main className={styles["filterTriggerContent"]}>
+                <div className={styles["filterTriggerContent"]}>
                   <TbSun className={styles["sunIcon"]} />
                   <span>Daytime (6am-6pm)</span>
-                </main>
+                </div>
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='night'>
-                <main className={styles["filterTriggerContent"]}>
+                <div className={styles["filterTriggerContent"]}>
                   <TbMoon className={styles["moonIcon"]} />
                   <span>Nighttime (6pm-6am)</span>
-                </main>
+                </div>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -245,7 +245,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             </Popover>
           )}
 
-          <main className={styles["viewToggle"]}>
+          <div className={styles["viewToggle"]}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
@@ -278,10 +278,10 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                 <TooltipContent>Grid View</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </main>
-        </main>
-      </main>
+          </div>
+        </div>
+      </div>
       {viewContent}
-    </main>
+    </div>
   );
 }

@@ -92,8 +92,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   }, [currentPage]);
 
   return (
-    <main>
-      <main className={styles["headerRow"]}>
+    <div>
+      <div className={styles["headerRow"]}>
         <h3 className={styles["itemsLabel"]}>Items</h3>
         <TooltipProvider>
           <Tooltip>
@@ -112,8 +112,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </main>
-      <main className={styles["tableWrapper"]}>
+      </div>
+      <div className={styles["tableWrapper"]}>
         <Table className='divide-border min-w-full divide-y'>
           <TableHeader>
             <TableRow className='bg-muted/50'>
@@ -177,11 +177,11 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
         {/* Pagination controls - only show when more than one page */}
         {totalPages > 1 && (
-          <main className={styles["paginationBar"]}>
-            <main className={styles["paginationInfo"]}>
+          <div className={styles["paginationBar"]}>
+            <div className={styles["paginationInfo"]}>
               {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
-            </main>
-            <main className={styles["paginationControls"]}>
+            </div>
+            <div className={styles["paginationControls"]}>
               <Button
                 variant='outline'
                 className='cursor-pointer'
@@ -199,10 +199,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 onClick={handleNextPage}>
                 Next
               </Button>
-            </main>
-          </main>
+            </div>
+          </div>
         )}
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }

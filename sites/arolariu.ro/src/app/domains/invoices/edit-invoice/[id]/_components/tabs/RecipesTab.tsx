@@ -98,12 +98,12 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
       transition={{duration: 0.2}}>
       <Card className='group transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between pb-2'>
-          <main>
+          <div>
             <CardTitle>Recipes You Can Make</CardTitle>
             <CardDescription>Based on items in this invoice</CardDescription>
-          </main>
+          </div>
           <TooltipProvider>
-            <main className={styles["headerActions"]}>
+            <div className={styles["headerActions"]}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -133,21 +133,21 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                   <p>Create a new recipe with these ingredients</p>
                 </TooltipContent>
               </Tooltip>
-            </main>
+            </div>
           </TooltipProvider>
         </CardHeader>
         <CardContent>
           {paginatedItems.length > 0 ? (
-            <main className={styles["recipesGrid"]}>
+            <div className={styles["recipesGrid"]}>
               {recipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.name}
                   recipe={recipe}
                 />
               ))}
-            </main>
+            </div>
           ) : (
-            <main className={styles["emptyState"]}>
+            <div className={styles["emptyState"]}>
               <p className={styles["emptyText"]}>No recipes available yet</p>
               <Button
                 onClick={handleCreateFirstRecipe}
@@ -156,10 +156,10 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 <TbPlus className='mr-2 h-4 w-4' />
                 Create Your First Recipe
               </Button>
-            </main>
+            </div>
           )}
           {totalPages > 1 && (
-            <main className={styles["paginationBar"]}>
+            <div className={styles["paginationBar"]}>
               <Button
                 variant='ghost'
                 size='sm'
@@ -167,9 +167,9 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 disabled={currentPage === 1}>
                 Previous
               </Button>
-              <main className={styles["pageInfo"]}>
+              <div className={styles["pageInfo"]}>
                 Page {currentPage} of {totalPages}
-              </main>
+              </div>
               <Button
                 variant='ghost'
                 size='sm'
@@ -177,7 +177,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 disabled={currentPage === totalPages}>
                 Next
               </Button>
-            </main>
+            </div>
           )}
         </CardContent>
       </Card>

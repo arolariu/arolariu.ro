@@ -79,17 +79,17 @@ export default function InvoiceHeader(): React.JSX.Element {
       animate={{opacity: 1, y: 0}}
       transition={{duration: 0.5}}
       className={styles["header"]}>
-      <main className={styles["nameGroup"]}>
-        <main>
+      <div className={styles["nameGroup"]}>
+        <div>
           <Input
             type='text'
             value={invoiceName}
             onChange={handleNameChange}
             className='w-full border-0 text-3xl font-bold tracking-tight focus-visible:border-0 focus-visible:ring-0'
           />
-        </main>
-      </main>
-      <main className={styles["actionsGroup"]}>
+        </div>
+      </div>
+      <div className={styles["actionsGroup"]}>
         <TooltipProvider>
           {/* Save & Discard buttons - only show when there are changes */}
           {hasChanges ? (
@@ -171,7 +171,7 @@ export default function InvoiceHeader(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </main>
+      </div>
     </motion.div>
   );
 }

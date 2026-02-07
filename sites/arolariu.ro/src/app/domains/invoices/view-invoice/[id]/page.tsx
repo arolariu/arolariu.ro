@@ -155,11 +155,11 @@ export default async function ViewInvoicePage(
   if (!canAccess) return <RenderForbiddenScreen />;
 
   return (
-    <main className={styles["page"]}>
+    <div className={styles["page"]}>
       <RenderViewInvoiceScreen
         invoice={invoice}
         merchant={merchant}
       />
-    </main>
+    </div>
   );
 }

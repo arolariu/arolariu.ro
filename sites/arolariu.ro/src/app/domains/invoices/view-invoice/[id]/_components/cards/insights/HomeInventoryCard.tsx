@@ -135,51 +135,51 @@ export function HomeInventoryCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Supply Stock Levels */}
-        <main>
+        <div>
           <h4 className={styles["sectionTitle"]}>Supply Stock Levels (estimated)</h4>
-          <main className={styles["suppliesList"]}>
+          <div className={styles["suppliesList"]}>
             {supplies.map((supply) => {
               const pct = (supply.daysRemaining / supply.maxDays) * 100;
               const color = getSupplyProgressColor(pct, styles);
               return (
-                <main
+                <div 
                   key={supply.id}
                   className={styles["supplyItem"]}>
-                  <main className={styles["supplyRow"]}>
-                    <main className={styles["supplyName"]}>
+                  <div className={styles["supplyRow"]}>
+                    <div className={styles["supplyName"]}>
                       {supply.icon}
                       <span>{supply.name}</span>
-                    </main>
+                    </div>
                     <span className={styles["supplyDays"]}>~{supply.daysRemaining} days</span>
-                  </main>
-                  <main className={styles["progressTrack"]}>
-                    <main
+                  </div>
+                  <div className={styles["progressTrack"]}>
+                    <div 
                       className={`${styles["progressBar"]} ${color}`}
                       style={{width: `${pct}%`}}
                     />
-                  </main>
-                </main>
+                  </div>
+                </div>
               );
             })}
-          </main>
-        </main>
+          </div>
+        </div>
 
         {/* Eco-Friendliness Score */}
-        <main className={styles["ecoSection"]}>
-          <main className={styles["ecoHeader"]}>
-            <main className={styles["ecoLabel"]}>
+        <div className={styles["ecoSection"]}>
+          <div className={styles["ecoHeader"]}>
+            <div className={styles["ecoLabel"]}>
               <TbLeaf className='h-4 w-4 text-green-500' />
               <span className={styles["ecoLabelText"]}>Eco-Friendliness Score</span>
-            </main>
-            <main className={styles["ecoStars"]}>
+            </div>
+            <div className={styles["ecoStars"]}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <TbStar
                   key={star}
                   className={`h-4 w-4 ${star <= ecoScore ? "fill-green-500 text-green-500" : "text-muted-foreground"}`}
                 />
               ))}
-            </main>
-          </main>
+            </div>
+          </div>
           <ul className={styles["ecoList"]}>
             <li className={styles["ecoItem"]}>
               <span className={styles["ecoBullet"]}>•</span>
@@ -194,18 +194,18 @@ export function HomeInventoryCard(): React.JSX.Element {
               <span className={styles["ecoTipText"]}>Tip: Eco alternatives save 2kg plastic/year</span>
             </li>
           </ul>
-        </main>
+        </div>
 
         {/* Bulk Buying Savings */}
-        <main className={styles["bulkBox"]}>
+        <div className={styles["bulkBox"]}>
           <TbPackage className='mt-0.5 h-4 w-4 shrink-0 text-blue-500' />
-          <main>
+          <div>
             <p className={styles["bulkTitle"]}>Bulk Buying Savings</p>
             <p className={styles["bulkDescription"]}>
               5L detergent vs 2L saves 18% ({formatCurrency(potentialSavings, {currencyCode: currency.code, locale})}/year)
             </p>
-          </main>
-        </main>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

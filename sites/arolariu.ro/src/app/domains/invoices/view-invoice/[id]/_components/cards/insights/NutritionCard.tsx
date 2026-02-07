@@ -162,83 +162,83 @@ export function NutritionCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-6'>
         {/* Food Balance Score */}
-        <main className={styles["scoreSection"]}>
-          <main className={styles["scoreRow"]}>
+        <div className={styles["scoreSection"]}>
+          <div className={styles["scoreRow"]}>
             <span className={styles["scoreLabel"]}>Food Balance Score</span>
             <span className={`${styles["scoreLabel"]} ${scoreColor}`}>
               {balanceScore}/100 - {scoreLabel}
             </span>
-          </main>
+          </div>
           <Progress
             value={balanceScore}
             className='h-2'
           />
-        </main>
+        </div>
 
         {/* Basket Composition */}
-        <main className={styles["compositionSection"]}>
+        <div className={styles["compositionSection"]}>
           <h4 className={styles["compositionTitle"]}>Your Basket Composition</h4>
-          <main className={styles["compositionList"]}>
-            <main className={styles["compositionRow"]}>
+          <div className={styles["compositionList"]}>
+            <div className={styles["compositionRow"]}>
               <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
               <span className={styles["compositionLabel"]}>Whole Foods</span>
-              <main className={styles["progressTrack"]}>
-                <main
+              <div className={styles["progressTrack"]}>
+                <div 
                   className={`${styles["progressBar"]} ${styles["progressGreen"]}`}
                   style={{width: `${wholeFoodPct}%`}}
                 />
-              </main>
+              </div>
               <span className={styles["compositionPct"]}>{wholeFoodPct}%</span>
-            </main>
-            <main className={styles["compositionRow"]}>
+            </div>
+            <div className={styles["compositionRow"]}>
               <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
               <span className={styles["compositionLabel"]}>Processed</span>
-              <main className={styles["progressTrack"]}>
-                <main
+              <div className={styles["progressTrack"]}>
+                <div 
                   className={`${styles["progressBar"]} ${styles["progressAmber"]}`}
                   style={{width: `${processedPct}%`}}
                 />
-              </main>
+              </div>
               <span className={styles["compositionPct"]}>{processedPct}%</span>
-            </main>
-            <main className={styles["compositionRow"]}>
+            </div>
+            <div className={styles["compositionRow"]}>
               <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
               <span className={styles["compositionLabel"]}>Dairy/Other</span>
-              <main className={styles["progressTrack"]}>
-                <main
+              <div className={styles["progressTrack"]}>
+                <div 
                   className={`${styles["progressBar"]} ${styles["progressBlue"]}`}
                   style={{width: `${dairySnackPct}%`}}
                 />
-              </main>
+              </div>
               <span className={styles["compositionPct"]}>{dairySnackPct}%</span>
-            </main>
-          </main>
-        </main>
+            </div>
+          </div>
+        </div>
 
         {/* Food Groups Grid */}
-        <main className={styles["foodGroupsGrid"]}>
+        <div className={styles["foodGroupsGrid"]}>
           {foodGroups.map((group) => (
-            <main
+            <div 
               key={group.name}
               className={styles["foodGroupCard"]}>
-              <main className={styles["foodGroupIconRow"]}>{group.icon}</main>
+              <div className={styles["foodGroupIconRow"]}>{group.icon}</div>
               <p className={styles["foodGroupName"]}>{group.name}</p>
               <p className={styles["foodGroupCount"]}>
                 {group.items} item{group.items === 1 ? "" : "s"}
               </p>
               <p className={styles["foodGroupAmount"]}>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
-            </main>
+            </div>
           ))}
-        </main>
+        </div>
 
         {/* Allergens */}
         {allergens.length > 0 && (
-          <main className={styles["allergensSection"]}>
-            <main className={styles["allergensHeader"]}>
+          <div className={styles["allergensSection"]}>
+            <div className={styles["allergensHeader"]}>
               <TbAlertTriangle className='h-4 w-4 text-amber-500' />
               <h4 className={styles["allergensTitle"]}>Allergens Detected</h4>
-            </main>
-            <main className={styles["allergensList"]}>
+            </div>
+            <div className={styles["allergensList"]}>
               <TooltipProvider>
                 {allergens.map(([name, count]) => (
                   <Tooltip key={name}>
@@ -259,15 +259,15 @@ export function NutritionCard(): React.JSX.Element {
                   </Tooltip>
                 ))}
               </TooltipProvider>
-            </main>
-          </main>
+            </div>
+          </div>
         )}
 
         {/* Suggestion */}
-        <main className={styles["suggestionBox"]}>
+        <div className={styles["suggestionBox"]}>
           <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
           <p className={styles["suggestionText"]}>{suggestion}</p>
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

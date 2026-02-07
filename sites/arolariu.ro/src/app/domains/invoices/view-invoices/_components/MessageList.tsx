@@ -21,7 +21,7 @@ type Props = {
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
   return (
-    <main className={styles["messageList"]}>
+    <div className={styles["messageList"]}>
       {messages.map((message, index) => (
         <motion.div
           key={message.id}
@@ -46,12 +46,12 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
               </>
             )}
           </Avatar>
-          <main className={styles["messageBody"]}>
-            <main className={styles["messageHeader"]}>
+          <div className={styles["messageBody"]}>
+            <div className={styles["messageHeader"]}>
               <p className={styles["messageSender"]}>{message.role === "assistant" ? "AI Assistant" : "You"}</p>
               <span className={styles["messageTimestamp"]}>{new Date(message.timestamp).toLocaleTimeString()}</span>
-            </main>
-            <main className={styles["messageContent"]}>
+            </div>
+            <div className={styles["messageContent"]}>
               {message.content.split("\n").map((line) => (
                 <p
                   key={line}
@@ -59,10 +59,10 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
                   {line}
                 </p>
               ))}
-            </main>
-          </main>
+            </div>
+          </div>
         </motion.div>
       ))}
-    </main>
+    </div>
   );
 }

@@ -19,9 +19,9 @@ export function InvoiceHeader(): React.JSX.Element {
 
   return (
     <TooltipProvider>
-      <main className={styles["header"]}>
-        <main className={styles["titleArea"]}>
-          <main className={styles["titleRow"]}>
+      <div className={styles["header"]}>
+        <div className={styles["titleArea"]}>
+          <div className={styles["titleRow"]}>
             <h1 className={styles["title"]}>{invoice.name}</h1>
             {Boolean(invoice.isImportant) && (
               <Tooltip>
@@ -33,10 +33,10 @@ export function InvoiceHeader(): React.JSX.Element {
                 </TooltipContent>
               </Tooltip>
             )}
-          </main>
+          </div>
           <p className={styles["invoiceId"]}>ID: {invoice.id}</p>
-        </main>
-        <main className={styles["actions"]}>
+        </div>
+        <div className={styles["actions"]}>
           {Boolean(isOwner) && (
             <>
               <Tooltip>
@@ -80,8 +80,8 @@ export function InvoiceHeader(): React.JSX.Element {
               <p>Print this invoice</p>
             </TooltipContent>
           </Tooltip>
-        </main>
-      </main>
+        </div>
+      </div>
     </TooltipProvider>
   );
 }

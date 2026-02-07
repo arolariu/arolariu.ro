@@ -63,8 +63,8 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
   }
 
   return (
-    <main className={styles["container"]}>
-      <main className={styles["header"]}>
+    <div className={styles["container"]}>
+      <div className={styles["header"]}>
         <TbUsers className='text-muted-foreground h-4 w-4' />
         <p className={styles["headerLabel"]}>Shared With</p>
         {Boolean(sharedUsers.length > 0 || isPublic) && (
@@ -74,7 +74,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
             {isPublic ? "Public" : sharedUsers.length}
           </Badge>
         )}
-      </main>
+      </div>
 
       {/* Public Access Warning */}
       {Boolean(isPublic) && (
@@ -91,20 +91,20 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
 
       {/* Shared Users List */}
       {sharedUsers.length > 0 && (
-        <main className={styles["usersList"]}>
+        <div className={styles["usersList"]}>
           {sharedUsers.map((user) => (
-            <main
+            <div 
               key={user}
               className={styles["userRow"]}>
-              <main className={styles["userInfo"]}>
+              <div className={styles["userInfo"]}>
                 <Avatar className='h-7 w-7'>
                   <AvatarFallback className='bg-primary/10 text-primary text-xs'>{getInitials(user)}</AvatarFallback>
                 </Avatar>
-                <main className={styles["userDetails"]}>
+                <div className={styles["userDetails"]}>
                   <p className={styles["userName"]}>{getDisplayName(user)}</p>
                   <p className={styles["userEmail"]}>{user}</p>
-                </main>
-              </main>
+                </div>
+              </div>
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -123,9 +123,9 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            </main>
+            </div>
           ))}
-        </main>
+        </div>
       )}
 
       <Button
@@ -136,6 +136,6 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
         <TbExternalLink className='h-3.5 w-3.5' />
         Manage Sharing
       </Button>
-    </main>
+    </div>
   );
 }

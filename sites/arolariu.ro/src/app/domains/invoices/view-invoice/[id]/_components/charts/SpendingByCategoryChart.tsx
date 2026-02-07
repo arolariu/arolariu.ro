@@ -34,7 +34,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className={styles["tooltip"]}>
+    <div className={styles["tooltip"]}>
       <p className={styles["tooltipCategory"]}>{data.category}</p>
       <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
@@ -42,25 +42,25 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipCount"]}>
         {data.count} item{data.count === 1 ? "" : "s"}
       </p>
-    </main>
+    </div>
   );
 }
 
 function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
   return (
-    <main className={styles["legendContainer"]}>
+    <div className={styles["legendContainer"]}>
       {payload.map((entry) => (
-        <main
+        <div 
           key={`legend-${entry.value}`}
           className={styles["legendItem"]}>
-          <main
+          <div 
             className={styles["legendDot"]}
             style={{backgroundColor: entry.color}}
           />
           <span className={styles["legendLabel"]}>{entry.value}</span>
-        </main>
+        </div>
       ))}
-    </main>
+    </div>
   );
 }
 
@@ -122,12 +122,12 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
-        <main className={styles["totalSection"]}>
+        <div className={styles["totalSection"]}>
           <p className={styles["totalAmount"]}>
             {total.toFixed(2)} {currency}
           </p>
           <p className={styles["totalLabel"]}>Total Spending</p>
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

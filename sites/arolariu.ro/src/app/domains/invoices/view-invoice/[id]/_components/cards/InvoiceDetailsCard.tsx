@@ -51,8 +51,8 @@ export function InvoiceDetailsCard(): React.JSX.Element {
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
-        <main className={styles["headerRow"]}>
-          <main className={styles["headerInfo"]}>
+        <div className={styles["headerRow"]}>
+          <div className={styles["headerInfo"]}>
             <CardTitle className='flex items-center gap-2'>
               Invoice Details
               {Boolean(invoice.isImportant) && <TbHeart className='h-4 w-4 fill-red-500 text-red-500' />}
@@ -60,17 +60,17 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             <CardDescription>
               {merchant.name} • {invoice.description}
             </CardDescription>
-          </main>
-        </main>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className='space-y-6'>
         {/* Info Grid */}
-        <main className={styles["infoGrid"]}>
-          <main className={styles["infoItem"]}>
-            <main className={styles["infoLabel"]}>
+        <div className={styles["infoGrid"]}>
+          <div className={styles["infoItem"]}>
+            <div className={styles["infoLabel"]}>
               <TbCalendar className='h-4 w-4' />
               <span>Date (UTC)</span>
-            </main>
+            </div>
             <p className={styles["infoValue"]}>
               {formatDate(invoice.paymentInformation.transactionDate, {
                 timeStyle: "short",
@@ -79,32 +79,32 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 locale,
               })}
             </p>
-          </main>
-          <main className={styles["infoItem"]}>
+          </div>
+          <div className={styles["infoItem"]}>
             <p className={styles["infoLabelPlain"]}>Category</p>
             <Badge variant='outline'>{formatEnum(ProductCategory, invoice.category)}</Badge>
-          </main>
-          <main className={styles["infoItem"]}>
-            <main className={styles["infoLabel"]}>
+          </div>
+          <div className={styles["infoItem"]}>
+            <div className={styles["infoLabel"]}>
               <TbCreditCard className='h-4 w-4' />
               <span>Payment</span>
-            </main>
+            </div>
             <p className={styles["infoValue"]}>{formatEnum(PaymentType, invoice.paymentInformation.paymentType)}</p>
-          </main>
-          <main className={styles["infoItem"]}>
+          </div>
+          <div className={styles["infoItem"]}>
             <p className={styles["infoLabelPlain"]}>Total Amount</p>
             <p className={styles["totalAmount"]}>
               {formatCurrency(invoice.paymentInformation.totalCostAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
             </p>
-          </main>
-        </main>
+          </div>
+        </div>
 
         <Separator />
 
         {/* Items Table */}
-        <main className={styles["itemsSection"]}>
+        <div className={styles["itemsSection"]}>
           <h3 className={styles["itemsTitle"]}>Items ({invoice.items.length})</h3>
-          <main className={styles["tableContainer"]}>
+          <div className={styles["tableContainer"]}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -119,10 +119,10 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 {paginatedItems.map((item) => (
                   <TableRow key={item.productCode}>
                     <TableCell>
-                      <main className={styles["itemCell"]}>
+                      <div className={styles["itemCell"]}>
                         <p className={styles["itemName"]}>{item.genericName || item.rawName}</p>
                         {item.detectedAllergens.length > 0 && (
-                          <main className={styles["allergenList"]}>
+                          <div className={styles["allergenList"]}>
                             {item.detectedAllergens.map((allergen) => (
                               <TooltipProvider key={allergen.name}>
                                 <Tooltip>
@@ -139,9 +139,9 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                                 </Tooltip>
                               </TooltipProvider>
                             ))}
-                          </main>
+                          </div>
                         )}
-                      </main>
+                      </div>
                     </TableCell>
                     <TableCell className='text-right'>{item.quantity}</TableCell>
                     <TableCell className='text-right'>{item.quantityUnit}</TableCell>
@@ -166,15 +166,15 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 </TableRow>
               </TableFooter>
             </Table>
-          </main>
+          </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <main className={styles["pagination"]}>
+            <div className={styles["pagination"]}>
               <p className={styles["paginationText"]}>
                 Page {currentPage} of {totalPages}
               </p>
-              <main className={styles["paginationButtons"]}>
+              <div className={styles["paginationButtons"]}>
                 <Button
                   variant='outline'
                   size='sm'
@@ -191,10 +191,10 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                   Next
                   <TbChevronRight className='h-4 w-4' />
                 </Button>
-              </main>
-            </main>
+              </div>
+            </div>
           )}
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

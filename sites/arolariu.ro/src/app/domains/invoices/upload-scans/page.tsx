@@ -37,8 +37,8 @@ export default async function UploadScansPage(_props: Readonly<PageProps<"/domai
   }
 
   return (
-    <main className={styles["page"]}>
+    <div className={styles["page"]}>
       <RenderUploadScansScreen />
-    </main>
+    </div>
   );
 }

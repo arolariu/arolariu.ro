@@ -78,61 +78,61 @@ export default function MerchantDialog(): React.JSX.Element {
           <DialogTitle>Merchant Details</DialogTitle>
           <DialogDescription>Information about {merchant.name}</DialogDescription>
         </DialogHeader>
-        <main className={styles["body"]}>
-          <main className={styles["merchantProfile"]}>
-            <main className={styles["merchantAvatar"]}>
+        <div className={styles["body"]}>
+          <div className={styles["merchantProfile"]}>
+            <div className={styles["merchantAvatar"]}>
               <TbBuilding className='text-primary h-6 w-6' />
-            </main>
-            <main>
+            </div>
+            <div>
               <h3 className={styles["merchantName"]}>{merchant.name}</h3>
               <Badge
                 variant='outline'
                 className='text-muted-foreground'>
                 {merchantCategoryAsString}
               </Badge>
-            </main>
-          </main>
+            </div>
+          </div>
 
           <Table>
             <TableBody>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <main className={styles["detailRow"]}>
+                  <div className={styles["detailRow"]}>
                     <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className={styles["detailLabel"]}>Address</span>
-                  </main>
+                  </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.address}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <main className={styles["detailRow"]}>
+                  <div className={styles["detailRow"]}>
                     <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className={styles["detailLabel"]}>Phone</span>
-                  </main>
+                  </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.phoneNumber}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <main className={styles["detailRow"]}>
+                  <div className={styles["detailRow"]}>
                     <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className={styles["detailLabel"]}>Parent Company</span>
-                  </main>
+                  </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.parentCompanyId}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
-        </main>
+        </div>
 
-        <main className={styles["footer"]}>
+        <div className={styles["footer"]}>
           <Button
             type='button'
             className='w-full'>
             Open in Maps
           </Button>
-        </main>
+        </div>
       </DialogContent>
     </Dialog>
   );

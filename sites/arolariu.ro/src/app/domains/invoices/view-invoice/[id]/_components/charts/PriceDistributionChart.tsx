@@ -24,14 +24,14 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className={styles["tooltip"]}>
+    <div className={styles["tooltip"]}>
       <p className={styles["tooltipRange"]}>
         {data.range} {data.currency}
       </p>
       <p className={styles["tooltipCount"]}>
         {data.count} item{data.count === 1 ? "" : "s"}
       </p>
-    </main>
+    </div>
   );
 }
 

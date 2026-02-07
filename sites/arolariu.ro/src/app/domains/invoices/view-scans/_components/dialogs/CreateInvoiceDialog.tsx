@@ -49,11 +49,11 @@ function formatFileSize(bytes: number): string {
 /** Mini scan preview thumbnail */
 function ScanThumbnail({scan}: Readonly<{scan: CachedScan}>): React.JSX.Element {
   return (
-    <main className={styles["thumbnail"]}>
+    <div className={styles["thumbnail"]}>
       {scan.mimeType === "application/pdf" ? (
-        <main className={styles["thumbnailPdfPlaceholder"]}>
+        <div className={styles["thumbnailPdfPlaceholder"]}>
           <TbFileTypePdf className={styles["thumbnailPdfIcon"]} />
-        </main>
+        </div>
       ) : (
         <Image
           src={scan.blobUrl}
@@ -63,7 +63,7 @@ function ScanThumbnail({scan}: Readonly<{scan: CachedScan}>): React.JSX.Element 
           unoptimized
         />
       )}
-    </main>
+    </div>
   );
 }
 
@@ -88,15 +88,15 @@ function ProcessStep({
   };
 
   return (
-    <main className={`${styles["processStep"]} ${isActive ? styles["processStepActive"] : ""}`}>
-      <main className={`${styles["stepCircle"]} ${getCircleClass()}`}>
+    <div className={`${styles["processStep"]} ${isActive ? styles["processStepActive"] : ""}`}>
+      <div className={`${styles["stepCircle"]} ${getCircleClass()}`}>
         {isComplete ? <TbCheck className={styles["stepCheckIcon"]} /> : step}
-      </main>
-      <main className={styles["stepContent"]}>
+      </div>
+      <div className={styles["stepContent"]}>
         <p className={styles["stepTitle"]}>{title}</p>
         <p className={styles["stepDescription"]}>{description}</p>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }
 
@@ -210,16 +210,16 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       </DialogHeader>
 
       {/* Scans Preview */}
-      <main className={styles["scansPreviewBox"]}>
-        <main className={styles["scansPreviewHeader"]}>
+      <div className={styles["scansPreviewBox"]}>
+        <div className={styles["scansPreviewHeader"]}>
           <span className={styles["scansPreviewLabel"]}>
             {t("selectedScans")} ({selectedScans.length})
           </span>
           <span className={styles["scansPreviewSize"]}>
             {formatFileSize(totalSize)} {t("totalSize")}
           </span>
-        </main>
-        <main className={styles["scansPreviewGrid"]}>
+        </div>
+        <div className={styles["scansPreviewGrid"]}>
           {selectedScans.slice(0, 6).map((scan) => (
             <ScanThumbnail
               key={scan.id}
@@ -227,22 +227,22 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             />
           ))}
           {selectedScans.length > 6 ? (
-            <main className={styles["scansPreviewOverflow"]}>
+            <div className={styles["scansPreviewOverflow"]}>
               +{selectedScans.length - 6}
-            </main>
+            </div>
           ) : null}
-        </main>
-      </main>
+        </div>
+      </div>
 
       {/* Mode Selection for multiple scans */}
       {selectedScans.length > 1 ? (
-        <main className={styles["modeSection"]}>
+        <div className={styles["modeSection"]}>
           <p className={styles["modeLabel"]}>{t("chooseMode")}</p>
           <RadioGroup
             value={mode}
             onValueChange={(v) => setMode(v as CreationMode)}>
             {/* Single mode option */}
-            <main
+            <div 
               role='button'
               tabIndex={0}
               className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}
@@ -253,7 +253,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 id='single'
                 className='mt-0.5'
               />
-              <main className={styles["modeOptionContent"]}>
+              <div className={styles["modeOptionContent"]}>
                 <Label
                   htmlFor='single'
                   className='flex cursor-pointer items-center gap-2 font-medium'>
@@ -263,10 +263,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 <p className={styles["modeOptionDescription"]}>
                   {t("singleMode.description", {count: String(selectedScans.length)})}
                 </p>
-              </main>
-            </main>
+              </div>
+            </div>
             {/* Batch mode option */}
-            <main
+            <div 
               role='button'
               tabIndex={0}
               className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}
@@ -277,7 +277,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 id='batch'
                 className='mt-0.5'
               />
-              <main className={styles["modeOptionContent"]}>
+              <div className={styles["modeOptionContent"]}>
                 <Label
                   htmlFor='batch'
                   className='flex cursor-pointer items-center gap-2 font-medium'>
@@ -287,21 +287,21 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 <p className={styles["modeOptionDescription"]}>
                   {t("batchMode.description", {count: String(selectedScans.length)})}
                 </p>
-              </main>
-            </main>
+              </div>
+            </div>
           </RadioGroup>
-        </main>
+        </div>
       ) : (
         /* Single scan info banner */
-        <main className={styles["singleScanBanner"]}>
-          <main className={styles["singleScanBannerContent"]}>
+        <div className={styles["singleScanBanner"]}>
+          <div className={styles["singleScanBannerContent"]}>
             <TbSparkles className={styles["singleScanBannerIcon"]} />
-            <main>
+            <div>
               <p className={styles["singleScanBannerTitle"]}>{t("singleScanInfo.title")}</p>
               <p className={styles["singleScanBannerDescription"]}>{t("singleScanInfo.description")}</p>
-            </main>
-          </main>
-        </main>
+            </div>
+          </div>
+        </div>
       )}
 
       <DialogFooter className={styles["selectFooter"]}>
@@ -330,10 +330,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}
       className={styles["creatingWrapper"]}>
-      <main className={styles["creatingCenter"]}>
-        <main className={styles["creatingIconCircle"]}>
+      <div className={styles["creatingCenter"]}>
+        <div className={styles["creatingIconCircle"]}>
           <TbLoader2 className={styles["creatingSpinIcon"]} />
-        </main>
+        </div>
         <h3 className={styles["creatingTitle"]}>
           {mode === "single" && selectedScans.length > 1 ? t("creating.titlePlural") : t("creating.title")}
         </h3>
@@ -342,17 +342,17 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             ? t("creating.processingPlural", {count: String(selectedScans.length)})
             : t("creating.processing", {count: String(selectedScans.length)})}
         </p>
-      </main>
+      </div>
 
-      <main className={styles["progressSection"]}>
+      <div className={styles["progressSection"]}>
         <Progress
           value={progress}
           className='h-2'
         />
         <p className={styles["progressLabel"]}>{progress}%</p>
-      </main>
+      </div>
 
-      <main className={styles["stepsSection"]}>
+      <div className={styles["stepsSection"]}>
         <ProcessStep
           step={1}
           title={t("creating.step1Title")}
@@ -374,7 +374,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           isActive={progress >= 70}
           isComplete={progress >= 100}
         />
-      </main>
+      </div>
     </motion.div>
   );
 
@@ -387,9 +387,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         initial={{opacity: 0, scale: 0.95}}
         animate={{opacity: 1, scale: 1}}
         className={styles["completeWrapper"]}>
-        <main className={styles["completeIconCircle"]}>
+        <div className={styles["completeIconCircle"]}>
           <TbCheck className={styles["completeCheckIcon"]} />
-        </main>
+        </div>
         <h3 className={styles["completeTitle"]}>
           {isPlural ? t("complete.titlePlural", {count: String(createdCount)}) : t("complete.title", {count: String(createdCount)})}
         </h3>
@@ -397,12 +397,12 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           {isPlural ? t("complete.descriptionPlural") : t("complete.description")}
         </p>
 
-        <main className={styles["completeNextSteps"]}>
+        <div className={styles["completeNextSteps"]}>
           <p className={styles["completeNextStepsText"]}>
             <strong>{t("complete.nextSteps")}</strong>{" "}
             {isPlural ? t("complete.nextStepsDescriptionPlural") : t("complete.nextStepsDescription")}
           </p>
-        </main>
+        </div>
 
         <DialogFooter className={styles["completeFooter"]}>
           <Button

@@ -62,17 +62,17 @@ export function GeneralExpenseCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Auto-detected Category */}
-        <main>
+        <div>
           <h4 className={styles["sectionTitle"]}>Auto-detected Category</h4>
-          <main className={styles["detectedBox"]}>
-            <main className={styles["detectedRow"]}>
-              <main className={styles["detectedLabel"]}>
+          <div className={styles["detectedBox"]}>
+            <div className={styles["detectedRow"]}>
+              <div className={styles["detectedLabel"]}>
                 <TbTag className='h-4 w-4 text-indigo-500' />
                 <span className={styles["detectedName"]}>{detectedCategory}</span>
-              </main>
+              </div>
               <Badge variant='secondary'>Confidence: {confidence}%</Badge>
-            </main>
-            <main className={styles["detectedActions"]}>
+            </div>
+            <div className={styles["detectedActions"]}>
               <Button
                 variant='outline'
                 size='sm'
@@ -89,36 +89,36 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 <TbRefresh className='h-3 w-3' />
                 Change
               </Button>
-            </main>
-          </main>
-        </main>
+            </div>
+          </div>
+        </div>
 
         {/* Budget Impact */}
-        <main className={styles["budgetSection"]}>
+        <div className={styles["budgetSection"]}>
           <h4 className={styles["sectionTitle"]}>Budget Impact</h4>
-          <main className={styles["budgetSection"]}>
+          <div className={styles["budgetSection"]}>
             {budgets.map((budget) => {
               const pct = (budget.spent / budget.limit) * 100;
               const isNearLimit = pct >= 90;
               return (
-                <main
+                <div 
                   key={budget.name}
                   className={styles["budgetItem"]}>
-                  <main className={styles["budgetRow"]}>
+                  <div className={styles["budgetRow"]}>
                     <span>{budget.name}</span>
                     <span className={isNearLimit ? styles["nearLimitText"] : styles["budgetMutedText"]}>
                       {formatCurrency(budget.spent, {currencyCode: currency.code, locale})} /{" "}
                       {formatCurrency(budget.limit, {currencyCode: currency.code, locale})}
                     </span>
-                  </main>
+                  </div>
                   <Progress
                     value={pct}
                     className='h-2'
                   />
-                </main>
+                </div>
               );
             })}
-          </main>
+          </div>
           {nearLimitBudget ? (
             <p
               className={styles["alertText"]}
@@ -128,16 +128,16 @@ export function GeneralExpenseCard(): React.JSX.Element {
               {nearLimitBudget.name}: {Math.round((nearLimitBudget.spent / nearLimitBudget.limit) * 100)}% used (10 days left in month)
             </p>
           ) : null}
-        </main>
+        </div>
 
         {/* Tax & Business Options */}
-        <main>
+        <div>
           <h4 className={styles["sectionTitleWithIcon"]}>
             <TbFileText className='h-4 w-4' />
             Tax & Business Options
           </h4>
-          <main className={styles["checkboxSection"]}>
-            <main className={styles["checkboxRow"]}>
+          <div className={styles["checkboxSection"]}>
+            <div className={styles["checkboxRow"]}>
               <Checkbox
                 id='business'
                 checked={businessExpense}
@@ -148,8 +148,8 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 className='cursor-pointer text-sm font-normal'>
                 Mark as business expense
               </Label>
-            </main>
-            <main className={styles["checkboxRow"]}>
+            </div>
+            <div className={styles["checkboxRow"]}>
               <Checkbox
                 id='warranty'
                 checked={trackWarranty}
@@ -160,8 +160,8 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 className='cursor-pointer text-sm font-normal'>
                 Track warranty (24 months standard)
               </Label>
-            </main>
-            <main className={styles["checkboxRow"]}>
+            </div>
+            <div className={styles["checkboxRow"]}>
               <Checkbox
                 id='insurance'
                 checked={insuranceInventory}
@@ -172,22 +172,22 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 className='cursor-pointer text-sm font-normal'>
                 Add to insurance inventory
               </Label>
-            </main>
-          </main>
+            </div>
+          </div>
           {businessExpense ? (
             <p className={styles["vatText"]}>
               <TbBriefcase className='h-3 w-3' />
               VAT Reclaimable: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
             </p>
           ) : null}
-        </main>
+        </div>
 
         {/* Similar Past Purchases */}
-        <main>
-          <main className={styles["pastHeader"]}>
+        <div>
+          <div className={styles["pastHeader"]}>
             <TbHistory className='h-4 w-4 text-gray-500' />
             <h4 className={styles["pastTitle"]}>Similar Past Purchases</h4>
-          </main>
+          </div>
           <ul className={styles["pastList"]}>
             {pastPurchases.map((p) => (
               <li
@@ -198,10 +198,10 @@ export function GeneralExpenseCard(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </main>
+        </div>
 
         {/* CTA Buttons */}
-        <main className={styles["ctaButtons"]}>
+        <div className={styles["ctaButtons"]}>
           <Button
             variant='outline'
             size='sm'
@@ -218,7 +218,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
             <TbDownload className='h-3 w-3' />
             Export
           </Button>
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

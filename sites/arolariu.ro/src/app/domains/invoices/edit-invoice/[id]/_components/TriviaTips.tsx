@@ -106,18 +106,18 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           className={styles["savingsBanner"]}
           whileHover={{scale: 1.02}}
           transition={{type: "spring", stiffness: 400, damping: 10}}>
-          <main className={styles["savingsBannerInner"]}>
+          <div className={styles["savingsBannerInner"]}>
             <p className={styles["savingsLabel"]}>Potential Savings</p>
             <p className={styles["savingsAmount"]}>
               {formatCurrency(totalPotentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
             </p>
-          </main>
+          </div>
           <p className={styles["savingsHint"]}>Apply these tips to save on your next visit to {merchant.name}</p>
         </motion.div>
 
         <Separator />
 
-        <main className={styles["tipsList"]}>
+        <div className={styles["tipsList"]}>
           {savingsTips.map((tip, index) => (
             <motion.div
               key={tip.id}
@@ -126,54 +126,54 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
               animate={{opacity: 1, y: 0}}
               transition={{delay: index * 0.1}}
               whileHover={{scale: 1.02, backgroundColor: "hsl(var(--muted) / 0.5)"}}>
-              <main className={styles["tipInner"]}>
-                <main className={styles["tipIconWrapper"]}>{tip.icon}</main>
-                <main className={styles["tipContent"]}>
-                  <main className={styles["tipHeader"]}>
-                    <main>
+              <div className={styles["tipInner"]}>
+                <div className={styles["tipIconWrapper"]}>{tip.icon}</div>
+                <div className={styles["tipContent"]}>
+                  <div className={styles["tipHeader"]}>
+                    <div>
                       <h3 className={styles["tipTitle"]}>{tip.title}</h3>
                       <Badge
                         variant={tip.difficulty === "EASY" ? "default" : "secondary"}
                         className='mt-1 text-xs'>
                         {tip.difficulty}
                       </Badge>
-                    </main>
+                    </div>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <main className={styles["tipSavings"]}>
+                          <div className={styles["tipSavings"]}>
                             <span>
                               {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
                             </span>
                             <TbThumbUp className='ml-1 h-3.5 w-3.5' />
-                          </main>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Estimated savings with this tip</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  </main>
+                  </div>
                   <p className={styles["tipDescription"]}>{tip.description}</p>
-                </main>
-              </main>
+                </div>
+              </div>
             </motion.div>
           ))}
-        </main>
+        </div>
 
-        <main className={styles["moreButton"]}>
+        <div className={styles["moreButton"]}>
           <Button
             variant='outline'
             className='group w-full'>
             <span>View More Savings Tips</span>
             <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
           </Button>
-        </main>
+        </div>
 
-        <main className={styles["disclaimer"]}>
+        <div className={styles["disclaimer"]}>
           <TbAlertCircle className='h-3.5 w-3.5' />
           <span>Savings are estimates based on average prices and promotions</span>
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

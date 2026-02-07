@@ -28,9 +28,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
   }
 
   return (
-    <main className={styles["toolbar"]}>
-      <main className={styles["toolbarContent"]}>
-        <main className={styles["toolbarLeft"]}>
+    <div className={styles["toolbar"]}>
+      <div className={styles["toolbarContent"]}>
+        <div className={styles["toolbarLeft"]}>
           <span className={styles["selectedCount"]}>
             {selectedScans.length} {t("selected")}
           </span>
@@ -49,9 +49,9 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
               <TooltipContent>{t("clearSelection")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </main>
+        </div>
 
-        <main className={styles["toolbarRight"]}>
+        <div className={styles["toolbarRight"]}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -66,8 +66,8 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
               <TooltipContent>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </main>
-      </main>
-    </main>
+        </div>
+      </div>
+    </div>
   );
 }

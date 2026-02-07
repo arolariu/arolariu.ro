@@ -134,7 +134,7 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
   const username = user?.fullName ?? "dear guest";
 
   return (
-    <main className={styles["pageMain"]}>
+    <div className={styles["pageMain"]}>
       <section className={styles["headerSection"]}>
         <h1 className={styles["title"]}>
           {t("title", {name: username})}
@@ -149,6 +149,6 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
       <section>
         <RenderViewInvoicesScreen />
       </section>
-    </main>
+    </div>
   );
 }

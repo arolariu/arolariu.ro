@@ -63,16 +63,16 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
         <CardTitle>Merchant</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <main className={styles["merchantInfo"]}>
-          <main className={styles["merchantIcon"]}>
+        <div className={styles["merchantInfo"]}>
+          <div className={styles["merchantIcon"]}>
             <TbShoppingCart className='text-primary h-5 w-5' />
-          </main>
-          <main>
+          </div>
+          <div>
             <p className={styles["merchantName"]}>{merchant.name}</p>
             <p className={styles["merchantAddress"]}>Address: {merchant.address.address}</p>
-          </main>
-        </main>
-        <main className={styles["actions"]}>
+          </div>
+        </div>
+        <div className={styles["actions"]}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -107,7 +107,7 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </main>
+        </div>
       </CardContent>
     </Card>
   );

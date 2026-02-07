@@ -78,7 +78,7 @@ function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element 
   if (data.invoiceNames.length === 0) return null;
 
   return (
-    <main className={styles["tooltipBorder"]}>
+    <div className={styles["tooltipBorder"]}>
       {data.invoiceNames.slice(0, 3).map((name) => (
         <p
           key={name}
@@ -87,7 +87,7 @@ function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element 
         </p>
       ))}
       {data.invoiceNames.length > 3 && <p className={styles["moreText"]}>+{data.invoiceNames.length - 3} more</p>}
-    </main>
+    </div>
   );
 }
 
@@ -97,11 +97,11 @@ function HistoricalComparisonSection({historicalData}: Readonly<{historicalData:
   const colorClass = historicalData.isAboveAverage ? styles["colorRed"] : styles["colorGreen"];
 
   return (
-    <main className={styles["historicalRow"]}>
+    <div className={styles["historicalRow"]}>
       <ArrowIcon className={`h-3 w-3 ${colorClass}`} />
       <span className={colorClass}>{Math.abs(historicalData.percentageDiff).toFixed(0)}%</span>
       <span className={styles["moreText"]}>vs avg ({historicalData.yearsWithData}y data)</span>
-    </main>
+    </div>
   );
 }
 
@@ -113,12 +113,12 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
     <TooltipContent
       side='top'
       className='max-w-xs space-y-2 text-xs'>
-      <main>
+      <div>
         <p className={styles["tooltipLabel"]}>{formatCurrency(amount, {currencyCode: currency.code, locale})}</p>
         <p className={styles["tooltipCount"]}>
           {count} {count === 1 ? "invoice" : "invoices"}
         </p>
-      </main>
+      </div>
       {data ? <InvoiceNamesList data={data} /> : null}
       {historicalData ? <HistoricalComparisonSection historicalData={historicalData} /> : null}
       {isCurrentInvoiceDate ? <Badge className='mt-1'>Current invoice</Badge> : null}
@@ -254,41 +254,41 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             />
 
             {/* Legend */}
-            <main className={styles["legend"]}>
+            <div className={styles["legend"]}>
               <span>Less</span>
-              <main className={styles["legendBlocks"]}>
-                <main className={`${styles["legendBlock"]} ${styles["legendBlock1"]}`} />
-                <main className={`${styles["legendBlock"]} ${styles["legendBlock2"]}`} />
-                <main className={`${styles["legendBlock"]} ${styles["legendBlock3"]}`} />
-                <main className={`${styles["legendBlock"]} ${styles["legendBlock4"]}`} />
-                <main className={`${styles["legendBlock"]} ${styles["legendBlock5"]}`} />
-              </main>
+              <div className={styles["legendBlocks"]}>
+                <div className={`${styles["legendBlock"]} ${styles["legendBlock1"]}`} />
+                <div className={`${styles["legendBlock"]} ${styles["legendBlock2"]}`} />
+                <div className={`${styles["legendBlock"]} ${styles["legendBlock3"]}`} />
+                <div className={`${styles["legendBlock"]} ${styles["legendBlock4"]}`} />
+                <div className={`${styles["legendBlock"]} ${styles["legendBlock5"]}`} />
+              </div>
               <span>More</span>
-            </main>
+            </div>
 
             <Separator />
 
             {/* Month Statistics */}
-            <main className={styles["statsGrid"]}>
-              <main className={styles["statBox"]}>
+            <div className={styles["statsGrid"]}>
+              <div className={styles["statBox"]}>
                 <TbShoppingCart className='text-muted-foreground h-4 w-4 shrink-0' />
-                <main>
+                <div>
                   <p className={styles["statLabel"]}>Month Total</p>
                   <p className={styles["statValue"]}>{formatCurrency(patterns.monthTotal, {currencyCode: currency.code, locale})}</p>
-                </main>
-              </main>
-              <main className={styles["statBox"]}>
+                </div>
+              </div>
+              <div className={styles["statBox"]}>
                 <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
-                <main>
+                <div>
                   <p className={styles["statLabel"]}>Shopping Days</p>
                   <p className={styles["statValue"]}>{patterns.shoppingDaysCount}</p>
-                </main>
-              </main>
-            </main>
+                </div>
+              </div>
+            </div>
 
             {/* Shopping Pattern Insight */}
             {patterns.avgDaysBetween > 0 ? (
-              <main className={styles["insightBox"]}>
+              <div className={styles["insightBox"]}>
                 <TbTrendingUp className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className={styles["insightText"]}>
                   You shop every <span className={styles["insightHighlight"]}>{patterns.avgDaysBetween.toFixed(0)} days</span> on average
@@ -302,17 +302,17 @@ export function ShoppingCalendarCard(): React.JSX.Element {
                     </>
                   ) : null}
                 </p>
-              </main>
+              </div>
             ) : null}
 
             {/* Most Active Day Insight */}
             {invoices.length > 5 ? (
-              <main className={styles["insightBox"]}>
+              <div className={styles["insightBox"]}>
                 <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className={styles["insightText"]}>
                   Most active on <span className={styles["insightHighlight"]}>{getWeekdayName(patterns.mostActiveWeekday, locale)}s</span>
                 </p>
-              </main>
+              </div>
             ) : null}
           </CardContent>
         </Card>

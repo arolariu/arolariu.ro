@@ -272,7 +272,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0, y: -20}}
               className={styles["analyzingSection"]}>
-              <main className={styles["spinnerWrapper"]}>
+              <div className={styles["spinnerWrapper"]}>
                 <motion.div
                   animate={{rotate: 360}}
                   transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
@@ -281,14 +281,14 @@ export default function AnalyzeDialog(): React.JSX.Element {
                 </motion.div>
                 <h3 className={styles["analyzingTitle"]}>Analyzing Invoice</h3>
                 <p className={styles["analyzingStep"]}>{currentStep}</p>
-              </main>
-              <main className={styles["progressWrapper"]}>
+              </div>
+              <div className={styles["progressWrapper"]}>
                 <Progress
                   value={progress}
                   className='h-2'
                 />
                 <p className={styles["progressText"]}>{Math.round(progress)}% complete</p>
-              </main>
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -298,9 +298,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["optionsSection"]}>
               {/* Analysis Type Selection */}
-              <main className={styles["sectionLabel"]}>
+              <div className={styles["sectionLabel"]}>
                 <Label className='text-base font-medium'>Analysis Type</Label>
-                <main className={styles["optionsGrid"]}>
+                <div className={styles["optionsGrid"]}>
                   {ANALYSIS_OPTIONS.map((option) => (
                     <Card
                       key={option.id}
@@ -312,11 +312,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
                           : styles["optionCardDefault"]
                       }`}>
                       <CardHeader className='pb-2'>
-                        <main className={styles["optionHeader"]}>
-                          <main className={selectedOption === option.id ? styles["optionIconSelected"] : styles["optionIconDefault"]}>
+                        <div className={styles["optionHeader"]}>
+                          <div className={selectedOption === option.id ? styles["optionIconSelected"] : styles["optionIconDefault"]}>
                             {option.icon}
-                          </main>
-                          <main className={styles["optionBadges"]}>
+                          </div>
+                          <div className={styles["optionBadges"]}>
                             {option.recommended ? (
                               <Badge
                                 variant='secondary'
@@ -325,21 +325,21 @@ export default function AnalyzeDialog(): React.JSX.Element {
                               </Badge>
                             ) : null}
                             {selectedOption === option.id && <TbCheck className='h-5 w-5 text-purple-500' />}
-                          </main>
-                        </main>
+                          </div>
+                        </div>
                         <CardTitle className='text-base'>{option.title}</CardTitle>
                         <CardDescription className='text-xs'>{option.description}</CardDescription>
                       </CardHeader>
                       <CardContent className='pt-0'>
-                        <main className={styles["optionTime"]}>
+                        <div className={styles["optionTime"]}>
                           <TbClock className='h-3 w-3' />
                           <span>{option.estimatedTime}</span>
-                        </main>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
-                </main>
-              </main>
+                </div>
+              </div>
 
               {/* Selected Option Features */}
               {selectedConfig ? (
@@ -348,7 +348,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   animate={{opacity: 1, height: "auto"}}
                   className={styles["featuresSection"]}>
                   <Label className='text-sm font-medium'>Included Features</Label>
-                  <main className={styles["featuresList"]}>
+                  <div className={styles["featuresList"]}>
                     {selectedConfig.features.map((feature) => (
                       <Badge
                         key={feature}
@@ -358,18 +358,18 @@ export default function AnalyzeDialog(): React.JSX.Element {
                         {feature}
                       </Badge>
                     ))}
-                  </main>
+                  </div>
                 </motion.div>
               ) : null}
 
               <Separator />
 
               {/* Analysis Enhancements */}
-              <main className={styles["enhancementsSection"]}>
+              <div className={styles["enhancementsSection"]}>
                 <Label className='text-base font-medium'>Enhancements (Optional)</Label>
-                <main className={styles["enhancementsSection"]}>
+                <div className={styles["enhancementsSection"]}>
                   {ANALYSIS_ENHANCEMENTS.map((enhancement) => (
-                    <main
+                    <div 
                       key={enhancement.id}
                       className={styles["enhancementItem"]}>
                       <Checkbox
@@ -378,38 +378,38 @@ export default function AnalyzeDialog(): React.JSX.Element {
                         // eslint-disable-next-line react/jsx-no-bind -- simple toggle handler
                         onCheckedChange={() => handleEnhancementToggle(enhancement.id)}
                       />
-                      <main className={styles["enhancementContent"]}>
-                        <main className={styles["enhancementIconWrapper"]}>{enhancement.icon}</main>
-                        <main className={styles["enhancementText"]}>
+                      <div className={styles["enhancementContent"]}>
+                        <div className={styles["enhancementIconWrapper"]}>{enhancement.icon}</div>
+                        <div className={styles["enhancementText"]}>
                           <Label
                             htmlFor={enhancement.id}
                             className='cursor-pointer font-medium'>
                             {enhancement.label}
                           </Label>
                           <p className={styles["enhancementDesc"]}>{enhancement.description}</p>
-                        </main>
-                      </main>
-                    </main>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </main>
-              </main>
+                </div>
+              </div>
 
               {/* Analysis Summary */}
               <Card className='bg-muted/30'>
                 <CardContent className={styles["summaryContent"]}>
-                  <main className={styles["summaryLeft"]}>
+                  <div className={styles["summaryLeft"]}>
                     <TbFileAnalytics className='h-8 w-8 text-purple-500' />
-                    <main>
+                    <div>
                       <p className={styles["summaryTitle"]}>{selectedConfig?.title}</p>
                       <p className={styles["summarySubtext"]}>
                         {selectedEnhancements.length > 0 ? `+ ${selectedEnhancements.length} enhancement(s)` : "No enhancements selected"}
                       </p>
-                    </main>
-                  </main>
-                  <main className={styles["summaryRight"]}>
+                    </div>
+                  </div>
+                  <div className={styles["summaryRight"]}>
                     <p className={styles["summaryTimeLabel"]}>Estimated time</p>
                     <p className={styles["summaryTimeValue"]}>{selectedConfig?.estimatedTime}</p>
-                  </main>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>

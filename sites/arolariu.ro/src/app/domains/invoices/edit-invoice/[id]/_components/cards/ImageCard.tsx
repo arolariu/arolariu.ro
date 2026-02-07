@@ -117,15 +117,15 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 height={600}
                 className={isTransitioning ? styles["receiptImageTransitioning"] : styles["receiptImageNormal"]}
               />
-              <main className={styles["zoomOverlayVisible"]}>
+              <div className={styles["zoomOverlayVisible"]}>
                 <TbZoomIn className='h-8 w-8' />
-              </main>
+              </div>
             </Button>
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
               </DialogHeader>
-              <main className={styles["zoomContainer"]}>
+              <div className={styles["zoomContainer"]}>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1} - full size`}
@@ -133,7 +133,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   height={1200}
                   className={styles["zoomDialogImage"]}
                 />
-              </main>
+              </div>
             </DialogContent>
           </Dialog>
         </CardContent>
@@ -156,7 +156,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
 
           {/* Navigation buttons */}
           {totalScans > 1 && (
-            <main className={styles["navButtons"]}>
+            <div className={styles["navButtons"]}>
               {currentScanIndex > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -189,11 +189,11 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   </TooltipContent>
                 </Tooltip>
               )}
-            </main>
+            </div>
           )}
 
           {/* Add/Remove buttons */}
-          <main className={styles["actionButtons"]}>
+          <div className={styles["actionButtons"]}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -223,7 +223,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 <p>Remove the current receipt scan</p>
               </TooltipContent>
             </Tooltip>
-          </main>
+          </div>
         </CardFooter>
       </Card>
     </TooltipProvider>

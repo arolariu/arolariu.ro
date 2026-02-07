@@ -69,7 +69,7 @@ export function ReceiptScanCard(): React.JSX.Element {
             open={isOpen}
             onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <main className={styles["imageContainer"]}>
+              <div className={styles["imageContainer"]}>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1}`}
@@ -77,13 +77,13 @@ export function ReceiptScanCard(): React.JSX.Element {
                   height={600}
                   className={`${styles["scanImage"]} ${isTransitioning ? styles["scanImageTransitioning"] : ""}`}
                 />
-              </main>
+              </div>
             </DialogTrigger>
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
               </DialogHeader>
-              <main className={styles["dialogImageContainer"]}>
+              <div className={styles["dialogImageContainer"]}>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1} - full size`}
@@ -91,7 +91,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   height={1200}
                   className={styles["dialogImage"]}
                 />
-              </main>
+              </div>
             </DialogContent>
           </Dialog>
         </CardContent>
@@ -111,7 +111,7 @@ export function ReceiptScanCard(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
           {totalScans > 1 && (
-            <main className={styles["scanNavigation"]}>
+            <div className={styles["scanNavigation"]}>
               {currentScanIndex > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -142,7 +142,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   </TooltipContent>
                 </Tooltip>
               )}
-            </main>
+            </div>
           )}
         </CardFooter>
       </Card>

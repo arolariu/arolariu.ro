@@ -55,11 +55,11 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
     <Card className='relative overflow-hidden'>
       <CardContent className='p-0'>
         {/* Preview */}
-        <main className={styles["previewArea"]}>
+        <div className={styles["previewArea"]}>
           {mimeType === "application/pdf" ? (
-            <main className={styles["pdfPlaceholder"]}>
+            <div className={styles["pdfPlaceholder"]}>
               <TbFileTypePdf className={styles["pdfIcon"]} />
-            </main>
+            </div>
           ) : (
             <Image
               src={preview}
@@ -72,23 +72,23 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
 
           {/* Status overlay */}
           {status === "uploading" && (
-            <main className={`${styles["statusOverlay"]} ${styles["overlayUploading"]}`}>
+            <div className={`${styles["statusOverlay"]} ${styles["overlayUploading"]}`}>
               <TbLoader2 className={`${styles["statusIcon"]} ${styles["spinIcon"]}`} />
-            </main>
+            </div>
           )}
           {status === "completed" && (
-            <main className={`${styles["statusOverlay"]} ${styles["overlayCompleted"]}`}>
+            <div className={`${styles["statusOverlay"]} ${styles["overlayCompleted"]}`}>
               <TbCheck className={styles["statusIcon"]} />
-            </main>
+            </div>
           )}
           {status === "failed" && (
-            <main className={`${styles["statusOverlay"]} ${styles["overlayFailed"]}`}>
+            <div className={`${styles["statusOverlay"]} ${styles["overlayFailed"]}`}>
               <TbX className={styles["statusIcon"]} />
-            </main>
+            </div>
           )}
 
           {/* Status badge */}
-          <main className={styles["badgePosition"]}>
+          <div className={styles["badgePosition"]}>
             {status === "idle" && (
               <Badge
                 variant='secondary'
@@ -117,7 +117,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
                 Failed
               </Badge>
             )}
-          </main>
+          </div>
 
           {/* Remove button */}
           {(status === "idle" || status === "failed") && (
@@ -136,10 +136,10 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
               </Tooltip>
             </TooltipProvider>
           )}
-        </main>
+        </div>
 
         {/* File info */}
-        <main className={styles["fileInfo"]}>
+        <div className={styles["fileInfo"]}>
           <p
             className={styles["fileName"]}
             title={name}>
@@ -147,7 +147,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
           </p>
           <p className={styles["fileSize"]}>{formatFileSize(size)}</p>
           {error ? <p className={styles["fileError"]}>{error}</p> : null}
-        </main>
+        </div>
       </CardContent>
     </Card>
   );
@@ -165,12 +165,12 @@ export default function UploadPreview(): React.JSX.Element | null {
   }
 
   return (
-    <main className={styles["container"]}>
-      <main className={styles["header"]}>
+    <div className={styles["container"]}>
+      <div className={styles["header"]}>
         <h2 className={styles["title"]}>Pending Uploads ({pendingUploads.length})</h2>
-      </main>
+      </div>
 
-      <main className={styles["grid"]}>
+      <div className={styles["grid"]}>
         {pendingUploads.map((upload) => (
           <UploadCard
             key={upload.id}
@@ -184,7 +184,7 @@ export default function UploadPreview(): React.JSX.Element | null {
             onRemove={removeFiles}
           />
         ))}
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }

@@ -36,16 +36,16 @@ export default function ScansHeader(): React.JSX.Element {
   const {scans, isSyncing, lastSyncTimestamp, syncScans} = useScans();
 
   return (
-    <main className={styles["header"]}>
-      <main className={styles["headerLeft"]}>
-        <main>
+    <div className={styles["header"]}>
+      <div className={styles["headerLeft"]}>
+        <div>
           <h1 className={styles["headerTitle"]}>
             {t("titleWithCount", {count: String(scans.length)})}
           </h1>
           {lastSyncTimestamp ? (
             <p className={styles["lastSynced"]}>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p>
           ) : null}
-        </main>
+        </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -63,9 +63,9 @@ export default function ScansHeader(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </main>
+      </div>
 
-      <main className={styles["headerActions"]}>
+      <div className={styles["headerActions"]}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -116,7 +116,7 @@ export default function ScansHeader(): React.JSX.Element {
             <TooltipContent>{t("syncTooltip")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }

@@ -59,23 +59,23 @@ interface SelectionModeProps {
  */
 function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): React.JSX.Element {
   return (
-    <main className={styles["selectionBody"]}>
+    <div className={styles["selectionBody"]}>
       <p className={styles["selectionDescription"]}>Choose how you want to share this invoice. Your choice affects who can access it.</p>
 
-      <main className={styles["selectionGrid"]}>
+      <div className={styles["selectionGrid"]}>
         <Card
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPublic}>
           <CardHeader className={styles["cardHeaderRow"]}>
-            <main className={`${styles["iconCircle"]} ${styles["iconCircleOrange"]}`}>
+            <div className={`${styles["iconCircle"]} ${styles["iconCircleOrange"]}`}>
               <TbGlobe className={styles["globeIcon"]} />
-            </main>
-            <main className={styles["cardContent"]}>
+            </div>
+            <div className={styles["cardContent"]}>
               <CardTitle className='text-base'>Public Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Generate a link or QR code that <strong>anyone</strong> can use to view this invoice.
               </CardDescription>
-            </main>
+            </div>
           </CardHeader>
         </Card>
 
@@ -83,18 +83,18 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPrivate}>
           <CardHeader className={styles["cardHeaderRow"]}>
-            <main className={`${styles["iconCircle"]} ${styles["iconCircleGreen"]}`}>
+            <div className={`${styles["iconCircle"]} ${styles["iconCircleGreen"]}`}>
               <TbLock className={styles["lockIcon"]} />
-            </main>
-            <main className={styles["cardContent"]}>
+            </div>
+            <div className={styles["cardContent"]}>
               <CardTitle className='text-base'>Private Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Send an email invitation to a <strong>specific person</strong>. Only they will have access.
               </CardDescription>
-            </main>
+            </div>
           </CardHeader>
         </Card>
-      </main>
+      </div>
 
       <Alert
         variant='default'
@@ -105,7 +105,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
           Public links can be accessed by anyone who has the URL. Private sharing restricts access to the specific recipient.
         </AlertDescription>
       </Alert>
-    </main>
+    </div>
   );
 }
 

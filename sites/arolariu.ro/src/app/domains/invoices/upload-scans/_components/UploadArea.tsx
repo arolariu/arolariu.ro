@@ -178,7 +178,7 @@ export default function UploadArea(): React.JSX.Element {
 
   if (pendingUploads.length === 0) {
     return (
-      <main
+      <div 
         className={`${styles["dropzoneEmpty"]} ${isDragActive ? styles["dropzoneEmptyActive"] : ""}`}
         role='button'
         tabIndex={0}
@@ -217,13 +217,13 @@ export default function UploadArea(): React.JSX.Element {
             Choose Files
           </Button>
         </motion.div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className={styles["wrapper"]}>
-      <main
+    <div className={styles["wrapper"]}>
+      <div 
         className={`${styles["dropzoneCompact"]} ${isDragActive ? styles["dropzoneCompactActive"] : ""} ${isUploading ? styles["dropzoneCompactDisabled"] : ""}`}
         role='button'
         tabIndex={isUploading ? -1 : 0}
@@ -242,18 +242,18 @@ export default function UploadArea(): React.JSX.Element {
           className={styles["hiddenInput"]}
           aria-label='Upload files'
         />
-        <main className={styles["compactContent"]}>
-          <main className={styles["compactIconCircle"]}>
+        <div className={styles["compactContent"]}>
+          <div className={styles["compactIconCircle"]}>
             <TbUpload className={styles["compactIcon"]} />
-          </main>
-          <main className={styles["compactTextBlock"]}>
+          </div>
+          <div className={styles["compactTextBlock"]}>
             <p className={styles["compactTitle"]}>{isDragActive ? "Drop to add..." : "Add more scans"}</p>
             <p className={styles["compactSubtitle"]}>JPG, PNG, PDF up to 10MB</p>
-          </main>
-        </main>
-      </main>
+          </div>
+        </div>
+      </div>
 
-      <main className={styles["actions"]}>
+      <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -283,7 +283,7 @@ export default function UploadArea(): React.JSX.Element {
             <TooltipContent>Upload all pending scans to your account</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }

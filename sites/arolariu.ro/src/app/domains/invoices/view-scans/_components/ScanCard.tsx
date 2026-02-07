@@ -113,11 +113,11 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
         onClick={onToggleSelect}>
         <CardContent className='p-0'>
           {/* Preview */}
-          <main className={styles["previewArea"]}>
+          <div className={styles["previewArea"]}>
             {scan.mimeType === "application/pdf" ? (
-              <main className={styles["pdfPlaceholder"]}>
+              <div className={styles["pdfPlaceholder"]}>
                 <TbFileTypePdf className={styles["pdfIcon"]} />
-              </main>
+              </div>
             ) : (
               <Image
                 src={scan.blobUrl}
@@ -129,7 +129,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             )}
 
             {/* Selection checkbox */}
-            <main
+            <div 
               role='button'
               tabIndex={0}
               className={styles["checkboxPosition"]}
@@ -140,10 +140,10 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 onCheckedChange={onToggleSelect}
                 className='h-5 w-5 border-2 border-white bg-white/80 data-[state=checked]:bg-purple-500'
               />
-            </main>
+            </div>
 
             {/* Actions menu */}
-            <main
+            <div 
               role='button'
               tabIndex={0}
               className={styles["actionsPosition"]}
@@ -167,31 +167,31 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </main>
+            </div>
 
             {/* Used by invoice badge */}
             {isUsedByInvoice ? (
-              <main className={styles["linkedBadgePosition"]}>
-                <main className={styles["linkedBadge"]}>
+              <div className={styles["linkedBadgePosition"]}>
+                <div className={styles["linkedBadge"]}>
                   <TbLink className={styles["linkedIcon"]} />
                   {t("linked")}
-                </main>
-              </main>
+                </div>
+              </div>
             ) : null}
-          </main>
+          </div>
 
           {/* File info */}
-          <main className={styles["fileInfo"]}>
+          <div className={styles["fileInfo"]}>
             <p
               className={styles["fileName"]}
               title={scan.name}>
               {scan.name}
             </p>
-            <main className={styles["fileMeta"]}>
+            <div className={styles["fileMeta"]}>
               <span>{formatFileSize(scan.sizeInBytes)}</span>
               <span>{formatDate(scan.uploadedAt)}</span>
-            </main>
-          </main>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

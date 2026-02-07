@@ -131,7 +131,7 @@ export default function ImportDialog(): React.JSX.Element {
             <TabsTrigger value='xlsx'>Excel</TabsTrigger>
           </TabsList>
 
-          <main
+          <div 
             className={`${styles["dropzone"]} ${isDragActive ? styles["dropzoneActive"] : styles["dropzoneIdle"]}`}
             // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility
             {...getRootProps()}>
@@ -139,7 +139,7 @@ export default function ImportDialog(): React.JSX.Element {
               // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading input props for proper file upload functionality
               {...getInputProps()}
             />
-            <main className={styles["dropzoneContent"]}>
+            <div className={styles["dropzoneContent"]}>
               <motion.div
                 className={styles["uploadIconWrapper"]}
                 animate={isDragActive ? {scale: 1.1} : {scale: 1}}
@@ -153,21 +153,21 @@ export default function ImportDialog(): React.JSX.Element {
                 {activeTab === "pdf" && "Accepts .pdf files (max 10MB)"}
                 {activeTab === "xlsx" && "Accepts .xlsx and .xls files (max 10MB)"}
               </p>
-            </main>
-          </main>
+            </div>
+          </div>
 
           {files.length > 0 && (
-            <main className={styles["fileListWrapper"]}>
+            <div className={styles["fileListWrapper"]}>
               <h4 className={styles["fileListTitle"]}>Selected Files</h4>
-              <main className={styles["fileList"]}>
+              <div className={styles["fileList"]}>
                 {files.map((file, index) => (
-                  <main
+                  <div 
                     key={fileKey(file)}
                     className={styles["fileItem"]}>
-                    <main className={styles["fileInfo"]}>
+                    <div className={styles["fileInfo"]}>
                       {getFileIcon(file.name)}
                       <span className={styles["fileName"]}>{file.name}</span>
-                    </main>
+                    </div>
                     <Button
                       variant='ghost'
                       size='sm'
@@ -175,10 +175,10 @@ export default function ImportDialog(): React.JSX.Element {
                       onClick={handleRemoveClick}>
                       Remove
                     </Button>
-                  </main>
+                  </div>
                 ))}
-              </main>
-            </main>
+              </div>
+            </div>
           )}
         </Tabs>
 

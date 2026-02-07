@@ -26,7 +26,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className={styles["tooltip"]}>
+    <div className={styles["tooltip"]}>
       <p className={styles["tooltipName"]}>{data.fullName ?? data.name}</p>
       <p className={styles["tooltipPrice"]}>
         {data.price.toFixed(2)} {currency}
@@ -34,7 +34,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipQty"]}>
         Qty: {data.quantity} {data.unit}
       </p>
-    </main>
+    </div>
   );
 }
 
