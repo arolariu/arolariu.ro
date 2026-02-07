@@ -71,7 +71,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/about/the-platform">>): Promise<React.JSX.Element> {
   return (
-    <main className={styles["platformPage"]}>
+    <div className={styles["platformPage"]}>
       <ScrollToTop />
       <div className={styles["platformMain"]}>
         {/* Hero Section - Full viewport intro with animated background */}
@@ -92,6 +92,6 @@ export default async function AboutThePlatformPage(_props: Readonly<PageProps<"/
         {/* Call to Action Section - Footer CTA */}
         <CallToAction />
       </div>
-    </main>
+    </div>
   );
 }

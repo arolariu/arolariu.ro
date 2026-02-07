@@ -18,8 +18,8 @@ export async function generateMetadata(): Promise<Metadata> {
 /** About hub page — server component wrapper with semantic `<main>`. */
 export default async function AboutHomepage(_props: Readonly<PageProps<"/about">>): Promise<React.JSX.Element> {
   return (
-    <main className={styles["aboutPage"]}>
+    <div className={styles["aboutPage"]}>
       <RenderAboutScreen />
-    </main>
+    </div>
   );
 }

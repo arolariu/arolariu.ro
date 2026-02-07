@@ -147,13 +147,13 @@ export default async function TermsOfServiceHomepage(_props: Readonly<PageProps<
   const t = await getTranslations("termsOfService");
 
   return (
-    <main className={styles["termsOfServiceMain"]}>
+    <div className={styles["termsOfServiceMain"]}>
       <section className={styles["headerSection"]}>
         <h1 className={styles["pageTitle"]}>{t("title")}</h1>
         <span>{t("last_updated")}</span>
       </section>
       <RenderTermsOfServiceScreen />
       <section className={styles["footerSection"]}>{t("contactInformation.content")}</section>
-    </main>
+    </div>
   );
 }

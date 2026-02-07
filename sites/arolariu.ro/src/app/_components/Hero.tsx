@@ -33,20 +33,20 @@ export default function HeroSection(): React.JSX.Element {
               textKey='subtitle'
             />
           </p>
-          <main className={styles["ctaWrapper"]}>
-            <main className={styles["ctaGlow"]} />
+          <div className={styles["ctaWrapper"]}>
+            <div className={styles["ctaGlow"]} />
             <Link
               href='/domains'
               title=''
               className={styles["ctaButton"]}>
               {t("cta")}
             </Link>
-          </main>
+          </div>
 
-          <main className={styles["appreciation"]}>
+          <div className={styles["appreciation"]}>
             <Separator className={styles["appreciationSeparator"]} />
             <span className={styles["appreciationText"]}>{t("appreciation")}</span>
-          </main>
+          </div>
         </motion.div>
         {/* Right side */}
         <motion.div
@@ -54,7 +54,7 @@ export default function HeroSection(): React.JSX.Element {
           animate={{opacity: 1, scale: 1}}
           transition={{duration: 0.8, delay: 0.3}}
           className={styles["visual"]}>
-          <main className={styles["visualContainer"]}>
+          <div className={styles["visualContainer"]}>
             <motion.div
               className={styles["orbPrimary"]}
               animate={{
@@ -80,13 +80,13 @@ export default function HeroSection(): React.JSX.Element {
               }}
             />
 
-            <main className={styles["techSphereWrapper"]}>
+            <div className={styles["techSphereWrapper"]}>
               <TechSphere />
-            </main>
+            </div>
 
             {/* Mobile-only animation */}
-            <main className={styles["mobileAnimation"]}>
-              <main className={styles["mobileAnimationInner"]}>
+            <div className={styles["mobileAnimation"]}>
+              <div className={styles["mobileAnimationInner"]}>
                 <motion.div
                   className={styles["mobileOrb"]}
                   animate={{
@@ -99,9 +99,9 @@ export default function HeroSection(): React.JSX.Element {
                     repeatType: "reverse",
                   }}
                 />
-              </main>
-            </main>
-          </main>
+              </div>
+            </div>
+          </div>
         </motion.div>
       </article>
     </section>

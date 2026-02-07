@@ -90,19 +90,19 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
 
   if (eulaCookie === null) {
     return (
-      <main className={styles["main"]}>
+      <div className={styles["main"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5}}>
           <EulaShimmer />
         </motion.div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className={styles["main"]}>
+    <div className={styles["main"]}>
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
@@ -121,7 +121,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             </CardTitle>
             <CardDescription className={styles["subtitle"]}>{t("subtitle")}</CardDescription>
 
-            <main className={styles["localePicker"]}>
+            <div className={styles["localePicker"]}>
               <Label
                 htmlFor='locale-select'
                 className={styles["localeLabel"]}>
@@ -138,7 +138,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <option value='ro'>Română (RO)</option>
                 <option value='fr'>Français (FR)</option>
               </select>
-            </main>
+            </div>
           </CardHeader>
 
           <CardContent className={styles["contentArea"]}>
@@ -150,7 +150,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               <span>{t("content")}</span>
             </motion.div>
 
-            <main className={styles["policyGrid"]}>
+            <div className={styles["policyGrid"]}>
               <motion.div
                 whileHover={{scale: 1.02}}
                 transition={{type: "spring", stiffness: 400, damping: 10}}>
@@ -214,7 +214,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   </CardFooter>
                 </Card>
               </motion.div>
-            </main>
+            </div>
 
             <Separator className={styles["separator"]} />
 
@@ -222,13 +222,13 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               initial={{opacity: 0, y: 10}}
               animate={{opacity: 1, y: 0}}
               transition={{delay: 0.4}}>
-              <main className={styles["cookiesSection"]}>
-                <main className={styles["cookiesHeader"]}>
+              <div className={styles["cookiesSection"]}>
+                <div className={styles["cookiesHeader"]}>
                   <h3 className={styles["cookiesTitle"]}>
                     <TbCookie className={styles["cookieIcon"]} />
                     {t("cookiesPolicy.title")}
                   </h3>
-                </main>
+                </div>
 
                 <span className={styles["cookiesSubtitle"]}>{t("cookiesPolicy.subtitle")}</span>
 
@@ -239,16 +239,16 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   className={styles["accordion"]}>
                   <AccordionItem value='essential'>
                     <AccordionTrigger className={styles["accordionTrigger"]}>
-                      <main className={styles["accordionTriggerContent"]}>
+                      <div className={styles["accordionTriggerContent"]}>
                         <TbLock className={styles["accordionIcon"]} />
                         <span>{t("cookiesPolicy.cookies.essential.title")}</span>
                         <Badge className={styles["badgeRequired"]}>Required</Badge>
-                      </main>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <main className={styles["accordionBody"]}>
+                      <div className={styles["accordionBody"]}>
                         <p className={styles["accordionDescription"]}>{t("cookiesPolicy.cookies.essential.description")}</p>
-                        <main className={styles["switchRow"]}>
+                        <div className={styles["switchRow"]}>
                           <Switch
                             id='essential'
                             checked
@@ -259,14 +259,14 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                             className={styles["switchLabel"]}>
                             {t("cookiesPolicy.cookies.essential.checkbox")}
                           </Label>
-                        </main>
-                      </main>
+                        </div>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
 
                   <AccordionItem value='analytics'>
                     <AccordionTrigger className={styles["accordionTrigger"]}>
-                      <main className={styles["accordionTriggerContent"]}>
+                      <div className={styles["accordionTriggerContent"]}>
                         <TbInfoCircleFilled className={styles["accordionIcon"]} />
                         <span>{t("cookiesPolicy.cookies.analytics.title")}</span>
                         <Badge
@@ -274,12 +274,12 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                           variant='outline'>
                           Optional
                         </Badge>
-                      </main>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <main className={styles["accordionBody"]}>
+                      <div className={styles["accordionBody"]}>
                         <p className={styles["accordionDescription"]}>{t("cookiesPolicy.cookies.analytics.description")}</p>
-                        <main className={styles["switchRow"]}>
+                        <div className={styles["switchRow"]}>
                           <Switch
                             id='analytics'
                             checked={cookieState.analytics}
@@ -290,12 +290,12 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                             className={styles["switchLabel"]}>
                             {t("cookiesPolicy.cookies.analytics.checkbox")}
                           </Label>
-                        </main>
-                      </main>
+                        </div>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-              </main>
+              </div>
             </motion.div>
           </CardContent>
 
@@ -315,6 +315,6 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
           </CardFooter>
         </Card>
       </motion.div>
-    </main>
+    </div>
   );
 }

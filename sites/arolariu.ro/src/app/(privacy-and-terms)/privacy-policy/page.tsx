@@ -130,13 +130,13 @@ export default async function PrivacyPolicyHomepage(_props: Readonly<PageProps<"
   const t = await getTranslations("privacyPolicy");
 
   return (
-    <main className={styles["privacyPolicyMain"]}>
+    <div className={styles["privacyPolicyMain"]}>
       <section className={styles["headerSection"]}>
         <h1 className={styles["pageTitle"]}>{t("title")}</h1>
         <span>{t("last_updated")}</span>
       </section>
       <RenderPrivacyPolicyScreen />
       <section className={styles["footerSection"]}>{t("contactInformation.content")}</section>
-    </main>
+    </div>
   );
 }

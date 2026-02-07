@@ -64,7 +64,7 @@ export default function FeaturesSection(): React.JSX.Element {
         />
         <p className={styles["description"]}>{t("description")}</p>
 
-        <main className={styles["grid"]}>
+        <div className={styles["grid"]}>
           {features.map((feature) => (
             <Card
               key={feature.title}
@@ -77,7 +77,7 @@ export default function FeaturesSection(): React.JSX.Element {
               </CardContent>
             </Card>
           ))}
-        </main>
+        </div>
         <Link
           href='/about'
           className={styles["learnMoreLink"]}>

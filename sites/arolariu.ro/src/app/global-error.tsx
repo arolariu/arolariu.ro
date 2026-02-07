@@ -123,7 +123,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
         <ContextProviders locale='en'>
           <Header />
 
-          <main className={styles["pageContainer"]}>
+          <div className={styles["pageContainer"]}>
             {/* Hero Section - Error Icon */}
             <section className={styles["heroSection"]}>
               <div className={styles["iconCircle"]}>
@@ -270,7 +270,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                 )}
               </p>
             </section>
-          </main>
+          </div>
           <Footer />
           <Tracking />
         </ContextProviders>

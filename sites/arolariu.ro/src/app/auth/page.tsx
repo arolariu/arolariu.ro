@@ -95,11 +95,11 @@ export default async function AuthHomepage(_props: Readonly<PageProps<"/auth">>)
   const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   if (isAuthenticated) return redirect("/");
   return (
-    <main className={styles["main"]}>
+    <div className={styles["main"]}>
       <DotBackground className={styles["dotBackground"]} />
-      <main className={styles["content"]}>
+      <div className={styles["content"]}>
         <RenderAuthScreen />
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }

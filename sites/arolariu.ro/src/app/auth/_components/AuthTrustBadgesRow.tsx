@@ -9,7 +9,7 @@ type Props = Readonly<{
 
 export default function AuthTrustBadgesRow(props: Readonly<Props>): React.JSX.Element {
   return (
-    <main className={styles["row"]}>
+    <div className={styles["row"]}>
       {props.badges.map((label) => (
         <Badge
           key={label}
@@ -17,6 +17,6 @@ export default function AuthTrustBadgesRow(props: Readonly<Props>): React.JSX.El
           {label}
         </Badge>
       ))}
-    </main>
+    </div>
   );
 }

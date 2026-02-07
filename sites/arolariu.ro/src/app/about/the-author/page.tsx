@@ -73,7 +73,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AboutTheAuthorPage(_props: Readonly<PageProps<"/about/the-author">>): Promise<React.JSX.Element> {
   return (
-    <main className={styles["authorPage"]}>
+    <div className={styles["authorPage"]}>
       <ScrollToTop />
       <div className={styles["authorMain"]}>
         <Hero />
@@ -85,6 +85,6 @@ export default async function AboutTheAuthorPage(_props: Readonly<PageProps<"/ab
         <Perspectives />
         <Contact />
       </div>
-    </main>
+    </div>
   );
 }

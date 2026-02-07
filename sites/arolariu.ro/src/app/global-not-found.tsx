@@ -51,7 +51,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
       <body className={styles["body"]}>
         <ContextProviders locale={locale}>
           <Header />
-          <main className={styles["pageContainer"]}>
+          <div className={styles["pageContainer"]}>
             <section className={styles["heroContent"]}>
               <h1 className={styles["title"]}>{t("title")}</h1>
               <span className={styles["subtitle"]}>{t("subtitle")}</span>
@@ -76,7 +76,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
                 </Button>
               </div>
             </section>
-          </main>
+          </div>
           <Footer />
           {Boolean(eulaCookie) && <Tracking />}
         </ContextProviders>
