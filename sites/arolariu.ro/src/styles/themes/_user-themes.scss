@@ -1,0 +1,57 @@
+// ===========================================
+// USER THEME PRESETS
+// ===========================================
+// This file documents and implements the full theme preset system.
+// Each preset defines a complete set of CSS custom properties
+// that override the defaults from globals.css.
+//
+// ARCHITECTURE:
+//   1. Presets are defined in TypeScript (src/lib/theme-presets.ts)
+//   2. The useThemePreset hook applies CSS variables to :root at runtime
+//   3. This SCSS file provides preset-specific style overrides
+//      using data-theme-preset="name" selectors
+//   4. User preferences are persisted in Zustand store → IndexedDB
+//
+// AVAILABLE PRESETS:
+//   - default: Cyan→Purple→Pink gradient, blue primary
+//   - midnight: Deep blue/indigo, dark-first design
+//   - ocean: Sky/cyan/teal palette, cool tones
+//   - sunset: Orange/red/pink, warm tones
+//   - forest: Green/emerald/teal, nature tones
+//   - rose: Rose/pink/fuchsia, romantic tones
+//   - monochrome: Grayscale, minimal design
+//   - custom: User-defined colors
+//
+// HOW TO ADD A NEW PRESET:
+//   1. Add preset object to THEME_PRESETS in src/lib/theme-presets.ts
+//   2. Add data-attribute selector below (if SCSS overrides needed)
+//   3. Update SettingsAppearance.module.scss with preview colors
+//   4. Document in this file
+// ===========================================
+
+// Preset-specific SCSS overrides
+// These selectors target the data-theme-preset attribute set by useThemePreset
+
+[data-theme-preset="midnight"] {
+  // Midnight uses deeper contrast - overrides handled via CSS variables at runtime
+}
+
+[data-theme-preset="ocean"] {
+  // Ocean-specific overrides if needed
+}
+
+[data-theme-preset="sunset"] {
+  // Sunset-specific overrides if needed
+}
+
+[data-theme-preset="forest"] {
+  // Forest-specific overrides if needed
+}
+
+[data-theme-preset="rose"] {
+  // Rose-specific overrides if needed
+}
+
+[data-theme-preset="monochrome"] {
+  // Monochrome removes all color, uses grayscale only
+}

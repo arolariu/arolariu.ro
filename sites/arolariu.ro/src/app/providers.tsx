@@ -1,6 +1,9 @@
+"use client";
+
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
 import {GradientThemeProvider} from "@/contexts/GradientThemeContext";
+import {useThemePreset} from "@/hooks/useThemePreset";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
@@ -13,6 +16,15 @@ import frMessages from "../../messages/fr.json";
 import roMessages from "../../messages/ro.json";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
+
+/**
+ * Client component that applies theme preset CSS variables.
+ * Must be rendered inside ThemeProvider (needs resolvedTheme from next-themes).
+ */
+function ThemePresetApplier(): null {
+  useThemePreset();
+  return null;
+}
 
 /**
  * Props for the ContextProviders component defining locale and children.
@@ -141,6 +153,7 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
             attribute='class'
             themes={["light", "dark"]}>
             <GradientThemeProvider>
+              <ThemePresetApplier />
               {children}
               <ToastProvider />
               <Commander />

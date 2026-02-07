@@ -4,6 +4,7 @@
  * @module stores/preferencesStore
  */
 
+import type {CustomThemeColors, ThemePresetName} from "@/lib/theme-presets";
 import {create} from "zustand";
 import {devtools, persist} from "zustand/middleware";
 import {createSharedStorage} from "./storage/indexedDBStorage";
@@ -41,6 +42,10 @@ export interface PreferencesPersistedState {
   compactMode: boolean;
   /** Whether animations are enabled */
   animationsEnabled: boolean;
+  /** Active theme preset name or "custom" for user-defined colors */
+  themePreset: ThemePresetName | "custom";
+  /** Custom theme colors when themePreset is "custom" */
+  customThemeColors: CustomThemeColors | null;
 }
 
 /**
@@ -104,6 +109,18 @@ interface PreferencesActions {
   setAnimationsEnabled: (enabled: boolean) => void;
 
   /**
+   * Sets the active theme preset.
+   * @param preset Preset name or "custom"
+   */
+  setThemePreset: (preset: ThemePresetName | "custom") => void;
+
+  /**
+   * Sets custom theme colors (used when themePreset is "custom").
+   * @param colors Custom theme color definitions
+   */
+  setCustomThemeColors: (colors: CustomThemeColors | null) => void;
+
+  /**
    * Sets the hydration status.
    * @param hasHydrated Whether the store has been hydrated
    */
@@ -141,6 +158,8 @@ export const DEFAULT_PREFERENCES: PreferencesPersistedState = {
   locale: "en",
   compactMode: false,
   animationsEnabled: true,
+  themePreset: "default",
+  customThemeColors: null,
 };
 
 /**
@@ -171,6 +190,8 @@ const persistConfig = {
     locale: state.locale,
     compactMode: state.compactMode,
     animationsEnabled: state.animationsEnabled,
+    themePreset: state.themePreset,
+    customThemeColors: state.customThemeColors,
   }),
   onRehydrateStorage: () => handleRehydration,
 } as const;
@@ -195,6 +216,8 @@ const createPreferencesSlice = (
   setLocale: (locale) => set({locale}),
   setCompactMode: (enabled) => set({compactMode: enabled}),
   setAnimationsEnabled: (enabled) => set({animationsEnabled: enabled}),
+  setThemePreset: (preset) => set({themePreset: preset}),
+  setCustomThemeColors: (colors) => set({customThemeColors: colors}),
   setHasHydrated: (hasHydrated) => set({hasHydrated}),
   resetToDefaults: () => set(DEFAULT_PREFERENCES),
 
