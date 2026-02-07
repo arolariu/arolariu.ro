@@ -33,14 +33,14 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
             {message.role === "assistant" ? (
               <>
                 <AvatarFallback className='bg-primary/10'>
-                  <TbRobot className='text-primary h-4 w-4' />
+                  <TbRobot className={styles["robotIcon"]} />
                 </AvatarFallback>
                 <AvatarImage src='/placeholder.svg?height=32&width=32' />
               </>
             ) : (
               <>
                 <AvatarFallback className='bg-secondary/10'>
-                  <TbUser className='text-secondary-foreground h-4 w-4' />
+                  <TbUser className={styles["userIcon"]} />
                 </AvatarFallback>
                 <AvatarImage src='/placeholder.svg?height=32&width=32' />
               </>

@@ -103,7 +103,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
             <CardDescription>Based on items in this invoice</CardDescription>
           </main>
           <TooltipProvider>
-            <main className='flex flex-row gap-4'>
+            <main className={styles["headerActions"]}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

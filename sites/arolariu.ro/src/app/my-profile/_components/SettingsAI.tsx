@@ -125,8 +125,8 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
               </Select>
               {selectedModel ? (
                 <div className={styles["infoBox"]}>
-                  <p className='text-sm font-medium'>{selectedModel.name}</p>
-                  <p className='text-muted-foreground text-xs'>{selectedModel.description}</p>
+                  <p className={styles["modelName"]}>{selectedModel.name}</p>
+                  <p className={styles["modelDescription"]}>{selectedModel.description}</p>
                 </div>
               ) : null}
             </CardContent>
@@ -163,7 +163,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   ))}
                 </SelectContent>
               </Select>
-              <p className='text-muted-foreground mt-2 text-xs'>
+              <p className={styles["behaviorHint"]}>
                 {AI_BEHAVIOR_PRESETS.find((p) => p.id === settings.behaviorPreset)?.description}
               </p>
             </CardContent>

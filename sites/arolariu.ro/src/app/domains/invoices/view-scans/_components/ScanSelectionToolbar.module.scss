@@ -47,6 +47,21 @@
   gap: space(3);
 }
 
+// ===========================================
+// ICON STYLES
+// ===========================================
+.clearIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(1);
+}
+
+.createIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+}
+
 .hiddenMobile {
   display: none;
 

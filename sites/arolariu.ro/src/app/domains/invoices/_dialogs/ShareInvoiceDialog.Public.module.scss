@@ -69,3 +69,37 @@
   text-align: center;
   font-size: font-size('xs');
 }
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.tabIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+}
+
+.actionIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.globeAlertIcon {
+  width: space(4);
+  height: space(4);
+  color: #ea580c; // Decorative: intentionally hardcoded (orange-600)
+
+  @include dark {
+    color: #fb923c; // orange-400
+  }
+}
+
+.qrCode {
+  border-radius: radius('md');
+}
+
+.backIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(1);
+}

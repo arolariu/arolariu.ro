@@ -106,7 +106,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                     <SheetDescription>{t("header.editProfileDescription")}</SheetDescription>
                   </SheetHeader>
                   <div className={styles["sheetBody"]}>
-                    <p className='text-muted-foreground text-sm'>{t("header.editProfileClerkNote")}</p>
+                    <p className={styles["sheetNote"]}>{t("header.editProfileClerkNote")}</p>
                     <Button
                       className='w-full cursor-pointer'
                       asChild>

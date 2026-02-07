@@ -457,3 +457,30 @@
   margin-top: space(6);
   justify-content: center;
 }
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.dialogTitleIcon {
+  width: space(5);
+  height: space(5);
+  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+}
+
+.modePurpleIcon {
+  width: space(4);
+  height: space(4);
+  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+}
+
+.modeBlueIcon {
+  width: space(4);
+  height: space(4);
+  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+}
+
+.arrowRightIcon {
+  width: space(4);
+  height: space(4);
+  margin-left: space(2);
+}

@@ -57,3 +57,20 @@
   color: color('muted-foreground');
   font-size: font-size('xs');
 }
+
+.trendValue {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.trendAmber {
+  color: #f59e0b; // Decorative: intentionally hardcoded
+}
+
+.trendEmerald {
+  color: #10b981; // Decorative: intentionally hardcoded
+}
+
+.trendMuted {
+  color: color('muted-foreground');
+}

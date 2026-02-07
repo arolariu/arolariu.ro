@@ -92,6 +92,19 @@
   font-weight: font-weight('medium');
 }
 
+// ===========================================
+// ICON STYLES
+// ===========================================
+.calendarIcon {
+  width: 0.875rem; // 3.5
+  height: 0.875rem;
+}
+
+.viewIcon {
+  width: space(4);
+  height: space(4);
+}
+
 .itemCount {
   color: color('muted-foreground');
   font-size: font-size('sm');

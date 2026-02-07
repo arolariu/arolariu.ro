@@ -16,6 +16,12 @@
 // ===========================================
 // SECURITY-SPECIFIC
 // ===========================================
+.clerkNote {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  text-align: center;
+}
+
 .twoFactorActive {
   @include settings.settings-info-box;
   margin-top: space(4);

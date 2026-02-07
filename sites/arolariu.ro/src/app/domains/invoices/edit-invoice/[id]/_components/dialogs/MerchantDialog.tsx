@@ -99,7 +99,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className='py-2 pl-0'>
                   <main className={styles["detailRow"]}>
                     <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className='font-medium'>Address</span>
+                    <span className={styles["detailLabel"]}>Address</span>
                   </main>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.address}</TableCell>
@@ -108,7 +108,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className='py-2 pl-0'>
                   <main className={styles["detailRow"]}>
                     <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className='font-medium'>Phone</span>
+                    <span className={styles["detailLabel"]}>Phone</span>
                   </main>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.phoneNumber}</TableCell>
@@ -117,7 +117,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className='py-2 pl-0'>
                   <main className={styles["detailRow"]}>
                     <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className='font-medium'>Parent Company</span>
+                    <span className={styles["detailLabel"]}>Parent Company</span>
                   </main>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.parentCompanyId}</TableCell>

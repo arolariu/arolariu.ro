@@ -116,7 +116,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
                 alt={`Scan ${scanIndex + 1}`}
                 width={400}
                 height={300}
-                className='h-48 w-full object-cover'
+                className={styles["scanPreviewImage"]}
               />
             </main>
             <p className={styles["previewCaption"]}>Scan {scanIndex + 1}</p>

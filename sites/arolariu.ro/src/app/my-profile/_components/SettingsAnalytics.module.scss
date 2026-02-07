@@ -12,3 +12,11 @@
 .toggleRow     { @include settings.settings-toggle-row; }
 .toggleLabel   { @include settings.settings-toggle-label; }
 .infoBox       { @include settings.settings-info-box; }
+
+// ===========================================
+// ANALYTICS-SPECIFIC
+// ===========================================
+.dataUsageInfo {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}

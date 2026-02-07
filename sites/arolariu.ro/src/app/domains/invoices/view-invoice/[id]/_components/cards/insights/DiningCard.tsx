@@ -89,7 +89,7 @@ export function DiningCard(): React.JSX.Element {
                 <p className={styles["nutritionLabel"]}>Sodium</p>
                 <p className={styles["nutritionValue"]}>
                   {sodiumLevel}
-                  {sodiumLevel === "High" && <span className='text-red-500'>!</span>}
+                  {sodiumLevel === "High" && <span className={styles["sodiumWarning"]}>!</span>}
                 </p>
               </main>
             </main>
@@ -117,7 +117,7 @@ export function DiningCard(): React.JSX.Element {
               <TbUserDollar className='mx-auto mb-1 h-4 w-4 text-green-500' />
               <p className={styles["habitLabel"]}>Avg Spend</p>
               <p className={styles["habitValue"]}>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
-              <p className={`${styles["habitSub"]} ${spendDiff > 0 ? "text-red-500" : "text-green-500"}`}>
+              <p className={`${styles["habitSub"]} ${spendDiff > 0 ? styles["spendDiffRed"] : styles["spendDiffGreen"]}`}>
                 {spendDiff > 0 ? "+" : ""}
                 {spendDiff.toFixed(0)}%
               </p>

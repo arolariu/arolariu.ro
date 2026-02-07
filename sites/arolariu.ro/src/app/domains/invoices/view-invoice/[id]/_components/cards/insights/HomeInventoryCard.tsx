@@ -19,10 +19,10 @@ type SupplyItem = {
 /**
  * Get the progress bar color class based on percentage remaining.
  */
-function getSupplyProgressColor(percentage: number): string {
-  if (percentage > 60) return "bg-green-500";
-  if (percentage > 30) return "bg-yellow-500";
-  return "bg-red-500";
+function getSupplyProgressColor(percentage: number, moduleStyles: Record<string, string>): string {
+  if (percentage > 60) return moduleStyles["progressGreen"] ?? "";
+  if (percentage > 30) return moduleStyles["progressYellow"] ?? "";
+  return moduleStyles["progressRed"] ?? "";
 }
 
 export function HomeInventoryCard(): React.JSX.Element {
@@ -140,7 +140,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           <main className={styles["suppliesList"]}>
             {supplies.map((supply) => {
               const pct = (supply.daysRemaining / supply.maxDays) * 100;
-              const color = getSupplyProgressColor(pct);
+              const color = getSupplyProgressColor(pct, styles);
               return (
                 <main
                   key={supply.id}

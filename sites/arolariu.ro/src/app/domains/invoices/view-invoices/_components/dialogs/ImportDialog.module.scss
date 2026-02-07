@@ -119,6 +119,38 @@
 // ===========================================
 // STATUS MESSAGES
 // ===========================================
+// ===========================================
+// ICON STYLES
+// ===========================================
+.fileIconBlue {
+  width: space(5);
+  height: space(5);
+  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+}
+
+.fileIconRed {
+  width: space(5);
+  height: space(5);
+  color: #ef4444; // Decorative: intentionally hardcoded (red-500)
+}
+
+.fileIconGreen {
+  width: space(5);
+  height: space(5);
+  color: #22c55e; // Decorative: intentionally hardcoded (green-500)
+}
+
+.fileIconGray {
+  width: space(5);
+  height: space(5);
+  color: #6b7280; // Decorative: intentionally hardcoded (gray-500)
+}
+
+.statusIcon {
+  width: space(5);
+  height: space(5);
+}
+
 .statusSuccess {
   display: flex;
   align-items: center;

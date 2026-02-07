@@ -45,7 +45,7 @@ export function ProfileSkeleton(): React.JSX.Element {
             {Array.from({length: 4}).map((_, index) => (
               <Card key={`skeleton-card-${index.toString()}`}>
                 <CardHeader>
-                  <div className='flex items-center gap-2'>
+                  <div className={styles["cardHeaderRow"]}>
                     <Skeleton className='h-4 w-4' />
                     <Skeleton className='h-4 w-32' />
                   </div>

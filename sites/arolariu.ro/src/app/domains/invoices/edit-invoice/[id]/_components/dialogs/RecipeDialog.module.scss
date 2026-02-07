@@ -79,3 +79,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: space(4);
 }
+
+.tooltipText {
+  max-width: 20rem; /* max-w-xs */
+}

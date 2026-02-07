@@ -115,11 +115,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 alt={`Receipt scan ${currentScanIndex + 1}`}
                 width={400}
                 height={600}
-                className={`w-full object-cover transition-all duration-200 group-hover/image:scale-105 ${
-                  isTransitioning ? styles["imageTransitioning"] : styles["imageNormal"]
-                }`}
+                className={isTransitioning ? styles["receiptImageTransitioning"] : styles["receiptImageNormal"]}
               />
-              <main className={`${styles["zoomOverlay"]} group-hover/image:opacity-100`}>
+              <main className={styles["zoomOverlayVisible"]}>
                 <TbZoomIn className='h-8 w-8' />
               </main>
             </Button>
@@ -133,7 +131,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   alt={`Receipt scan ${currentScanIndex + 1} - full size`}
                   width={800}
                   height={1200}
-                  className='w-full object-contain'
+                  className={styles["zoomDialogImage"]}
                 />
               </main>
             </DialogContent>

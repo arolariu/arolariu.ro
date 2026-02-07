@@ -127,7 +127,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 text-red-600 dark:text-red-400'>
-            <TbTrash className='h-5 w-5' />
+            <TbTrash className={styles["titleIcon"]} />
             Delete Invoice
           </DialogTitle>
           <DialogDescription>This action cannot be undone. Please review carefully before proceeding.</DialogDescription>
@@ -145,7 +145,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 animate={{rotate: 360}}
                 transition={{duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
                 className={styles["spinnerWrapper"]}>
-                <TbLoader2 className='h-10 w-10 text-red-500' />
+                <TbLoader2 className={styles["spinnerIcon"]} />
               </motion.div>
               <p className={styles["deletingTitle"]}>Deleting invoice...</p>
               <p className={styles["deletingDescription"]}>Please wait while we remove all associated data.</p>
@@ -161,7 +161,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <main className={styles["summaryCard"]}>
                 <main className={styles["summaryRow"]}>
                   <main className={styles["summaryIconBox"]}>
-                    <TbReceipt className='h-6 w-6 text-red-500' />
+                    <TbReceipt className={styles["summaryIcon"]} />
                   </main>
                   <main className={styles["summaryContent"]}>
                     <p className={styles["summaryName"]}>{invoiceName}</p>
@@ -175,30 +175,30 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <Alert
                 variant='destructive'
                 className='border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50'>
-                <TbAlertTriangle className='h-4 w-4' />
+                <TbAlertTriangle className={styles["impactIcon"]} />
                 <AlertTitle>Permanent Deletion</AlertTitle>
                 <AlertDescription>
-                  <p className='mb-2'>The following data will be permanently deleted:</p>
+                  <p className={styles["impactIntro"]}>The following data will be permanently deleted:</p>
                   <ul className={styles["impactList"]}>
                     <li className={styles["impactItem"]}>
-                      <TbFileX className='h-4 w-4' />
+                      <TbFileX className={styles["impactIcon"]} />
                       Invoice record and metadata
                     </li>
                     {scanCount > 0 && (
                       <li className={styles["impactItem"]}>
-                        <TbPhoto className='h-4 w-4' />
+                        <TbPhoto className={styles["impactIcon"]} />
                         {scanCount} uploaded scan(s)
                       </li>
                     )}
                     {itemCount > 0 && (
                       <li className={styles["impactItem"]}>
-                        <TbShoppingCart className='h-4 w-4' />
+                        <TbShoppingCart className={styles["impactIcon"]} />
                         {itemCount} line item(s)
                       </li>
                     )}
                     {sharedCount > 0 && (
                       <li className={styles["impactItem"]}>
-                        <TbX className='h-4 w-4' />
+                        <TbX className={styles["impactIcon"]} />
                         Shared access for {sharedCount} user(s)
                       </li>
                     )}
@@ -262,12 +262,12 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
             disabled={!isConfirmValid || isDeleting}>
             {isDeleting ? (
               <>
-                <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
+                <TbLoader2 className={styles["buttonSpinnerIcon"]} />
                 Deleting...
               </>
             ) : (
               <>
-                <TbTrash className='mr-2 h-4 w-4' />
+                <TbTrash className={styles["buttonIcon"]} />
                 Delete Permanently
               </>
             )}

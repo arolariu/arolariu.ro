@@ -200,7 +200,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   {t("font.dyslexic")}
                 </Button>
               </div>
-              <p className='text-muted-foreground text-xs'>{t("font.dyslexicHint")}</p>
+              <p className={styles["fontHint"]}>{t("font.dyslexicHint")}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -284,7 +284,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                             className={styles["colorSwatch"]}
                             style={{backgroundColor: settings.primaryColor}}
                           />
-                          <span className='text-muted-foreground text-xs'>{settings.primaryColor}</span>
+                          <span className={styles["colorLabel"]}>{settings.primaryColor}</span>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className='w-64'>
@@ -327,7 +327,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                             className={styles["colorSwatch"]}
                             style={{backgroundColor: settings.secondaryColor}}
                           />
-                          <span className='text-muted-foreground text-xs'>{settings.secondaryColor}</span>
+                          <span className={styles["colorLabel"]}>{settings.secondaryColor}</span>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className='w-64'>

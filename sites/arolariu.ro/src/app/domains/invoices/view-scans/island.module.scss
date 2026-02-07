@@ -59,6 +59,30 @@
   font-weight: font-weight('bold');
 }
 
+.statsCardValueDefault {
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.statsCardValueGreen {
+  color: #22c55e; // Decorative: intentionally hardcoded (green-500)
+}
+
+.statsCardValuePurple {
+  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+}
+
+// ===========================================
+// ICON SIZES
+// ===========================================
+.tipIcon {
+  width: space(4);
+  height: space(4);
+}
+
 .statsCardLabel {
   font-size: font-size('xs');
   color: #6b7280; // gray-500

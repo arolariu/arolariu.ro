@@ -47,6 +47,18 @@
   @include transition(all);
 }
 
+.progressGreen {
+  background-color: #22c55e; // Decorative: intentionally hardcoded
+}
+
+.progressYellow {
+  background-color: #eab308; // Decorative: intentionally hardcoded
+}
+
+.progressRed {
+  background-color: #ef4444; // Decorative: intentionally hardcoded
+}
+
 .ecoSection {
   & > * + * {
     margin-top: space(2);

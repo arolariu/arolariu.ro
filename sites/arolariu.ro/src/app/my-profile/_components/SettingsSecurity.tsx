@@ -178,7 +178,7 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                   {t("password.changePassword")}
                 </a>
               </Button>
-              <p className='text-muted-foreground text-center text-xs'>{t("password.clerkNote")}</p>
+              <p className={styles["clerkNote"]}>{t("password.clerkNote")}</p>
             </CardContent>
           </Card>
         </motion.div>

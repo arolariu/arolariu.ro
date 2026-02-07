@@ -67,3 +67,31 @@
     margin-top: space(1);
   }
 }
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.globeIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #ea580c; // orange-600
+
+  @include dark {
+    color: #fb923c; // orange-400
+  }
+}
+
+.lockIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #16a34a; // green-600
+
+  @include dark {
+    color: #4ade80; // green-400
+  }
+}
+
+.alertIcon {
+  width: space(4);
+  height: space(4);
+}

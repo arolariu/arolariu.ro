@@ -53,7 +53,7 @@ export default function ScansHeader(): React.JSX.Element {
                 variant='ghost'
                 size='icon'
                 className='mt-1 h-6 w-6 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'>
-                <TbInfoCircle className='h-5 w-5' />
+                <TbInfoCircle className={styles["infoIcon"]} />
               </Button>
             </TooltipTrigger>
             <TooltipContent
@@ -73,7 +73,7 @@ export default function ScansHeader(): React.JSX.Element {
                 asChild
                 className='from-gradient-from to-gradient-to flex items-center gap-2 bg-linear-to-r text-white hover:opacity-90'>
                 <Link href='/domains/invoices/upload-scans'>
-                  <TbUpload className='h-4 w-4' />
+                  <TbUpload className={styles["actionIcon"]} />
                   <span className={styles["hiddenMobile"]}>{t("uploadMore")}</span>
                   <span className={styles["visibleMobile"]}>{t("upload")}</span>
                 </Link>
@@ -91,7 +91,7 @@ export default function ScansHeader(): React.JSX.Element {
                 variant='outline'
                 className='flex items-center gap-2'>
                 <Link href='/domains/invoices/view-invoices'>
-                  <TbFileInvoice className='h-4 w-4' />
+                  <TbFileInvoice className={styles["actionIcon"]} />
                   <span className={styles["hiddenMobile"]}>{t("myInvoices")}</span>
                   <span className={styles["visibleMobile"]}>{t("invoices")}</span>
                 </Link>

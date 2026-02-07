@@ -36,11 +36,11 @@ function getScoreLabel(score: number): string {
 }
 
 /** Get the color class for a balance score */
-function getScoreColorClass(score: number): string {
-  if (score >= 80) return "text-green-600";
-  if (score >= 60) return "text-emerald-600";
-  if (score >= 40) return "text-yellow-600";
-  return "text-red-600";
+function getScoreColorClass(score: number, moduleStyles: Record<string, string>): string {
+  if (score >= 80) return moduleStyles["scoreGreen"] ?? "";
+  if (score >= 60) return moduleStyles["scoreEmerald"] ?? "";
+  if (score >= 40) return moduleStyles["scoreYellow"] ?? "";
+  return moduleStyles["scoreRed"] ?? "";
 }
 
 /** Calculate the balance score based on food group presence */
@@ -138,7 +138,7 @@ export function NutritionCard(): React.JSX.Element {
   const hasProtein = foodGroups.find((g) => g.name === "Protein")!.items > 0;
   const balanceScore = calculateBalanceScore(hasVeggies, hasFruits, hasProtein, wholeFoodPct);
   const scoreLabel = getScoreLabel(balanceScore);
-  const scoreColor = getScoreColorClass(balanceScore);
+  const scoreColor = getScoreColorClass(balanceScore, styles);
 
   // Collect allergens
   const allergenMap = new Map<string, number>();
@@ -184,7 +184,7 @@ export function NutritionCard(): React.JSX.Element {
               <span className={styles["compositionLabel"]}>Whole Foods</span>
               <main className={styles["progressTrack"]}>
                 <main
-                  className={`${styles["progressBar"]} bg-green-500`}
+                  className={`${styles["progressBar"]} ${styles["progressGreen"]}`}
                   style={{width: `${wholeFoodPct}%`}}
                 />
               </main>
@@ -195,7 +195,7 @@ export function NutritionCard(): React.JSX.Element {
               <span className={styles["compositionLabel"]}>Processed</span>
               <main className={styles["progressTrack"]}>
                 <main
-                  className={`${styles["progressBar"]} bg-amber-500`}
+                  className={`${styles["progressBar"]} ${styles["progressAmber"]}`}
                   style={{width: `${processedPct}%`}}
                 />
               </main>
@@ -206,7 +206,7 @@ export function NutritionCard(): React.JSX.Element {
               <span className={styles["compositionLabel"]}>Dairy/Other</span>
               <main className={styles["progressTrack"]}>
                 <main
-                  className={`${styles["progressBar"]} bg-blue-500`}
+                  className={`${styles["progressBar"]} ${styles["progressBlue"]}`}
                   style={{width: `${dairySnackPct}%`}}
                 />
               </main>

@@ -16,6 +16,18 @@
 // ===========================================
 // DATA-SPECIFIC
 // ===========================================
+.retentionHint {
+  margin-top: space(2);
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.exportHint {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  text-align: center;
+}
+
 .dangerCard {
   @include settings.settings-card-full;
   border-color: color-alpha('destructive', 0.5);

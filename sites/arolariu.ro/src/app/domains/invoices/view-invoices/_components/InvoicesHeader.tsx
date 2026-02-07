@@ -40,7 +40,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                 size='sm'
                 className='cursor-pointer gap-1'
                 onClick={openImportDialog}>
-                <TbUpload className='h-4 w-4' />
+                <TbUpload className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>Import</span>
               </Button>
             </TooltipTrigger>
@@ -56,7 +56,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                 size='sm'
                 className='cursor-pointer gap-1'
                 onClick={openExportDialog}>
-                <TbDownload className='h-4 w-4' />
+                <TbDownload className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>Export</span>
               </Button>
             </TooltipTrigger>
@@ -72,7 +72,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                 size='sm'
                 className='cursor-pointer gap-1'
                 onClick={handlePrintAction}>
-                <TbPrinter className='h-4 w-4' />
+                <TbPrinter className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>Print</span>
               </Button>
             </TooltipTrigger>
@@ -87,7 +87,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                 <Button
                   size='sm'
                   className='cursor-pointer gap-1'>
-                  <TbPlus className='h-4 w-4' />
+                  <TbPlus className={styles["actionIcon"]} />
                   <span>New Invoice</span>
                 </Button>
               </Link>

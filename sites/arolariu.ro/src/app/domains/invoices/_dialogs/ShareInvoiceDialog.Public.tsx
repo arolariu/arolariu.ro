@@ -64,13 +64,13 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
         <TabsTrigger
           value='link'
           className='cursor-pointer'>
-          <TbCopy className='mr-2 size-4' />
+          <TbCopy className={styles["tabIcon"]} />
           Direct Link
         </TabsTrigger>
         <TabsTrigger
           value='qr'
           className='cursor-pointer'>
-          <TbQrcode className='mr-2 size-4' />
+          <TbQrcode className={styles["tabIcon"]} />
           QR Code
         </TabsTrigger>
       </TabsList>
@@ -88,7 +88,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             size='icon'
             onClick={onCopyLink}
             variant='outline'>
-            {copied ? <TbCheck className='size-4' /> : <TbCopy className='size-4' />}
+            {copied ? <TbCheck className={styles["actionIcon"]} /> : <TbCopy className={styles["actionIcon"]} />}
           </Button>
         </main>
         <p className={styles["linkHint"]}>
@@ -106,7 +106,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
               value={shareUrl}
               size={128}
               style={{width: "128px"}}
-              className='rounded-md'
+              className={styles["qrCode"]}
               level='L'
             />
           </main>
@@ -115,7 +115,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             variant='outline'
             onClick={onCopyQRCode}
             className='w-full'>
-            <TbCopy className='mr-2 size-4' />
+            <TbCopy className={styles["tabIcon"]} />
             Copy QR Code as Image
           </Button>
         </main>
@@ -149,7 +149,7 @@ export function AlreadyPublicMode({
       <Alert
         variant='destructive'
         className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
-        <TbGlobe className='size-4 text-orange-600 dark:text-orange-400' />
+        <TbGlobe className={styles["globeAlertIcon"]} />
         <AlertTitle className='text-orange-800 dark:text-orange-300'>This Invoice is Currently Public</AlertTitle>
         <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
           This invoice is publicly accessible. <strong>Anyone with the link can view it</strong>, including all invoice details, items, and
@@ -170,7 +170,7 @@ export function AlreadyPublicMode({
           onClick={onRevokeAccess}
           disabled={isRevoking}
           className='w-full'>
-          <TbShieldOff className='mr-2 size-4' />
+          <TbShieldOff className={styles["tabIcon"]} />
           {isRevoking ? "Revoking Access..." : "Revoke Public Access"}
         </Button>
         <p className={styles["revokeHint"]}>
@@ -201,14 +201,14 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         size='sm'
         onClick={onBack}
         className='mb-2 -ml-2'>
-        <TbArrowLeft className='mr-1 size-4' />
+        <TbArrowLeft className={styles["backIcon"]} />
         Back to options
       </Button>
 
       <Alert
         variant='destructive'
         className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
-        <TbAlertTriangle className='size-4 text-orange-600 dark:text-orange-400' />
+        <TbAlertTriangle className={styles["globeAlertIcon"]} />
         <AlertTitle className='text-orange-800 dark:text-orange-300'>Public Access Warning</AlertTitle>
         <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
           By sharing this invoice publicly, <strong>anyone with the link will be able to view it</strong>. This includes all invoice

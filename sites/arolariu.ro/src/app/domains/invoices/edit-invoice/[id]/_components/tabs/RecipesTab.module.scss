@@ -30,3 +30,9 @@
 .pageInfo {
   font-size: font-size('sm');
 }
+
+.headerActions {
+  display: flex;
+  flex-direction: row;
+  gap: space(4);
+}

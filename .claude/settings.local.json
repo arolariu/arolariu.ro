@@ -88,7 +88,8 @@
       "WebFetch(domain:deepwiki.com)",
       "WebFetch(domain:gist.github.com)",
       "WebFetch(domain:bundlephobia.com)",
-      "Bash(del \"C:\\\\Users\\\\aolariu\\\\source\\\\repos\\\\arolariu\\\\arolariu.ro\\\\sites\\\\arolariu.ro\\\\src\\\\styles\\\\utilities\\\\_spacing.scss\")"
+      "Bash(del \"C:\\\\Users\\\\aolariu\\\\source\\\\repos\\\\arolariu\\\\arolariu.ro\\\\sites\\\\arolariu.ro\\\\src\\\\styles\\\\utilities\\\\_spacing.scss\")",
+      "Bash(python3:*)"
     ],
     "deny": []
   },

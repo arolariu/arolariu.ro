@@ -129,7 +129,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
                     size='icon'
                     className='absolute top-2 left-2 h-8 w-8 bg-black/50 text-white hover:bg-black/70'
                     onClick={handleRemove}>
-                    <TbTrash className='h-4 w-4' />
+                    <TbTrash className={styles["removeIcon"]} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side='right'>Remove from queue</TooltipContent>

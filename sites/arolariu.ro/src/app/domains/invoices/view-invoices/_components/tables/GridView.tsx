@@ -91,7 +91,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                         variant='ghost'
                         size='icon'
                         className='bg-background/80 h-8 w-8 backdrop-blur-sm'>
-                        <TbEye className='h-4 w-4' />
+                        <TbEye className={styles["viewIcon"]} />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>View Details</TooltipContent>
@@ -107,7 +107,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
             <CardContent className='pb-2'>
               <main className={styles["contentRow"]}>
                 <main className={styles["dateRow"]}>
-                  <TbCalendar className='h-3.5 w-3.5' />
+                  <TbCalendar className={styles["calendarIcon"]} />
                   <span>{formatDate(invoice.createdAt, {dateStyle: "full", locale})}</span>
                 </main>
                 <main className={styles["amount"]}>

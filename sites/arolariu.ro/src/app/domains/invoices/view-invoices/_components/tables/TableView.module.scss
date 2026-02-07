@@ -68,6 +68,22 @@
   font-size: font-size('sm');
 }
 
+// ===========================================
+// ICON STYLES
+// ===========================================
+.sortIcon {
+  width: space(4);
+  height: space(4);
+
+  @media print {
+    display: none;
+  }
+}
+
+.cursorHelp {
+  cursor: help;
+}
+
 .viewLink {
   height: 2rem;
   width: 2rem;

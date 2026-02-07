@@ -47,14 +47,14 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
         size='sm'
         onClick={onBack}
         className='mb-2 -ml-2'>
-        <TbArrowLeft className='mr-1 size-4' />
+        <TbArrowLeft className={styles["backIcon"]} />
         Back to options
       </Button>
 
       <Alert
         variant='default'
         className='border-green-500/50 bg-green-50 text-green-900 dark:bg-green-950/30 dark:text-green-200'>
-        <TbLock className='size-4 text-green-600 dark:text-green-400' />
+        <TbLock className={styles["lockIcon"]} />
         <AlertTitle className='text-green-800 dark:text-green-300'>Private Sharing</AlertTitle>
         <AlertDescription className='text-xs text-green-700 dark:text-green-400'>
           The invitation will be sent directly to the email address you specify. Only this recipient will receive access to view the
@@ -85,7 +85,7 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
           // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
           disabled={!email || !/\S+@\S+\.\S+/u.test(email)}
           className='w-full'>
-          <TbMail className='mr-2 size-4' />
+          <TbMail className={styles["mailIcon"]} />
           Send Private Invitation
         </Button>
       </form>

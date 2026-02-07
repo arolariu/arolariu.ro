@@ -43,7 +43,7 @@ export function InvoiceHeader(): React.JSX.Element {
                 <TooltipTrigger asChild>
                   <Link
                     href={`/domains/invoices/edit-invoice/${invoice.id}`}
-                    className='flex'>
+                    className={styles["editLink"]}>
                     <Button>
                       <TbPencil className='mr-2 h-4 w-4' />
                       Edit

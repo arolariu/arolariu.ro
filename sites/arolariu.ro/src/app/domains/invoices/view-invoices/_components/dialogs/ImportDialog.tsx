@@ -79,14 +79,14 @@ export default function ImportDialog(): React.JSX.Element {
     const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
       case "csv":
-        return <TbFileText className='h-5 w-5 text-blue-500' />;
+        return <TbFileText className={styles["fileIconBlue"]} />;
       case "pdf":
-        return <TbFileTypePdf className='h-5 w-5 text-red-500' />;
+        return <TbFileTypePdf className={styles["fileIconRed"]} />;
       case "xlsx":
       case "xls":
-        return <TbFileSpreadsheet className='h-5 w-5 text-green-500' />;
+        return <TbFileSpreadsheet className={styles["fileIconGreen"]} />;
       default:
-        return <TbFile className='h-5 w-5 text-gray-500' />;
+        return <TbFile className={styles["fileIconGray"]} />;
     }
   };
 
@@ -189,7 +189,7 @@ export default function ImportDialog(): React.JSX.Element {
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0}}
               className={styles["statusSuccess"]}>
-              <TbCheck className='h-5 w-5' />
+              <TbCheck className={styles["statusIcon"]} />
               <span>Files imported successfully!</span>
             </motion.div>
           )}
@@ -200,7 +200,7 @@ export default function ImportDialog(): React.JSX.Element {
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0}}
               className={styles["statusError"]}>
-              <TbAlertCircle className='h-5 w-5' />
+              <TbAlertCircle className={styles["statusIcon"]} />
               <span>Error importing files. Please try again.</span>
             </motion.div>
           )}

@@ -215,3 +215,12 @@
     background-color: #7e22ce;
   }
 }
+
+.invoiceIdSnippet {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: font-size('xs');
+}
+
+.summaryTitle {
+  font-weight: font-weight('medium');
+}

@@ -161,3 +161,55 @@
   color: color('muted-foreground');
   font-size: font-size('xs');
 }
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.titleIcon {
+  width: space(5);
+  height: space(5);
+}
+
+.spinnerIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #ef4444; // Decorative: intentionally hardcoded (red-500)
+}
+
+.summaryIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #ef4444; // Decorative: intentionally hardcoded (red-500)
+}
+
+.impactIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.impactIntro {
+  margin-bottom: space(2);
+}
+
+.buttonIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+}
+
+.buttonSpinnerIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

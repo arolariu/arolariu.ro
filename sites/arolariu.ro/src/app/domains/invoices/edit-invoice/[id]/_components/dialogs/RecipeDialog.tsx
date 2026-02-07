@@ -96,7 +96,7 @@ const CreateDialog = () => {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className='max-w-xs'>Generate a recipe name based on your ingredients and difficulty level using AI</p>
+                      <p className={styles["tooltipText"]}>Generate a recipe name based on your ingredients and difficulty level using AI</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -394,7 +394,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className='max-w-xs'>Generate a recipe name based on your ingredients and difficulty level using AI</p>
+                      <p className={styles["tooltipText"]}>Generate a recipe name based on your ingredients and difficulty level using AI</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

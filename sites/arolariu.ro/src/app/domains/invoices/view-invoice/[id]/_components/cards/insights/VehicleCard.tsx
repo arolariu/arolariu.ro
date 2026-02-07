@@ -172,7 +172,7 @@ export function VehicleCard(): React.JSX.Element {
           <main className={styles["statCard"]}>
             <TbTrendingUp className='mx-auto mb-1 h-4 w-4 text-red-500' />
             <p className={styles["statLabel"]}>Fuel Price</p>
-            <p className={`${styles["statValue"]} text-red-500`}>+{priceChange}%</p>
+            <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>+{priceChange}%</p>
             <p className={styles["statSub"]}>this month</p>
           </main>
         </main>

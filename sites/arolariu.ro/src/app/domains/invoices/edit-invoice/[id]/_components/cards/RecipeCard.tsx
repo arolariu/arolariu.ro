@@ -171,7 +171,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                   </TooltipTrigger>
                   <TooltipContent className='max-w-xs'>
                     <p className={styles["tooltipTitle"]}>Additional ingredients:</p>
-                    <ul className='list-disc pl-5'>
+                    <ul className={styles["tooltipIngredientsList"]}>
                       {ingredients.slice(3).map((ingredient) => (
                         <li key={ingredient.rawName}>{ingredient.rawName}</li>
                       ))}

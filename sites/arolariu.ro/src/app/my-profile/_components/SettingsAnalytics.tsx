@@ -276,7 +276,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
             </CardHeader>
             <CardContent>
               <div className={styles["infoBox"]}>
-                <p className='text-muted-foreground text-sm'>{t("dataUsage.info")}</p>
+                <p className={styles["dataUsageInfo"]}>{t("dataUsage.info")}</p>
               </div>
             </CardContent>
           </Card>

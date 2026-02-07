@@ -85,9 +85,9 @@ function WorkflowCard({
             className={`w-full bg-linear-to-r ${gradient} text-white transition-transform group-hover:scale-[1.02]`}>
             <Link
               href={href}
-              className='flex items-center justify-center gap-2'>
+              className={styles["cardLink"]}>
               {buttonText}
-              <TbArrowRight className='h-4 w-4 transition-transform group-hover:translate-x-1' />
+              <TbArrowRight className={styles["cardArrowIcon"]} />
             </Link>
           </Button>
         </CardContent>
@@ -163,7 +163,7 @@ function BentoSection({
           {bentoItemsConfig.map((item, index) => (
             <motion.div
               key={item.key}
-              className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${item.gradient} ${item.span} cursor-default`}
+              className={`${styles["bentoItem"]} bg-gradient-to-br ${item.gradient} ${item.span}`}
               initial={{opacity: 0, y: 30, scale: 0.95}}
               animate={isInView ? {opacity: 1, y: 0, scale: 1} : {}}
               transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
@@ -188,7 +188,7 @@ function BentoSection({
                 <motion.div
                   whileHover={{scale: 1.1, rotate: 5}}
                   transition={{duration: 0.3}}>
-                  <item.icon className='h-8 w-8 text-white' />
+                  <item.icon className={styles["bentoIcon"]} />
                 </motion.div>
                 <main>
                   <h3 className={styles["bentoItemTitle"]}>{translations.items[item.key].title}</h3>
@@ -205,8 +205,8 @@ function BentoSection({
           initial={{opacity: 0}}
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.8, duration: 0.5}}>
-          <TbDeviceMobile className='h-5 w-5' />
-          <span className='text-sm'>{translations.mobile}</span>
+          <TbDeviceMobile className={styles["mobileIcon"]} />
+          <span className={styles["mobileText"]}>{translations.mobile}</span>
         </motion.div>
       </main>
     </section>
@@ -276,7 +276,7 @@ function EnhancedCTA({
           <motion.div
             animate={{rotate: [0, 10, -10, 0]}}
             transition={{duration: 2, repeat: Infinity, ease: "easeInOut"}}>
-            <TbSparkles className='h-12 w-12 text-yellow-300' />
+            <TbSparkles className={styles["sparklesIcon"]} />
           </motion.div>
         </motion.div>
 
@@ -307,7 +307,7 @@ function EnhancedCTA({
             size='lg'
             className='group bg-white px-8 text-indigo-600 hover:bg-gray-100'>
             <Link href='/domains/invoices/upload-scans'>
-              <TbUpload className='mr-2 h-5 w-5 transition-transform group-hover:-translate-y-0.5' />
+              <TbUpload className={styles["ctaUploadIcon"]} />
               {translations.uploadButton}
             </Link>
           </Button>
@@ -318,7 +318,7 @@ function EnhancedCTA({
             className='border-white/30 bg-white/10 px-8 text-white backdrop-blur-sm hover:bg-white/20'>
             <Link href='/about/the-platform'>
               {translations.learnMore}
-              <TbArrowRight className='ml-2 h-5 w-5' />
+              <TbArrowRight className={styles["ctaArrowIcon"]} />
             </Link>
           </Button>
         </motion.div>
@@ -330,15 +330,15 @@ function EnhancedCTA({
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.5, duration: 0.5}}>
           <main className={styles["ctaBadge"]}>
-            <TbLock className='h-4 w-4' />
+            <TbLock className={styles["badgeIcon"]} />
             <span>{translations.badges.secure}</span>
           </main>
           <main className={styles["ctaBadge"]}>
-            <TbCloud className='h-4 w-4' />
+            <TbCloud className={styles["badgeIcon"]} />
             <span>{translations.badges.cloud}</span>
           </main>
           <main className={styles["ctaBadge"]}>
-            <TbBrain className='h-4 w-4' />
+            <TbBrain className={styles["badgeIcon"]} />
             <span>{translations.badges.ai}</span>
           </main>
         </motion.div>
@@ -414,7 +414,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                     size='lg'
                     className='from-gradient-from to-gradient-to bg-linear-to-r px-8 text-white hover:opacity-90'>
                     <Link href='/domains/invoices/upload-scans'>
-                      <TbUpload className='mr-2 h-5 w-5' />
+                      <TbUpload className={styles["heroButtonIcon"]} />
                       {t("hero.getStarted")}
                     </Link>
                   </Button>
@@ -424,7 +424,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                       variant='outline'
                       size='lg'>
                       <Link href='/domains/invoices/view-invoices'>
-                        <TbFileInvoice className='mr-2 h-5 w-5' />
+                        <TbFileInvoice className={styles["heroButtonIcon"]} />
                         {t("hero.viewMyInvoices")}
                       </Link>
                     </Button>
@@ -469,7 +469,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               step={1}
               title={t("workflow.step1.title")}
               description={t("workflow.step1.description")}
-              icon={<TbUpload className='h-6 w-6' />}
+              icon={<TbUpload className={styles["workflowIcon"]} />}
               href='/domains/invoices/upload-scans'
               buttonText={t("workflow.step1.button")}
               gradient='from-blue-500 to-cyan-500'
@@ -480,7 +480,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               step={2}
               title={t("workflow.step2.title")}
               description={t("workflow.step2.description")}
-              icon={<TbEye className='h-6 w-6' />}
+              icon={<TbEye className={styles["workflowIcon"]} />}
               href='/domains/invoices/view-scans'
               buttonText={t("workflow.step2.button")}
               gradient='from-purple-500 to-pink-500'
@@ -491,7 +491,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               step={3}
               title={t("workflow.step3.title")}
               description={t("workflow.step3.description")}
-              icon={<TbFileInvoice className='h-6 w-6' />}
+              icon={<TbFileInvoice className={styles["workflowIcon"]} />}
               href='/domains/invoices/view-invoices'
               buttonText={t("workflow.step3.button")}
               gradient='from-green-500 to-emerald-500'
@@ -533,17 +533,17 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
 
               <main className={styles["featuresList"]}>
                 <FeatureItem
-                  icon={<TbPhoto className='h-5 w-5' />}
+                  icon={<TbPhoto className={styles["featureIcon"]} />}
                   title={t("features.ocr.title")}
                   description={t("features.ocr.description")}
                 />
                 <FeatureItem
-                  icon={<TbChartBar className='h-5 w-5' />}
+                  icon={<TbChartBar className={styles["featureIcon"]} />}
                   title={t("features.analytics.title")}
                   description={t("features.analytics.description")}
                 />
                 <FeatureItem
-                  icon={<TbFileInvoice className='h-5 w-5' />}
+                  icon={<TbFileInvoice className={styles["featureIcon"]} />}
                   title={t("features.batch.title")}
                   description={t("features.batch.description")}
                 />

@@ -59,7 +59,7 @@ export default function ImageDialog(): React.JSX.Element {
               src={image}
               fill
               alt='Photo of receipt'
-              className='h-full w-full rounded-md border object-cover'
+              className={styles["receiptImage"]}
             />
           </main>
         </DialogHeader>

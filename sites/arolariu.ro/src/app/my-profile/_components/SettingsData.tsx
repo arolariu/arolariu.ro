@@ -98,7 +98,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   ))}
                 </SelectContent>
               </Select>
-              <p className='text-muted-foreground mt-2 text-xs'>{t("retention.hint")}</p>
+              <p className={styles["retentionHint"]}>{t("retention.hint")}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -200,7 +200,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                 <TbDownload className='mr-2 h-4 w-4' />
                 {t("export.downloadAll")}
               </Button>
-              <p className='text-muted-foreground text-center text-xs'>{t("export.hint")}</p>
+              <p className={styles["exportHint"]}>{t("export.hint")}</p>
             </CardContent>
           </Card>
         </motion.div>

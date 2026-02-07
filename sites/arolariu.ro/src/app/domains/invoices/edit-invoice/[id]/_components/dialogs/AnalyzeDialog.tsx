@@ -260,7 +260,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
             Analyze Invoice
           </DialogTitle>
           <DialogDescription>
-            Configure AI-powered analysis for invoice <span className='font-mono text-xs'>{invoice.id.slice(0, 8)}...</span>
+            Configure AI-powered analysis for invoice <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -400,7 +400,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   <main className={styles["summaryLeft"]}>
                     <TbFileAnalytics className='h-8 w-8 text-purple-500' />
                     <main>
-                      <p className='font-medium'>{selectedConfig?.title}</p>
+                      <p className={styles["summaryTitle"]}>{selectedConfig?.title}</p>
                       <p className={styles["summarySubtext"]}>
                         {selectedEnhancements.length > 0 ? `+ ${selectedEnhancements.length} enhancement(s)` : "No enhancements selected"}
                       </p>

@@ -66,6 +66,11 @@
   color: color('primary');
 }
 
+.statsLabel {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
 .statsMeta {
   display: flex;
   gap: space(4);

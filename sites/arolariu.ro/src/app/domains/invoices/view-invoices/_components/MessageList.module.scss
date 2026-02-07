@@ -71,3 +71,18 @@
     color: #fff;
   }
 }
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.robotIcon {
+  width: space(4);
+  height: space(4);
+  color: color('primary');
+}
+
+.userIcon {
+  width: space(4);
+  height: space(4);
+  color: color('secondary-foreground');
+}

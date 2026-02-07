@@ -129,7 +129,7 @@ function UploadStats(): React.JSX.Element | null {
             className='bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
             <Link href='/domains/invoices/view-scans'>
               {t("buttons.viewScans")}
-              <TbArrowRight className='ml-2 h-4 w-4' />
+              <TbArrowRight className={styles["arrowIcon"]} />
             </Link>
           </Button>
         ) : null}
@@ -171,7 +171,7 @@ function UploadContent(): React.JSX.Element {
                   variant='ghost'
                   size='icon'
                   className='mt-1 h-auto w-auto p-0 text-gray-400 hover:bg-transparent hover:text-gray-600 dark:text-gray-500 dark:hover:bg-transparent dark:hover:text-gray-300'>
-                  <TbInfoCircle className='h-5 w-5' />
+                  <TbInfoCircle className={styles["infoIcon"]} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent
@@ -192,7 +192,7 @@ function UploadContent(): React.JSX.Element {
                   variant='outline'
                   className='flex items-center gap-2'>
                   <Link href='/domains/invoices/view-scans'>
-                    <TbEye className='h-4 w-4' />
+                    <TbEye className={styles["actionIcon"]} />
                     <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
                     <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
                   </Link>
@@ -210,7 +210,7 @@ function UploadContent(): React.JSX.Element {
                   variant='outline'
                   className='flex items-center gap-2'>
                   <Link href='/domains/invoices/view-invoices'>
-                    <TbFileInvoice className='h-4 w-4' />
+                    <TbFileInvoice className={styles["actionIcon"]} />
                     <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
                     <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
                   </Link>
@@ -241,12 +241,12 @@ function UploadContent(): React.JSX.Element {
               <h3 className={styles["sidebarTitle"]}>{t("sidebar.formats.title")}</h3>
               <main className={styles["formatsList"]}>
                 <FileTypeCard
-                  icon={<TbPhoto className='text-accent-primary h-5 w-5' />}
+                  icon={<TbPhoto className={styles["fileTypeIconAccent"]} />}
                   label={t("sidebar.formats.images")}
                   extensions={t("sidebar.formats.imageExtensions")}
                 />
                 <FileTypeCard
-                  icon={<TbFileTypePdf className='h-5 w-5 text-red-500' />}
+                  icon={<TbFileTypePdf className={styles["fileTypeIconRed"]} />}
                   label={t("sidebar.formats.documents")}
                   extensions={t("sidebar.formats.documentExtensions")}
                 />
@@ -298,7 +298,7 @@ function UploadContent(): React.JSX.Element {
                     className='w-full bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
                     <Link href='/domains/invoices/view-scans'>
                       {t("sidebar.nextSteps.button")}
-                      <TbArrowRight className='ml-2 h-4 w-4' />
+                      <TbArrowRight className={styles["arrowIcon"]} />
                     </Link>
                   </Button>
                 </CardContent>

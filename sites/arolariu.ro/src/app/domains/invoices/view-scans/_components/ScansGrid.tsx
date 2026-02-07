@@ -108,19 +108,19 @@ export default function ScansGrid(): React.JSX.Element {
             <main className={styles["emptyStepsList"]}>
               <EmptyStateStep
                 step={1}
-                icon={<TbUpload className='text-accent-primary h-4 w-4' />}
+                icon={<TbUpload className={styles["iconAccent"]} />}
                 title={t("emptyState.step1Title")}
                 description={t("emptyState.step1Description")}
               />
               <EmptyStateStep
                 step={2}
-                icon={<TbPhoto className='h-4 w-4 text-purple-500' />}
+                icon={<TbPhoto className={styles["iconPurple"]} />}
                 title={t("emptyState.step2Title")}
                 description={t("emptyState.step2Description")}
               />
               <EmptyStateStep
                 step={3}
-                icon={<TbFileInvoice className='h-4 w-4 text-green-500' />}
+                icon={<TbFileInvoice className={styles["iconGreen"]} />}
                 title={t("emptyState.step3Title")}
                 description={t("emptyState.step3Description")}
               />
@@ -132,7 +132,7 @@ export default function ScansGrid(): React.JSX.Element {
                 size='lg'
                 className='bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'>
                 <Link href='/domains/invoices/upload-scans'>
-                  <TbUpload className='mr-2 h-5 w-5' />
+                  <TbUpload className={styles["iconUploadLg"]} />
                   {t("emptyState.uploadButton")}
                 </Link>
               </Button>
@@ -142,7 +142,7 @@ export default function ScansGrid(): React.JSX.Element {
                 size='lg'>
                 <Link href='/domains/invoices'>
                   {t("emptyState.learnMoreButton")}
-                  <TbArrowRight className='ml-2 h-4 w-4' />
+                  <TbArrowRight className={styles["iconArrowRight"]} />
                 </Link>
               </Button>
             </main>

@@ -1,6 +1,6 @@
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle, cn, Progress} from "@arolariu/components";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle, Progress} from "@arolariu/components";
 import {TbBuildingStore, TbMinus, TbShoppingBag, TbTarget, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {ComparisonStats} from "../../_utils/analytics";
 import styles from "./ComparisonStatsCard.module.scss";
@@ -17,9 +17,9 @@ function getTrendIcon(value: number): React.JSX.Element {
 }
 
 function getTrendColor(value: number): string {
-  if (value > 5) return "text-amber-500";
-  if (value < -5) return "text-emerald-500";
-  return "text-muted-foreground";
+  if (value > 5) return styles["trendAmber"] ?? "";
+  if (value < -5) return styles["trendEmerald"] ?? "";
+  return styles["trendMuted"] ?? "";
 }
 
 export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.JSX.Element {
@@ -41,7 +41,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
             </main>
             <main className={styles["trendRow"]}>
               {getTrendIcon(stats.percentageDiff)}
-              <span className={cn("text-sm font-medium", getTrendColor(stats.percentageDiff))}>
+              <span className={`${styles["trendValue"]} ${getTrendColor(stats.percentageDiff)}`}>
                 {stats.percentageDiff > 0 ? "+" : ""}
                 {stats.percentageDiff}%
               </span>
@@ -79,7 +79,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
           <main className={styles["rightAlign"]}>
             <main className={styles["trendRow"]}>
               {getTrendIcon(stats.itemCountDiff)}
-              <span className={cn("text-sm font-medium", getTrendColor(stats.itemCountDiff))}>
+              <span className={`${styles["trendValue"]} ${getTrendColor(stats.itemCountDiff)}`}>
                 {stats.itemCountDiff > 0 ? "+" : ""}
                 {stats.itemCountDiff}%
               </span>
@@ -99,7 +99,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
           <main className={styles["rightAlign"]}>
             <main className={styles["trendRow"]}>
               {getTrendIcon(stats.sameMerchantDiff)}
-              <span className={cn("text-sm font-medium", getTrendColor(stats.sameMerchantDiff))}>
+              <span className={`${styles["trendValue"]} ${getTrendColor(stats.sameMerchantDiff)}`}>
                 {stats.sameMerchantDiff > 0 ? "+" : ""}
                 {stats.sameMerchantDiff}%
               </span>

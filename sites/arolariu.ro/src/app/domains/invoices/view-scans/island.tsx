@@ -39,10 +39,10 @@ function QuickTip({icon, title, description}: Readonly<{icon: React.ReactNode; t
 /**
  * Stats card component.
  */
-function StatsCard({value, label, color}: Readonly<{value: number; label: string; color: string}>): React.JSX.Element {
+function StatsCard({value, label, colorClass}: Readonly<{value: number; label: string; colorClass: string}>): React.JSX.Element {
   return (
     <main className={styles["statsCardItem"]}>
-      <p className={`${styles["statsCardValue"]} ${color}`}>{value}</p>
+      <p className={`${styles["statsCardValue"]} ${styles[colorClass]}`}>{value}</p>
       <p className={styles["statsCardLabel"]}>{label}</p>
     </main>
   );
@@ -68,17 +68,17 @@ function ScanStats(): React.JSX.Element | null {
           <StatsCard
             value={scans.length}
             label={t("stats.totalScans")}
-            color='text-gray-900 dark:text-white'
+            colorClass='statsCardValueDefault'
           />
           <StatsCard
             value={readyScans}
             label={t("stats.ready")}
-            color='text-green-500'
+            colorClass='statsCardValueGreen'
           />
           <StatsCard
             value={selectedScans.length}
             label={t("stats.selected")}
-            color='text-purple-500'
+            colorClass='statsCardValuePurple'
           />
         </main>
 
@@ -111,17 +111,17 @@ function Sidebar(): React.JSX.Element | null {
           <h3 className={styles["sidebarTitle"]}>{t("sidebar.howTo.title")}</h3>
           <main className={styles["howToList"]}>
             <QuickTip
-              icon={<TbClick className='h-4 w-4' />}
+              icon={<TbClick className={styles["tipIcon"]} />}
               title={t("sidebar.howTo.step1Title")}
               description={t("sidebar.howTo.step1Description")}
             />
             <QuickTip
-              icon={<TbStack2 className='h-4 w-4' />}
+              icon={<TbStack2 className={styles["tipIcon"]} />}
               title={t("sidebar.howTo.step2Title")}
               description={t("sidebar.howTo.step2Description")}
             />
             <QuickTip
-              icon={<TbFileInvoice className='h-4 w-4' />}
+              icon={<TbFileInvoice className={styles["tipIcon"]} />}
               title={t("sidebar.howTo.step3Title")}
               description={t("sidebar.howTo.step3Description")}
             />

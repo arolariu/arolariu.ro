@@ -42,7 +42,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                   size='sm'
                   onClick={clearSelection}
                   className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'>
-                  <TbX className='mr-1 h-4 w-4' />
+                  <TbX className={styles["clearIcon"]} />
                   <span className={styles["hiddenMobile"]}>{t("clearSelection")}</span>
                 </Button>
               </TooltipTrigger>
@@ -58,7 +58,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                 <Button
                   onClick={onCreateInvoice}
                   className='bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'>
-                  <TbFileInvoice className='mr-2 h-4 w-4' />
+                  <TbFileInvoice className={styles["createIcon"]} />
                   <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</span>
                   <span className={styles["visibleMobile"]}>{t("createInvoice").split(" ")[0]}</span>
                 </Button>

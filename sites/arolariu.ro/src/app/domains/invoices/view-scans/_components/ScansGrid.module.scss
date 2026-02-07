@@ -160,6 +160,42 @@
 // ===========================================
 // SCANS GRID
 // ===========================================
+// ===========================================
+// ICON STYLES
+// ===========================================
+.iconAccent {
+  width: space(4);
+  height: space(4);
+  color: color('primary');
+}
+
+.iconPurple {
+  width: space(4);
+  height: space(4);
+  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+}
+
+.iconGreen {
+  width: space(4);
+  height: space(4);
+  color: #22c55e; // Decorative: intentionally hardcoded (green-500)
+}
+
+.iconUploadLg {
+  width: space(5);
+  height: space(5);
+  margin-right: space(2);
+}
+
+.iconArrowRight {
+  width: space(4);
+  height: space(4);
+  margin-left: space(2);
+}
+
+// ===========================================
+// SCANS GRID
+// ===========================================
 .scansGrid {
   @include grid(1, space(4));
 

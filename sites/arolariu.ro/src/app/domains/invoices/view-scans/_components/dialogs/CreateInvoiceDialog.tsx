@@ -203,7 +203,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       exit={{opacity: 0, y: -10}}>
       <DialogHeader>
         <DialogTitle className='flex items-center gap-2'>
-          <TbFileInvoice className='h-5 w-5 text-purple-500' />
+          <TbFileInvoice className={styles["dialogTitleIcon"]} />
           {selectedScans.length > 1 ? t("titlePlural") : t("title")}
         </DialogTitle>
         <DialogDescription>{t("description")}</DialogDescription>
@@ -257,7 +257,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 <Label
                   htmlFor='single'
                   className='flex cursor-pointer items-center gap-2 font-medium'>
-                  <TbPhoto className='h-4 w-4 text-purple-500' />
+                  <TbPhoto className={styles["modePurpleIcon"]} />
                   {t("singleMode.title")}
                 </Label>
                 <p className={styles["modeOptionDescription"]}>
@@ -281,7 +281,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                 <Label
                   htmlFor='batch'
                   className='flex cursor-pointer items-center gap-2 font-medium'>
-                  <TbStack2 className='h-4 w-4 text-blue-500' />
+                  <TbStack2 className={styles["modeBlueIcon"]} />
                   {t("batchMode.title")}
                 </Label>
                 <p className={styles["modeOptionDescription"]}>
@@ -316,7 +316,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           {mode === "batch" || selectedScans.length === 1
             ? t("buttons.createSingle")
             : t("buttons.createMultiple", {count: String(selectedScans.length)})}
-          <TbArrowRight className='ml-2 h-4 w-4' />
+          <TbArrowRight className={styles["arrowRightIcon"]} />
         </Button>
       </DialogFooter>
     </motion.div>
@@ -409,7 +409,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             onClick={handleClose}
             className='bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'>
             {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
-            <TbArrowRight className='ml-2 h-4 w-4' />
+            <TbArrowRight className={styles["arrowRightIcon"]} />
           </Button>
         </DialogFooter>
       </motion.div>

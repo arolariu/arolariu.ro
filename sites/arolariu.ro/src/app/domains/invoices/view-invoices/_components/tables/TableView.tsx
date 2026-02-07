@@ -108,7 +108,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
               Date
-              <TbArrowsUpDown className='h-4 w-4 print:hidden' />
+              <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
           </TableHead>
           <TableHead>
@@ -116,7 +116,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
               Amount
-              <TbArrowsUpDown className='h-4 w-4 print:hidden' />
+              <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
           </TableHead>
           <TableHead className='text-end'>Actions</TableHead>
@@ -146,7 +146,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className='cursor-help'>{formatDate(invoice.createdAt, {locale})} </span>
+                      <span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>{new Date(invoice.createdAt).toUTCString()}</p>

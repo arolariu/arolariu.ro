@@ -26,6 +26,11 @@
   gap: space(2);
 }
 
+.fontHint {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
 // ===========================================
 // PRESET GRID
 // ===========================================
@@ -102,6 +107,11 @@
 
 .colorRow {
   @include flex-between;
+}
+
+.colorLabel {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
 }
 
 .colorSwatch {

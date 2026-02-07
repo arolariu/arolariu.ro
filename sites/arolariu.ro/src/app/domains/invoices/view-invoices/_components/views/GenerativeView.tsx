@@ -72,7 +72,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           variant='outline'
           size='sm'
           className='cursor-help gap-1'>
-          <TbHelpCircle className='h-4 w-4' />
+          <TbHelpCircle className={styles["actionIcon"]} />
           <span>Help</span>
         </Button>
       </main>
@@ -84,13 +84,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           <TabsTrigger
             value='chat'
             className='flex cursor-pointer items-center gap-2'>
-            <TbMessage className='h-4 w-4' />
+            <TbMessage className={styles["actionIcon"]} />
             <span>Chat</span>
           </TabsTrigger>
           <TabsTrigger
             value='settings'
             className='flex cursor-pointer items-center gap-2'>
-            <TbSettings className='h-4 w-4' />
+            <TbSettings className={styles["actionIcon"]} />
             <span>Settings</span>
           </TabsTrigger>
         </TabsList>

@@ -159,7 +159,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
         <div className={styles["bentoStatsCard"]}>
           <div className={styles["statsCardInner"]}>
             <div className={styles["statsNumber"]}>{statistics.totalInvoices}</div>
-            <p className='text-muted-foreground text-sm'>Total Invoices</p>
+            <p className={styles["statsLabel"]}>Total Invoices</p>
             <div className={styles["statsMeta"]}>
               <span>{statistics.totalMerchants} merchants</span>
               <span>{statistics.totalScans} scans</span>

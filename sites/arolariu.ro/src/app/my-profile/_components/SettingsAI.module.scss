@@ -20,6 +20,22 @@
   @include settings.settings-range-labels;
 }
 
+.modelName {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.modelDescription {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.behaviorHint {
+  margin-top: space(2);
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
 .modelItem {
   display: flex;
   align-items: center;

@@ -28,7 +28,7 @@ function CategoryButton({category, isSelected, onSelect, variant}: Readonly<Cate
           isSelected ? "border-primary bg-primary/10 ring-primary/20 ring-2" : ""
         }`}>
         {category.icon}
-        <span className='text-xs font-medium'>{category.name}</span>
+        <span className={styles["categoryLabel"]}>{category.name}</span>
       </Button>
     );
   }

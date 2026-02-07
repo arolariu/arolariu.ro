@@ -68,7 +68,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
           onClick={onSelectPublic}>
           <CardHeader className={styles["cardHeaderRow"]}>
             <main className={`${styles["iconCircle"]} ${styles["iconCircleOrange"]}`}>
-              <TbGlobe className='size-6 text-orange-600 dark:text-orange-400' />
+              <TbGlobe className={styles["globeIcon"]} />
             </main>
             <main className={styles["cardContent"]}>
               <CardTitle className='text-base'>Public Sharing</CardTitle>
@@ -84,7 +84,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
           onClick={onSelectPrivate}>
           <CardHeader className={styles["cardHeaderRow"]}>
             <main className={`${styles["iconCircle"]} ${styles["iconCircleGreen"]}`}>
-              <TbLock className='size-6 text-green-600 dark:text-green-400' />
+              <TbLock className={styles["lockIcon"]} />
             </main>
             <main className={styles["cardContent"]}>
               <CardTitle className='text-base'>Private Sharing</CardTitle>
@@ -99,7 +99,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
       <Alert
         variant='default'
         className='mt-4'>
-        <TbAlertTriangle className='size-4' />
+        <TbAlertTriangle className={styles["alertIcon"]} />
         <AlertTitle>Privacy Notice</AlertTitle>
         <AlertDescription className='text-xs'>
           Public links can be accessed by anyone who has the URL. Private sharing restricts access to the specific recipient.

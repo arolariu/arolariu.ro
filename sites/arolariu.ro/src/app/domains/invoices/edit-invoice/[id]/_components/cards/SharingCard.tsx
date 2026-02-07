@@ -139,7 +139,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                 alt='User'
                 width={40}
                 height={40}
-                className='rounded-full'
+                className={styles["ownerImage"]}
                 priority
               />
             ) : (
