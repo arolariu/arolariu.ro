@@ -149,8 +149,10 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
           <ThemeProvider
             enableSystem
             enableColorScheme
+            disableTransitionOnChange
             defaultTheme='system'
             attribute='class'
+            storageKey='arolariu-theme'
             themes={["light", "dark"]}>
             <ThemePresetApplier />
               {children}
