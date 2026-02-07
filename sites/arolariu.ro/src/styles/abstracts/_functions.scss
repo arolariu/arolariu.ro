@@ -1,5 +1,20 @@
 // ===========================================
-// SCSS FUNCTIONS
+// DESIGN TOKENS — Functions
+// ===========================================
+// Pure utility functions for unit conversion, map access, and
+// string manipulation. These functions have no side effects and
+// produce no CSS output.
+//
+// USAGE:
+//   width: rem(24);                    // → 1.5rem
+//   font-size: em(14);                 // → 0.875em
+//   $raw: strip-unit(1.5rem);          // → 1.5
+//   $val: map-deep-get($map, 'a', 'b');
+//   $has: list-contains($list, 'x');   // → true/false
+//   $new: str-replace('foo-bar', '-', '_'); // → 'foo_bar'
+//
+// DEPENDENCIES: None
+// IMPORTED BY: _index.scss (forwarded to all consumers)
 // ===========================================
 
 // ===========================================

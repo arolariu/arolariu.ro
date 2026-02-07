@@ -1,5 +1,68 @@
 // ===========================================
 // SPACING UTILITIES
-// Margin and padding helpers
 // ===========================================
-// Placeholder - populate as needed during migration
+// Global utility classes for margin, padding, and gap.
+// Use in CSS Module files via `composes:` or in JSX directly.
+//
+// Naming convention matches Tailwind for familiarity:
+//   .m-{size}  .p-{size}  .mx-auto  .gap-{size}
+//
+// Only generates utilities for common spacing values
+// to keep bundle size small. For other values, use space()
+// in your .module.scss file directly.
+// ===========================================
+@use '../abstracts' as *;
+
+$utility-spacings: (0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24);
+
+// Margin utilities
+@each $key in $utility-spacings {
+  .m-#{$key} { margin: space($key); }
+  .mt-#{$key} { margin-top: space($key); }
+  .mr-#{$key} { margin-right: space($key); }
+  .mb-#{$key} { margin-bottom: space($key); }
+  .ml-#{$key} { margin-left: space($key); }
+  .mx-#{$key} { margin-left: space($key); margin-right: space($key); }
+  .my-#{$key} { margin-top: space($key); margin-bottom: space($key); }
+}
+
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+// Padding utilities
+@each $key in $utility-spacings {
+  .p-#{$key} { padding: space($key); }
+  .pt-#{$key} { padding-top: space($key); }
+  .pr-#{$key} { padding-right: space($key); }
+  .pb-#{$key} { padding-bottom: space($key); }
+  .pl-#{$key} { padding-left: space($key); }
+  .px-#{$key} { padding-left: space($key); padding-right: space($key); }
+  .py-#{$key} { padding-top: space($key); padding-bottom: space($key); }
+}
+
+// Gap utilities
+@each $key in $utility-spacings {
+  .gap-#{$key} { gap: space($key); }
+  .gap-x-#{$key} { column-gap: space($key); }
+  .gap-y-#{$key} { row-gap: space($key); }
+}
+
+// Negative margin (for overlap patterns)
+@each $key in $utility-spacings {
+  @if $key > 0 {
+    .-mt-#{$key} { margin-top: calc(-1 * #{space($key)}); }
+    .-mb-#{$key} { margin-bottom: calc(-1 * #{space($key)}); }
+    .-ml-#{$key} { margin-left: calc(-1 * #{space($key)}); }
+    .-mr-#{$key} { margin-right: calc(-1 * #{space($key)}); }
+  }
+}
+
+// Space-between children (vertical)
+.space-y-2 > * + * { margin-top: space(2); }
+.space-y-4 > * + * { margin-top: space(4); }
+.space-y-6 > * + * { margin-top: space(6); }
+.space-y-8 > * + * { margin-top: space(8); }
+
+// Space-between children (horizontal)
+.space-x-2 > * + * { margin-left: space(2); }
+.space-x-4 > * + * { margin-left: space(4); }
+.space-x-6 > * + * { margin-left: space(6); }

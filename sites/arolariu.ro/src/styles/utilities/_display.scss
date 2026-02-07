@@ -1,5 +1,62 @@
 // ===========================================
-// DISPLAY UTILITIES
-// Display and visibility helpers
+// DISPLAY & VISIBILITY UTILITIES
 // ===========================================
-// Placeholder - populate as needed during migration
+@use '../abstracts' as *;
+
+// Display
+.block { display: block; }
+.inline-block { display: inline-block; }
+.inline { display: inline; }
+.inline-flex { display: inline-flex; }
+.inline-grid { display: inline-grid; }
+.hidden { display: none; }
+.contents { display: contents; }
+
+// Visibility
+.visible { visibility: visible; }
+.invisible { visibility: hidden; }
+
+// Overflow
+.overflow-auto { overflow: auto; }
+.overflow-hidden { overflow: hidden; }
+.overflow-visible { overflow: visible; }
+.overflow-scroll { overflow: scroll; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-x-hidden { overflow-x: hidden; }
+.overflow-y-auto { overflow-y: auto; }
+.overflow-y-hidden { overflow-y: hidden; }
+
+// Object Fit
+.object-cover { object-fit: cover; }
+.object-contain { object-fit: contain; }
+.object-fill { object-fit: fill; }
+.object-center { object-position: center; }
+
+// Pointer Events
+.pointer-events-none { pointer-events: none; }
+.pointer-events-auto { pointer-events: auto; }
+
+// Cursor
+.cursor-pointer { cursor: pointer; }
+.cursor-default { cursor: default; }
+.cursor-not-allowed { cursor: not-allowed; }
+
+// Select
+.select-none { user-select: none; }
+.select-text { user-select: text; }
+.select-all { user-select: all; }
+
+// Screen Reader Only
+.sr-only {
+  @include visually-hidden;
+}
+
+// Print utilities
+@media print {
+  .print-hidden { display: none !important; }
+  .print-only { display: block; }
+}
+
+.print-only {
+  display: none;
+}

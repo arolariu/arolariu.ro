@@ -251,3 +251,159 @@
 @mixin image-drop-shadow {
   filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
 }
+
+// ===========================================
+// GRADIENT TEXT WITH CUSTOM COLORS
+// ===========================================
+// Gradient text using specific hex colors (not CSS variable gradients).
+// For CSS-variable-based gradient text, use @include gradient-text instead.
+//
+// @param {Color} $from [#3b82f6] - Start color (default: blue-500)
+// @param {Color} $via [#a855f7] - Middle color (default: purple-500)
+// @param {Color} $to [#ec4899] - End color (default: pink-500)
+// @param {String} $direction [to right] - Gradient direction
+//
+// @example
+//   .title { @include gradient-text-custom(#3b82f6, #a855f7, #ec4899); }
+@mixin gradient-text-custom($from: #3b82f6, $via: #a855f7, $to: #ec4899, $direction: to right) {
+  background: linear-gradient($direction, $from, $via, $to);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+// ===========================================
+// CARD HOVER ELEVATION
+// ===========================================
+// Standard hover effect for interactive cards: highlights border
+// and elevates shadow on hover. Includes transition setup.
+//
+// @param {String} $shadow-level ['lg'] - Shadow level on hover
+// @param {Number} $border-alpha [0.3] - Border opacity on hover (0-1)
+// @param {String} $border-color ['primary'] - CSS variable name for border
+//
+// @example
+//   .card { @include card-hover; }
+//   .card { @include card-hover('xl', 0.5); }
+@mixin card-hover($shadow-level: 'lg', $border-alpha: 0.3, $border-color: 'primary') {
+  @include transition(border-color, box-shadow, background-color);
+
+  &:hover {
+    border-color: hsl(var(--#{$border-color}) / #{$border-alpha});
+    @include shadow($shadow-level);
+  }
+}
+
+// ===========================================
+// ACCENT TOP BAR
+// ===========================================
+// Gradient decorative bar at the top of a card or section.
+// The parent element MUST have position: relative.
+//
+// @param {Number} $height [4px] - Bar height
+// @param {Color} $from [#3b82f6] - Start color
+// @param {Color} $via [#a855f7] - Middle color
+// @param {Color} $to [#ec4899] - End color
+//
+// @example
+//   .accentBar { @include accent-top-bar; }
+@mixin accent-top-bar($height: 4px, $from: #3b82f6, $via: #a855f7, $to: #ec4899) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: $height;
+  width: 100%;
+  background: linear-gradient(to right, $from, $via, $to);
+  border-radius: radius('xl') radius('xl') 0 0;
+}
+
+// ===========================================
+// ICON COLOR VARIANTS
+// ===========================================
+// Generates color variant classes for icons used in timelines,
+// competencies, and similar components.
+//
+// @param {String} $prefix ['icon'] - Class name prefix
+//
+// @example SCSS:
+//   .icon { @include icon-color-variants; }
+//   // Generates: &Blue, &Green, &Purple, etc.
+//
+// @example TSX (CSS Module):
+//   <div className={styles[`icon${color}`]} />
+
+$icon-colors: (
+  'Blue': #3b82f6,
+  'Green': #22c55e,
+  'Purple': #a855f7,
+  'Amber': #f59e0b,
+  'Pink': #ec4899,
+  'Red': #ef4444,
+  'Teal': #14b8a6,
+  'Orange': #f97316,
+  'Indigo': #6366f1,
+  'Cyan': #06b6d4,
+) !default;
+
+@mixin icon-color-variants($prefix: 'icon') {
+  @each $name, $color in $icon-colors {
+    &#{$name} {
+      color: $color;
+    }
+  }
+}
+
+// ===========================================
+// RESPONSIVE GRID
+// ===========================================
+// Common pattern: 1 column on mobile, 2 on tablet, 3 on desktop.
+// Wraps the repeated @include grid + @include respond-to pattern.
+//
+// @param {Number} $mobile [1] - Columns on mobile
+// @param {Number} $tablet [2] - Columns at 'md' breakpoint
+// @param {Number} $desktop [3] - Columns at 'lg' breakpoint
+// @param {Value} $gap [space(6)] - Grid gap
+// @param {Value} $desktop-gap [null] - Optional larger gap on desktop
+//
+// @example
+//   .grid { @include responsive-grid; }                    // 1→2→3
+//   .grid { @include responsive-grid(1, 2, 4, space(4)); } // 1→2→4
+@mixin responsive-grid($mobile: 1, $tablet: 2, $desktop: 3, $gap: space(6), $desktop-gap: null) {
+  display: grid;
+  grid-template-columns: repeat($mobile, minmax(0, 1fr));
+  gap: $gap;
+
+  @include respond-to('md') {
+    grid-template-columns: repeat($tablet, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat($desktop, minmax(0, 1fr));
+    @if $desktop-gap {
+      gap: $desktop-gap;
+    }
+  }
+}
+
+// ===========================================
+// SECTION LAYOUT
+// ===========================================
+// Standard page section with responsive vertical padding
+// and optional background color.
+//
+// @param {Value} $py-mobile [space(12)] - Vertical padding on mobile
+// @param {Value} $py-desktop [space(20)] - Vertical padding on desktop
+//
+// @example
+//   .section { @include section-layout; }
+@mixin section-layout($py-mobile: space(12), $py-desktop: space(20)) {
+  position: relative;
+  padding-top: $py-mobile;
+  padding-bottom: $py-mobile;
+  overflow: hidden;
+
+  @include respond-to('lg') {
+    padding-top: $py-desktop;
+    padding-bottom: $py-desktop;
+  }
+}

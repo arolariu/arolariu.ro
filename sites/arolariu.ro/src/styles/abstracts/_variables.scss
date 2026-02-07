@@ -1,3 +1,24 @@
+// ===========================================
+// DESIGN TOKENS — Variables
+// ===========================================
+// This file defines all design tokens as SCSS maps with helper functions.
+// Each token set has a corresponding function for type-safe access
+// with compile-time error messages for invalid keys.
+//
+// USAGE:
+//   padding: space(4);           // → 1rem (16px)
+//   z-index: z('modal');         // → 1050
+//   border-radius: radius('xl'); // → 0.75rem (12px)
+//   min-width: breakpoint('md'); // → 768px
+//
+// EXTENDING:
+//   To add a new spacing value, add a key-value pair to $spacing.
+//   To add a new breakpoint, add to $breakpoints AND update
+//   tailwind.config.ts if Tailwind is still in use.
+//
+// DEPENDENCIES: sass:map
+// IMPORTED BY: _index.scss (forwarded to all consumers)
+// ===========================================
 @use 'sass:map';
 
 // ===========================================

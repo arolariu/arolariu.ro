@@ -1,3 +1,24 @@
+// ===========================================
+// DESIGN TOKENS — Typography
+// ===========================================
+// Type scale, font families, weights, line heights, and letter spacing.
+// Font families reference CSS variables set by the FontContext React context.
+//
+// USAGE:
+//   font-size: font-size('xl');         // → 1.25rem (20px)
+//   font-weight: font-weight('bold');   // → 700
+//   line-height: line-height('tight');  // → 1.25
+//   letter-spacing: letter-spacing('wide'); // → 0.025em
+//   font-family: $font-family-default;
+//
+// EXTENDING:
+//   To add a font size, add to $font-sizes map.
+//   To change the default font, update the FontContext React context
+//   and the $font-family-default variable here.
+//
+// DEPENDENCIES: sass:map
+// IMPORTED BY: _index.scss (forwarded to all consumers)
+// ===========================================
 @use 'sass:map';
 
 // ===========================================

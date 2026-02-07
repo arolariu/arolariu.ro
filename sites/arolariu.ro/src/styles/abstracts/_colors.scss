@@ -1,3 +1,28 @@
+// ===========================================
+// DESIGN TOKENS — Colors
+// ===========================================
+// This file provides SCSS helpers for consuming CSS custom properties
+// defined in globals.css. Colors are NOT defined here — they are
+// referenced via CSS variables for automatic light/dark mode support.
+//
+// USAGE:
+//   color: color('primary');              // → hsl(var(--primary))
+//   background: color-alpha('card', 0.5); // → hsl(var(--card) / 0.5)
+//   color: static-color('white');         // → hsl(0, 0%, 100%)
+//
+// EXTENDING:
+//   To add a new semantic color, add to $color-vars map AND define
+//   the CSS variable in globals.css (both :root and .dark blocks).
+//
+// ARCHITECTURE:
+//   globals.css → defines CSS variables (:root / .dark)
+//   next-themes → toggles .dark class on <html>
+//   GradientThemeContext → sets gradient-* variables at runtime
+//   This file → SCSS helpers to reference those variables
+//
+// DEPENDENCIES: sass:map
+// IMPORTED BY: _index.scss (forwarded to all consumers)
+// ===========================================
 @use 'sass:map';
 
 // ===========================================
