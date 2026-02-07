@@ -112,8 +112,16 @@
 // For multiple properties, wrap in a list: transition((border-color, box-shadow))
 @mixin transition($properties: all, $dur: 'normal', $timing: 'ease') {
   transition-property: $properties;
-  transition-duration: if(meta.type-of($dur) == 'string', duration($dur), $dur);
-  transition-timing-function: if(meta.type-of($timing) == 'string', easing($timing), $timing);
+  @if meta.type-of($dur) == 'string' {
+    transition-duration: duration($dur);
+  } @else {
+    transition-duration: $dur;
+  }
+  @if meta.type-of($timing) == 'string' {
+    transition-timing-function: easing($timing);
+  } @else {
+    transition-timing-function: $timing;
+  }
 }
 
 // Hover lift effect

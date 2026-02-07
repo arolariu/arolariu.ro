@@ -149,7 +149,7 @@ export default function Hero(): React.JSX.Element {
                 neon
                 className={styles["gradientTitle"]}
                 gradient='linear-gradient(90deg, #3b82f6 0%, #8b5cf6 25%, #d946ef 50%, #8b5cf6 75%, #3b82f6 100%)'
-                transition={{duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
+                transition={{duration: 10, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
               />
             </h1>
           </motion.div>
