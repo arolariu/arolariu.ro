@@ -82,3 +82,22 @@ table {
   border-collapse: collapse;
   border-spacing: 0;
 }
+
+// 12. Border color reset (was in globals.scss)
+*,
+::after,
+::before,
+::backdrop,
+::file-selector-button {
+  border-color: hsl(var(--border));
+}
+
+// 13. Text rendering optimization
+html {
+  text-rendering: optimizelegibility;
+}
+
+// 14. Minimum viewport height
+body {
+  min-height: 100dvh;
+}

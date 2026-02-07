@@ -137,6 +137,15 @@ hr {
 }
 
 // ===========================================
+// FONT UTILITY (was in globals.scss)
+// ===========================================
+.text {
+  font-family: var(--font-default);
+  font-weight: font-weight('normal');
+  font-style: normal;
+}
+
+// ===========================================
 // SELECTION
 // ===========================================
 ::selection {

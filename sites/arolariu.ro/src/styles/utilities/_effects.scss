@@ -1,0 +1,68 @@
+// ===========================================
+// VISUAL EFFECT UTILITIES
+// ===========================================
+// Moved from globals.scss for proper 7-1 organization.
+// All hardcoded colors replaced with CSS variable references.
+
+// Grid background pattern
+.bg-grid-pattern {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+// Text glow (theme-aware — uses accent-primary)
+.text-glow {
+  text-shadow: 0 0 10px hsl(var(--accent-primary) / 0.5);
+}
+
+.text-glow-strong {
+  text-shadow: 0 0 15px hsl(var(--accent-primary) / 0.8);
+}
+
+// Underline accent (theme-aware — uses primary)
+.blue-underline {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)) 70%, hsl(var(--primary) / 0.3) 90%, hsl(var(--primary) / 0) 100%);
+    border-radius: 2px;
+  }
+}
+
+// Glow border effect (theme-aware — uses primary)
+.glow-effect {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, hsl(var(--primary)), transparent, hsl(var(--primary)));
+    z-index: -1;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    animation: glowing 1.5s linear infinite;
+  }
+
+  &:hover::before {
+    opacity: 1;
+    animation: glowing 1.5s linear infinite;
+  }
+}
+
+// GPU-accelerated parallax layer
+.parallax-layer {
+  will-change: transform;
+}
