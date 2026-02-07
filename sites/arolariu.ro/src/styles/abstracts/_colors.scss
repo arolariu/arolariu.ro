@@ -17,7 +17,7 @@
 // ARCHITECTURE:
 //   globals.css → defines CSS variables (:root / .dark)
 //   next-themes → toggles .dark class on <html>
-//   GradientThemeContext → sets gradient-* variables at runtime
+//   themes/_presets.scss / useThemePreset → sets gradient-* variables at runtime
 //   This file → SCSS helpers to reference those variables
 //
 // DEPENDENCIES: sass:map
@@ -31,7 +31,7 @@
 // IMPORTANT: Colors are defined as CSS variables by:
 // - globals.css (base theme variables)
 // - next-themes (adds .dark class for dark mode)
-// - GradientThemeContext (sets gradient variables at runtime)
+// - themes/_presets.scss / useThemePreset (sets gradient variables at runtime)
 //
 // This file provides SCSS helpers to consume those variables.
 // We do NOT redefine colors here - we reference them.
@@ -70,7 +70,7 @@ $color-vars: (
   'input': '--input',
   'ring': '--ring',
 
-  // Gradient colors (set by GradientThemeContext)
+  // Gradient colors (set by themes/_presets.scss / useThemePreset)
   'gradient-from': '--gradient-from',
   'gradient-via': '--gradient-via',
   'gradient-to': '--gradient-to',

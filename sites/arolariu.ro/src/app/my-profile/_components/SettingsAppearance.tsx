@@ -1,8 +1,8 @@
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
-import {useGradientTheme} from "@/contexts/GradientThemeContext";
 import {setCookie} from "@/lib/actions/cookies";
+import {usePreferencesStore} from "@/stores/preferencesStore";
 import {
   Button,
   Card,
@@ -44,7 +44,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
   const t = useTranslations("MyProfile.settings.appearance");
   const {theme, setTheme} = useTheme();
   const {fontType, setFont} = useFontContext();
-  const {setPrimaryColor, setSecondaryColor} = useGradientTheme();
+  const {setPrimaryColor, setSecondaryColor} = usePreferencesStore();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 

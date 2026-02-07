@@ -2,7 +2,6 @@
 
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
-import {GradientThemeProvider} from "@/contexts/GradientThemeContext";
 import {useThemePreset} from "@/hooks/useThemePreset";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
@@ -18,8 +17,9 @@ import roMessages from "../../messages/ro.json";
 const WebVitals = dynamic(() => import("./web-vitals"));
 
 /**
- * Client component that applies theme preset CSS variables.
- * Must be rendered inside ThemeProvider (needs resolvedTheme from next-themes).
+ * Client component that applies theme preset data attribute.
+ * Sets data-theme-preset on <html> so SCSS handles CSS variables.
+ * For "custom" preset, applies inline CSS variables.
  */
 function ThemePresetApplier(): null {
   useThemePreset();
@@ -152,13 +152,11 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
             defaultTheme='system'
             attribute='class'
             themes={["light", "dark"]}>
-            <GradientThemeProvider>
-              <ThemePresetApplier />
+            <ThemePresetApplier />
               {children}
               <ToastProvider />
               <Commander />
               <WebVitals />
-            </GradientThemeProvider>
           </ThemeProvider>
         </FontProvider>
       </AuthProvider>
