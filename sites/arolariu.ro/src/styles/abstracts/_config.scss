@@ -1,0 +1,32 @@
+// ===========================================
+// SCSS DESIGN SYSTEM CONFIGURATION
+// ===========================================
+// Central configuration for the design system.
+// Inspired by Carbon's @use config with ($prefix: 'cds') pattern.
+//
+// This module is @used first by all other abstracts files.
+// Consumer modules can override defaults:
+//   @use 'abstracts' with ($enable-fluid-type: false);
+//
+// DEPENDENCIES: None (leaf module)
+// ===========================================
+
+// Feature flags
+$enable-fluid-type: true !default;
+$enable-logical-properties: true !default;
+$enable-container-queries: true !default;
+$enable-reduced-motion: true !default;
+$enable-high-contrast: true !default;
+$enable-print-styles: true !default;
+$enable-css-layers: true !default;
+
+// Namespace prefix for CSS custom properties
+// All generated CSS variables will use this prefix: --aro-{token}
+$css-prefix: 'aro' !default;
+
+// Base font size for rem calculations (browser default)
+$base-font-size: 16px !default;
+
+// Default transition configuration
+$default-duration: 150ms !default;
+$default-easing: cubic-bezier(0.4, 0, 0.2, 1) !default;
