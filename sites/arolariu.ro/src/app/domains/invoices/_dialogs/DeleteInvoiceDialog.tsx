@@ -25,6 +25,7 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
+import styles from "./DeleteInvoiceDialog.module.scss";
 
 /**
  * Dialog for confirming and executing invoice deletion.
@@ -139,15 +140,15 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               initial={{opacity: 0, scale: 0.95}}
               animate={{opacity: 1, scale: 1}}
               exit={{opacity: 0, scale: 0.95}}
-              className='flex flex-col items-center justify-center space-y-4 py-8'>
+              className={styles["deletingState"]}>
               <motion.div
                 animate={{rotate: 360}}
                 transition={{duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
-                className='rounded-full bg-red-100 p-4 dark:bg-red-900/30'>
+                className={styles["spinnerWrapper"]}>
                 <TbLoader2 className='h-10 w-10 text-red-500' />
               </motion.div>
-              <p className='font-medium text-red-600 dark:text-red-400'>Deleting invoice...</p>
-              <p className='text-muted-foreground text-sm'>Please wait while we remove all associated data.</p>
+              <p className={styles["deletingTitle"]}>Deleting invoice...</p>
+              <p className={styles["deletingDescription"]}>Please wait while we remove all associated data.</p>
             </motion.div>
           ) : (
             <motion.div
@@ -155,17 +156,17 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               initial={{opacity: 0}}
               animate={{opacity: 1}}
               exit={{opacity: 0}}
-              className='space-y-4'>
+              className={styles["confirmBody"]}>
               {/* Invoice Summary Card */}
-              <main className='bg-muted/30 rounded-lg border p-4'>
-                <main className='flex items-start gap-3'>
-                  <main className='rounded-lg bg-red-100 p-2 dark:bg-red-900/30'>
+              <main className={styles["summaryCard"]}>
+                <main className={styles["summaryRow"]}>
+                  <main className={styles["summaryIconBox"]}>
                     <TbReceipt className='h-6 w-6 text-red-500' />
                   </main>
-                  <main className='min-w-0 flex-1'>
-                    <p className='truncate font-semibold'>{invoiceName}</p>
-                    <p className='text-muted-foreground font-mono text-xs'>{invoice.id}</p>
-                    {invoice.description ? <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>{invoice.description}</p> : null}
+                  <main className={styles["summaryContent"]}>
+                    <p className={styles["summaryName"]}>{invoiceName}</p>
+                    <p className={styles["summaryId"]}>{invoice.id}</p>
+                    {invoice.description ? <p className={styles["summaryDescription"]}>{invoice.description}</p> : null}
                   </main>
                 </main>
               </main>
@@ -178,25 +179,25 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 <AlertTitle>Permanent Deletion</AlertTitle>
                 <AlertDescription>
                   <p className='mb-2'>The following data will be permanently deleted:</p>
-                  <ul className='space-y-1 text-sm'>
-                    <li className='flex items-center gap-2'>
+                  <ul className={styles["impactList"]}>
+                    <li className={styles["impactItem"]}>
                       <TbFileX className='h-4 w-4' />
                       Invoice record and metadata
                     </li>
                     {scanCount > 0 && (
-                      <li className='flex items-center gap-2'>
+                      <li className={styles["impactItem"]}>
                         <TbPhoto className='h-4 w-4' />
                         {scanCount} uploaded scan(s)
                       </li>
                     )}
                     {itemCount > 0 && (
-                      <li className='flex items-center gap-2'>
+                      <li className={styles["impactItem"]}>
                         <TbShoppingCart className='h-4 w-4' />
                         {itemCount} line item(s)
                       </li>
                     )}
                     {sharedCount > 0 && (
-                      <li className='flex items-center gap-2'>
+                      <li className={styles["impactItem"]}>
                         <TbX className='h-4 w-4' />
                         Shared access for {sharedCount} user(s)
                       </li>
@@ -208,10 +209,10 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <Separator />
 
               {/* Confirmation Input */}
-              <main className='space-y-3'>
-                <main className='space-y-2'>
+              <main className={styles["confirmSection"]}>
+                <main className={styles["confirmField"]}>
                   <Label htmlFor='confirm-name'>
-                    Type <span className='font-semibold text-red-600 dark:text-red-400'>{invoiceName}</span> to confirm:
+                    Type <span className={styles["confirmHighlight"]}>{invoiceName}</span> to confirm:
                   </Label>
                   <Input
                     id='confirm-name'
@@ -224,19 +225,19 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 </main>
 
                 {/* Understanding Checkbox */}
-                <main className='flex items-start space-x-3 rounded-lg border p-3'>
+                <main className={styles["checkboxCard"]}>
                   <Checkbox
                     id='understand-deletion'
                     checked={understoodCheckbox}
                     onCheckedChange={handleCheckboxChange}
                   />
-                  <main className='space-y-1'>
+                  <main className={styles["checkboxContent"]}>
                     <Label
                       htmlFor='understand-deletion'
                       className='cursor-pointer text-sm leading-none font-medium'>
                       I understand this action is permanent
                     </Label>
-                    <p className='text-muted-foreground text-xs'>
+                    <p className={styles["checkboxDescription"]}>
                       This invoice and all its data will be permanently deleted and cannot be recovered.
                     </p>
                   </main>

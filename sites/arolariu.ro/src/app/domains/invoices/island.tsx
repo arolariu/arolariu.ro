@@ -31,6 +31,7 @@ import {
   TbSparkles,
   TbUpload,
 } from "react-icons/tb";
+import styles from "./island.module.scss";
 
 type Props = {
   isAuthenticated: boolean;
@@ -66,12 +67,12 @@ function WorkflowCard({
       <Card className='group relative h-full overflow-hidden border-2 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg dark:hover:border-indigo-700'>
         {/* Step number badge */}
         <main
-          className={`absolute -top-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br ${gradient} text-2xl font-bold text-white opacity-20 transition-opacity group-hover:opacity-30`}>
+          className={`${styles["stepBadge"]} bg-linear-to-br ${gradient}`}>
           {step}
         </main>
 
         <CardHeader className='pb-2'>
-          <main className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br ${gradient} text-white shadow-md`}>
+          <main className={`${styles["stepIconBox"]} bg-linear-to-br ${gradient}`}>
             {icon}
           </main>
           <CardTitle className='text-xl'>{title}</CardTitle>
@@ -100,13 +101,13 @@ function WorkflowCard({
  */
 function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <main className='flex items-start gap-4'>
-      <main className='flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400'>
+    <main className={styles["featureItem"]}>
+      <main className={styles["featureIconBox"]}>
         {icon}
       </main>
       <main>
-        <h3 className='font-semibold text-gray-900 dark:text-white'>{title}</h3>
-        <p className='text-sm text-gray-600 dark:text-gray-400'>{description}</p>
+        <h3 className={styles["featureTitle"]}>{title}</h3>
+        <p className={styles["featureDescription"]}>{description}</p>
       </main>
     </main>
   );
@@ -145,20 +146,20 @@ function BentoSection({
   return (
     <section
       ref={ref}
-      className='bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 dark:bg-gray-900/50'>
-      <main className='mx-auto max-w-5xl'>
+      className={styles["bentoSection"]}>
+      <main className={styles["bentoContainer"]}>
         {/* Section header */}
         <motion.div
-          className='mb-12 text-center'
+          className={styles["workflowHeader"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.5}}>
-          <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>{translations.title}</h2>
-          <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>{translations.description}</p>
+          <h2 className={styles["sectionTitle"]}>{translations.title}</h2>
+          <p className={styles["sectionDescription"]}>{translations.description}</p>
         </motion.div>
 
         {/* Bento grid */}
-        <main className='grid auto-rows-[120px] grid-cols-2 gap-4 md:grid-cols-3'>
+        <main className={styles["bentoGrid"]}>
           {bentoItemsConfig.map((item, index) => (
             <motion.div
               key={item.key}
@@ -168,30 +169,30 @@ function BentoSection({
               transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
               whileHover={{scale: 1.02}}>
               {/* Shimmer effect on hover */}
-              <main className='absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full' />
+              <main className={styles["shimmerOverlay"]} />
 
               {/* Floating particles */}
               <motion.div
-                className='absolute top-2 right-2 h-2 w-2 rounded-full bg-white/30'
+                className={styles["particleTopRight"]}
                 animate={{y: [0, -8, 0], opacity: [0.3, 0.6, 0.3]}}
                 transition={{duration: 3, repeat: Infinity, delay: index * 0.2}}
               />
               <motion.div
-                className='absolute bottom-4 left-4 h-1.5 w-1.5 rounded-full bg-white/20'
+                className={styles["particleBottomLeft"]}
                 animate={{y: [0, -6, 0], opacity: [0.2, 0.5, 0.2]}}
                 transition={{duration: 2.5, repeat: Infinity, delay: index * 0.3}}
               />
 
               {/* Content */}
-              <main className='relative flex h-full flex-col justify-between p-4'>
+              <main className={styles["bentoContent"]}>
                 <motion.div
                   whileHover={{scale: 1.1, rotate: 5}}
                   transition={{duration: 0.3}}>
                   <item.icon className='h-8 w-8 text-white' />
                 </motion.div>
                 <main>
-                  <h3 className='text-base font-bold text-white'>{translations.items[item.key].title}</h3>
-                  <p className='text-sm text-white/80'>{translations.items[item.key].description}</p>
+                  <h3 className={styles["bentoItemTitle"]}>{translations.items[item.key].title}</h3>
+                  <p className={styles["bentoItemDescription"]}>{translations.items[item.key].description}</p>
                 </main>
               </main>
             </motion.div>
@@ -200,7 +201,7 @@ function BentoSection({
 
         {/* Mobile highlight */}
         <motion.div
-          className='mt-8 flex items-center justify-center gap-3 text-gray-600 dark:text-gray-400'
+          className={styles["mobileNote"]}
           initial={{opacity: 0}}
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.8, duration: 0.5}}>
@@ -232,12 +233,12 @@ function EnhancedCTA({
   return (
     <section
       ref={ref}
-      className='relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8'>
+      className={styles["ctaSection"]}>
       {/* Animated background */}
-      <main className='absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500'>
+      <main className={styles["ctaBackground"]}>
         {/* Floating orbs */}
         <motion.div
-          className='absolute top-10 left-10 h-32 w-32 rounded-full bg-white/10 blur-2xl'
+          className={styles["orbTopLeft"]}
           animate={{
             x: [0, 30, 0],
             y: [0, -20, 0],
@@ -246,7 +247,7 @@ function EnhancedCTA({
           transition={{duration: 8, repeat: Infinity, ease: "easeInOut"}}
         />
         <motion.div
-          className='absolute right-20 bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl'
+          className={styles["orbBottomRight"]}
           animate={{
             x: [0, -20, 0],
             y: [0, 20, 0],
@@ -255,20 +256,20 @@ function EnhancedCTA({
           transition={{duration: 10, repeat: Infinity, ease: "easeInOut"}}
         />
         <motion.div
-          className='absolute top-1/2 left-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/5 blur-3xl'
+          className={styles["orbCenter"]}
           animate={{scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3]}}
           transition={{duration: 6, repeat: Infinity, ease: "easeInOut"}}
         />
 
         {/* Grid pattern overlay */}
-        <main className='absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]' />
+        <main className={styles["ctaGridPattern"]} />
       </main>
 
       {/* Content */}
-      <main className='relative mx-auto max-w-4xl text-center'>
+      <main className={styles["ctaContent"]}>
         {/* Sparkle icon */}
         <motion.div
-          className='mb-6 inline-flex items-center justify-center'
+          className={styles["ctaSparkle"]}
           initial={{opacity: 0, scale: 0}}
           animate={isInView ? {opacity: 1, scale: 1} : {}}
           transition={{duration: 0.5, type: "spring"}}>
@@ -280,7 +281,7 @@ function EnhancedCTA({
         </motion.div>
 
         <motion.h2
-          className='mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl'
+          className={styles["ctaTitle"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.1, duration: 0.5}}>
@@ -288,7 +289,7 @@ function EnhancedCTA({
         </motion.h2>
 
         <motion.p
-          className='mb-8 text-lg text-indigo-100 sm:text-xl'
+          className={styles["ctaDescription"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.2, duration: 0.5}}>
@@ -297,7 +298,7 @@ function EnhancedCTA({
 
         {/* Buttons */}
         <motion.div
-          className='flex flex-col items-center justify-center gap-4 sm:flex-row'
+          className={styles["ctaButtons"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{delay: 0.3, duration: 0.5}}>
@@ -324,19 +325,19 @@ function EnhancedCTA({
 
         {/* Trust badges */}
         <motion.div
-          className='mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-indigo-200'
+          className={styles["ctaBadges"]}
           initial={{opacity: 0}}
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.5, duration: 0.5}}>
-          <main className='flex items-center gap-2'>
+          <main className={styles["ctaBadge"]}>
             <TbLock className='h-4 w-4' />
             <span>{translations.badges.secure}</span>
           </main>
-          <main className='flex items-center gap-2'>
+          <main className={styles["ctaBadge"]}>
             <TbCloud className='h-4 w-4' />
             <span>{translations.badges.cloud}</span>
           </main>
-          <main className='flex items-center gap-2'>
+          <main className={styles["ctaBadge"]}>
             <TbBrain className='h-4 w-4' />
             <span>{translations.badges.ai}</span>
           </main>
@@ -387,27 +388,27 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
   };
 
   return (
-    <main className='min-h-screen'>
+    <main className={styles["page"]}>
       {/* Hero Section */}
-      <section className='relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8'>
-        <main className='mx-auto max-w-7xl'>
-          <main className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
+      <section className={styles["heroSection"]}>
+        <main className={styles["heroContainer"]}>
+          <main className={styles["heroFlex"]}>
             {/* Left: Content */}
-            <main className='flex-1 text-center lg:text-left'>
+            <main className={styles["heroContent"]}>
               <motion.div
                 initial={{opacity: 0, y: 20}}
                 animate={{opacity: 1, y: 0}}
                 transition={{duration: 0.6}}>
-                <h1 className='mb-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl dark:text-white'>
+                <h1 className={styles["heroTitle"]}>
                   {t("hero.title")}{" "}
-                  <span className='from-gradient-from to-gradient-to bg-linear-to-r bg-clip-text text-transparent'>
+                  <span className={styles["heroHighlight"]}>
                     {t("hero.titleHighlight")}
                   </span>{" "}
                   {t("hero.titleSuffix")}
                 </h1>
-                <p className='mb-8 max-w-2xl text-lg text-gray-600 lg:text-xl dark:text-gray-300'>{t("hero.description")}</p>
+                <p className={styles["heroDescription"]}>{t("hero.description")}</p>
 
-                <main className='flex flex-col items-center gap-4 sm:flex-row lg:justify-start'>
+                <main className={styles["heroButtons"]}>
                   <Button
                     asChild
                     size='lg'
@@ -434,7 +435,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
 
             {/* Right: Image */}
             <motion.div
-              className='flex-1'
+              className={styles["heroImageWrapper"]}
               initial={{opacity: 0, scale: 0.95}}
               animate={{opacity: 1, scale: 1}}
               transition={{duration: 0.6, delay: 0.2}}>
@@ -443,7 +444,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 alt='Invoice management illustration'
                 width={500}
                 height={500}
-                className='mx-auto w-full max-w-md lg:max-w-lg'
+                className={styles["heroImage"]}
                 priority
               />
             </motion.div>
@@ -452,18 +453,18 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       </section>
 
       {/* Workflow Section */}
-      <section className='bg-gray-50 px-4 py-16 sm:px-6 lg:px-8 dark:bg-gray-900/50'>
-        <main className='mx-auto max-w-7xl'>
+      <section className={styles["workflowSection"]}>
+        <main className={styles["workflowContainer"]}>
           <motion.div
-            className='mb-12 text-center'
+            className={styles["workflowHeader"]}
             initial={{opacity: 0, y: 20}}
             animate={{opacity: 1, y: 0}}
             transition={{duration: 0.5}}>
-            <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>{t("workflow.title")}</h2>
-            <p className='mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400'>{t("workflow.description")}</p>
+            <h2 className={styles["sectionTitle"]}>{t("workflow.title")}</h2>
+            <p className={styles["sectionDescription"]}>{t("workflow.description")}</p>
           </motion.div>
 
-          <main className='grid gap-8 md:grid-cols-3'>
+          <main className={styles["workflowGrid"]}>
             <WorkflowCard
               step={1}
               title={t("workflow.step1.title")}
@@ -501,12 +502,12 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       </section>
 
       {/* Features Section */}
-      <section className='px-4 py-16 sm:px-6 lg:px-8'>
-        <main className='mx-auto max-w-7xl'>
-          <main className='flex flex-col items-center gap-12 lg:flex-row lg:gap-16'>
+      <section className={styles["featuresSection"]}>
+        <main className={styles["featuresContainer"]}>
+          <main className={styles["featuresFlex"]}>
             {/* Left: Image */}
             <motion.div
-              className='flex-1'
+              className={styles["featuresImageWrapper"]}
               initial={{opacity: 0, x: -20}}
               animate={{opacity: 1, x: 0}}
               transition={{duration: 0.6}}>
@@ -515,22 +516,22 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 alt='Invoice features illustration'
                 width={500}
                 height={500}
-                className='mx-auto w-full max-w-md lg:max-w-lg'
+                className={styles["featuresImage"]}
               />
             </motion.div>
 
             {/* Right: Features */}
             <motion.div
-              className='flex-1 space-y-8'
+              className={styles["featuresContent"]}
               initial={{opacity: 0, x: 20}}
               animate={{opacity: 1, x: 0}}
               transition={{duration: 0.6, delay: 0.2}}>
-              <main>
-                <h2 className='mb-4 text-3xl font-bold text-gray-900 sm:text-4xl dark:text-white'>{t("features.title")}</h2>
-                <p className='text-lg text-gray-600 dark:text-gray-400'>{t("features.description")}</p>
+              <main className={styles["featuresHeader"]}>
+                <h2 className={styles["sectionTitle"]}>{t("features.title")}</h2>
+                <p className={styles["sectionDescription"]}>{t("features.description")}</p>
               </main>
 
-              <main className='space-y-6'>
+              <main className={styles["featuresList"]}>
                 <FeatureItem
                   icon={<TbPhoto className='h-5 w-5' />}
                   title={t("features.ocr.title")}
@@ -549,8 +550,8 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               </main>
 
               {!isAuthenticated && (
-                <main className='rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-900/30'>
-                  <p className='text-sm text-indigo-800 dark:text-indigo-200'>
+                <main className={styles["signInPrompt"]}>
+                  <p className={styles["signInPromptText"]}>
                     <strong>Sign in</strong> {t("features.signInPrompt")}
                   </p>
                 </main>
@@ -567,7 +568,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       <EnhancedCTA translations={ctaTranslations} />
 
       {/* Footer spacing */}
-      <main className='h-16 bg-gradient-to-b from-pink-500/10 to-transparent dark:from-purple-900/20' />
+      <main className={styles["footerSpacing"]} />
     </main>
   );
 }

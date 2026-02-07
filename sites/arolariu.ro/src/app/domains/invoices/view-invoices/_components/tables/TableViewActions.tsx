@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import {TbEdit, TbMenu3, TbShare, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
+import styles from "./TableViewActions.module.scss";
 
 type Props = {invoice: Invoice};
 
@@ -51,7 +52,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                 className='cursor-pointer'>
                 <Link
                   href={`/domains/invoices/edit-invoice/${invoice.id}`}
-                  className='flex items-center gap-2'>
+                  className={styles["editLink"]}>
                   <TbEdit className='mr-2 h-4 w-4' />
                   Edit
                 </Link>

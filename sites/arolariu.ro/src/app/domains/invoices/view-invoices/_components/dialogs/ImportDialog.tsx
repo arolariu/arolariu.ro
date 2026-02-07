@@ -17,6 +17,7 @@ import {useCallback, useMemo, useState} from "react";
 import {useDropzone, type Accept} from "react-dropzone";
 import {TbAlertCircle, TbCheck, TbFile, TbFileSpreadsheet, TbFileText, TbFileTypePdf, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
+import styles from "./ImportDialog.module.scss";
 
 /** Supported file format types for invoice import. */
 type ImportFileFormat = "csv" | "pdf" | "xlsx";
@@ -131,25 +132,23 @@ export default function ImportDialog(): React.JSX.Element {
           </TabsList>
 
           <main
-            className={`mt-4 cursor-pointer rounded-lg border-2 border-dashed p-6 transition-all duration-200 ${
-              isDragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
-            }`}
+            className={`${styles["dropzone"]} ${isDragActive ? styles["dropzoneActive"] : styles["dropzoneIdle"]}`}
             // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility
             {...getRootProps()}>
             <input
               // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading input props for proper file upload functionality
               {...getInputProps()}
             />
-            <main className='flex flex-col items-center justify-center space-y-2 text-center'>
+            <main className={styles["dropzoneContent"]}>
               <motion.div
-                className='bg-primary/10 rounded-full p-3'
+                className={styles["uploadIconWrapper"]}
                 animate={isDragActive ? {scale: 1.1} : {scale: 1}}
                 transition={{duration: 0.2}}>
-                <TbUpload className='text-primary h-6 w-6' />
+                <TbUpload className={styles["uploadIcon"]} />
               </motion.div>
-              <h3 className='font-medium'>{isDragActive ? "Drop files here..." : "Drag & drop files here"}</h3>
-              <p className='text-muted-foreground text-sm'>or click to browse files</p>
-              <p className='text-muted-foreground text-xs'>
+              <h3 className={styles["dropzoneTitle"]}>{isDragActive ? "Drop files here..." : "Drag & drop files here"}</h3>
+              <p className={styles["dropzoneSubtitle"]}>or click to browse files</p>
+              <p className={styles["dropzoneHint"]}>
                 {activeTab === "csv" && "Accepts .csv files (max 10MB)"}
                 {activeTab === "pdf" && "Accepts .pdf files (max 10MB)"}
                 {activeTab === "xlsx" && "Accepts .xlsx and .xls files (max 10MB)"}
@@ -158,16 +157,16 @@ export default function ImportDialog(): React.JSX.Element {
           </main>
 
           {files.length > 0 && (
-            <main className='mt-4 space-y-2'>
-              <h4 className='text-sm font-medium'>Selected Files</h4>
-              <main className='max-h-[150px] space-y-2 overflow-y-auto'>
+            <main className={styles["fileListWrapper"]}>
+              <h4 className={styles["fileListTitle"]}>Selected Files</h4>
+              <main className={styles["fileList"]}>
                 {files.map((file, index) => (
                   <main
                     key={fileKey(file)}
-                    className='bg-muted/50 flex items-center justify-between rounded-md p-2'>
-                    <main className='flex items-center space-x-2'>
+                    className={styles["fileItem"]}>
+                    <main className={styles["fileInfo"]}>
                       {getFileIcon(file.name)}
-                      <span className='max-w-[300px] truncate text-sm'>{file.name}</span>
+                      <span className={styles["fileName"]}>{file.name}</span>
                     </main>
                     <Button
                       variant='ghost'
@@ -189,7 +188,7 @@ export default function ImportDialog(): React.JSX.Element {
               initial={{opacity: 0, y: 10}}
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0}}
-              className='flex items-center space-x-2 rounded-md bg-green-50 p-2 text-green-600'>
+              className={styles["statusSuccess"]}>
               <TbCheck className='h-5 w-5' />
               <span>Files imported successfully!</span>
             </motion.div>
@@ -200,7 +199,7 @@ export default function ImportDialog(): React.JSX.Element {
               initial={{opacity: 0, y: 10}}
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0}}
-              className='flex items-center space-x-2 rounded-md bg-red-50 p-2 text-red-600'>
+              className={styles["statusError"]}>
               <TbAlertCircle className='h-5 w-5' />
               <span>Error importing files. Please try again.</span>
             </motion.div>

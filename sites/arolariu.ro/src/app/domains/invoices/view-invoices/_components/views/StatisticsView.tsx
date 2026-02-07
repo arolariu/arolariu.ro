@@ -1,4 +1,5 @@
 import type {Invoice} from "@/types/invoices";
+import styles from "./StatisticsView.module.scss";
 
 type Props = {
   invoices: ReadonlyArray<Invoice>;
@@ -15,11 +16,11 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   console.log(invoices);
 
   return (
-    <main className='space-y-4'>
-      <main className='flex flex-col justify-between gap-4 sm:flex-row'>
-        <main className='relative flex-1'>
-          <h1 className='text-3xl font-bold tracking-tight'>Invoice Statistics</h1>
-          <p className='text-muted-foreground mt-1'>Manage your receipts and track your spending habits</p>
+    <main className={styles["container"]}>
+      <main className={styles["header"]}>
+        <main className={styles["headerContent"]}>
+          <h1 className={styles["title"]}>Invoice Statistics</h1>
+          <p className={styles["subtitle"]}>Manage your receipts and track your spending habits</p>
         </main>
       </main>
     </main>

@@ -23,6 +23,7 @@ import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
 import {copySvgToClipboard} from "../_utils";
+import styles from "./ShareInvoiceDialog.module.scss";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
 
@@ -58,18 +59,18 @@ interface SelectionModeProps {
  */
 function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): React.JSX.Element {
   return (
-    <main className='space-y-4'>
-      <p className='text-muted-foreground text-sm'>Choose how you want to share this invoice. Your choice affects who can access it.</p>
+    <main className={styles["selectionBody"]}>
+      <p className={styles["selectionDescription"]}>Choose how you want to share this invoice. Your choice affects who can access it.</p>
 
-      <main className='grid gap-4'>
+      <main className={styles["selectionGrid"]}>
         <Card
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPublic}>
-          <CardHeader className='flex flex-row items-start gap-4 space-y-0 pb-4'>
-            <main className='flex size-12 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30'>
+          <CardHeader className={styles["cardHeaderRow"]}>
+            <main className={`${styles["iconCircle"]} ${styles["iconCircleOrange"]}`}>
               <TbGlobe className='size-6 text-orange-600 dark:text-orange-400' />
             </main>
-            <main className='flex-1 space-y-1'>
+            <main className={styles["cardContent"]}>
               <CardTitle className='text-base'>Public Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Generate a link or QR code that <strong>anyone</strong> can use to view this invoice.
@@ -81,11 +82,11 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
         <Card
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPrivate}>
-          <CardHeader className='flex flex-row items-start gap-4 space-y-0 pb-4'>
-            <main className='flex size-12 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30'>
+          <CardHeader className={styles["cardHeaderRow"]}>
+            <main className={`${styles["iconCircle"]} ${styles["iconCircleGreen"]}`}>
               <TbLock className='size-6 text-green-600 dark:text-green-400' />
             </main>
-            <main className='flex-1 space-y-1'>
+            <main className={styles["cardContent"]}>
               <CardTitle className='text-base'>Private Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Send an email invitation to a <strong>specific person</strong>. Only they will have access.

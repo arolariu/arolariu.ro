@@ -1,8 +1,9 @@
 "use client";
 
-import {Avatar, AvatarFallback, AvatarImage, cn} from "@arolariu/components";
+import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbRobot, TbUser} from "react-icons/tb";
+import styles from "./MessageList.module.scss";
 
 type Props = {
   messages: {
@@ -20,14 +21,14 @@ type Props = {
  */
 export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
   return (
-    <main className='space-y-4'>
+    <main className={styles["messageList"]}>
       {messages.map((message, index) => (
         <motion.div
           key={message.id}
           initial={{opacity: 0, y: 10}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.3, delay: index === messages.length - 1 ? 0.2 : 0}}
-          className={cn("flex items-start gap-3 rounded-lg p-3", message.role === "user" ? "bg-muted/50" : "bg-primary/5")}>
+          className={`${styles["messageItem"]} ${message.role === "user" ? styles["messageUser"] : styles["messageAssistant"]}`}>
           <Avatar className='h-8 w-8'>
             {message.role === "assistant" ? (
               <>
@@ -45,16 +46,16 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
               </>
             )}
           </Avatar>
-          <main className='flex-1 space-y-1'>
-            <main className='flex items-center gap-2'>
-              <p className='text-sm font-medium'>{message.role === "assistant" ? "AI Assistant" : "You"}</p>
-              <span className='text-muted-foreground text-xs'>{new Date(message.timestamp).toLocaleTimeString()}</span>
+          <main className={styles["messageBody"]}>
+            <main className={styles["messageHeader"]}>
+              <p className={styles["messageSender"]}>{message.role === "assistant" ? "AI Assistant" : "You"}</p>
+              <span className={styles["messageTimestamp"]}>{new Date(message.timestamp).toLocaleTimeString()}</span>
             </main>
-            <main className='prose prose-sm dark:prose-invert'>
+            <main className={styles["messageContent"]}>
               {message.content.split("\n").map((line) => (
                 <p
                   key={line}
-                  className='my-1 text-black dark:text-white'>
+                  className={styles["messageLine"]}>
                   {line}
                 </p>
               ))}

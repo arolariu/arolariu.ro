@@ -1,0 +1,69 @@
+// ===========================================
+// SHARE INVOICE DIALOG STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// SELECTION MODE
+// ===========================================
+.selectionBody {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.selectionDescription {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.selectionGrid {
+  display: grid;
+  gap: space(4);
+}
+
+.cardHeaderRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: space(4);
+
+  & > * {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  padding-bottom: space(4);
+}
+
+.iconCircle {
+  @include flex-center;
+  height: 3rem;
+  width: 3rem;
+  flex-shrink: 0;
+  border-radius: radius('full');
+}
+
+.iconCircleOrange {
+  background-color: #fff7ed; // orange-100
+
+  @include dark {
+    background-color: rgba(124, 45, 18, 0.3); // orange-900/30
+  }
+}
+
+.iconCircleGreen {
+  background-color: #dcfce7; // green-100
+
+  @include dark {
+    background-color: rgba(20, 83, 45, 0.3); // green-900/30
+  }
+}
+
+.cardContent {
+  flex: 1;
+
+  & > * + * {
+    margin-top: space(1);
+  }
+}

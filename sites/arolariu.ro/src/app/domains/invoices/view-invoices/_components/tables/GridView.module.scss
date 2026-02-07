@@ -1,0 +1,98 @@
+// ===========================================
+// GRID VIEW STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyState {
+  @include flex-column-center;
+  justify-content: center;
+  padding-block: space(10);
+}
+
+.emptyMessage {
+  color: color('muted-foreground');
+  margin-bottom: space(2);
+}
+
+// ===========================================
+// GRID LAYOUT
+// ===========================================
+.grid {
+  @include responsive-grid(1, 2, 3, space(4));
+}
+
+// ===========================================
+// CARD WRAPPER
+// ===========================================
+.cardWrapper {
+  position: relative;
+}
+
+.checkboxOverlay {
+  position: absolute;
+  top: space(2);
+  left: space(2);
+  z-index: 10;
+
+  @media print {
+    display: none;
+  }
+}
+
+// ===========================================
+// IMAGE SECTION
+// ===========================================
+.imageContainer {
+  position: relative;
+}
+
+.cardImage {
+  height: 100%;
+  width: 100%;
+  object-fit: fill;
+  @include transition(transform);
+  transition-duration: 500ms;
+}
+
+.imageActions {
+  position: absolute;
+  right: space(2);
+  bottom: space(2);
+  z-index: 10;
+  display: flex;
+  gap: space(1);
+
+  @media print {
+    display: none;
+  }
+}
+
+// ===========================================
+// CARD CONTENT
+// ===========================================
+.contentRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.amount {
+  font-size: font-size('lg');
+  font-weight: font-weight('medium');
+}
+
+.itemCount {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}

@@ -1,0 +1,146 @@
+// ===========================================
+// IMPORT DIALOG STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// DROPZONE
+// ===========================================
+.dropzone {
+  margin-top: space(4);
+  cursor: pointer;
+  border-radius: radius('lg');
+  border: 2px dashed;
+  padding: space(6);
+  @include transition(all);
+  transition-duration: 200ms;
+}
+
+.dropzoneActive {
+  border-color: color('primary');
+  background-color: color-alpha('primary', 0.1);
+}
+
+.dropzoneIdle {
+  border-color: color-alpha('muted-foreground', 0.25);
+
+  &:hover {
+    border-color: color-alpha('primary', 0.5);
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.dropzoneContent {
+  @include flex-column-center;
+  justify-content: center;
+
+  & > * + * {
+    margin-top: space(2);
+  }
+
+  text-align: center;
+}
+
+.uploadIconWrapper {
+  background-color: color-alpha('primary', 0.1);
+  border-radius: radius('full');
+  padding: space(3);
+}
+
+.uploadIcon {
+  height: 1.5rem;
+  width: 1.5rem;
+  color: color('primary');
+}
+
+.dropzoneTitle {
+  font-weight: font-weight('medium');
+}
+
+.dropzoneSubtitle {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.dropzoneHint {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+// ===========================================
+// FILE LIST
+// ===========================================
+.fileListWrapper {
+  margin-top: space(4);
+
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.fileListTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.fileList {
+  max-height: 150px;
+  overflow-y: auto;
+
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: radius('md');
+  padding: space(2);
+  background-color: color-alpha('muted', 0.5);
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+
+  & > * + * {
+    margin-left: space(2);
+  }
+}
+
+.fileName {
+  max-width: 300px;
+  @include truncate;
+  font-size: font-size('sm');
+}
+
+// ===========================================
+// STATUS MESSAGES
+// ===========================================
+.statusSuccess {
+  display: flex;
+  align-items: center;
+  border-radius: radius('md');
+  padding: space(2);
+  background-color: #f0fdf4; // green-50
+  color: #16a34a; // green-600
+
+  & > * + * {
+    margin-left: space(2);
+  }
+}
+
+.statusError {
+  display: flex;
+  align-items: center;
+  border-radius: radius('md');
+  padding: space(2);
+  background-color: #fef2f2; // red-50
+  color: #dc2626; // red-600
+
+  & > * + * {
+    margin-left: space(2);
+  }
+}

@@ -24,6 +24,7 @@ import {motion} from "motion/react";
 import {useRef, useState} from "react";
 import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
 import {MessageList} from "../MessageList";
+import styles from "./GenerativeView.module.scss";
 
 type Message = {
   id: string;
@@ -61,11 +62,11 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
       initial={{opacity: 0}}
       animate={{opacity: 1}}
       transition={{duration: 0.5}}
-      className='space-y-6'>
-      <main className='flex items-center justify-between'>
+      className={styles["container"]}>
+      <main className={styles["header"]}>
         <main>
-          <h2 className='text-2xl font-bold tracking-tight'>Live Analysis</h2>
-          <p className='text-muted-foreground'>Chat with AI to analyze your invoices and get insights</p>
+          <h2 className={styles["title"]}>Live Analysis</h2>
+          <p className={styles["subtitle"]}>Chat with AI to analyze your invoices and get insights</p>
         </main>
         <Button
           variant='outline'
@@ -104,12 +105,12 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <main className='flex h-[600px] flex-col overflow-hidden rounded-lg border'>
-                <main className='flex-1 overflow-y-auto p-4'>
+              <main className={styles["chatContainer"]}>
+                <main className={styles["chatMessages"]}>
                   <MessageList messages={messages} />
                   <main ref={messagesEndRef} />
                 </main>
-                <main className='border-t p-4' />
+                <main className={styles["chatInput"]} />
               </main>
             </CardContent>
           </Card>
@@ -123,8 +124,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               <CardDescription>Configure your AI assistant preferences</CardDescription>
             </CardHeader>
             <CardContent>
-              <main className='space-y-4'>
-                <main className='grid gap-2'>
+              <main className={styles["settingsContainer"]}>
+                <main className={styles["settingsField"]}>
                   <Label htmlFor='history'>Chat History</Label>
                   <Select defaultValue='30'>
                     <SelectTrigger id='history'>
@@ -139,9 +140,9 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   </Select>
                 </main>
 
-                <main className='grid gap-2'>
-                  <span className='text-sm font-medium'>Data Access</span>
-                  <main className='flex items-center space-x-2'>
+                <main className={styles["settingsField"]}>
+                  <span className={styles["settingsLabel"]}>Data Access</span>
+                  <main className={styles["checkboxRow"]}>
                     <Checkbox
                       id='access-invoices'
                       defaultChecked
@@ -152,7 +153,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       Allow access to invoice data
                     </Label>
                   </main>
-                  <main className='flex items-center space-x-2'>
+                  <main className={styles["checkboxRow"]}>
                     <Checkbox
                       id='access-merchants'
                       defaultChecked
@@ -165,9 +166,9 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   </main>
                 </main>
 
-                <main className='grid gap-2'>
-                  <span className='text-sm font-medium'>Notification Preferences</span>
-                  <main className='flex items-center space-x-2'>
+                <main className={styles["settingsField"]}>
+                  <span className={styles["settingsLabel"]}>Notification Preferences</span>
+                  <main className={styles["checkboxRow"]}>
                     <Checkbox
                       id='notify-insights'
                       defaultChecked

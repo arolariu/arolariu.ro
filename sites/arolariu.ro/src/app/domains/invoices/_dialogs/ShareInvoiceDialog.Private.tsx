@@ -6,6 +6,7 @@
 import {Alert, AlertDescription, AlertTitle, Button, Input, Label} from "@arolariu/components";
 import React from "react";
 import {TbArrowLeft, TbLock, TbMail} from "react-icons/tb";
+import styles from "./ShareInvoiceDialog.Private.module.scss";
 
 // ============================================================================
 // Types
@@ -40,7 +41,7 @@ export interface PrivateModeProps {
  */
 export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: PrivateModeProps): React.JSX.Element {
   return (
-    <main className='space-y-4'>
+    <main className={styles["body"]}>
       <Button
         variant='ghost'
         size='sm'
@@ -63,8 +64,8 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
 
       <form
         onSubmit={onSendEmail}
-        className='space-y-4'>
-        <main className='space-y-2'>
+        className={styles["formBody"]}>
+        <main className={styles["fieldGroup"]}>
           <Label htmlFor='email'>Recipient&apos;s Email Address</Label>
           <Input
             id='email'
@@ -75,7 +76,7 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
             onChange={(e) => onEmailChange(e.target.value)}
             required
           />
-          <p className='text-muted-foreground text-xs'>
+          <p className={styles["emailHint"]}>
             An email invitation will be sent to this address with a private link to view the invoice.
           </p>
         </main>

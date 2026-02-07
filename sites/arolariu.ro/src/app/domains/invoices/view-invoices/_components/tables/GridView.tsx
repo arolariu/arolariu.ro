@@ -21,6 +21,7 @@ import Image from "next/image";
 import {useCallback} from "react";
 import {TbCalendar, TbEye} from "react-icons/tb";
 import TableViewActions from "./TableViewActions";
+import styles from "./GridView.module.scss";
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];
@@ -45,8 +46,8 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <main className='flex flex-col items-center justify-center py-10'>
-        <main className='text-muted-foreground mb-2'>No invoices found</main>
+      <main className={styles["emptyState"]}>
+        <main className={styles["emptyMessage"]}>No invoices found</main>
       </main>
     );
   }
@@ -57,12 +58,12 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
       animate={{opacity: 1}}
       exit={{opacity: 0}}
       transition={{duration: 0.2}}
-      className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      className={styles["grid"]}>
       {invoices.map((invoice) => (
         <main
           key={invoice.id}
-          className='relative'>
-          <main className='absolute top-2 left-2 z-10 print:hidden'>
+          className={styles["cardWrapper"]}>
+          <main className={styles["checkboxOverlay"]}>
             <Checkbox
               checked={selectedInvoices.includes(invoice)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
@@ -72,15 +73,15 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
             />
           </main>
           <Card className='overflow-hidden'>
-            <main className='relative'>
+            <main className={styles["imageContainer"]}>
               <Image
                 src={invoice.scans[0]?.location || "/placeholder.svg"}
                 alt={invoice.name}
-                className='h-full w-full object-fill transition-transform duration-500'
+                className={styles["cardImage"]}
                 width={400}
                 height={400}
               />
-              <main className='absolute right-2 bottom-2 z-10 flex gap-1 print:hidden'>
+              <main className={styles["imageActions"]}>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
@@ -104,12 +105,12 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               <CardDescription>{invoice.description}</CardDescription>
             </CardHeader>
             <CardContent className='pb-2'>
-              <main className='flex items-center justify-between'>
-                <main className='text-muted-foreground flex items-center gap-1 text-sm'>
+              <main className={styles["contentRow"]}>
+                <main className={styles["dateRow"]}>
                   <TbCalendar className='h-3.5 w-3.5' />
                   <span>{formatDate(invoice.createdAt, {dateStyle: "full", locale})}</span>
                 </main>
-                <main className='text-lg font-medium'>
+                <main className={styles["amount"]}>
                   {formatCurrency(invoice.paymentInformation.totalCostAmount, {
                     currencyCode: invoice.paymentInformation.currency.code,
                     locale,
@@ -118,7 +119,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               </main>
             </CardContent>
             <CardFooter className='flex justify-between pt-2'>
-              <main className='text-muted-foreground text-sm'>{invoice.items?.length || 0} items</main>
+              <main className={styles["itemCount"]}>{invoice.items?.length || 0} items</main>
             </CardFooter>
           </Card>
         </main>

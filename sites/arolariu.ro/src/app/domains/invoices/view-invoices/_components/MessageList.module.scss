@@ -1,0 +1,73 @@
+// ===========================================
+// MESSAGE LIST STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+// ===========================================
+// CONTAINER
+// ===========================================
+.messageList {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+// ===========================================
+// MESSAGE ITEM
+// ===========================================
+.messageItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  border-radius: radius('lg');
+  padding: space(3);
+}
+
+.messageUser {
+  background-color: color-alpha('muted', 0.5);
+}
+
+.messageAssistant {
+  background-color: color-alpha('primary', 0.05);
+}
+
+// ===========================================
+// MESSAGE CONTENT
+// ===========================================
+.messageBody {
+  flex: 1;
+
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.messageHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.messageSender {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.messageTimestamp {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.messageContent {
+  // prose-like styles
+  font-size: font-size('sm');
+}
+
+.messageLine {
+  margin-block: space(1);
+  color: #000;
+
+  @include dark {
+    color: #fff;
+  }
+}

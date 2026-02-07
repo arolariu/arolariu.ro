@@ -7,6 +7,7 @@ import {Alert, AlertDescription, AlertTitle, Button, Input, Tabs, TabsContent, T
 import React from "react";
 import {TbAlertTriangle, TbArrowLeft, TbCheck, TbCopy, TbGlobe, TbQrcode, TbShieldOff} from "react-icons/tb";
 import QRCode from "react-qr-code";
+import styles from "./ShareInvoiceDialog.Public.module.scss";
 
 // ============================================================================
 // Types
@@ -76,8 +77,8 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
 
       <TabsContent
         value='link'
-        className='mt-4 space-y-4'>
-        <main className='flex items-center space-x-2'>
+        className={`mt-4 ${styles["body"]}`}>
+        <main className={styles["linkRow"]}>
           <Input
             value={shareUrl}
             readOnly
@@ -90,7 +91,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             {copied ? <TbCheck className='size-4' /> : <TbCopy className='size-4' />}
           </Button>
         </main>
-        <p className='text-muted-foreground text-xs'>
+        <p className={styles["linkHint"]}>
           Copy this link and share it. Anyone who receives it will be able to view the invoice.
         </p>
       </TabsContent>
@@ -98,8 +99,8 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
       <TabsContent
         value='qr'
         className='mt-4'>
-        <main className='flex flex-col items-center justify-center space-y-4'>
-          <main className='rounded-lg border bg-white p-4 shadow-sm'>
+        <main className={styles["qrContainer"]}>
+          <main className={styles["qrWrapper"]}>
             <QRCode
               id='invoice-qr-code'
               value={shareUrl}
@@ -109,7 +110,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
               level='L'
             />
           </main>
-          <p className='text-muted-foreground text-center text-xs'>Anyone who scans this QR code will be directed to view the invoice.</p>
+          <p className={styles["qrHint"]}>Anyone who scans this QR code will be directed to view the invoice.</p>
           <Button
             variant='outline'
             onClick={onCopyQRCode}
@@ -144,7 +145,7 @@ export function AlreadyPublicMode({
   isRevoking,
 }: AlreadyPublicModeProps): React.JSX.Element {
   return (
-    <main className='space-y-4'>
+    <main className={styles["body"]}>
       <Alert
         variant='destructive'
         className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
@@ -163,7 +164,7 @@ export function AlreadyPublicMode({
         onCopyQRCode={onCopyQRCode}
       />
 
-      <main className='border-t pt-4'>
+      <main className={styles["revokeSection"]}>
         <Button
           variant='destructive'
           onClick={onRevokeAccess}
@@ -172,7 +173,7 @@ export function AlreadyPublicMode({
           <TbShieldOff className='mr-2 size-4' />
           {isRevoking ? "Revoking Access..." : "Revoke Public Access"}
         </Button>
-        <p className='text-muted-foreground mt-2 text-center text-xs'>
+        <p className={styles["revokeHint"]}>
           This will make the invoice private. Existing links will stop working.
         </p>
       </main>
@@ -194,7 +195,7 @@ export function AlreadyPublicMode({
  */
 export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}: PublicModeProps): React.JSX.Element {
   return (
-    <main className='space-y-4'>
+    <main className={styles["body"]}>
       <Button
         variant='ghost'
         size='sm'

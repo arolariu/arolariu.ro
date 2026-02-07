@@ -1,0 +1,27 @@
+// ===========================================
+// SHARE INVOICE DIALOG PRIVATE STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.body {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.formBody {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.fieldGroup {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.emailHint {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}

@@ -1,0 +1,10 @@
+// ===========================================
+// TABLE VIEW ACTIONS STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+.editLink {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}

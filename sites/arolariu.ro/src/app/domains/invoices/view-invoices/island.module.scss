@@ -1,0 +1,37 @@
+// ===========================================
+// VIEW INVOICES ISLAND STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// LOADING SKELETON
+// ===========================================
+.loadingSection {
+  @include flex-column;
+  gap: space(6);
+}
+
+.loadingTabsRow {
+  display: flex;
+  gap: space(4);
+}
+
+.loadingGrid {
+  display: grid;
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// ===========================================
+// TABS CONTENT
+// ===========================================
+.tabsContent {
+  margin-top: space(6);
+}

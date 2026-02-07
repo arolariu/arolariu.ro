@@ -5,6 +5,7 @@ import {RichText} from "@/presentation/Text";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import RenderViewInvoicesScreen from "./island";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the invoice viewing page with localized content.
@@ -133,12 +134,12 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
   const username = user?.fullName ?? "dear guest";
 
   return (
-    <main className='container mx-auto px-5 py-24'>
-      <section className='mb-20 flex w-full flex-col text-center print:hidden'>
-        <h1 className='mb-4 bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-2xl font-medium text-transparent sm:text-3xl'>
+    <main className={styles["pageMain"]}>
+      <section className={styles["headerSection"]}>
+        <h1 className={styles["title"]}>
           {t("title", {name: username})}
         </h1>
-        <article className='mx-auto text-base leading-relaxed lg:w-2/3'>
+        <article className={styles["subtitleArticle"]}>
           <RichText
             sectionKey='Domains.services.invoices.service.view-invoices'
             textKey='subtitle'

@@ -1,0 +1,81 @@
+// ===========================================
+// TABLE VIEW STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// EMPTY STATE
+// ===========================================
+.emptyState {
+  @include flex-column-center;
+  justify-content: center;
+  padding-block: space(10);
+}
+
+.emptyMessage {
+  color: color('muted-foreground');
+  margin-bottom: space(2);
+}
+
+// ===========================================
+// TABLE CELLS
+// ===========================================
+.printHidden {
+  @media print {
+    display: none;
+  }
+}
+
+.printOnly {
+  display: none;
+
+  @media print {
+    display: inline;
+  }
+}
+
+.printInline {
+  @media print {
+    display: none;
+  }
+}
+
+// ===========================================
+// ACTIONS CELL
+// ===========================================
+.actionsCell {
+  position: relative;
+  text-align: right;
+}
+
+.actionsRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: space(2);
+}
+
+// ===========================================
+// FOOTER
+// ===========================================
+.footerContent {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.footerLabel {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.viewLink {
+  height: 2rem;
+  width: 2rem;
+}
+
+.viewIcon {
+  margin-top: space(1.5);
+  margin-left: space(1.5);
+  height: 1.25rem;
+  width: 1.25rem;
+}

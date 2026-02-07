@@ -1,4 +1,5 @@
 import Link from "next/link";
+import styles from "./InvoicesNotFound.module.scss";
 
 /**
  * This component is displayed when the user does not have any invoices associated with their account.
@@ -6,15 +7,15 @@ import Link from "next/link";
  */
 export default function InvoicesNotFound() {
   return (
-    <main className='mb-20 flex w-full flex-col text-center'>
-      <h1 className='mb-4 text-2xl font-medium sm:text-3xl'>Something is missing here... 😰</h1>
-      <article className='mx-auto text-base leading-relaxed lg:w-2/3'>
+    <main className={styles["container"]}>
+      <h1 className={styles["title"]}>Something is missing here...</h1>
+      <article className={styles["description"]}>
         It seems that you do not have any invoices associated with your account... <br />
         Please upload some invoices and come back later. <br /> <br />
       </article>
       <Link
         href='/domains/invoices/create-invoice'
-        className='mx-auto mt-8 inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
+        className={styles["ctaLink"]}>
         Upload an invoice here.
       </Link>
     </main>
