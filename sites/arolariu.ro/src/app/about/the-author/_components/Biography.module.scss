@@ -114,12 +114,20 @@
   @include transition(background-color);
 }
 
-// Icon
+// Icon wrapper — fixed-size container for uniform icon rendering
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+
+// Icon SVG — fills the wrapper
 .icon {
-  width: 6rem;
-  height: 6rem;
-  padding-right: space(2);
-  border-radius: radius('lg');
+  width: 100%;
+  height: 100%;
 }
 
 .iconBlue {

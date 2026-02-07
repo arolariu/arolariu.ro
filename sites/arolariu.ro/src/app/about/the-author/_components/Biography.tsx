@@ -115,7 +115,7 @@ export default function Biography(): React.JSX.Element {
               <motion.div
                 key={section.content.slice(0, 20)}
                 className={styles["bioItem"]}>
-                <span>{section.icon}</span>
+                <span className={styles["iconWrapper"]}>{section.icon}</span>
                 <span className={styles["bioText"]}>{section.content}</span>
               </motion.div>
             ))}
