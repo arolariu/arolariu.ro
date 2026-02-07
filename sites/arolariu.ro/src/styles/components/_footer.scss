@@ -276,6 +276,12 @@
   }
 }
 
+// Source code prefix (indentation for "source code" line)
+// Original: ml-4
+.footer__source-prefix {
+  margin-left: space(4);
+}
+
 // Source code link
 // Original: text-yellow-500 italic
 .footer__source-link {

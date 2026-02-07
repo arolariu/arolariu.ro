@@ -73,7 +73,7 @@ function useNavigationItems(isSignedIn: boolean): ReadonlyArray<NavigationItem> 
 
 // Desktop helper components
 const DesktopNavigationChild = ({child}: Readonly<{child: NavigationItem}>): React.JSX.Element => (
-  <main>
+  <div>
     <Link
       href={child.href}
       className='desktop-nav__child-title'>
@@ -98,7 +98,7 @@ const DesktopNavigationChild = ({child}: Readonly<{child: NavigationItem}>): Rea
         ))}
       </ul>
     )}
-  </main>
+  </div>
 );
 
 const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.JSX.Element => (
@@ -110,14 +110,14 @@ const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.
     </Link>
 
     {Boolean(item.children) && (
-      <main className='desktop-nav__dropdown'>
+      <div className='desktop-nav__dropdown'>
         {item.children!.map((col) => (
           <DesktopNavigationChild
             key={`col-${col.label}`}
             child={col}
           />
         ))}
-      </main>
+      </div>
     )}
   </li>
 );
@@ -131,7 +131,7 @@ function DesktopNavigationComponent(): React.JSX.Element {
   const navigationItems = useNavigationItems(Boolean(isSignedIn));
 
   return (
-    <main className='desktop-nav'>
+    <div className='desktop-nav'>
       <ul className='desktop-nav__list'>
         {navigationItems.map((item) => (
           <DesktopNavigationItem
@@ -140,7 +140,7 @@ function DesktopNavigationComponent(): React.JSX.Element {
           />
         ))}
       </ul>
-    </main>
+    </div>
   );
 }
 
@@ -152,7 +152,7 @@ DesktopNavigation.displayName = "DesktopNavigation";
 
 // Mobile helper components
 const MobileNavigationChild = ({col}: Readonly<{col: NavigationItem}>): React.JSX.Element => (
-  <main className='mobile-nav__child'>
+  <div className='mobile-nav__child'>
     <Link
       href={col.href}
       className='mobile-nav__child-title'>
@@ -177,7 +177,7 @@ const MobileNavigationChild = ({col}: Readonly<{col: NavigationItem}>): React.JS
         ))}
       </ul>
     )}
-  </main>
+  </div>
 );
 
 const MobileNavigationItem = ({
@@ -190,7 +190,7 @@ const MobileNavigationItem = ({
   onToggle?: () => void;
 }>): React.JSX.Element => (
   <li className='mobile-nav__item'>
-    <main className='mobile-nav__item-header'>
+    <div className='mobile-nav__item-header'>
       <Link
         href={item.href}
         className='mobile-nav__item-link'>
@@ -206,17 +206,17 @@ const MobileNavigationItem = ({
           <TbChevronDown className={`mobile-nav__expand-icon ${isOpen ? "mobile-nav__expand-icon--open" : ""}`} />
         </Button>
       )}
-    </main>
+    </div>
 
     {Boolean(item.children) && Boolean(isOpen) && (
-      <main className='mobile-nav__children'>
+      <div className='mobile-nav__children'>
         {item.children!.map((col) => (
           <MobileNavigationChild
             key={`m-col-${col.label}`}
             col={col}
           />
         ))}
-      </main>
+      </div>
     )}
   </li>
 );
@@ -250,8 +250,8 @@ function MobileNavigationComponent(): React.JSX.Element {
       </Button>
 
       {Boolean(mobileOpen) && (
-        <main className='mobile-nav__overlay'>
-          <main
+        <div className='mobile-nav__overlay'>
+          <div
             className='mobile-nav__backdrop'
             onClick={toggleMobile}
             aria-hidden
@@ -262,7 +262,7 @@ function MobileNavigationComponent(): React.JSX.Element {
             aria-modal='true'
             aria-label={t("title")}
             className='mobile-nav__panel'>
-            <main className='mobile-nav__header'>
+            <div className='mobile-nav__header'>
               <h3 className='mobile-nav__title'>{t("title")}</h3>
               <Button
                 onClick={toggleMobile}
@@ -270,7 +270,7 @@ function MobileNavigationComponent(): React.JSX.Element {
                 className='mobile-nav__close'>
                 ✕
               </Button>
-            </main>
+            </div>
 
             <ul className='mobile-nav__list'>
               {navigationItems.map((item) => (
@@ -284,7 +284,7 @@ function MobileNavigationComponent(): React.JSX.Element {
               ))}
             </ul>
           </aside>
-        </main>
+        </div>
       )}
     </>
   );
