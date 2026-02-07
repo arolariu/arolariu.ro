@@ -1,28 +1,66 @@
 "use client";
 
-import {THEME_PRESETS} from "@/lib/theme-presets";
-import type {ThemePresetName} from "@/lib/theme-presets";
+import type {CustomThemeColors} from "@/lib/theme-presets";
 import {usePreferencesStore} from "@/stores/preferencesStore";
 import {useEffect} from "react";
-import {useTheme} from "next-themes";
 
 /**
- * Hook that applies theme preset CSS variables to the document root.
- * Reads the active preset from preferencesStore and applies the
- * corresponding CSS variable overrides for semantic colors (primary,
- * primary-foreground, accent-primary, footer-bg).
+ * CSS properties managed by the theme preset system.
+ * Used to clean up inline styles when switching away from "custom" preset.
+ */
+const THEME_CSS_PROPS = [
+  "--primary",
+  "--primary-foreground",
+  "--gradient-from",
+  "--gradient-via",
+  "--gradient-to",
+  "--accent-primary",
+  "--footer-bg",
+] as const;
+
+/**
+ * Removes inline theme CSS properties from the root element.
+ * Called when switching from "custom" to a named preset so that
+ * SCSS-defined [data-theme-preset] selectors take precedence.
+ */
+function clearInlineThemeStyles(root: HTMLElement): void {
+  for (const prop of THEME_CSS_PROPS) {
+    root.style.removeProperty(prop);
+  }
+}
+
+/**
+ * Applies custom user-defined theme colors as inline CSS properties.
+ * Only called when themePreset is "custom".
+ */
+function applyCustomThemeColors(root: HTMLElement, colors: CustomThemeColors): void {
+  root.style.setProperty("--gradient-from", colors.gradientFrom);
+  root.style.setProperty("--gradient-via", colors.gradientVia);
+  root.style.setProperty("--gradient-to", colors.gradientTo);
+  root.style.setProperty("--primary", colors.primary);
+  root.style.setProperty("--primary-foreground", colors.primaryForeground);
+  root.style.setProperty("--accent-primary", colors.gradientFrom);
+  root.style.setProperty("--footer-bg", colors.footerBg);
+}
+
+/**
+ * Hook that applies theme preset via data attribute on the document root.
+ *
+ * For named presets (default, midnight, ocean, etc.):
+ * - Sets `data-theme-preset` attribute on <html>
+ * - SCSS selectors in themes/_presets.scss handle CSS variable overrides
+ * - No runtime JavaScript CSS variable application needed
+ * - No dependency on resolvedTheme — SCSS handles .dark variants
+ *
+ * For "custom" preset:
+ * - Applies user-defined CSS variables via inline styles
+ * - Clears inline styles are cleaned up when switching away
  *
  * Should be used once in a top-level client component (e.g., providers.tsx).
  *
- * @remarks
- * This hook works alongside GradientThemeContext:
- * - GradientThemeContext handles --gradient-from/via/to from individual color picks
- * - This hook applies the full preset (including --primary, --primary-foreground)
- * - When themePreset is "custom", only custom colors are applied
- * - When themePreset is "default", the CSS defaults from globals.css are used
+ * @see src/styles/themes/_presets.scss for named preset CSS definitions
  */
 export function useThemePreset(): void {
-  const {resolvedTheme} = useTheme();
   const themePreset = usePreferencesStore((s) => s.themePreset);
   const customThemeColors = usePreferencesStore((s) => s.customThemeColors);
   const hasHydrated = usePreferencesStore((s) => s.hasHydrated);
@@ -32,32 +70,16 @@ export function useThemePreset(): void {
 
     const root = document.documentElement;
 
-    // Set data attribute for SCSS selectors
+    // Set data attribute — SCSS handles named preset variables
     root.setAttribute("data-theme-preset", themePreset);
 
     if (themePreset === "custom" && customThemeColors) {
-      // Apply custom user colors
-      root.style.setProperty("--gradient-from", customThemeColors.gradientFrom);
-      root.style.setProperty("--gradient-via", customThemeColors.gradientVia);
-      root.style.setProperty("--gradient-to", customThemeColors.gradientTo);
-      root.style.setProperty("--primary", customThemeColors.primary);
-      root.style.setProperty("--primary-foreground", customThemeColors.primaryForeground);
-      root.style.setProperty("--accent-primary", customThemeColors.gradientFrom);
-      root.style.setProperty("--footer-bg", customThemeColors.footerBg);
-    } else if (themePreset !== "default" && themePreset !== "custom") {
-      // Apply preset colors based on current light/dark mode
-      const preset = THEME_PRESETS[themePreset as ThemePresetName];
-      const colors = resolvedTheme === "dark" ? preset.dark : preset.light;
-
-      for (const [property, value] of Object.entries(colors)) {
-        root.style.setProperty(property, value);
-      }
+      // Only "custom" needs runtime JS variable application
+      applyCustomThemeColors(root, customThemeColors);
+    } else {
+      // Named presets: clear any previously applied inline styles
+      // so SCSS-defined variables take precedence
+      clearInlineThemeStyles(root);
     }
-    // For "default" preset, don't override — let globals.css values apply naturally
-
-    return () => {
-      // Cleanup: remove data attribute on unmount
-      root.removeAttribute("data-theme-preset");
-    };
-  }, [themePreset, customThemeColors, resolvedTheme, hasHydrated]);
+  }, [themePreset, customThemeColors, hasHydrated]);
 }

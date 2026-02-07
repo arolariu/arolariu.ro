@@ -1,60 +1,197 @@
 // ===========================================
-// THEME PRESETS
+// THEME PRESETS — Single Source of Truth
 // ===========================================
-// These presets are implemented in GradientThemeContext.tsx
-// This file documents the available presets for reference.
+// This file defines all named theme preset CSS variables.
+// Each preset overrides the defaults from globals.scss.
 //
-// To add a new preset:
-// 1. Add it to GRADIENT_PRESETS in GradientThemeContext.tsx
-// 2. Document it here
-// 3. Optionally add SCSS-specific overrides below
+// ARCHITECTURE:
+//   - $theme-presets SCSS map defines light and dark color overrides
+//   - @each loop generates [data-theme-preset="name"] and
+//     [data-theme-preset="name"].dark CSS selectors
+//   - useThemePreset hook sets the data-theme-preset attribute
+//   - next-themes toggles .dark class — SCSS handles the rest
+//   - No runtime JavaScript needed for named presets
+//
+// HOW TO ADD A NEW PRESET:
+//   1. Add entry to $theme-presets map below (both light and dark)
+//   2. Add metadata to src/lib/theme-presets.ts (name, description, preview)
+//   3. Update ThemePresetName type if needed
+//
+// CSS VARIABLE REFERENCE:
+//   --primary            Semantic primary brand color (HSL)
+//   --primary-foreground Text color on primary backgrounds (HSL)
+//   --gradient-from      Gradient start color (HSL)
+//   --gradient-via       Gradient middle color (HSL)
+//   --gradient-to        Gradient end color (HSL)
+//   --accent-primary     Accent color for text/icons (HSL)
+//   --footer-bg          Footer background color (HSL)
+//
+// NOTE: "default" preset is intentionally omitted — its values
+// are the CSS variable defaults defined in globals.scss.
+// ===========================================
 
-// ===========================================
-// PRESET DEFINITIONS (Implemented in TypeScript)
-// ===========================================
-//
-// DEFAULT:
-//   from: #06b6d4 (cyan-500)
-//   via: #8b5cf6 (purple-500)
-//   to: #ec4899 (pink-500)
-//
-// OCEAN:
-//   from: #0ea5e9 (sky-500)
-//   via: #06b6d4 (cyan-500)
-//   to: #14b8a6 (teal-500)
-//
-// SUNSET:
-//   from: #f97316 (orange-500)
-//   via: #ef4444 (red-500)
-//   to: #ec4899 (pink-500)
-//
-// FOREST:
-//   from: #22c55e (green-500)
-//   via: #10b981 (emerald-500)
-//   to: #14b8a6 (teal-500)
-//
-// PURPLE:
-//   from: #8b5cf6 (violet-500)
-//   via: #a855f7 (purple-500)
-//   to: #d946ef (fuchsia-500)
+@use 'sass:map';
 
 // ===========================================
-// PRESET-SPECIFIC SCSS OVERRIDES (optional)
+// PRESET DEFINITIONS
 // ===========================================
-// Use data attributes set by GradientThemeContext if needed
 
-[data-gradient-preset="ocean"] {
-  // Ocean-specific overrides if needed
-}
+$theme-presets: (
+  // ---- Midnight: Deep indigo and blue ----
+  'midnight': (
+    'light': (
+      '--primary': '243 75% 59%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '245 58% 51%',
+      '--gradient-via': '243 75% 59%',
+      '--gradient-to': '241 77% 74%',
+      '--accent-primary': '243 75% 59%',
+      '--footer-bg': '245 58% 30%',
+    ),
+    'dark': (
+      '--primary': '241 77% 74%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '245 58% 51%',
+      '--gradient-via': '243 75% 59%',
+      '--gradient-to': '241 77% 74%',
+      '--accent-primary': '241 77% 74%',
+      '--footer-bg': '245 58% 25%',
+    ),
+  ),
 
-[data-gradient-preset="sunset"] {
-  // Sunset-specific overrides if needed
-}
+  // ---- Ocean: Sky, cyan, and teal ----
+  'ocean': (
+    'light': (
+      '--primary': '199 89% 48%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '199 89% 48%',
+      '--gradient-via': '187 94% 43%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '199 89% 48%',
+      '--footer-bg': '187 94% 28%',
+    ),
+    'dark': (
+      '--primary': '187 94% 43%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '199 89% 48%',
+      '--gradient-via': '187 94% 43%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '187 94% 43%',
+      '--footer-bg': '187 94% 25%',
+    ),
+  ),
 
-[data-gradient-preset="forest"] {
-  // Forest-specific overrides if needed
-}
+  // ---- Sunset: Orange, red, and pink ----
+  'sunset': (
+    'light': (
+      '--primary': '24 95% 53%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '24 95% 53%',
+      '--gradient-via': '0 84% 60%',
+      '--gradient-to': '330 81% 60%',
+      '--accent-primary': '24 95% 53%',
+      '--footer-bg': '0 84% 35%',
+    ),
+    'dark': (
+      '--primary': '0 84% 60%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '24 95% 53%',
+      '--gradient-via': '0 84% 60%',
+      '--gradient-to': '330 81% 60%',
+      '--accent-primary': '24 95% 53%',
+      '--footer-bg': '0 84% 30%',
+    ),
+  ),
 
-[data-gradient-preset="purple"] {
-  // Purple-specific overrides if needed
+  // ---- Forest: Green, emerald, and teal ----
+  'forest': (
+    'light': (
+      '--primary': '142 71% 45%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '142 71% 45%',
+      '--gradient-via': '160 84% 39%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '142 71% 45%',
+      '--footer-bg': '160 84% 25%',
+    ),
+    'dark': (
+      '--primary': '160 84% 39%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '142 71% 45%',
+      '--gradient-via': '160 84% 39%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '160 84% 39%',
+      '--footer-bg': '160 84% 22%',
+    ),
+  ),
+
+  // ---- Rose: Rose, pink, and fuchsia ----
+  'rose': (
+    'light': (
+      '--primary': '350 89% 60%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '350 89% 60%',
+      '--gradient-via': '330 81% 60%',
+      '--gradient-to': '292 91% 73%',
+      '--accent-primary': '350 89% 60%',
+      '--footer-bg': '330 81% 35%',
+    ),
+    'dark': (
+      '--primary': '330 81% 60%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '350 89% 60%',
+      '--gradient-via': '330 81% 60%',
+      '--gradient-to': '292 91% 73%',
+      '--accent-primary': '330 81% 60%',
+      '--footer-bg': '330 81% 30%',
+    ),
+  ),
+
+  // ---- Monochrome: Grayscale ----
+  'monochrome': (
+    'light': (
+      '--primary': '0 0% 32%',
+      '--primary-foreground': '0 0% 100%',
+      '--gradient-from': '0 0% 32%',
+      '--gradient-via': '0 0% 45%',
+      '--gradient-to': '0 0% 64%',
+      '--accent-primary': '0 0% 32%',
+      '--footer-bg': '0 0% 20%',
+    ),
+    'dark': (
+      '--primary': '0 0% 64%',
+      '--primary-foreground': '0 0% 0%',
+      '--gradient-from': '0 0% 32%',
+      '--gradient-via': '0 0% 45%',
+      '--gradient-to': '0 0% 64%',
+      '--accent-primary': '0 0% 64%',
+      '--footer-bg': '0 0% 15%',
+    ),
+  ),
+);
+
+// ===========================================
+// CSS SELECTOR GENERATION
+// ===========================================
+// Generates [data-theme-preset="name"] and
+// [data-theme-preset="name"].dark selectors
+// for each preset in the map.
+
+@each $name, $modes in $theme-presets {
+  $light: map.get($modes, 'light');
+  $dark: map.get($modes, 'dark');
+
+  // Light mode overrides
+  [data-theme-preset='#{$name}'] {
+    @each $prop, $value in $light {
+      #{$prop}: #{$value};
+    }
+  }
+
+  // Dark mode overrides (when .dark class is also present)
+  [data-theme-preset='#{$name}'].dark {
+    @each $prop, $value in $dark {
+      #{$prop}: #{$value};
+    }
+  }
 }

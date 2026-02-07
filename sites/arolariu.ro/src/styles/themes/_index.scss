@@ -1,8 +1,6 @@
 // ===========================================
 // THEMES
-// Color scheme definitions using CSS variables
-// Works WITH next-themes and GradientThemeContext
+// Theme preset CSS variable overrides
+// Works with next-themes (.dark class) for light/dark switching
 // ===========================================
-@forward 'variables';
 @forward 'presets';
-@forward 'user-themes';
