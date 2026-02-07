@@ -3,6 +3,7 @@
 
 import {Messages, NamespaceKeys, useTranslations} from "next-intl";
 import React from "react";
+import styles from "./RichText.module.scss";
 
 type Props = {
   className?: string;
@@ -40,9 +41,9 @@ export function RichText({className, sectionKey, textKey}: Readonly<Props>): Rea
         </>
       ),
       code: (chunks: React.ReactNode) => (
-        <code className='bg-muted text-foreground rounded px-1.5 py-0.5 font-mono font-semibold'>{chunks}</code>
+        <code className={styles["inlineCode"]}>{chunks}</code>
       ),
-      ul: (chunks: React.ReactNode) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
+      ul: (chunks: React.ReactNode) => <ul className={styles["richList"]}>{chunks}</ul>,
       li: (chunks: React.ReactNode) => <li>{chunks}</li>,
       span: (chunks: React.ReactNode) => <span>{chunks}</span>,
     });
