@@ -46,13 +46,18 @@
   color: static-color('white');
 
   @include respond-to('md') {
-    padding-left: 6rem; // md:px-24 (24 * 0.25rem = 6rem)
-    padding-right: 6rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
   }
 
   @include respond-to('lg') {
-    padding-left: 2rem; // lg:px-8 (8 * 0.25rem = 2rem)
+    padding-left: 2rem;
     padding-right: 2rem;
+  }
+
+  @include respond-to('xl') {
+    padding-left: 4rem;
+    padding-right: 4rem;
   }
 }
 
@@ -68,20 +73,20 @@
   }
 
   @include respond-to('md') {
-    column-gap: 3rem;
+    column-gap: 2rem;
   }
 
   @include respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 6rem;
+    column-gap: 2rem;
   }
 
   @include respond-to('xl') {
-    column-gap: 10rem;
+    column-gap: 4rem;
   }
 
   @include respond-to('2xl') {
-    column-gap: 14rem;
+    column-gap: 6rem;
   }
 }
 
