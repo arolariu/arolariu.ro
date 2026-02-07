@@ -386,6 +386,26 @@ $icon-colors: (
 }
 
 // ===========================================
+// CONTENT VISIBILITY
+// ===========================================
+// Enables the browser to skip rendering of off-screen sections,
+// significantly improving initial paint and scroll performance
+// on long pages. The contain-intrinsic-size prevents layout shift
+// when the section scrolls into view.
+//
+// @param {Value} $height [auto 500px] - Intrinsic size hint
+//   Use "auto <fallback>" for elements that have been rendered before,
+//   or a fixed value for sections with predictable heights.
+//
+// @example
+//   .longSection { @include content-visibility; }
+//   .hero { @include content-visibility(auto 800px); }
+@mixin content-visibility($height: auto 500px) {
+  content-visibility: auto;
+  contain-intrinsic-size: $height;
+}
+
+// ===========================================
 // SECTION LAYOUT
 // ===========================================
 // Standard page section with responsive vertical padding
