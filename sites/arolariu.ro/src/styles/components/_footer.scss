@@ -43,7 +43,7 @@
   max-width: none; // No max-width constraint
   margin: 0; // No centering margins (match production)
   padding-top: 3rem; // pt-12
-  color: white;
+  color: static-color('white');
 
   @include respond-to('md') {
     padding-left: 6rem; // md:px-24 (24 * 0.25rem = 6rem)
@@ -114,7 +114,7 @@
 
   &:hover {
     transform: scale(1.1);
-    color: #eab308; // yellow-500
+    color: interactive-color('hover-accent-dark'); // yellow-500
   }
 }
 
@@ -132,10 +132,10 @@
   font-weight: 700; // font-bold
   text-transform: uppercase;
   letter-spacing: 0.025em; // tracking-wide
-  color: white; // Ensure white color in footer
+  color: static-color('white'); // Ensure white color in footer
 
   &:hover {
-    color: #eab308; // yellow-500
+    color: interactive-color('hover-accent-dark'); // yellow-500
   }
 }
 
@@ -158,7 +158,7 @@
 // RichText prose styling
 // Original: prose 2xsm:text-center text-pretty text-white md:text-start
 .footer__rich-text {
-  color: white;
+  color: static-color('white');
   text-wrap: pretty;
   text-align: left; // Default: left aligned
 
@@ -205,12 +205,12 @@
 .footer__nav-title {
   font-weight: 600; // font-semibold
   letter-spacing: 0.025em; // tracking-wide
-  color: white;
+  color: static-color('white');
   cursor: default;
   transition: color 300ms ease-in-out;
 
   &:hover {
-    color: #eab308; // yellow-500
+    color: interactive-color('hover-accent-dark'); // yellow-500
   }
 }
 
@@ -230,11 +230,11 @@
 // Navigation link
 // Original: text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300
 .footer__nav-link {
-  color: rgba(255, 255, 255, 0.9); // text-deep-purple-50 approximation
+  color: hsla(0, 0%, 100%, 0.9); // text-deep-purple-50 approximation
   transition: color 300ms ease-in-out;
 
   &:hover {
-    color: #5eead4; // teal-accent-400
+    color: interactive-color('teal-accent'); // teal-accent-400
   }
 
   // Override global code styling within footer links
@@ -256,7 +256,7 @@
   justify-content: space-between;
   width: 100%; // Ensure full width for space-between to work
   gap: 2rem; // gap-8
-  border-top: 1px solid white;
+  border-top: 1px solid static-color('white');
   padding-top: 1.25rem; // py-5
   padding-bottom: 1.25rem;
 }
@@ -285,7 +285,7 @@
 // Source code link
 // Original: text-yellow-500 italic
 .footer__source-link {
-  color: #eab308; // yellow-500
+  color: interactive-color('hover-accent-dark'); // yellow-500
   font-style: italic;
 }
 
@@ -311,11 +311,11 @@
 .footer__social-icon {
   height: 1.75rem; // h-7
   width: 1.75rem; // w-7
-  color: white; // Ensure white color in footer
+  color: static-color('white'); // Ensure white color in footer
   transition: color 300ms ease-in-out;
 
   &:hover {
-    color: #eab308; // yellow-500
+    color: interactive-color('hover-accent-dark'); // yellow-500
   }
 }
 
@@ -324,7 +324,7 @@
 .footer__build-info {
   width: 100%; // Ensure full width for text-align to work
   font-size: 0.875rem; // text-sm
-  color: #cbd5e1; // text-slate-300
+  color: interactive-color('slate-light'); // text-slate-300
   text-align: end; // Default: right aligned
 
   // Mobile only: centered
@@ -337,8 +337,13 @@
 // Original: cursor-help
 .footer__build-tooltip {
   cursor: help;
-  background-color: transparent !important;
-  color: white !important;
+
+  // Override Tooltip component defaults in footer context
+  &,
+  &[data-state] {
+    background-color: transparent;
+    color: static-color('white');
+  }
 }
 
 // Commit SHA link

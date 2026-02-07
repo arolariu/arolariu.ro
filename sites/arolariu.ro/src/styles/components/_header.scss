@@ -47,14 +47,14 @@
   @include transition(color);
 
   &:hover {
-    color: #fde047; // yellow-300
+    color: interactive-color('hover-accent-light');
   }
 }
 
 .header__logo {
   display: none;
   border-radius: 9999px;
-  box-shadow: 0 0 0 2px #6366f1; // ring-indigo-500
+  box-shadow: 0 0 0 2px interactive-color('ring-brand');
 
   @include respond-to('lg') {
     display: block;
@@ -67,7 +67,7 @@
   color: hsl(var(--foreground)); // Ensure black/white text, not link color
 
   &:hover {
-    color: #fde047; // yellow-300
+    color: interactive-color('hover-accent-light');
   }
 }
 

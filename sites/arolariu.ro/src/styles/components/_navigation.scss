@@ -41,7 +41,7 @@
   @include transition(color);
 
   &:hover {
-    color: #4f46e5; // indigo-600
+    color: interactive-color('hover-accent');
   }
 }
 
@@ -52,7 +52,7 @@
   margin-top: space(2);
   padding: space(4);
   min-width: 200px;
-  background-color: white;
+  background-color: color('card');
   border-radius: radius('xl');
   @include shadow('lg');
   visibility: hidden;
@@ -69,7 +69,7 @@
   margin-bottom: space(2);
   font-size: font-size('sm');
   font-weight: font-weight('semibold');
-  color: #111827; // gray-900
+  color: color('foreground');
 }
 
 .desktop-nav__child-list {
@@ -86,13 +86,13 @@
   display: block;
   padding: space(1) space(2);
   font-size: font-size('sm');
-  color: #374151; // gray-700
+  color: color('muted-foreground');
   border-radius: radius('md');
   @include transition((background-color, color));
 
   &:hover {
-    background-color: #f9fafb; // gray-50
-    color: #4f46e5; // indigo-600
+    background-color: color('muted');
+    color: interactive-color('hover-accent');
   }
 }
 
@@ -114,7 +114,7 @@
   @include transition(background-color);
 
   &:hover {
-    background-color: #f3f4f6; // gray-100
+    background-color: interactive-color('hover-bg-light');
   }
 
   @include respond-to('md') {
@@ -137,7 +137,7 @@
 .mobile-nav__backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: color-alpha('foreground', 0.4);
 }
 
 .mobile-nav__panel {
@@ -146,7 +146,7 @@
   max-width: 100%;
   overflow: auto;
   padding: space(6);
-  background-color: white;
+  background-color: color('card');
   border-radius: 0 radius('lg') radius('lg') 0;
   @include shadow('xl');
 }
@@ -162,13 +162,13 @@
   font-size: font-size('lg');
   font-weight: font-weight('semibold');
   letter-spacing: letter-spacing('tight');
-  color: black;
+  color: color('foreground');
 }
 
 .mobile-nav__close {
   padding: space(2);
-  background-color: white;
-  color: black;
+  background-color: color('card');
+  color: color('foreground');
   cursor: pointer;
 }
 
@@ -182,7 +182,7 @@
   }
 
   > li {
-    border-top: 1px solid #f3f4f6; // gray-100
+    border-top: 1px solid color('border');
   }
 
   > li:first-child {
@@ -204,22 +204,22 @@
 .mobile-nav__item-link {
   font-size: font-size('base');
   font-weight: font-weight('semibold');
-  color: #111827; // gray-900
+  color: color('foreground');
   @include transition(color);
 
   &:hover {
-    color: #4f46e5; // indigo-600
+    color: interactive-color('hover-accent');
   }
 }
 
 .mobile-nav__expand-btn {
   padding: space(1);
-  color: #6b7280; // gray-500
+  color: color('muted-foreground');
   cursor: pointer;
   @include transition(color);
 
   &:hover {
-    color: #374151; // gray-700
+    color: color('muted-foreground');
   }
 }
 
@@ -237,7 +237,7 @@
   margin-top: space(3);
   padding: space(3);
   padding-left: space(4);
-  background-color: #f9fafb; // gray-50
+  background-color: color('muted');
   border-radius: radius('md');
 
   > * + * {
@@ -247,7 +247,7 @@
 
 .mobile-nav__child {
   margin-bottom: space(1);
-  color: black;
+  color: color('foreground');
 }
 
 .mobile-nav__child-title {
@@ -281,12 +281,55 @@
   display: inline;
   padding: space(1) space(2);
   font-size: font-size('sm');
-  color: #374151; // gray-700
+  color: color('muted-foreground');
   border-radius: radius('md');
   @include transition((background-color, color));
 
   &:hover {
-    background-color: #f9fafb; // gray-50
-    color: #4f46e5; // indigo-600
+    background-color: color('muted');
+    color: interactive-color('hover-accent');
   }
+}
+
+// ===========================================
+// DARK MODE OVERRIDES
+// ===========================================
+// NOTE: Cannot use @include dark at top level (& requires parent).
+// Using .dark ancestor selector directly instead.
+.dark .desktop-nav__link:hover {
+  color: color('primary');
+}
+
+.dark .desktop-nav__dropdown {
+  border: 1px solid color('border');
+}
+
+.dark .desktop-nav__child-link:hover {
+  background-color: color-alpha('accent', 0.1);
+  color: color('primary');
+}
+
+.dark .mobile-nav__toggle:hover {
+  background-color: color-alpha('muted', 0.3);
+}
+
+.dark .mobile-nav__item-link:hover {
+  color: color('primary');
+}
+
+.dark .mobile-nav__expand-btn {
+  color: color('muted-foreground');
+
+  &:hover {
+    color: color('foreground');
+  }
+}
+
+.dark .mobile-nav__children {
+  background-color: color-alpha('muted', 0.5);
+}
+
+.dark .mobile-nav__grandchild-link:hover {
+  background-color: color-alpha('accent', 0.1);
+  color: color('primary');
 }
