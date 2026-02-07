@@ -35,7 +35,7 @@
 }
 
 .heroContent {
-  z-index: 10;
+  z-index: z('content');
   margin-left: auto;
   margin-right: auto;
   max-width: 56rem; // max-w-4xl
@@ -205,7 +205,7 @@
 .timelineIcon {
   position: absolute;
   left: 0;
-  z-index: 10;
+  z-index: z('content');
   display: flex;
   align-items: center;
   justify-content: center;

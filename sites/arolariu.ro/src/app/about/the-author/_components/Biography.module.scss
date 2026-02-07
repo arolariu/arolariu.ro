@@ -49,7 +49,7 @@
 // Content wrapper
 .content {
   position: relative;
-  z-index: 10;
+  z-index: z('content');
   display: flex;
   flex-direction: column;
   gap: space(12);

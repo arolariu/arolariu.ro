@@ -63,8 +63,7 @@
 
 // Z-Index
 .z-0 { z-index: z('base'); }
-.z-10 { z-index: 10; }
-.z-20 { z-index: 20; }
-.z-30 { z-index: 30; }
-.z-40 { z-index: 40; }
-.z-50 { z-index: 50; }
+.z-behind { z-index: z('behind'); }
+.z-content { z-index: z('content'); }
+.z-content-high { z-index: z('content-high'); }
+.z-overlay-subtle { z-index: z('overlay-subtle'); }

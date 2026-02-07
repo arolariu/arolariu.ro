@@ -25,7 +25,7 @@
 
 .iconCircle {
   position: relative;
-  z-index: 10;
+  z-index: z('content');
   @include flex-center;
   height: space(4);
   width: space(4);

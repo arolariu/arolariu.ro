@@ -27,7 +27,7 @@
 // Left side content
 .content {
   position: relative;
-  z-index: 10;
+  z-index: z('content');
 }
 
 .title {

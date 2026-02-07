@@ -16,7 +16,7 @@
 .bgLayers {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: z('behind');
 }
 
 .bgGradient {
@@ -88,7 +88,7 @@
 // Main content
 .content {
   position: relative;
-  z-index: 10;
+  z-index: z('content');
   margin-left: auto;
   margin-right: auto;
   padding: space(20) space(4);

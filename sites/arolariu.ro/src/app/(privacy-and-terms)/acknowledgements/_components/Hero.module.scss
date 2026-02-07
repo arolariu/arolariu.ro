@@ -53,7 +53,7 @@
 // ===========================================
 .contentContainer {
   position: relative;
-  z-index: 10;
+  z-index: z('content');
   @include flex-center;
   flex-direction: column;
   text-align: center;
