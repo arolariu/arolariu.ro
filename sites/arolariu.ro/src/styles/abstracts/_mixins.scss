@@ -103,8 +103,17 @@
 // ===========================================
 
 // Box shadow mixin (tokens defined in _variables.scss)
+// Automatically applies stronger shadows in dark mode for visibility.
 @mixin shadow($level: 'md') {
   box-shadow: shadow($level);
+
+  @if $level != 'none' {
+    .dark & {
+      @if map.has-key($shadows-dark, $level) {
+        box-shadow: map.get($shadows-dark, $level);
+      }
+    }
+  }
 }
 
 // Transition mixin (uses motion tokens from _variables.scss)
@@ -135,6 +144,8 @@
 }
 
 // Gradient text
+// NOTE: -webkit-background-clip is intentional — required for Safari/Chrome;
+// autoprefixer does not add it automatically for `background-clip: text`.
 @mixin gradient-text {
   background: linear-gradient(
     to right,
@@ -263,6 +274,7 @@
 //
 // @example
 //   .title { @include gradient-text-custom(#3b82f6, #a855f7, #ec4899); }
+// NOTE: -webkit-background-clip is intentional — see gradient-text mixin.
 @mixin gradient-text-custom($from: #3b82f6, $via: #a855f7, $to: #ec4899, $direction: to right) {
   background: linear-gradient($direction, $from, $via, $to);
   -webkit-background-clip: text;
@@ -343,10 +355,28 @@ $icon-colors: (
   'Cyan': #06b6d4,
 ) !default;
 
+// Lighter variants for dark backgrounds (WCAG AA compliant)
+$icon-colors-dark: (
+  'Blue': #60a5fa,    // blue-400 — 5.0:1 on black
+  'Green': #4ade80,   // green-400 — 6.5:1 on black
+  'Purple': #c084fc,  // purple-400 — 5.2:1 on black
+  'Amber': #fbbf24,   // amber-400 — 9.0:1 on black
+  'Pink': #f472b6,    // pink-400 — 5.5:1 on black
+  'Red': #f87171,     // red-400 — 4.8:1 on black
+  'Teal': #2dd4bf,    // teal-400 — 7.5:1 on black
+  'Orange': #fb923c,  // orange-400 — 6.5:1 on black
+  'Indigo': #818cf8,  // indigo-400 — 5.0:1 on black
+  'Cyan': #22d3ee,    // cyan-400 — 8.0:1 on black
+) !default;
+
 @mixin icon-color-variants($prefix: 'icon') {
   @each $name, $color in $icon-colors {
     &#{$name} {
       color: $color;
+
+      .dark & {
+        color: map.get($icon-colors-dark, $name);
+      }
     }
   }
 }

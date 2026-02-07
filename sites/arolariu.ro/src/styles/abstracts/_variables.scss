@@ -98,7 +98,12 @@ $breakpoints: (
 // Organized layering system
 // ===========================================
 $z-index: (
+  'behind': -1,        // Background decorative elements (orbs, patterns)
   'base': 0,
+  'raised': 1,         // Slightly above siblings (loading spinners)
+  'content': 10,       // Content above decorative backgrounds
+  'content-high': 20,  // Content above other content (timeline connectors)
+  'overlay-subtle': 50, // Subtle overlays within sections
   'dropdown': 1000,
   'sticky': 1020,
   'fixed': 1030,
@@ -153,6 +158,16 @@ $shadows: (
   'lg': (0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)),
   'xl': (0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)),
   '2xl': 0 25px 50px -12px rgb(0 0 0 / 0.25),
+) !default;
+
+// Dark mode shadows — stronger opacity for visibility on dark backgrounds
+$shadows-dark: (
+  'none': none,
+  'sm': 0 1px 2px 0 rgb(0 0 0 / 0.3),
+  'md': (0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3)),
+  'lg': (0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3)),
+  'xl': (0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3)),
+  '2xl': 0 25px 50px -12px rgb(0 0 0 / 0.6),
 ) !default;
 
 @function shadow($level) {
