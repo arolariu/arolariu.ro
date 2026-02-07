@@ -13,7 +13,7 @@
   "keywords": [
     "NextJS",
     "ReactJS",
-    "TailwindCSS"
+    "SCSS"
   ],
   "bugs": {
     "url": "https://github.com/arolariu/arolariu.ro/issues",
@@ -87,8 +87,6 @@
     "@playwright/test": "*",
     "@react-email/preview-server": "*",
     "@react-pdf/types": "*",
-    "@tailwindcss/postcss": "*",
-    "@tailwindcss/typography": "*",
     "@testing-library/dom": "*",
     "@testing-library/jest-dom": "*",
     "@testing-library/react": "*",
@@ -101,15 +99,12 @@
     "@vitest/ui": "*",
     "cross-env": "*",
     "cssnano": "*",
-    "daisyui": "*",
     "fake-indexeddb": "*",
     "globals": "*",
     "jsdom": "*",
     "msw": "*",
     "postcss": "*",
     "sass": "*",
-    "tailwindcss": "*",
-    "tailwindcss-animate": "*",
     "typescript": "*",
     "vitest": "*"
   },

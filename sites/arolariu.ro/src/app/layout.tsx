@@ -12,8 +12,8 @@ import Tracking from "./tracking";
 // @ts-ignore -- css file has no typings.
 import "@arolariu/components/styles.css";
 
-// @ts-ignore -- css file has no typings.
-import "./globals.css";
+// @ts-ignore -- scss file has no typings.
+import "./globals.scss";
 
 // @ts-ignore -- scss file has no typings.
 import "@/styles/main.scss";
@@ -33,7 +33,7 @@ export default async function RootLayout(props: Readonly<LayoutProps<"/">>): Pro
       suppressHydrationWarning
       lang={locale}
       dir='ltr'>
-      <body className='bg-white text-black dark:bg-black dark:text-white'>
+      <body>
         <ContextProviders locale={locale}>
           <Header />
           <Suspense fallback={<Loading />}>{eulaCookie ? props.children : <Eula locale={locale} />}</Suspense>
