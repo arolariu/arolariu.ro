@@ -268,10 +268,6 @@
   font-weight: font-weight('semibold');
   cursor: pointer;
 
-  // Override global a{color: hsl(var(--primary))} for asChild Link usage
-  &:any-link {
-    color: inherit;
-  }
 }
 
 .ctaIcon {

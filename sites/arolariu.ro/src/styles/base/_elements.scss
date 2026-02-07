@@ -78,7 +78,10 @@ p {
 // ===========================================
 // LINKS
 // ===========================================
-a {
+// Wrapped in :where() for zero specificity (0,0,0) so component-level
+// classes (Tailwind, CSS Modules) automatically win. This prevents the
+// global link color from overriding Button asChild text colors.
+:where(a) {
   color: hsl(var(--primary));
   @include transition((color, opacity));
 
