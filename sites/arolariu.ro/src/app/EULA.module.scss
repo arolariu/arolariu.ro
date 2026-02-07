@@ -41,7 +41,7 @@
 .shieldIconSvg {
   width: 3rem;
   height: 3rem;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .title {
@@ -88,21 +88,21 @@
   appearance: none;
   padding: space(2) space(8) space(2) space(3);
   font-size: font-size('sm');
-  border: 1px solid hsl(var(--border));
+  border: 1px solid color('border');
   border-radius: radius('md');
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: color('background');
+  color: color('foreground');
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right space(2) center;
   @include transition(border-color);
 
   &:hover {
-    border-color: hsl(var(--primary) / 0.5);
+    border-color: color-alpha('primary', 0.5);
   }
 
   &:focus-visible {
-    outline: 2px solid hsl(var(--ring));
+    outline: 2px solid color('ring');
     outline-offset: 2px;
   }
 }
@@ -126,7 +126,7 @@
   padding-left: space(4);
   padding-right: space(4);
   text-align: center;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -147,7 +147,7 @@
   @include transition(border-color);
 
   &:hover {
-    border-color: hsl(var(--primary));
+    border-color: color('primary');
   }
 }
 
@@ -164,12 +164,12 @@
 .policyIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .policyCardContent {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .policyButton {
@@ -228,13 +228,13 @@
 
 .cookiesSubtitle {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .cookieIcon {
   width: 1.25rem;
   height: 1.25rem;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .accordion {
@@ -263,12 +263,12 @@
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .badgeRequired {
   margin-left: space(2);
-  background-color: hsl(var(--primary));
+  background-color: color('primary');
 }
 
 .badgeOptional {
@@ -284,7 +284,7 @@
 
 .accordionDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .switchRow {
@@ -296,10 +296,10 @@
   // (Tailwind data-attribute classes may not generate for library components)
   button[role='switch'] {
     flex-shrink: 0;
-    background-color: hsl(var(--input));
+    background-color: color('input');
 
     &[data-state='checked'] {
-      background-color: hsl(var(--primary));
+      background-color: color('primary');
     }
   }
 }
@@ -325,10 +325,10 @@
 .acceptButton {
   width: 100%;
   cursor: pointer;
-  background-color: hsl(var(--primary));
+  background-color: color('primary');
 
   &:hover {
-    background-color: hsl(var(--primary) / 0.9);
+    background-color: color-alpha('primary', 0.9);
   }
 }
 
@@ -341,7 +341,7 @@
 .footerNote {
   text-align: center;
   font-size: font-size('xs');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -351,7 +351,7 @@
 .shimmerCircle {
   width: 3rem;
   height: 3rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .shimmerTitle {
