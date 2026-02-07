@@ -1,0 +1,24 @@
+@use '../styles/abstracts' as *;
+
+.scrollButton {
+  position: fixed;
+  right: space(8);
+  bottom: space(8);
+  z-index: z('toast');
+  padding: space(3);
+  border-radius: radius('full');
+  background-color: color('primary');
+  color: static-color('white');
+  cursor: pointer;
+  @include shadow('lg');
+  @include transition((background-color, color));
+
+  &:hover {
+    background-color: color-alpha('primary', 0.9);
+  }
+}
+
+.scrollIcon {
+  width: space(6);
+  height: space(6);
+}

@@ -1,0 +1,27 @@
+@use '../../styles/abstracts' as *;
+
+.themeButton {
+  position: relative;
+  width: space(10);
+  height: space(10);
+  cursor: pointer;
+  border-radius: radius('full');
+  border: 2px solid color('foreground');
+  @include transition((background-color, border-color));
+
+  &:hover {
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.iconWrapper {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+}
+
+.icon {
+  width: space(6);
+  height: space(6);
+  color: color('foreground');
+}

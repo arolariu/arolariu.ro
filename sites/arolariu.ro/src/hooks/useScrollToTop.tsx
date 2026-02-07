@@ -12,6 +12,7 @@
 import {AnimatePresence, motion} from "motion/react";
 import {useCallback, useEffect, useState} from "react";
 import {TbChevronUp} from "react-icons/tb";
+import styles from "./useScrollToTop.module.scss";
 
 /**
  * Displays an animated floating action button that scrolls to top of page.
@@ -114,10 +115,10 @@ export function ScrollToTop() {
           exit={{opacity: 0, scale: 0.5}}
           transition={{duration: 0.3}}
           onClick={handleScrollToTop}
-          className='bg-primary hover:bg-primary/90 fixed right-8 bottom-8 z-50 rounded-full p-3 text-white shadow-lg transition-colors duration-300'
+          className={styles["scrollButton"]}
           whileHover={{scale: 1.1}}
           whileTap={{scale: 0.9}}>
-          <TbChevronUp className='h-6 w-6' />
+          <TbChevronUp className={styles["scrollIcon"]} />
         </motion.button>
       )}
     </AnimatePresence>
