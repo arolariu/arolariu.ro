@@ -36,7 +36,9 @@ export default async function RootLayout(props: Readonly<LayoutProps<"/">>): Pro
       <body>
         <ContextProviders locale={locale}>
           <Header />
-          <Suspense fallback={<Loading />}>{eulaCookie ? props.children : <Eula locale={locale} />}</Suspense>
+          <main>
+            <Suspense fallback={<Loading />}>{eulaCookie ? props.children : <Eula locale={locale} />}</Suspense>
+          </main>
           <Footer />
           {Boolean(eulaCookie) && <Tracking />}
         </ContextProviders>
