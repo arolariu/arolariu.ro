@@ -12,6 +12,7 @@ import {
 } from "@arolariu/components";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./MerchantCard.module.scss";
 
 type Props = {
   merchant: Merchant;
@@ -62,16 +63,16 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
         <CardTitle>Merchant</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <main className='flex items-center'>
-          <main className='bg-primary/10 mr-3 flex h-10 w-10 items-center justify-center rounded-full'>
+        <main className={styles["merchantInfo"]}>
+          <main className={styles["merchantIcon"]}>
             <TbShoppingCart className='text-primary h-5 w-5' />
           </main>
           <main>
-            <p className='font-medium'>{merchant.name}</p>
-            <p className='text-muted-foreground text-sm'>Address: {merchant.address.address}</p>
+            <p className={styles["merchantName"]}>{merchant.name}</p>
+            <p className={styles["merchantAddress"]}>Address: {merchant.address.address}</p>
           </main>
         </main>
-        <main className='space-y-2'>
+        <main className={styles["actions"]}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

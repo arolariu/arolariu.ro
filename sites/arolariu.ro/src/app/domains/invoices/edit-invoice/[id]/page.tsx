@@ -7,6 +7,7 @@ import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import React from "react";
 import RenderEditInvoiceScreen from "./island";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the invoice editing page with localized content.
@@ -141,7 +142,7 @@ export default async function EditInvoicePage(
   const merchant = merchantResult.data;
 
   return (
-    <main className='overflow-hidden py-24'>
+    <main className={styles["page"]}>
       <RenderEditInvoiceScreen
         invoice={invoice}
         merchant={merchant}

@@ -16,6 +16,7 @@ import {
 import {useCallback, useState} from "react";
 import {TbStar} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./FeedbackDialog.module.scss";
 
 /**
  * Dialog for collecting user feedback on invoice analytics features.
@@ -174,11 +175,11 @@ export default function FeedbackDialog(): React.JSX.Element {
           <DialogDescription>Help us improve our analytics by sharing your thoughts</DialogDescription>
         </DialogHeader>
 
-        <main className='space-y-6 py-4'>
+        <main className={styles["body"]}>
           {/* Star Rating */}
-          <main className='space-y-2'>
-            <h4 className='text-sm font-medium'>How would you rate the analytics?</h4>
-            <main className='flex justify-center'>
+          <main className={styles["section"]}>
+            <h4 className={styles["sectionHeading"]}>How would you rate the analytics?</h4>
+            <main className={styles["starRow"]}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Button
                   key={star}
@@ -189,7 +190,7 @@ export default function FeedbackDialog(): React.JSX.Element {
                   onMouseLeave={handleStarLeave}
                   onClick={handleStarClick}>
                   <TbStar
-                    className={`h-8 w-8 ${star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+                    className={star <= (hoveredRating || rating) ? styles["starActive"] : styles["starInactive"]}
                   />
                 </Button>
               ))}
@@ -197,9 +198,9 @@ export default function FeedbackDialog(): React.JSX.Element {
           </main>
 
           {/* Feature Selection */}
-          <main className='space-y-2'>
-            <h4 className='text-sm font-medium'>Which features were most helpful? (Select all that apply)</h4>
-            <main className='flex flex-wrap gap-2'>
+          <main className={styles["section"]}>
+            <h4 className={styles["sectionHeading"]}>Which features were most helpful? (Select all that apply)</h4>
+            <main className={styles["featuresWrap"]}>
               {features.map((feature) => (
                 <Badge
                   key={feature}
@@ -214,8 +215,8 @@ export default function FeedbackDialog(): React.JSX.Element {
           </main>
 
           {/* Written Feedback */}
-          <main className='space-y-2'>
-            <h4 className='text-sm font-medium'>Additional comments (optional)</h4>
+          <main className={styles["section"]}>
+            <h4 className={styles["sectionHeading"]}>Additional comments (optional)</h4>
             <Textarea
               placeholder='Share your thoughts about the analytics...'
               value={feedback}
@@ -228,7 +229,7 @@ export default function FeedbackDialog(): React.JSX.Element {
         <DialogFooter>
           <form
             onSubmit={handleSubmit}
-            className='flex items-center justify-between gap-4'>
+            className={styles["footerForm"]}>
             <Button
               variant='outline'
               onClick={close}>

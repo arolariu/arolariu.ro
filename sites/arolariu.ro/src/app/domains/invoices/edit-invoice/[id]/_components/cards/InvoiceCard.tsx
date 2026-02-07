@@ -35,6 +35,7 @@ import {useCallback, useMemo} from "react";
 import {TbCalendar, TbCreditCard, TbHeart, TbTag} from "react-icons/tb";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
 import ItemsTable from "../tables/ItemsTable";
+import styles from "./InvoiceCard.module.scss";
 
 /**
  * Displays comprehensive invoice details with inline editing capabilities.
@@ -160,7 +161,7 @@ export default function InvoiceCard(): React.JSX.Element {
     <motion.div variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}>
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='pb-3'>
-          <main className='flex items-center justify-between'>
+          <main className={styles["headerRow"]}>
             <CardTitle>Invoice Details</CardTitle>
             <TooltipProvider>
               <Tooltip>
@@ -192,12 +193,12 @@ export default function InvoiceCard(): React.JSX.Element {
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
-          <main className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          <main className={styles["detailsGrid"]}>
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Date (UTC)</h3>
-              <main className='flex items-center'>
+              <h3 className={styles["detailLabel"]}>Date (UTC)</h3>
+              <main className={styles["dateRow"]}>
                 <TbCalendar className='text-muted-foreground mr-2 h-4 w-4' />
                 <Popover>
                   <PopoverTrigger asChild>
@@ -221,11 +222,11 @@ export default function InvoiceCard(): React.JSX.Element {
                       className='w-64 rounded-md border [--cell-size:2.5rem]'
                     />
                     <Separator className='my-3' />
-                    <main className='flex items-center justify-center gap-2'>
-                      <main className='flex flex-col items-center gap-1'>
+                    <main className={styles["timePicker"]}>
+                      <main className={styles["timeColumn"]}>
                         <Label
                           htmlFor='hours'
-                          className='text-muted-foreground text-xs'>
+                          className={styles["timeLabel"]}>
                           Hours
                         </Label>
                         <Input
@@ -238,11 +239,11 @@ export default function InvoiceCard(): React.JSX.Element {
                           className='h-9 w-16 text-center'
                         />
                       </main>
-                      <span className='text-muted-foreground mt-5 text-lg font-medium'>:</span>
-                      <main className='flex flex-col items-center gap-1'>
+                      <span className={styles["timeSeparator"]}>:</span>
+                      <main className={styles["timeColumn"]}>
                         <Label
                           htmlFor='minutes'
-                          className='text-muted-foreground text-xs'>
+                          className={styles["timeLabel"]}>
                           Minutes
                         </Label>
                         <Input
@@ -255,7 +256,7 @@ export default function InvoiceCard(): React.JSX.Element {
                           className='h-9 w-16 text-center'
                         />
                       </main>
-                      <span className='text-muted-foreground mt-5 text-sm'>UTC</span>
+                      <span className={styles["timeUtc"]}>UTC</span>
                     </main>
                   </PopoverContent>
                 </Popover>
@@ -264,8 +265,8 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Category</h3>
-              <main className='flex items-center'>
+              <h3 className={styles["detailLabel"]}>Category</h3>
+              <main className={styles["categoryRow"]}>
                 <TbTag className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentCategory)}
@@ -288,8 +289,8 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Payment Method</h3>
-              <main className='flex items-center'>
+              <h3 className={styles["detailLabel"]}>Payment Method</h3>
+              <main className={styles["paymentRow"]}>
                 <TbCreditCard className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentPaymentType)}
@@ -312,8 +313,8 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Total Amount</h3>
-              <p className='text-lg font-semibold'>
+              <h3 className={styles["detailLabel"]}>Total Amount</h3>
+              <p className={styles["totalAmount"]}>
                 {formatCurrency(paymentInformation.totalCostAmount, {currencyCode: paymentInformation.currency.code, locale})}
               </p>
             </motion.div>

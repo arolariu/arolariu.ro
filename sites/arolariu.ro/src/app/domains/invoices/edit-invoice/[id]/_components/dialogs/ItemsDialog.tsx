@@ -22,6 +22,7 @@ import {
 import {useCallback, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./ItemsDialog.module.scss";
 
 /**
  * Dialog for bulk editing invoice line items with add, modify, and delete operations.
@@ -170,27 +171,27 @@ export default function ItemsDialog(): React.JSX.Element {
           <DialogDescription>Update quantities, prices, or add new items to this invoice</DialogDescription>
         </DialogHeader>
 
-        <main className='space-y-4'>
-          <main className='overflow-hidden rounded-md border'>
+        <main className={styles["body"]}>
+          <main className={styles["tableWrapper"]}>
             <Table className='divide-border min-w-full divide-y'>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wider uppercase'>
+                  <TableHead className={styles["tableHeader"]}>
                     Item
                   </TableHead>
-                  <TableHead className='text-muted-foreground px-4 py-3 text-center text-xs font-medium tracking-wider uppercase'>
+                  <TableHead className={styles["tableHeaderCenter"]}>
                     Quantity
                   </TableHead>
-                  <TableHead className='text-muted-foreground px-4 py-3 text-center text-xs font-medium tracking-wider uppercase'>
+                  <TableHead className={styles["tableHeaderCenter"]}>
                     Unit
                   </TableHead>
-                  <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+                  <TableHead className={styles["tableHeaderRight"]}>
                     Price
                   </TableHead>
-                  <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+                  <TableHead className={styles["tableHeaderRight"]}>
                     Total
                   </TableHead>
-                  <TableHead className='text-muted-foreground px-4 py-3 text-center text-xs font-medium tracking-wider uppercase'>
+                  <TableHead className={styles["tableHeaderCenter"]}>
                     Actions
                   </TableHead>
                 </TableRow>
@@ -258,7 +259,7 @@ export default function ItemsDialog(): React.JSX.Element {
               <TableFooter>
                 <TableRow className='bg-muted/50'>
                   <TableHead
-                    className='text-muted-foreground px-4 py-3 text-sm font-medium'
+                    className={styles["tableHeader"]}
                     colSpan={2}>
                     <span
                       role='status'
@@ -268,7 +269,7 @@ export default function ItemsDialog(): React.JSX.Element {
                     </span>
                   </TableHead>
                   <TableHead
-                    className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
+                    className={styles["tableHeaderRight"]}
                     colSpan={2}>
                     <span
                       role='status'
@@ -278,7 +279,7 @@ export default function ItemsDialog(): React.JSX.Element {
                     </span>
                   </TableHead>
                   <TableHead
-                    className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
+                    className={styles["tableHeaderRight"]}
                     colSpan={2}>
                     <Button
                       variant='ghost'
@@ -305,7 +306,7 @@ export default function ItemsDialog(): React.JSX.Element {
           </main>
 
           {/* Controls */}
-          <main className='flex justify-between'>
+          <main className={styles["controls"]}>
             <Button
               type='button'
               variant='outline'
@@ -315,7 +316,7 @@ export default function ItemsDialog(): React.JSX.Element {
               Add Item
             </Button>
             <main
-              className='text-muted-foreground text-sm'
+              className={styles["itemCount"]}
               role='status'
               aria-live='polite'>
               {items.length} {items.length === 1 ? "item" : "items"} in total

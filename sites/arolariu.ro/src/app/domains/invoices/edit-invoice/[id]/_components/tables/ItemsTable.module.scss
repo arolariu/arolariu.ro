@@ -1,0 +1,93 @@
+@use '../../../../../../../styles/abstracts' as *;
+@use '../../../../_styles/invoice-shared' as invoice;
+
+.headerRow {
+  margin-bottom: space(2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.itemsLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.tableWrapper {
+  overflow: hidden;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}
+
+.tableHeader {
+  color: color('muted-foreground');
+  padding: space(3) space(4);
+  text-align: left;
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  text-transform: uppercase;
+  letter-spacing: letter-spacing('wider');
+}
+
+.tableHeaderRight {
+  composes: tableHeader;
+  text-align: right;
+}
+
+.tableRow {
+  &:hover {
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.tableCell {
+  padding: space(3) space(4);
+  font-size: font-size('sm');
+  white-space: nowrap;
+}
+
+.tableCellRight {
+  composes: tableCell;
+  text-align: right;
+}
+
+.tableCellRightBold {
+  composes: tableCellRight;
+  font-weight: font-weight('medium');
+}
+
+.emptyRow {
+  height: space(12);
+}
+
+.footerLabel {
+  padding: space(3) space(4);
+  text-align: right;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.paginationBar {
+  background-color: color('popover');
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid color('border');
+  padding: space(4);
+}
+
+.paginationInfo {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.paginationText {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}

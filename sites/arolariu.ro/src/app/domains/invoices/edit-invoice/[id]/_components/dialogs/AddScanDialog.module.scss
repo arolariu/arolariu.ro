@@ -1,0 +1,116 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.body {
+  display: grid;
+  gap: space(4);
+  padding-block: space(4);
+}
+
+.dropzone {
+  display: flex;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: radius('lg');
+  border: 2px dashed color('border');
+  padding: space(8);
+  @include transition(colors);
+}
+
+.dropzoneDragActive {
+  composes: dropzone;
+  border-color: color('primary');
+  background-color: color-alpha('primary', 0.05);
+}
+
+.dropzoneDragAccept {
+  composes: dropzone;
+  border-color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+.dropzoneDragReject {
+  composes: dropzone;
+  border-color: color('destructive');
+  background-color: color-alpha('destructive', 0.05);
+}
+
+.dropzoneIdle {
+  composes: dropzone;
+
+  &:hover {
+    border-color: color-alpha('primary', 0.5);
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.dropzoneDisabled {
+  composes: dropzone;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.uploadIcon {
+  color: color('muted-foreground');
+  margin-bottom: space(4);
+  width: space(12);
+  height: space(12);
+}
+
+.dropText {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.dropSubtext {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.dropFormats {
+  color: color('muted-foreground');
+  margin-top: space(2);
+  font-size: font-size('xs');
+}
+
+.filePreview {
+  background-color: color('muted');
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: radius('md');
+  padding: space(3);
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.fileIcon {
+  width: space(8);
+  height: space(8);
+  flex-shrink: 0;
+}
+
+.fileTextWrapper {
+  min-width: 0;
+}
+
+.fileName {
+  @include truncate;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.fileSize {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.scanTypeGrid {
+  display: grid;
+  gap: space(2);
+}

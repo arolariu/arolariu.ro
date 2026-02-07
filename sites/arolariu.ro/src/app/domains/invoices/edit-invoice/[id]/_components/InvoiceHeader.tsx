@@ -6,6 +6,7 @@ import {useCallback} from "react";
 import {TbDeviceFloppy, TbPrinter, TbScanEye, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
+import styles from "./InvoiceHeader.module.scss";
 
 /**
  * Renders the editable invoice header with inline name editing, save, and print functionality.
@@ -77,8 +78,8 @@ export default function InvoiceHeader(): React.JSX.Element {
       initial={{opacity: 0, y: -20}}
       animate={{opacity: 1, y: 0}}
       transition={{duration: 0.5}}
-      className='mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center'>
-      <main className='flex items-center gap-2'>
+      className={styles["header"]}>
+      <main className={styles["nameGroup"]}>
         <main>
           <Input
             type='text'
@@ -88,7 +89,7 @@ export default function InvoiceHeader(): React.JSX.Element {
           />
         </main>
       </main>
-      <main className='flex flex-wrap items-center gap-2'>
+      <main className={styles["actionsGroup"]}>
         <TooltipProvider>
           {/* Save & Discard buttons - only show when there are changes */}
           {hasChanges ? (

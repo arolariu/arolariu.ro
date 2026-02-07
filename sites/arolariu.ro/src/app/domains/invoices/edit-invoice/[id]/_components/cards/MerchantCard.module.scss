@@ -1,0 +1,33 @@
+@use '../../../../../../../styles/abstracts' as *;
+@use '../../../../_styles/invoice-shared' as invoice;
+
+.merchantInfo {
+  display: flex;
+  align-items: center;
+}
+
+.merchantIcon {
+  background-color: color-alpha('primary', 0.1);
+  margin-right: space(3);
+  display: flex;
+  width: space(10);
+  height: space(10);
+  align-items: center;
+  justify-content: center;
+  border-radius: radius('full');
+}
+
+.merchantName {
+  font-weight: font-weight('medium');
+}
+
+.merchantAddress {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.actions {
+  & > * + * {
+    margin-top: space(2);
+  }
+}

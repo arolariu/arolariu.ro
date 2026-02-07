@@ -31,6 +31,7 @@ import {useLocale} from "next-intl";
 import {useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./MerchantReceiptsDialog.module.scss";
 
 /**
  * Dialog displaying all receipts/invoices from a specific merchant with filtering.
@@ -122,9 +123,9 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
           <DialogDescription>View and filter all your receipts from this merchant</DialogDescription>
         </DialogHeader>
 
-        <main className='space-y-4'>
-          <main className='flex flex-col gap-3 sm:flex-row'>
-            <main className='relative flex-1'>
+        <main className={styles["body"]}>
+          <main className={styles["filterRow"]}>
+            <main className={styles["searchWrapper"]}>
               <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
               <Input
                 placeholder='Search receipts...'
@@ -133,8 +134,8 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </main>
-            <main className='flex gap-2'>
-              <main className='w-40'>
+            <main className={styles["filterControls"]}>
+              <main className={styles["selectWrapper"]}>
                 <Select onValueChange={handleDateFilterChange}>
                   <SelectTrigger>
                     <TbCalendar className='mr-2 h-4 w-4' />
@@ -148,7 +149,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                   </SelectContent>
                 </Select>
               </main>
-              <main className='w-40'>
+              <main className={styles["selectWrapper"]}>
                 <Select onValueChange={handleSortChange}>
                   <SelectTrigger>
                     <TbArrowsUpDown className='mr-2 h-4 w-4' />
@@ -163,17 +164,17 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
             </main>
           </main>
 
-          <main className='overflow-hidden rounded-md border'>
-            <main className='overflow-x-auto'>
+          <main className={styles["tableOuter"]}>
+            <main className={styles["tableScroll"]}>
               <Table>
                 <TableHeader>
                   <TableRow className='bg-muted/50'>
-                    <TableHead className='text-muted-foreground px-4 py-3 text-xs font-medium tracking-wider uppercase'>Receipt</TableHead>
-                    <TableHead className='text-muted-foreground px-4 py-3 text-xs font-medium tracking-wider uppercase'>Date</TableHead>
-                    <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+                    <TableHead className={styles["tableHeader"]}>Receipt</TableHead>
+                    <TableHead className={styles["tableHeader"]}>Date</TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>
                       Items #
                     </TableHead>
-                    <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+                    <TableHead className={styles["tableHeaderRight"]}>
                       Actions
                     </TableHead>
                   </TableRow>
@@ -202,16 +203,16 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableHead className='text-muted-foreground px-4 py-3 text-sm font-medium'>
+                    <TableHead className={styles["tableHeader"]}>
                       {receipts.length} receipts found (showing {paginatedItems.length})
                     </TableHead>
                     <TableCell
-                      className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
+                      className={styles["tableHeaderRight"]}
                       colSpan={2}>
                       Page {currentPage} of {totalPages}
                     </TableCell>
                     <TableCell
-                      className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
+                      className={styles["tableHeaderRight"]}
                       colSpan={2}>
                       <Button
                         variant='ghost'

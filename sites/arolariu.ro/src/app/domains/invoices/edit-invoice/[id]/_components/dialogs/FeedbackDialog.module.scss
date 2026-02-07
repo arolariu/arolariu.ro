@@ -1,0 +1,50 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.body {
+  & > * + * {
+    margin-top: space(6);
+  }
+  padding-block: space(4);
+}
+
+.section {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.sectionHeading {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.starRow {
+  display: flex;
+  justify-content: center;
+}
+
+.starActive {
+  width: space(8);
+  height: space(8);
+  fill: #facc15;
+  color: #facc15;
+}
+
+.starInactive {
+  width: space(8);
+  height: space(8);
+  color: color('muted-foreground');
+}
+
+.featuresWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+.footerForm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(4);
+}

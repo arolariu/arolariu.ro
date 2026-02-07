@@ -1,6 +1,7 @@
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
 import Image from "next/image";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./ImageDialog.module.scss";
 
 /**
  * Full-screen dialog for viewing receipt images at expanded size.
@@ -53,7 +54,7 @@ export default function ImageDialog(): React.JSX.Element {
       <DialogContent className='h-full min-w-11/12'>
         <DialogHeader>
           <DialogTitle>Image ({image})</DialogTitle>
-          <main className='relative h-full w-full'>
+          <main className={styles["imageContainer"]}>
             <Image
               src={image}
               fill

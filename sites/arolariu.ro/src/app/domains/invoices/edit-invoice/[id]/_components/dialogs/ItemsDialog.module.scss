@@ -1,0 +1,44 @@
+@use '../../../../../../../styles/abstracts' as *;
+@use '../../../../_styles/invoice-shared' as invoice;
+
+.body {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.tableWrapper {
+  overflow: hidden;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}
+
+.tableHeader {
+  color: color('muted-foreground');
+  padding: space(3) space(4);
+  text-align: left;
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  text-transform: uppercase;
+  letter-spacing: letter-spacing('wider');
+}
+
+.tableHeaderCenter {
+  composes: tableHeader;
+  text-align: center;
+}
+
+.tableHeaderRight {
+  composes: tableHeader;
+  text-align: right;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+}
+
+.itemCount {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}

@@ -14,6 +14,7 @@ import InvoiceHeader from "./_components/InvoiceHeader";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
 import {EditInvoiceContextProvider} from "./_context/EditInvoiceContext";
+import styles from "./island.module.scss";
 
 type Props = Readonly<{
   readonly invoice: Invoice;
@@ -92,16 +93,16 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
       <EditInvoiceContextProvider
         invoice={invoice}
         merchant={merchant}>
-        <section className='container mx-auto py-12'>
+        <section className={styles["section"]}>
           {/* Header */}
           <InvoiceHeader />
 
-          <main className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+          <main className={styles["mainGrid"]}>
             <motion.div
               variants={containerVariants}
               initial='hidden'
               animate='visible'
-              className='space-y-6 md:col-span-2'>
+              className={styles["mainContent"]}>
               <InvoiceCard />
 
               {/* Tabs for Recipes and Metadata */}
@@ -143,7 +144,7 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
                 variants={containerVariants}
                 initial='hidden'
                 animate='visible'
-                className='space-y-6'>
+                className={styles["sidebar"]}>
                 <motion.div variants={itemVariants}>
                   <ImageCard invoice={invoice} />
                 </motion.div>

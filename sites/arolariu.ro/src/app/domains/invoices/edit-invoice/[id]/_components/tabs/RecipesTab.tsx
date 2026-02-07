@@ -20,6 +20,7 @@ import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import RecipeCard from "../cards/RecipeCard";
+import styles from "./RecipesTab.module.scss";
 
 type Props = {
   recipes: Recipe[];
@@ -137,7 +138,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
         </CardHeader>
         <CardContent>
           {paginatedItems.length > 0 ? (
-            <main className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <main className={styles["recipesGrid"]}>
               {recipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.name}
@@ -146,8 +147,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
               ))}
             </main>
           ) : (
-            <main className='py-8 text-center'>
-              <p className='text-muted-foreground mb-4'>No recipes available yet</p>
+            <main className={styles["emptyState"]}>
+              <p className={styles["emptyText"]}>No recipes available yet</p>
               <Button
                 onClick={handleCreateFirstRecipe}
                 variant='outline'
@@ -158,7 +159,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
             </main>
           )}
           {totalPages > 1 && (
-            <main className='flex items-center justify-between pt-4'>
+            <main className={styles["paginationBar"]}>
               <Button
                 variant='ghost'
                 size='sm'
@@ -166,7 +167,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 disabled={currentPage === 1}>
                 Previous
               </Button>
-              <main className='text-sm'>
+              <main className={styles["pageInfo"]}>
                 Page {currentPage} of {totalPages}
               </main>
               <Button

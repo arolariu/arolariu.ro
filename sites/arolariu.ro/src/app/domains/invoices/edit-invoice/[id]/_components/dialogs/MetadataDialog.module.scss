@@ -1,0 +1,19 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.formBody {
+  & > * + * {
+    margin-top: space(4);
+  }
+  padding-block: space(2);
+}
+
+.fieldGroup {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.deleteButton {
+  background-color: #ef4444;
+  color: white;
+}

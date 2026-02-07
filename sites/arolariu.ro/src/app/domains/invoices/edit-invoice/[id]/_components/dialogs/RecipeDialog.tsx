@@ -37,6 +37,7 @@ import {
 import {useCallback, useState} from "react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./RecipeDialog.module.scss";
 
 const CreateDialog = () => {
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
@@ -76,11 +77,11 @@ const CreateDialog = () => {
           <DialogDescription>Fill in the details to create a recipe.</DialogDescription>
         </DialogHeader>
 
-        <form className='space-y-4 py-2'>
-          <main className='space-y-2'>
-            <main className='flex items-center justify-between'>
+        <form className={styles["formBody"]}>
+          <main className={styles["fieldGroup"]}>
+            <main className={styles["fieldHeader"]}>
               <Label htmlFor='name'>Recipe Name</Label>
-              <main className='flex items-center'>
+              <main>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -111,7 +112,7 @@ const CreateDialog = () => {
           </main>
 
           {/* Add description field */}
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='description'>Description</Label>
             <Textarea
               id='description'
@@ -123,8 +124,8 @@ const CreateDialog = () => {
             />
           </main>
 
-          <main className='space-y-2'>
-            <main className='flex items-center justify-between'>
+          <main className={styles["fieldGroup"]}>
+            <main className={styles["fieldHeader"]}>
               <Label>Ingredients</Label>
               <Button
                 type='button'
@@ -135,13 +136,13 @@ const CreateDialog = () => {
               </Button>
             </main>
 
-            <main className='space-y-2'>
+            <main className={styles["fieldGroup"]}>
               {recipe.ingredients.map((ingredient, idx) => (
                 <main
                   key={idx}
-                  className='relative'>
-                  <main className='flex gap-2'>
-                    <main className='relative flex-1'>
+                  className={styles["ingredientItem"]}>
+                  <main className={styles["ingredientRow"]}>
+                    <main className={styles["ingredientInput"]}>
                       <Input
                         value={ingredient.rawName}
                         placeholder={`Ingredient ${idx + 1} (from receipt or custom)`}
@@ -161,7 +162,7 @@ const CreateDialog = () => {
           </main>
 
           {/* Add difficulty selector */}
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>Difficulty Level</Label>
             <Select
               value={RecipeComplexity[recipe.complexity]}
@@ -184,8 +185,8 @@ const CreateDialog = () => {
           </main>
 
           {/* Add instructions field */}
-          <main className='space-y-2'>
-            <main className='flex items-center justify-between'>
+          <main className={styles["fieldGroup"]}>
+            <main className={styles["fieldHeader"]}>
               <Label htmlFor='instructions'>Instructions</Label>
               <TooltipProvider>
                 <Tooltip>
@@ -216,10 +217,10 @@ const CreateDialog = () => {
           </main>
 
           {/* Add preparation time field */}
-          <main className='grid grid-cols-2 gap-4'>
-            <main className='space-y-2'>
+          <main className={styles["timeGrid"]}>
+            <main className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>Prep Time</Label>
-              <main className='flex items-center'>
+              <main className={styles["timeRow"]}>
                 <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
@@ -232,9 +233,9 @@ const CreateDialog = () => {
             </main>
 
             {/* Add cooking time field */}
-            <main className='space-y-2'>
+            <main className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>Cook Time</Label>
-              <main className='flex items-center'>
+              <main className={styles["timeRow"]}>
                 <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
@@ -249,7 +250,7 @@ const CreateDialog = () => {
         </form>
 
         <DialogFooter className='flex items-center justify-between sm:justify-between'>
-          <main className='flex gap-2'>
+          <main className={styles["footerActions"]}>
             <Button
               type='button'
               variant='outline'
@@ -283,27 +284,27 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           <DialogDescription>Recipe details and cooking instructions</DialogDescription>
         </DialogHeader>
 
-        <main className='space-y-4 py-2'>
+        <main className={styles["formBody"]}>
           {/* Add description field */}
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='description'>Description</Label>
-            <p className='text-sm'>{recipe?.description || "No description provided."}</p>
+            <p className={styles["readText"]}>{recipe?.description || "No description provided."}</p>
           </main>
 
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label>Ingredients</Label>
-            <ul className='list-disc space-y-1 pl-5'>
+            <ul className={styles["ingredientReadList"]}>
               {recipe?.ingredients.map((ingredient, idx) => (
                 <li
                   key={idx}
-                  className='text-sm'>
+                  className={styles["readText"]}>
                   {ingredient.rawName}
                 </li>
               ))}
             </ul>
           </main>
 
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='complexity'>Complexity Level</Label>
             <Badge
               variant={
@@ -317,17 +318,17 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             </Badge>
           </main>
 
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='instructions'>Instructions</Label>
 
-            <main className='grid grid-cols-2 gap-4'>
+            <main className={styles["timeGrid"]}>
               <Label htmlFor='preparationTime'>Prep Time</Label>
               <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
               <span>{recipe?.preparationTime || "Not specified"}</span>
             </main>
           </main>
 
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='cookingTime'>Cook Time</Label>
             <TbToolsKitchen3 className='text-muted-foreground mr-2 h-4 w-4' />
             <span>{recipe?.cookingTime || "Not specified"}</span>
@@ -374,11 +375,11 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           <DialogDescription>Fill in the details to create a recipe.</DialogDescription>
         </DialogHeader>
 
-        <form className='space-y-4 py-2'>
-          <main className='space-y-2'>
-            <main className='flex items-center justify-between'>
+        <form className={styles["formBody"]}>
+          <main className={styles["fieldGroup"]}>
+            <main className={styles["fieldHeader"]}>
               <Label htmlFor='name'>Recipe Name</Label>
-              <main className='flex items-center'>
+              <main>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -409,7 +410,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </main>
 
           {/* Add description field */}
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='description'>Description</Label>
             <Textarea
               id='description'
@@ -422,8 +423,8 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </main>
 
           {/* Add ingredients field */}
-          <main className='space-y-2'>
-            <main className='flex items-center justify-between'>
+          <main className={styles["fieldGroup"]}>
+            <main className={styles["fieldHeader"]}>
               <Label>Ingredients</Label>
               <Button
                 type='button'
@@ -434,13 +435,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               </Button>
             </main>
 
-            <main className='space-y-2'>
+            <main className={styles["fieldGroup"]}>
               {recipeDetails.ingredients.map((ingredient, idx) => (
                 <main
                   key={ingredient.rawName}
-                  className='relative'>
-                  <main className='flex gap-2'>
-                    <main className='relative flex-1'>
+                  className={styles["ingredientItem"]}>
+                  <main className={styles["ingredientRow"]}>
+                    <main className={styles["ingredientInput"]}>
                       <Input
                         value={ingredient.rawName}
                         placeholder={`Ingredient ${idx + 1} (from receipt or custom)`}
@@ -460,7 +461,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </main>
 
           {/* Add difficulty selector */}
-          <main className='space-y-2'>
+          <main className={styles["fieldGroup"]}>
             <Label htmlFor='difficulty'>Difficulty Level</Label>
             <Select
               value={RecipeComplexity[recipe.complexity]}
@@ -483,8 +484,8 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </main>
 
           {/* Add instructions field */}
-          <main className='space-y-2'>
-            <main className='flex items-center justify-between'>
+          <main className={styles["fieldGroup"]}>
+            <main className={styles["fieldHeader"]}>
               <Label htmlFor='instructions'>Instructions</Label>
               <TooltipProvider>
                 <Tooltip>
@@ -515,10 +516,10 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </main>
 
           {/* Add preparation time field */}
-          <main className='grid grid-cols-2 gap-4'>
-            <main className='space-y-2'>
+          <main className={styles["timeGrid"]}>
+            <main className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>Prep Time</Label>
-              <main className='flex items-center'>
+              <main className={styles["timeRow"]}>
                 <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
@@ -531,9 +532,9 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             </main>
 
             {/* Add cooking time field */}
-            <main className='space-y-2'>
+            <main className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>Cook Time</Label>
-              <main className='flex items-center'>
+              <main className={styles["timeRow"]}>
                 <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
@@ -548,7 +549,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
         </form>
 
         <DialogFooter className='flex items-center justify-between sm:justify-between'>
-          <main className='flex gap-2'>
+          <main className={styles["footerActions"]}>
             <Button
               type='button'
               variant='outline'

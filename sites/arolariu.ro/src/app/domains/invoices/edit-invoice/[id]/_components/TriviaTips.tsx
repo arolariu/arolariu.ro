@@ -17,6 +17,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbAlertCircle, TbArrowRight, TbBulb, TbPercentage, TbPigMoney, TbSparkles, TbThumbUp} from "react-icons/tb";
+import styles from "./TriviaTips.module.scss";
 
 type Props = {
   merchant: Merchant;
@@ -102,35 +103,35 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       </CardHeader>
       <CardContent className='space-y-4'>
         <motion.div
-          className='border-primary/20 bg-primary/10 rounded-md border p-3'
+          className={styles["savingsBanner"]}
           whileHover={{scale: 1.02}}
           transition={{type: "spring", stiffness: 400, damping: 10}}>
-          <main className='flex items-center justify-between'>
-            <p className='text-sm font-medium'>Potential Savings</p>
-            <p className='text-lg font-bold'>
+          <main className={styles["savingsBannerInner"]}>
+            <p className={styles["savingsLabel"]}>Potential Savings</p>
+            <p className={styles["savingsAmount"]}>
               {formatCurrency(totalPotentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
             </p>
           </main>
-          <p className='text-muted-foreground mt-1 text-xs'>Apply these tips to save on your next visit to {merchant.name}</p>
+          <p className={styles["savingsHint"]}>Apply these tips to save on your next visit to {merchant.name}</p>
         </motion.div>
 
         <Separator />
 
-        <main className='space-y-3'>
+        <main className={styles["tipsList"]}>
           {savingsTips.map((tip, index) => (
             <motion.div
               key={tip.id}
-              className='group hover:border-primary/50 hover:bg-muted/50 rounded-md border p-3'
+              className={styles["tipCard"]}
               initial={{opacity: 0, y: 10}}
               animate={{opacity: 1, y: 0}}
               transition={{delay: index * 0.1}}
               whileHover={{scale: 1.02, backgroundColor: "hsl(var(--muted) / 0.5)"}}>
-              <main className='flex items-start gap-3'>
-                <main className='bg-primary/10 text-primary mt-0.5 rounded-md p-1.5'>{tip.icon}</main>
-                <main className='flex-1'>
-                  <main className='flex items-start justify-between'>
+              <main className={styles["tipInner"]}>
+                <main className={styles["tipIconWrapper"]}>{tip.icon}</main>
+                <main className={styles["tipContent"]}>
+                  <main className={styles["tipHeader"]}>
                     <main>
-                      <h3 className='text-sm font-medium'>{tip.title}</h3>
+                      <h3 className={styles["tipTitle"]}>{tip.title}</h3>
                       <Badge
                         variant={tip.difficulty === "EASY" ? "default" : "secondary"}
                         className='mt-1 text-xs'>
@@ -140,7 +141,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <main className='text-success flex items-center text-sm font-medium'>
+                          <main className={styles["tipSavings"]}>
                             <span>
                               {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
                             </span>
@@ -153,14 +154,14 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       </Tooltip>
                     </TooltipProvider>
                   </main>
-                  <p className='text-muted-foreground mt-1 text-sm'>{tip.description}</p>
+                  <p className={styles["tipDescription"]}>{tip.description}</p>
                 </main>
               </main>
             </motion.div>
           ))}
         </main>
 
-        <main className='pt-2'>
+        <main className={styles["moreButton"]}>
           <Button
             variant='outline'
             className='group w-full'>
@@ -169,7 +170,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           </Button>
         </main>
 
-        <main className='text-muted-foreground flex items-center gap-2 text-xs'>
+        <main className={styles["disclaimer"]}>
           <TbAlertCircle className='h-3.5 w-3.5' />
           <span>Savings are estimates based on average prices and promotions</span>
         </main>
