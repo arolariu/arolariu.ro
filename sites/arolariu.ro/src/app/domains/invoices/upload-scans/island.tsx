@@ -38,13 +38,13 @@ function FileTypeCard({
   extensions: string;
 }>): React.JSX.Element {
   return (
-    <main className={styles["fileTypeCard"]}>
-      <main className={styles["fileTypeIconBox"]}>{icon}</main>
-      <main>
+    <div className={styles["fileTypeCard"]}>
+      <div className={styles["fileTypeIconBox"]}>{icon}</div>
+      <div>
         <p className={styles["fileTypeLabel"]}>{label}</p>
         <p className={styles["fileTypeExtensions"]}>{extensions}</p>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }
 
@@ -86,42 +86,42 @@ function UploadStats(): React.JSX.Element | null {
       initial={{opacity: 0, y: 10}}
       animate={{opacity: 1, y: 0}}
       className={styles["statsBar"]}>
-      <main className={styles["statsContent"]}>
-        <main className={styles["statsGroup"]}>
+      <div className={styles["statsContent"]}>
+        <div className={styles["statsGroup"]}>
           {/* Session total */}
-          <main className={styles["statItem"]}>
+          <div className={styles["statItem"]}>
             <p className={`${styles["statValue"]} ${styles["statValueDefault"]}`}>{totalAdded}</p>
             <p className={styles["statLabel"]}>{t("stats.added")}</p>
-          </main>
+          </div>
           {/* Pending in current batch */}
           {pending > 0 && (
-            <main className={styles["statItem"]}>
+            <div className={styles["statItem"]}>
               <p className={`${styles["statValue"]} ${styles["statValueAmber"]}`}>{pending}</p>
               <p className={styles["statLabel"]}>{t("stats.pending")}</p>
-            </main>
+            </div>
           )}
           {/* Currently uploading */}
           {uploading > 0 && (
-            <main className={styles["statItem"]}>
+            <div className={styles["statItem"]}>
               <p className={`${styles["statValue"]} ${styles["statValueBlue"]}`}>{uploading}</p>
               <p className={styles["statLabel"]}>{t("stats.uploading")}</p>
-            </main>
+            </div>
           )}
           {/* Session completed (persistent) */}
           {totalCompleted > 0 && (
-            <main className={styles["statItem"]}>
+            <div className={styles["statItem"]}>
               <p className={`${styles["statValue"]} ${styles["statValueGreen"]}`}>{totalCompleted}</p>
               <p className={styles["statLabel"]}>{t("stats.completed")}</p>
-            </main>
+            </div>
           )}
           {/* Session failed (persistent) + current queue failures */}
           {(totalFailed > 0 || failedInQueue > 0) && (
-            <main className={styles["statItem"]}>
+            <div className={styles["statItem"]}>
               <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>{totalFailed + failedInQueue}</p>
               <p className={styles["statLabel"]}>{t("stats.failed")}</p>
-            </main>
+            </div>
           )}
-        </main>
+        </div>
 
         {allDone ? (
           <Button
@@ -133,7 +133,7 @@ function UploadStats(): React.JSX.Element | null {
             </Link>
           </Button>
         ) : null}
-      </main>
+      </div>
     </motion.div>
   );
 }
@@ -148,22 +148,22 @@ function UploadContent(): React.JSX.Element {
   return (
     <section className={styles["contentSection"]}>
       {/* Breadcrumb */}
-      <main className={styles["breadcrumb"]}>
+      <div className={styles["breadcrumb"]}>
         <Link
           href='/domains/invoices'
           className={styles["breadcrumbLink"]}>
           <TbArrowLeft className={styles["breadcrumbIcon"]} />
           {t("breadcrumb")}
         </Link>
-      </main>
+      </div>
 
       {/* Header */}
-      <main className={styles["header"]}>
-        <main className={styles["headerLeft"]}>
-          <main>
+      <div className={styles["header"]}>
+        <div className={styles["headerLeft"]}>
+          <div>
             <h1 className={styles["headerTitle"]}>{t("header.title")}</h1>
             <p className={styles["headerDescription"]}>{t("header.description")}</p>
-          </main>
+          </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -181,9 +181,9 @@ function UploadContent(): React.JSX.Element {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </main>
+        </div>
 
-        <main className={styles["headerActions"]}>
+        <div className={styles["headerActions"]}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -219,27 +219,27 @@ function UploadContent(): React.JSX.Element {
               <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        </main>
-      </main>
+        </div>
+      </div>
 
       {/* Upload Stats (when there are pending uploads) */}
       <UploadStats />
 
       {/* Main Content Area */}
-      <main className={styles["contentGrid"]}>
+      <div className={styles["contentGrid"]}>
         {/* Upload Area - Takes 2 columns */}
-        <main className={styles["mainArea"]}>
+        <div className={styles["mainArea"]}>
           <UploadPreview />
           <UploadArea />
-        </main>
+        </div>
 
         {/* Sidebar - Info Cards */}
-        <main className={styles["sidebar"]}>
+        <div className={styles["sidebar"]}>
           {/* Supported Formats */}
           <Card>
             <CardContent className='p-4'>
               <h3 className={styles["sidebarTitle"]}>{t("sidebar.formats.title")}</h3>
-              <main className={styles["formatsList"]}>
+              <div className={styles["formatsList"]}>
                 <FileTypeCard
                   icon={<TbPhoto className={styles["fileTypeIconAccent"]} />}
                   label={t("sidebar.formats.images")}
@@ -250,7 +250,7 @@ function UploadContent(): React.JSX.Element {
                   label={t("sidebar.formats.documents")}
                   extensions={t("sidebar.formats.documentExtensions")}
                 />
-              </main>
+              </div>
               <p className={styles["maxSizeNote"]}>{t("sidebar.formats.maxSize")}</p>
             </CardContent>
           </Card>
@@ -272,13 +272,13 @@ function UploadContent(): React.JSX.Element {
           {/* Security Note */}
           <Card className='border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'>
             <CardContent className='p-4'>
-              <main className={styles["securityContent"]}>
+              <div className={styles["securityContent"]}>
                 <TbShieldCheck className={styles["securityIcon"]} />
-                <main>
+                <div>
                   <h3 className={styles["securityTitle"]}>{t("sidebar.security.title")}</h3>
                   <p className={styles["securityDescription"]}>{t("sidebar.security.description")}</p>
-                </main>
-              </main>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -305,8 +305,8 @@ function UploadContent(): React.JSX.Element {
               </Card>
             </motion.div>
           )}
-        </main>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }

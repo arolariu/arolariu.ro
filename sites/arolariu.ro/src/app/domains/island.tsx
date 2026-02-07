@@ -36,7 +36,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
   const t = useTranslations("Domains");
 
   return (
-    <main className={styles["domainsMain"]}>
+    <section className={styles["domainsMain"]}>
       <section className={styles["headerSection"]}>
         <div className={styles["progressTrack"]}>
           <div className={styles["progressFill"]} />
@@ -85,6 +85,6 @@ export default function RenderDomainsScreen(): React.JSX.Element {
           </article>
         </section>
       </section>
-    </main>
+    </section>
   );
 }

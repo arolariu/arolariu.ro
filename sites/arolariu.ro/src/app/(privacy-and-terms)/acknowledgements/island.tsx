@@ -50,7 +50,7 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
   const t = useTranslations("Acknowledgements");
 
   return (
-    <main className={styles["acknowledgementsMain"]}>
+    <section className={styles["acknowledgementsMain"]}>
       {/* Hero section */}
       <Hero lastUpdatedDate={lastUpdatedDate} />
 
@@ -73,6 +73,6 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
         </div>
         <PackagesScreen packages={packages} />
       </section>
-    </main>
+    </section>
   );
 }

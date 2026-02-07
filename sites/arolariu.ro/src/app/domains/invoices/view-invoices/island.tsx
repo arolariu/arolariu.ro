@@ -22,16 +22,16 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
     return (
       <section className={styles["loadingSection"]}>
         <Skeleton className='h-24 w-full' />
-        <main className={styles["loadingTabsRow"]}>
+        <div className={styles["loadingTabsRow"]}>
           <Skeleton className='h-10 w-24' />
           <Skeleton className='h-10 w-24' />
           <Skeleton className='h-10 w-24' />
-        </main>
-        <main className={styles["loadingGrid"]}>
+        </div>
+        <div className={styles["loadingGrid"]}>
           <Skeleton className='h-48 w-full' />
           <Skeleton className='h-48 w-full' />
           <Skeleton className='h-48 w-full' />
-        </main>
+        </div>
       </section>
     );
   }

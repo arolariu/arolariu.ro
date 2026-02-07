@@ -24,15 +24,15 @@ import styles from "./island.module.scss";
  */
 function QuickTip({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <main className={styles["quickTip"]}>
-      <main className={styles["quickTipIconBox"]}>
+    <div className={styles["quickTip"]}>
+      <div className={styles["quickTipIconBox"]}>
         {icon}
-      </main>
-      <main>
+      </div>
+      <div>
         <p className={styles["quickTipTitle"]}>{title}</p>
         <p className={styles["quickTipDescription"]}>{description}</p>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }
 
@@ -41,10 +41,10 @@ function QuickTip({icon, title, description}: Readonly<{icon: React.ReactNode; t
  */
 function StatsCard({value, label, colorClass}: Readonly<{value: number; label: string; colorClass: string}>): React.JSX.Element {
   return (
-    <main className={styles["statsCardItem"]}>
+    <div className={styles["statsCardItem"]}>
       <p className={`${styles["statsCardValue"]} ${styles[colorClass]}`}>{value}</p>
       <p className={styles["statsCardLabel"]}>{label}</p>
-    </main>
+    </div>
   );
 }
 
@@ -63,8 +63,8 @@ function ScanStats(): React.JSX.Element | null {
       initial={{opacity: 0, y: 10}}
       animate={{opacity: 1, y: 0}}
       className={styles["scanStatsBar"]}>
-      <main className={styles["scanStatsContent"]}>
-        <main className={styles["scanStatsGroup"]}>
+      <div className={styles["scanStatsContent"]}>
+        <div className={styles["scanStatsGroup"]}>
           <StatsCard
             value={scans.length}
             label={t("stats.totalScans")}
@@ -80,7 +80,7 @@ function ScanStats(): React.JSX.Element | null {
             label={t("stats.selected")}
             colorClass='statsCardValuePurple'
           />
-        </main>
+        </div>
 
         {selectedScans.length === 0 && scans.length > 0 && (
           <p className={styles["selectHint"]}>
@@ -88,7 +88,7 @@ function ScanStats(): React.JSX.Element | null {
             <span className={styles["visibleMobile"]}>{t("stats.tapHint")}</span>
           </p>
         )}
-      </main>
+      </div>
     </motion.div>
   );
 }
@@ -104,12 +104,12 @@ function Sidebar(): React.JSX.Element | null {
   if (scans.length === 0) return null;
 
   return (
-    <main className={styles["sidebar"]}>
+    <div className={styles["sidebar"]}>
       {/* How to Use */}
       <Card>
         <CardContent className='p-4'>
           <h3 className={styles["sidebarTitle"]}>{t("sidebar.howTo.title")}</h3>
-          <main className={styles["howToList"]}>
+          <div className={styles["howToList"]}>
             <QuickTip
               icon={<TbClick className={styles["tipIcon"]} />}
               title={t("sidebar.howTo.step1Title")}
@@ -125,7 +125,7 @@ function Sidebar(): React.JSX.Element | null {
               title={t("sidebar.howTo.step3Title")}
               description={t("sidebar.howTo.step3Description")}
             />
-          </main>
+          </div>
         </CardContent>
       </Card>
 
@@ -136,11 +136,11 @@ function Sidebar(): React.JSX.Element | null {
           animate={{opacity: 1, scale: 1}}>
           <Card className='border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20'>
             <CardContent className='p-4'>
-              <main className={styles["selectionContent"]}>
-                <main className={styles["selectionIconCircle"]}>
+              <div className={styles["selectionContent"]}>
+                <div className={styles["selectionIconCircle"]}>
                   <TbCheck className={styles["selectionIcon"]} />
-                </main>
-                <main>
+                </div>
+                <div>
                   <p className={styles["selectionTitle"]}>
                     {selectedScans.length}{" "}
                     {selectedScans.length > 1 ? t("sidebar.selectionStatus.plural") : t("sidebar.selectionStatus.singular")}
@@ -148,8 +148,8 @@ function Sidebar(): React.JSX.Element | null {
                   <p className={styles["selectionDescription"]}>
                     {selectedScans.length > 1 ? t("sidebar.selectionStatus.readyPlural") : t("sidebar.selectionStatus.readySingular")}
                   </p>
-                </main>
-              </main>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -158,24 +158,24 @@ function Sidebar(): React.JSX.Element | null {
       {/* Quick Upload Link */}
       <Card>
         <CardContent className='p-4'>
-          <main className={styles["quickUploadContent"]}>
-            <main className={styles["quickUploadIconBox"]}>
+          <div className={styles["quickUploadContent"]}>
+            <div className={styles["quickUploadIconBox"]}>
               <TbPhoto className={styles["quickUploadIcon"]} />
-            </main>
-            <main className={styles["quickUploadTextBlock"]}>
+            </div>
+            <div className={styles["quickUploadTextBlock"]}>
               <p className={styles["quickUploadTitle"]}>{t("sidebar.quickUpload.title")}</p>
               <p className={styles["quickUploadDescription"]}>{t("sidebar.quickUpload.description")}</p>
-            </main>
+            </div>
             <Button
               asChild
               size='sm'
               variant='outline'>
               <Link href='/domains/invoices/upload-scans'>{t("sidebar.quickUpload.button")}</Link>
             </Button>
-          </main>
+          </div>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }
 
@@ -194,14 +194,14 @@ function ViewScansContent(): React.JSX.Element {
   return (
     <section className={styles["contentSection"]}>
       {/* Breadcrumb */}
-      <main className={styles["breadcrumb"]}>
+      <div className={styles["breadcrumb"]}>
         <Link
           href='/domains/invoices'
           className={styles["breadcrumbLink"]}>
           <TbArrowLeft className={styles["breadcrumbIcon"]} />
           {t("breadcrumb")}
         </Link>
-      </main>
+      </div>
 
       <ScansHeader />
 
@@ -209,20 +209,20 @@ function ViewScansContent(): React.JSX.Element {
       <ScanStats />
 
       {/* Main Content */}
-      <main className={`${styles["contentGrid"]} ${scans.length > 0 ? styles["contentGridWithSidebar"] : ""}`}>
+      <div className={`${styles["contentGrid"]} ${scans.length > 0 ? styles["contentGridWithSidebar"] : ""}`}>
         {/* Scans Grid - Takes 3 columns when there are scans */}
-        <main className={scans.length > 0 ? styles["mainAreaWithSidebar"] : ""}>
+        <div className={scans.length > 0 ? styles["mainAreaWithSidebar"] : ""}>
           <ScansGrid />
-        </main>
+        </div>
 
         {/* Sidebar */}
         <Sidebar />
-      </main>
+      </div>
 
       <ScanSelectionToolbar onCreateInvoice={handleOpenCreateInvoice} />
       <DialogContainer />
       {/* Add padding at bottom when toolbar is visible */}
-      {selectedScans.length > 0 ? <main className={styles["bottomSpacer"]} /> : null}
+      {selectedScans.length > 0 ? <div className={styles["bottomSpacer"]} /> : null}
     </section>
   );
 }

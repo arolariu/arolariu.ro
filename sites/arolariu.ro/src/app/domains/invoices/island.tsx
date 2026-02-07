@@ -66,15 +66,15 @@ function WorkflowCard({
       transition={{duration: 0.5, delay}}>
       <Card className='group relative h-full overflow-hidden border-2 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg dark:hover:border-indigo-700'>
         {/* Step number badge */}
-        <main
+        <div
           className={`${styles["stepBadge"]} bg-linear-to-br ${gradient}`}>
           {step}
-        </main>
+        </div>
 
         <CardHeader className='pb-2'>
-          <main className={`${styles["stepIconBox"]} bg-linear-to-br ${gradient}`}>
+          <div className={`${styles["stepIconBox"]} bg-linear-to-br ${gradient}`}>
             {icon}
-          </main>
+          </div>
           <CardTitle className='text-xl'>{title}</CardTitle>
           <CardDescription className='text-base'>{description}</CardDescription>
         </CardHeader>
@@ -101,15 +101,15 @@ function WorkflowCard({
  */
 function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <main className={styles["featureItem"]}>
-      <main className={styles["featureIconBox"]}>
+    <div className={styles["featureItem"]}>
+      <div className={styles["featureIconBox"]}>
         {icon}
-      </main>
-      <main>
+      </div>
+      <div>
         <h3 className={styles["featureTitle"]}>{title}</h3>
         <p className={styles["featureDescription"]}>{description}</p>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }
 
@@ -147,7 +147,7 @@ function BentoSection({
     <section
       ref={ref}
       className={styles["bentoSection"]}>
-      <main className={styles["bentoContainer"]}>
+      <div className={styles["bentoContainer"]}>
         {/* Section header */}
         <motion.div
           className={styles["workflowHeader"]}
@@ -159,7 +159,7 @@ function BentoSection({
         </motion.div>
 
         {/* Bento grid */}
-        <main className={styles["bentoGrid"]}>
+        <div className={styles["bentoGrid"]}>
           {bentoItemsConfig.map((item, index) => (
             <motion.div
               key={item.key}
@@ -169,7 +169,7 @@ function BentoSection({
               transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
               whileHover={{scale: 1.02}}>
               {/* Shimmer effect on hover */}
-              <main className={styles["shimmerOverlay"]} />
+              <div className={styles["shimmerOverlay"]} />
 
               {/* Floating particles */}
               <motion.div
@@ -184,20 +184,20 @@ function BentoSection({
               />
 
               {/* Content */}
-              <main className={styles["bentoContent"]}>
+              <div className={styles["bentoContent"]}>
                 <motion.div
                   whileHover={{scale: 1.1, rotate: 5}}
                   transition={{duration: 0.3}}>
                   <item.icon className={styles["bentoIcon"]} />
                 </motion.div>
-                <main>
+                <div>
                   <h3 className={styles["bentoItemTitle"]}>{translations.items[item.key].title}</h3>
                   <p className={styles["bentoItemDescription"]}>{translations.items[item.key].description}</p>
-                </main>
-              </main>
+                </div>
+              </div>
             </motion.div>
           ))}
-        </main>
+        </div>
 
         {/* Mobile highlight */}
         <motion.div
@@ -208,7 +208,7 @@ function BentoSection({
           <TbDeviceMobile className={styles["mobileIcon"]} />
           <span className={styles["mobileText"]}>{translations.mobile}</span>
         </motion.div>
-      </main>
+      </div>
     </section>
   );
 }
@@ -235,7 +235,7 @@ function EnhancedCTA({
       ref={ref}
       className={styles["ctaSection"]}>
       {/* Animated background */}
-      <main className={styles["ctaBackground"]}>
+      <div className={styles["ctaBackground"]}>
         {/* Floating orbs */}
         <motion.div
           className={styles["orbTopLeft"]}
@@ -262,11 +262,11 @@ function EnhancedCTA({
         />
 
         {/* Grid pattern overlay */}
-        <main className={styles["ctaGridPattern"]} />
-      </main>
+        <div className={styles["ctaGridPattern"]} />
+      </div>
 
       {/* Content */}
-      <main className={styles["ctaContent"]}>
+      <div className={styles["ctaContent"]}>
         {/* Sparkle icon */}
         <motion.div
           className={styles["ctaSparkle"]}
@@ -329,20 +329,20 @@ function EnhancedCTA({
           initial={{opacity: 0}}
           animate={isInView ? {opacity: 1} : {}}
           transition={{delay: 0.5, duration: 0.5}}>
-          <main className={styles["ctaBadge"]}>
+          <div className={styles["ctaBadge"]}>
             <TbLock className={styles["badgeIcon"]} />
             <span>{translations.badges.secure}</span>
-          </main>
-          <main className={styles["ctaBadge"]}>
+          </div>
+          <div className={styles["ctaBadge"]}>
             <TbCloud className={styles["badgeIcon"]} />
             <span>{translations.badges.cloud}</span>
-          </main>
-          <main className={styles["ctaBadge"]}>
+          </div>
+          <div className={styles["ctaBadge"]}>
             <TbBrain className={styles["badgeIcon"]} />
             <span>{translations.badges.ai}</span>
-          </main>
+          </div>
         </motion.div>
-      </main>
+      </div>
     </section>
   );
 }
@@ -388,13 +388,13 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
   };
 
   return (
-    <main className={styles["page"]}>
+    <div className={styles["page"]}>
       {/* Hero Section */}
       <section className={styles["heroSection"]}>
-        <main className={styles["heroContainer"]}>
-          <main className={styles["heroFlex"]}>
+        <div className={styles["heroContainer"]}>
+          <div className={styles["heroFlex"]}>
             {/* Left: Content */}
-            <main className={styles["heroContent"]}>
+            <div className={styles["heroContent"]}>
               <motion.div
                 initial={{opacity: 0, y: 20}}
                 animate={{opacity: 1, y: 0}}
@@ -408,7 +408,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 </h1>
                 <p className={styles["heroDescription"]}>{t("hero.description")}</p>
 
-                <main className={styles["heroButtons"]}>
+                <div className={styles["heroButtons"]}>
                   <Button
                     asChild
                     size='lg'
@@ -429,9 +429,9 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                       </Link>
                     </Button>
                   ) : null}
-                </main>
+                </div>
               </motion.div>
-            </main>
+            </div>
 
             {/* Right: Image */}
             <motion.div
@@ -448,13 +448,13 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 priority
               />
             </motion.div>
-          </main>
-        </main>
+          </div>
+        </div>
       </section>
 
       {/* Workflow Section */}
       <section className={styles["workflowSection"]}>
-        <main className={styles["workflowContainer"]}>
+        <div className={styles["workflowContainer"]}>
           <motion.div
             className={styles["workflowHeader"]}
             initial={{opacity: 0, y: 20}}
@@ -464,7 +464,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
             <p className={styles["sectionDescription"]}>{t("workflow.description")}</p>
           </motion.div>
 
-          <main className={styles["workflowGrid"]}>
+          <div className={styles["workflowGrid"]}>
             <WorkflowCard
               step={1}
               title={t("workflow.step1.title")}
@@ -497,14 +497,14 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               gradient='from-green-500 to-emerald-500'
               delay={0.3}
             />
-          </main>
-        </main>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
       <section className={styles["featuresSection"]}>
-        <main className={styles["featuresContainer"]}>
-          <main className={styles["featuresFlex"]}>
+        <div className={styles["featuresContainer"]}>
+          <div className={styles["featuresFlex"]}>
             {/* Left: Image */}
             <motion.div
               className={styles["featuresImageWrapper"]}
@@ -526,12 +526,12 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               initial={{opacity: 0, x: 20}}
               animate={{opacity: 1, x: 0}}
               transition={{duration: 0.6, delay: 0.2}}>
-              <main className={styles["featuresHeader"]}>
+              <div className={styles["featuresHeader"]}>
                 <h2 className={styles["sectionTitle"]}>{t("features.title")}</h2>
                 <p className={styles["sectionDescription"]}>{t("features.description")}</p>
-              </main>
+              </div>
 
-              <main className={styles["featuresList"]}>
+              <div className={styles["featuresList"]}>
                 <FeatureItem
                   icon={<TbPhoto className={styles["featureIcon"]} />}
                   title={t("features.ocr.title")}
@@ -547,18 +547,18 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                   title={t("features.batch.title")}
                   description={t("features.batch.description")}
                 />
-              </main>
+              </div>
 
               {!isAuthenticated && (
-                <main className={styles["signInPrompt"]}>
+                <div className={styles["signInPrompt"]}>
                   <p className={styles["signInPromptText"]}>
                     <strong>Sign in</strong> {t("features.signInPrompt")}
                   </p>
-                </main>
+                </div>
               )}
             </motion.div>
-          </main>
-        </main>
+          </div>
+        </div>
       </section>
 
       {/* Bento Grid Section */}
@@ -568,7 +568,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       <EnhancedCTA translations={ctaTranslations} />
 
       {/* Footer spacing */}
-      <main className={styles["footerSpacing"]} />
-    </main>
+      <div className={styles["footerSpacing"]} />
+    </div>
   );
 }

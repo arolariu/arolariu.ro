@@ -39,14 +39,14 @@ import styles from "./loading.module.scss";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className={styles["page"]}>
+    <div className={styles["page"]}>
       {/* Hero Section Skeleton */}
       <section className={styles["heroSection"]}>
         {/* Top SVG Illustration Skeleton */}
         <Skeleton className={styles["heroImage"]} />
 
         {/* Content Area */}
-        <main className={styles["contentArea"]}>
+        <div className={styles["contentArea"]}>
           {/* Title Skeleton */}
           <Skeleton className={`${styles["titleSkeleton"]} h-10 w-3/4 sm:h-12`} />
 
@@ -58,45 +58,45 @@ export default function Loading(): React.JSX.Element {
           </article>
 
           {/* CTA Buttons Skeleton */}
-          <main className={styles["ctaRow"]}>
+          <div className={styles["ctaRow"]}>
             <Skeleton className='h-11 w-40 rounded' />
             <Skeleton className='h-11 w-32 rounded' />
-          </main>
-        </main>
+          </div>
+        </div>
       </section>
 
       {/* Steps and Bottom Image Section Skeleton */}
       <section className={styles["stepsSection"]}>
         {/* Steps Timeline Skeleton */}
-        <main className={styles["stepsTimeline"]}>
+        <div className={styles["stepsTimeline"]}>
           {/* 5 Steps */}
           {[1, 2, 3, 4, 5].map((stepNumber) => (
-            <main
+            <div
               className={styles["stepItem"]}
               key={`step-${stepNumber}`}>
               {/* Vertical Line */}
-              <main className={styles["stepLine"]}>
-                {stepNumber < 5 && <main className={styles["stepLineBar"]} />}
-              </main>
+              <div className={styles["stepLine"]}>
+                {stepNumber < 5 && <div className={styles["stepLineBar"]} />}
+              </div>
 
               {/* Circle Icon */}
               <Skeleton className='relative z-10 h-10 w-10 shrink-0 rounded-full' />
 
               {/* Step Content */}
-              <main className={styles["stepContent"]}>
+              <div className={styles["stepContent"]}>
                 <Skeleton className='h-4 w-32' />
                 <Skeleton className='h-3 w-full' />
                 <Skeleton className='h-3 w-5/6' />
-              </main>
-            </main>
+              </div>
+            </div>
           ))}
-        </main>
+        </div>
 
         {/* Bottom SVG Illustration Skeleton */}
-        <main>
+        <div>
           <Skeleton className={styles["heroImage"]} />
-        </main>
+        </div>
       </section>
-    </main>
+    </div>
   );
 }

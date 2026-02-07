@@ -87,7 +87,7 @@ export default function Loading(): React.JSX.Element {
       </div>
 
       {/* ========== Bottom Nav (mobile/tablet, mirrors 7 tab icons) ========== */}
-      <nav className={styles["bottomNav"]}>
+      <div className={styles["bottomNav"]}>
         {Array.from({length: 7}).map((_, index) => (
           <div
             key={`bottom-nav-${index.toString()}`}
@@ -96,7 +96,7 @@ export default function Loading(): React.JSX.Element {
             <Skeleton className='h-2 w-8' />
           </div>
         ))}
-      </nav>
+      </div>
     </div>
   );
 }

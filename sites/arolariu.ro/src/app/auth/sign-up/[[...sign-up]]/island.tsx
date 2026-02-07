@@ -11,28 +11,28 @@ import styles from "./island.module.scss";
 /** Skeleton displayed while Clerk's SignUp component is mounting */
 function ClerkSkeleton(): React.JSX.Element {
   return (
-    <main className={styles["clerkSkeleton"]}>
-      <main className={styles["clerkSkeletonHeader"]}>
-        <main className={`${styles["clerkSkeletonLogo"]} ${styles["clerkShimmer"]}`} />
-        <main className={`${styles["clerkSkeletonTitle"]} ${styles["clerkShimmer"]}`} />
-        <main className={`${styles["clerkSkeletonSubtitle"]} ${styles["clerkShimmer"]}`} />
-      </main>
-      <main className={styles["clerkSkeletonSocial"]}>
-        <main className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
-        <main className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
-        <main className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
-      </main>
-      <main className={`${styles["clerkSkeletonDivider"]} ${styles["clerkShimmer"]}`} />
+    <div className={styles["clerkSkeleton"]}>
+      <div className={styles["clerkSkeletonHeader"]}>
+        <div className={`${styles["clerkSkeletonLogo"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonTitle"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonSubtitle"]} ${styles["clerkShimmer"]}`} />
+      </div>
+      <div className={styles["clerkSkeletonSocial"]}>
+        <div className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
+        <div className={`${styles["clerkSkeletonSocialButton"]} ${styles["clerkShimmer"]}`} />
+      </div>
+      <div className={`${styles["clerkSkeletonDivider"]} ${styles["clerkShimmer"]}`} />
       {/* SignUp has more fields: email, password, first name, last name */}
-      <main className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
-      <main className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
-      <main className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
-      <main className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
-      <main className={`${styles["clerkSkeletonButton"]} ${styles["clerkShimmer"]}`} />
-      <main className={styles["clerkSkeletonFooter"]}>
-        <main className={`${styles["clerkSkeletonFooterText"]} ${styles["clerkShimmer"]}`} />
-      </main>
-    </main>
+      <div className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
+      <div className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
+      <div className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
+      <div className={`${styles["clerkSkeletonInput"]} ${styles["clerkShimmer"]}`} />
+      <div className={`${styles["clerkSkeletonButton"]} ${styles["clerkShimmer"]}`} />
+      <div className={styles["clerkSkeletonFooter"]}>
+        <div className={`${styles["clerkSkeletonFooterText"]} ${styles["clerkShimmer"]}`} />
+      </div>
+    </div>
   );
 }
 
@@ -75,8 +75,8 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
   const trust = useTranslations("Authentication.Island.trust");
 
   return (
-    <main className={styles["grid"]}>
-      <main className={styles["column"]}>
+    <div className={styles["grid"]}>
+      <div className={styles["column"]}>
         <AuthMarketingPanel
           title={t("hero.title")}
           subtitle={t("hero.subtitle")}
@@ -85,9 +85,9 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
           bullets={[t("bullets.first"), t("bullets.second"), t("bullets.third")]}
           trustBadges={[trust("oauth"), trust("session"), trust("privacy")]}
         />
-      </main>
+      </div>
 
-      <main className={styles["column"]}>
+      <div className={styles["column"]}>
         <AuthFormShell
           kicker={t("form.kicker")}
           secondaryPrompt={t("form.secondaryPrompt")}
@@ -100,7 +100,7 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
             animate='visible'
             className={styles["formContainer"]}>
             {/* Background glow */}
-            <main
+            <div
               aria-hidden='true'
               className={`${styles["glow"]} ${styles["glowBackground"]}`}
             />
@@ -115,7 +115,7 @@ export default function RenderAuthSignUpPage(): React.JSX.Element {
             </motion.div>
           </motion.div>
         </AuthFormShell>
-      </main>
-    </main>
+      </div>
+    </div>
   );
 }

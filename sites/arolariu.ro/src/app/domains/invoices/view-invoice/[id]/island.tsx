@@ -46,66 +46,66 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
       invoice={invoice}
       merchant={merchant}>
       <DialogProvider>
-        <main className={styles["container"]}>
+        <div className={styles["container"]}>
           {/* Header */}
-          <main className={styles["headerSection"]}>
+          <div className={styles["headerSection"]}>
             {Boolean(!isOwner && !isLoadingUserInformation) && <InvoiceGuestBanner />}
             <InvoiceHeader />
-          </main>
+          </div>
 
-          <main className={styles["mainGrid"]}>
+          <div className={styles["mainGrid"]}>
             {/* Left Column - Timeline (hidden on mobile, shown on lg+) */}
-            <main className={styles["leftColumn"]}>
-              <main className={styles["leftColumnSticky"]}>
+            <div className={styles["leftColumn"]}>
+              <div className={styles["leftColumnSticky"]}>
                 <InvoiceTimeline />
-              </main>
-            </main>
+              </div>
+            </div>
 
             {/* Main Content - Center Column */}
-            <main className={styles["centerColumn"]}>
-              <main className={styles["centerItem"]}>
+            <div className={styles["centerColumn"]}>
+              <div className={styles["centerItem"]}>
                 <InvoiceDetailsCard />
-              </main>
+              </div>
 
-              <main className={styles["centerItem"]}>
+              <div className={styles["centerItem"]}>
                 <CategoryInsightsCardContainer />
-              </main>
+              </div>
 
-              <main className={styles["centerItem"]}>
+              <div className={styles["centerItem"]}>
                 <InvoiceTabs />
-              </main>
+              </div>
 
               {/* Timeline on mobile/tablet (shown below main content) */}
-              <main className={styles["mobileTimeline"]}>
+              <div className={styles["mobileTimeline"]}>
                 <InvoiceTimeline />
-              </main>
-            </main>
+              </div>
+            </div>
 
             {/* Sidebar - Right Column */}
-            <main className={styles["rightColumn"]}>
-              <main className={styles["rightItem"]}>
+            <div className={styles["rightColumn"]}>
+              <div className={styles["rightItem"]}>
                 <ReceiptScanCard />
-              </main>
-              <main className={styles["rightItem"]}>
+              </div>
+              <div className={styles["rightItem"]}>
                 {Boolean(isOwner && !isLoadingUserInformation) && <ShoppingCalendarCard />}
-              </main>
-              <main className={styles["rightItem"]}>
+              </div>
+              <div className={styles["rightItem"]}>
                 {Boolean(isOwner && !isLoadingUserInformation) && <BudgetImpactCard />}
-              </main>
-              <main className={styles["rightItem"]}>
+              </div>
+              <div className={styles["rightItem"]}>
                 {Boolean(isOwner && !isLoadingUserInformation) && <SeasonalInsightsCard />}
-              </main>
-              <main className={styles["rightItem"]}>
+              </div>
+              <div className={styles["rightItem"]}>
                 <MerchantInfoCard />
-              </main>
-            </main>
-          </main>
+              </div>
+            </div>
+          </div>
 
           {/* Analytics Section */}
-          <main className={styles["analyticsSection"]}>
+          <div className={styles["analyticsSection"]}>
             <InvoiceAnalytics />
-          </main>
-        </main>
+          </div>
+        </div>
         <DialogContainer />
       </DialogProvider>
     </InvoiceContextProvider>

@@ -6,32 +6,32 @@ import styles from "./loading.module.scss";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <main className={styles["wrapper"]}>
+    <div className={styles["wrapper"]}>
       <section className={styles["container"]}>
         {/* Header skeleton */}
-        <main className={styles["headerRow"]}>
-          <main>
+        <div className={styles["headerRow"]}>
+          <div>
             <Skeleton style={{height: "2rem", width: "12rem", marginBottom: "0.5rem"}} />
             <Skeleton style={{height: "1rem", width: "8rem"}} />
-          </main>
+          </div>
           <Skeleton style={{height: "2.5rem", width: "10rem"}} />
-        </main>
+        </div>
 
         {/* Grid skeleton */}
-        <main className={styles["grid"]}>
+        <div className={styles["grid"]}>
           {Array.from({length: 8}).map((_, i) => (
-            <main
+            <div
               key={`skeleton-${String(i)}`}
               className={styles["skeletonCard"]}>
               <Skeleton style={{aspectRatio: "4 / 3"}} />
-              <main className={styles["skeletonCardBody"]}>
+              <div className={styles["skeletonCardBody"]}>
                 <Skeleton style={{height: "1rem", width: "75%", marginBottom: "0.5rem"}} />
                 <Skeleton style={{height: "0.75rem", width: "50%"}} />
-              </main>
-            </main>
+              </div>
+            </div>
           ))}
-        </main>
+        </div>
       </section>
-    </main>
+    </div>
   );
 }

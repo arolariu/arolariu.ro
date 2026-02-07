@@ -146,7 +146,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
   };
 
   return (
-    <main className={styles["page"]}>
+    <section className={styles["page"]}>
       {/* Bento Grid Header Section */}
       <section className={styles["bentoGrid"]}>
         <div className={styles["bentoProfileCard"]}>
@@ -222,6 +222,6 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
           </button>
         ))}
       </nav>
-    </main>
+    </section>
   );
 }

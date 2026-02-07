@@ -11,54 +11,54 @@ import styles from "./loading.module.scss";
 
 export default function Loading(): React.JSX.Element {
   return (
-    <main className={styles["page"]}>
+    <div className={styles["page"]}>
       {/* Hero section skeleton */}
       <section className={styles["heroSection"]}>
-        <main className={styles["heroContainer"]}>
-          <main className={styles["heroGrid"]}>
+        <div className={styles["heroContainer"]}>
+          <div className={styles["heroGrid"]}>
             {/* Left side - Text */}
-            <main className={styles["heroText"]}>
+            <div className={styles["heroText"]}>
               <Skeleton className={styles["heroBadge"]} />
               <h1 className={styles["heroTitle"]}>Loading...</h1>
               <Skeleton className={styles["heroLine"]} />
               <Skeleton className={styles["heroLine"]} />
-              <main className={styles["heroButtons"]}>
+              <div className={styles["heroButtons"]}>
                 <Skeleton className={styles["heroButton"]} />
                 <Skeleton className={styles["heroButton"]} />
-              </main>
-            </main>
+              </div>
+            </div>
 
             {/* Right side - Sphere placeholder */}
-            <main className={styles["heroVisual"]}>
-              <main className={styles["sphereWrapper"]}>
+            <div className={styles["heroVisual"]}>
+              <div className={styles["sphereWrapper"]}>
                 <Skeleton className={styles["sphere"]} />
-                <main className={styles["orbitRing"]} />
-                <main className={styles["orbitRingReverse"]} />
-              </main>
-            </main>
-          </main>
-        </main>
+                <div className={styles["orbitRing"]} />
+                <div className={styles["orbitRingReverse"]} />
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Technology cards section */}
       <section className={styles["cardsSection"]}>
-        <main className={styles["cardsContainer"]}>
-          <main className={styles["cardsHeader"]}>
+        <div className={styles["cardsContainer"]}>
+          <div className={styles["cardsHeader"]}>
             <Skeleton className={styles["cardsHeaderBadge"]} />
             <Skeleton className={styles["cardsHeaderTitle"]} />
             <Skeleton className={styles["cardsHeaderSubtitle"]} />
-          </main>
+          </div>
 
-          <main className={styles["cardsGrid"]}>
+          <div className={styles["cardsGrid"]}>
             {[1, 2, 3, 4, 5, 6].map((key) => (
               <Skeleton
                 key={key}
                 className={styles["cardSkeleton"]}
               />
             ))}
-          </main>
-        </main>
+          </div>
+        </div>
       </section>
-    </main>
+    </div>
   );
 }
