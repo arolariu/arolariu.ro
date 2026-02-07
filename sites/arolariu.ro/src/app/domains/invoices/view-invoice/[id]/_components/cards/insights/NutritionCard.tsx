@@ -17,6 +17,7 @@ import {
 import {useLocale} from "next-intl";
 import {TbAlertTriangle, TbApple, TbBulb, TbLeaf, TbMeat, TbMilk, TbWheat} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
+import styles from "./NutritionCard.module.scss";
 
 type FoodGroup = {
   name: string;
@@ -161,10 +162,10 @@ export function NutritionCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-6'>
         {/* Food Balance Score */}
-        <main className='space-y-2'>
-          <main className='flex items-center justify-between'>
-            <span className='text-sm font-medium'>Food Balance Score</span>
-            <span className={`text-sm font-semibold ${scoreColor}`}>
+        <main className={styles["scoreSection"]}>
+          <main className={styles["scoreRow"]}>
+            <span className={styles["scoreLabel"]}>Food Balance Score</span>
+            <span className={`${styles["scoreLabel"]} ${scoreColor}`}>
               {balanceScore}/100 - {scoreLabel}
             </span>
           </main>
@@ -175,69 +176,69 @@ export function NutritionCard(): React.JSX.Element {
         </main>
 
         {/* Basket Composition */}
-        <main className='space-y-3'>
-          <h4 className='text-muted-foreground text-sm font-medium tracking-wide uppercase'>Your Basket Composition</h4>
-          <main className='space-y-2'>
-            <main className='flex items-center gap-3'>
+        <main className={styles["compositionSection"]}>
+          <h4 className={styles["compositionTitle"]}>Your Basket Composition</h4>
+          <main className={styles["compositionList"]}>
+            <main className={styles["compositionRow"]}>
               <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
-              <span className='w-24 shrink-0 text-sm'>Whole Foods</span>
-              <main className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
+              <span className={styles["compositionLabel"]}>Whole Foods</span>
+              <main className={styles["progressTrack"]}>
                 <main
-                  className='h-full bg-green-500 transition-all'
+                  className={`${styles["progressBar"]} bg-green-500`}
                   style={{width: `${wholeFoodPct}%`}}
                 />
               </main>
-              <span className='text-muted-foreground w-10 text-right text-sm'>{wholeFoodPct}%</span>
+              <span className={styles["compositionPct"]}>{wholeFoodPct}%</span>
             </main>
-            <main className='flex items-center gap-3'>
+            <main className={styles["compositionRow"]}>
               <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
-              <span className='w-24 shrink-0 text-sm'>Processed</span>
-              <main className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
+              <span className={styles["compositionLabel"]}>Processed</span>
+              <main className={styles["progressTrack"]}>
                 <main
-                  className='h-full bg-amber-500 transition-all'
+                  className={`${styles["progressBar"]} bg-amber-500`}
                   style={{width: `${processedPct}%`}}
                 />
               </main>
-              <span className='text-muted-foreground w-10 text-right text-sm'>{processedPct}%</span>
+              <span className={styles["compositionPct"]}>{processedPct}%</span>
             </main>
-            <main className='flex items-center gap-3'>
+            <main className={styles["compositionRow"]}>
               <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
-              <span className='w-24 shrink-0 text-sm'>Dairy/Other</span>
-              <main className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
+              <span className={styles["compositionLabel"]}>Dairy/Other</span>
+              <main className={styles["progressTrack"]}>
                 <main
-                  className='h-full bg-blue-500 transition-all'
+                  className={`${styles["progressBar"]} bg-blue-500`}
                   style={{width: `${dairySnackPct}%`}}
                 />
               </main>
-              <span className='text-muted-foreground w-10 text-right text-sm'>{dairySnackPct}%</span>
+              <span className={styles["compositionPct"]}>{dairySnackPct}%</span>
             </main>
           </main>
         </main>
 
         {/* Food Groups Grid */}
-        <main className='grid grid-cols-2 gap-3'>
+        <main className={styles["foodGroupsGrid"]}>
           {foodGroups.map((group) => (
             <main
               key={group.name}
-              className='bg-card rounded-lg border p-3 text-center'>
-              <main className='mb-1 flex justify-center'>{group.icon}</main>
-              <p className='text-muted-foreground text-xs'>{group.name}</p>
-              <p className='text-sm font-semibold'>
+              className={styles["foodGroupCard"]}>
+              <main className={styles["foodGroupIconRow"]}>{group.icon}</main>
+              <p className={styles["foodGroupName"]}>{group.name}</p>
+              <p className={styles["foodGroupCount"]}>
                 {group.items} item{group.items === 1 ? "" : "s"}
               </p>
-              <p className='text-muted-foreground text-xs'>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
+              <p className={styles["foodGroupAmount"]}>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
             </main>
           ))}
         </main>
 
         {/* Allergens */}
         {allergens.length > 0 && (
-          <main className='space-y-2'>
-            <main className='flex items-center gap-2'>
+          <main className={styles["allergensSection"]}>
+            <main className={styles["allergensHeader"]}>
               <TbAlertTriangle className='h-4 w-4 text-amber-500' />
-              <h4 className='text-sm font-medium'>Allergens Detected</h4>
+              <h4 className={styles["allergensTitle"]}>Allergens Detected</h4>
             </main>
-            <main className='flex flex-wrap gap-2'>
+            <main className={styles["allergensList"]}>
               <TooltipProvider>
                 {allergens.map(([name, count]) => (
                   <Tooltip key={name}>
@@ -263,9 +264,9 @@ export function NutritionCard(): React.JSX.Element {
         )}
 
         {/* Suggestion */}
-        <main className='bg-muted/50 flex items-start gap-2 rounded-lg p-3'>
+        <main className={styles["suggestionBox"]}>
           <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
-          <p className='text-muted-foreground text-sm'>{suggestion}</p>
+          <p className={styles["suggestionText"]}>{suggestion}</p>
         </main>
       </CardContent>
     </Card>

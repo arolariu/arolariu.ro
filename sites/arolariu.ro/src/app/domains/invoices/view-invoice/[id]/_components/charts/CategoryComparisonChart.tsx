@@ -3,6 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {CategoryTrendData} from "../../_utils/analytics";
+import styles from "./CategoryComparisonChart.module.scss";
 
 type Props = {
   readonly data: CategoryTrendData[];
@@ -24,18 +25,18 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
-      <p className='text-sm font-medium'>{data.category}</p>
-      <main className='mt-1 space-y-0.5'>
-        <p className='text-xs'>
-          <span className='text-muted-foreground'>Current: </span>
-          <span className='font-medium'>
+    <main className={styles["tooltip"]}>
+      <p className={styles["tooltipName"]}>{data.category}</p>
+      <main className={styles["tooltipDetails"]}>
+        <p className={styles["tooltipRow"]}>
+          <span className={styles["tooltipLabel"]}>Current: </span>
+          <span className={styles["tooltipValue"]}>
             {data.current.toFixed(2)} {currency}
           </span>
         </p>
-        <p className='text-xs'>
-          <span className='text-muted-foreground'>Average: </span>
-          <span className='font-medium'>
+        <p className={styles["tooltipRow"]}>
+          <span className={styles["tooltipLabel"]}>Average: </span>
+          <span className={styles["tooltipValue"]}>
             {data.average.toFixed(2)} {currency}
           </span>
         </p>

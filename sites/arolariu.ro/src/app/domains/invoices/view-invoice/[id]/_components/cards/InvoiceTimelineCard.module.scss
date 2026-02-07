@@ -1,0 +1,65 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.dateGroup {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.dateLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+}
+
+.eventsColumn {
+  border-left: 2px solid color('border');
+  padding-left: space(4);
+
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.eventItem {
+  position: relative;
+}
+
+.eventDot {
+  position: absolute;
+  left: calc(-1 * space(4) - 9px);
+  @include flex-center;
+  height: space(4);
+  width: space(4);
+  border-radius: radius('full');
+  background-color: color('primary');
+  color: color('primary-foreground');
+}
+
+.eventContent {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: space(2);
+}
+
+.eventDetails {
+  min-width: 0;
+}
+
+.eventTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  line-height: line-height('tight');
+}
+
+.eventDescription {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.eventDate {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  flex-shrink: 0;
+}

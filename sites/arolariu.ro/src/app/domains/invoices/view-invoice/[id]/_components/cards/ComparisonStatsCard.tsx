@@ -3,6 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, cn, Progress} from "@arolariu/components";
 import {TbBuildingStore, TbMinus, TbShoppingBag, TbTarget, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {ComparisonStats} from "../../_utils/analytics";
+import styles from "./ComparisonStatsCard.module.scss";
 
 type Props = {
   stats: ComparisonStats;
@@ -32,13 +33,13 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Current vs Average */}
-        <main className='space-y-2'>
-          <main className='flex items-center justify-between'>
-            <main className='flex items-center gap-2'>
+        <main className={styles["section"]}>
+          <main className={styles["row"]}>
+            <main className={styles["rowWithIcon"]}>
               <TbTarget className='text-muted-foreground h-4 w-4' />
-              <span className='text-sm'>vs Average</span>
+              <span className={styles["label"]}>vs Average</span>
             </main>
-            <main className='flex items-center gap-1'>
+            <main className={styles["trendRow"]}>
               {getTrendIcon(stats.percentageDiff)}
               <span className={cn("text-sm font-medium", getTrendColor(stats.percentageDiff))}>
                 {stats.percentageDiff > 0 ? "+" : ""}
@@ -46,7 +47,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
               </span>
             </main>
           </main>
-          <main className='text-muted-foreground flex justify-between text-xs'>
+          <main className={styles["mutedRow"]}>
             <span>
               Avg: {stats.averageAmount.toFixed(2)} {currency}
             </span>
@@ -57,8 +58,8 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
         </main>
 
         {/* Spending Range Progress */}
-        <main className='space-y-2'>
-          <main className='text-muted-foreground flex justify-between text-xs'>
+        <main className={styles["section"]}>
+          <main className={styles["mutedRow"]}>
             <span>Min: {stats.minAmount.toFixed(0)}</span>
             <span>Max: {stats.maxAmount.toFixed(0)}</span>
           </main>
@@ -66,44 +67,44 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
             value={percentageProgress}
             className='h-2'
           />
-          <p className='text-muted-foreground text-center text-xs'>Your position in spending range</p>
+          <p className={styles["positionLabel"]}>Your position in spending range</p>
         </main>
 
         {/* Item Count Comparison */}
-        <main className='flex items-center justify-between border-t pt-2'>
-          <main className='flex items-center gap-2'>
+        <main className={styles["borderTopRow"]}>
+          <main className={styles["rowWithIcon"]}>
             <TbShoppingBag className='text-muted-foreground h-4 w-4' />
-            <span className='text-sm'>Item Count</span>
+            <span className={styles["label"]}>Item Count</span>
           </main>
-          <main className='text-right'>
-            <main className='flex items-center gap-1'>
+          <main className={styles["rightAlign"]}>
+            <main className={styles["trendRow"]}>
               {getTrendIcon(stats.itemCountDiff)}
               <span className={cn("text-sm font-medium", getTrendColor(stats.itemCountDiff))}>
                 {stats.itemCountDiff > 0 ? "+" : ""}
                 {stats.itemCountDiff}%
               </span>
             </main>
-            <span className='text-muted-foreground text-xs'>
+            <span className={styles["subLabel"]}>
               {stats.currentItemCount} vs avg {stats.averageItemCount}
             </span>
           </main>
         </main>
 
         {/* Same Merchant Comparison */}
-        <main className='flex items-center justify-between border-t pt-2'>
-          <main className='flex items-center gap-2'>
+        <main className={styles["borderTopRow"]}>
+          <main className={styles["rowWithIcon"]}>
             <TbBuildingStore className='text-muted-foreground h-4 w-4' />
-            <span className='text-sm'>Same Store</span>
+            <span className={styles["label"]}>Same Store</span>
           </main>
-          <main className='text-right'>
-            <main className='flex items-center gap-1'>
+          <main className={styles["rightAlign"]}>
+            <main className={styles["trendRow"]}>
               {getTrendIcon(stats.sameMerchantDiff)}
               <span className={cn("text-sm font-medium", getTrendColor(stats.sameMerchantDiff))}>
                 {stats.sameMerchantDiff > 0 ? "+" : ""}
                 {stats.sameMerchantDiff}%
               </span>
             </main>
-            <span className='text-muted-foreground text-xs'>
+            <span className={styles["subLabel"]}>
               vs avg {stats.sameMerchantAvg.toFixed(0)} {currency}
             </span>
           </main>

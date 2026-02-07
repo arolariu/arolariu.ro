@@ -4,6 +4,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContaine
 import {useCallback} from "react";
 import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {QuantityData} from "../../_utils/analytics";
+import styles from "./ItemsBreakdownChart.module.scss";
 
 type Props = {
   readonly data: QuantityData[];
@@ -25,12 +26,12 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
-      <p className='text-sm font-medium'>{data.fullName ?? data.name}</p>
-      <p className='text-muted-foreground text-sm'>
+    <main className={styles["tooltip"]}>
+      <p className={styles["tooltipName"]}>{data.fullName ?? data.name}</p>
+      <p className={styles["tooltipPrice"]}>
         {data.price.toFixed(2)} {currency}
       </p>
-      <p className='text-muted-foreground text-xs'>
+      <p className={styles["tooltipQty"]}>
         Qty: {data.quantity} {data.unit}
       </p>
     </main>

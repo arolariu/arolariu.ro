@@ -1,0 +1,117 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.tooltipBorder {
+  border-top: 1px solid color('border');
+  padding-top: space(1);
+}
+
+.invoiceName {
+  color: color('muted-foreground');
+  @include truncate;
+}
+
+.moreText {
+  color: color('muted-foreground');
+}
+
+.historicalRow {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  border-top: 1px solid color('border');
+  padding-top: space(1);
+}
+
+.tooltipLabel {
+  font-weight: font-weight('semibold');
+}
+
+.tooltipCount {
+  color: color('muted-foreground');
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.legendBlocks {
+  display: flex;
+  gap: space(0.5);
+}
+
+.legendBlock {
+  height: space(3);
+  width: space(3);
+  border-radius: radius('sm');
+}
+
+.legendBlock1 {
+  background-color: color-alpha('muted', 0.5);
+}
+
+.legendBlock2 {
+  background-color: color-alpha('primary', 0.2);
+}
+
+.legendBlock3 {
+  background-color: color-alpha('primary', 0.4);
+}
+
+.legendBlock4 {
+  background-color: color-alpha('primary', 0.6);
+}
+
+.legendBlock5 {
+  background-color: color-alpha('primary', 0.8);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: space(3);
+  width: 100%;
+  font-size: font-size('sm');
+}
+
+.statBox {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  padding: space(2);
+}
+
+.statLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.statValue {
+  font-weight: font-weight('medium');
+}
+
+.insightBox {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  width: 100%;
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  padding: space(3);
+}
+
+.insightText {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.insightHighlight {
+  color: color('foreground');
+  font-weight: font-weight('medium');
+}

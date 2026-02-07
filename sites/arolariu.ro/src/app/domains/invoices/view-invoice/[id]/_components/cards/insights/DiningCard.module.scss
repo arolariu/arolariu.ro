@@ -1,0 +1,120 @@
+@use '../../../../../../../../styles/abstracts' as *;
+
+.sectionTitle {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.nutritionGrid {
+  @include grid(2, space(2));
+}
+
+.nutritionItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(2);
+}
+
+.nutritionLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.nutritionValue {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.habitsGrid {
+  @include grid(3, space(2));
+}
+
+.habitCard {
+  background-color: color('card');
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(3);
+  text-align: center;
+}
+
+.habitLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.habitValue {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.habitSub {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.swapsHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.swapsTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.swapsList {
+  & > * + * {
+    margin-top: space(1.5);
+  }
+}
+
+.swapItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.swapBullet {
+  color: color('muted-foreground');
+}
+
+.swapSaving {
+  font-weight: font-weight('medium');
+  color: #16a34a;
+}
+
+.challengeBox {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  border-radius: radius('lg');
+  border: 1px solid rgba(#c084fc, 0.3);
+  background: linear-gradient(to right, rgba(#a855f7, 0.1), rgba(#ec4899, 0.1));
+  padding: space(3);
+
+  @include dark {
+    border-color: rgba(#7e22ce, 1);
+  }
+}
+
+.challengeTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.challengeDescription {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.challengeHighlight {
+  font-weight: font-weight('semibold');
+  color: #9333ea;
+}

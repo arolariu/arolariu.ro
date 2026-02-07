@@ -20,6 +20,7 @@ import {
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
+import styles from "./ShareAnalyticsDialog.module.scss";
 
 /**
  * Dialog for sharing spending analytics via image download, clipboard, or email.
@@ -128,18 +129,18 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
           <TabsContent
             value='image'
             className='py-4'>
-            <main className='space-y-4'>
-              <p className='text-muted-foreground text-sm'>
+            <main className={styles["contentSection"]}>
+              <p className={styles["description"]}>
                 Download or copy the analytics graph as a PNG image that you can share or save.
               </p>
-              <main className='flex justify-center'>
-                <main className='w-full max-w-xs rounded-md border p-4'>
-                  <main className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</main>
+              <main className={styles["previewContainer"]}>
+                <main className={styles["previewBox"]}>
+                  <main className={styles["previewPlaceholder"]}>Analytics Preview</main>
                 </main>
               </main>
             </main>
             <DialogFooter className='mt-4'>
-              <main className='flex w-full flex-col gap-2'>
+              <main className={styles["footerButtons"]}>
                 <Button
                   onClick={handleDownloadImage}
                   className='w-full'>
@@ -160,9 +161,9 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
           <TabsContent
             value='email'
             className='py-4'>
-            <main className='space-y-4'>
-              <p className='text-muted-foreground text-sm'>Send the analytics to an email address.</p>
-              <main className='space-y-2'>
+            <main className={styles["contentSection"]}>
+              <p className={styles["description"]}>Send the analytics to an email address.</p>
+              <main className={styles["emailSection"]}>
                 <Label htmlFor='email'>Email address</Label>
                 <Input
                   id='email'

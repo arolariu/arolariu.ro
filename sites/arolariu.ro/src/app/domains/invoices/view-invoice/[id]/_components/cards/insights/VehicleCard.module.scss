@@ -1,0 +1,139 @@
+@use '../../../../../../../../styles/abstracts' as *;
+
+.expenseType {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.expenseTypeLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.detailsGrid {
+  @include grid(2, space(2));
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(2.5);
+}
+
+.detailLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.detailValue {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.detailValueMuted {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.chartSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.chartTitle {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.statsGrid {
+  @include grid(3, space(2));
+}
+
+.statCard {
+  background-color: color('card');
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(2.5);
+  text-align: center;
+}
+
+.statLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.statValue {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.statSub {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.remindersHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.remindersTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.remindersList {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.reminderItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.reminderBullet {
+  color: color('muted-foreground');
+}
+
+.tipBox {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+  border-radius: radius('lg');
+  border: 1px solid rgba(#22c55e, 0.3);
+  background-color: rgba(#22c55e, 0.1);
+  padding: space(3);
+
+  @include dark {
+    border-color: rgba(#166534, 1);
+  }
+}
+
+.tipTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.tipDescription {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.ctaButtons {
+  display: flex;
+  gap: space(2);
+}

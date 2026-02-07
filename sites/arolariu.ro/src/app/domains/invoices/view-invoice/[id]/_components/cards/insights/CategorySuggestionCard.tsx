@@ -5,6 +5,7 @@ import {Button, Card, CardContent, CardHeader, CardTitle, Progress} from "@arola
 import {useCallback, useState} from "react";
 import {TbGift, TbHelpCircle} from "react-icons/tb";
 import {extendedCategories, mainCategories} from "../../../_utils/categories";
+import styles from "./CategorySuggestionCard.module.scss";
 
 type CategoryButtonProps = {
   category: (typeof mainCategories)[number] | (typeof extendedCategories)[number];
@@ -66,12 +67,12 @@ export function CategorySuggestionCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Explanation */}
-        <p className='text-muted-foreground text-sm'>
+        <p className={styles["description"]}>
           We couldn&apos;t automatically categorize this invoice. Select the right category to unlock insights:
         </p>
 
         {/* Main Categories Grid */}
-        <main className='grid grid-cols-5 gap-2'>
+        <main className={styles["mainGrid"]}>
           {mainCategories.map((category) => (
             <CategoryButton
               key={category.id}
@@ -84,9 +85,9 @@ export function CategorySuggestionCard(): React.JSX.Element {
         </main>
 
         {/* More Categories Grid */}
-        <main className='space-y-2'>
-          <p className='text-muted-foreground text-sm'>More categories:</p>
-          <main className='grid grid-cols-3 gap-2'>
+        <main className={styles["moreSection"]}>
+          <p className={styles["moreLabel"]}>More categories:</p>
+          <main className={styles["moreGrid"]}>
             {extendedCategories.map((category) => (
               <CategoryButton
                 key={category.id}
@@ -100,17 +101,17 @@ export function CategorySuggestionCard(): React.JSX.Element {
         </main>
 
         {/* Gamification */}
-        <main className='space-y-2 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-500/10 to-orange-500/10 p-3 dark:border-amber-800'>
-          <main className='flex items-center gap-2'>
+        <main className={styles["gamificationBox"]}>
+          <main className={styles["gamificationHeader"]}>
             <TbGift className='h-4 w-4 text-amber-600' />
-            <span className='text-sm font-medium'>Categorize {goal} invoices to unlock detailed insights!</span>
+            <span className={styles["gamificationLabel"]}>Categorize {goal} invoices to unlock detailed insights!</span>
           </main>
-          <main className='flex items-center gap-3'>
+          <main className={styles["gamificationProgress"]}>
             <Progress
               value={(categorizedCount / goal) * 100}
               className='h-2 flex-1'
             />
-            <span className='text-muted-foreground text-sm font-medium'>
+            <span className={styles["gamificationCount"]}>
               {categorizedCount}/{goal}
             </span>
           </main>

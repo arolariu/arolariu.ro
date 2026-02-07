@@ -27,6 +27,7 @@ import {useLocale} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbCalendar, TbChevronLeft, TbChevronRight, TbCreditCard, TbHeart} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
+import styles from "./InvoiceDetailsCard.module.scss";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -50,8 +51,8 @@ export function InvoiceDetailsCard(): React.JSX.Element {
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
-        <main className='flex items-center justify-between'>
-          <main className='space-y-1'>
+        <main className={styles["headerRow"]}>
+          <main className={styles["headerInfo"]}>
             <CardTitle className='flex items-center gap-2'>
               Invoice Details
               {Boolean(invoice.isImportant) && <TbHeart className='h-4 w-4 fill-red-500 text-red-500' />}
@@ -64,13 +65,13 @@ export function InvoiceDetailsCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-6'>
         {/* Info Grid */}
-        <main className='grid grid-cols-2 gap-4'>
-          <main className='space-y-1'>
-            <main className='text-muted-foreground flex items-center gap-2 text-sm'>
+        <main className={styles["infoGrid"]}>
+          <main className={styles["infoItem"]}>
+            <main className={styles["infoLabel"]}>
               <TbCalendar className='h-4 w-4' />
               <span>Date (UTC)</span>
             </main>
-            <p className='font-medium'>
+            <p className={styles["infoValue"]}>
               {formatDate(invoice.paymentInformation.transactionDate, {
                 timeStyle: "short",
                 dateStyle: "full",
@@ -79,20 +80,20 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               })}
             </p>
           </main>
-          <main className='space-y-1'>
-            <p className='text-muted-foreground text-sm'>Category</p>
+          <main className={styles["infoItem"]}>
+            <p className={styles["infoLabelPlain"]}>Category</p>
             <Badge variant='outline'>{formatEnum(ProductCategory, invoice.category)}</Badge>
           </main>
-          <main className='space-y-1'>
-            <main className='text-muted-foreground flex items-center gap-2 text-sm'>
+          <main className={styles["infoItem"]}>
+            <main className={styles["infoLabel"]}>
               <TbCreditCard className='h-4 w-4' />
               <span>Payment</span>
             </main>
-            <p className='font-medium'>{formatEnum(PaymentType, invoice.paymentInformation.paymentType)}</p>
+            <p className={styles["infoValue"]}>{formatEnum(PaymentType, invoice.paymentInformation.paymentType)}</p>
           </main>
-          <main className='space-y-1'>
-            <p className='text-muted-foreground text-sm'>Total Amount</p>
-            <p className='text-lg font-semibold'>
+          <main className={styles["infoItem"]}>
+            <p className={styles["infoLabelPlain"]}>Total Amount</p>
+            <p className={styles["totalAmount"]}>
               {formatCurrency(invoice.paymentInformation.totalCostAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
             </p>
           </main>
@@ -101,9 +102,9 @@ export function InvoiceDetailsCard(): React.JSX.Element {
         <Separator />
 
         {/* Items Table */}
-        <main className='space-y-4'>
-          <h3 className='font-semibold'>Items ({invoice.items.length})</h3>
-          <main className='rounded-md border'>
+        <main className={styles["itemsSection"]}>
+          <h3 className={styles["itemsTitle"]}>Items ({invoice.items.length})</h3>
+          <main className={styles["tableContainer"]}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -118,10 +119,10 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 {paginatedItems.map((item) => (
                   <TableRow key={item.productCode}>
                     <TableCell>
-                      <main className='space-y-1'>
-                        <p className='font-medium'>{item.genericName || item.rawName}</p>
+                      <main className={styles["itemCell"]}>
+                        <p className={styles["itemName"]}>{item.genericName || item.rawName}</p>
                         {item.detectedAllergens.length > 0 && (
-                          <main className='flex flex-wrap gap-1'>
+                          <main className={styles["allergenList"]}>
                             {item.detectedAllergens.map((allergen) => (
                               <TooltipProvider key={allergen.name}>
                                 <Tooltip>
@@ -169,11 +170,11 @@ export function InvoiceDetailsCard(): React.JSX.Element {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <main className='flex items-center justify-between'>
-              <p className='text-muted-foreground text-sm'>
+            <main className={styles["pagination"]}>
+              <p className={styles["paginationText"]}>
                 Page {currentPage} of {totalPages}
               </p>
-              <main className='flex gap-2'>
+              <main className={styles["paginationButtons"]}>
                 <Button
                   variant='outline'
                   size='sm'

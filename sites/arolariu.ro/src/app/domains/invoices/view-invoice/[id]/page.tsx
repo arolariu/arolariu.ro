@@ -7,6 +7,7 @@ import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import RenderViewInvoiceScreen from "./island";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the invoice viewing page with localized content.
@@ -154,7 +155,7 @@ export default async function ViewInvoicePage(
   if (!canAccess) return <RenderForbiddenScreen />;
 
   return (
-    <main className='px-5 py-24'>
+    <main className={styles["page"]}>
       <RenderViewInvoiceScreen
         invoice={invoice}
         merchant={merchant}

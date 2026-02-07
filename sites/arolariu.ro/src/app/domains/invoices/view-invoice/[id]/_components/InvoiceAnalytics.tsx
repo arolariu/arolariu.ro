@@ -22,6 +22,7 @@ import {MerchantBreakdownChart} from "./charts/MerchantBreakdownChart";
 import {PriceDistributionChart} from "./charts/PriceDistributionChart";
 import {SpendingByCategoryChart} from "./charts/SpendingByCategoryChart";
 import {SpendingTrendChart} from "./charts/SpendingTrendChart";
+import styles from "./InvoiceAnalytics.module.scss";
 
 export function InvoiceAnalytics(): React.JSX.Element {
   const {invoice, merchant} = useInvoiceContext();
@@ -41,14 +42,14 @@ export function InvoiceAnalytics(): React.JSX.Element {
   const merchantBreakdown = getMerchantBreakdown();
 
   return (
-    <main className='space-y-6'>
+    <main className={styles["container"]}>
       <Tabs
         defaultValue='current'
         className='w-full'>
-        <main className='mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-          <main className='flex items-center gap-2'>
+        <main className={styles["tabHeader"]}>
+          <main className={styles["sectionTitle"]}>
             <TbChartBar className='text-muted-foreground h-5 w-5' />
-            <h2 className='text-xl font-semibold'>Analytics & Insights</h2>
+            <h2 className={styles["sectionTitleText"]}>Analytics & Insights</h2>
           </main>
           <TabsList className='grid w-full grid-cols-2 sm:w-auto'>
             <TabsTrigger
@@ -72,9 +73,9 @@ export function InvoiceAnalytics(): React.JSX.Element {
         <TabsContent
           value='current'
           className='mt-0'>
-          <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          <main className={styles["analyticsGrid"]}>
             {/* Summary Stats */}
-            <main className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
+            <main className={styles["gridItem"]}>
               <SummaryStatsCard
                 summary={summary}
                 currency={currency}
@@ -82,7 +83,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
             </main>
 
             {/* Spending by Category */}
-            <main className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300'>
+            <main className={styles["gridItem"]}>
               <SpendingByCategoryChart
                 data={categoryData}
                 currency={currency}
@@ -90,7 +91,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
             </main>
 
             {/* Price Distribution */}
-            <main className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300'>
+            <main className={styles["gridItem"]}>
               <PriceDistributionChart
                 data={priceData}
                 currency={currency}
@@ -98,7 +99,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
             </main>
 
             {/* Items Breakdown - Full Width on larger screens */}
-            <main className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300 sm:col-span-2 lg:col-span-3'>
+            <main className={styles["gridItemFullWidth"]}>
               <ItemsBreakdownChart
                 data={quantityData}
                 currency={currency}
@@ -112,9 +113,9 @@ export function InvoiceAnalytics(): React.JSX.Element {
           <TabsContent
             value='compare'
             className='mt-0'>
-            <main className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+            <main className={styles["analyticsGrid"]}>
               {/* Comparison Stats */}
-              <main className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
+              <main className={styles["gridItem"]}>
                 <ComparisonStatsCard
                   stats={comparisonStats}
                   currency={currency}
@@ -122,7 +123,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
               </main>
 
               {/* Spending Trend */}
-              <main className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300 sm:col-span-1 lg:col-span-2'>
+              <main className={styles["gridItemWide"]}>
                 <SpendingTrendChart
                   data={trendData}
                   currency={currency}
@@ -130,7 +131,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
               </main>
 
               {/* Category Comparison */}
-              <main className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300 sm:col-span-2 lg:col-span-2'>
+              <main className={styles["gridItemWide"]}>
                 <CategoryComparisonChart
                   data={categoryComparison}
                   currency={currency}
@@ -138,7 +139,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
               </main>
 
               {/* Merchant Breakdown */}
-              <main className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300'>
+              <main className={styles["gridItem"]}>
                 <MerchantBreakdownChart
                   data={merchantBreakdown}
                   currency={currency}

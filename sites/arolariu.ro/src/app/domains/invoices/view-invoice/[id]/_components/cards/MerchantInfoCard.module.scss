@@ -1,0 +1,27 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.infoRowStart {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+}
+
+.infoText {
+  font-size: font-size('sm');
+}
+
+.websiteLink {
+  color: color('primary');
+  font-size: font-size('sm');
+  text-underline-offset: 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

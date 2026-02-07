@@ -1,0 +1,42 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.imageContainer {
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+
+  &:hover img {
+    transform: scale(1.05);
+  }
+}
+
+.scanImage {
+  width: 100%;
+  object-fit: cover;
+  @include transition(all, 200ms);
+}
+
+.scanImageTransitioning {
+  opacity: 0.5;
+  filter: blur(4px);
+}
+
+.dialogImageContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.dialogImage {
+  width: 100%;
+  object-fit: contain;
+}
+
+.scanNavigation {
+  display: flex;
+  width: 100%;
+  gap: space(2);
+}

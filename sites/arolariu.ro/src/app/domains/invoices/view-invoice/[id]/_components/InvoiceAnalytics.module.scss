@@ -1,0 +1,58 @@
+@use '../../../../../../styles/abstracts' as *;
+
+.container {
+  & > * + * {
+    margin-top: space(6);
+  }
+}
+
+.tabHeader {
+  margin-bottom: space(4);
+  @include flex-column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.sectionTitleText {
+  font-size: font-size('xl');
+  font-weight: font-weight('semibold');
+}
+
+.analyticsGrid {
+  @include responsive-grid(1, 2, 3, space(4));
+}
+
+.gridItem {
+  // Placeholder for animation
+}
+
+.gridItemFullWidth {
+  @include respond-to('sm') {
+    grid-column: span 2;
+  }
+
+  @include respond-to('lg') {
+    grid-column: span 3;
+  }
+}
+
+.gridItemWide {
+  @include respond-to('sm') {
+    grid-column: span 1;
+  }
+
+  @include respond-to('lg') {
+    grid-column: span 2;
+  }
+}

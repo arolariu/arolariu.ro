@@ -3,6 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategorySpending} from "../../_utils/analytics";
+import styles from "./SpendingByCategoryChart.module.scss";
 
 type Props = {
   readonly data: CategorySpending[];
@@ -33,12 +34,12 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
-      <p className='font-medium'>{data.category}</p>
-      <p className='text-muted-foreground text-sm'>
+    <main className={styles["tooltip"]}>
+      <p className={styles["tooltipCategory"]}>{data.category}</p>
+      <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
-      <p className='text-muted-foreground text-xs'>
+      <p className={styles["tooltipCount"]}>
         {data.count} item{data.count === 1 ? "" : "s"}
       </p>
     </main>
@@ -47,16 +48,16 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 
 function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
   return (
-    <main className='mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1'>
+    <main className={styles["legendContainer"]}>
       {payload.map((entry) => (
         <main
           key={`legend-${entry.value}`}
-          className='flex items-center gap-1'>
+          className={styles["legendItem"]}>
           <main
-            className='h-2.5 w-2.5 rounded-full'
+            className={styles["legendDot"]}
             style={{backgroundColor: entry.color}}
           />
-          <span className='text-muted-foreground text-xs'>{entry.value}</span>
+          <span className={styles["legendLabel"]}>{entry.value}</span>
         </main>
       ))}
     </main>
@@ -121,11 +122,11 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
-        <main className='mt-2 text-center'>
-          <p className='text-xl font-bold'>
+        <main className={styles["totalSection"]}>
+          <p className={styles["totalAmount"]}>
             {total.toFixed(2)} {currency}
           </p>
-          <p className='text-muted-foreground text-xs'>Total Spending</p>
+          <p className={styles["totalLabel"]}>Total Spending</p>
         </main>
       </CardContent>
     </Card>

@@ -3,6 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {PriceRange} from "../../_utils/analytics";
+import styles from "./PriceDistributionChart.module.scss";
 
 type Props = {
   data: PriceRange[];
@@ -23,11 +24,11 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
-      <p className='font-medium'>
+    <main className={styles["tooltip"]}>
+      <p className={styles["tooltipRange"]}>
         {data.range} {data.currency}
       </p>
-      <p className='text-muted-foreground text-sm'>
+      <p className={styles["tooltipCount"]}>
         {data.count} item{data.count === 1 ? "" : "s"}
       </p>
     </main>

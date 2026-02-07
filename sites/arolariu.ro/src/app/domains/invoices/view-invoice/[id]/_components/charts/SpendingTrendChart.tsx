@@ -4,6 +4,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContaine
 import {useCallback} from "react";
 import {Area, AreaChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {SpendingTrendData} from "../../_utils/analytics";
+import styles from "./SpendingTrendChart.module.scss";
 
 type Props = {
   readonly data: SpendingTrendData[];
@@ -25,13 +26,13 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
-      <p className='text-sm font-medium'>{data.name}</p>
-      <p className='text-muted-foreground text-xs'>{data.date}</p>
-      <p className='mt-1 text-sm font-medium'>
+    <main className={styles["tooltip"]}>
+      <p className={styles["tooltipName"]}>{data.name}</p>
+      <p className={styles["tooltipDate"]}>{data.date}</p>
+      <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
-      {data.isCurrent ? <p className='text-primary mt-1 text-xs'>Current Invoice</p> : null}
+      {data.isCurrent ? <p className={styles["tooltipCurrent"]}>Current Invoice</p> : null}
     </main>
   );
 }

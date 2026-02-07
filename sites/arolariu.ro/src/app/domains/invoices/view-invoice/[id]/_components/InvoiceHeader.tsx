@@ -7,6 +7,7 @@ import * as React from "react";
 import {TbHeart, TbPencil, TbPrinter, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {useInvoiceContext} from "../_context/InvoiceContext";
+import styles from "./InvoiceHeader.module.scss";
 
 export function InvoiceHeader(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
@@ -18,10 +19,10 @@ export function InvoiceHeader(): React.JSX.Element {
 
   return (
     <TooltipProvider>
-      <main className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
-        <main className='space-y-1'>
-          <main className='flex items-center gap-2'>
-            <h1 className='text-3xl font-bold tracking-tight'>{invoice.name}</h1>
+      <main className={styles["header"]}>
+        <main className={styles["titleArea"]}>
+          <main className={styles["titleRow"]}>
+            <h1 className={styles["title"]}>{invoice.name}</h1>
             {Boolean(invoice.isImportant) && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -33,9 +34,9 @@ export function InvoiceHeader(): React.JSX.Element {
               </Tooltip>
             )}
           </main>
-          <p className='text-muted-foreground font-mono text-sm'>ID: {invoice.id}</p>
+          <p className={styles["invoiceId"]}>ID: {invoice.id}</p>
         </main>
-        <main className='flex flex-wrap gap-2'>
+        <main className={styles["actions"]}>
           {Boolean(isOwner) && (
             <>
               <Tooltip>

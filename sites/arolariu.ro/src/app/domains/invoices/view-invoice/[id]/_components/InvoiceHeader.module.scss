@@ -1,0 +1,42 @@
+@use '../../../../../../styles/abstracts' as *;
+
+.header {
+  @include flex-column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.titleArea {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.title {
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+}
+
+.invoiceId {
+  color: color('muted-foreground');
+  font-family: $font-family-mono;
+  font-size: font-size('sm');
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}

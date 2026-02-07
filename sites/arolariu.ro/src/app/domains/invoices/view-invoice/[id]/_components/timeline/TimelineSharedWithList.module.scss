@@ -1,0 +1,90 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.container {
+  border-top: 1px solid color('border');
+  padding-top: space(4);
+
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.headerLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  font-weight: font-weight('semibold');
+  letter-spacing: letter-spacing('wider');
+  text-transform: uppercase;
+}
+
+.usersList {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(2);
+  border-radius: radius('md');
+  padding: space(2);
+  background-color: color-alpha('muted', 0.5);
+  @include transition(background-color);
+
+  &:hover {
+    background-color: color('muted');
+  }
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  min-width: 0;
+}
+
+.userDetails {
+  min-width: 0;
+}
+
+.userName {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  @include truncate;
+}
+
+.userEmail {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  @include truncate;
+}
+
+.tooltipBorder {
+  border-top: 1px solid color('border');
+  padding-top: space(1);
+}
+
+.invoiceName {
+  color: color('muted-foreground');
+  @include truncate;
+}
+
+.moreText {
+  color: color('muted-foreground');
+}
+
+.historicalRow {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  border-top: 1px solid color('border');
+  padding-top: space(1);
+}

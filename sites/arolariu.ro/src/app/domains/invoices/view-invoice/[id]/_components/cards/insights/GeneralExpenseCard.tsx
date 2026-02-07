@@ -6,6 +6,7 @@ import {useLocale} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbBriefcase, TbChartBar, TbCheck, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbRefresh, TbTag} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
+import styles from "./GeneralExpenseCard.module.scss";
 
 export function GeneralExpenseCard(): React.JSX.Element {
   const locale = useLocale();
@@ -61,17 +62,17 @@ export function GeneralExpenseCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Auto-detected Category */}
-        <main className='space-y-2'>
-          <h4 className='text-muted-foreground text-sm font-medium'>Auto-detected Category</h4>
-          <main className='rounded-lg border p-3'>
-            <main className='mb-2 flex items-center justify-between'>
-              <main className='flex items-center gap-2'>
+        <main>
+          <h4 className={styles["sectionTitle"]}>Auto-detected Category</h4>
+          <main className={styles["detectedBox"]}>
+            <main className={styles["detectedRow"]}>
+              <main className={styles["detectedLabel"]}>
                 <TbTag className='h-4 w-4 text-indigo-500' />
-                <span className='font-medium'>{detectedCategory}</span>
+                <span className={styles["detectedName"]}>{detectedCategory}</span>
               </main>
               <Badge variant='secondary'>Confidence: {confidence}%</Badge>
             </main>
-            <main className='flex gap-2'>
+            <main className={styles["detectedActions"]}>
               <Button
                 variant='outline'
                 size='sm'
@@ -93,19 +94,19 @@ export function GeneralExpenseCard(): React.JSX.Element {
         </main>
 
         {/* Budget Impact */}
-        <main className='space-y-3'>
-          <h4 className='text-muted-foreground text-sm font-medium'>Budget Impact</h4>
-          <main className='space-y-3'>
+        <main className={styles["budgetSection"]}>
+          <h4 className={styles["sectionTitle"]}>Budget Impact</h4>
+          <main className={styles["budgetSection"]}>
             {budgets.map((budget) => {
               const pct = (budget.spent / budget.limit) * 100;
               const isNearLimit = pct >= 90;
               return (
                 <main
                   key={budget.name}
-                  className='space-y-1'>
-                  <main className='flex items-center justify-between text-sm'>
+                  className={styles["budgetItem"]}>
+                  <main className={styles["budgetRow"]}>
                     <span>{budget.name}</span>
-                    <span className={isNearLimit ? "font-medium text-red-500" : "text-muted-foreground"}>
+                    <span className={isNearLimit ? styles["nearLimitText"] : styles["budgetMutedText"]}>
                       {formatCurrency(budget.spent, {currencyCode: currency.code, locale})} /{" "}
                       {formatCurrency(budget.limit, {currencyCode: currency.code, locale})}
                     </span>
@@ -120,7 +121,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           </main>
           {nearLimitBudget ? (
             <p
-              className='flex items-center gap-1 text-xs text-amber-600'
+              className={styles["alertText"]}
               role='alert'
               aria-live='polite'>
               <span aria-hidden='true'>!</span>
@@ -130,13 +131,13 @@ export function GeneralExpenseCard(): React.JSX.Element {
         </main>
 
         {/* Tax & Business Options */}
-        <main className='space-y-3'>
-          <h4 className='text-muted-foreground flex items-center gap-2 text-sm font-medium'>
+        <main>
+          <h4 className={styles["sectionTitleWithIcon"]}>
             <TbFileText className='h-4 w-4' />
             Tax & Business Options
           </h4>
-          <main className='space-y-2'>
-            <main className='flex items-center gap-2'>
+          <main className={styles["checkboxSection"]}>
+            <main className={styles["checkboxRow"]}>
               <Checkbox
                 id='business'
                 checked={businessExpense}
@@ -148,7 +149,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 Mark as business expense
               </Label>
             </main>
-            <main className='flex items-center gap-2'>
+            <main className={styles["checkboxRow"]}>
               <Checkbox
                 id='warranty'
                 checked={trackWarranty}
@@ -160,7 +161,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 Track warranty (24 months standard)
               </Label>
             </main>
-            <main className='flex items-center gap-2'>
+            <main className={styles["checkboxRow"]}>
               <Checkbox
                 id='insurance'
                 checked={insuranceInventory}
@@ -174,7 +175,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
             </main>
           </main>
           {businessExpense ? (
-            <p className='flex items-center gap-1 text-sm text-green-600'>
+            <p className={styles["vatText"]}>
               <TbBriefcase className='h-3 w-3' />
               VAT Reclaimable: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
             </p>
@@ -182,17 +183,17 @@ export function GeneralExpenseCard(): React.JSX.Element {
         </main>
 
         {/* Similar Past Purchases */}
-        <main className='space-y-2'>
-          <main className='flex items-center gap-2'>
+        <main>
+          <main className={styles["pastHeader"]}>
             <TbHistory className='h-4 w-4 text-gray-500' />
-            <h4 className='text-sm font-medium'>Similar Past Purchases</h4>
+            <h4 className={styles["pastTitle"]}>Similar Past Purchases</h4>
           </main>
-          <ul className='text-muted-foreground space-y-1.5 text-sm'>
+          <ul className={styles["pastList"]}>
             {pastPurchases.map((p) => (
               <li
                 key={p.id}
-                className='flex items-center gap-2'>
-                <span className='text-muted-foreground'>•</span>
+                className={styles["pastItem"]}>
+                <span className={styles["pastBullet"]}>•</span>
                 {p.store} - {formatDate(p.date, {locale})}: {formatCurrency(p.amount, {currencyCode: currency.code, locale})} ({p.item})
               </li>
             ))}
@@ -200,7 +201,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
         </main>
 
         {/* CTA Buttons */}
-        <main className='flex gap-2'>
+        <main className={styles["ctaButtons"]}>
           <Button
             variant='outline'
             size='sm'

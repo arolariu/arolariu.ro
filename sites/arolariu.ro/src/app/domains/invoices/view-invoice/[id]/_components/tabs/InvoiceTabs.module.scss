@@ -1,0 +1,82 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.recipesGrid {
+  display: grid;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.recipeHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: space(2);
+}
+
+.recipeDescription {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  @include line-clamp(2);
+}
+
+.recipeDetails {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+  font-size: font-size('sm');
+}
+
+.recipeDetailItem {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  color: color('muted-foreground');
+}
+
+.recipeDetailMuted {
+  color: color('muted-foreground');
+}
+
+.emptyState {
+  @include flex-column-center;
+  justify-content: center;
+  padding-block: space(8);
+  text-align: center;
+}
+
+.emptyStateText {
+  color: color('muted-foreground');
+  margin-top: space(2);
+}
+
+.metadataList {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.metadataItem {
+  display: flex;
+  justify-content: space-between;
+  gap: space(4);
+  border-bottom: 1px solid color('border');
+  padding-bottom: space(2);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.metadataKey {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.metadataValue {
+  font-size: font-size('sm');
+  text-align: right;
+}

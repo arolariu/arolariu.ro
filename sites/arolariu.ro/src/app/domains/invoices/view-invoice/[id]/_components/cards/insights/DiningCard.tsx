@@ -16,6 +16,7 @@ import {
   TbUserDollar,
 } from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
+import styles from "./DiningCard.module.scss";
 
 export function DiningCard(): React.JSX.Element {
   const locale = useLocale();
@@ -65,87 +66,87 @@ export function DiningCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Estimated Nutrition */}
-        <main className='space-y-2'>
-          <h4 className='text-muted-foreground text-sm font-medium'>Estimated Nutrition</h4>
-          <main className='grid grid-cols-2 gap-2'>
-            <main className='flex items-center gap-2 rounded-lg border p-2'>
+        <main>
+          <h4 className={styles["sectionTitle"]}>Estimated Nutrition</h4>
+          <main className={styles["nutritionGrid"]}>
+            <main className={styles["nutritionItem"]}>
               <TbFlame className='h-4 w-4 text-orange-500' />
               <main>
-                <p className='text-muted-foreground text-xs'>Calories</p>
-                <p className='text-sm font-semibold'>~{estimatedCalories} kcal</p>
+                <p className={styles["nutritionLabel"]}>Calories</p>
+                <p className={styles["nutritionValue"]}>~{estimatedCalories} kcal</p>
               </main>
             </main>
-            <main className='flex items-center gap-2 rounded-lg border p-2'>
+            <main className={styles["nutritionItem"]}>
               <TbMeat className='h-4 w-4 text-red-500' />
               <main>
-                <p className='text-muted-foreground text-xs'>Protein</p>
-                <p className='text-sm font-semibold'>~{estimatedProtein}g</p>
+                <p className={styles["nutritionLabel"]}>Protein</p>
+                <p className={styles["nutritionValue"]}>~{estimatedProtein}g</p>
               </main>
             </main>
-            <main className='flex items-center gap-2 rounded-lg border p-2'>
+            <main className={styles["nutritionItem"]}>
               <TbAlertTriangle className={`h-4 w-4 ${sodiumLevel === "High" ? "text-red-500" : "text-yellow-500"}`} />
               <main>
-                <p className='text-muted-foreground text-xs'>Sodium</p>
-                <p className='flex items-center gap-1 text-sm font-semibold'>
+                <p className={styles["nutritionLabel"]}>Sodium</p>
+                <p className={styles["nutritionValue"]}>
                   {sodiumLevel}
                   {sodiumLevel === "High" && <span className='text-red-500'>!</span>}
                 </p>
               </main>
             </main>
-            <main className='flex items-center gap-2 rounded-lg border p-2'>
+            <main className={styles["nutritionItem"]}>
               <TbCookie className='h-4 w-4 text-amber-500' />
               <main>
-                <p className='text-muted-foreground text-xs'>Carbs</p>
-                <p className='text-sm font-semibold'>~{estimatedCarbs}g</p>
+                <p className={styles["nutritionLabel"]}>Carbs</p>
+                <p className={styles["nutritionValue"]}>~{estimatedCarbs}g</p>
               </main>
             </main>
           </main>
         </main>
 
         {/* Fast Food Habits */}
-        <main className='space-y-2'>
-          <h4 className='text-muted-foreground text-sm font-medium'>Your Fast Food Habits</h4>
-          <main className='grid grid-cols-3 gap-2'>
-            <main className='bg-card rounded-lg border p-3 text-center'>
+        <main>
+          <h4 className={styles["sectionTitle"]}>Your Fast Food Habits</h4>
+          <main className={styles["habitsGrid"]}>
+            <main className={styles["habitCard"]}>
               <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
-              <p className='text-muted-foreground text-xs'>Frequency</p>
-              <p className='text-sm font-semibold'>{fastFoodFrequency}x/month</p>
-              <p className='text-muted-foreground text-xs'>+1 vs avg</p>
+              <p className={styles["habitLabel"]}>Frequency</p>
+              <p className={styles["habitValue"]}>{fastFoodFrequency}x/month</p>
+              <p className={styles["habitSub"]}>+1 vs avg</p>
             </main>
-            <main className='bg-card rounded-lg border p-3 text-center'>
+            <main className={styles["habitCard"]}>
               <TbUserDollar className='mx-auto mb-1 h-4 w-4 text-green-500' />
-              <p className='text-muted-foreground text-xs'>Avg Spend</p>
-              <p className='text-sm font-semibold'>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
-              <p className={`text-xs ${spendDiff > 0 ? "text-red-500" : "text-green-500"}`}>
+              <p className={styles["habitLabel"]}>Avg Spend</p>
+              <p className={styles["habitValue"]}>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
+              <p className={`${styles["habitSub"]} ${spendDiff > 0 ? "text-red-500" : "text-green-500"}`}>
                 {spendDiff > 0 ? "+" : ""}
                 {spendDiff.toFixed(0)}%
               </p>
             </main>
-            <main className='bg-card rounded-lg border p-3 text-center'>
+            <main className={styles["habitCard"]}>
               <TbMapPin className='mx-auto mb-1 h-4 w-4 text-red-500' />
-              <p className='text-muted-foreground text-xs'>Favorite</p>
-              <p className='truncate text-sm font-semibold'>{favoritePlace}</p>
-              <p className='text-muted-foreground text-xs'>{visits} visits</p>
+              <p className={styles["habitLabel"]}>Favorite</p>
+              <p className={styles["habitValue"]}>{favoritePlace}</p>
+              <p className={styles["habitSub"]}>{visits} visits</p>
             </main>
           </main>
         </main>
 
         {/* Healthier Swaps */}
-        <main className='space-y-2'>
-          <main className='flex items-center gap-2'>
+        <main>
+          <main className={styles["swapsHeader"]}>
             <TbBulb className='h-4 w-4 text-amber-500' />
-            <h4 className='text-sm font-medium'>Healthier Swaps</h4>
+            <h4 className={styles["swapsTitle"]}>Healthier Swaps</h4>
           </main>
-          <ul className='space-y-1.5'>
+          <ul className={styles["swapsList"]}>
             {swaps.map((s) => (
               <li
                 key={s.id}
-                className='text-muted-foreground flex items-start gap-2 text-sm'>
-                <span className='text-muted-foreground'>•</span>
+                className={styles["swapItem"]}>
+                <span className={styles["swapBullet"]}>•</span>
                 <span>
-                  {s.swap}: <span className='font-medium text-green-600'>-{s.calSaved} cal</span>
+                  {s.swap}: <span className={styles["swapSaving"]}>-{s.calSaved} cal</span>
                   {s.moneySaved ? (
-                    <span className='font-medium text-green-600'>
+                    <span className={styles["swapSaving"]}>
                       , saves {formatCurrency(s.moneySaved, {currencyCode: currency.code, locale})}
                     </span>
                   ) : null}
@@ -156,13 +157,13 @@ export function DiningCard(): React.JSX.Element {
         </main>
 
         {/* Challenge */}
-        <main className='flex items-start gap-3 rounded-lg border border-purple-200 bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-3 dark:border-purple-800'>
+        <main className={styles["challengeBox"]}>
           <TbTarget className='mt-0.5 h-5 w-5 shrink-0 text-purple-500' />
           <main>
-            <p className='text-sm font-medium'>Weekly Challenge</p>
-            <p className='text-muted-foreground text-sm'>
+            <p className={styles["challengeTitle"]}>Weekly Challenge</p>
+            <p className={styles["challengeDescription"]}>
               Skip fast food for 7 days and save{" "}
-              <span className='font-semibold text-purple-600'>
+              <span className={styles["challengeHighlight"]}>
                 {formatCurrency(challengeSavings, {currencyCode: currency.code, locale})}
               </span>
             </p>

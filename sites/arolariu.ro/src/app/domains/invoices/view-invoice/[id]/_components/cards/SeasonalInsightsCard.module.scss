@@ -1,0 +1,92 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.monthSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.monthRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: font-size('sm');
+}
+
+.monthLabel {
+  color: color('muted-foreground');
+}
+
+.monthValue {
+  font-weight: font-weight('medium');
+}
+
+.monthMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.insightsList {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.insightItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  border-radius: radius('lg');
+  border: 1px solid;
+  padding: space(3);
+}
+
+.insightWarning {
+  border-color: rgba(#f59e0b, 0.3);
+  background-color: rgba(#f59e0b, 0.05);
+}
+
+.insightSuccess {
+  border-color: rgba(#22c55e, 0.3);
+  background-color: rgba(#22c55e, 0.05);
+}
+
+.insightInfo {
+  border-color: color('border');
+  background-color: color-alpha('muted', 0.3);
+}
+
+.insightIconWrapper {
+  margin-top: space(0.5);
+}
+
+.insightIconWarning {
+  color: #f59e0b;
+}
+
+.insightIconSuccess {
+  color: #22c55e;
+}
+
+.insightIconInfo {
+  color: color('muted-foreground');
+}
+
+.insightContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.insightTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  line-height: line-height('tight');
+}
+
+.insightDescription {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}

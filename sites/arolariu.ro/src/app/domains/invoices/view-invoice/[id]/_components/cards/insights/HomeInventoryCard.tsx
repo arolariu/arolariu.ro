@@ -6,6 +6,7 @@ import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {TbDroplets, TbHome, TbLeaf, TbPackage, TbSparkles, TbSpray, TbStar, TbToiletPaper} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
+import styles from "./HomeInventoryCard.module.scss";
 
 type SupplyItem = {
   id: string;
@@ -134,26 +135,26 @@ export function HomeInventoryCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Supply Stock Levels */}
-        <main className='space-y-3'>
-          <h4 className='text-muted-foreground text-sm font-medium'>Supply Stock Levels (estimated)</h4>
-          <main className='space-y-3'>
+        <main>
+          <h4 className={styles["sectionTitle"]}>Supply Stock Levels (estimated)</h4>
+          <main className={styles["suppliesList"]}>
             {supplies.map((supply) => {
               const pct = (supply.daysRemaining / supply.maxDays) * 100;
               const color = getSupplyProgressColor(pct);
               return (
                 <main
                   key={supply.id}
-                  className='space-y-1'>
-                  <main className='flex items-center justify-between text-sm'>
-                    <main className='flex items-center gap-2'>
+                  className={styles["supplyItem"]}>
+                  <main className={styles["supplyRow"]}>
+                    <main className={styles["supplyName"]}>
                       {supply.icon}
                       <span>{supply.name}</span>
                     </main>
-                    <span className='text-muted-foreground'>~{supply.daysRemaining} days</span>
+                    <span className={styles["supplyDays"]}>~{supply.daysRemaining} days</span>
                   </main>
-                  <main className='bg-muted h-2 overflow-hidden rounded-full'>
+                  <main className={styles["progressTrack"]}>
                     <main
-                      className={`h-full ${color} transition-all`}
+                      className={`${styles["progressBar"]} ${color}`}
                       style={{width: `${pct}%`}}
                     />
                   </main>
@@ -164,13 +165,13 @@ export function HomeInventoryCard(): React.JSX.Element {
         </main>
 
         {/* Eco-Friendliness Score */}
-        <main className='space-y-2'>
-          <main className='flex items-center justify-between'>
-            <main className='flex items-center gap-2'>
+        <main className={styles["ecoSection"]}>
+          <main className={styles["ecoHeader"]}>
+            <main className={styles["ecoLabel"]}>
               <TbLeaf className='h-4 w-4 text-green-500' />
-              <span className='text-sm font-medium'>Eco-Friendliness Score</span>
+              <span className={styles["ecoLabelText"]}>Eco-Friendliness Score</span>
             </main>
-            <main className='flex items-center gap-1'>
+            <main className={styles["ecoStars"]}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <TbStar
                   key={star}
@@ -179,28 +180,28 @@ export function HomeInventoryCard(): React.JSX.Element {
               ))}
             </main>
           </main>
-          <ul className='text-muted-foreground space-y-1 pl-6 text-sm'>
-            <li className='flex items-center gap-2'>
-              <span className='text-muted-foreground'>•</span>
+          <ul className={styles["ecoList"]}>
+            <li className={styles["ecoItem"]}>
+              <span className={styles["ecoBullet"]}>•</span>
               {ecoProducts} products with eco-labels
             </li>
-            <li className='flex items-center gap-2'>
-              <span className='text-muted-foreground'>•</span>
+            <li className={styles["ecoItem"]}>
+              <span className={styles["ecoBullet"]}>•</span>
               {recyclablePackaging} product with recyclable packaging
             </li>
-            <li className='flex items-center gap-2'>
-              <span className='text-green-600'>•</span>
-              <span className='text-green-600'>Tip: Eco alternatives save 2kg plastic/year</span>
+            <li className={styles["ecoItem"]}>
+              <span className={styles["ecoTipBullet"]}>•</span>
+              <span className={styles["ecoTipText"]}>Tip: Eco alternatives save 2kg plastic/year</span>
             </li>
           </ul>
         </main>
 
         {/* Bulk Buying Savings */}
-        <main className='bg-muted/30 flex items-start gap-2 rounded-lg border p-3'>
+        <main className={styles["bulkBox"]}>
           <TbPackage className='mt-0.5 h-4 w-4 shrink-0 text-blue-500' />
           <main>
-            <p className='text-sm font-medium'>Bulk Buying Savings</p>
-            <p className='text-muted-foreground text-sm'>
+            <p className={styles["bulkTitle"]}>Bulk Buying Savings</p>
+            <p className={styles["bulkDescription"]}>
               5L detergent vs 2L saves 18% ({formatCurrency(potentialSavings, {currencyCode: currency.code, locale})}/year)
             </p>
           </main>

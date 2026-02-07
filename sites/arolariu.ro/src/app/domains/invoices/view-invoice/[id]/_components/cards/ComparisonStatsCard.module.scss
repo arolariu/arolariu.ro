@@ -1,0 +1,59 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.section {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rowWithIcon {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.trendRow {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+}
+
+.mutedRow {
+  display: flex;
+  justify-content: space-between;
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.label {
+  font-size: font-size('sm');
+}
+
+.positionLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  text-align: center;
+}
+
+.borderTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid color('border');
+  padding-top: space(2);
+}
+
+.rightAlign {
+  text-align: right;
+}
+
+.subLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}

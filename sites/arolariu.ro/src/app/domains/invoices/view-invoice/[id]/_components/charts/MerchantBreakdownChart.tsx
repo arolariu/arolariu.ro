@@ -3,6 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {MerchantBreakdown} from "../../_utils/analytics";
+import styles from "./MerchantBreakdownChart.module.scss";
 
 type Props = {
   readonly data: MerchantBreakdown[];
@@ -25,22 +26,22 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
   return (
-    <main className='bg-background rounded-lg border px-3 py-2 shadow-md'>
-      <p className='text-sm font-medium'>{data.name}</p>
-      <main className='mt-1 space-y-0.5 text-xs'>
+    <main className={styles["tooltip"]}>
+      <p className={styles["tooltipName"]}>{data.name}</p>
+      <main className={styles["tooltipDetails"]}>
         <p>
-          <span className='text-muted-foreground'>Total: </span>
-          <span className='font-medium'>
+          <span className={styles["tooltipLabel"]}>Total: </span>
+          <span className={styles["tooltipValue"]}>
             {data.total.toFixed(2)} {currency}
           </span>
         </p>
         <p>
-          <span className='text-muted-foreground'>Visits: </span>
-          <span className='font-medium'>{data.count}</span>
+          <span className={styles["tooltipLabel"]}>Visits: </span>
+          <span className={styles["tooltipValue"]}>{data.count}</span>
         </p>
         <p>
-          <span className='text-muted-foreground'>Avg/visit: </span>
-          <span className='font-medium'>
+          <span className={styles["tooltipLabel"]}>Avg/visit: </span>
+          <span className={styles["tooltipValue"]}>
             {data.average.toFixed(2)} {currency}
           </span>
         </p>

@@ -1,0 +1,140 @@
+@use '../../../../../../../../styles/abstracts' as *;
+
+.scoreSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.scoreRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scoreLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.compositionSection {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.compositionTitle {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  letter-spacing: letter-spacing('wide');
+  text-transform: uppercase;
+}
+
+.compositionList {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.compositionRow {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.compositionLabel {
+  width: space(24);
+  flex-shrink: 0;
+  font-size: font-size('sm');
+}
+
+.progressTrack {
+  height: space(2);
+  flex: 1;
+  overflow: hidden;
+  border-radius: radius('full');
+  background-color: color('muted');
+}
+
+.progressBar {
+  height: 100%;
+  @include transition(all);
+}
+
+.compositionPct {
+  width: space(10);
+  text-align: right;
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.foodGroupsGrid {
+  @include grid(2, space(3));
+}
+
+.foodGroupCard {
+  background-color: color('card');
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(3);
+  text-align: center;
+}
+
+.foodGroupIconRow {
+  display: flex;
+  justify-content: center;
+  margin-bottom: space(1);
+}
+
+.foodGroupName {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.foodGroupCount {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.foodGroupAmount {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.allergensSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.allergensHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.allergensTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.allergensList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+.suggestionBox {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+  border-radius: radius('lg');
+  background-color: color-alpha('muted', 0.5);
+  padding: space(3);
+}
+
+.suggestionText {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
