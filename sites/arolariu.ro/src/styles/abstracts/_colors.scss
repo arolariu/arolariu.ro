@@ -64,6 +64,12 @@ $color-vars: (
   'accent-foreground': '--accent-foreground',
   'destructive': '--destructive',
   'destructive-foreground': '--destructive-foreground',
+  'success': '--success',
+  'success-foreground': '--success-foreground',
+  'warning': '--warning',
+  'warning-foreground': '--warning-foreground',
+  'info': '--info',
+  'info-foreground': '--info-foreground',
 
   // UI colors
   'border': '--border',
@@ -118,4 +124,34 @@ $static-colors: (
     @return map.get($static-colors, $name);
   }
   @error "Unknown static color: #{$name}";
+}
+
+// ===========================================
+// INTERACTIVE STATE COLORS
+// ===========================================
+// Colors for hover, focus, active states in navigation and UI chrome.
+// These are STATIC (not theme-responsive) — they represent specific
+// brand accent values used alongside the CSS variable theme system.
+//
+// For theme-responsive colors, use color() / color-alpha() instead.
+$interactive-colors: (
+  'hover-accent': #4f46e5,       // indigo-600 — link hover
+  'hover-accent-light': #fde047, // yellow-300 — brand hover on dark bg
+  'hover-accent-dark': #eab308,  // yellow-500 — brand hover (footer)
+  'hover-bg-subtle': #f9fafb,    // gray-50 — subtle hover bg
+  'hover-bg-light': #f3f4f6,     // gray-100 — light hover bg
+  'text-strong': #111827,        // gray-900
+  'text-medium': #374151,        // gray-700
+  'text-subtle': #6b7280,        // gray-500
+  'border-subtle': #f3f4f6,      // gray-100
+  'teal-accent': #5eead4,        // teal-accent-400 (footer links)
+  'slate-light': #cbd5e1,        // slate-300 (build info)
+  'ring-brand': #6366f1,         // indigo-500 (logo ring)
+) !default;
+
+@function interactive-color($name) {
+  @if map.has-key($interactive-colors, $name) {
+    @return map.get($interactive-colors, $name);
+  }
+  @error "Unknown interactive color: #{$name}. Available: #{map.keys($interactive-colors)}";
 }
