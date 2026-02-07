@@ -42,15 +42,12 @@
 }
 
 .titleHighlight {
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include gradient-text-custom;
 }
 
 .description {
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -85,13 +82,13 @@
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary));
+    border-color: color('primary');
   }
 }
 
 .cardActive {
   composes: card;
-  border-color: hsl(var(--primary));
+  border-color: color('primary');
   @include shadow('lg');
 }
 
@@ -204,7 +201,7 @@
   overflow-y: auto;
   padding: space(8);
   border-radius: radius('2xl');
-  background-color: hsl(var(--background));
+  background-color: color('background');
   @include shadow('2xl');
 }
 
@@ -235,14 +232,14 @@
 }
 
 .modalSubtitle {
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .modalDescription {
   margin-bottom: space(6);
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .modalTags {
@@ -278,10 +275,10 @@
 
 .modalClose {
   padding: space(3) space(6);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   &:hover {
-    color: hsl(var(--foreground));
+    color: color('foreground');
   }
 }
 

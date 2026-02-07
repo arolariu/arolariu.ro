@@ -4,7 +4,7 @@
 @use '../../../../styles/abstracts' as *;
 
 .section {
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-alpha('muted', 0.3);
   padding: space(20) space(4);
 
   @include respond-to('md') {
@@ -41,7 +41,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Grid
@@ -69,14 +69,14 @@
   height: 600px;
   overflow: hidden;
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border) / 0.5);
-  background-color: hsl(var(--card));
+  border: 1px solid color-alpha('border', 0.5);
+  background-color: color('card');
   padding: space(6);
   @include shadow('md');
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-alpha('primary', 0.3);
     @include shadow('xl');
   }
 }
@@ -93,8 +93,8 @@
 .awardIconWrapper {
   padding: space(3);
   border-radius: radius('lg');
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
 }
 
 .awardIcon {
@@ -104,8 +104,8 @@
 
 // Code badge
 .codeBadge {
-  border-color: hsl(var(--primary));
-  color: hsl(var(--primary));
+  border-color: color('primary');
+  color: color('primary');
 }
 
 // Card title
@@ -115,7 +115,7 @@
   font-weight: font-weight('semibold');
 
   .card:hover & {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+    text-shadow: 0 0 20px color-alpha('primary', 0.5);
   }
 }
 
@@ -125,7 +125,7 @@
   align-items: center;
   margin-bottom: space(4);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .issuerSeparator {
@@ -142,7 +142,7 @@
 .description {
   margin-bottom: space(4);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Skills section
@@ -172,7 +172,7 @@
   flex-shrink: 0;
   width: 1rem;
   height: 1rem;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .skillText {
@@ -195,7 +195,7 @@
   display: inline-flex;
   align-items: center;
   font-size: font-size('sm');
-  color: hsl(var(--primary));
+  color: color('primary');
 
   &:hover {
     text-decoration: underline;
@@ -214,7 +214,7 @@
   bottom: 0;
   left: 0;
   height: 4px;
-  background-color: hsl(var(--primary));
+  background-color: color('primary');
 }
 
 // Glow effect
@@ -223,6 +223,6 @@
   inset: 0;
   z-index: -1;
   border-radius: radius('xl');
-  background-color: hsl(var(--primary) / 0.05);
+  background-color: color-alpha('primary', 0.05);
   filter: blur(24px);
 }

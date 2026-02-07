@@ -4,7 +4,7 @@
 @use '../../../../styles/abstracts' as *;
 
 .section {
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-alpha('muted', 0.3);
   padding: space(20) space(4);
 
   @include respond-to('md') {
@@ -43,15 +43,15 @@
   bottom: -0.5rem;
   left: 0;
   height: 4px;
-  border-radius: 9999px;
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.3));
+  border-radius: radius('full');
+  background: linear-gradient(to right, color('primary'), color-alpha('primary', 0.3));
 }
 
 .subtitle {
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Grid
@@ -73,7 +73,7 @@
   height: 100%;
   overflow: visible;
   border: none;
-  background-color: hsl(var(--card));
+  background-color: color('card');
   @include shadow('lg');
   @include transition(box-shadow);
 
@@ -94,22 +94,22 @@
   top: -2rem;
   left: space(6);
   padding: space(4);
-  border-radius: 9999px;
-  background-color: hsl(var(--primary));
+  border-radius: radius('full');
+  background-color: color('primary');
   @include shadow('lg');
 }
 
 .quoteIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: hsl(var(--primary-foreground));
+  color: color('primary-foreground');
 }
 
 // Quote text
 .quote {
   margin-bottom: space(6);
   font-style: italic;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Author info
@@ -125,5 +125,5 @@
 
 .authorPosition {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

@@ -11,8 +11,8 @@
 .authorPage {
   position: relative;
   min-height: 100vh;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: color('background');
+  color: color('foreground');
   cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%231e90ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m18 16 4-4-4-4'/><path d='m6 8-4 4 4 4'/><path d='m14.5 4-5 16'/></svg>") 16 16, auto;
 }
 
@@ -55,12 +55,12 @@
   margin: 0 auto space(6);
   width: 8rem; // h-32 w-32
   height: 8rem;
-  border-radius: 9999px;
-  border: 4px solid hsl(var(--primary) / 0.2);
+  border-radius: radius('full');
+  border: 4px solid color-alpha('primary', 0.2);
   overflow: hidden;
   box-shadow:
-    0 0 20px hsl(var(--primary) / 0.3),
-    0 0 40px hsl(var(--primary) / 0.2);
+    0 0 20px color-alpha('primary', 0.3),
+    0 0 40px color-alpha('primary', 0.2);
 
   @include respond-to('md') {
     width: 10rem; // md:h-40 md:w-40
@@ -107,7 +107,7 @@
 // Section with muted background
 .sectionMuted {
   composes: section;
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-alpha('muted', 0.3);
 }
 
 // Section container
@@ -139,7 +139,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem; // max-w-2xl
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -166,7 +166,7 @@
   bottom: 0;
   left: 2rem; // left-8
   width: 1px;
-  background-color: hsl(var(--border) / 0.5);
+  background-color: color-alpha('border', 0.5);
 }
 
 .timelineItem {
@@ -211,18 +211,18 @@
   justify-content: center;
   width: 4rem; // w-16 h-16
   height: 4rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   @include transition(background-color);
 }
 
 .timelineIconActive {
   composes: timelineIcon;
-  background-color: hsl(var(--primary) / 0.2);
+  background-color: color-alpha('primary', 0.2);
 }
 
 .timelineIconInactive {
   composes: timelineIcon;
-  background-color: hsl(var(--muted));
+  background-color: color('muted');
 }
 
 // Inner icon circle
@@ -232,19 +232,19 @@
   justify-content: center;
   width: 2.5rem; // w-10 h-10
   height: 2.5rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .timelineIconInnerActive {
   composes: timelineIconInner;
-  background-color: hsl(var(--primary));
+  background-color: color('primary');
   color: white;
 }
 
 .timelineIconInnerInactive {
   composes: timelineIconInner;
-  background-color: hsl(var(--background));
-  color: hsl(var(--muted-foreground));
+  background-color: color('background');
+  color: color('muted-foreground');
 }
 
 // Timeline content
@@ -260,11 +260,11 @@
 
 .timelineCompanyActive {
   composes: timelineCompany;
-  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
 }
 
 .timelineRole {
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .timelineMeta {
@@ -272,7 +272,7 @@
   align-items: center;
   margin-top: space(1);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -284,20 +284,15 @@
   height: 100%;
   overflow: hidden;
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border) / 0.5);
-  background-color: hsl(var(--card));
+  border: 1px solid color-alpha('border', 0.5);
+  background-color: color('card');
   padding: space(6);
   @include shadow('lg');
 }
 
 // Gradient accent bar (top/bottom)
 .cardAccentTop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 4px;
-  width: 100%;
-  background: linear-gradient(to right, #ec4899, #a855f7, #3b82f6);
+  @include accent-top-bar(4px, #ec4899, #a855f7, #3b82f6);
 }
 
 .cardAccentBottom {
@@ -319,14 +314,14 @@
 .cardTitle {
   font-size: font-size('2xl');
   font-weight: font-weight('bold');
-  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
 }
 
 .cardMeta {
   display: flex;
   align-items: center;
   margin-top: space(1);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .cardMetaLocation {
@@ -342,13 +337,13 @@
   width: 4rem;
   height: 4rem;
   border-radius: radius('lg');
-  background-color: hsl(var(--background));
+  background-color: color('background');
 }
 
 // Card sections
 .cardDescription {
   margin-bottom: space(6);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .cardSection {
@@ -381,7 +376,7 @@
   margin-top: 0.25rem;
   margin-right: space(2);
   flex-shrink: 0;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 // Skills/Tags section
@@ -413,7 +408,7 @@
 .biographyParagraph {
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .biographyStats {
@@ -429,17 +424,14 @@
 .statCard {
   padding: space(4);
   border-radius: radius('lg');
-  background-color: hsl(var(--muted) / 0.5);
+  background-color: color-alpha('muted', 0.5);
   text-align: center;
 }
 
 .statValue {
   font-size: font-size('2xl');
   font-weight: font-weight('bold');
-  background: linear-gradient(to right, #3b82f6, #a855f7);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include gradient-text-custom(#3b82f6, #a855f7, #a855f7);
 
   @include respond-to('md') {
     font-size: font-size('3xl');
@@ -448,7 +440,7 @@
 
 .statLabel {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -471,13 +463,13 @@
 .competencyCard {
   padding: space(6);
   border-radius: radius('lg');
-  background-color: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
+  background-color: color('card');
+  border: 1px solid color('border');
   @include transition(transform, box-shadow, border-color);
 
   &:hover {
     transform: translateY(-4px);
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-alpha('primary', 0.3);
     @include shadow('lg');
   }
 }
@@ -505,7 +497,7 @@
 
 .competencyDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
   line-height: line-height('relaxed');
 }
 
@@ -525,14 +517,9 @@
 .educationCard {
   padding: space(6);
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
-  @include transition(border-color, box-shadow);
-
-  &:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    @include shadow('lg');
-  }
+  border: 1px solid color('border');
+  background-color: color('card');
+  @include card-hover;
 }
 
 .educationHeader {
@@ -546,7 +533,7 @@
   width: 4rem;
   height: 4rem;
   border-radius: radius('lg');
-  background-color: hsl(var(--muted));
+  background-color: color('muted');
   display: flex;
   align-items: center;
   justify-content: center;
@@ -558,12 +545,12 @@
 }
 
 .educationInstitution {
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .educationPeriod {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Certifications grid
@@ -586,14 +573,9 @@
   gap: space(4);
   padding: space(4);
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
-  @include transition(border-color, box-shadow);
-
-  &:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    @include shadow('md');
-  }
+  border: 1px solid color('border');
+  background-color: color('card');
+  @include card-hover('md');
 }
 
 .certificationBadge {
@@ -608,7 +590,7 @@
 
 .certificationIssuer {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -635,14 +617,14 @@
   gap: space(3);
   padding: space(6);
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
+  border: 1px solid color('border');
+  background-color: color('card');
   text-align: center;
   @include transition(transform, border-color, box-shadow);
 
   &:hover {
     transform: translateY(-4px);
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-alpha('primary', 0.3);
     @include shadow('lg');
   }
 }
@@ -653,9 +635,9 @@
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
 }
 
 .contactLabel {
@@ -664,7 +646,7 @@
 
 .contactValue {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -683,19 +665,19 @@
 .perspectiveCard {
   padding: space(6);
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
+  border: 1px solid color('border');
+  background-color: color('card');
 }
 
 .perspectiveQuote {
   font-size: font-size('lg');
   font-style: italic;
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
   margin-bottom: space(4);
 }
 
 .perspectiveTopic {
   font-weight: font-weight('semibold');
-  color: hsl(var(--primary));
+  color: color('primary');
 }

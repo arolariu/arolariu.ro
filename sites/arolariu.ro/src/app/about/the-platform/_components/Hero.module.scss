@@ -24,9 +24,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    hsl(var(--background)),
-    hsl(var(--background)),
-    hsl(var(--primary) / 0.05)
+    color('background'),
+    color('background'),
+    color-alpha('primary', 0.05)
   );
 }
 
@@ -38,7 +38,7 @@
 
 .orb {
   position: absolute;
-  border-radius: 9999px;
+  border-radius: radius('full');
   filter: blur(64px);
 }
 
@@ -110,10 +110,10 @@
   align-items: center;
   gap: space(3);
   padding: space(2) space(5);
-  border-radius: 9999px;
-  border: 1px solid hsl(var(--primary) / 0.2);
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  border-radius: radius('full');
+  border: 1px solid color-alpha('primary', 0.2);
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
   font-size: font-size('sm');
   font-weight: font-weight('medium');
   backdrop-filter: blur(8px);
@@ -131,7 +131,7 @@
   display: inline-flex;
   width: 100%;
   height: 100%;
-  border-radius: 9999px;
+  border-radius: radius('full');
   background-color: #22c55e;
   opacity: 0.75;
   animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -142,7 +142,7 @@
   display: inline-flex;
   width: 0.625rem;
   height: 0.625rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   background-color: #22c55e;
 }
 
@@ -183,7 +183,7 @@
 
 .gradientTitle {
   font-size: font-size('6xl');
-  font-weight: 800;
+  font-weight: font-weight('extrabold');
 
   @include respond-to('md') {
     font-size: font-size('7xl');
@@ -205,7 +205,7 @@
   max-width: 48rem;
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -230,9 +230,9 @@
   align-items: center;
   gap: space(2);
   padding: space(2) space(4);
-  border-radius: 9999px;
-  background-color: hsl(var(--muted) / 0.5);
-  color: hsl(var(--muted-foreground));
+  border-radius: radius('full');
+  background-color: color-alpha('muted', 0.5);
+  color: color('muted-foreground');
   font-size: font-size('sm');
   backdrop-filter: blur(8px);
 }
@@ -297,7 +297,7 @@
 .ctaOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.05));
+  background: linear-gradient(to right, color-alpha('primary', 0.2), color-alpha('primary', 0.05));
 }
 
 // Scroll indicator
@@ -317,23 +317,23 @@
 .scrollText {
   font-size: font-size('xs');
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: hsl(var(--muted-foreground));
+  letter-spacing: letter-spacing('widest');
+  color: color('muted-foreground');
 }
 
 .scrollMouse {
   width: 1.5rem;
   height: 2.5rem;
-  border-radius: 9999px;
-  border: 2px solid hsl(var(--muted-foreground) / 0.3);
+  border-radius: radius('full');
+  border: 2px solid color-alpha('muted-foreground', 0.3);
   padding: 0.25rem;
 }
 
 .scrollDot {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary));
+  border-radius: radius('full');
+  background-color: color('primary');
 }
 
 // Bottom fade
@@ -343,7 +343,7 @@
   bottom: 0;
   left: 0;
   height: 8rem;
-  background: linear-gradient(to top, hsl(var(--background)), transparent);
+  background: linear-gradient(to top, color('background'), transparent);
   pointer-events: none;
 }
 

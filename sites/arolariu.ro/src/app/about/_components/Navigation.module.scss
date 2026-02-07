@@ -44,7 +44,7 @@
   margin-right: auto;
   max-width: 42rem;
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Navigation cards grid
@@ -62,15 +62,15 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  background-color: hsl(var(--card) / 0.5);
+  background-color: color-alpha('card', 0.5);
   backdrop-filter: blur(8px);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid color('border');
   border-radius: radius('lg');
   @include transition(transform, border-color, box-shadow);
 
   &:hover {
     transform: translateY(-4px);
-    border-color: hsl(var(--primary) / 0.4);
+    border-color: color-alpha('primary', 0.4);
     @include shadow('2xl');
   }
 }
@@ -113,7 +113,7 @@
   margin: 0 auto;
   padding: space(4);
   border-radius: radius('2xl');
-  background: linear-gradient(to bottom right, hsl(var(--muted) / 0.3), hsl(var(--muted) / 0.1));
+  background: linear-gradient(to bottom right, color-alpha('muted', 0.3), color-alpha('muted', 0.1));
   @include transition(transform);
 
   .card:hover & {
@@ -152,7 +152,7 @@
 .cardSubtitle {
   font-size: font-size('sm');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Feature list
@@ -170,7 +170,7 @@
   align-items: center;
   gap: space(2);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .featureBadge {

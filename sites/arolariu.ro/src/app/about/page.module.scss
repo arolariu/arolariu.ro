@@ -11,8 +11,8 @@
   align-items: center;
   width: 100%;
   min-height: 100vh;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: color('background');
+  color: color('foreground');
 }
 
 .aboutInner {

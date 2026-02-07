@@ -21,9 +21,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    hsl(var(--background)),
-    hsl(var(--primary) / 0.1),
-    hsl(var(--background))
+    color('background'),
+    color-alpha('primary', 0.1),
+    color('background')
   );
 }
 
@@ -35,7 +35,7 @@
 
 .orb {
   position: absolute;
-  border-radius: 9999px;
+  border-radius: radius('full');
   filter: blur(48px);
 }
 
@@ -107,9 +107,9 @@
 .titleHighlight {
   background: linear-gradient(
     to right,
-    hsl(var(--gradient-from)),
-    hsl(var(--gradient-via)),
-    hsl(var(--gradient-to))
+    color('gradient-from'),
+    color('gradient-via'),
+    color('gradient-to')
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -123,7 +123,7 @@
   margin-bottom: space(10);
   max-width: 42rem;
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -179,7 +179,7 @@
 .ctaOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.05));
+  background: linear-gradient(to right, color-alpha('primary', 0.2), color-alpha('primary', 0.05));
 }
 
 // Secondary links
@@ -196,11 +196,11 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
   @include transition(color);
 
   &:hover {
-    color: hsl(var(--primary));
+    color: color('primary');
   }
 }
 
@@ -210,7 +210,7 @@
 }
 
 .linkDivider {
-  color: hsl(var(--muted-foreground) / 0.3);
+  color: color-alpha('muted-foreground', 0.3);
 }
 
 // Trust indicators
@@ -227,7 +227,7 @@
 .trustCard {
   padding: space(6);
   border-radius: radius('xl');
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-alpha('muted', 0.3);
   backdrop-filter: blur(8px);
   @include transition(transform);
 
@@ -240,7 +240,7 @@
   margin-bottom: space(3);
   height: 4px;
   width: 3rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .trustAccentBlue {
@@ -262,7 +262,7 @@
 
 .trustDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Footer
@@ -272,11 +272,11 @@
 
 .footerText {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .footerLink {
-  color: hsl(var(--primary));
+  color: color('primary');
 
   &:hover {
     text-decoration: underline;

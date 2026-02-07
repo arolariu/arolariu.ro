@@ -20,9 +20,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    hsl(var(--background)),
-    hsl(var(--primary) / 0.05),
-    hsl(var(--background))
+    color('background'),
+    color-alpha('primary', 0.05),
+    color('background')
   );
 }
 
@@ -59,15 +59,12 @@
 }
 
 .titleHighlight {
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include gradient-text-custom;
 }
 
 .description {
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -96,7 +93,7 @@
   padding: space(2);
   margin-bottom: space(12);
   border-radius: radius('lg');
-  background-color: hsl(var(--muted) / 0.5);
+  background-color: color-alpha('muted', 0.5);
   backdrop-filter: blur(8px);
 
   @include respond-to('md') {
@@ -118,13 +115,13 @@
   @include transition(background-color);
 
   &:hover {
-    background-color: hsl(var(--background) / 0.5);
+    background-color: color-alpha('background', 0.5);
   }
 }
 
 .tabTriggerActive {
   composes: tabTrigger;
-  background-color: hsl(var(--background));
+  background-color: color('background');
 }
 
 .tabIcon {
@@ -161,7 +158,7 @@
   margin-bottom: space(8);
   text-align: center;
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Tech grid
@@ -186,7 +183,7 @@
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary));
+    border-color: color('primary');
     @include shadow('lg');
   }
 }
@@ -247,7 +244,7 @@
 
 .techDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .techCardBorder {
@@ -289,7 +286,7 @@
 
 .statsDescription {
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -321,14 +318,14 @@
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary));
+    border-color: color('primary');
     @include shadow('lg');
   }
 }
 
 .statCardActive {
   composes: statCard;
-  border-color: hsl(var(--primary));
+  border-color: color('primary');
   @include shadow('lg');
 }
 
@@ -385,7 +382,7 @@
   margin-bottom: space(2);
   font-size: font-size('4xl');
   font-weight: font-weight('bold');
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 // Stat label
@@ -397,7 +394,7 @@
 
 .statDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Animated border

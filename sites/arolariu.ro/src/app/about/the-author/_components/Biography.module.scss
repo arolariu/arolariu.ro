@@ -24,7 +24,7 @@
 
 .orb {
   position: absolute;
-  border-radius: 9999px;
+  border-radius: radius('full');
   filter: blur(64px);
 }
 
@@ -77,8 +77,8 @@
   position: relative;
   overflow: hidden;
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border) / 0.5);
-  background-color: hsl(var(--card) / 0.5);
+  border: 1px solid color-alpha('border', 0.5);
+  background-color: color-alpha('card', 0.5);
   padding: space(6);
   @include shadow('lg');
   backdrop-filter: blur(4px);
@@ -90,12 +90,7 @@
 
 // Gradient accent bars
 .accentTop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 4px;
-  width: 100%;
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
+  @include accent-top-bar;
 }
 
 .accentBottom {
@@ -103,7 +98,7 @@
   bottom: 0;
   left: 0;
   height: 4px;
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
+  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);  // decorative bottom bar
 }
 
 // Bio section item
@@ -115,7 +110,7 @@
   gap: space(4);
   padding: space(4);
   border-radius: radius('lg');
-  color: hsl(var(--foreground));
+  color: color('foreground');
   @include transition(background-color);
 }
 
@@ -129,7 +124,7 @@
 
 .iconBlue {
   composes: icon;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .iconGreen {

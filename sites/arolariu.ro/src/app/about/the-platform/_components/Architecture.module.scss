@@ -20,9 +20,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    hsl(var(--background)),
-    hsl(var(--muted) / 0.3),
-    hsl(var(--background))
+    color('background'),
+    color-alpha('muted', 0.3),
+    color('background')
   );
 }
 
@@ -60,15 +60,12 @@
 }
 
 .titleHighlight {
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include gradient-text-custom;
 }
 
 .description {
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -105,13 +102,13 @@
   @include transition(border-color, box-shadow, transform);
 
   &:hover {
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-alpha('primary', 0.3);
   }
 }
 
 .layerCardActive {
   composes: layerCard;
-  border-color: hsl(var(--primary));
+  border-color: color('primary');
   transform: scale(1.05);
   @include shadow('lg');
 }
@@ -162,7 +159,7 @@
 
 .layerDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Technologies

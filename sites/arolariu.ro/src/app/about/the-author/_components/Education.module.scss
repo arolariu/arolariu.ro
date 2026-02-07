@@ -37,7 +37,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Education list
@@ -114,21 +114,21 @@
   width: 5rem;
   height: 5rem;
   margin-bottom: space(4);
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.2);
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.2);
   cursor: pointer;
 }
 
 .schoolIcon {
   width: 2.5rem;
   height: 2.5rem;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .degree {
   font-size: font-size('xl');
   font-weight: font-weight('bold');
-  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
 }
 
 .metaItem {
@@ -136,7 +136,7 @@
   align-items: center;
   justify-content: center;
   margin-top: space(1);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .metaIcon {
@@ -164,7 +164,7 @@
   margin-right: space(2);
   width: 1.25rem;
   height: 1.25rem;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 // Course list
@@ -184,19 +184,19 @@
 
 .courseBullet {
   margin-right: space(2);
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .description {
   margin-top: space(4);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // CTA button
 .ctaButton {
   margin-top: space(4);
   width: fit-content;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .ctaIcon {
@@ -222,11 +222,11 @@
 .backTitle {
   font-size: font-size('xl');
   font-weight: font-weight('bold');
-  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
 }
 
 .backButton {
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .backIcon {
@@ -261,6 +261,6 @@
   inset: 0;
   z-index: -1;
   border-radius: radius('xl');
-  background-color: hsl(var(--primary) / 0.05);
+  background-color: color-alpha('primary', 0.05);
   filter: blur(24px);
 }

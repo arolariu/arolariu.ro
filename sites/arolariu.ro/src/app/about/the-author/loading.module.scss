@@ -10,8 +10,8 @@
 .page {
   position: relative;
   min-height: 100vh;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: color('background');
+  color: color('foreground');
 }
 
 .inner {
@@ -33,7 +33,7 @@
 .heroAvatar {
   width: 8rem;
   height: 8rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 
   @include respond-to('md') {
     width: 10rem;
@@ -76,7 +76,7 @@
 
 .sectionMuted {
   composes: section;
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-alpha('muted', 0.3);
 }
 
 .sectionContainer {
@@ -108,7 +108,7 @@
 // ===========================================
 .biographyCard {
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border) / 0.5);
+  border: 1px solid color-alpha('border', 0.5);
   padding: space(6);
   @include flex-column;
   gap: space(4);
@@ -171,7 +171,7 @@
 .timelineCircle {
   width: 3rem;
   height: 3rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   flex-shrink: 0;
 }
 

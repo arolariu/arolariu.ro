@@ -20,9 +20,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    hsl(var(--background)),
-    hsl(var(--primary) / 0.05),
-    hsl(var(--background))
+    color('background'),
+    color-alpha('primary', 0.05),
+    color('background')
   );
 }
 
@@ -59,15 +59,12 @@
 }
 
 .titleHighlight {
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include gradient-text-custom;
 }
 
 .description {
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -89,12 +86,12 @@
   transform: translateX(-50%);
   width: 4px;
   height: 100%;
-  border-radius: 9999px;
+  border-radius: radius('full');
   background: linear-gradient(
     to bottom,
-    hsl(var(--primary) / 0.5),
-    hsl(var(--primary) / 0.3),
-    hsl(var(--primary) / 0.1)
+    color-alpha('primary', 0.5),
+    color-alpha('primary', 0.3),
+    color-alpha('primary', 0.1)
   );
 }
 
@@ -122,7 +119,7 @@
   justify-content: center;
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   @include shadow('lg');
 }
 
@@ -189,14 +186,14 @@
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary));
+    border-color: color('primary');
     @include shadow('lg');
   }
 }
 
 .eventCardActive {
   composes: eventCard;
-  border-color: hsl(var(--primary));
+  border-color: color('primary');
   @include shadow('lg');
 }
 
@@ -259,7 +256,7 @@
 
 .detailsInner {
   padding-top: space(4);
-  border-top: 1px solid hsl(var(--primary) / 0.2);
+  border-top: 1px solid color-alpha('primary', 0.2);
 }
 
 .detailsTitle {
@@ -279,7 +276,7 @@
   align-items: flex-start;
   gap: space(2);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .detailIcon {
@@ -327,7 +324,7 @@
   margin-top: space(2);
   text-align: center;
   font-size: font-size('xs');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Animated border
@@ -392,9 +389,9 @@
   margin-right: auto;
   width: 5rem;
   height: 5rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
 }
 
 .futureIcon {
@@ -404,5 +401,5 @@
 
 .futureText {
   margin-top: space(4);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

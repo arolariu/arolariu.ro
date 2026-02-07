@@ -10,8 +10,8 @@
 .page {
   position: relative;
   min-height: 100vh;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: color('background');
+  color: color('foreground');
 }
 
 .inner {
@@ -34,7 +34,7 @@
 .heroBadge {
   height: 2rem;
   width: 10rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .heroTitle {
@@ -68,7 +68,7 @@
 .heroPill {
   height: 2rem;
   width: 8rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .heroButtons {
@@ -111,7 +111,7 @@
 .sectionBadge {
   height: 1.5rem;
   width: 8rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .sectionTitle {
@@ -251,7 +251,7 @@
 .timelineCircle {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   flex-shrink: 0;
 }
 

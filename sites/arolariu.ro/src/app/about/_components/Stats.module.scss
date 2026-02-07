@@ -37,7 +37,7 @@
   margin-right: auto;
   max-width: 42rem;
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Stats grid
@@ -60,13 +60,13 @@
   height: 100%;
   overflow: hidden;
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
+  border: 1px solid color('border');
+  background-color: color('card');
   @include transition(transform, border-color, box-shadow);
 
   &:hover {
     transform: translateY(-4px);
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-alpha('primary', 0.3);
     @include shadow('lg');
   }
 }
@@ -163,5 +163,5 @@
 
 .description {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

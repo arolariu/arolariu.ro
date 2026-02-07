@@ -39,10 +39,7 @@
   max-width: 36rem;
   font-size: font-size('2xl');
   font-weight: font-weight('semibold');
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include gradient-text-custom;
 
   @include respond-to('sm') {
     font-size: font-size('3xl');
@@ -55,7 +52,7 @@
   max-width: 48rem;
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Pillars grid
@@ -73,16 +70,12 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  background-color: hsl(var(--card) / 0.5);
+  background-color: color-alpha('card', 0.5);
   backdrop-filter: blur(8px);
-  border: 1px solid hsl(var(--border));
+  border: 1px solid color('border');
   border-radius: radius('lg');
-  @include transition(border-color, box-shadow);
+  @include card-hover;
 
-  &:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    @include shadow('lg');
-  }
 }
 
 .cardGradient {
@@ -138,5 +131,5 @@
 .cardDescription {
   font-size: font-size('sm');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

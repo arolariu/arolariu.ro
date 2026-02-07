@@ -4,7 +4,7 @@
 @use '../../../../styles/abstracts' as *;
 
 .section {
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-alpha('muted', 0.3);
   padding: space(20) space(4);
 
   @include respond-to('md') {
@@ -41,7 +41,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Grid layout
@@ -65,7 +65,7 @@
   bottom: 0;
   left: 2rem;
   width: 1px;
-  background-color: hsl(var(--border) / 0.5);
+  background-color: color-alpha('border', 0.5);
 }
 
 .timelineItem {
@@ -111,18 +111,18 @@
   justify-content: center;
   width: 4rem;
   height: 4rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
   @include transition(background-color);
 }
 
 .timelineIconActive {
   composes: timelineIcon;
-  background-color: hsl(var(--primary) / 0.2);
+  background-color: color-alpha('primary', 0.2);
 }
 
 .timelineIconInactive {
   composes: timelineIcon;
-  background-color: hsl(var(--muted));
+  background-color: color('muted');
 }
 
 // Inner icon circle
@@ -132,19 +132,19 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 9999px;
+  border-radius: radius('full');
 }
 
 .timelineIconInnerActive {
   composes: timelineIconInner;
-  background-color: hsl(var(--primary));
+  background-color: color('primary');
   color: white;
 }
 
 .timelineIconInnerInactive {
   composes: timelineIconInner;
-  background-color: hsl(var(--background));
-  color: hsl(var(--muted-foreground));
+  background-color: color('background');
+  color: color('muted-foreground');
 }
 
 .timelineIconSvg {
@@ -165,11 +165,11 @@
 
 .timelineCompanyActive {
   composes: timelineCompany;
-  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
 }
 
 .timelineRole {
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .timelineMeta {
@@ -177,7 +177,7 @@
   align-items: center;
   margin-top: space(1);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .timelineMetaIcon {
@@ -200,8 +200,8 @@
   width: 100%;
   overflow: hidden;
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border) / 0.5);
-  background-color: hsl(var(--card));
+  border: 1px solid color-alpha('border', 0.5);
+  background-color: color('card');
   padding: space(6);
   @include shadow('lg');
 }
@@ -235,14 +235,14 @@
 .cardTitle {
   font-size: font-size('2xl');
   font-weight: font-weight('bold');
-  text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
 }
 
 .cardMeta {
   display: flex;
   align-items: center;
   margin-top: space(1);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .cardCompany {
@@ -269,7 +269,7 @@
   width: 4rem;
   height: 4rem;
   border-radius: radius('lg');
-  background-color: hsl(var(--background));
+  background-color: color('background');
 }
 
 .logoInner {
@@ -278,22 +278,22 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--background));
-  color: hsl(var(--muted-foreground));
+  border-radius: radius('full');
+  background-color: color('background');
+  color: color('muted-foreground');
   @include transition(color);
 }
 
 .logoIcon {
   width: 2.5rem;
   height: 2.5rem;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Card description
 .cardDescription {
   margin-bottom: space(6);
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Card sections
@@ -328,7 +328,7 @@
   flex-shrink: 0;
   width: 1rem;
   height: 1rem;
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 // Skills
@@ -343,7 +343,7 @@
   @include transition(background-color, color);
 
   &:hover {
-    background-color: hsl(var(--primary));
+    background-color: color('primary');
     color: white;
   }
 }

@@ -11,8 +11,8 @@
 .platformPage {
   position: relative;
   min-height: 100vh;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: color('background');
+  color: color('foreground');
 }
 
 .platformMain {
@@ -45,9 +45,9 @@
     z-index: -1;
     background: linear-gradient(
       to bottom,
-      hsl(var(--background)),
-      hsl(var(--primary) / 0.05),
-      hsl(var(--background))
+      color('background'),
+      color-alpha('primary', 0.05),
+      color('background')
     );
   }
 }
@@ -80,15 +80,12 @@
 }
 
 .sectionTitleHighlight {
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  @include gradient-text-custom;
 }
 
 .sectionDescription {
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('md') {
     font-size: font-size('xl');
@@ -142,7 +139,7 @@
   max-width: 42rem;
   font-size: font-size('xl');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .heroCta {
@@ -181,14 +178,14 @@
   height: 100%;
   padding: space(6);
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
+  border: 1px solid color('border');
+  background-color: color('card');
   overflow: hidden;
   @include transition(transform, border-color, box-shadow);
 
   &:hover {
     transform: translateY(-4px);
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-alpha('primary', 0.3);
     @include shadow('xl');
   }
 }
@@ -228,7 +225,7 @@
 
 .featureDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
   line-height: line-height('relaxed');
 }
 
@@ -245,8 +242,8 @@
   position: relative;
   padding: space(8);
   border-radius: radius('2xl');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card) / 0.5);
+  border: 1px solid color('border');
+  background-color: color-alpha('card', 0.5);
   backdrop-filter: blur(8px);
 }
 
@@ -254,7 +251,7 @@
   padding: space(4);
   margin-bottom: space(4);
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border) / 0.5);
+  border: 1px solid color-alpha('border', 0.5);
 
   &:last-child {
     margin-bottom: 0;
@@ -276,7 +273,7 @@
 .architectureComponent {
   padding: space(2) space(3);
   border-radius: radius('md');
-  background-color: hsl(var(--muted));
+  background-color: color('muted');
   font-size: font-size('sm');
 }
 
@@ -296,7 +293,7 @@
   gap: space(2);
   padding: space(2);
   margin-bottom: space(12);
-  background-color: hsl(var(--muted) / 0.5);
+  background-color: color-alpha('muted', 0.5);
   backdrop-filter: blur(8px);
   border-radius: radius('lg');
 
@@ -319,13 +316,13 @@
   @include transition(background-color);
 
   &:hover {
-    background-color: hsl(var(--background) / 0.5);
+    background-color: color-alpha('background', 0.5);
   }
 }
 
 .tabTriggerActive {
   composes: tabTrigger;
-  background-color: hsl(var(--background));
+  background-color: color('background');
 }
 
 .tabIndicator {
@@ -340,7 +337,7 @@
   margin-bottom: space(8);
   text-align: center;
   font-size: font-size('lg');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Tech cards grid
@@ -362,12 +359,12 @@
   height: 100%;
   overflow: hidden;
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
+  border: 1px solid color('border');
+  background-color: color('card');
   @include transition(border-color, box-shadow);
 
   &:hover {
-    border-color: hsl(var(--primary));
+    border-color: color('primary');
     @include shadow('lg');
   }
 }
@@ -418,7 +415,7 @@
 
 .techDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .techCardAccent {
@@ -454,7 +451,7 @@
 .techStatCard {
   padding: space(6);
   border-radius: radius('xl');
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: color-alpha('muted', 0.3);
   backdrop-filter: blur(8px);
   text-align: center;
   @include transition(transform);
@@ -468,7 +465,7 @@
   margin-bottom: space(1);
   font-size: font-size('3xl');
   font-weight: font-weight('bold');
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .techStatLabel {
@@ -477,7 +474,7 @@
 
 .techStatDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -497,7 +494,7 @@
   bottom: 0;
   width: 2px;
   transform: translateX(-50%);
-  background: linear-gradient(to bottom, hsl(var(--primary) / 0.2), hsl(var(--primary)), hsl(var(--primary) / 0.2));
+  background: linear-gradient(to bottom, color-alpha('primary', 0.2), color('primary'), color-alpha('primary', 0.2));
 
   @include respond-below('md') {
     left: 1rem;
@@ -542,9 +539,9 @@
   transform: translateX(-50%);
   width: 1rem;
   height: 1rem;
-  border-radius: 9999px;
-  background-color: hsl(var(--primary));
-  border: 3px solid hsl(var(--background));
+  border-radius: radius('full');
+  background-color: color('primary');
+  border: 3px solid color('background');
   @include shadow('md');
 
   @include respond-below('md') {
@@ -557,13 +554,13 @@
   max-width: 100%;
   padding: space(5);
   border-radius: radius('lg');
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--card));
+  border: 1px solid color('border');
+  background-color: color('card');
   @include shadow('md');
   @include transition(box-shadow, border-color);
 
   &:hover {
-    border-color: hsl(var(--primary) / 0.3);
+    border-color: color-alpha('primary', 0.3);
     @include shadow('lg');
   }
 
@@ -576,7 +573,7 @@
   margin-bottom: space(2);
   font-size: font-size('sm');
   font-weight: font-weight('semibold');
-  color: hsl(var(--primary));
+  color: color('primary');
 }
 
 .timelineTitle {
@@ -587,7 +584,7 @@
 
 .timelineDescription {
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -624,7 +621,7 @@
   max-width: 42rem;
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 .ctaButtons {
@@ -642,7 +639,7 @@
 .ctaFooter {
   margin-top: space(12);
   font-size: font-size('sm');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // ===========================================

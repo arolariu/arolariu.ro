@@ -25,7 +25,7 @@
 
 .orb {
   position: absolute;
-  border-radius: 9999px;
+  border-radius: radius('full');
   filter: blur(64px);
 }
 
@@ -116,7 +116,7 @@
   max-width: 42rem;
   font-size: font-size('lg');
   line-height: line-height('relaxed');
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 
   @include respond-to('sm') {
     font-size: font-size('xl');
@@ -166,5 +166,5 @@
 .scrollIcon {
   width: 1.5rem;
   height: 1.5rem;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }

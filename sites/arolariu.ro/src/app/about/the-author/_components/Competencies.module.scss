@@ -37,7 +37,7 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
 
 // Grid
@@ -65,15 +65,15 @@
   height: 100%;
   overflow: hidden;
   border-radius: radius('xl');
-  border: 1px solid hsl(var(--border) / 0.5);
-  background-color: hsl(var(--card));
+  border: 1px solid color-alpha('border', 0.5);
+  background-color: color('card');
   padding: space(6);
   @include shadow('md');
   @include transition(border-color, box-shadow, background-color);
 
   &:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    background-color: hsl(var(--card) / 0.8);
+    border-color: color-alpha('primary', 0.3);
+    background-color: color-alpha('card', 0.8);
     @include shadow('xl');
   }
 }
@@ -85,7 +85,7 @@
   left: 0;
   height: 4px;
   width: 100%;
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.3));
+  background: linear-gradient(to right, color('primary'), color-alpha('primary', 0.3));
 }
 
 // Card header
@@ -100,13 +100,13 @@
 .iconWrapper {
   padding: space(3);
   border-radius: radius('lg');
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
   @include transition(background-color, color);
 
   .card:hover & {
-    background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
+    background-color: color('primary');
+    color: color('primary-foreground');
   }
 }
 
@@ -121,11 +121,11 @@
   font-weight: font-weight('semibold');
 
   .card:hover & {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+    text-shadow: 0 0 20px color-alpha('primary', 0.5);
   }
 }
 
 // Card description
 .cardDescription {
-  color: hsl(var(--muted-foreground));
+  color: color('muted-foreground');
 }
