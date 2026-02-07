@@ -80,7 +80,7 @@ p {
 // ===========================================
 a {
   color: hsl(var(--primary));
-  @include transition(color, opacity);
+  @include transition((color, opacity));
 
   &:hover {
     opacity: 0.8;

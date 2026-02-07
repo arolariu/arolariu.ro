@@ -47,7 +47,7 @@
   background-color: color-alpha('card', 0.6);
   backdrop-filter: blur(12px);
   @include shadow('2xl');
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   @include respond-to('sm') {
     padding: space(4);

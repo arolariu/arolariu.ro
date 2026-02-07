@@ -180,7 +180,7 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color('primary');
@@ -315,7 +315,7 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color('primary');

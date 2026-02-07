@@ -55,7 +55,7 @@ $invoice-status-colors: (
   border-radius: radius('md');
   background: color('background');
   font-size: font-size('sm');
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:focus {
     border-color: color('ring');

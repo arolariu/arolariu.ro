@@ -27,6 +27,68 @@
 }
 
 // ===========================================
+// PRESET GRID
+// ===========================================
+.presetGrid {
+  @include grid(2, space(3));
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.presetCard {
+  @include flex-column;
+  align-items: center;
+  gap: space(2);
+  padding: space(3);
+  border: 2px solid color('border');
+  border-radius: radius('lg');
+  background: transparent;
+  cursor: pointer;
+  @include transition((border-color, box-shadow, transform));
+
+  &:hover {
+    @include shadow('sm');
+    transform: translateY(-1px);
+  }
+
+  &[data-selected='true'] {
+    border-color: hsl(var(--primary));
+    @include shadow('sm');
+  }
+}
+
+.presetPreview {
+  display: flex;
+  gap: space(1);
+}
+
+.presetDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: radius('full');
+}
+
+.presetName {
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+.presetDescription {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  text-align: center;
+  @include line-clamp(2);
+}
+
+.customPresetCard {
+  composes: presetCard;
+  border-style: dashed;
+}
+
+// ===========================================
 // COLOR GRID
 // ===========================================
 .colorGrid {

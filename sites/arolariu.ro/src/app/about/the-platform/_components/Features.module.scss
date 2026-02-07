@@ -79,7 +79,7 @@
   height: 100%;
   overflow: hidden;
   cursor: pointer;
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color('primary');
@@ -149,7 +149,7 @@
   height: 1.25rem;
   opacity: 0;
   transform: translateX(10px);
-  @include transition(opacity, transform);
+  @include transition((opacity, transform));
 
   .card:hover & {
     opacity: 1;

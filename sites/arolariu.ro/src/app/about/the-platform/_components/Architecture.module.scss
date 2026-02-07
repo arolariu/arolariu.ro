@@ -99,7 +99,7 @@
 .layerCard {
   position: relative;
   overflow: hidden;
-  @include transition(border-color, box-shadow, transform);
+  @include transition((border-color, box-shadow, transform));
 
   &:hover {
     border-color: color-alpha('primary', 0.3);

@@ -138,7 +138,7 @@
   background-color: color-alpha('card', 0.5);
   border: 1px solid color-alpha('border', 0.5);
   backdrop-filter: blur(4px);
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color-alpha('primary', 0.4);

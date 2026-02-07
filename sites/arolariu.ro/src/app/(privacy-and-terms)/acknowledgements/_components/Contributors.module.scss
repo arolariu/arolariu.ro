@@ -68,7 +68,7 @@
 // ===========================================
 .contributorCard {
   height: 100%;
-  @include transition(all, 300ms);
+  @include transition(all, 'moderate');
 
   &:hover {
     transform: translateY(-0.25rem);

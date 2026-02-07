@@ -59,7 +59,7 @@
   border-radius: radius('full');
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  @include transition(background-color, color);
+  @include transition((background-color, color));
 }
 
 .stepCircleDefault {

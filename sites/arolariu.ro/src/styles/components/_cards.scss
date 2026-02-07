@@ -75,7 +75,7 @@
 
   // Interactive card (clickable)
   &--interactive {
-    @include transition(border-color, box-shadow, transform);
+    @include transition((border-color, box-shadow, transform));
     cursor: pointer;
 
     &:hover {

@@ -73,7 +73,7 @@
   background-color: color('card');
   padding: space(6);
   @include shadow('md');
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color-alpha('primary', 0.3);

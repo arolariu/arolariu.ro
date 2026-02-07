@@ -98,7 +98,7 @@
   border: 1px solid color('border');
   padding: space(8);
   @include shadow('2xl');
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color-alpha('primary', 0.1);

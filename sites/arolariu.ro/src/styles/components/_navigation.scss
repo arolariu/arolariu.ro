@@ -88,7 +88,7 @@
   font-size: font-size('sm');
   color: #374151; // gray-700
   border-radius: radius('md');
-  @include transition(background-color, color);
+  @include transition((background-color, color));
 
   &:hover {
     background-color: #f9fafb; // gray-50
@@ -283,7 +283,7 @@
   font-size: font-size('sm');
   color: #374151; // gray-700
   border-radius: radius('md');
-  @include transition(background-color, color);
+  @include transition((background-color, color));
 
   &:hover {
     background-color: #f9fafb; // gray-50

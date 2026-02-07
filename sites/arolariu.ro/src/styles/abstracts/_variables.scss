@@ -161,3 +161,46 @@ $shadows: (
   }
   @error "Unknown shadow level: #{$level}. Available: #{map.keys($shadows)}";
 }
+
+// ===========================================
+// MOTION TOKENS
+// Inspired by Material Design 3 motion system.
+// Provides named tokens for transition durations and
+// easing curves, replacing raw ms/cubic-bezier values.
+//
+// USAGE:
+//   transition-duration: duration('normal');   // → 150ms
+//   transition-timing-function: easing('ease'); // → cubic-bezier(0.4, 0, 0.2, 1)
+// ===========================================
+$durations: (
+  'instant': 0ms,
+  'fast': 100ms,
+  'normal': 150ms,
+  'moderate': 250ms,
+  'slow': 350ms,
+  'slower': 500ms,
+  'slowest': 700ms,
+) !default;
+
+@function duration($key) {
+  @if map.has-key($durations, $key) {
+    @return map.get($durations, $key);
+  }
+  @error "Unknown duration: #{$key}. Available: #{map.keys($durations)}";
+}
+
+$easings: (
+  'linear': linear,
+  'ease': cubic-bezier(0.4, 0, 0.2, 1),        // standard (Material)
+  'ease-in': cubic-bezier(0.4, 0, 1, 1),        // decelerate
+  'ease-out': cubic-bezier(0, 0, 0.2, 1),       // accelerate
+  'ease-in-out': cubic-bezier(0.4, 0, 0.2, 1),  // standard
+  'spring': cubic-bezier(0.34, 1.56, 0.64, 1),  // bounce-like
+) !default;
+
+@function easing($key) {
+  @if map.has-key($easings, $key) {
+    @return map.get($easings, $key);
+  }
+  @error "Unknown easing: #{$key}. Available: #{map.keys($easings)}";
+}

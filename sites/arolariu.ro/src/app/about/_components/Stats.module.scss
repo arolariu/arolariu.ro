@@ -62,7 +62,7 @@
   border-radius: radius('lg');
   border: 1px solid color('border');
   background-color: color('card');
-  @include transition(transform, border-color, box-shadow);
+  @include transition((transform, border-color, box-shadow));
 
   &:hover {
     transform: translateY(-4px);

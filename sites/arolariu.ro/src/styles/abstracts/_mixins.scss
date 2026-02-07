@@ -2,6 +2,7 @@
 // MIXINS
 // ===========================================
 @use 'sass:map';
+@use 'sass:meta';
 @use 'variables' as *;
 
 // ===========================================
@@ -106,16 +107,18 @@
   box-shadow: shadow($level);
 }
 
-// Transition mixin
-@mixin transition($properties: all, $duration: 150ms, $timing: cubic-bezier(0.4, 0, 0.2, 1)) {
+// Transition mixin (uses motion tokens from _variables.scss)
+// Accepts token names ('normal', 'ease') or raw values (300ms, linear).
+// For multiple properties, wrap in a list: transition((border-color, box-shadow))
+@mixin transition($properties: all, $dur: 'normal', $timing: 'ease') {
   transition-property: $properties;
-  transition-duration: $duration;
-  transition-timing-function: $timing;
+  transition-duration: if(meta.type-of($dur) == 'string', duration($dur), $dur);
+  transition-timing-function: if(meta.type-of($timing) == 'string', easing($timing), $timing);
 }
 
 // Hover lift effect
 @mixin hover-lift($distance: -2px) {
-  @include transition(transform, box-shadow);
+  @include transition((transform, box-shadow));
 
   &:hover {
     transform: translateY($distance);
@@ -273,7 +276,7 @@
 //   .card { @include card-hover; }
 //   .card { @include card-hover('xl', 0.5); }
 @mixin card-hover($shadow-level: 'lg', $border-alpha: 0.3, $border-color: 'primary') {
-  @include transition(border-color, box-shadow, background-color);
+  @include transition((border-color, box-shadow, background-color));
 
   &:hover {
     border-color: hsl(var(--#{$border-color}) / #{$border-alpha});

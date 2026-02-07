@@ -14,7 +14,7 @@
 .scanImage {
   width: 100%;
   object-fit: cover;
-  @include transition(all, 200ms);
+  @include transition(all, 'normal');
 }
 
 .scanImageTransitioning {

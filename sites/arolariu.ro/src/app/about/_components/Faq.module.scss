@@ -71,7 +71,7 @@
   border: 1px solid color-alpha('border', 0.5);
   border-radius: radius('lg');
   padding: space(2) space(4);
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color-alpha('primary', 0.3);

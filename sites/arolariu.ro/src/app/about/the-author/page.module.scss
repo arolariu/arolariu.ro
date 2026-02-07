@@ -465,7 +465,7 @@
   border-radius: radius('lg');
   background-color: color('card');
   border: 1px solid color('border');
-  @include transition(transform, box-shadow, border-color);
+  @include transition((transform, box-shadow, border-color));
 
   &:hover {
     transform: translateY(-4px);
@@ -620,7 +620,7 @@
   border: 1px solid color('border');
   background-color: color('card');
   text-align: center;
-  @include transition(transform, border-color, box-shadow);
+  @include transition((transform, border-color, box-shadow));
 
   &:hover {
     transform: translateY(-4px);

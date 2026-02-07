@@ -340,7 +340,7 @@
 
 .skillBadge {
   font-weight: font-weight('normal');
-  @include transition(background-color, color);
+  @include transition((background-color, color));
 
   &:hover {
     background-color: color('primary');

@@ -69,7 +69,7 @@
   background-color: color('card');
   padding: space(6);
   @include shadow('md');
-  @include transition(border-color, box-shadow, background-color);
+  @include transition((border-color, box-shadow, background-color));
 
   &:hover {
     border-color: color-alpha('primary', 0.3);
@@ -102,7 +102,7 @@
   border-radius: radius('lg');
   background-color: color-alpha('primary', 0.1);
   color: color('primary');
-  @include transition(background-color, color);
+  @include transition((background-color, color));
 
   .card:hover & {
     background-color: color('primary');

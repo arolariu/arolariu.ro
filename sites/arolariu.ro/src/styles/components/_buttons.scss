@@ -17,7 +17,7 @@
   font-size: font-size('sm');
   border: none;
   cursor: pointer;
-  @include transition(opacity, transform);
+  @include transition((opacity, transform));
   @include focus-ring;
 
   &:hover {
@@ -59,7 +59,7 @@
   font-size: font-size('sm');
   border: none;
   cursor: pointer;
-  @include transition(color, background-color);
+  @include transition((color, background-color));
   @include focus-ring;
 
   // Gradient border using pseudo-element
@@ -108,7 +108,7 @@
   color: hsl(var(--foreground));
   border: 1px solid hsl(var(--border));
   cursor: pointer;
-  @include transition(background-color, border-color, color);
+  @include transition((background-color, border-color, color));
   @include focus-ring;
 
   &:hover {
@@ -154,7 +154,7 @@
   text-decoration: underline;
   text-underline-offset: 4px;
   cursor: pointer;
-  @include transition(color, text-decoration-color);
+  @include transition((color, text-decoration-color));
 
   &:hover {
     color: hsl(var(--primary) / 0.8);

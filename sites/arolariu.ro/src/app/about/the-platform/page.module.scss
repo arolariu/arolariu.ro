@@ -181,7 +181,7 @@
   border: 1px solid color('border');
   background-color: color('card');
   overflow: hidden;
-  @include transition(transform, border-color, box-shadow);
+  @include transition((transform, border-color, box-shadow));
 
   &:hover {
     transform: translateY(-4px);
@@ -361,7 +361,7 @@
   border-radius: radius('lg');
   border: 1px solid color('border');
   background-color: color('card');
-  @include transition(border-color, box-shadow);
+  @include transition((border-color, box-shadow));
 
   &:hover {
     border-color: color('primary');
@@ -557,7 +557,7 @@
   border: 1px solid color('border');
   background-color: color('card');
   @include shadow('md');
-  @include transition(box-shadow, border-color);
+  @include transition((box-shadow, border-color));
 
   &:hover {
     border-color: color-alpha('primary', 0.3);
