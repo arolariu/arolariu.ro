@@ -86,6 +86,11 @@
     &:active {
       transform: scale(0.99);
     }
+
+    &:focus-visible {
+      outline: 2px solid hsl(var(--ring));
+      outline-offset: -2px; // Keep inside overflow: hidden boundary
+    }
   }
 
   // Elevated card (more shadow, no border)
@@ -178,6 +183,7 @@
   }
 
   // Featured card (gradient border)
+  // NOTE: -webkit-mask/-webkit-mask-composite are intentional — see _buttons.scss.
   &--featured {
     position: relative;
     border: none;

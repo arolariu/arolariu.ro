@@ -29,7 +29,7 @@
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
   }
 
@@ -63,6 +63,8 @@
   @include focus-ring;
 
   // Gradient border using pseudo-element
+  // NOTE: -webkit-mask/-webkit-mask-composite are intentional — mask-composite
+  // syntax differs between -webkit- and standard; autoprefixer cannot auto-add.
   &::before {
     content: '';
     position: absolute;
@@ -90,7 +92,7 @@
   }
 
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
   }
 }
@@ -122,8 +124,16 @@
 
   // Size variants
   &--sm {
+    position: relative;
     width: 2rem;
     height: 2rem;
+
+    // Expand touch target to 44px without changing visual size
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -0.375rem; // expand 6px each side: 32 + 12 = 44px
+    }
   }
 
   &--lg {
