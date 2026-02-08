@@ -1,32 +1,71 @@
-// ===========================================
-// SCSS DESIGN SYSTEM CONFIGURATION
-// ===========================================
-// Central configuration for the design system.
-// Inspired by Carbon's @use config with ($prefix: 'cds') pattern.
-//
-// This module is @used first by all other abstracts files.
-// Consumer modules can override defaults:
-//   @use 'abstracts' with ($enable-fluid-type: false);
-//
-// DEPENDENCIES: None (leaf module)
-// ===========================================
+/// ===========================================
+/// SCSS DESIGN SYSTEM CONFIGURATION
+/// ===========================================
+/// Central configuration for the design system.
+/// Inspired by Carbon's `@use config with ($prefix: 'cds')` pattern.
+///
+/// This module is `@used` first by all other abstracts files.
+/// Consumer modules can override defaults:
+///   `@use 'abstracts' with ($enable-fluid-type: false);`
+///
+/// @group config
+/// @author arolariu
+/// ===========================================
 
-// Feature flags
+/// Enable fluid typography using `clamp()` for responsive font sizes.
+/// @type Boolean
+/// @group config
 $enable-fluid-type: true !default;
+
+/// Enable CSS logical properties (`margin-inline`, `padding-block`, etc.).
+/// @type Boolean
+/// @group config
 $enable-logical-properties: true !default;
+
+/// Enable CSS container queries for component-level responsive design.
+/// @type Boolean
+/// @group config
 $enable-container-queries: true !default;
+
+/// Enable `prefers-reduced-motion` media query wrappers.
+/// @type Boolean
+/// @group config
 $enable-reduced-motion: true !default;
+
+/// Enable high-contrast mode adjustments.
+/// @type Boolean
+/// @group config
 $enable-high-contrast: true !default;
+
+/// Enable print stylesheet generation.
+/// @type Boolean
+/// @group config
 $enable-print-styles: true !default;
+
+/// Enable CSS `@layer` for cascade control.
+/// @type Boolean
+/// @group config
 $enable-css-layers: true !default;
 
-// Namespace prefix for CSS custom properties
-// All generated CSS variables will use this prefix: --aro-{token}
+/// Namespace prefix for CSS custom properties.
+/// All generated CSS variables use this prefix: `--aro-{token}`.
+/// @type String
+/// @group config
 $css-prefix: 'aro' !default;
 
-// Base font size for rem calculations (browser default)
+/// Base font size for rem calculations (browser default).
+/// @type Length
+/// @group config
 $base-font-size: 16px !default;
 
-// Default transition configuration
+/// Default transition duration.
+/// @type Duration
+/// @group config
+/// @see {variable} $durations
 $default-duration: 150ms !default;
+
+/// Default easing curve for transitions.
+/// @type TimingFunction
+/// @group config
+/// @see {variable} $easings
 $default-easing: cubic-bezier(0.4, 0, 0.2, 1) !default;

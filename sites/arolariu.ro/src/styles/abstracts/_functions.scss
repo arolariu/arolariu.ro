@@ -1,37 +1,65 @@
-// ===========================================
-// DESIGN TOKENS — Functions
-// ===========================================
-// Pure utility functions for unit conversion, map access, and
-// string manipulation. These functions have no side effects and
-// produce no CSS output.
-//
-// USAGE:
-//   width: rem(24);                    // → 1.5rem
-//   font-size: em(14);                 // → 0.875em
-//   $raw: strip-unit(1.5rem);          // → 1.5
-//   $val: map-deep-get($map, 'a', 'b');
-//   $has: list-contains($list, 'x');   // → true/false
-//   $new: str-replace('foo-bar', '-', '_'); // → 'foo_bar'
-//
-// DEPENDENCIES: None
-// IMPORTED BY: _index.scss (forwarded to all consumers)
-// ===========================================
+/// ===========================================
+/// DESIGN TOKENS — Functions
+/// ===========================================
+/// Pure utility functions for unit conversion, map access, and
+/// string manipulation. These functions have no side effects and
+/// produce no CSS output.
+///
+/// @group functions
+/// @author arolariu
+///
+/// @example scss - Unit conversion
+///   width: rem(24);                        // → 1.5rem
+///   font-size: em(14);                     // → 0.875em
+///
+/// @example scss - Map access
+///   $val: map-deep-get($map, 'a', 'b');
+///
+/// @example scss - List check
+///   $has: list-contains($list, 'x');       // → true/false
+///
+/// @example scss - String replace
+///   $new: str-replace('foo-bar', '-', '_'); // → 'foo_bar'
+/// ===========================================
 
 // ===========================================
 // UNIT FUNCTIONS
 // ===========================================
 
-// Convert pixels to rem
+/// Convert a pixel value to rem units.
+/// Uses a configurable base font size (default: 16px).
+/// @param {Number} $pixels - Value in pixels (unitless)
+/// @param {Number} $base [16] - Base font size in pixels
+/// @return {Length} The rem value
+/// @group functions
+/// @example scss
+///   width: rem(24);       // → 1.5rem
+///   padding: rem(12);     // → 0.75rem
+///   font-size: rem(14);   // → 0.875rem
 @function rem($pixels, $base: 16) {
   @return #{calc($pixels / $base)}rem;
 }
 
-// Convert pixels to em
+/// Convert a pixel value to em units.
+/// Uses a configurable base font size (default: 16px).
+/// @param {Number} $pixels - Value in pixels (unitless)
+/// @param {Number} $base [16] - Base font size in pixels
+/// @return {Length} The em value
+/// @group functions
+/// @example scss
+///   font-size: em(14);     // → 0.875em
+///   margin: em(8);         // → 0.5em
 @function em($pixels, $base: 16) {
   @return #{calc($pixels / $base)}em;
 }
 
-// Strip unit from value
+/// Strip the unit from a CSS value, returning a unitless number.
+/// @param {Length} $value - A value with a unit (e.g. 1.5rem, 16px)
+/// @return {Number} The unitless number
+/// @group functions
+/// @example scss
+///   $raw: strip-unit(1.5rem);  // → 1.5
+///   $raw: strip-unit(16px);    // → 16
 @function strip-unit($value) {
   @return calc($value / ($value * 0 + 1));
 }
@@ -40,7 +68,16 @@
 // MAP FUNCTIONS
 // ===========================================
 
-// Get value from nested map
+/// Get a value from a deeply nested map using a sequence of keys.
+/// Returns `null` if any intermediate key is missing or the value
+/// at that key is not a map.
+/// @param {Map} $map - The root map to traverse
+/// @param {String...} $keys - One or more keys to follow
+/// @return {*} The value at the nested key path, or null
+/// @group functions
+/// @example scss
+///   $theme: ('colors': ('primary': ('base': blue)));
+///   $val: map-deep-get($theme, 'colors', 'primary', 'base'); // → blue
 @function map-deep-get($map, $keys...) {
   @each $key in $keys {
     @if type-of($map) != 'map' {
@@ -51,7 +88,14 @@
   @return $map;
 }
 
-// Check if value exists in list
+/// Check if a value exists in a list.
+/// @param {List} $list - The list to search
+/// @param {*} $value - The value to find
+/// @return {Boolean} true if the value is in the list
+/// @group functions
+/// @example scss
+///   $has: list-contains(('a', 'b', 'c'), 'b'); // → true
+///   $has: list-contains(('a', 'b', 'c'), 'z'); // → false
 @function list-contains($list, $value) {
   @return index($list, $value) != null;
 }
@@ -60,7 +104,16 @@
 // STRING FUNCTIONS
 // ===========================================
 
-// Replace string
+/// Replace all occurrences of a substring within a string.
+/// Recursively replaces to handle all occurrences.
+/// @param {String} $string - The original string
+/// @param {String} $search - The substring to find
+/// @param {String} $replace [''] - The replacement string
+/// @return {String} The modified string
+/// @group functions
+/// @example scss
+///   $new: str-replace('foo-bar-baz', '-', '_'); // → 'foo_bar_baz'
+///   $new: str-replace('hello world', ' ', '');  // → 'helloworld'
 @function str-replace($string, $search, $replace: '') {
   $index: str-index($string, $search);
 

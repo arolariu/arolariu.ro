@@ -1,30 +1,54 @@
-// ===========================================
-// DESIGN TOKENS — Variables
-// ===========================================
-// This file defines all design tokens as SCSS maps with helper functions.
-// Each token set has a corresponding function for type-safe access
-// with compile-time error messages for invalid keys.
-//
-// USAGE:
-//   padding: space(4);           // → 1rem (16px)
-//   z-index: z('modal');         // → 1050
-//   border-radius: radius('xl'); // → 0.75rem (12px)
-//   min-width: breakpoint('md'); // → 768px
-//
-// EXTENDING:
-//   To add a new spacing value, add a key-value pair to $spacing.
-//   To add a new breakpoint, add to $breakpoints AND update
-//   tailwind.config.ts if Tailwind is still in use.
-//
-// DEPENDENCIES: sass:map
-// IMPORTED BY: _index.scss (forwarded to all consumers)
-// ===========================================
+/// ===========================================
+/// DESIGN TOKENS — Variables
+/// ===========================================
+/// This file defines all design tokens as SCSS maps with helper functions.
+/// Each token set has a corresponding function for type-safe access
+/// with compile-time error messages for invalid keys.
+///
+/// @group tokens
+/// @author arolariu
+///
+/// @example scss - Spacing
+///   padding: space(4);           // → 1rem (16px)
+///
+/// @example scss - Z-index
+///   z-index: z('modal');         // → 1050
+///
+/// @example scss - Border radius
+///   border-radius: radius('xl'); // → 0.75rem (12px)
+///
+/// @example scss - Breakpoint
+///   min-width: breakpoint('md'); // → 768px
+///
+/// EXTENDING:
+///   To add a new spacing value, add a key-value pair to $spacing.
+///   To add a new breakpoint, add to $breakpoints AND update
+///   tailwind.config.ts if Tailwind is still in use.
+///
+/// @see {variable} $spacing
+/// @see {variable} $breakpoints
+/// @see {variable} $z-index
+/// @see {variable} $border-radius
+/// @see {variable} $shadows
+/// @see {variable} $durations
+/// @see {variable} $easings
+/// ===========================================
 @use 'sass:map';
 
 // ===========================================
 // SPACING SCALE
-// Matches current Tailwind usage patterns
 // ===========================================
+
+/// Spacing scale map — matches Tailwind usage patterns.
+/// Keys are unitless multipliers; values are rem-based lengths.
+/// @type Map
+/// @group tokens-spacing
+/// @prop {Length} 0 [0] - No spacing
+/// @prop {Length} 0.5 [0.125rem] - 2px
+/// @prop {Length} 1 [0.25rem] - 4px
+/// @prop {Length} 4 [1rem] - 16px (base)
+/// @prop {Length} 8 [2rem] - 32px
+/// @prop {Length} 96 [24rem] - 384px (max)
 $spacing: (
   0: 0,
   0.5: 0.125rem,   // 2px
@@ -62,7 +86,15 @@ $spacing: (
   96: 24rem,       // 384px
 );
 
-// Helper function to get spacing value
+/// Get a spacing value by its scale key.
+/// @param {Number} $key - Scale key (e.g. 4, 8, 12)
+/// @return {Length} The rem-based spacing value
+/// @throws Unknown spacing key: #{$key}
+/// @group tokens-spacing
+/// @example scss
+///   padding: space(4);     // → 1rem
+///   margin: space(8);      // → 2rem
+///   gap: space(6);         // → 1.5rem
 @function space($key) {
   @if map.has-key($spacing, $key) {
     @return map.get($spacing, $key);
@@ -72,8 +104,20 @@ $spacing: (
 
 // ===========================================
 // BREAKPOINTS
-// Matches current custom Tailwind breakpoints exactly
 // ===========================================
+
+/// Responsive breakpoint map — matches custom Tailwind breakpoints.
+/// Used by `respond-to()`, `respond-below()`, and `respond-between()` mixins.
+/// @type Map
+/// @group tokens-breakpoints
+/// @prop {Length} '2xsm' [320px] - Mobile-first (custom)
+/// @prop {Length} 'xsm' [480px] - Small phones (custom)
+/// @prop {Length} 'sm' [640px] - Standard mobile
+/// @prop {Length} 'md' [768px] - Tablets
+/// @prop {Length} 'lg' [1024px] - Small desktop
+/// @prop {Length} 'xl' [1280px] - Desktop
+/// @prop {Length} '2xl' [1440px] - Large desktop (custom)
+/// @prop {Length} '3xl' [1976px] - Ultra-wide (custom)
 $breakpoints: (
   '2xsm': 320px,   // Mobile-first (custom)
   'xsm': 480px,    // Small phones (custom)
@@ -85,7 +129,13 @@ $breakpoints: (
   '3xl': 1976px,   // Ultra-wide (custom)
 );
 
-// Helper function to get breakpoint value
+/// Get a breakpoint value by name.
+/// @param {String} $key - Breakpoint name (e.g. 'md', 'lg')
+/// @return {Length} The pixel-based breakpoint value
+/// @throws Unknown breakpoint: #{$key}
+/// @group tokens-breakpoints
+/// @example scss
+///   @media (min-width: breakpoint('md')) { ... }
 @function breakpoint($key) {
   @if map.has-key($breakpoints, $key) {
     @return map.get($breakpoints, $key);
@@ -95,8 +145,26 @@ $breakpoints: (
 
 // ===========================================
 // Z-INDEX SCALE
-// Organized layering system
 // ===========================================
+
+/// Z-index layering system — organized from background to topmost overlays.
+/// Prevents magic numbers and z-index conflicts across the application.
+/// @type Map
+/// @group tokens-z-index
+/// @prop {Number} 'behind' [-1] - Background decorative elements (orbs, patterns)
+/// @prop {Number} 'base' [0] - Default stacking
+/// @prop {Number} 'raised' [1] - Slightly above siblings (loading spinners)
+/// @prop {Number} 'content' [10] - Content above decorative backgrounds
+/// @prop {Number} 'content-high' [20] - Content above other content (timeline connectors)
+/// @prop {Number} 'overlay-subtle' [50] - Subtle overlays within sections
+/// @prop {Number} 'dropdown' [1000] - Dropdown menus
+/// @prop {Number} 'sticky' [1020] - Sticky navigation
+/// @prop {Number} 'fixed' [1030] - Fixed position elements
+/// @prop {Number} 'modal-backdrop' [1040] - Modal backdrop overlay
+/// @prop {Number} 'modal' [1050] - Modal dialogs
+/// @prop {Number} 'popover' [1060] - Popover content
+/// @prop {Number} 'tooltip' [1070] - Tooltip overlays
+/// @prop {Number} 'toast' [1080] - Toast notifications (topmost)
 $z-index: (
   'behind': -1,        // Background decorative elements (orbs, patterns)
   'base': 0,
@@ -114,6 +182,14 @@ $z-index: (
   'toast': 1080,
 );
 
+/// Get a z-index value by semantic name.
+/// @param {String} $key - Layer name (e.g. 'modal', 'dropdown')
+/// @return {Number} The z-index value
+/// @throws Unknown z-index key: #{$key}
+/// @group tokens-z-index
+/// @example scss
+///   z-index: z('modal');     // → 1050
+///   z-index: z('tooltip');   // → 1070
 @function z($key) {
   @if map.has-key($z-index, $key) {
     @return map.get($z-index, $key);
@@ -123,10 +199,25 @@ $z-index: (
 
 // ===========================================
 // BORDER RADIUS
-// Uses CSS variable for base (matches Tailwind config)
 // ===========================================
-$radius-base: 0.5rem; // Fallback, actual value from --radius CSS var
 
+/// Base border radius fallback value.
+/// The actual runtime value comes from the `--radius` CSS variable.
+/// @type Length
+/// @group tokens-radius
+$radius-base: 0.5rem;
+
+/// Border radius scale map.
+/// @type Map
+/// @group tokens-radius
+/// @prop {Length} 'none' [0] - No rounding
+/// @prop {Length} 'sm' [0.125rem] - 2px — subtle rounding
+/// @prop {Length} 'md' [0.375rem] - 6px — moderate rounding
+/// @prop {Length} 'lg' [0.5rem] - 8px — default rounding
+/// @prop {Length} 'xl' [0.75rem] - 12px — card rounding
+/// @prop {Length} '2xl' [1rem] - 16px — large rounding
+/// @prop {Length} '3xl' [1.5rem] - 24px — pill-like rounding
+/// @prop {Length} 'full' [9999px] - Fully rounded (circle/pill)
 $border-radius: (
   'none': 0,
   'sm': 0.125rem,     // 2px
@@ -138,6 +229,14 @@ $border-radius: (
   'full': 9999px,
 );
 
+/// Get a border-radius value by name.
+/// @param {String} $key - Radius size (e.g. 'lg', 'xl', 'full')
+/// @return {Length} The border-radius value
+/// @throws Unknown radius key: #{$key}
+/// @group tokens-radius
+/// @example scss
+///   border-radius: radius('lg');   // → 0.5rem
+///   border-radius: radius('full'); // → 9999px
 @function radius($key) {
   @if map.has-key($border-radius, $key) {
     @return map.get($border-radius, $key);
@@ -147,10 +246,30 @@ $border-radius: (
 
 // ===========================================
 // ELEVATION / SHADOW SCALE
-// Inspired by Material Design 3 elevation tokens.
-// Previously inline in the shadow() mixin; now a
-// first-class design token for reuse and overrides.
 // ===========================================
+
+/// Shadow elevation scale (light mode) — inspired by Material Design 3.
+/// Each level increases perceived elevation. Use via the `shadow()` mixin
+/// in _mixins.scss for automatic dark mode support.
+///
+/// ### Elevation Guide
+/// | Level | Use Case                              | Elevation |
+/// |-------|---------------------------------------|-----------|
+/// | none  | Flat elements, no elevation           | 0dp       |
+/// | sm    | Cards at rest, subtle depth           | 1dp       |
+/// | md    | Raised cards, dropdowns               | 3dp       |
+/// | lg    | Hover state cards, popovers           | 6dp       |
+/// | xl    | Modals, dialogs                       | 12dp      |
+/// | 2xl   | Overlays, high-emphasis elements       | 24dp      |
+///
+/// @type Map
+/// @group tokens-shadows
+/// @prop {Shadow} 'none' [none] - No shadow
+/// @prop {Shadow} 'sm' - Subtle bottom shadow (1dp)
+/// @prop {Shadow} 'md' - Standard card shadow (3dp)
+/// @prop {Shadow} 'lg' - Elevated card shadow (6dp)
+/// @prop {Shadow} 'xl' - Modal/dialog shadow (12dp)
+/// @prop {Shadow} '2xl' - Maximum elevation shadow (24dp)
 $shadows: (
   'none': none,
   'sm': 0 1px 2px 0 rgb(0 0 0 / 0.05),
@@ -160,7 +279,11 @@ $shadows: (
   '2xl': 0 25px 50px -12px rgb(0 0 0 / 0.25),
 ) !default;
 
-// Dark mode shadows — stronger opacity for visibility on dark backgrounds
+/// Shadow elevation scale (dark mode) — stronger opacity for visibility
+/// on dark backgrounds. Mirrors $shadows keys exactly.
+/// @type Map
+/// @group tokens-shadows
+/// @see $shadows
 $shadows-dark: (
   'none': none,
   'sm': 0 1px 2px 0 rgb(0 0 0 / 0.3),
@@ -170,6 +293,16 @@ $shadows-dark: (
   '2xl': 0 25px 50px -12px rgb(0 0 0 / 0.6),
 ) !default;
 
+/// Get a shadow value by elevation level (light mode only).
+/// For automatic dark mode support, use the `shadow()` mixin instead.
+/// @param {String} $level - Shadow level ('none', 'sm', 'md', 'lg', 'xl', '2xl')
+/// @return {Shadow} The box-shadow value
+/// @throws Unknown shadow level: #{$level}
+/// @group tokens-shadows
+/// @see {mixin} shadow
+/// @example scss
+///   box-shadow: shadow('md');   // Standard card shadow
+///   box-shadow: shadow('lg');   // Elevated hover shadow
 @function shadow($level) {
   @if map.has-key($shadows, $level) {
     @return map.get($shadows, $level);
@@ -179,14 +312,19 @@ $shadows-dark: (
 
 // ===========================================
 // MOTION TOKENS
-// Inspired by Material Design 3 motion system.
-// Provides named tokens for transition durations and
-// easing curves, replacing raw ms/cubic-bezier values.
-//
-// USAGE:
-//   transition-duration: duration('normal');   // → 150ms
-//   transition-timing-function: easing('ease'); // → cubic-bezier(0.4, 0, 0.2, 1)
 // ===========================================
+
+/// Transition duration scale — inspired by Material Design 3 motion system.
+/// Provides named tokens replacing raw millisecond values.
+/// @type Map
+/// @group tokens-motion
+/// @prop {Duration} 'instant' [0ms] - No animation
+/// @prop {Duration} 'fast' [100ms] - Micro-interactions (button press)
+/// @prop {Duration} 'normal' [150ms] - Default transitions (hover, focus)
+/// @prop {Duration} 'moderate' [250ms] - State changes (expand/collapse)
+/// @prop {Duration} 'slow' [350ms] - Complex animations (panel slide)
+/// @prop {Duration} 'slower' [500ms] - Entrance animations
+/// @prop {Duration} 'slowest' [700ms] - Page transitions
 $durations: (
   'instant': 0ms,
   'fast': 100ms,
@@ -197,6 +335,14 @@ $durations: (
   'slowest': 700ms,
 ) !default;
 
+/// Get a transition duration by name.
+/// @param {String} $key - Duration name (e.g. 'normal', 'slow')
+/// @return {Duration} The duration in milliseconds
+/// @throws Unknown duration: #{$key}
+/// @group tokens-motion
+/// @example scss
+///   transition-duration: duration('normal');   // → 150ms
+///   transition-duration: duration('moderate'); // → 250ms
 @function duration($key) {
   @if map.has-key($durations, $key) {
     @return map.get($durations, $key);
@@ -204,6 +350,15 @@ $durations: (
   @error "Unknown duration: #{$key}. Available: #{map.keys($durations)}";
 }
 
+/// Easing curve scale — named cubic-bezier tokens for consistent motion.
+/// @type Map
+/// @group tokens-motion
+/// @prop {TimingFunction} 'linear' [linear] - Constant speed
+/// @prop {TimingFunction} 'ease' - Standard Material easing (default)
+/// @prop {TimingFunction} 'ease-in' - Deceleration curve (entering elements)
+/// @prop {TimingFunction} 'ease-out' - Acceleration curve (exiting elements)
+/// @prop {TimingFunction} 'ease-in-out' - Standard symmetric easing
+/// @prop {TimingFunction} 'spring' - Bounce-like overshoot effect
 $easings: (
   'linear': linear,
   'ease': cubic-bezier(0.4, 0, 0.2, 1),        // standard (Material)
@@ -213,6 +368,14 @@ $easings: (
   'spring': cubic-bezier(0.34, 1.56, 0.64, 1),  // bounce-like
 ) !default;
 
+/// Get an easing curve by name.
+/// @param {String} $key - Easing name (e.g. 'ease', 'spring')
+/// @return {TimingFunction} The cubic-bezier or keyword value
+/// @throws Unknown easing: #{$key}
+/// @group tokens-motion
+/// @example scss
+///   transition-timing-function: easing('ease');   // → cubic-bezier(0.4, 0, 0.2, 1)
+///   transition-timing-function: easing('spring'); // → cubic-bezier(0.34, 1.56, 0.64, 1)
 @function easing($key) {
   @if map.has-key($easings, $key) {
     @return map.get($easings, $key);

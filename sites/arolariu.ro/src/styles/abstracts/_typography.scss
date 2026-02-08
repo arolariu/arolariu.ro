@@ -1,40 +1,80 @@
-// ===========================================
-// DESIGN TOKENS — Typography
-// ===========================================
-// Type scale, font families, weights, line heights, and letter spacing.
-// Font families reference CSS variables set by the FontContext React context.
-//
-// USAGE:
-//   font-size: font-size('xl');         // → 1.25rem (20px)
-//   font-weight: font-weight('bold');   // → 700
-//   line-height: line-height('tight');  // → 1.25
-//   letter-spacing: letter-spacing('wide'); // → 0.025em
-//   font-family: $font-family-default;
-//
-// EXTENDING:
-//   To add a font size, add to $font-sizes map.
-//   To change the default font, update the FontContext React context
-//   and the $font-family-default variable here.
-//
-// DEPENDENCIES: sass:map
-// IMPORTED BY: _index.scss (forwarded to all consumers)
-// ===========================================
+/// ===========================================
+/// DESIGN TOKENS — Typography
+/// ===========================================
+/// Type scale, font families, weights, line heights, and letter spacing.
+/// Font families reference CSS variables set by the FontContext React context.
+///
+/// @group tokens-typography
+/// @author arolariu
+///
+/// @example scss - Font size
+///   font-size: font-size('xl');              // → 1.25rem (20px)
+///
+/// @example scss - Font weight
+///   font-weight: font-weight('bold');        // → 700
+///
+/// @example scss - Line height
+///   line-height: line-height('tight');       // → 1.25
+///
+/// @example scss - Letter spacing
+///   letter-spacing: letter-spacing('wide');  // → 0.025em
+///
+/// @example scss - Font family
+///   font-family: $font-family-default;
+///
+/// EXTENDING:
+///   To add a font size, add to $font-sizes map.
+///   To change the default font, update the FontContext React context
+///   and the $font-family-default variable here.
+///
+/// @see {variable} $font-sizes
+/// @see {variable} $font-weights
+/// @see {variable} $line-heights
+/// @see {variable} $letter-spacing
+/// ===========================================
 @use 'sass:map';
 
 // ===========================================
-// TYPOGRAPHY
-// Uses existing FontContext CSS variables
+// FONT FAMILIES
 // ===========================================
 
-// Font family references (set by FontContext)
-// --font-default = Caudex (serif, weight 700)
-// --font-dyslexic = Atkinson Hyperlegible (sans-serif, weight 400)
-
+/// Default font family stack — uses CSS variable set by FontContext.
+/// Falls back to Caudex (serif) if the variable is not set.
+/// @type List
+/// @group tokens-typography
 $font-family-default: var(--font-default), 'Caudex', Georgia, 'Times New Roman', serif;
+
+/// Dyslexia-friendly font family stack — uses CSS variable set by FontContext.
+/// Falls back to Atkinson Hyperlegible (sans-serif).
+/// @type List
+/// @group tokens-typography
 $font-family-dyslexic: var(--font-dyslexic), 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+/// Monospace font family stack — for code blocks and technical content.
+/// @type List
+/// @group tokens-typography
 $font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
-// Font sizes
+// ===========================================
+// TYPE SCALE
+// ===========================================
+
+/// Font size scale map — matches Tailwind's default type scale.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Length} 'xs' [0.75rem] - 12px — small labels, captions
+/// @prop {Length} 'sm' [0.875rem] - 14px — secondary text
+/// @prop {Length} 'base' [1rem] - 16px — body text (default)
+/// @prop {Length} 'lg' [1.125rem] - 18px — emphasized body
+/// @prop {Length} 'xl' [1.25rem] - 20px — sub-headings
+/// @prop {Length} '2xl' [1.5rem] - 24px — section headings
+/// @prop {Length} '3xl' [1.875rem] - 30px — page headings
+/// @prop {Length} '4xl' [2.25rem] - 36px — hero sub-headings
+/// @prop {Length} '5xl' [3rem] - 48px — hero headings
+/// @prop {Length} '6xl' [3.75rem] - 60px — display headings
+/// @prop {Length} '7xl' [4.5rem] - 72px — large display
+/// @prop {Length} '8xl' [6rem] - 96px — extra large display
+/// @prop {Length} '9xl' [8rem] - 128px — maximum display
 $font-sizes: (
   'xs': 0.75rem,     // 12px
   'sm': 0.875rem,    // 14px
@@ -51,7 +91,18 @@ $font-sizes: (
   '9xl': 8rem,       // 128px
 );
 
-// Font weights
+/// Font weight scale map.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Number} 'thin' [100]
+/// @prop {Number} 'extralight' [200]
+/// @prop {Number} 'light' [300]
+/// @prop {Number} 'normal' [400] - Default body weight
+/// @prop {Number} 'medium' [500]
+/// @prop {Number} 'semibold' [600]
+/// @prop {Number} 'bold' [700] - Default heading weight
+/// @prop {Number} 'extrabold' [800]
+/// @prop {Number} 'black' [900]
 $font-weights: (
   'thin': 100,
   'extralight': 200,
@@ -64,7 +115,15 @@ $font-weights: (
   'black': 900,
 );
 
-// Line heights
+/// Line height scale map.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Number} 'none' [1] - No extra line spacing
+/// @prop {Number} 'tight' [1.25] - Headings, compact text
+/// @prop {Number} 'snug' [1.375] - Sub-headings
+/// @prop {Number} 'normal' [1.5] - Body text (default)
+/// @prop {Number} 'relaxed' [1.625] - Long-form content
+/// @prop {Number} 'loose' [2] - Extra spacious text
 $line-heights: (
   'none': 1,
   'tight': 1.25,
@@ -74,7 +133,15 @@ $line-heights: (
   'loose': 2,
 );
 
-// Letter spacing
+/// Letter spacing scale map.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Length} 'tighter' [-0.05em] - Very tight tracking
+/// @prop {Length} 'tight' [-0.025em] - Slightly tight
+/// @prop {Length} 'normal' [0] - Default tracking
+/// @prop {Length} 'wide' [0.025em] - Slightly wide
+/// @prop {Length} 'wider' [0.05em] - Wide tracking
+/// @prop {Length} 'widest' [0.1em] - Maximum tracking (uppercase text)
 $letter-spacing: (
   'tighter': -0.05em,
   'tight': -0.025em,
@@ -84,7 +151,18 @@ $letter-spacing: (
   'widest': 0.1em,
 );
 
-// Helper functions
+// ===========================================
+// ACCESSOR FUNCTIONS
+// ===========================================
+
+/// Get a font size by its scale name.
+/// @param {String} $key - Size name (e.g. 'base', 'xl', '3xl')
+/// @return {Length} The rem-based font size
+/// @throws Unknown font-size: #{$key}
+/// @group tokens-typography
+/// @example scss
+///   font-size: font-size('xl');   // → 1.25rem
+///   font-size: font-size('3xl');  // → 1.875rem
 @function font-size($key) {
   @if map.has-key($font-sizes, $key) {
     @return map.get($font-sizes, $key);
@@ -92,6 +170,14 @@ $letter-spacing: (
   @error "Unknown font-size: #{$key}";
 }
 
+/// Get a font weight by name.
+/// @param {String} $key - Weight name (e.g. 'normal', 'bold', 'semibold')
+/// @return {Number} The numeric font weight
+/// @throws Unknown font-weight: #{$key}
+/// @group tokens-typography
+/// @example scss
+///   font-weight: font-weight('bold');     // → 700
+///   font-weight: font-weight('semibold'); // → 600
 @function font-weight($key) {
   @if map.has-key($font-weights, $key) {
     @return map.get($font-weights, $key);
@@ -99,6 +185,14 @@ $letter-spacing: (
   @error "Unknown font-weight: #{$key}";
 }
 
+/// Get a line height by name.
+/// @param {String} $key - Line height name (e.g. 'normal', 'tight')
+/// @return {Number} The unitless line height multiplier
+/// @throws Unknown line-height: #{$key}
+/// @group tokens-typography
+/// @example scss
+///   line-height: line-height('tight');   // → 1.25
+///   line-height: line-height('relaxed'); // → 1.625
 @function line-height($key) {
   @if map.has-key($line-heights, $key) {
     @return map.get($line-heights, $key);
@@ -106,6 +200,14 @@ $letter-spacing: (
   @error "Unknown line-height: #{$key}";
 }
 
+/// Get a letter spacing value by name.
+/// @param {String} $key - Spacing name (e.g. 'normal', 'wide', 'widest')
+/// @return {Length} The em-based letter spacing
+/// @throws Unknown letter-spacing: #{$key}
+/// @group tokens-typography
+/// @example scss
+///   letter-spacing: letter-spacing('wide');    // → 0.025em
+///   letter-spacing: letter-spacing('widest');  // → 0.1em
 @function letter-spacing($key) {
   @if map.has-key($letter-spacing, $key) {
     @return map.get($letter-spacing, $key);

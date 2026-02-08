@@ -1,47 +1,67 @@
-// ===========================================
-// DESIGN TOKENS — Colors
-// ===========================================
-// This file provides SCSS helpers for consuming CSS custom properties
-// defined in globals.css. Colors are NOT defined here — they are
-// referenced via CSS variables for automatic light/dark mode support.
-//
-// USAGE:
-//   color: color('primary');              // → hsl(var(--primary))
-//   background: color-alpha('card', 0.5); // → hsl(var(--card) / 0.5)
-//   color: static-color('white');         // → hsl(0, 0%, 100%)
-//
-// EXTENDING:
-//   To add a new semantic color, add to $color-vars map AND define
-//   the CSS variable in globals.css (both :root and .dark blocks).
-//
-// ARCHITECTURE:
-//   globals.css → defines CSS variables (:root / .dark)
-//   next-themes → toggles .dark class on <html>
-//   themes/_presets.scss / useThemePreset → sets gradient-* variables at runtime
-//   This file → SCSS helpers to reference those variables
-//
-// DEPENDENCIES: sass:map
-// IMPORTED BY: _index.scss (forwarded to all consumers)
-// ===========================================
+/// ===========================================
+/// DESIGN TOKENS — Colors
+/// ===========================================
+/// SCSS helpers for consuming CSS custom properties defined in base/_globals.scss.
+/// Colors are NOT defined here — they are referenced via CSS variables for
+/// automatic light/dark mode support.
+///
+/// @group tokens-colors
+/// @author arolariu
+///
+/// @example scss - Semantic color
+///   color: color('primary');              // → hsl(var(--primary))
+///
+/// @example scss - Alpha transparency
+///   background: color-alpha('card', 0.5); // → hsl(var(--card) / 0.5)
+///
+/// @example scss - Static color
+///   color: static-color('white');         // → hsl(0, 0%, 100%)
+///
+/// @example scss - Interactive state
+///   color: interactive-color('hover-accent'); // → #4f46e5
+///
+/// EXTENDING:
+///   To add a new semantic color, add to $color-vars map AND define
+///   the CSS variable in base/_globals.scss (both :root and .dark blocks).
+///
+/// ARCHITECTURE:
+///   base/_globals.scss → defines CSS variables (:root / .dark)
+///   next-themes → toggles .dark class on <html>
+///   themes/_presets.scss / useThemePreset → sets gradient-* variables at runtime
+///   This file → SCSS helpers to reference those variables
+///
+/// @see {function} color
+/// @see {function} color-alpha
+/// @see {function} static-color
+/// @see {function} interactive-color
+/// ===========================================
 @use 'sass:map';
 
 // ===========================================
-// COLOR SYSTEM
-// ===========================================
-// IMPORTANT: Colors are defined as CSS variables by:
-// - globals.css (base theme variables)
-// - next-themes (adds .dark class for dark mode)
-// - themes/_presets.scss / useThemePreset (sets gradient variables at runtime)
-//
-// This file provides SCSS helpers to consume those variables.
-// We do NOT redefine colors here - we reference them.
-
-// ===========================================
 // CSS VARIABLE REFERENCES
-// These variables are set by globals.css and modified by .dark class
 // ===========================================
 
-// Semantic color variable names (for documentation)
+/// Semantic color variable name map — maps friendly names to CSS custom
+/// property names. Variables are set by base/_globals.scss and toggled by
+/// the `.dark` class via next-themes.
+/// @type Map
+/// @group tokens-colors
+/// @prop {String} 'background' [--background] - Page background
+/// @prop {String} 'foreground' [--foreground] - Default text color
+/// @prop {String} 'card' [--card] - Card surface color
+/// @prop {String} 'primary' [--primary] - Brand primary color
+/// @prop {String} 'secondary' [--secondary] - Brand secondary color
+/// @prop {String} 'muted' [--muted] - Muted surface color
+/// @prop {String} 'accent' [--accent] - Accent color
+/// @prop {String} 'destructive' [--destructive] - Error/danger color
+/// @prop {String} 'success' [--success] - Success state color
+/// @prop {String} 'warning' [--warning] - Warning state color
+/// @prop {String} 'info' [--info] - Informational state color
+/// @prop {String} 'border' [--border] - Default border color
+/// @prop {String} 'ring' [--ring] - Focus ring color
+/// @prop {String} 'gradient-from' [--gradient-from] - Gradient start (theme preset)
+/// @prop {String} 'gradient-via' [--gradient-via] - Gradient middle (theme preset)
+/// @prop {String} 'gradient-to' [--gradient-to] - Gradient end (theme preset)
 $color-vars: (
   // Base colors
   'background': '--background',
@@ -85,11 +105,20 @@ $color-vars: (
 );
 
 // ===========================================
-// COLOR HELPER FUNCTION
+// COLOR HELPER FUNCTIONS
 // ===========================================
 
-// Get color as HSL CSS variable
-// Usage: color: color('primary');
+/// Get a semantic color as an HSL CSS variable reference.
+/// Returns a fully-formed `hsl(var(--name))` expression that
+/// responds automatically to light/dark mode.
+/// @param {String} $name - Semantic color name from $color-vars
+/// @return {Color} hsl(var(--name)) expression
+/// @throws Unknown color: #{$name}
+/// @group tokens-colors
+/// @example scss
+///   color: color('primary');
+///   background-color: color('card');
+///   border-color: color('border');
 @function color($name) {
   @if map.has-key($color-vars, $name) {
     $var-name: map.get($color-vars, $name);
@@ -98,8 +127,16 @@ $color-vars: (
   @error "Unknown color: #{$name}. Available: #{map.keys($color-vars)}";
 }
 
-// Get color with alpha
-// Usage: background: color-alpha('primary', 0.5);
+/// Get a semantic color with alpha transparency.
+/// Uses the HSL space-separated syntax with `/` alpha notation.
+/// @param {String} $name - Semantic color name from $color-vars
+/// @param {Number} $alpha - Opacity value between 0 and 1
+/// @return {Color} hsl(var(--name) / alpha) expression
+/// @throws Unknown color: #{$name}
+/// @group tokens-colors
+/// @example scss
+///   background: color-alpha('primary', 0.5);
+///   border-color: color-alpha('border', 0.3);
 @function color-alpha($name, $alpha) {
   @if map.has-key($color-vars, $name) {
     $var-name: map.get($color-vars, $name);
@@ -109,9 +146,17 @@ $color-vars: (
 }
 
 // ===========================================
-// STATIC COLOR PALETTE (for non-themed elements)
+// STATIC COLOR PALETTE
 // ===========================================
 
+/// Static colors for non-themed elements (overlays, masks, etc.).
+/// These do NOT change with light/dark mode.
+/// @type Map
+/// @group tokens-colors
+/// @prop {Color} 'white' [hsl(0, 0%, 100%)] - Pure white
+/// @prop {Color} 'black' [hsl(0, 0%, 0%)] - Pure black
+/// @prop {Color} 'transparent' [transparent] - Fully transparent
+/// @prop {Color} 'current' [currentColor] - Inherits parent text color
 $static-colors: (
   'white': hsl(0, 0%, 100%),
   'black': hsl(0, 0%, 0%),
@@ -119,6 +164,14 @@ $static-colors: (
   'current': currentColor,
 );
 
+/// Get a static (non-themed) color by name.
+/// @param {String} $name - Static color name
+/// @return {Color} The static color value
+/// @throws Unknown static color: #{$name}
+/// @group tokens-colors
+/// @example scss
+///   color: static-color('white');
+///   background: static-color('transparent');
 @function static-color($name) {
   @if map.has-key($static-colors, $name) {
     @return map.get($static-colors, $name);
@@ -129,11 +182,28 @@ $static-colors: (
 // ===========================================
 // INTERACTIVE STATE COLORS
 // ===========================================
-// Colors for hover, focus, active states in navigation and UI chrome.
-// These are STATIC (not theme-responsive) — they represent specific
-// brand accent values used alongside the CSS variable theme system.
-//
-// For theme-responsive colors, use color() / color-alpha() instead.
+
+/// Static colors for hover, focus, and active states in navigation
+/// and UI chrome. These are STATIC (not theme-responsive) — they
+/// represent specific brand accent values used alongside the CSS
+/// variable theme system.
+///
+/// For theme-responsive colors, use `color()` / `color-alpha()` instead.
+///
+/// @type Map
+/// @group tokens-colors
+/// @prop {Color} 'hover-accent' [#4f46e5] - indigo-600 — link hover
+/// @prop {Color} 'hover-accent-light' [#fde047] - yellow-300 — brand hover on dark bg
+/// @prop {Color} 'hover-accent-dark' [#eab308] - yellow-500 — brand hover (footer)
+/// @prop {Color} 'hover-bg-subtle' [#f9fafb] - gray-50 — subtle hover bg
+/// @prop {Color} 'hover-bg-light' [#f3f4f6] - gray-100 — light hover bg
+/// @prop {Color} 'text-strong' [#111827] - gray-900
+/// @prop {Color} 'text-medium' [#374151] - gray-700
+/// @prop {Color} 'text-subtle' [#6b7280] - gray-500
+/// @prop {Color} 'border-subtle' [#f3f4f6] - gray-100
+/// @prop {Color} 'teal-accent' [#5eead4] - teal-400 (footer links)
+/// @prop {Color} 'slate-light' [#cbd5e1] - slate-300 (build info)
+/// @prop {Color} 'ring-brand' [#6366f1] - indigo-500 (logo ring)
 $interactive-colors: (
   'hover-accent': #4f46e5,       // indigo-600 — link hover
   'hover-accent-light': #fde047, // yellow-300 — brand hover on dark bg
@@ -149,6 +219,14 @@ $interactive-colors: (
   'ring-brand': #6366f1,         // indigo-500 (logo ring)
 ) !default;
 
+/// Get an interactive state color by name.
+/// @param {String} $name - Interactive color name
+/// @return {Color} The hex color value
+/// @throws Unknown interactive color: #{$name}
+/// @group tokens-colors
+/// @example scss
+///   &:hover { color: interactive-color('hover-accent'); }
+///   border-color: interactive-color('border-subtle');
 @function interactive-color($name) {
   @if map.has-key($interactive-colors, $name) {
     @return map.get($interactive-colors, $name);
