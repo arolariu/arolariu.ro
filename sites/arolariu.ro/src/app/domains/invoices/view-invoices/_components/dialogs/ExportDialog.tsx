@@ -20,6 +20,7 @@ import {TbDownload, TbFileSpreadsheet, TbFileText, TbJson} from "react-icons/tb"
 import {useDialog} from "../../../_contexts/DialogContext";
 import type {InvoiceExportRequest} from "../../_types/InvoiceExport";
 import {exportInvoices} from "../../_utils/export";
+import styles from "./ExportDialog.module.scss";
 
 /**
  * The ExportDialog component allows users to export selected invoices in various formats.
@@ -63,14 +64,14 @@ export default function ExportDialog(): React.JSX.Element {
           <DialogDescription>Export {invoicesToExport.length} invoices in your preferred format.</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4 py-4'>
-          <div className='space-y-2'>
-            <h3 className='text-sm font-medium'>Export Format</h3>
+        <div className={styles["body"]}>
+          <div className={styles["section"]}>
+            <h3 className={styles["sectionTitle"]}>Export Format</h3>
             <RadioGroup
               defaultValue={exportOptions.format}
               // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
               onValueChange={(format) => handleOptionsChange("format", format)}>
-              <div className='flex items-center space-x-2'>
+              <div className={styles["radioRow"]}>
                 <RadioGroupItem
                   value='csv'
                   id='csv'
@@ -78,11 +79,11 @@ export default function ExportDialog(): React.JSX.Element {
                 <Label
                   htmlFor='csv'
                   className='flex items-center gap-2'>
-                  <TbFileSpreadsheet className='h-4 w-4' />
+                  <TbFileSpreadsheet className={styles["formatIcon"]} />
                   CSV
                 </Label>
               </div>
-              <div className='flex items-center space-x-2'>
+              <div className={styles["radioRow"]}>
                 <RadioGroupItem
                   value='json'
                   id='json'
@@ -90,11 +91,11 @@ export default function ExportDialog(): React.JSX.Element {
                 <Label
                   htmlFor='json'
                   className='flex items-center gap-2'>
-                  <TbJson className='h-4 w-4' />
+                  <TbJson className={styles["formatIcon"]} />
                   JSON
                 </Label>
               </div>
-              <div className='flex items-center space-x-2'>
+              <div className={styles["radioRow"]}>
                 <RadioGroupItem
                   value='pdf'
                   id='pdf'
@@ -102,16 +103,16 @@ export default function ExportDialog(): React.JSX.Element {
                 <Label
                   htmlFor='pdf'
                   className='flex items-center gap-2'>
-                  <TbFileText className='h-4 w-4' />
+                  <TbFileText className={styles["formatIcon"]} />
                   PDF
                 </Label>
               </div>
             </RadioGroup>
           </div>
 
-          <div className='space-y-2'>
-            <h3 className='text-sm font-medium'>Options</h3>
-            <div className='flex items-center space-x-2'>
+          <div className={styles["section"]}>
+            <h3 className={styles["sectionTitle"]}>Options</h3>
+            <div className={styles["radioRow"]}>
               <Checkbox
                 id='include-metadata'
                 checked={exportOptions.includeMetadata}
@@ -120,7 +121,7 @@ export default function ExportDialog(): React.JSX.Element {
               />
               <Label htmlFor='include-metadata'>Include metadata</Label>
             </div>
-            <div className='flex items-center space-x-2'>
+            <div className={styles["radioRow"]}>
               <Checkbox
                 id='include-items'
                 checked={exportOptions.includeProducts}
@@ -129,7 +130,7 @@ export default function ExportDialog(): React.JSX.Element {
               />
               <Label htmlFor='include-items'>Include products</Label>
             </div>
-            <div className='flex items-center space-x-2'>
+            <div className={styles["radioRow"]}>
               <Checkbox
                 id='include-merchant'
                 checked={exportOptions.includeMerchant}
@@ -140,7 +141,7 @@ export default function ExportDialog(): React.JSX.Element {
             </div>
             {exportOptions.format === "csv" && (
               <>
-                <div className='flex items-center space-x-2'>
+                <div className={styles["radioRow"]}>
                   <Checkbox
                     id='csv-include-headers'
                     checked={exportOptions.csvOptions?.includeHeaders}
@@ -161,7 +162,7 @@ export default function ExportDialog(): React.JSX.Element {
               </>
             )}
             {exportOptions.format === "json" && (
-              <div className='flex items-center space-x-2'>
+              <div className={styles["radioRow"]}>
                 <Checkbox
                   id='json-pretty-print'
                   checked={exportOptions.jsonOptions?.prettyPrint}
@@ -183,7 +184,7 @@ export default function ExportDialog(): React.JSX.Element {
           <Button
             onClick={handleExport}
             className='gap-2'>
-            <TbDownload className='h-4 w-4' />
+            <TbDownload className={styles["formatIcon"]} />
             Export
           </Button>
         </DialogFooter>

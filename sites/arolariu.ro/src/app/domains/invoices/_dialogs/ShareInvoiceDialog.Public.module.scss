@@ -1,0 +1,105 @@
+// ===========================================
+// SHARE INVOICE DIALOG PUBLIC STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// SHARED
+// ===========================================
+.body {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+// ===========================================
+// LINK TAB
+// ===========================================
+.linkRow {
+  display: flex;
+  align-items: center;
+
+  & > * + * {
+    margin-left: space(2);
+  }
+}
+
+.linkHint {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+// ===========================================
+// QR TAB
+// ===========================================
+.qrContainer {
+  @include flex-column-center;
+  justify-content: center;
+
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.qrWrapper {
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  background-color: white;
+  padding: space(4);
+  @include shadow('sm');
+}
+
+.qrHint {
+  color: color('muted-foreground');
+  text-align: center;
+  font-size: font-size('xs');
+}
+
+// ===========================================
+// REVOKE SECTION
+// ===========================================
+.revokeSection {
+  border-top: 1px solid color('border');
+  padding-top: space(4);
+}
+
+.revokeHint {
+  color: color('muted-foreground');
+  margin-top: space(2);
+  text-align: center;
+  font-size: font-size('xs');
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.tabIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+}
+
+.actionIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.globeAlertIcon {
+  width: space(4);
+  height: space(4);
+  color: #ea580c; // Decorative: intentionally hardcoded (orange-600)
+
+  @include dark {
+    color: #fb923c; // orange-400
+  }
+}
+
+.qrCode {
+  border-radius: radius('md');
+}
+
+.backIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(1);
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import {useTranslations} from "next-intl";
+import styles from "./LoadingInvoice.module.scss";
 
 /**
  * This component is used to display a message when the invoice is loading.
@@ -10,10 +11,10 @@ export default function LoadingInvoice({invoiceIdentifier}: Readonly<{invoiceIde
   const t = useTranslations("Domains.services.invoices.service.states.loading");
 
   return (
-    <section className='flex flex-row flex-nowrap'>
-      <article className='2xsm:w-full mx-auto flex-initial lg:w-1/2'>
-        <h1 className='text-center text-2xl font-bold'>{t("title")}</h1>
-        <p className='text-center'>{t("description", {invoiceIdentifier})}</p>
+    <section className={styles["section"]}>
+      <article className={styles["article"]}>
+        <h1 className={styles["title"]}>{t("title")}</h1>
+        <p className={styles["description"]}>{t("description", {invoiceIdentifier})}</p>
       </article>
     </section>
   );

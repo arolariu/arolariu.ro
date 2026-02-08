@@ -1,0 +1,165 @@
+// ===========================================
+// ABOUT HUB - HERO COMPONENT
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  width: 100%;
+  padding: space(20) space(4);
+  overflow: hidden;
+}
+
+// Background orbs container
+.bgOrbs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  border-radius: radius('full');
+  filter: blur(64px);
+}
+
+.orbBlue {
+  composes: orb;
+  top: -10rem;
+  left: -10rem;
+  width: 20rem;
+  height: 20rem;
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+}
+
+.orbPurple {
+  composes: orb;
+  right: -10rem;
+  bottom: -10rem;
+  width: 24rem;
+  height: 24rem;
+  background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+}
+
+.orbIndigo {
+  composes: orb;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16rem;
+  height: 16rem;
+  background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(59, 130, 246, 0.1));
+}
+
+// Grid pattern overlay
+.gridPattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(100, 100, 100, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 100, 100, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+// Content wrapper
+.content {
+  position: relative;
+  z-index: z('content');
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 56rem;
+  text-align: center;
+}
+
+// Badge
+.badge {
+  margin-bottom: space(6);
+  padding: space(1) space(4);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.badgeIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+// Title
+.title {
+  margin-bottom: space(6);
+  font-size: font-size('5xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+  @include gradient-text;
+
+  @include respond-to('sm') {
+    font-size: font-size('6xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('7xl');
+  }
+}
+
+// Subtitle
+.subtitle {
+  margin-bottom: space(10);
+  max-width: 42rem;
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+  color: color('muted-foreground');
+
+  @include respond-to('sm') {
+    font-size: font-size('xl');
+  }
+}
+
+// CTA buttons container
+.cta {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.ctaButton {
+  padding-left: space(8);
+  padding-right: space(8);
+}
+
+.ctaIcon {
+  margin-right: space(2);
+  width: 1.25rem;
+  height: 1.25rem;
+  @include transition(transform);
+}
+
+.ctaButton:hover .ctaIcon {
+  transform: translateY(-2px);
+}
+
+// Scroll indicator
+.scrollIndicator {
+  position: absolute;
+  bottom: space(8);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.scrollIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: color('muted-foreground');
+}

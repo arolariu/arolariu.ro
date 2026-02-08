@@ -76,21 +76,21 @@ const DesktopNavigationChild = ({child}: Readonly<{child: NavigationItem}>): Rea
   <div>
     <Link
       href={child.href}
-      className='mb-2 block text-sm font-semibold text-gray-900'>
+      className='desktop-nav__child-title'>
       {child.label}
     </Link>
 
     {Boolean(child.children) && (
-      <ul className='space-y-1'>
+      <ul className='desktop-nav__child-list'>
         {child.children!.map((link) => (
           <li key={`desktop-grand-${link.label}`}>
             <Link
               href={link.href}
-              className='block rounded px-2 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600'>
+              className='desktop-nav__child-link'>
               {link.label}
               <span
                 aria-hidden
-                className='ml-2 text-xs'>
+                className='desktop-nav__arrow'>
                 →
               </span>
             </Link>
@@ -102,23 +102,21 @@ const DesktopNavigationChild = ({child}: Readonly<{child: NavigationItem}>): Rea
 );
 
 const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.JSX.Element => (
-  <li className='group relative'>
+  <li className='desktop-nav__item'>
     <Link
       href={item.href}
-      className='px-3 py-2 text-sm font-medium hover:text-indigo-600'>
+      className='desktop-nav__link'>
       {item.label}
     </Link>
 
     {Boolean(item.children) && (
-      <div className='invisible absolute left-0 z-40 mt-2 rounded-xl bg-white opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100'>
-        <div className='space-y-4 p-4'>
-          {item.children!.map((col) => (
-            <DesktopNavigationChild
-              key={`col-${col.label}`}
-              child={col}
-            />
-          ))}
-        </div>
+      <div className='desktop-nav__dropdown'>
+        {item.children!.map((col) => (
+          <DesktopNavigationChild
+            key={`col-${col.label}`}
+            child={col}
+          />
+        ))}
       </div>
     )}
   </li>
@@ -133,8 +131,8 @@ function DesktopNavigationComponent(): React.JSX.Element {
   const navigationItems = useNavigationItems(Boolean(isSignedIn));
 
   return (
-    <div className='mx-auto px-4 dark:text-white'>
-      <ul className='flex items-center gap-6'>
+    <div className='desktop-nav'>
+      <ul className='desktop-nav__list'>
         {navigationItems.map((item) => (
           <DesktopNavigationItem
             key={`nav-${item.label}`}
@@ -154,25 +152,25 @@ DesktopNavigation.displayName = "DesktopNavigation";
 
 // Mobile helper components
 const MobileNavigationChild = ({col}: Readonly<{col: NavigationItem}>): React.JSX.Element => (
-  <div className='mb-1 text-black'>
+  <div className='mobile-nav__child'>
     <Link
       href={col.href}
-      className='mb-2 block text-sm font-medium hover:underline'>
+      className='mobile-nav__child-title'>
       {col.label}
     </Link>
 
     {Boolean(col.children) && (
-      <ul className='space-y-3'>
+      <ul className='mobile-nav__grandchild-list'>
         {col.children!.map((link) => (
           <li key={`m-grand-${link.label}`}>
             <span
               aria-hidden
-              className='ml-2 inline text-xs'>
+              className='mobile-nav__grandchild-arrow'>
               →
             </span>
             <Link
               href={link.href}
-              className='inline rounded px-2 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600'>
+              className='mobile-nav__grandchild-link'>
               {link.label}
             </Link>
           </li>
@@ -191,11 +189,11 @@ const MobileNavigationItem = ({
   isOpen?: boolean;
   onToggle?: () => void;
 }>): React.JSX.Element => (
-  <li className='py-2'>
-    <div className='flex items-center justify-between py-3'>
+  <li className='mobile-nav__item'>
+    <div className='mobile-nav__item-header'>
       <Link
         href={item.href}
-        className='text-base font-semibold text-gray-900 transition-colors hover:text-indigo-600'>
+        className='mobile-nav__item-link'>
         {item.label}
       </Link>
 
@@ -204,14 +202,14 @@ const MobileNavigationItem = ({
           onClick={onToggle}
           aria-expanded={Boolean(isOpen)}
           variant='ghost'
-          className='cursor-pointer p-1 text-gray-500 hover:text-gray-700'>
-          <TbChevronDown className={`h-5 w-5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          className='mobile-nav__expand-btn'>
+          <TbChevronDown className={`mobile-nav__expand-icon ${isOpen ? "mobile-nav__expand-icon--open" : ""}`} />
         </Button>
       )}
     </div>
 
     {Boolean(item.children) && Boolean(isOpen) && (
-      <div className='mt-3 space-y-3 rounded-md bg-gray-50 p-3 pl-4'>
+      <div className='mobile-nav__children'>
         {item.children!.map((col) => (
           <MobileNavigationChild
             key={`m-col-${col.label}`}
@@ -243,18 +241,19 @@ function MobileNavigationComponent(): React.JSX.Element {
   return (
     <>
       <Button
+        variant='ghost'
         onClick={toggleMobile}
         aria-expanded={mobileOpen}
         aria-controls='mobile-navigation'
-        className='inline-flex cursor-pointer items-center justify-center rounded-md p-2 hover:bg-gray-100 md:hidden'>
+        className='mobile-nav__toggle'>
         <span className='sr-only'>{t("openNavigation")}</span>
-        <TbMenu className='h-6 w-6' />
+        <TbMenu className='mobile-nav__toggle-icon' />
       </Button>
 
       {Boolean(mobileOpen) && (
-        <div className='fixed inset-0 z-50 flex'>
+        <div className='mobile-nav__overlay'>
           <div
-            className='fixed inset-0 bg-black/40'
+            className='mobile-nav__backdrop'
             onClick={toggleMobile}
             aria-hidden
           />
@@ -263,18 +262,19 @@ function MobileNavigationComponent(): React.JSX.Element {
             role='dialog'
             aria-modal='true'
             aria-label={t("title")}
-            className='relative w-80 max-w-full overflow-auto rounded-r-lg bg-white p-6 shadow-xl'>
-            <div className='mb-4 flex items-center justify-between'>
-              <h3 className='text-lg font-semibold tracking-tight text-black'>{t("title")}</h3>
+            className='mobile-nav__panel'>
+            <div className='mobile-nav__header'>
+              <h3 className='mobile-nav__title'>{t("title")}</h3>
               <Button
+                variant='ghost'
                 onClick={toggleMobile}
                 aria-label={t("closeNavigation")}
-                className='cursor-pointer bg-white p-2 text-black'>
+                className='mobile-nav__close'>
                 ✕
               </Button>
             </div>
 
-            <ul className='space-y-2 divide-y divide-gray-100'>
+            <ul className='mobile-nav__list'>
               {navigationItems.map((item) => (
                 <MobileNavigationItem
                   key={`mobile-${item.label}`}

@@ -1,0 +1,35 @@
+// ===========================================
+// SETTINGS NOTIFICATIONS STYLES
+// Scoped to SettingsNotifications.tsx only
+// ===========================================
+@use '../../../styles/abstracts' as *;
+@use 'settings-shared' as settings;
+
+.section { @include settings.settings-section; }
+.header  { @include settings.settings-header; }
+.grid    { @include settings.settings-grid; }
+.fullWidthCard { @include settings.settings-card-full; }
+.toggleRow     { @include settings.settings-toggle-row; }
+.toggleLabel   { @include settings.settings-toggle-label; }
+.infoBox       { @include settings.settings-info-box; }
+
+// ===========================================
+// NOTIFICATIONS-SPECIFIC
+// ===========================================
+.alwaysOnNote {
+  @include settings.settings-info-box;
+  margin-top: space(4);
+
+  p {
+    display: flex;
+    align-items: center;
+    gap: space(2);
+    font-size: font-size('xs');
+    color: color('muted-foreground');
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}

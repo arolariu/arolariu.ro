@@ -1,0 +1,137 @@
+@use '../../../../../../../../styles/abstracts' as *;
+
+.sectionTitle {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.suppliesList {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.supplyItem {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.supplyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: font-size('sm');
+}
+
+.supplyName {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.supplyDays {
+  color: color('muted-foreground');
+}
+
+.progressTrack {
+  height: space(2);
+  overflow: hidden;
+  border-radius: radius('full');
+  background-color: color('muted');
+}
+
+.progressBar {
+  height: 100%;
+  @include transition(all);
+}
+
+.progressGreen {
+  background-color: #22c55e; // Decorative: intentionally hardcoded
+}
+
+.progressYellow {
+  background-color: #eab308; // Decorative: intentionally hardcoded
+}
+
+.progressRed {
+  background-color: #ef4444; // Decorative: intentionally hardcoded
+}
+
+.ecoSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.ecoHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ecoLabel {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.ecoLabelText {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.ecoStars {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+}
+
+.ecoList {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  padding-left: space(6);
+
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.ecoItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.ecoBullet {
+  color: color('muted-foreground');
+}
+
+.ecoTipBullet {
+  color: #16a34a;
+}
+
+.ecoTipText {
+  color: #16a34a;
+}
+
+.bulkBox {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  background-color: color-alpha('muted', 0.3);
+  padding: space(3);
+}
+
+.bulkTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.bulkDescription {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}

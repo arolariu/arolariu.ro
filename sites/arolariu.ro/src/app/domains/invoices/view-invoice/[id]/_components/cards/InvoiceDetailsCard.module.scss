@@ -1,0 +1,92 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerInfo {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.infoGrid {
+  @include grid(2, space(4));
+}
+
+.infoItem {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.infoLabel {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.infoLabelPlain {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.infoValue {
+  font-weight: font-weight('medium');
+}
+
+.totalAmount {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+.itemsSection {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.itemsTitle {
+  font-weight: font-weight('semibold');
+}
+
+.tableContainer {
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}
+
+.itemCell {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.itemName {
+  font-weight: font-weight('medium');
+}
+
+.allergenList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(1);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.paginationText {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.paginationButtons {
+  display: flex;
+  gap: space(2);
+}

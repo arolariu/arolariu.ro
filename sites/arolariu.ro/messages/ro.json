@@ -1501,6 +1501,7 @@
   },
   "EULA": {
     "accept": "Accept acest acord",
+    "language": "Limbă",
     "content": "Acest acord de licență pentru utilizatorul final („EULA”) reprezintă un acord între dvs. și AROLARIU.RO și reglementează utilizarea acestui software. Vă rugăm să citiți cu atenție următoarele documente înainte de a utiliza site-ul web:",
     "cookiesPolicy": {
       "cookies": {
@@ -2074,6 +2075,12 @@
           "normal": "Standard",
           "dyslexic": "Prietenos pentru dislexici",
           "dyslexicHint": "Font OpenDyslexic pentru lizibilitate îmbunătățită"
+        },
+        "presets": {
+          "title": "Presetare Temă",
+          "description": "Alegeți o schemă de culori predefinită sau creați-o pe a voastră",
+          "custom": "Personalizat",
+          "customDescription": "Creați-vă propria schemă de culori"
         },
         "colors": {
           "title": "Culori Personalizate",

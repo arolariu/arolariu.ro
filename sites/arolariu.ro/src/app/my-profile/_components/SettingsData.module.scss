@@ -1,0 +1,54 @@
+// ===========================================
+// SETTINGS DATA STYLES
+// Scoped to SettingsData.tsx only
+// ===========================================
+@use '../../../styles/abstracts' as *;
+@use 'settings-shared' as settings;
+
+.section { @include settings.settings-section; }
+.header  { @include settings.settings-header; }
+.grid    { @include settings.settings-grid; }
+.fullWidthCard { @include settings.settings-card-full; }
+.toggleRow     { @include settings.settings-toggle-row; }
+.toggleLabel   { @include settings.settings-toggle-label; }
+.infoBox       { @include settings.settings-info-box; }
+
+// ===========================================
+// DATA-SPECIFIC
+// ===========================================
+.retentionHint {
+  margin-top: space(2);
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.exportHint {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+  text-align: center;
+}
+
+.dangerCard {
+  @include settings.settings-card-full;
+  border-color: color-alpha('destructive', 0.5);
+}
+
+.dangerRow {
+  @include flex-between;
+  border-radius: radius('lg');
+  border: 1px dashed color('border');
+  padding: space(4);
+}
+
+.dangerRowText {
+  display: block;
+
+  p:first-child {
+    font-weight: font-weight('medium');
+  }
+
+  p:last-child {
+    font-size: font-size('xs');
+    color: color('muted-foreground');
+  }
+}

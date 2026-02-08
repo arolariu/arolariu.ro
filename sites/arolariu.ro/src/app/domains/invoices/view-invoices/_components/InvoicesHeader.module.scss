@@ -1,0 +1,63 @@
+// ===========================================
+// INVOICES HEADER STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+// ===========================================
+// TEXT
+// ===========================================
+.title {
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  letter-spacing: -0.025em;
+}
+
+.description {
+  color: color('muted-foreground');
+  margin-top: space(1);
+}
+
+// ===========================================
+// ACTIONS
+// ===========================================
+.actions {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.actionIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.buttonLabel {
+  display: none;
+
+  @include respond-to('sm') {
+    display: inline;
+  }
+}

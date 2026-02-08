@@ -9,6 +9,7 @@ import InvoicesHeader from "./_components/InvoicesHeader";
 import RenderGenerativeView from "./_components/views/GenerativeView";
 import RenderInvoicesView from "./_components/views/InvoicesView";
 import RenderStatisticsView from "./_components/views/StatisticsView";
+import styles from "./island.module.scss";
 
 /**
  * This function renders the view invoices page.
@@ -19,14 +20,14 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <section className='flex flex-col gap-6'>
+      <section className={styles["loadingSection"]}>
         <Skeleton className='h-24 w-full' />
-        <div className='flex gap-4'>
+        <div className={styles["loadingTabsRow"]}>
           <Skeleton className='h-10 w-24' />
           <Skeleton className='h-10 w-24' />
           <Skeleton className='h-10 w-24' />
         </div>
-        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+        <div className={styles["loadingGrid"]}>
           <Skeleton className='h-48 w-full' />
           <Skeleton className='h-48 w-full' />
           <Skeleton className='h-48 w-full' />
@@ -62,7 +63,7 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
             </TabsList>
             <TabsContent
               value='invoices'
-              className='mt-6'>
+              className={styles["tabsContent"]}>
               <motion.div
                 key='invoices'
                 initial={{opacity: 0, y: 20}}
@@ -74,7 +75,7 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
             </TabsContent>
             <TabsContent
               value='statistics'
-              className='mt-6'>
+              className={styles["tabsContent"]}>
               <motion.div
                 key='statistics'
                 initial={{opacity: 0, y: 20}}
@@ -86,7 +87,7 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
             </TabsContent>
             <TabsContent
               value='liveAnalysis'
-              className='mt-6'>
+              className={styles["tabsContent"]}>
               <motion.div
                 key='liveAnalysis'
                 initial={{opacity: 0, y: 20}}

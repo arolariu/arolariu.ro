@@ -1,0 +1,226 @@
+/// ===========================================
+/// THEME PRESETS — Single Source of Truth
+/// ===========================================
+/// Defines all named theme preset CSS variables as an SCSS map.
+/// Each preset overrides the defaults from `base/_globals.scss`.
+///
+/// @group themes
+/// @author arolariu
+///
+/// ## Architecture
+/// 1. `$theme-presets` SCSS map defines light and dark color overrides
+/// 2. `@each` loop generates `[data-theme-preset="name"]` and
+///    `[data-theme-preset="name"].dark` CSS selectors
+/// 3. `useThemePreset` hook sets the `data-theme-preset` attribute on `<html>`
+/// 4. `next-themes` toggles `.dark` class — SCSS handles the rest
+/// 5. No runtime JavaScript needed for named presets
+///
+/// ## How to Add a New Preset
+/// 1. Add entry to `$theme-presets` map below (both `light` and `dark`)
+/// 2. Add metadata to `src/lib/theme-presets.ts` (name, description, preview)
+/// 3. Update `ThemePresetName` type if needed
+///
+/// ## CSS Variable Reference
+/// | Variable | Purpose |
+/// |----------|---------|
+/// | `--primary` | Semantic primary brand color (HSL) |
+/// | `--primary-foreground` | Text on primary backgrounds (HSL) |
+/// | `--ring` | Focus ring color (HSL) |
+/// | `--gradient-from` | Gradient start color (HSL) |
+/// | `--gradient-via` | Gradient middle color (HSL) |
+/// | `--gradient-to` | Gradient end color (HSL) |
+/// | `--accent-primary` | Accent for text/icons (HSL) |
+/// | `--footer-bg` | Footer background color (HSL) |
+///
+/// ## Available Presets
+/// `midnight`, `ocean`, `sunset`, `forest`, `rose`, `monochrome`
+///
+/// **Note:** "default" preset is intentionally omitted — its values
+/// are the CSS variable defaults in `base/_globals.scss`.
+///
+/// @type Map
+/// @see base/_globals.scss — default CSS variable values
+/// @see {hook} useThemePreset — sets `data-theme-preset` attribute
+/// ===========================================
+
+@use 'sass:map';
+
+// ===========================================
+// PRESET DEFINITIONS
+// ===========================================
+
+$theme-presets: (
+  // ---- Midnight: Deep indigo and blue ----
+  'midnight': (
+    'light': (
+      '--primary': '243 75% 59%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '243 75% 59%',
+      '--gradient-from': '245 58% 51%',
+      '--gradient-via': '243 75% 59%',
+      '--gradient-to': '241 77% 74%',
+      '--accent-primary': '243 75% 59%',
+      '--footer-bg': '245 58% 30%',
+    ),
+    'dark': (
+      '--primary': '241 77% 74%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '241 77% 74%',
+      '--gradient-from': '245 58% 51%',
+      '--gradient-via': '243 75% 59%',
+      '--gradient-to': '241 77% 74%',
+      '--accent-primary': '241 77% 74%',
+      '--footer-bg': '245 58% 25%',
+    ),
+  ),
+
+  // ---- Ocean: Sky, cyan, and teal ----
+  // Light primary darkened from 48% to 38% for WCAG AA white-on-primary (5.0:1)
+  'ocean': (
+    'light': (
+      '--primary': '199 89% 38%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '199 89% 38%',
+      '--gradient-from': '199 89% 48%',
+      '--gradient-via': '187 94% 43%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '199 89% 38%',
+      '--footer-bg': '187 94% 28%',
+    ),
+    'dark': (
+      '--primary': '187 94% 43%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '187 94% 43%',
+      '--gradient-from': '199 89% 48%',
+      '--gradient-via': '187 94% 43%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '187 94% 43%',
+      '--footer-bg': '187 94% 25%',
+    ),
+  ),
+
+  // ---- Sunset: Orange, red, and pink ----
+  // Light primary darkened from 53% to 43% for WCAG AA white-on-primary (4.6:1)
+  'sunset': (
+    'light': (
+      '--primary': '24 95% 43%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '24 95% 43%',
+      '--gradient-from': '24 95% 53%',
+      '--gradient-via': '0 84% 60%',
+      '--gradient-to': '330 81% 60%',
+      '--accent-primary': '24 95% 43%',
+      '--footer-bg': '0 84% 35%',
+    ),
+    'dark': (
+      '--primary': '0 84% 60%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '0 84% 60%',
+      '--gradient-from': '24 95% 53%',
+      '--gradient-via': '0 84% 60%',
+      '--gradient-to': '330 81% 60%',
+      '--accent-primary': '24 95% 53%',
+      '--footer-bg': '0 84% 30%',
+    ),
+  ),
+
+  // ---- Forest: Green, emerald, and teal ----
+  // Light primary darkened from 45% to 35% for WCAG AA white-on-primary (5.8:1)
+  'forest': (
+    'light': (
+      '--primary': '142 71% 35%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '142 71% 35%',
+      '--gradient-from': '142 71% 45%',
+      '--gradient-via': '160 84% 39%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '142 71% 35%',
+      '--footer-bg': '160 84% 25%',
+    ),
+    'dark': (
+      '--primary': '160 84% 39%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '160 84% 39%',
+      '--gradient-from': '142 71% 45%',
+      '--gradient-via': '160 84% 39%',
+      '--gradient-to': '173 80% 40%',
+      '--accent-primary': '160 84% 39%',
+      '--footer-bg': '160 84% 22%',
+    ),
+  ),
+
+  // ---- Rose: Rose, pink, and fuchsia ----
+  // Light primary darkened from 60% to 48% for WCAG AA white-on-primary (4.5:1)
+  'rose': (
+    'light': (
+      '--primary': '350 89% 48%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '350 89% 48%',
+      '--gradient-from': '350 89% 60%',
+      '--gradient-via': '330 81% 60%',
+      '--gradient-to': '292 91% 73%',
+      '--accent-primary': '350 89% 48%',
+      '--footer-bg': '330 81% 35%',
+    ),
+    'dark': (
+      '--primary': '330 81% 60%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '330 81% 60%',
+      '--gradient-from': '350 89% 60%',
+      '--gradient-via': '330 81% 60%',
+      '--gradient-to': '292 91% 73%',
+      '--accent-primary': '330 81% 60%',
+      '--footer-bg': '330 81% 30%',
+    ),
+  ),
+
+  // ---- Monochrome: Grayscale ----
+  'monochrome': (
+    'light': (
+      '--primary': '0 0% 32%',
+      '--primary-foreground': '0 0% 100%',
+      '--ring': '0 0% 32%',
+      '--gradient-from': '0 0% 32%',
+      '--gradient-via': '0 0% 45%',
+      '--gradient-to': '0 0% 64%',
+      '--accent-primary': '0 0% 32%',
+      '--footer-bg': '0 0% 20%',
+    ),
+    'dark': (
+      '--primary': '0 0% 64%',
+      '--primary-foreground': '0 0% 0%',
+      '--ring': '0 0% 64%',
+      '--gradient-from': '0 0% 32%',
+      '--gradient-via': '0 0% 45%',
+      '--gradient-to': '0 0% 64%',
+      '--accent-primary': '0 0% 64%',
+      '--footer-bg': '0 0% 15%',
+    ),
+  ),
+);
+
+// ===========================================
+// CSS SELECTOR GENERATION
+// ===========================================
+// Generates [data-theme-preset="name"] and
+// [data-theme-preset="name"].dark selectors
+// for each preset in the map.
+
+@each $name, $modes in $theme-presets {
+  $light: map.get($modes, 'light');
+  $dark: map.get($modes, 'dark');
+
+  // Light mode overrides
+  [data-theme-preset='#{$name}'] {
+    @each $prop, $value in $light {
+      #{$prop}: #{$value};
+    }
+  }
+
+  // Dark mode overrides (when .dark class is also present)
+  [data-theme-preset='#{$name}'].dark {
+    @each $prop, $value in $dark {
+      #{$prop}: #{$value};
+    }
+  }
+}

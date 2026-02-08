@@ -1,4 +1,5 @@
 import {Skeleton} from "@arolariu/components";
+import styles from "./loading.module.scss";
 
 /**
  * Loading skeleton component for the domains overview page.
@@ -40,23 +41,23 @@ import {Skeleton} from "@arolariu/components";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <div className='container mx-auto px-5 py-24'>
+    <div className={styles["domainsMain"]}>
       {/* Header Section Skeleton */}
-      <section className='flex flex-col'>
+      <section className={styles["headerSection"]}>
         {/* Progress Bar */}
-        <div className='h-1 overflow-hidden rounded bg-gray-200'>
+        <div className={styles["progressTrack"]}>
           <Skeleton className='h-full w-24' />
         </div>
 
         {/* Title and Subtitle Container */}
-        <div className='mb-12 flex flex-col flex-wrap py-6 sm:flex-row'>
+        <div className={styles["titleRow"]}>
           {/* Title Skeleton */}
-          <div className='mb-2 sm:mb-0 sm:w-2/5'>
+          <div className={styles["titleSkeleton"]}>
             <Skeleton className='mx-auto h-14 w-4/5 sm:mx-0' />
           </div>
 
           {/* Subtitle Skeleton */}
-          <article className='2xsm:mt-8 space-y-2 pl-0 sm:w-3/5 sm:pl-10 md:mt-0'>
+          <article className={styles["subtitleArticle"]}>
             <Skeleton className='h-4 w-full' />
             <Skeleton className='h-4 w-5/6' />
             <Skeleton className='h-4 w-4/5' />
@@ -65,21 +66,21 @@ export default function Loading(): React.JSX.Element {
       </section>
 
       {/* Service Cards Grid Skeleton */}
-      <section className='2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center flex flex-row flex-wrap gap-4 md:items-baseline md:justify-normal md:justify-items-start'>
+      <section className={styles["cardsSection"]}>
         {/* Service Card Skeleton */}
-        <section className='mb-6 max-w-80 rounded-xl border p-4 sm:mb-0'>
+        <section className={styles["serviceCard"]}>
           {/* Image Skeleton */}
-          <article className='h-64 overflow-hidden rounded-lg'>
+          <article className={styles["imageContainer"]}>
             <Skeleton className='h-full w-full' />
           </article>
 
           {/* Card Content Skeleton */}
-          <article className='space-y-3'>
+          <article className={styles["cardContent"]}>
             {/* Title */}
             <Skeleton className='mx-auto mt-5 h-7 w-3/4' />
 
             {/* Description Lines */}
-            <div className='space-y-2'>
+            <div className={styles["descriptionLines"]}>
               <Skeleton className='h-4 w-full' />
               <Skeleton className='h-4 w-5/6' />
             </div>
@@ -90,13 +91,13 @@ export default function Loading(): React.JSX.Element {
         </section>
 
         {/* Additional Card Placeholders (for future domains) */}
-        <section className='mb-6 max-w-80 rounded-xl border p-4 opacity-50 sm:mb-0'>
-          <article className='h-64 overflow-hidden rounded-lg'>
+        <section className={styles["serviceCardFaded"]}>
+          <article className={styles["imageContainer"]}>
             <Skeleton className='h-full w-full' />
           </article>
-          <article className='space-y-3'>
+          <article className={styles["cardContent"]}>
             <Skeleton className='mx-auto mt-5 h-7 w-3/4' />
-            <div className='space-y-2'>
+            <div className={styles["descriptionLines"]}>
               <Skeleton className='h-4 w-full' />
               <Skeleton className='h-4 w-5/6' />
             </div>
@@ -104,13 +105,13 @@ export default function Loading(): React.JSX.Element {
           </article>
         </section>
 
-        <section className='mb-6 max-w-80 rounded-xl border p-4 opacity-30 sm:mb-0'>
-          <article className='h-64 overflow-hidden rounded-lg'>
+        <section className={styles["serviceCardFadedMore"]}>
+          <article className={styles["imageContainer"]}>
             <Skeleton className='h-full w-full' />
           </article>
-          <article className='space-y-3'>
+          <article className={styles["cardContent"]}>
             <Skeleton className='mx-auto mt-5 h-7 w-3/4' />
-            <div className='space-y-2'>
+            <div className={styles["descriptionLines"]}>
               <Skeleton className='h-4 w-full' />
               <Skeleton className='h-4 w-5/6' />
             </div>

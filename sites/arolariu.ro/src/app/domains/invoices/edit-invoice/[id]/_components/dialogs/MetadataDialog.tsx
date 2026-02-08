@@ -14,6 +14,7 @@ import {
 import {useCallback, useState} from "react";
 import {TbDiscFilled} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./MetadataDialog.module.scss";
 
 // Define valid metadata keys and which ones are readonly
 export const VALID_METADATA_KEYS = [
@@ -60,8 +61,8 @@ const AddDialog = () => {
           <DialogDescription>Add additional information to this invoice</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4 py-2'>
-          <div className='space-y-2'>
+        <div className={styles["formBody"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='key'>Metadata Key</Label>
             <Input
               id='key'
@@ -72,7 +73,7 @@ const AddDialog = () => {
             />
           </div>
 
-          <div className='space-y-2'>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='value'>Metadata Value</Label>
             <Input
               id='value'
@@ -128,8 +129,8 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           <DialogDescription>Update the value of this metadata field</DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4 py-2'>
-          <div className='space-y-2'>
+        <div className={styles["formBody"]}>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='key'>Metadata Field</Label>
             <Input
               id='key'
@@ -138,7 +139,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
             />
           </div>
 
-          <div className='space-y-2'>
+          <div className={styles["fieldGroup"]}>
             <Label htmlFor='value'>Value</Label>
             <Input
               id='value'
@@ -198,7 +199,7 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           <Button
             type='button'
             onClick={handleDelete}
-            className='bg-red-500 text-white'>
+            className={styles["deleteButton"]}>
             Delete
           </Button>
         </DialogFooter>

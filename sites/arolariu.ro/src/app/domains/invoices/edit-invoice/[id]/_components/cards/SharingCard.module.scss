@@ -1,0 +1,75 @@
+@use '../../../../../../../styles/abstracts' as *;
+@use '../../../../_styles/invoice-shared' as invoice;
+
+.ownerRow {
+  display: flex;
+  align-items: center;
+}
+
+.ownerAvatar {
+  background-color: color-alpha('primary', 0.1);
+  margin-right: space(3);
+  display: flex;
+  width: space(10);
+  height: space(10);
+  align-items: center;
+  justify-content: center;
+  border-radius: radius('full');
+}
+
+.ownerName {
+  font-weight: font-weight('medium');
+}
+
+.ownerUsername {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.manageArea {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.sharedTitle {
+  margin-bottom: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.sharedList {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.sharedUserRow {
+  display: flex;
+  align-items: center;
+}
+
+.sharedUserAvatar {
+  background-color: color('muted');
+  margin-right: space(2);
+  display: flex;
+  width: space(8);
+  height: space(8);
+  align-items: center;
+  justify-content: center;
+  border-radius: radius('full');
+}
+
+.sharedUserName {
+  font-size: font-size('sm');
+}
+
+.emptyShared {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.ownerImage {
+  border-radius: radius('full');
+}

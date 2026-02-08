@@ -1,0 +1,130 @@
+// ===========================================
+// INVOICE DOMAIN LOADING STYLES
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.page {
+  padding-inline: space(5);
+  padding-block: space(24);
+}
+
+// ===========================================
+// HERO SKELETON
+// ===========================================
+.heroSection {
+  @include flex-column-center;
+  justify-content: center;
+  text-align: center;
+}
+
+.heroImage {
+  height: 500px;
+  width: 500px;
+  object-fit: fill;
+  object-position: center;
+
+  @include respond-to('md') {
+    margin-inline: auto;
+    height: 100%;
+  }
+
+  @include respond-to('lg') {
+    height: 50%;
+  }
+}
+
+.contentArea {
+  margin-top: space(2);
+  width: 100%;
+
+  @include respond-to('lg') {
+    width: 66.666%;
+  }
+}
+
+.titleSkeleton {
+  margin-inline: auto;
+  margin-bottom: space(4);
+}
+
+.descriptionBlock {
+  margin-bottom: space(8);
+
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.descriptionLine {
+  margin-inline: auto;
+}
+
+.ctaRow {
+  @include flex-column-center;
+  justify-content: center;
+  gap: space(4);
+
+  @include respond-to('md') {
+    flex-direction: row;
+  }
+}
+
+// ===========================================
+// STEPS SKELETON
+// ===========================================
+.stepsSection {
+  @include flex-column-center;
+  justify-content: center;
+  padding-top: space(16);
+
+  @include respond-to('md') {
+    flex-direction: row;
+  }
+}
+
+.stepsTimeline {
+  @include respond-to('md') {
+    width: 50%;
+    padding-block: space(6);
+    padding-right: space(10);
+  }
+
+  @include respond-to('lg') {
+    width: 40%;
+  }
+}
+
+.stepItem {
+  position: relative;
+  display: flex;
+  padding-bottom: space(12);
+}
+
+.stepLine {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  height: 100%;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.stepLineBar {
+  pointer-events: none;
+  height: 100%;
+  width: 0.25rem;
+  background-color: #e5e7eb; // gray-200
+}
+
+.stepContent {
+  flex-grow: 1;
+  padding-left: space(4);
+
+  & > * + * {
+    margin-top: space(2);
+  }
+}

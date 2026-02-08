@@ -18,6 +18,7 @@ import {InvoiceHeader} from "./_components/InvoiceHeader";
 import {InvoiceTabs} from "./_components/tabs/InvoiceTabs";
 import {InvoiceTimeline} from "./_components/timeline/InvoiceTimeline";
 import {InvoiceContextProvider} from "./_context/InvoiceContext";
+import styles from "./island.module.scss";
 
 type Props = Readonly<{
   readonly invoice: Invoice;
@@ -45,63 +46,63 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
       invoice={invoice}
       merchant={merchant}>
       <DialogProvider>
-        <div className='animate-in fade-in container mx-auto px-4 py-8 duration-500 sm:py-12'>
+        <div className={styles["container"]}>
           {/* Header */}
-          <div className='animate-in slide-in-from-bottom-4 mb-8 duration-500'>
+          <div className={styles["headerSection"]}>
             {Boolean(!isOwner && !isLoadingUserInformation) && <InvoiceGuestBanner />}
             <InvoiceHeader />
           </div>
 
-          <div className='grid grid-cols-1 gap-6 lg:grid-cols-12'>
+          <div className={styles["mainGrid"]}>
             {/* Left Column - Timeline (hidden on mobile, shown on lg+) */}
-            <div className='hidden space-y-6 lg:col-span-3 lg:block'>
-              <div className='animate-in slide-in-from-left-4 sticky top-6 delay-100 duration-500'>
+            <div className={styles["leftColumn"]}>
+              <div className={styles["leftColumnSticky"]}>
                 <InvoiceTimeline />
               </div>
             </div>
 
             {/* Main Content - Center Column */}
-            <div className='space-y-6 lg:col-span-6'>
-              <div className='animate-in slide-in-from-bottom-4 delay-100 duration-500'>
+            <div className={styles["centerColumn"]}>
+              <div className={styles["centerItem"]}>
                 <InvoiceDetailsCard />
               </div>
 
-              <div className='animate-in slide-in-from-bottom-4 delay-150 duration-500'>
+              <div className={styles["centerItem"]}>
                 <CategoryInsightsCardContainer />
               </div>
 
-              <div className='animate-in slide-in-from-bottom-4 delay-200 duration-500'>
+              <div className={styles["centerItem"]}>
                 <InvoiceTabs />
               </div>
 
               {/* Timeline on mobile/tablet (shown below main content) */}
-              <div className='animate-in slide-in-from-bottom-4 delay-250 duration-500 lg:hidden'>
+              <div className={styles["mobileTimeline"]}>
                 <InvoiceTimeline />
               </div>
             </div>
 
             {/* Sidebar - Right Column */}
-            <div className='space-y-6 lg:col-span-3'>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-100 duration-500'>
+            <div className={styles["rightColumn"]}>
+              <div className={styles["rightItem"]}>
                 <ReceiptScanCard />
               </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-150 duration-500'>
+              <div className={styles["rightItem"]}>
                 {Boolean(isOwner && !isLoadingUserInformation) && <ShoppingCalendarCard />}
               </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-200 duration-500'>
+              <div className={styles["rightItem"]}>
                 {Boolean(isOwner && !isLoadingUserInformation) && <BudgetImpactCard />}
               </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-250 duration-500'>
+              <div className={styles["rightItem"]}>
                 {Boolean(isOwner && !isLoadingUserInformation) && <SeasonalInsightsCard />}
               </div>
-              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-300 duration-500'>
+              <div className={styles["rightItem"]}>
                 <MerchantInfoCard />
               </div>
             </div>
           </div>
 
           {/* Analytics Section */}
-          <div className='border-border mt-8 border-t pt-8 sm:mt-12 sm:pt-12'>
+          <div className={styles["analyticsSection"]}>
             <InvoiceAnalytics />
           </div>
         </div>

@@ -1,0 +1,242 @@
+@use '../styles/abstracts' as *;
+
+// Body
+.body {
+  background-color: color('background');
+  color: color('foreground');
+}
+
+// Page container (the single <main>)
+.pageContainer {
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: space(24) space(5);
+}
+
+// Hero error section
+.heroSection {
+  margin-bottom: space(8);
+  text-align: center;
+}
+
+.iconCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: space(4);
+  padding: space(6);
+  border-radius: radius('full');
+  background-color: color-alpha('destructive', 0.1);
+}
+
+.heroIcon {
+  width: 4rem;
+  height: 4rem;
+  color: color('destructive');
+}
+
+.heroTitle {
+  margin-bottom: space(2);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  color: color('destructive');
+}
+
+.heroSubtitle {
+  font-size: font-size('lg');
+  color: color('muted-foreground');
+}
+
+// Card overrides
+.errorCard {
+  width: 100%;
+  max-width: 42rem;
+}
+
+.cardTitleWrapper {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.cardTitleIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: color('destructive');
+}
+
+.errorCode {
+  display: inline-block;
+  padding: space(0.5) space(2);
+  border-radius: radius('md');
+  background-color: color('muted');
+  font-family: monospace;
+  font-size: font-size('sm');
+}
+
+// Alert overrides
+.alertTitleInner {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.alertIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.alertDescription {
+  margin-top: space(2);
+}
+
+.errorMessage {
+  font-family: monospace;
+  font-size: font-size('sm');
+}
+
+// Info box ("What can you do?")
+.infoBox {
+  padding: space(4);
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  background-color: color-alpha('muted', 0.3);
+}
+
+.infoTitle {
+  margin-bottom: space(2);
+  font-weight: font-weight('semibold');
+}
+
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+// QR Code section
+.qrSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(2);
+  padding: space(4);
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  background-color: color('background');
+}
+
+.qrLabel {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.qrCode {
+  padding: space(2);
+  border: 2px solid color('border');
+  border-radius: radius('md');
+}
+
+// Technical details
+.technicalDetails {
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  background-color: color('background');
+}
+
+.technicalSummary {
+  padding: space(4);
+  font-weight: font-weight('semibold');
+  cursor: pointer;
+  @include transition(background-color);
+
+  &:hover {
+    background-color: color-alpha('muted', 0.3);
+  }
+}
+
+.technicalContent {
+  padding: space(4);
+  border-top: 1px solid color('border');
+}
+
+.preBlock {
+  overflow-x: auto;
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.stackTitle {
+  margin-top: space(4);
+  margin-bottom: space(2);
+  font-weight: font-weight('semibold');
+}
+
+// Card footer / buttons
+.cardFooterInner {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.actionButton {
+  width: 100%;
+
+  @include respond-to('sm') {
+    width: auto;
+  }
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+// Help section
+.helpSection {
+  margin-top: space(8);
+  text-align: center;
+}
+
+.helpText {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.helpLink {
+  color: color('primary');
+  text-decoration: underline;
+  @include transition(color);
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.helpErrorCode {
+  display: inline-block;
+  padding: space(0.5) space(2);
+  border-radius: radius('md');
+  background-color: color('muted');
+  font-family: monospace;
+  font-size: font-size('xs');
+}
+
+// Content spacing (replaces Tailwind space-y-4)
+.contentSpacing {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}

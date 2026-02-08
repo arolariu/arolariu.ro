@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npm ci *)",
+      "Bash(npm test)",
+      "Bash(npm ls:*)",
+      "Bash(npx *)",
+      "Bash(nx *)",
+      "Bash(dotnet *)",
+      "Bash(node *)",
+      "Bash(cd *)",
+      "Bash(ls *)",
+      "Bash(pwd)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(which *)",
+      "Bash(where *)",
+      "Bash(gh pr create:*)",
+      "WebSearch",
+      "mcp__sequential-thinking__*",
+      "mcp__eslint__*",
+      "mcp__memory__*",
+      "mcp__plugin_context7_context7__resolve-library-id"
+    ],
+    "deny": []
+  },
+  "enableAllProjectMcpServers": true
+}

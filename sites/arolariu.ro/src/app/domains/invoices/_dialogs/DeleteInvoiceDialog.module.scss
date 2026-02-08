@@ -1,0 +1,215 @@
+// ===========================================
+// DELETE INVOICE DIALOG STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// DELETING STATE
+// ===========================================
+.deletingState {
+  @include flex-column-center;
+  justify-content: center;
+  padding-block: space(8);
+
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.spinnerWrapper {
+  border-radius: radius('full');
+  padding: space(4);
+  background-color: #fee2e2; // red-100
+
+  @include dark {
+    background-color: rgba(127, 29, 29, 0.3); // red-900/30
+  }
+}
+
+.deletingTitle {
+  font-weight: font-weight('medium');
+  color: #dc2626; // red-600
+
+  @include dark {
+    color: #f87171; // red-400
+  }
+}
+
+.deletingDescription {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+// ===========================================
+// CONFIRM STATE
+// ===========================================
+.confirmBody {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+// ===========================================
+// INVOICE SUMMARY CARD
+// ===========================================
+.summaryCard {
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(4);
+  background-color: color-alpha('muted', 0.3);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+}
+
+.summaryIconBox {
+  border-radius: radius('lg');
+  padding: space(2);
+  background-color: #fee2e2; // red-100
+
+  @include dark {
+    background-color: rgba(127, 29, 29, 0.3); // red-900/30
+  }
+}
+
+.summaryContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.summaryName {
+  @include truncate;
+  font-weight: font-weight('semibold');
+}
+
+.summaryId {
+  color: color('muted-foreground');
+  font-family: monospace;
+  font-size: font-size('xs');
+}
+
+.summaryDescription {
+  color: color('muted-foreground');
+  margin-top: space(1);
+  font-size: font-size('sm');
+  @include line-clamp(2);
+}
+
+// ===========================================
+// IMPACT LIST
+// ===========================================
+.impactList {
+  & > * + * {
+    margin-top: space(1);
+  }
+
+  font-size: font-size('sm');
+}
+
+.impactItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+// ===========================================
+// CONFIRMATION
+// ===========================================
+.confirmSection {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.confirmField {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.confirmHighlight {
+  font-weight: font-weight('semibold');
+  color: #dc2626; // red-600
+
+  @include dark {
+    color: #f87171; // red-400
+  }
+}
+
+.checkboxCard {
+  display: flex;
+  align-items: flex-start;
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(3);
+
+  & > * + * {
+    margin-left: space(3);
+  }
+}
+
+.checkboxContent {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.checkboxDescription {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.titleIcon {
+  width: space(5);
+  height: space(5);
+}
+
+.spinnerIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #ef4444; // Decorative: intentionally hardcoded (red-500)
+}
+
+.summaryIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #ef4444; // Decorative: intentionally hardcoded (red-500)
+}
+
+.impactIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.impactIntro {
+  margin-bottom: space(2);
+}
+
+.buttonIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+}
+
+.buttonSpinnerIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

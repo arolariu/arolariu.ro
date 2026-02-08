@@ -1,0 +1,284 @@
+// ===========================================
+// THE PLATFORM - CALL TO ACTION COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  padding: space(24) 0;
+  overflow: hidden;
+}
+
+// Background
+.bgLayer {
+  position: absolute;
+  inset: 0;
+  z-index: z('behind');
+}
+
+.bgGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    color('background'),
+    color-alpha('primary', 0.1),
+    color('background')
+  );
+}
+
+// Animated orbs
+.bgOrbs {
+  position: absolute;
+  inset: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: radius('full');
+  filter: blur(48px);
+}
+
+.orbPrimary {
+  composes: orb;
+  top: 25%;
+  left: 25%;
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+}
+
+.orbSecondary {
+  composes: orb;
+  right: 25%;
+  bottom: 25%;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(to top left, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.1), transparent);
+}
+
+// Grid pattern
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(128, 128, 128, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(128, 128, 128, 0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+// Beams wrapper
+.beamsWrapper {
+  opacity: 0.3;
+}
+
+// Container
+.container {
+  position: relative;
+  z-index: z('content');
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 space(4);
+}
+
+.contentWrapper {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 64rem;
+  text-align: center;
+}
+
+// Title
+.title {
+  margin-bottom: space(6);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+}
+
+.titleHighlight {
+  background: linear-gradient(
+    to right,
+    color('gradient-from'),
+    color('gradient-via'),
+    color('gradient-to')
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+// Description
+.description {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(10);
+  max-width: 42rem;
+  font-size: font-size('lg');
+  color: color('muted-foreground');
+
+  @include respond-to('md') {
+    font-size: font-size('xl');
+  }
+}
+
+// CTA buttons
+.ctaButtons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.ctaButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: space(3);
+  height: 3.5rem;
+  padding: 0 space(8);
+  overflow: hidden;
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  cursor: pointer;
+}
+
+.ctaIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  @include transition(transform);
+}
+
+.ctaButton:hover .ctaIcon {
+  transform: rotate(12deg);
+}
+
+.ctaArrow {
+  width: 1.25rem;
+  height: 1.25rem;
+  @include transition(transform);
+}
+
+.ctaButton:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+.ctaOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, color-alpha('primary', 0.2), color-alpha('primary', 0.05));
+}
+
+// Secondary links
+.secondaryLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: space(6);
+  margin-top: space(10);
+}
+
+.secondaryLink {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  color: color('muted-foreground');
+  @include transition(color);
+
+  &:hover {
+    color: color('primary');
+  }
+}
+
+.secondaryLinkIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.linkDivider {
+  color: color-alpha('muted-foreground', 0.3);
+}
+
+// Trust indicators
+.trustGrid {
+  display: grid;
+  gap: space(8);
+  margin-top: space(16);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.trustCard {
+  padding: space(6);
+  border-radius: radius('xl');
+  background-color: color-alpha('muted', 0.3);
+  backdrop-filter: blur(8px);
+  @include transition(transform);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.trustAccent {
+  margin-bottom: space(3);
+  height: 4px;
+  width: 3rem;
+  border-radius: radius('full');
+}
+
+.trustAccentBlue {
+  background: linear-gradient(to right, #3b82f6, #06b6d4);
+}
+
+.trustAccentPurple {
+  background: linear-gradient(to right, #a855f7, #ec4899);
+}
+
+.trustAccentOrange {
+  background: linear-gradient(to right, #f97316, #f59e0b);
+}
+
+.trustTitle {
+  margin-bottom: space(2);
+  font-weight: font-weight('semibold');
+}
+
+.trustDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+// Footer
+.footer {
+  margin-top: space(16);
+}
+
+.footerText {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.footerLink {
+  color: color('primary');
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

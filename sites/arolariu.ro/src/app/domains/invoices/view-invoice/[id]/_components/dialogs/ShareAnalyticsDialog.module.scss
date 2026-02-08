@@ -1,0 +1,45 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.contentSection {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.description {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.previewContainer {
+  display: flex;
+  justify-content: center;
+}
+
+.previewBox {
+  width: 100%;
+  max-width: 20rem;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+  padding: space(4);
+}
+
+.previewPlaceholder {
+  @include flex-center;
+  height: space(32);
+  border-radius: radius('md');
+  background-color: color('muted');
+}
+
+.footerButtons {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: space(2);
+}
+
+.emailSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}

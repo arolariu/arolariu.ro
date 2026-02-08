@@ -5,6 +5,7 @@ import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef} from "react";
 import {TbQuestionMark} from "react-icons/tb";
+import styles from "./Faq.module.scss";
 
 const questions = ["q1", "q2", "q3", "q4"] as const;
 
@@ -19,21 +20,21 @@ export default function Faq(): React.JSX.Element {
   return (
     <section
       ref={ref}
-      className='relative w-full px-4 py-20'>
-      <div className='mx-auto max-w-3xl'>
+      className={styles["section"]}>
+      <div className={styles["container"]}>
         {/* Section header */}
         <motion.div
-          className='mb-12 text-center'
+          className={styles["header"]}
           initial={{opacity: 0, y: 20}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
-          <div className='mb-4 flex justify-center'>
-            <div className='rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 p-3'>
-              <TbQuestionMark className='h-6 w-6 text-white' />
+          <div className={styles["iconWrapper"]}>
+            <div className={styles["iconInner"]}>
+              <TbQuestionMark className={styles["icon"]} />
             </div>
           </div>
-          <h2 className='blue-underline mb-4 inline-block text-3xl font-bold sm:text-4xl'>{t("title")}</h2>
-          <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>{t("subtitle")}</p>
+          <h2 className={styles["title"]}>{t("title")}</h2>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
 
         {/* Accordion */}
@@ -44,7 +45,7 @@ export default function Faq(): React.JSX.Element {
           <Accordion
             type='single'
             collapsible
-            className='w-full'>
+            className={styles["accordion"]}>
             {questions.map((q, index) => (
               <motion.div
                 key={q}
@@ -53,12 +54,12 @@ export default function Faq(): React.JSX.Element {
                 transition={{delay: 0.4 + index * 0.1, duration: 0.4}}>
                 <AccordionItem
                   value={q}
-                  className='border-border/50 hover:border-primary/30 border-b transition-colors'>
-                  <AccordionTrigger className='hover:no-underline'>
-                    <span className='pr-4 text-left font-semibold'>{t(`questions.${q}.question`)}</span>
+                  className={styles["accordionItem"]}>
+                  <AccordionTrigger className={styles["accordionTrigger"]}>
+                    <span className={styles["question"]}>{t(`questions.${q}.question`)}</span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className='text-muted-foreground leading-relaxed'>{t(`questions.${q}.answer`)}</p>
+                    <p className={styles["answer"]}>{t(`questions.${q}.answer`)}</p>
                   </AccordionContent>
                 </AccordionItem>
               </motion.div>

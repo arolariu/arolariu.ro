@@ -1,0 +1,92 @@
+@use '../styles/abstracts' as *;
+
+// Body
+.body {
+  background-color: color('background');
+  color: color('foreground');
+}
+
+// Page container (the single <main>)
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: space(24) space(5);
+  font-size: font-size('xl');
+
+  @include respond-to('2xsm') {
+    font-size: font-size('lg');
+  }
+}
+
+// Hero content
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  text-align: center;
+}
+
+.title {
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: space(8);
+  font-size: font-size('xl');
+
+  @include respond-to('2xsm') {
+    font-size: font-size('xl');
+  }
+
+  @include respond-to('md') {
+    font-size: font-size('3xl');
+  }
+}
+
+.subtitle {
+  text-wrap: balance;
+}
+
+// QR section
+.qrSection {
+  margin: space(4) 0;
+  padding: space(4) 0;
+}
+
+.qrTitle {
+  margin: space(4) 0;
+  text-align: center;
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+}
+
+// Bottom section
+.bottomSection {
+  text-align: center;
+}
+
+.falsePositive {
+  text-align: center;
+  font-size: font-size('xs');
+}
+
+// Button row
+.buttonRow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(4);
+  margin-top: space(4);
+
+  @include respond-to('md') {
+    flex-direction: row;
+  }
+}
+
+.actionButton {
+  margin-left: auto;
+  margin-right: auto;
+}

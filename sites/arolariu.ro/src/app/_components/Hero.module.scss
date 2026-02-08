@@ -1,0 +1,193 @@
+// ===========================================
+// HOME PAGE - HERO COMPONENT
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: space(20) 0;
+}
+
+.article {
+  margin-left: auto;
+  margin-right: auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: space(12);
+  padding: 0 space(4);
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// Left side content
+.content {
+  position: relative;
+  z-index: z('content');
+}
+
+.title {
+  margin-top: space(6);
+  font-size: font-size('4xl');
+  font-weight: font-weight('normal');
+  color: white;
+  text-align: center;
+
+  @include respond-to('sm') {
+    margin-top: space(10);
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('md') {
+    text-align: left;
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+
+  @include respond-to('xl') {
+    font-size: font-size('8xl');
+  }
+}
+
+.titleGradient {
+  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  margin-top: space(4);
+  max-width: 32rem;
+  font-size: font-size('xl');
+  color: color('muted-foreground');
+  text-align: center;
+
+  @include respond-to('md') {
+    text-align: left;
+  }
+
+  @include respond-to('lg') {
+    max-width: 42rem;
+  }
+}
+
+// CTA button container
+.ctaWrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+  margin-top: space(8);
+  margin-left: auto;
+  margin-right: auto;
+
+  @include respond-to('md') {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.ctaGlow {
+  position: absolute;
+  inset: -1px;
+  border-radius: radius('full');
+  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
+  @include transition(box-shadow);
+}
+
+.ctaButton {
+  position: relative;
+  display: inline-flex;
+  padding: space(3) space(8);
+  border-radius: radius('full');
+  border: 1px solid transparent;
+  background-color: black;
+  color: white;
+}
+
+// Appreciation section
+.appreciation {
+  margin-top: space(8);
+}
+
+.appreciationSeparator {
+  margin-bottom: space(6);
+}
+
+.appreciationText {
+  display: block;
+  text-align: center;
+
+  @include respond-to('md') {
+    text-align: left;
+  }
+}
+
+// Right side visual
+.visual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.visualContainer {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 400px;
+}
+
+// Animated orbs
+.orbPrimary {
+  @include orb(10rem, 48px, color-alpha('primary', 0.2));
+  top: -5rem;
+  left: -5rem;
+}
+
+.orbPurple {
+  @include orb(10rem, 48px, rgb(168 85 247 / 0.2)); // purple-500/20
+  bottom: -5rem;
+  right: -5rem;
+}
+
+// Desktop TechSphere container
+.techSphereWrapper {
+  display: none;
+
+  @include respond-to('lg') {
+    display: block;
+  }
+}
+
+// Mobile animation
+.mobileAnimation {
+  display: block;
+  width: 100%;
+
+  @include respond-to('sm') {
+    display: none;
+  }
+}
+
+.mobileAnimationInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 15rem;
+  width: 100%;
+}
+
+.mobileOrb {
+  @include orb(8rem, 24px, color-alpha('primary', 0.2));
+}

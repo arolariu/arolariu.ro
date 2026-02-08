@@ -1,0 +1,95 @@
+// ===========================================
+// SCANS HEADER COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+.header {
+  margin-bottom: space(8);
+  @include flex-column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.headerLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+}
+
+.headerTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  color: #111827; // gray-900
+
+  @include respond-to('lg') {
+    font-size: font-size('3xl');
+  }
+
+  @include dark {
+    color: white;
+  }
+}
+
+.lastSynced {
+  font-size: font-size('sm');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.headerActions {
+  display: flex;
+  gap: space(2);
+}
+
+.hiddenMobile {
+  display: none;
+
+  @include respond-to('sm') {
+    display: inline;
+  }
+}
+
+.visibleMobile {
+  @include respond-to('sm') {
+    display: none;
+  }
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.infoIcon {
+  width: space(5);
+  height: space(5);
+}
+
+.actionIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.syncIcon {
+  height: space(4);
+  width: space(4);
+}
+
+.syncIconSpinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

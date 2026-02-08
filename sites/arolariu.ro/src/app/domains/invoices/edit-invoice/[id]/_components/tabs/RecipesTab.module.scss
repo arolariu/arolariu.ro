@@ -1,0 +1,38 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.recipesGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.emptyState {
+  padding-block: space(8);
+  text-align: center;
+}
+
+.emptyText {
+  color: color('muted-foreground');
+  margin-bottom: space(4);
+}
+
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: space(4);
+}
+
+.pageInfo {
+  font-size: font-size('sm');
+}
+
+.headerActions {
+  display: flex;
+  flex-direction: row;
+  gap: space(4);
+}

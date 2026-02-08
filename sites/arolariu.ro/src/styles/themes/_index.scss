@@ -1,0 +1,13 @@
+/// ===========================================
+/// THEMES — Barrel Export
+/// ===========================================
+/// Forwards theme preset CSS variable overrides.
+/// Works with `next-themes` (`.dark` class) for light/dark switching
+/// and `useThemePreset` hook for named preset selection.
+///
+/// @group themes
+/// @author arolariu
+/// @see themes/_presets.scss — named theme preset definitions and CSS generation
+/// @see base/_globals.scss — default CSS custom properties overridden by presets
+/// ===========================================
+@forward 'presets';

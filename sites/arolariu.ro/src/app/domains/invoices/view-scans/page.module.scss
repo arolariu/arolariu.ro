@@ -1,0 +1,17 @@
+// ===========================================
+// VIEW SCANS PAGE STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.page {
+  min-height: 100vh;
+  padding: space(12) space(4);
+
+  @include respond-to('sm') {
+    padding-inline: space(6);
+  }
+
+  @include respond-to('lg') {
+    padding-inline: space(8);
+  }
+}

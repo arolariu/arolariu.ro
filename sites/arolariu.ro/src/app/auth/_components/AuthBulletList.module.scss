@@ -1,0 +1,30 @@
+// ===========================================
+// AUTH BULLET LIST
+// Feature bullet list for marketing panels
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  text-align: left;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+}
+
+.dot {
+  margin-top: space(2);
+  display: inline-block;
+  width: space(1.5);
+  height: space(1.5);
+  flex-shrink: 0;
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.7);
+}

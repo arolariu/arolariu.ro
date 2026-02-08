@@ -5,7 +5,6 @@ import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
 import {type Invoice, InvoiceScanType} from "@/types/invoices";
 import {
   Button,
-  cn,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -25,6 +24,7 @@ import {useCallback, useState} from "react";
 import {useDropzone} from "react-dropzone";
 import {TbCloudUpload, TbFile, TbLoader2, TbUpload, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./AddScanDialog.module.scss";
 
 /**
  * Dialog for adding a new scan to an existing invoice.
@@ -191,39 +191,42 @@ export default function AddScanDialog(): React.JSX.Element {
         </DialogHeader>
 
         {/* eslint-disable react/jsx-props-no-spreading, react/jsx-handler-names -- react-dropzone library requires spread props */}
-        <div className='grid gap-4 py-4'>
+        <div className={styles["body"]}>
           {/* Dropzone - using react-dropzone library pattern with spread props */}
-          <div
+          <div 
             {...getRootProps()}
-            className={cn(
-              "flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors",
-              isDragActive && "border-primary bg-primary/5",
-              isDragAccept && "border-green-500 bg-green-500/5",
-              isDragReject && "border-destructive bg-destructive/5",
-              !isDragActive && "hover:border-primary/50 hover:bg-muted/50",
-              isUploading && "pointer-events-none opacity-50",
-            )}>
+            className={
+              isUploading
+                ? styles["dropzoneDisabled"]
+                : isDragReject
+                  ? styles["dropzoneDragReject"]
+                  : isDragAccept
+                    ? styles["dropzoneDragAccept"]
+                    : isDragActive
+                      ? styles["dropzoneDragActive"]
+                      : styles["dropzoneIdle"]
+            }>
             <input {...getInputProps()} />
-            <TbCloudUpload className='text-muted-foreground mb-4 h-12 w-12' />
+            <TbCloudUpload className={styles["uploadIcon"]} />
             {isDragActive ? (
-              <p className='text-sm font-medium'>Drop the file here...</p>
+              <p className={styles["dropText"]}>Drop the file here...</p>
             ) : (
               <>
-                <p className='text-sm font-medium'>Drag & drop a file here</p>
-                <p className='text-muted-foreground text-xs'>or click to browse</p>
+                <p className={styles["dropText"]}>Drag & drop a file here</p>
+                <p className={styles["dropSubtext"]}>or click to browse</p>
               </>
             )}
-            <p className='text-muted-foreground mt-2 text-xs'>JPEG, PNG, PDF (max 10MB)</p>
+            <p className={styles["dropFormats"]}>JPEG, PNG, PDF (max 10MB)</p>
           </div>
 
           {/* Selected file preview */}
           {file ? (
-            <div className='bg-muted flex items-center justify-between rounded-md p-3'>
-              <div className='flex items-center gap-3'>
-                <TbFile className='h-8 w-8 shrink-0' />
-                <div className='min-w-0'>
-                  <p className='truncate text-sm font-medium'>{file.name}</p>
-                  <p className='text-muted-foreground text-xs'>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+            <div className={styles["filePreview"]}>
+              <div className={styles["fileInfo"]}>
+                <TbFile className={styles["fileIcon"]} />
+                <div className={styles["fileTextWrapper"]}>
+                  <p className={styles["fileName"]}>{file.name}</p>
+                  <p className={styles["fileSize"]}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
               </div>
               <Button
@@ -240,7 +243,7 @@ export default function AddScanDialog(): React.JSX.Element {
 
           {/* Scan type selector */}
           {file ? (
-            <div className='grid gap-2'>
+            <div className={styles["scanTypeGrid"]}>
               <Label htmlFor='scan-type'>Scan Type</Label>
               <Select
                 value={String(scanType)}

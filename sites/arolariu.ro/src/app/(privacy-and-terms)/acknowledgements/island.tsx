@@ -16,6 +16,7 @@ import Hero from "./_components/Hero";
 import LicenseBreakdown from "./_components/LicenseBreakdown";
 import PackagesScreen from "./_components/PackagesScreen";
 import Stats from "./_components/Stats";
+import styles from "./island.module.scss";
 
 type Props = {
   packages: NodePackagesJSON;
@@ -49,7 +50,7 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
   const t = useTranslations("Acknowledgements");
 
   return (
-    <main className='flex min-h-screen flex-col'>
+    <section className={styles["acknowledgementsMain"]}>
       {/* Hero section */}
       <Hero lastUpdatedDate={lastUpdatedDate} />
 
@@ -63,15 +64,15 @@ export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}
       <LicenseBreakdown />
 
       {/* NPM packages browser */}
-      <section className='mx-auto w-full max-w-7xl px-4 py-16'>
-        <div className='mb-8 text-center'>
-          <h2 className='mb-4 text-3xl font-bold'>
-            <span className='from-gradient-from to-gradient-to bg-gradient-to-r bg-clip-text text-transparent'>{t("packages.title")}</span>
+      <section className={styles["packagesSection"]}>
+        <div className={styles["packagesSectionHeader"]}>
+          <h2 className={styles["packagesTitle"]}>
+            <span className={styles["packagesTitleGradient"]}>{t("packages.title")}</span>
           </h2>
-          <p className='text-muted-foreground mx-auto max-w-2xl text-lg'>{t("packages.subtitle")}</p>
+          <p className={styles["packagesSubtitle"]}>{t("packages.subtitle")}</p>
         </div>
         <PackagesScreen packages={packages} />
       </section>
-    </main>
+    </section>
   );
 }

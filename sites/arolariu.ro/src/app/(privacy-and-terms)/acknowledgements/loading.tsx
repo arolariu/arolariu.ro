@@ -16,6 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@arolariu/components";
+import styles from "./loading.module.scss";
 
 const GRID_SKELETON_KEYS = [
   "ack-grid-skel-1",
@@ -49,37 +50,37 @@ const TABLE_SKELETON_KEYS = [
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <div className='container mx-auto max-w-7xl py-10'>
+    <div className={styles["container"]}>
       {/* Header skeleton */}
-      <div className='mb-10 text-center'>
-        <Skeleton className='mx-auto mb-2 h-10 w-64' />
-        <Skeleton className='mx-auto mb-1 h-4 w-96' />
-        <Skeleton className='mx-auto h-4 w-80' />
+      <div className={styles["headerSkeleton"]}>
+        <Skeleton className={styles["skelTitle"]} />
+        <Skeleton className={styles["skelSubtitleWide"]} />
+        <Skeleton className={styles["skelSubtitleNarrow"]} />
       </div>
 
       {/* Last updated skeleton */}
-      <div className='mb-6 text-center'>
-        <Skeleton className='mx-auto h-4 w-56' />
+      <div className={styles["lastUpdatedSkeleton"]}>
+        <Skeleton className={styles["skelLastUpdated"]} />
       </div>
 
       {/* Search and filter controls skeleton */}
-      <div className='mb-6 space-y-4'>
-        <div className='relative mx-auto max-w-md'>
-          <Skeleton className='h-10 w-full' />
+      <div className={styles["filtersSkeleton"]}>
+        <div className={styles["searchSkeleton"]}>
+          <Skeleton className={styles["skelSearchInput"]} />
         </div>
 
-        <div className='mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row'>
-          <Skeleton className='h-10 flex-1' />
-          <Skeleton className='h-10 flex-1' />
-          <Skeleton className='h-10 flex-1' />
+        <div className={styles["filterRowSkeleton"]}>
+          <Skeleton className={styles["skelFilterInput"]} />
+          <Skeleton className={styles["skelFilterInput"]} />
+          <Skeleton className={styles["skelFilterInput"]} />
         </div>
       </div>
 
       {/* Tabs skeleton */}
       <Tabs
         defaultValue='grid'
-        className='w-full'>
-        <TabsList className='mx-auto mb-8 grid w-full max-w-md grid-cols-2'>
+        className={styles["tabsFull"]}>
+        <TabsList className={styles["tabsListLayout"]}>
           <TabsTrigger
             value='grid'
             disabled>
@@ -92,42 +93,42 @@ export default function Loading(): React.JSX.Element {
           </TabsTrigger>
         </TabsList>
 
-        <div className='min-h-[600px]'>
+        <div className={styles["tabsContentWrapper"]}>
           <TabsContent
             value='grid'
-            className='w-full'>
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
+            className={styles["tabsFull"]}>
+            <div className={styles["gridSkeleton"]}>
               {GRID_SKELETON_KEYS.map((key) => (
                 <Card
                   key={key}
-                  className='h-full'>
+                  className={styles["cardFullHeight"]}>
                   <CardHeader>
-                    <div className='flex items-center justify-between'>
-                      <Skeleton className='h-6 w-32' />
-                      <Skeleton className='h-5 w-16 rounded-full' />
+                    <div className={styles["cardHeaderRow"]}>
+                      <Skeleton className={styles["skelCardName"]} />
+                      <Skeleton className={styles["skelVersionBadge"]} />
                     </div>
-                    <div className='mt-2 flex items-center'>
-                      <Skeleton className='h-5 w-24 rounded-full' />
+                    <div className={styles["cardBadgeRow"]}>
+                      <Skeleton className={styles["skelLicenseBadge"]} />
                     </div>
-                    <div className='mt-2 space-y-2'>
-                      <Skeleton className='h-4 w-full' />
-                      <Skeleton className='h-4 w-full' />
-                      <Skeleton className='h-4 w-3/4' />
+                    <div className={styles["cardDescriptionSkeleton"]}>
+                      <Skeleton className={styles["skelLineFull"]} />
+                      <Skeleton className={styles["skelLineFull"]} />
+                      <Skeleton className={styles["skelLineThreeQuarter"]} />
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className='flex flex-col space-y-2'>
-                      <div className='flex items-center'>
-                        <Skeleton className='mr-2 h-4 w-24' />
-                        <Skeleton className='h-4 w-16' />
+                    <div className={styles["cardDetailColumn"]}>
+                      <div className={styles["cardDetailRow"]}>
+                        <Skeleton className={styles["skelLabelSm"]} />
+                        <Skeleton className={styles["skelValueSm"]} />
                       </div>
-                      <div className='flex items-center'>
-                        <Skeleton className='mr-2 h-4 w-28' />
-                        <Skeleton className='h-4 w-8' />
+                      <div className={styles["cardDetailRow"]}>
+                        <Skeleton className={styles["skelLabelMd"]} />
+                        <Skeleton className={styles["skelValueXs"]} />
                       </div>
-                      <div className='mt-4 flex items-center justify-between'>
-                        <Skeleton className='h-8 w-24' />
-                        <Skeleton className='h-8 w-32' />
+                      <div className={styles["cardActionsRow"]}>
+                        <Skeleton className={styles["skelBtnSm"]} />
+                        <Skeleton className={styles["skelBtnMd"]} />
                       </div>
                     </div>
                   </CardContent>
@@ -137,30 +138,30 @@ export default function Loading(): React.JSX.Element {
           </TabsContent>
 
           <TabsContent value='table'>
-            <div className='rounded-md border'>
+            <div className={styles["tableBorder"]}>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>
-                      <Skeleton className='h-4 w-24' />
+                      <Skeleton className={styles["skelColMd"]} />
                     </TableHead>
                     <TableHead>
-                      <Skeleton className='h-4 w-16' />
+                      <Skeleton className={styles["skelColSm"]} />
                     </TableHead>
                     <TableHead>
-                      <Skeleton className='h-4 w-12' />
+                      <Skeleton className={styles["skelColXs"]} />
                     </TableHead>
-                    <TableHead className='hidden md:table-cell'>
-                      <Skeleton className='h-4 w-32' />
-                    </TableHead>
-                    <TableHead>
-                      <Skeleton className='h-4 w-16' />
+                    <TableHead className={styles["hiddenMd"]}>
+                      <Skeleton className={styles["skelColLg"]} />
                     </TableHead>
                     <TableHead>
-                      <Skeleton className='h-4 w-24' />
+                      <Skeleton className={styles["skelColSm"]} />
                     </TableHead>
                     <TableHead>
-                      <Skeleton className='h-4 w-16' />
+                      <Skeleton className={styles["skelColMd"]} />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className={styles["skelColSm"]} />
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -168,25 +169,25 @@ export default function Loading(): React.JSX.Element {
                   {TABLE_SKELETON_KEYS.map((key) => (
                     <TableRow key={key}>
                       <TableCell>
-                        <Skeleton className='h-4 w-32' />
+                        <Skeleton className={styles["skelColLg"]} />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className='h-4 w-16' />
+                        <Skeleton className={styles["skelColSm"]} />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className='h-5 w-24 rounded-full' />
+                        <Skeleton className={styles["skelTableBadge"]} />
                       </TableCell>
-                      <TableCell className='hidden md:table-cell'>
-                        <Skeleton className='h-4 w-full' />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className='h-4 w-12' />
+                      <TableCell className={styles["hiddenMd"]}>
+                        <Skeleton className={styles["skelColFull"]} />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className='h-8 w-28' />
+                        <Skeleton className={styles["skelColXs"]} />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className='mx-auto h-8 w-8 rounded-md' />
+                        <Skeleton className={styles["skelActionBtn"]} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className={styles["skelIconBtn"]} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -198,13 +199,13 @@ export default function Loading(): React.JSX.Element {
       </Tabs>
 
       {/* Footer skeleton */}
-      <div className='mt-16 text-center'>
-        <div className='mb-4 flex items-center justify-center'>
-          <Skeleton className='mr-2 h-6 w-6' />
-          <Skeleton className='h-6 w-48' />
+      <div className={styles["footerSkeleton"]}>
+        <div className={styles["footerHeaderSkeleton"]}>
+          <Skeleton className={styles["skelFooterIcon"]} />
+          <Skeleton className={styles["skelFooterTitle"]} />
         </div>
-        <Skeleton className='mx-auto mb-1 h-4 w-96' />
-        <Skeleton className='mx-auto h-4 w-80' />
+        <Skeleton className={styles["skelSubtitleWide"]} />
+        <Skeleton className={styles["skelSubtitleNarrow"]} />
       </div>
     </div>
   );

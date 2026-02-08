@@ -1,0 +1,302 @@
+// ===========================================
+// THE PLATFORM LOADING SKELETON STYLES
+// Mirrors page.tsx + component layout 1:1
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+// ===========================================
+// PAGE WRAPPER
+// ===========================================
+.page {
+  position: relative;
+  min-height: 100vh;
+  background-color: color('background');
+  color: color('foreground');
+}
+
+.inner {
+  padding-bottom: space(12);
+}
+
+// ===========================================
+// HERO SECTION
+// ===========================================
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90vh;
+  gap: space(6);
+  padding: space(20) space(4);
+}
+
+.heroBadge {
+  height: 2rem;
+  width: 10rem;
+  border-radius: radius('full');
+}
+
+.heroTitle {
+  height: 4rem;
+  width: 24rem;
+  border-radius: radius('lg');
+
+  @include respond-to('md') {
+    height: 5rem;
+    width: 32rem;
+  }
+}
+
+.heroSubtitle {
+  height: 1.5rem;
+  width: 20rem;
+  border-radius: radius('lg');
+
+  @include respond-to('md') {
+    width: 28rem;
+  }
+}
+
+.heroPills {
+  display: flex;
+  gap: space(3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.heroPill {
+  height: 2rem;
+  width: 8rem;
+  border-radius: radius('full');
+}
+
+.heroButtons {
+  display: flex;
+  gap: space(4);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.heroButton {
+  height: 3.5rem;
+  width: 12rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// SECTION SKELETON (reusable)
+// ===========================================
+.section {
+  padding: space(24) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+.sectionContainer {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+.sectionHeader {
+  @include flex-column-center;
+  gap: space(3);
+  margin-bottom: space(16);
+}
+
+.sectionBadge {
+  height: 1.5rem;
+  width: 8rem;
+  border-radius: radius('full');
+}
+
+.sectionTitle {
+  height: 2.5rem;
+  width: 16rem;
+  border-radius: radius('lg');
+}
+
+.sectionSubtitle {
+  height: 1.25rem;
+  width: 24rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// FEATURES (bento grid)
+// ===========================================
+.featuresGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, 1fr);
+
+    > :first-child {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+  }
+}
+
+.featureCard {
+  height: 12rem;
+  border-radius: radius('xl');
+}
+
+.featureCardHero {
+  height: 12rem;
+  border-radius: radius('xl');
+
+  @include respond-to('lg') {
+    height: 100%;
+  }
+}
+
+// ===========================================
+// ARCHITECTURE (4-col grid)
+// ===========================================
+.architectureGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.architectureCard {
+  height: 10rem;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// TECH STACK + STATS
+// ===========================================
+.tabBar {
+  height: 3.5rem;
+  width: 100%;
+  max-width: 36rem;
+  margin: 0 auto space(12);
+  border-radius: radius('lg');
+}
+
+.techGrid {
+  display: grid;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.techCard {
+  height: 6rem;
+  border-radius: radius('lg');
+}
+
+.statsGrid {
+  display: grid;
+  gap: space(6);
+  margin-top: space(20);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.statCard {
+  height: 10rem;
+  border-radius: radius('xl');
+}
+
+// ===========================================
+// TIMELINE
+// ===========================================
+.timelineWrapper {
+  position: relative;
+  max-width: 48rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: space(8);
+}
+
+.timelineItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(4);
+}
+
+.timelineCircle {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: radius('full');
+  flex-shrink: 0;
+}
+
+.timelineCard {
+  height: 8rem;
+  width: 100%;
+  border-radius: radius('lg');
+}
+
+// ===========================================
+// CALL TO ACTION
+// ===========================================
+.ctaSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(6);
+  padding: space(24) space(4);
+}
+
+.ctaTitle {
+  height: 3rem;
+  width: 20rem;
+  border-radius: radius('lg');
+
+  @include respond-to('md') {
+    width: 28rem;
+  }
+}
+
+.ctaSubtitle {
+  height: 1.5rem;
+  width: 24rem;
+  border-radius: radius('lg');
+}
+
+.ctaButtons {
+  display: flex;
+  gap: space(4);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ctaButton {
+  height: 3.5rem;
+  width: 12rem;
+  border-radius: radius('lg');
+}

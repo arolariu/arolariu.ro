@@ -1,0 +1,162 @@
+// ===========================================
+// THE AUTHOR - BIOGRAPHY COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+// Background orbs
+.bgOrbs {
+  position: absolute;
+  inset: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: radius('full');
+  filter: blur(64px);
+}
+
+.orbBlue {
+  composes: orb;
+  top: -5rem;
+  right: -5rem;
+  width: 16rem;
+  height: 16rem;
+  background-color: rgba(59, 130, 246, 1);
+}
+
+.orbPurple {
+  composes: orb;
+  bottom: -5rem;
+  left: -5rem;
+  width: 16rem;
+  height: 16rem;
+  background-color: rgba(168, 85, 247, 1);
+}
+
+// Content wrapper
+.content {
+  position: relative;
+  z-index: z('content');
+  display: flex;
+  flex-direction: column;
+  gap: space(12);
+}
+
+// Header
+.header {
+  text-align: center;
+}
+
+.title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+// Card
+.card {
+  position: relative;
+  overflow: hidden;
+  border-radius: radius('xl');
+  border: 1px solid color-alpha('border', 0.5);
+  background-color: color-alpha('card', 0.5);
+  padding: space(6);
+  @include shadow('lg');
+  backdrop-filter: blur(4px);
+
+  @include respond-to('md') {
+    padding: space(8);
+  }
+}
+
+// Gradient accent bars
+.accentTop {
+  @include accent-top-bar;
+}
+
+.accentBottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);  // decorative bottom bar
+}
+
+// Bio section item
+.bioItem {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: space(4);
+  padding: space(4);
+  border-radius: radius('lg');
+  color: color('foreground');
+  @include transition(background-color);
+}
+
+// Icon wrapper — fixed-size container for uniform icon rendering
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+
+// Icon SVG — fills the wrapper
+.icon {
+  width: 100%;
+  height: 100%;
+}
+
+.iconBlue {
+  composes: icon;
+  color: color('primary');
+}
+
+.iconGreen {
+  composes: icon;
+  color: #22c55e;
+}
+
+.iconPurple {
+  composes: icon;
+  color: #a855f7;
+}
+
+.iconAmber {
+  composes: icon;
+  color: #f59e0b;
+}
+
+.iconPink {
+  composes: icon;
+  color: #ec4899;
+}
+
+// Bio text
+.bioText {
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+}

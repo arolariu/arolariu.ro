@@ -1,0 +1,408 @@
+// ===========================================
+// EULA COMPONENT STYLES
+// Scoped to /app/EULA.tsx
+// ===========================================
+@use '../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.main {
+  width: 100%;
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: space(20) space(4);
+}
+
+// ===========================================
+// CARD
+// ===========================================
+.card {
+  border-width: 2px;
+  @include shadow('lg');
+}
+
+// ===========================================
+// HEADER
+// ===========================================
+.headerCenter {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  text-align: center;
+}
+
+.shieldIcon {
+  display: flex;
+  justify-content: center;
+}
+
+.shieldIconSvg {
+  width: 3rem;
+  height: 3rem;
+  color: color('primary');
+}
+
+.title {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('3xl');
+  }
+}
+
+.subtitle {
+  font-size: font-size('base');
+}
+
+// ===========================================
+// LOCALE PICKER
+// ===========================================
+.localePicker {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: space(3);
+  width: 100%;
+  max-width: 20rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.localeLabel {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.localeSelect {
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+  padding: space(2) space(8) space(2) space(3);
+  font-size: font-size('sm');
+  border: 1px solid color('border');
+  border-radius: radius('md');
+  background-color: color('background');
+  color: color('foreground');
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right space(2) center;
+  @include transition(border-color);
+
+  &:hover {
+    border-color: color-alpha('primary', 0.5);
+  }
+
+  &:focus-visible {
+    outline: 2px solid color('ring');
+    outline-offset: 2px;
+  }
+}
+
+.globeIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+// ===========================================
+// CONTENT
+// ===========================================
+.contentArea {
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+}
+
+.contentText {
+  padding-left: space(4);
+  padding-right: space(4);
+  text-align: center;
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// POLICY CARDS GRID
+// ===========================================
+.policyGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.policyCard {
+  height: 100%;
+  @include transition(border-color);
+
+  &:hover {
+    border-color: color('primary');
+  }
+}
+
+.policyCardHeader {
+  padding-bottom: space(2);
+}
+
+.policyCardTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.policyIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: color('primary');
+}
+
+.policyCardContent {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.policyButton {
+  width: 100%;
+  cursor: pointer;
+}
+
+// ===========================================
+// DIALOG
+// ===========================================
+.dialogContent {
+  max-height: 90vh;
+  max-width: 90vw;
+  overflow-y: scroll;
+
+  @include respond-to('md') {
+    max-height: 75vh;
+    max-width: 75vw;
+  }
+}
+
+.dialogTitle {
+  text-align: center;
+}
+
+// ===========================================
+// SEPARATOR
+// ===========================================
+.separator {
+  margin-top: space(6);
+  margin-bottom: space(6);
+}
+
+// ===========================================
+// COOKIES SECTION
+// ===========================================
+.cookiesSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.cookiesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cookiesTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('lg');
+  font-weight: font-weight('medium');
+}
+
+.cookiesSubtitle {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.cookieIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: color('primary');
+}
+
+.accordion {
+  width: 100%;
+
+  > :global([data-orientation='vertical']) {
+    padding-top: space(2);
+    padding-bottom: space(2);
+  }
+}
+
+.accordionTrigger {
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.accordionTriggerContent {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('sm');
+}
+
+.accordionIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: color('primary');
+}
+
+.badgeRequired {
+  margin-left: space(2);
+  background-color: color('primary');
+}
+
+.badgeOptional {
+  margin-left: space(2);
+}
+
+.accordionBody {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  padding: space(2);
+}
+
+.accordionDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+
+  // Ensure the Switch toggle track has visible background colors
+  // (Tailwind data-attribute classes may not generate for library components)
+  button[role='switch'] {
+    flex-shrink: 0;
+    background-color: color('input');
+
+    &[data-state='checked'] {
+      background-color: color('primary');
+    }
+  }
+}
+
+.switchLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+// ===========================================
+// FOOTER
+// ===========================================
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.acceptButtonWrapper {
+  width: 100%;
+}
+
+.acceptButton {
+  width: 100%;
+  cursor: pointer;
+  background-color: color('primary');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.9);
+  }
+}
+
+.acceptIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+.footerNote {
+  text-align: center;
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// SKELETON SHIMMERS (used by EULA.shimmers.tsx)
+// Sizing only — animation comes from <Skeleton />
+// ===========================================
+.shimmerCircle {
+  width: 3rem;
+  height: 3rem;
+  border-radius: radius('full');
+}
+
+.shimmerTitle {
+  width: 12rem;
+  height: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: radius('md');
+}
+
+.shimmerTabs {
+  width: 100%;
+  height: 2.5rem;
+  border-radius: radius('md');
+}
+
+.shimmerContentBlock {
+  height: 4rem;
+  border-radius: radius('md');
+}
+
+.shimmerPolicyCard {
+  height: 12rem;
+  border-radius: radius('md');
+}
+
+.shimmerSeparator {
+  height: 0.25rem;
+  border-radius: radius('md');
+}
+
+.shimmerCookiesHeader {
+  height: 2rem;
+  border-radius: radius('md');
+}
+
+.shimmerAccordionItem {
+  height: 6rem;
+  border-radius: radius('md');
+}
+
+.shimmerButton {
+  width: 100%;
+  height: 3rem;
+  border-radius: radius('md');
+}
+
+.shimmerFooterNote {
+  width: 75%;
+  height: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: radius('md');
+}

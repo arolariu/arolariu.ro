@@ -1,0 +1,89 @@
+/// ===========================================
+/// COLOR UTILITIES
+/// ===========================================
+/// Atomic utility classes for text, background, and border colors.
+/// All semantic colors reference CSS custom properties for automatic
+/// light/dark mode support. Includes gradient utilities and opacity scale.
+///
+/// @group utilities
+/// @author arolariu
+///
+/// ## Text Colors
+/// `.text-foreground`, `.text-primary`, `.text-primary-foreground`,
+/// `.text-secondary-foreground`, `.text-muted`, `.text-accent`,
+/// `.text-destructive`, `.text-card-foreground`
+///
+/// ## Background Colors
+/// `.bg-background`, `.bg-card`, `.bg-primary`, `.bg-secondary`,
+/// `.bg-muted`, `.bg-accent`, `.bg-destructive`, `.bg-popover`,
+/// `.bg-transparent`
+///
+/// ## Border Colors
+/// `.border-border`, `.border-input`, `.border-primary`,
+/// `.border-destructive`, `.border-transparent`
+///
+/// ## Gradients
+/// `.gradient-text` — gradient clipped to text
+/// `.gradient-bg` — gradient background
+///
+/// ## Opacity
+/// `.opacity-0` through `.opacity-100` (14 steps)
+///
+/// @see abstracts/_colors.scss — `color()` and `color-alpha()` functions
+/// @see abstracts/_mixins.scss — `gradient-text`, `gradient-bg` mixins
+/// @see base/_globals.scss — CSS custom property definitions
+/// ===========================================
+@use '../abstracts' as *;
+
+// Semantic text colors
+.text-foreground { color: hsl(var(--foreground)); }
+.text-primary { color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+.text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
+.text-muted { color: hsl(var(--muted-foreground)); }
+.text-accent { color: hsl(var(--accent-foreground)); }
+.text-destructive { color: hsl(var(--destructive)); }
+.text-card-foreground { color: hsl(var(--card-foreground)); }
+
+// Semantic background colors
+.bg-background { background-color: hsl(var(--background)); }
+.bg-card { background-color: hsl(var(--card)); }
+.bg-primary { background-color: hsl(var(--primary)); }
+.bg-secondary { background-color: hsl(var(--secondary)); }
+.bg-muted { background-color: hsl(var(--muted)); }
+.bg-accent { background-color: hsl(var(--accent)); }
+.bg-destructive { background-color: hsl(var(--destructive)); }
+.bg-popover { background-color: hsl(var(--popover)); }
+.bg-transparent { background-color: transparent; }
+
+// Semantic border colors
+.border-border { border-color: hsl(var(--border)); }
+.border-input { border-color: hsl(var(--input)); }
+.border-primary { border-color: hsl(var(--primary)); }
+.border-destructive { border-color: hsl(var(--destructive)); }
+.border-transparent { border-color: transparent; }
+
+// Gradient utilities
+.gradient-text {
+  @include gradient-text;
+}
+
+.gradient-bg {
+  @include gradient-bg;
+}
+
+// Opacity modifiers
+.opacity-0 { opacity: 0; }
+.opacity-5 { opacity: 0.05; }
+.opacity-10 { opacity: 0.1; }
+.opacity-20 { opacity: 0.2; }
+.opacity-25 { opacity: 0.25; }
+.opacity-30 { opacity: 0.3; }
+.opacity-40 { opacity: 0.4; }
+.opacity-50 { opacity: 0.5; }
+.opacity-60 { opacity: 0.6; }
+.opacity-70 { opacity: 0.7; }
+.opacity-75 { opacity: 0.75; }
+.opacity-80 { opacity: 0.8; }
+.opacity-90 { opacity: 0.9; }
+.opacity-100 { opacity: 1; }

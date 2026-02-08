@@ -1,0 +1,375 @@
+// ===========================================
+// AUTH PAGE - MAIN ISLAND STYLES
+// Scoped to /auth/island.tsx only
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: space(10) space(4);
+
+  @include respond-to('sm') {
+    padding-left: space(6);
+    padding-right: space(6);
+  }
+
+  @include respond-to('lg') {
+    padding: space(14) space(8);
+  }
+}
+
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(12);
+}
+
+// ===========================================
+// HERO SECTION
+// ===========================================
+.heroSection {
+  position: relative;
+  text-align: center;
+}
+
+.heroInner {
+  position: relative;
+}
+
+.heroBadge {
+  margin-bottom: space(4);
+  padding: space(1) space(4);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.heroBadgeIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+.heroTitle {
+  background: linear-gradient(
+    to right,
+    color('foreground'),
+    color-alpha('foreground', 0.9),
+    color-alpha('foreground', 0.7)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('sm') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+}
+
+.heroSubtitle {
+  margin-top: space(4);
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+  color: color('muted-foreground');
+
+  @include respond-to('sm') {
+    font-size: font-size('xl');
+  }
+}
+
+.trustBadgesCenter {
+  margin-top: space(8);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: space(3);
+}
+
+// ===========================================
+// CARDS GRID
+// ===========================================
+.cardsGrid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    gap: space(10);
+  }
+}
+
+.cardWrapper {
+  @include transition(transform);
+
+  &:hover {
+    transform: translateY(-0.25rem);
+  }
+}
+
+.card {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background-color: color-alpha('card', 0.5);
+  border: 1px solid color-alpha('border', 0.5);
+  backdrop-filter: blur(4px);
+  @include transition((border-color, box-shadow));
+
+  &:hover {
+    border-color: color-alpha('primary', 0.4);
+    @include shadow('2xl');
+  }
+}
+
+.cardGradient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  @include transition(opacity);
+
+  .card:hover & {
+    opacity: 1;
+  }
+}
+
+.cardGlow {
+  position: absolute;
+  top: -4rem;
+  right: -4rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.3);
+  filter: blur(48px);
+  pointer-events: none;
+  opacity: 0;
+  @include transition(opacity);
+
+  .card:hover & {
+    opacity: 1;
+  }
+}
+
+.cardHeader {
+  position: relative;
+  padding-bottom: space(4);
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+}
+
+.cardHeaderTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: radius('xl');
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+}
+
+.cardIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.cardStep {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('muted-foreground');
+}
+
+.cardIllustration {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 12rem;
+  height: 12rem;
+  border-radius: radius('2xl');
+  padding: space(4);
+  background: linear-gradient(to bottom right, color-alpha('muted', 0.3), color-alpha('muted', 0.1));
+  @include transition(transform);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  @include respond-to('sm') {
+    width: 14rem;
+    height: 14rem;
+  }
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  @include image-drop-shadow;
+}
+
+.cardTitleSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+  text-align: center;
+}
+
+.cardTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('sm') {
+    font-size: font-size('3xl');
+  }
+}
+
+.cardDescription {
+  font-size: font-size('base');
+  line-height: line-height('relaxed');
+  color: color('muted-foreground');
+}
+
+.cardContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+  padding-top: space(2);
+}
+
+.bulletsList {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+}
+
+.bulletItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.bulletDot {
+  margin-top: space(1.5);
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.7);
+}
+
+// ===========================================
+// CTA SECTION
+// ===========================================
+.ctaSection {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  padding-top: space(2);
+}
+
+.ctaButtonWrapper {
+  @include transition(transform);
+
+  &:hover {
+    transform: scale(1.02);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.ctaButton {
+  width: 100%;
+  font-size: font-size('base');
+  font-weight: font-weight('semibold');
+}
+
+.ctaArrowIcon {
+  margin-left: space(2);
+  width: 1rem;
+  height: 1rem;
+  @include transition(transform);
+
+  .ctaButton:hover & {
+    transform: translateX(0.25rem);
+  }
+}
+
+.secondaryPrompt {
+  text-align: center;
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.secondaryLink {
+  color: color('primary');
+  font-weight: font-weight('medium');
+  text-underline-offset: 4px;
+  @include transition(color);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.footerNote {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  text-align: center;
+  font-size: font-size('sm');
+  line-height: line-height('relaxed');
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// GRADIENT VARIANTS
+// ===========================================
+.gradientEmerald {
+  background: linear-gradient(to bottom right, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.1), transparent);
+}
+
+.gradientViolet {
+  background: linear-gradient(to bottom right, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+}

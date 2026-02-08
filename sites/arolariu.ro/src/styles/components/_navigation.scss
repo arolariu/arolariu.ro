@@ -1,0 +1,380 @@
+/// ===========================================
+/// NAVIGATION COMPONENT — BEM
+/// ===========================================
+/// Desktop and mobile navigation systems for the site header.
+///
+/// **Desktop nav** uses hover-reveal dropdowns with smooth opacity transitions.
+/// **Mobile nav** uses a slide-in overlay panel with expand/collapse children.
+/// Dark mode overrides are at the bottom using `.dark` ancestor selector.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## Desktop BEM Structure
+/// ```
+/// .desktop-nav
+///   .desktop-nav__list          — flex row of nav items
+///   .desktop-nav__item          — single nav entry (hover reveals dropdown)
+///   .desktop-nav__link          — top-level link
+///   .desktop-nav__dropdown      — absolute dropdown panel
+///   .desktop-nav__child-title   — section heading inside dropdown
+///   .desktop-nav__child-list    — links inside dropdown section
+///   .desktop-nav__child-link    — individual dropdown link
+///   .desktop-nav__arrow         — dropdown indicator icon
+/// ```
+///
+/// ## Mobile BEM Structure
+/// ```
+/// .mobile-nav__toggle           — hamburger button (hidden >= md)
+/// .mobile-nav__overlay          — fixed full-screen overlay
+/// .mobile-nav__backdrop         — semi-transparent backdrop
+/// .mobile-nav__panel            — slide-in panel (max 20rem)
+/// .mobile-nav__header           — panel header with title + close
+/// .mobile-nav__list             — nav items list
+/// .mobile-nav__item             — single nav entry
+/// .mobile-nav__item-header      — entry with expand button
+/// .mobile-nav__item-link        — top-level mobile link
+/// .mobile-nav__expand-btn       — chevron toggle
+/// .mobile-nav__expand-icon      — icon with rotate animation
+/// .mobile-nav__children         — expanded child section
+/// .mobile-nav__child            — child entry
+/// .mobile-nav__child-title      — child heading link
+/// .mobile-nav__grandchild-list  — grandchild links list
+/// .mobile-nav__grandchild-link  — grandchild link
+/// ```
+///
+/// @see components/_header.scss — header container for this navigation
+/// ===========================================
+@use '../abstracts' as *;
+
+// ===========================================
+// DESKTOP NAVIGATION
+// ===========================================
+.desktop-nav {
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: space(4);
+  padding-right: space(4);
+  color: hsl(var(--foreground));
+}
+
+.desktop-nav__list {
+  display: flex;
+  align-items: center;
+  gap: space(6);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.desktop-nav__item {
+  position: relative;
+
+  &:hover .desktop-nav__dropdown {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+.desktop-nav__link {
+  display: inline-block;
+  padding: space(2) space(3);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: inherit;
+  @include transition(color);
+
+  &:hover {
+    color: interactive-color('hover-accent');
+  }
+}
+
+.desktop-nav__dropdown {
+  position: absolute;
+  left: 0;
+  z-index: z('dropdown');
+  margin-top: space(2);
+  padding: space(4);
+  min-width: 200px;
+  background-color: color('card');
+  border-radius: radius('xl');
+  @include shadow('lg');
+  visibility: hidden;
+  opacity: 0;
+  @include transition(opacity);
+
+  > * + * {
+    margin-top: space(4);
+  }
+}
+
+.desktop-nav__child-title {
+  display: block;
+  margin-bottom: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+}
+
+.desktop-nav__child-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  > * + * {
+    margin-top: space(1);
+  }
+}
+
+.desktop-nav__child-link {
+  display: block;
+  padding: space(1) space(2);
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  border-radius: radius('md');
+  @include transition((background-color, color));
+
+  &:hover {
+    background-color: color('muted');
+    color: interactive-color('hover-accent');
+  }
+}
+
+.desktop-nav__arrow {
+  margin-left: space(2);
+  font-size: font-size('xs');
+}
+
+// ===========================================
+// MOBILE NAVIGATION
+// ===========================================
+.mobile-nav__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: space(2);
+  border-radius: radius('md');
+  cursor: pointer;
+  @include transition(background-color);
+
+  &:hover {
+    background-color: interactive-color('hover-bg-light');
+  }
+
+  @include respond-to('md') {
+    display: none;
+  }
+}
+
+.mobile-nav__toggle-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+  color: color('foreground');
+}
+
+.mobile-nav__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: z('modal');
+  display: flex;
+}
+
+.mobile-nav__backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: color-alpha('foreground', 0.4);
+}
+
+.mobile-nav__panel {
+  position: relative;
+  width: 20rem;
+  max-width: 100%;
+  overflow: auto;
+  padding: space(6);
+  background-color: color('card');
+  border-radius: 0 radius('lg') radius('lg') 0;
+  @include shadow('xl');
+}
+
+.mobile-nav__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(4);
+}
+
+.mobile-nav__title {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  letter-spacing: letter-spacing('tight');
+  color: color('foreground');
+}
+
+.mobile-nav__close {
+  padding: space(2);
+  background-color: color('card');
+  color: color('foreground');
+  cursor: pointer;
+}
+
+.mobile-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  > * + * {
+    margin-top: space(2);
+  }
+
+  > li {
+    border-top: 1px solid color('border');
+  }
+
+  > li:first-child {
+    border-top: none;
+  }
+}
+
+.mobile-nav__item {
+  padding: space(2) 0;
+}
+
+.mobile-nav__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: space(3) 0;
+}
+
+.mobile-nav__item-link {
+  font-size: font-size('base');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  @include transition(color);
+
+  &:hover {
+    color: interactive-color('hover-accent');
+  }
+}
+
+.mobile-nav__expand-btn {
+  padding: space(1);
+  color: color('muted-foreground');
+  cursor: pointer;
+  @include transition(color);
+
+  &:hover {
+    color: color('muted-foreground');
+  }
+}
+
+.mobile-nav__expand-icon {
+  height: 1.25rem;
+  width: 1.25rem;
+  @include transition(transform);
+
+  &--open {
+    transform: rotate(180deg);
+  }
+}
+
+.mobile-nav__children {
+  margin-top: space(3);
+  padding: space(3);
+  padding-left: space(4);
+  background-color: color('muted');
+  border-radius: radius('md');
+
+  > * + * {
+    margin-top: space(3);
+  }
+}
+
+.mobile-nav__child {
+  margin-bottom: space(1);
+  color: color('foreground');
+}
+
+.mobile-nav__child-title {
+  display: block;
+  margin-bottom: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.mobile-nav__grandchild-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  > * + * {
+    margin-top: space(3);
+  }
+}
+
+.mobile-nav__grandchild-arrow {
+  display: inline;
+  margin-left: space(2);
+  font-size: font-size('xs');
+}
+
+.mobile-nav__grandchild-link {
+  display: inline;
+  padding: space(1) space(2);
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  border-radius: radius('md');
+  @include transition((background-color, color));
+
+  &:hover {
+    background-color: color('muted');
+    color: interactive-color('hover-accent');
+  }
+}
+
+// ===========================================
+// DARK MODE OVERRIDES
+// ===========================================
+// NOTE: Cannot use @include dark at top level (& requires parent).
+// Using .dark ancestor selector directly instead.
+.dark .desktop-nav__link:hover {
+  color: color('primary');
+}
+
+.dark .desktop-nav__dropdown {
+  border: 1px solid color('border');
+}
+
+.dark .desktop-nav__child-link:hover {
+  background-color: color-alpha('accent', 0.1);
+  color: color('primary');
+}
+
+.dark .mobile-nav__toggle:hover {
+  background-color: color-alpha('muted', 0.3);
+}
+
+.dark .mobile-nav__item-link:hover {
+  color: color('primary');
+}
+
+.dark .mobile-nav__expand-btn {
+  color: color('muted-foreground');
+
+  &:hover {
+    color: color('foreground');
+  }
+}
+
+.dark .mobile-nav__children {
+  background-color: color-alpha('muted', 0.5);
+}
+
+.dark .mobile-nav__grandchild-link:hover {
+  background-color: color-alpha('accent', 0.1);
+  color: color('primary');
+}

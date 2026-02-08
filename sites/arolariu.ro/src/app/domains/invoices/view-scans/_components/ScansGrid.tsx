@@ -14,6 +14,7 @@ import {useCallback} from "react";
 import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
 import {useScans} from "../_hooks/useScans";
 import ScanCard from "./ScanCard";
+import styles from "./ScansGrid.module.scss";
 
 /** Pre-generated skeleton keys for loading state to avoid array index as key */
 const SKELETON_KEYS = ["skeleton-1", "skeleton-2", "skeleton-3", "skeleton-4", "skeleton-5", "skeleton-6"] as const;
@@ -51,16 +52,16 @@ function EmptyStateStep({
   description,
 }: Readonly<{step: number; icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
-    <div className='flex items-start gap-4'>
-      <div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-pink-500 text-sm font-bold text-white'>
+    <div className={styles["emptyStep"]}>
+      <div className={styles["emptyStepNumber"]}>
         {step}
       </div>
-      <div className='flex-1'>
-        <div className='mb-1 flex items-center gap-2'>
+      <div className={styles["emptyStepContent"]}>
+        <div className={styles["emptyStepTitleRow"]}>
           {icon}
-          <h4 className='font-medium text-gray-900 dark:text-white'>{title}</h4>
+          <h4 className={styles["emptyStepTitle"]}>{title}</h4>
         </div>
-        <p className='text-sm text-gray-500 dark:text-gray-400'>{description}</p>
+        <p className={styles["emptyStepDescription"]}>{description}</p>
       </div>
     </div>
   );
@@ -76,11 +77,11 @@ export default function ScansGrid(): React.JSX.Element {
   // Show loading state
   if (!hasHydrated || (isSyncing && scans.length === 0)) {
     return (
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+      <div className={styles["skeletonGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
-          <div
+          <div 
             key={skeletonKey}
-            className='aspect-[4/3] animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700'
+            className={styles["skeletonItem"]}
           />
         ))}
       </div>
@@ -93,45 +94,45 @@ export default function ScansGrid(): React.JSX.Element {
       <motion.div
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
-        className='py-8'>
+        className={styles["emptyWrapper"]}>
         <Card className='mx-auto max-w-2xl'>
           <CardContent className='p-8'>
-            <div className='mb-8 text-center'>
-              <div className='mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-cyan-500'>
-                <TbPhoto className='h-8 w-8 text-white' />
+            <div className={styles["emptyCenter"]}>
+              <div className={styles["emptyIconCircle"]}>
+                <TbPhoto className={styles["emptyIcon"]} />
               </div>
-              <h3 className='mb-2 text-2xl font-bold text-gray-900 dark:text-white'>{t("emptyState.title")}</h3>
-              <p className='text-gray-600 dark:text-gray-300'>{t("emptyState.description")}</p>
+              <h3 className={styles["emptyTitle"]}>{t("emptyState.title")}</h3>
+              <p className={styles["emptyDescription"]}>{t("emptyState.description")}</p>
             </div>
 
-            <div className='mb-8 space-y-6'>
+            <div className={styles["emptyStepsList"]}>
               <EmptyStateStep
                 step={1}
-                icon={<TbUpload className='text-accent-primary h-4 w-4' />}
+                icon={<TbUpload className={styles["iconAccent"]} />}
                 title={t("emptyState.step1Title")}
                 description={t("emptyState.step1Description")}
               />
               <EmptyStateStep
                 step={2}
-                icon={<TbPhoto className='h-4 w-4 text-purple-500' />}
+                icon={<TbPhoto className={styles["iconPurple"]} />}
                 title={t("emptyState.step2Title")}
                 description={t("emptyState.step2Description")}
               />
               <EmptyStateStep
                 step={3}
-                icon={<TbFileInvoice className='h-4 w-4 text-green-500' />}
+                icon={<TbFileInvoice className={styles["iconGreen"]} />}
                 title={t("emptyState.step3Title")}
                 description={t("emptyState.step3Description")}
               />
             </div>
 
-            <div className='flex flex-col items-center gap-4 sm:flex-row sm:justify-center'>
+            <div className={styles["emptyActions"]}>
               <Button
                 asChild
                 size='lg'
                 className='bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'>
                 <Link href='/domains/invoices/upload-scans'>
-                  <TbUpload className='mr-2 h-5 w-5' />
+                  <TbUpload className={styles["iconUploadLg"]} />
                   {t("emptyState.uploadButton")}
                 </Link>
               </Button>
@@ -141,7 +142,7 @@ export default function ScansGrid(): React.JSX.Element {
                 size='lg'>
                 <Link href='/domains/invoices'>
                   {t("emptyState.learnMoreButton")}
-                  <TbArrowRight className='ml-2 h-4 w-4' />
+                  <TbArrowRight className={styles["iconArrowRight"]} />
                 </Link>
               </Button>
             </div>
@@ -152,7 +153,7 @@ export default function ScansGrid(): React.JSX.Element {
   }
 
   return (
-    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+    <div className={styles["scansGrid"]}>
       {scans.map((scan) => (
         <ScanCardWrapper
           key={scan.id}

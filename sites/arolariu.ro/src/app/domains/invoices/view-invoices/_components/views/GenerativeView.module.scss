@@ -1,0 +1,89 @@
+// ===========================================
+// GENERATIVE VIEW STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.container {
+  & > * + * {
+    margin-top: space(6);
+  }
+}
+
+// ===========================================
+// HEADER
+// ===========================================
+.header {
+  @include flex-between;
+}
+
+.title {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+  letter-spacing: -0.025em;
+}
+
+.subtitle {
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// CHAT AREA
+// ===========================================
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  overflow: hidden;
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+}
+
+.chatMessages {
+  flex: 1;
+  overflow-y: auto;
+  padding: space(4);
+}
+
+.chatInput {
+  border-top: 1px solid color('border');
+  padding: space(4);
+}
+
+// ===========================================
+// SETTINGS
+// ===========================================
+.settingsContainer {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.settingsField {
+  display: grid;
+  gap: space(2);
+}
+
+.settingsLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+
+  & > * + * {
+    margin-left: space(2);
+  }
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.actionIcon {
+  width: space(4);
+  height: space(4);
+}

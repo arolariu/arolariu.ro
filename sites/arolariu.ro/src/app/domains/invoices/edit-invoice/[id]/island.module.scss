@@ -1,0 +1,32 @@
+@use '../../../../../styles/abstracts' as *;
+
+.section {
+  @include container;
+  padding-block: space(12);
+}
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(6);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.mainContent {
+  & > * + * {
+    margin-top: space(6);
+  }
+
+  @include respond-to('md') {
+    grid-column: span 2;
+  }
+}
+
+.sidebar {
+  & > * + * {
+    margin-top: space(6);
+  }
+}

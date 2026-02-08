@@ -27,6 +27,7 @@ import Link from "next/link";
 import {useCallback} from "react";
 import {TbArrowsUpDown, TbEye} from "react-icons/tb";
 import TableViewActions from "./TableViewActions";
+import styles from "./TableView.module.scss";
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];
@@ -78,8 +79,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <div className='flex flex-col items-center justify-center py-10'>
-        <div className='text-muted-foreground mb-2'>No invoices found</div>
+      <div className={styles["emptyState"]}>
+        <div className={styles["emptyMessage"]}>No invoices found</div>
       </div>
     );
   }
@@ -92,7 +93,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className='print:hidden'>
+          <TableHead className={styles["printHidden"]}>
             <Checkbox
               className='bg-background/80 backdrop-blur-sm'
               checked={isAllSelected || (isIndeterminate && "indeterminate")}
@@ -107,7 +108,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
               Date
-              <TbArrowsUpDown className='h-4 w-4 print:hidden' />
+              <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
           </TableHead>
           <TableHead>
@@ -115,7 +116,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
               Amount
-              <TbArrowsUpDown className='h-4 w-4 print:hidden' />
+              <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
           </TableHead>
           <TableHead className='text-end'>Actions</TableHead>
@@ -126,7 +127,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           .toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .map((invoice) => (
             <TableRow key={invoice.id}>
-              <TableCell className='print:hidden'>
+              <TableCell className={styles["printHidden"]}>
                 <Checkbox
                   checked={selectedInvoices.some((s) => s.id === invoice.id)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
@@ -135,8 +136,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 />
               </TableCell>
               <TableCell>
-                <span className='print:hidden'>{invoice.name.length > 0 ? invoice.name : invoice.id}</span>
-                <span className='hidden print:inline'>{invoice.id}</span>
+                <span className={styles["printInline"]}>{invoice.name.length > 0 ? invoice.name : invoice.id}</span>
+                <span className={styles["printOnly"]}>{invoice.id}</span>
               </TableCell>
               <TableCell>
                 <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
@@ -145,7 +146,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className='cursor-help'>{formatDate(invoice.createdAt, {locale})} </span>
+                      <span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>{new Date(invoice.createdAt).toUTCString()}</p>
@@ -159,8 +160,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                   currencyCode: invoice.paymentInformation.currency.code,
                 })}
               </TableCell>
-              <TableCell className='relative text-right'>
-                <div className='flex justify-end gap-2'>
+              <TableCell className={styles["actionsCell"]}>
+                <div className={styles["actionsRow"]}>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger
@@ -168,8 +169,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                         className='hover:text-accent-primary cursor-pointer'>
                         <Link
                           href={`/domains/invoices/view-invoice/${invoice.id}`}
-                          className='h-8 w-8'>
-                          <TbEye className='mt-1.5 ml-1.5 h-5 w-5' />
+                          className={styles["viewLink"]}>
+                          <TbEye className={styles["viewIcon"]} />
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent>View Invoice</TooltipContent>
@@ -185,8 +186,8 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
         <TableFooter>
           <TableRow>
             <TableCell colSpan={4}>
-              <div className='flex items-center gap-2'>
-                <span className='text-muted-foreground text-sm'>Rows per page:</span>
+              <div className={styles["footerContent"]}>
+                <span className={styles["footerLabel"]}>Rows per page:</span>
                 <Select
                   value={String(pageSize)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
@@ -206,7 +207,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                     ))}
                   </SelectContent>
                 </Select>
-                <span className='text-muted-foreground text-sm'>
+                <span className={styles["footerLabel"]}>
                   Page {currentPage} of {totalPages}
                 </span>
               </div>

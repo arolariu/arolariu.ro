@@ -5,6 +5,7 @@ import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef} from "react";
 import {TbAward, TbCheck, TbExternalLink} from "react-icons/tb";
+import styles from "./Certifications.module.scss";
 
 type CertificationType = {
   name: string;
@@ -68,93 +69,93 @@ export default function Certifications(): React.JSX.Element {
   return (
     <section
       ref={sectionRef}
-      className='bg-muted/30 px-4 py-20 md:px-8'>
-      <div className='mx-auto max-w-6xl'>
+      className={styles["section"]}>
+      <div className={styles["container"]}>
         <motion.div
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.6}}
-          className='mb-16 text-center'>
-          <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-          <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
+          className={styles["header"]}>
+          <h2 className={`blue-underline ${styles["title"]}`}>{t("title")}</h2>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </motion.div>
 
         <motion.div
           variants={containerVariants}
           initial='hidden'
           animate={inView ? "visible" : "hidden"}
-          className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
+          className={styles["grid"]}>
           {certifications.map((cert) => (
             <motion.div
               key={cert.code}
               variants={itemVariants}
-              className='group relative'
+              className={styles["cardWrapper"]}
               whileHover={{
                 scale: 1.03,
                 transition: {duration: 0.2},
               }}>
-              <div className='border-border/50 bg-card hover:border-primary/30 relative h-[600px] overflow-hidden rounded-xl border p-6 shadow-md transition-all duration-300 hover:shadow-xl'>
-                <div className='mb-4 flex items-start justify-between'>
-                  <div className='bg-primary/10 text-primary rounded-lg p-3'>
-                    <TbAward className='h-6 w-6' />
+              <div className={styles["card"]}>
+                <div className={styles["cardHeader"]}>
+                  <div className={styles["awardIconWrapper"]}>
+                    <TbAward className={styles["awardIcon"]} />
                   </div>
                   <Badge
                     variant='outline'
-                    className='border-primary text-primary'>
+                    className={styles["codeBadge"]}>
                     {cert.code}
                   </Badge>
                 </div>
 
-                <h3 className='group-hover:text-glow mb-2 text-xl font-semibold'>{cert.name}</h3>
+                <h3 className={styles["cardTitle"]}>{cert.name}</h3>
 
-                <div className='text-muted-foreground mb-4 flex items-center text-sm'>
+                <div className={styles["issuerInfo"]}>
                   <span>{cert.issuer}</span>
-                  <span className='mx-2'>•</span>
+                  <span className={styles["issuerSeparator"]}>•</span>
                   <span>{cert.issueDate}</span>
                 </div>
 
-                <div className='custom-scrollbar h-[350px] overflow-y-auto pr-2'>
-                  <p className='text-muted-foreground mb-4 text-sm'>{cert.description}</p>
+                <div className={styles["scrollContent"]}>
+                  <p className={styles["description"]}>{cert.description}</p>
 
-                  <div className='mt-4'>
-                    <h4 className='mb-2 text-sm font-semibold'>{t("coreSkillsLabel")}</h4>
-                    <div className='space-y-2'>
+                  <div className={styles["skillsSection"]}>
+                    <h4 className={styles["skillsTitle"]}>{t("coreSkillsLabel")}</h4>
+                    <div className={styles["skillsList"]}>
                       {cert.coreSkills.map((skill, i) => (
                         <motion.div
                           key={`${skill.slice(0, 10)}`}
-                          className='flex items-center'
+                          className={styles["skillItem"]}
                           initial={{opacity: 0, x: -10}}
                           animate={{opacity: 1, x: 0}}
                           transition={{delay: i * 0.1, duration: 0.3}}>
-                          <TbCheck className='text-primary mr-2 h-4 w-4 shrink-0' />
-                          <span className='text-sm'>{skill}</span>
+                          <TbCheck className={styles["skillIcon"]} />
+                          <span className={styles["skillText"]}>{skill}</span>
                         </motion.div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className='absolute right-6 bottom-6 left-6 mt-4 flex items-center justify-between'>
+                <div className={styles["cardFooter"]}>
                   <motion.a
                     href={cert.link}
                     target='_blank'
                     rel='noopener noreferrer'
-                    className='text-primary inline-flex items-center text-sm hover:underline'
+                    className={styles["viewLink"]}
                     whileHover={{x: 5}}>
                     {t("viewCertification")}
-                    <TbExternalLink className='ml-1 h-3 w-3' />
+                    <TbExternalLink className={styles["viewLinkIcon"]} />
                   </motion.a>
                 </div>
 
                 <motion.div
-                  className='bg-primary absolute bottom-0 left-0 h-1'
+                  className={styles["progressBar"]}
                   initial={{width: "0%"}}
                   transition={{duration: 0.3}}
                 />
               </div>
 
               <motion.div
-                className='bg-primary/5 absolute inset-0 -z-10 rounded-xl blur-xl'
+                className={styles["glowEffect"]}
                 initial={{opacity: 0}}
                 animate={{opacity: 1}}
                 exit={{opacity: 0}}

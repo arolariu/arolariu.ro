@@ -30,6 +30,9 @@
 !.vs/settings.vssettings
 
 
+# Claude Code local settings (user-specific auto-granted permissions):
+.claude/settings.local.json
+
 # Environment variables:
 **/.env
 **/.env.*

@@ -1,0 +1,316 @@
+/// ===========================================
+/// DESIGN TOKENS — Typography
+/// ===========================================
+/// Type scale, font families, weights, line heights, and letter spacing.
+/// Font families reference CSS variables set by the FontContext React context.
+///
+/// @group tokens-typography
+/// @author arolariu
+///
+/// @example scss - Font size (static)
+///   font-size: font-size('base');            // → 1rem (16px)
+///
+/// @example scss - Font size (fluid, when $enable-fluid-type is true)
+///   font-size: font-size('xl');              // → clamp(1.125rem, 1.08rem + 0.21vw, 1.25rem)
+///
+/// @example scss - Font weight
+///   font-weight: font-weight('bold');        // → 700
+///
+/// @example scss - Line height
+///   line-height: line-height('tight');       // → 1.25
+///
+/// @example scss - Letter spacing
+///   letter-spacing: letter-spacing('wide');  // → 0.025em
+///
+/// @example scss - Font family
+///   font-family: $font-family-default;
+///
+/// EXTENDING:
+///   To add a font size, add to $font-sizes map.
+///   To change the default font, update the FontContext React context
+///   and the $font-family-default variable here.
+///
+/// @see {variable} $font-sizes
+/// @see {variable} $font-weights
+/// @see {variable} $line-heights
+/// @see {variable} $letter-spacing
+/// ===========================================
+@use 'sass:map';
+@use 'sass:math';
+@use 'config' as config;
+
+// ===========================================
+// FONT FAMILIES
+// ===========================================
+
+/// Default font family stack — uses CSS variable set by FontContext.
+/// Falls back to Caudex (serif) if the variable is not set.
+/// @type List
+/// @group tokens-typography
+$font-family-default: var(--font-default), 'Caudex', Georgia, 'Times New Roman', serif;
+
+/// Dyslexia-friendly font family stack — uses CSS variable set by FontContext.
+/// Falls back to Atkinson Hyperlegible (sans-serif).
+/// @type List
+/// @group tokens-typography
+$font-family-dyslexic: var(--font-dyslexic), 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+/// Monospace font family stack — for code blocks and technical content.
+/// @type List
+/// @group tokens-typography
+$font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+// ===========================================
+// TYPE SCALE
+// ===========================================
+
+/// Font size scale map — matches Tailwind's default type scale.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Length} 'xs' [0.75rem] - 12px — small labels, captions
+/// @prop {Length} 'sm' [0.875rem] - 14px — secondary text
+/// @prop {Length} 'base' [1rem] - 16px — body text (default)
+/// @prop {Length} 'lg' [1.125rem] - 18px — emphasized body
+/// @prop {Length} 'xl' [1.25rem] - 20px — sub-headings
+/// @prop {Length} '2xl' [1.5rem] - 24px — section headings
+/// @prop {Length} '3xl' [1.875rem] - 30px — page headings
+/// @prop {Length} '4xl' [2.25rem] - 36px — hero sub-headings
+/// @prop {Length} '5xl' [3rem] - 48px — hero headings
+/// @prop {Length} '6xl' [3.75rem] - 60px — display headings
+/// @prop {Length} '7xl' [4.5rem] - 72px — large display
+/// @prop {Length} '8xl' [6rem] - 96px — extra large display
+/// @prop {Length} '9xl' [8rem] - 128px — maximum display
+$font-sizes: (
+  'xs': 0.75rem,     // 12px
+  'sm': 0.875rem,    // 14px
+  'base': 1rem,      // 16px
+  'lg': 1.125rem,    // 18px
+  'xl': 1.25rem,     // 20px
+  '2xl': 1.5rem,     // 24px
+  '3xl': 1.875rem,   // 30px
+  '4xl': 2.25rem,    // 36px
+  '5xl': 3rem,       // 48px
+  '6xl': 3.75rem,    // 60px
+  '7xl': 4.5rem,     // 72px
+  '8xl': 6rem,       // 96px
+  '9xl': 8rem,       // 128px
+);
+
+// ===========================================
+// FLUID TYPOGRAPHY
+// ===========================================
+
+/// Minimum font sizes for fluid typography (mobile viewport).
+/// Each token maps to its clamp() minimum — the size at `$fluid-min-viewport`.
+///
+/// Tokens `xs` through `lg` are static (min equals max, no clamp generated).
+/// Tokens `xl` through `9xl` scale progressively, with each min equal to the
+/// previous step's static (max) value. This mirrors the current heading pattern
+/// where h1 uses 4xl on mobile and 5xl on desktop.
+///
+/// @type Map
+/// @group tokens-typography
+/// @see {variable} $font-sizes — the max (desktop) values
+/// @see {function} font-size — accessor that generates clamp() when fluid is enabled
+$font-size-fluid-min: (
+  'xs':   0.75rem,     // 12px → static
+  'sm':   0.875rem,    // 14px → static
+  'base': 1rem,        // 16px → static
+  'lg':   1.125rem,    // 18px → static
+  'xl':   1.125rem,    // 18px → scales to 20px (from lg)
+  '2xl':  1.25rem,     // 20px → scales to 24px (from xl)
+  '3xl':  1.5rem,      // 24px → scales to 30px (from 2xl)
+  '4xl':  1.875rem,    // 30px → scales to 36px (from 3xl)
+  '5xl':  2.25rem,     // 36px → scales to 48px (from 4xl)
+  '6xl':  2.75rem,     // 44px → scales to 60px
+  '7xl':  3.25rem,     // 52px → scales to 72px
+  '8xl':  4rem,        // 64px → scales to 96px
+  '9xl':  5rem,        // 80px → scales to 128px
+) !default;
+
+/// Compute a CSS `clamp()` expression for fluid typography.
+/// Uses linear interpolation between min and max viewport widths
+/// following the Utopia methodology.
+///
+/// Formula: `clamp(min, intercept + slope * vw, max)`
+/// where slope = (max - min) / (maxVP - minVP)
+///
+/// @param {Length} $min-size - Minimum font size in rem
+/// @param {Length} $max-size - Maximum font size in rem
+/// @return {String} A `clamp()` CSS expression, or the static value if min == max
+/// @group tokens-typography
+/// @access private
+@function _fluid-clamp($min-size, $max-size) {
+  // Static: no clamp needed when min equals max
+  @if $min-size == $max-size {
+    @return $max-size;
+  }
+
+  // Guard: min must not exceed max
+  @if $min-size > $max-size {
+    @error 'Fluid type error: min (#{$min-size}) cannot exceed max (#{$max-size})';
+  }
+
+  $base: math.div(config.$base-font-size, 1px); // strip px unit → 16
+  $min-vw: math.div(config.$fluid-min-viewport, 1px);
+  $max-vw: math.div(config.$fluid-max-viewport, 1px);
+
+  // Convert rem to px for calculation
+  $min-px: math.div($min-size, 1rem) * $base;
+  $max-px: math.div($max-size, 1rem) * $base;
+
+  // Linear interpolation: slope in px/px, then convert to vw + rem
+  $slope: math.div($max-px - $min-px, $max-vw - $min-vw);
+  $intercept-px: $min-px - $slope * $min-vw;
+
+  // slope × 100 converts px/px to vw coefficient (1vw = viewport / 100)
+  // Round slope to 2 decimals, intercept to 4 decimals
+  $slope-vw: math.div(math.round($slope * 10000), 100);
+  $intercept-rem: math.div(math.round(math.div($intercept-px, $base) * 10000), 10000);
+
+  @return clamp(#{$min-size}, #{$intercept-rem}rem + #{$slope-vw}vw, #{$max-size});
+}
+
+/// Font weight scale map.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Number} 'thin' [100]
+/// @prop {Number} 'extralight' [200]
+/// @prop {Number} 'light' [300]
+/// @prop {Number} 'normal' [400] - Default body weight
+/// @prop {Number} 'medium' [500]
+/// @prop {Number} 'semibold' [600]
+/// @prop {Number} 'bold' [700] - Default heading weight
+/// @prop {Number} 'extrabold' [800]
+/// @prop {Number} 'black' [900]
+$font-weights: (
+  'thin': 100,
+  'extralight': 200,
+  'light': 300,
+  'normal': 400,
+  'medium': 500,
+  'semibold': 600,
+  'bold': 700,
+  'extrabold': 800,
+  'black': 900,
+);
+
+/// Line height scale map.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Number} 'none' [1] - No extra line spacing
+/// @prop {Number} 'tight' [1.25] - Headings, compact text
+/// @prop {Number} 'snug' [1.375] - Sub-headings
+/// @prop {Number} 'normal' [1.5] - Body text (default)
+/// @prop {Number} 'relaxed' [1.625] - Long-form content
+/// @prop {Number} 'loose' [2] - Extra spacious text
+$line-heights: (
+  'none': 1,
+  'tight': 1.25,
+  'snug': 1.375,
+  'normal': 1.5,
+  'relaxed': 1.625,
+  'loose': 2,
+);
+
+/// Letter spacing scale map.
+/// @type Map
+/// @group tokens-typography
+/// @prop {Length} 'tighter' [-0.05em] - Very tight tracking
+/// @prop {Length} 'tight' [-0.025em] - Slightly tight
+/// @prop {Length} 'normal' [0] - Default tracking
+/// @prop {Length} 'wide' [0.025em] - Slightly wide
+/// @prop {Length} 'wider' [0.05em] - Wide tracking
+/// @prop {Length} 'widest' [0.1em] - Maximum tracking (uppercase text)
+$letter-spacing: (
+  'tighter': -0.05em,
+  'tight': -0.025em,
+  'normal': 0,
+  'wide': 0.025em,
+  'wider': 0.05em,
+  'widest': 0.1em,
+);
+
+// ===========================================
+// ACCESSOR FUNCTIONS
+// ===========================================
+
+/// Get a font size by its scale name.
+///
+/// When `$enable-fluid-type` is `true` (default), returns a CSS `clamp()`
+/// expression for tokens `xl` and above, providing smooth scaling between
+/// `$fluid-min-viewport` and `$fluid-max-viewport`. Tokens `xs` through `lg`
+/// always return static rem values.
+///
+/// When `$enable-fluid-type` is `false`, always returns the static rem value.
+///
+/// @param {String} $key - Size name (e.g. 'base', 'xl', '3xl')
+/// @return {Length|String} Static rem value or `clamp()` expression
+/// @throws Unknown font-size: #{$key}
+/// @group tokens-typography
+/// @example scss - Static (fluid disabled or small token)
+///   font-size: font-size('base');  // → 1rem
+/// @example scss - Fluid (when enabled, xl+)
+///   font-size: font-size('3xl');   // → clamp(1.5rem, 1.375rem + 0.63vw, 1.875rem)
+/// @see {variable} $font-sizes — max (desktop) values
+/// @see {variable} $font-size-fluid-min — min (mobile) values
+/// @see {variable} config.$enable-fluid-type — toggle fluid behavior
+@function font-size($key) {
+  @if not map.has-key($font-sizes, $key) {
+    @error "Unknown font-size: #{$key}. Available: #{map.keys($font-sizes)}";
+  }
+
+  $max: map.get($font-sizes, $key);
+
+  @if config.$enable-fluid-type and map.has-key($font-size-fluid-min, $key) {
+    $min: map.get($font-size-fluid-min, $key);
+    @return _fluid-clamp($min, $max);
+  }
+
+  @return $max;
+}
+
+/// Get a font weight by name.
+/// @param {String} $key - Weight name (e.g. 'normal', 'bold', 'semibold')
+/// @return {Number} The numeric font weight
+/// @throws Unknown font-weight: #{$key}
+/// @group tokens-typography
+/// @example scss
+///   font-weight: font-weight('bold');     // → 700
+///   font-weight: font-weight('semibold'); // → 600
+@function font-weight($key) {
+  @if map.has-key($font-weights, $key) {
+    @return map.get($font-weights, $key);
+  }
+  @error "Unknown font-weight: #{$key}";
+}
+
+/// Get a line height by name.
+/// @param {String} $key - Line height name (e.g. 'normal', 'tight')
+/// @return {Number} The unitless line height multiplier
+/// @throws Unknown line-height: #{$key}
+/// @group tokens-typography
+/// @example scss
+///   line-height: line-height('tight');   // → 1.25
+///   line-height: line-height('relaxed'); // → 1.625
+@function line-height($key) {
+  @if map.has-key($line-heights, $key) {
+    @return map.get($line-heights, $key);
+  }
+  @error "Unknown line-height: #{$key}";
+}
+
+/// Get a letter spacing value by name.
+/// @param {String} $key - Spacing name (e.g. 'normal', 'wide', 'widest')
+/// @return {Length} The em-based letter spacing
+/// @throws Unknown letter-spacing: #{$key}
+/// @group tokens-typography
+/// @example scss
+///   letter-spacing: letter-spacing('wide');    // → 0.025em
+///   letter-spacing: letter-spacing('widest');  // → 0.1em
+@function letter-spacing($key) {
+  @if map.has-key($letter-spacing, $key) {
+    @return map.get($letter-spacing, $key);
+  }
+  @error "Unknown letter-spacing: #{$key}";
+}

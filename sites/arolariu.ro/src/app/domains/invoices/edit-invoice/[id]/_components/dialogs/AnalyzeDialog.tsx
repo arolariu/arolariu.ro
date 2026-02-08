@@ -39,6 +39,7 @@ import {
   TbShoppingCart,
   TbSparkles,
 } from "react-icons/tb";
+import styles from "./AnalyzeDialog.module.scss";
 
 /** Configuration for each analysis option. */
 type AnalysisOptionConfig = {
@@ -259,7 +260,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
             Analyze Invoice
           </DialogTitle>
           <DialogDescription>
-            Configure AI-powered analysis for invoice <span className='font-mono text-xs'>{invoice.id.slice(0, 8)}...</span>
+            Configure AI-powered analysis for invoice <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -270,23 +271,23 @@ export default function AnalyzeDialog(): React.JSX.Element {
               initial={{opacity: 0, y: 20}}
               animate={{opacity: 1, y: 0}}
               exit={{opacity: 0, y: -20}}
-              className='space-y-6 py-8'>
-              <div className='flex flex-col items-center justify-center space-y-4'>
+              className={styles["analyzingSection"]}>
+              <div className={styles["spinnerWrapper"]}>
                 <motion.div
                   animate={{rotate: 360}}
                   transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
-                  className='rounded-full bg-purple-100 p-4 dark:bg-purple-900/30'>
+                  className={styles["spinnerIcon"]}>
                   <TbLoader2 className='h-12 w-12 text-purple-500' />
                 </motion.div>
-                <h3 className='text-lg font-semibold'>Analyzing Invoice</h3>
-                <p className='text-muted-foreground text-sm'>{currentStep}</p>
+                <h3 className={styles["analyzingTitle"]}>Analyzing Invoice</h3>
+                <p className={styles["analyzingStep"]}>{currentStep}</p>
               </div>
-              <div className='mx-auto max-w-md space-y-2'>
+              <div className={styles["progressWrapper"]}>
                 <Progress
                   value={progress}
                   className='h-2'
                 />
-                <p className='text-muted-foreground text-center text-xs'>{Math.round(progress)}% complete</p>
+                <p className={styles["progressText"]}>{Math.round(progress)}% complete</p>
               </div>
             </motion.div>
           ) : (
@@ -295,11 +296,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
               initial={{opacity: 0}}
               animate={{opacity: 1}}
               exit={{opacity: 0}}
-              className='space-y-6'>
+              className={styles["optionsSection"]}>
               {/* Analysis Type Selection */}
-              <div className='space-y-3'>
+              <div className={styles["sectionLabel"]}>
                 <Label className='text-base font-medium'>Analysis Type</Label>
-                <div className='grid gap-3 sm:grid-cols-2'>
+                <div className={styles["optionsGrid"]}>
                   {ANALYSIS_OPTIONS.map((option) => (
                     <Card
                       key={option.id}
@@ -307,15 +308,15 @@ export default function AnalyzeDialog(): React.JSX.Element {
                       onClick={handleOptionSelect}
                       className={`cursor-pointer transition-all duration-200 ${
                         selectedOption === option.id
-                          ? "border-purple-500 bg-purple-50 ring-2 ring-purple-500/20 dark:bg-purple-900/20"
-                          : "hover:bg-muted/50 hover:border-purple-300"
+                          ? styles["optionCardSelected"]
+                          : styles["optionCardDefault"]
                       }`}>
                       <CardHeader className='pb-2'>
-                        <div className='flex items-start justify-between'>
-                          <div className={`rounded-lg p-2 ${selectedOption === option.id ? "bg-purple-500 text-white" : "bg-muted"}`}>
+                        <div className={styles["optionHeader"]}>
+                          <div className={selectedOption === option.id ? styles["optionIconSelected"] : styles["optionIconDefault"]}>
                             {option.icon}
                           </div>
-                          <div className='flex items-center gap-2'>
+                          <div className={styles["optionBadges"]}>
                             {option.recommended ? (
                               <Badge
                                 variant='secondary'
@@ -330,7 +331,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                         <CardDescription className='text-xs'>{option.description}</CardDescription>
                       </CardHeader>
                       <CardContent className='pt-0'>
-                        <div className='text-muted-foreground flex items-center gap-1 text-xs'>
+                        <div className={styles["optionTime"]}>
                           <TbClock className='h-3 w-3' />
                           <span>{option.estimatedTime}</span>
                         </div>
@@ -345,9 +346,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
                 <motion.div
                   initial={{opacity: 0, height: 0}}
                   animate={{opacity: 1, height: "auto"}}
-                  className='space-y-2'>
+                  className={styles["featuresSection"]}>
                   <Label className='text-sm font-medium'>Included Features</Label>
-                  <div className='flex flex-wrap gap-2'>
+                  <div className={styles["featuresList"]}>
                     {selectedConfig.features.map((feature) => (
                       <Badge
                         key={feature}
@@ -364,28 +365,28 @@ export default function AnalyzeDialog(): React.JSX.Element {
               <Separator />
 
               {/* Analysis Enhancements */}
-              <div className='space-y-3'>
+              <div className={styles["enhancementsSection"]}>
                 <Label className='text-base font-medium'>Enhancements (Optional)</Label>
-                <div className='space-y-3'>
+                <div className={styles["enhancementsSection"]}>
                   {ANALYSIS_ENHANCEMENTS.map((enhancement) => (
-                    <div
+                    <div 
                       key={enhancement.id}
-                      className='hover:bg-muted/50 flex items-start space-x-3 rounded-lg border p-3 transition-colors'>
+                      className={styles["enhancementItem"]}>
                       <Checkbox
                         id={enhancement.id}
                         checked={selectedEnhancements.includes(enhancement.id)}
                         // eslint-disable-next-line react/jsx-no-bind -- simple toggle handler
                         onCheckedChange={() => handleEnhancementToggle(enhancement.id)}
                       />
-                      <div className='flex flex-1 items-start gap-3'>
-                        <div className='text-muted-foreground mt-0.5'>{enhancement.icon}</div>
-                        <div className='space-y-1'>
+                      <div className={styles["enhancementContent"]}>
+                        <div className={styles["enhancementIconWrapper"]}>{enhancement.icon}</div>
+                        <div className={styles["enhancementText"]}>
                           <Label
                             htmlFor={enhancement.id}
                             className='cursor-pointer font-medium'>
                             {enhancement.label}
                           </Label>
-                          <p className='text-muted-foreground text-xs'>{enhancement.description}</p>
+                          <p className={styles["enhancementDesc"]}>{enhancement.description}</p>
                         </div>
                       </div>
                     </div>
@@ -395,19 +396,19 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
               {/* Analysis Summary */}
               <Card className='bg-muted/30'>
-                <CardContent className='flex items-center justify-between py-4'>
-                  <div className='flex items-center gap-3'>
+                <CardContent className={styles["summaryContent"]}>
+                  <div className={styles["summaryLeft"]}>
                     <TbFileAnalytics className='h-8 w-8 text-purple-500' />
                     <div>
-                      <p className='font-medium'>{selectedConfig?.title}</p>
-                      <p className='text-muted-foreground text-sm'>
+                      <p className={styles["summaryTitle"]}>{selectedConfig?.title}</p>
+                      <p className={styles["summarySubtext"]}>
                         {selectedEnhancements.length > 0 ? `+ ${selectedEnhancements.length} enhancement(s)` : "No enhancements selected"}
                       </p>
                     </div>
                   </div>
-                  <div className='text-right'>
-                    <p className='text-muted-foreground text-sm'>Estimated time</p>
-                    <p className='font-semibold'>{selectedConfig?.estimatedTime}</p>
+                  <div className={styles["summaryRight"]}>
+                    <p className={styles["summaryTimeLabel"]}>Estimated time</p>
+                    <p className={styles["summaryTimeValue"]}>{selectedConfig?.estimatedTime}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -427,7 +428,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
             type='button'
             onClick={handleAnalysis}
             disabled={isAnalyzing || selectedOption === InvoiceAnalysisOptions.NoAnalysis}
-            className='bg-purple-600 hover:bg-purple-700'>
+            className={styles["analyzeButton"]}>
             {isAnalyzing ? (
               <>
                 <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />

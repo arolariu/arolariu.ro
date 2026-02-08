@@ -1,0 +1,161 @@
+// ===========================================
+// UPLOAD PREVIEW COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+// ===========================================
+// PREVIEW CONTAINER
+// ===========================================
+.container {
+  margin-bottom: space(8);
+}
+
+.header {
+  @include flex-between;
+  margin-bottom: space(4);
+}
+
+.title {
+  font-size: font-size('xl');
+  font-weight: font-weight('semibold');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.grid {
+  @include grid(1, space(4));
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include respond-to('xl') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// ===========================================
+// UPLOAD CARD
+// ===========================================
+.previewArea {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background-color: #f3f4f6; // gray-100
+
+  @include dark {
+    background-color: #1f2937; // gray-800
+  }
+}
+
+.pdfPlaceholder {
+  @include flex-center;
+  height: 100%;
+}
+
+.pdfIcon {
+  height: space(16);
+  width: space(16);
+  color: #ef4444; // red-500
+}
+
+.imagePreview {
+  object-fit: cover;
+}
+
+// ===========================================
+// STATUS OVERLAYS
+// ===========================================
+.statusOverlay {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+}
+
+.overlayUploading {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.overlayCompleted {
+  background-color: rgba(34, 197, 94, 0.5); // green-500/50
+}
+
+.overlayFailed {
+  background-color: rgba(239, 68, 68, 0.5); // red-500/50
+}
+
+.statusIcon {
+  height: space(10);
+  width: space(10);
+  color: white;
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ===========================================
+// STATUS BADGE POSITION
+// ===========================================
+.badgePosition {
+  position: absolute;
+  top: space(2);
+  right: space(2);
+}
+
+// ===========================================
+// FILE INFO
+// ===========================================
+.fileInfo {
+  padding: space(3);
+}
+
+.fileName {
+  @include truncate;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.fileSize {
+  font-size: font-size('xs');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.fileError {
+  margin-top: space(1);
+  @include truncate;
+  font-size: font-size('xs');
+  color: #ef4444; // red-500
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.removeIcon {
+  width: space(4);
+  height: space(4);
+}

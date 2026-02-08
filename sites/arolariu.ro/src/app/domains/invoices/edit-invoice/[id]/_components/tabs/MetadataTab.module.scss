@@ -1,0 +1,57 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.metadataGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.metadataField {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  & > * + * {
+    margin-top: space(1);
+  }
+  border-radius: radius('md');
+  border: 1px solid color('border');
+  padding: space(3);
+  @include transition(colors);
+
+  &:hover {
+    border-color: color-alpha('primary', 0.5);
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.fieldLabel {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.editButton {
+  position: absolute;
+  top: space(2);
+  right: space(2);
+  opacity: 0;
+  @include transition(opacity);
+
+  .metadataField:hover & {
+    opacity: 1;
+  }
+}
+
+.emptyState {
+  padding-block: space(8);
+  text-align: center;
+}
+
+.emptyText {
+  color: color('muted-foreground');
+  margin-bottom: space(4);
+}

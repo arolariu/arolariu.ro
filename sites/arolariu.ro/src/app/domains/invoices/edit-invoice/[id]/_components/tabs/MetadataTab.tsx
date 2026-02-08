@@ -20,6 +20,7 @@ import {
 import {motion} from "motion/react";
 import {TbEdit, TbPencil, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./MetadataTab.module.scss";
 
 type Props = {
   metadata: Record<string, string>;
@@ -96,7 +97,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
         </CardHeader>
         <CardContent>
           {Object.keys(metadata).length > 0 ? (
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+            <div className={styles["metadataGrid"]}>
               {Object.entries(metadata).map(([key, value], index) => (
                 <motion.div
                   key={key}
@@ -104,8 +105,8 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                   animate={{opacity: 1, scale: 1}}
                   transition={{delay: index * 0.05}}
                   whileHover={{scale: 1.02}}
-                  className='group hover:border-primary/50 hover:bg-muted/50 relative flex flex-col space-y-1 rounded-md border p-3 transition-colors'>
-                  <span className='text-muted-foreground text-sm font-medium'>
+                  className={styles["metadataField"]}>
+                  <span className={styles["fieldLabel"]}>
                     <Badge
                       variant='outline'
                       className='ml-2 text-xs'>
@@ -114,7 +115,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                   </span>
                   <span>{value}</span>
 
-                  <div className='absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100'>
+                  <div className={styles["editButton"]}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -145,8 +146,8 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
               ))}
             </div>
           ) : (
-            <div className='py-8 text-center'>
-              <p className='text-muted-foreground mb-4'>No metadata fields added yet</p>
+            <div className={styles["emptyState"]}>
+              <p className={styles["emptyText"]}>No metadata fields added yet</p>
               <Button
                 onClick={openAddDialog}
                 variant='outline'>

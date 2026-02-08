@@ -1,0 +1,168 @@
+// ===========================================
+// PROFILE HEADER STYLES
+// Scoped to ProfileHeader.tsx only
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+// ===========================================
+// BANNER
+// ===========================================
+.bannerGradient {
+  position: relative;
+  height: 8rem;
+  background: linear-gradient(to right, color-alpha('primary', 0.2), color-alpha('primary', 0.1), transparent);
+}
+
+.bannerOrb {
+  @include orb(10rem, 48px, color-alpha('primary', 0.1));
+  top: -2.5rem;
+  right: -2.5rem;
+}
+
+// ===========================================
+// CARD BODY
+// ===========================================
+.cardBody {
+  position: relative;
+  margin-top: -4rem;
+  padding: 0 space(6) space(6);
+}
+
+// ===========================================
+// HEADER LAYOUT
+// ===========================================
+.headerLayout {
+  @include flex-column;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.avatarGroup {
+  @include flex-column;
+  align-items: center;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+// ===========================================
+// AVATAR
+// ===========================================
+.avatarWrapper {
+  position: relative;
+}
+
+.onlineIndicator {
+  position: absolute;
+  right: -0.25rem;
+  bottom: -0.25rem;
+  border-radius: radius('full');
+  background-color: #22c55e;
+  padding: 0.375rem;
+  ring: 2px solid color('background');
+}
+
+.onlineIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: white;
+}
+
+// ===========================================
+// NAME & BADGES
+// ===========================================
+.nameBlock {
+  text-align: center;
+
+  @include respond-to('sm') {
+    text-align: left;
+  }
+}
+
+.nameRow {
+  @include flex-column;
+  align-items: center;
+  gap: space(2);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.name {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+}
+
+.email {
+  color: color('muted-foreground');
+  margin-top: space(1);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: space(2);
+  margin-top: space(3);
+
+  @include respond-to('sm') {
+    justify-content: flex-start;
+  }
+}
+
+// ===========================================
+// EDIT BUTTON
+// ===========================================
+.editActions {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.sheetBody {
+  margin-top: space(6);
+  @include flex-column;
+  gap: space(4);
+}
+
+.sheetNote {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+// ===========================================
+// PROGRESS
+// ===========================================
+.progressSection {
+  margin-top: space(6);
+  max-width: 28rem;
+}
+
+.progressHeader {
+  @include flex-between;
+  margin-bottom: space(2);
+  font-size: font-size('sm');
+}
+
+.progressLabel {
+  color: color('muted-foreground');
+}
+
+.progressValue {
+  font-weight: font-weight('medium');
+}
+
+.progressHint {
+  margin-top: space(2);
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}

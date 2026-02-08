@@ -1,0 +1,88 @@
+@use '../../../../../styles/abstracts' as *;
+
+.container {
+  @include container;
+  padding-inline: space(4);
+  padding-block: space(8);
+
+  @include respond-to('sm') {
+    padding-block: space(12);
+  }
+}
+
+.headerSection {
+  margin-bottom: space(8);
+}
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(6);
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+}
+
+.leftColumn {
+  display: none;
+
+  & > * + * {
+    margin-top: space(6);
+  }
+
+  @include respond-to('lg') {
+    display: block;
+    grid-column: span 3;
+  }
+}
+
+.leftColumnSticky {
+  position: sticky;
+  top: space(6);
+}
+
+.centerColumn {
+  & > * + * {
+    margin-top: space(6);
+  }
+
+  @include respond-to('lg') {
+    grid-column: span 6;
+  }
+}
+
+.centerItem {
+  // Placeholder for animation
+}
+
+.mobileTimeline {
+  @include respond-to('lg') {
+    display: none;
+  }
+}
+
+.rightColumn {
+  & > * + * {
+    margin-top: space(6);
+  }
+
+  @include respond-to('lg') {
+    grid-column: span 3;
+  }
+}
+
+.rightItem {
+  // Placeholder for animation
+}
+
+.analyticsSection {
+  margin-top: space(8);
+  padding-top: space(8);
+  border-top: 1px solid color('border');
+
+  @include respond-to('sm') {
+    margin-top: space(12);
+    padding-top: space(12);
+  }
+}

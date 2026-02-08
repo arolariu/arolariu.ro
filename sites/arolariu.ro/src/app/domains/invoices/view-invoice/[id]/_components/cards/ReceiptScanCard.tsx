@@ -21,6 +21,7 @@ import Image from "next/image";
 import {useCallback, useState} from "react";
 import {TbZoomIn} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
+import styles from "./ReceiptScanCard.module.scss";
 
 export function ReceiptScanCard(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
@@ -68,15 +69,13 @@ export function ReceiptScanCard(): React.JSX.Element {
             open={isOpen}
             onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <div className='group cursor-pointer overflow-hidden rounded-lg border'>
+              <div className={styles["imageContainer"]}>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1}`}
                   width={400}
                   height={600}
-                  className={`w-full object-cover transition-all duration-200 group-hover:scale-105 ${
-                    isTransitioning ? "opacity-50 blur-sm" : "blur-0 opacity-100"
-                  }`}
+                  className={`${styles["scanImage"]} ${isTransitioning ? styles["scanImageTransitioning"] : ""}`}
                 />
               </div>
             </DialogTrigger>
@@ -84,13 +83,13 @@ export function ReceiptScanCard(): React.JSX.Element {
               <DialogHeader>
                 <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
               </DialogHeader>
-              <div className='relative flex max-h-[80vh] justify-center overflow-auto'>
+              <div className={styles["dialogImageContainer"]}>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1} - full size`}
                   width={800}
                   height={1200}
-                  className='w-full object-contain'
+                  className={styles["dialogImage"]}
                 />
               </div>
             </DialogContent>
@@ -112,7 +111,7 @@ export function ReceiptScanCard(): React.JSX.Element {
             </TooltipContent>
           </Tooltip>
           {totalScans > 1 && (
-            <div className='flex w-full gap-2'>
+            <div className={styles["scanNavigation"]}>
               {currentScanIndex > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>

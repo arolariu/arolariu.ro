@@ -1,0 +1,22 @@
+// ===========================================
+// ABOUT HUB PAGE - Layout wrappers only
+// Each component owns its own .module.scss
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+.aboutPage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+  background-color: color('background');
+  color: color('foreground');
+}
+
+.aboutInner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}

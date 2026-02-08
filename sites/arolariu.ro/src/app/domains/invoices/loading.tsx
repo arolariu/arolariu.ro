@@ -1,4 +1,5 @@
 import {Skeleton} from "@arolariu/components";
+import styles from "./loading.module.scss";
 
 /**
  * Loading skeleton component for the invoices domain main page.
@@ -38,26 +39,26 @@ import {Skeleton} from "@arolariu/components";
  */
 export default function Loading(): React.JSX.Element {
   return (
-    <div className='px-5 py-24'>
+    <div className={styles["page"]}>
       {/* Hero Section Skeleton */}
-      <section className='flex flex-col items-center justify-center justify-items-center text-center'>
+      <section className={styles["heroSection"]}>
         {/* Top SVG Illustration Skeleton */}
-        <Skeleton className='h-[500px] w-[500px] object-fill object-center md:mx-auto md:h-full lg:h-1/2' />
+        <Skeleton className={styles["heroImage"]} />
 
         {/* Content Area */}
-        <div className='mt-2 w-full lg:w-2/3'>
+        <div className={styles["contentArea"]}>
           {/* Title Skeleton */}
-          <Skeleton className='mx-auto mb-4 h-10 w-3/4 sm:h-12' />
+          <Skeleton className={`${styles["titleSkeleton"]} h-10 w-3/4 sm:h-12`} />
 
           {/* Description Skeleton */}
-          <article className='mb-8 space-y-2'>
-            <Skeleton className='mx-auto h-4 w-full' />
-            <Skeleton className='mx-auto h-4 w-5/6' />
-            <Skeleton className='mx-auto h-4 w-4/5' />
+          <article className={styles["descriptionBlock"]}>
+            <Skeleton className={`${styles["descriptionLine"]} h-4 w-full`} />
+            <Skeleton className={`${styles["descriptionLine"]} h-4 w-5/6`} />
+            <Skeleton className={`${styles["descriptionLine"]} h-4 w-4/5`} />
           </article>
 
           {/* CTA Buttons Skeleton */}
-          <div className='flex flex-col items-center justify-center justify-items-center gap-4 md:flex-row'>
+          <div className={styles["ctaRow"]}>
             <Skeleton className='h-11 w-40 rounded' />
             <Skeleton className='h-11 w-32 rounded' />
           </div>
@@ -65,24 +66,24 @@ export default function Loading(): React.JSX.Element {
       </section>
 
       {/* Steps and Bottom Image Section Skeleton */}
-      <section className='flex flex-col items-center justify-center justify-items-center pt-16 md:flex-row'>
+      <section className={styles["stepsSection"]}>
         {/* Steps Timeline Skeleton */}
-        <div className='md:w-1/2 md:py-6 md:pr-10 lg:w-2/5'>
+        <div className={styles["stepsTimeline"]}>
           {/* 5 Steps */}
           {[1, 2, 3, 4, 5].map((stepNumber) => (
             <div
-              className='relative flex pb-12'
+              className={styles["stepItem"]}
               key={`step-${stepNumber}`}>
               {/* Vertical Line */}
-              <div className='absolute inset-0 flex h-full w-10 items-center justify-center'>
-                {stepNumber < 5 && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
+              <div className={styles["stepLine"]}>
+                {stepNumber < 5 && <div className={styles["stepLineBar"]} />}
               </div>
 
               {/* Circle Icon */}
               <Skeleton className='relative z-10 h-10 w-10 shrink-0 rounded-full' />
 
               {/* Step Content */}
-              <div className='grow space-y-2 pl-4'>
+              <div className={styles["stepContent"]}>
                 <Skeleton className='h-4 w-32' />
                 <Skeleton className='h-3 w-full' />
                 <Skeleton className='h-3 w-5/6' />
@@ -93,7 +94,7 @@ export default function Loading(): React.JSX.Element {
 
         {/* Bottom SVG Illustration Skeleton */}
         <div>
-          <Skeleton className='h-[500px] w-[500px] object-fill object-center md:mx-auto md:h-full lg:h-1/2' />
+          <Skeleton className={styles["heroImage"]} />
         </div>
       </section>
     </div>

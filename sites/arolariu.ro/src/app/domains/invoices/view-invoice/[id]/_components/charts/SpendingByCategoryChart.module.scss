@@ -1,0 +1,63 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.tooltip {
+  background-color: color('background');
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(2) space(3);
+  @include shadow('md');
+}
+
+.tooltipCategory {
+  font-weight: font-weight('medium');
+}
+
+.tooltipAmount {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.tooltipCount {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.legendContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: space(1) space(3);
+  margin-top: space(2);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+}
+
+.legendDot {
+  height: space(2.5);
+  width: space(2.5);
+  border-radius: radius('full');
+}
+
+.legendLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.totalSection {
+  margin-top: space(2);
+  text-align: center;
+}
+
+.totalAmount {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+}
+
+.totalLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}

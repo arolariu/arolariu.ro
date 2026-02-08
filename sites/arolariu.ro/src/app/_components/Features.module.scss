@@ -1,0 +1,138 @@
+// ===========================================
+// HOME PAGE - FEATURES COMPONENT
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+.section {
+  padding: space(12) 0;
+  overflow: hidden; // Prevent TypewriterTextSmooth nowrap from causing horizontal scroll
+
+  @include respond-to('sm') {
+    padding-bottom: space(16);
+  }
+
+  @include respond-to('lg') {
+    padding-bottom: space(20);
+  }
+
+  @include respond-to('xl') {
+    padding-bottom: space(24);
+  }
+}
+
+.article {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80rem; // --breakpoint-xl
+  padding: space(8) space(4);
+
+  @include respond-to('sm') {
+    padding: space(12) space(6);
+  }
+
+  @include respond-to('lg') {
+    padding: space(16) space(8);
+  }
+}
+
+.titleWrapper {
+  justify-content: center;
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+
+  // Override the component's internal text sizing
+  div {
+    font-size: inherit;
+  }
+}
+
+.titleWord {
+  display: inline-block;
+  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cursorClass {
+  height: 2rem;
+
+  @include respond-to('sm') {
+    height: 2.5rem;
+  }
+
+  @include respond-to('md') {
+    height: 3rem;
+  }
+
+  @include respond-to('lg') {
+    height: 3.75rem;
+  }
+}
+
+.description {
+  margin-top: space(4);
+  text-align: center;
+  color: color('muted-foreground');
+}
+
+.grid {
+  @include responsive-grid(1, 2, 3, space(8));
+  margin-top: space(8);
+}
+
+.card {
+  border-radius: radius('xl');
+  border: 1px solid color('border');
+  padding: space(8);
+  @include shadow('2xl');
+  @include transition((border-color, box-shadow));
+
+  &:hover {
+    border-color: color-alpha('primary', 0.1);
+    box-shadow: 0 25px 50px -12px color-alpha('primary', 0.1);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  padding-bottom: space(4);
+}
+
+.cardIcon {
+  display: inline;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.cardTitle {
+  margin-left: space(2);
+  font-size: font-size('xl');
+}
+
+.cardDescription {
+  margin-top: space(3);
+  font-size: font-size('base');
+  color: color('muted-foreground');
+}
+
+.learnMoreLink {
+  display: block;
+  margin-top: space(8);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}

@@ -1,0 +1,85 @@
+@use '../../../../../../../styles/abstracts' as *;
+@use '../../../../_styles/invoice-shared' as invoice;
+
+.imageTransitioning {
+  opacity: 0.5;
+  filter: blur(4px);
+}
+
+.imageNormal {
+  filter: blur(0);
+  opacity: 1;
+}
+
+.zoomOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-alpha('background', 0.8);
+  opacity: 0;
+  @include transition(opacity);
+}
+
+.zoomContainer {
+  position: relative;
+  display: flex;
+  max-height: 80vh;
+  justify-content: center;
+  overflow: auto;
+}
+
+.navButtons {
+  display: flex;
+  width: 100%;
+  gap: space(2);
+}
+
+.actionButtons {
+  display: flex;
+  width: 100%;
+  gap: space(2);
+}
+
+.receiptImage {
+  width: 100%;
+  object-fit: cover;
+  @include transition(all);
+
+  &:global(.group-hover\/image) {
+    transform: scale(1.05);
+  }
+}
+
+.receiptImageTransitioning {
+  composes: receiptImage;
+  opacity: 0.5;
+  filter: blur(4px);
+}
+
+.receiptImageNormal {
+  composes: receiptImage;
+  filter: blur(0);
+  opacity: 1;
+}
+
+.zoomOverlayVisible {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-alpha('background', 0.8);
+  opacity: 0;
+  @include transition(opacity);
+
+  :global(.group-hover\/image) & {
+    opacity: 1;
+  }
+}
+
+.zoomDialogImage {
+  width: 100%;
+  object-fit: contain;
+}

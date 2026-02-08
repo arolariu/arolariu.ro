@@ -17,6 +17,7 @@ import {
 import {useLocale} from "next-intl";
 import {TbAlertTriangle, TbApple, TbBulb, TbLeaf, TbMeat, TbMilk, TbWheat} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
+import styles from "./NutritionCard.module.scss";
 
 type FoodGroup = {
   name: string;
@@ -35,11 +36,11 @@ function getScoreLabel(score: number): string {
 }
 
 /** Get the color class for a balance score */
-function getScoreColorClass(score: number): string {
-  if (score >= 80) return "text-green-600";
-  if (score >= 60) return "text-emerald-600";
-  if (score >= 40) return "text-yellow-600";
-  return "text-red-600";
+function getScoreColorClass(score: number, moduleStyles: Record<string, string>): string {
+  if (score >= 80) return moduleStyles["scoreGreen"] ?? "";
+  if (score >= 60) return moduleStyles["scoreEmerald"] ?? "";
+  if (score >= 40) return moduleStyles["scoreYellow"] ?? "";
+  return moduleStyles["scoreRed"] ?? "";
 }
 
 /** Calculate the balance score based on food group presence */
@@ -137,7 +138,7 @@ export function NutritionCard(): React.JSX.Element {
   const hasProtein = foodGroups.find((g) => g.name === "Protein")!.items > 0;
   const balanceScore = calculateBalanceScore(hasVeggies, hasFruits, hasProtein, wholeFoodPct);
   const scoreLabel = getScoreLabel(balanceScore);
-  const scoreColor = getScoreColorClass(balanceScore);
+  const scoreColor = getScoreColorClass(balanceScore, styles);
 
   // Collect allergens
   const allergenMap = new Map<string, number>();
@@ -161,10 +162,10 @@ export function NutritionCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-6'>
         {/* Food Balance Score */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between'>
-            <span className='text-sm font-medium'>Food Balance Score</span>
-            <span className={`text-sm font-semibold ${scoreColor}`}>
+        <div className={styles["scoreSection"]}>
+          <div className={styles["scoreRow"]}>
+            <span className={styles["scoreLabel"]}>Food Balance Score</span>
+            <span className={`${styles["scoreLabel"]} ${scoreColor}`}>
               {balanceScore}/100 - {scoreLabel}
             </span>
           </div>
@@ -175,69 +176,69 @@ export function NutritionCard(): React.JSX.Element {
         </div>
 
         {/* Basket Composition */}
-        <div className='space-y-3'>
-          <h4 className='text-muted-foreground text-sm font-medium tracking-wide uppercase'>Your Basket Composition</h4>
-          <div className='space-y-2'>
-            <div className='flex items-center gap-3'>
+        <div className={styles["compositionSection"]}>
+          <h4 className={styles["compositionTitle"]}>Your Basket Composition</h4>
+          <div className={styles["compositionList"]}>
+            <div className={styles["compositionRow"]}>
               <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
-              <span className='w-24 shrink-0 text-sm'>Whole Foods</span>
-              <div className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
-                <div
-                  className='h-full bg-green-500 transition-all'
+              <span className={styles["compositionLabel"]}>Whole Foods</span>
+              <div className={styles["progressTrack"]}>
+                <div 
+                  className={`${styles["progressBar"]} ${styles["progressGreen"]}`}
                   style={{width: `${wholeFoodPct}%`}}
                 />
               </div>
-              <span className='text-muted-foreground w-10 text-right text-sm'>{wholeFoodPct}%</span>
+              <span className={styles["compositionPct"]}>{wholeFoodPct}%</span>
             </div>
-            <div className='flex items-center gap-3'>
+            <div className={styles["compositionRow"]}>
               <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
-              <span className='w-24 shrink-0 text-sm'>Processed</span>
-              <div className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
-                <div
-                  className='h-full bg-amber-500 transition-all'
+              <span className={styles["compositionLabel"]}>Processed</span>
+              <div className={styles["progressTrack"]}>
+                <div 
+                  className={`${styles["progressBar"]} ${styles["progressAmber"]}`}
                   style={{width: `${processedPct}%`}}
                 />
               </div>
-              <span className='text-muted-foreground w-10 text-right text-sm'>{processedPct}%</span>
+              <span className={styles["compositionPct"]}>{processedPct}%</span>
             </div>
-            <div className='flex items-center gap-3'>
+            <div className={styles["compositionRow"]}>
               <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
-              <span className='w-24 shrink-0 text-sm'>Dairy/Other</span>
-              <div className='bg-muted h-2 flex-1 overflow-hidden rounded-full'>
-                <div
-                  className='h-full bg-blue-500 transition-all'
+              <span className={styles["compositionLabel"]}>Dairy/Other</span>
+              <div className={styles["progressTrack"]}>
+                <div 
+                  className={`${styles["progressBar"]} ${styles["progressBlue"]}`}
                   style={{width: `${dairySnackPct}%`}}
                 />
               </div>
-              <span className='text-muted-foreground w-10 text-right text-sm'>{dairySnackPct}%</span>
+              <span className={styles["compositionPct"]}>{dairySnackPct}%</span>
             </div>
           </div>
         </div>
 
         {/* Food Groups Grid */}
-        <div className='grid grid-cols-2 gap-3'>
+        <div className={styles["foodGroupsGrid"]}>
           {foodGroups.map((group) => (
-            <div
+            <div 
               key={group.name}
-              className='bg-card rounded-lg border p-3 text-center'>
-              <div className='mb-1 flex justify-center'>{group.icon}</div>
-              <p className='text-muted-foreground text-xs'>{group.name}</p>
-              <p className='text-sm font-semibold'>
+              className={styles["foodGroupCard"]}>
+              <div className={styles["foodGroupIconRow"]}>{group.icon}</div>
+              <p className={styles["foodGroupName"]}>{group.name}</p>
+              <p className={styles["foodGroupCount"]}>
                 {group.items} item{group.items === 1 ? "" : "s"}
               </p>
-              <p className='text-muted-foreground text-xs'>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
+              <p className={styles["foodGroupAmount"]}>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
             </div>
           ))}
         </div>
 
         {/* Allergens */}
         {allergens.length > 0 && (
-          <div className='space-y-2'>
-            <div className='flex items-center gap-2'>
+          <div className={styles["allergensSection"]}>
+            <div className={styles["allergensHeader"]}>
               <TbAlertTriangle className='h-4 w-4 text-amber-500' />
-              <h4 className='text-sm font-medium'>Allergens Detected</h4>
+              <h4 className={styles["allergensTitle"]}>Allergens Detected</h4>
             </div>
-            <div className='flex flex-wrap gap-2'>
+            <div className={styles["allergensList"]}>
               <TooltipProvider>
                 {allergens.map(([name, count]) => (
                   <Tooltip key={name}>
@@ -263,9 +264,9 @@ export function NutritionCard(): React.JSX.Element {
         )}
 
         {/* Suggestion */}
-        <div className='bg-muted/50 flex items-start gap-2 rounded-lg p-3'>
+        <div className={styles["suggestionBox"]}>
           <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
-          <p className='text-muted-foreground text-sm'>{suggestion}</p>
+          <p className={styles["suggestionText"]}>{suggestion}</p>
         </div>
       </CardContent>
     </Card>

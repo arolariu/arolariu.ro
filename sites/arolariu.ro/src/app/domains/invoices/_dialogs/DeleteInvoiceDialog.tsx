@@ -25,6 +25,7 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
+import styles from "./DeleteInvoiceDialog.module.scss";
 
 /**
  * Dialog for confirming and executing invoice deletion.
@@ -126,7 +127,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 text-red-600 dark:text-red-400'>
-            <TbTrash className='h-5 w-5' />
+            <TbTrash className={styles["titleIcon"]} />
             Delete Invoice
           </DialogTitle>
           <DialogDescription>This action cannot be undone. Please review carefully before proceeding.</DialogDescription>
@@ -139,15 +140,15 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               initial={{opacity: 0, scale: 0.95}}
               animate={{opacity: 1, scale: 1}}
               exit={{opacity: 0, scale: 0.95}}
-              className='flex flex-col items-center justify-center space-y-4 py-8'>
+              className={styles["deletingState"]}>
               <motion.div
                 animate={{rotate: 360}}
                 transition={{duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
-                className='rounded-full bg-red-100 p-4 dark:bg-red-900/30'>
-                <TbLoader2 className='h-10 w-10 text-red-500' />
+                className={styles["spinnerWrapper"]}>
+                <TbLoader2 className={styles["spinnerIcon"]} />
               </motion.div>
-              <p className='font-medium text-red-600 dark:text-red-400'>Deleting invoice...</p>
-              <p className='text-muted-foreground text-sm'>Please wait while we remove all associated data.</p>
+              <p className={styles["deletingTitle"]}>Deleting invoice...</p>
+              <p className={styles["deletingDescription"]}>Please wait while we remove all associated data.</p>
             </motion.div>
           ) : (
             <motion.div
@@ -155,17 +156,17 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               initial={{opacity: 0}}
               animate={{opacity: 1}}
               exit={{opacity: 0}}
-              className='space-y-4'>
+              className={styles["confirmBody"]}>
               {/* Invoice Summary Card */}
-              <div className='bg-muted/30 rounded-lg border p-4'>
-                <div className='flex items-start gap-3'>
-                  <div className='rounded-lg bg-red-100 p-2 dark:bg-red-900/30'>
-                    <TbReceipt className='h-6 w-6 text-red-500' />
+              <div className={styles["summaryCard"]}>
+                <div className={styles["summaryRow"]}>
+                  <div className={styles["summaryIconBox"]}>
+                    <TbReceipt className={styles["summaryIcon"]} />
                   </div>
-                  <div className='min-w-0 flex-1'>
-                    <p className='truncate font-semibold'>{invoiceName}</p>
-                    <p className='text-muted-foreground font-mono text-xs'>{invoice.id}</p>
-                    {invoice.description ? <p className='text-muted-foreground mt-1 line-clamp-2 text-sm'>{invoice.description}</p> : null}
+                  <div className={styles["summaryContent"]}>
+                    <p className={styles["summaryName"]}>{invoiceName}</p>
+                    <p className={styles["summaryId"]}>{invoice.id}</p>
+                    {invoice.description ? <p className={styles["summaryDescription"]}>{invoice.description}</p> : null}
                   </div>
                 </div>
               </div>
@@ -174,30 +175,30 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <Alert
                 variant='destructive'
                 className='border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50'>
-                <TbAlertTriangle className='h-4 w-4' />
+                <TbAlertTriangle className={styles["impactIcon"]} />
                 <AlertTitle>Permanent Deletion</AlertTitle>
                 <AlertDescription>
-                  <p className='mb-2'>The following data will be permanently deleted:</p>
-                  <ul className='space-y-1 text-sm'>
-                    <li className='flex items-center gap-2'>
-                      <TbFileX className='h-4 w-4' />
+                  <p className={styles["impactIntro"]}>The following data will be permanently deleted:</p>
+                  <ul className={styles["impactList"]}>
+                    <li className={styles["impactItem"]}>
+                      <TbFileX className={styles["impactIcon"]} />
                       Invoice record and metadata
                     </li>
                     {scanCount > 0 && (
-                      <li className='flex items-center gap-2'>
-                        <TbPhoto className='h-4 w-4' />
+                      <li className={styles["impactItem"]}>
+                        <TbPhoto className={styles["impactIcon"]} />
                         {scanCount} uploaded scan(s)
                       </li>
                     )}
                     {itemCount > 0 && (
-                      <li className='flex items-center gap-2'>
-                        <TbShoppingCart className='h-4 w-4' />
+                      <li className={styles["impactItem"]}>
+                        <TbShoppingCart className={styles["impactIcon"]} />
                         {itemCount} line item(s)
                       </li>
                     )}
                     {sharedCount > 0 && (
-                      <li className='flex items-center gap-2'>
-                        <TbX className='h-4 w-4' />
+                      <li className={styles["impactItem"]}>
+                        <TbX className={styles["impactIcon"]} />
                         Shared access for {sharedCount} user(s)
                       </li>
                     )}
@@ -208,10 +209,10 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <Separator />
 
               {/* Confirmation Input */}
-              <div className='space-y-3'>
-                <div className='space-y-2'>
+              <div className={styles["confirmSection"]}>
+                <div className={styles["confirmField"]}>
                   <Label htmlFor='confirm-name'>
-                    Type <span className='font-semibold text-red-600 dark:text-red-400'>{invoiceName}</span> to confirm:
+                    Type <span className={styles["confirmHighlight"]}>{invoiceName}</span> to confirm:
                   </Label>
                   <Input
                     id='confirm-name'
@@ -224,19 +225,19 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 </div>
 
                 {/* Understanding Checkbox */}
-                <div className='flex items-start space-x-3 rounded-lg border p-3'>
+                <div className={styles["checkboxCard"]}>
                   <Checkbox
                     id='understand-deletion'
                     checked={understoodCheckbox}
                     onCheckedChange={handleCheckboxChange}
                   />
-                  <div className='space-y-1'>
+                  <div className={styles["checkboxContent"]}>
                     <Label
                       htmlFor='understand-deletion'
                       className='cursor-pointer text-sm leading-none font-medium'>
                       I understand this action is permanent
                     </Label>
-                    <p className='text-muted-foreground text-xs'>
+                    <p className={styles["checkboxDescription"]}>
                       This invoice and all its data will be permanently deleted and cannot be recovered.
                     </p>
                   </div>
@@ -261,12 +262,12 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
             disabled={!isConfirmValid || isDeleting}>
             {isDeleting ? (
               <>
-                <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
+                <TbLoader2 className={styles["buttonSpinnerIcon"]} />
                 Deleting...
               </>
             ) : (
               <>
-                <TbTrash className='mr-2 h-4 w-4' />
+                <TbTrash className={styles["buttonIcon"]} />
                 Delete Permanently
               </>
             )}

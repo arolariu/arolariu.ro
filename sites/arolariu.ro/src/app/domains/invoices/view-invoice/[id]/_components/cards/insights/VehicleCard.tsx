@@ -7,6 +7,7 @@ import {useCallback} from "react";
 import {TbBarrel, TbBulb, TbCalendar, TbCar, TbCurrencyDollar, TbGasStation, TbGauge, TbMapPin, TbTrendingUp} from "react-icons/tb";
 import {Area, AreaChart, ResponsiveContainer, XAxis, YAxis} from "recharts";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
+import styles from "./VehicleCard.module.scss";
 
 export function VehicleCard(): React.JSX.Element {
   const locale = useLocale();
@@ -60,46 +61,46 @@ export function VehicleCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Expense Type Badge */}
-        <div className='flex items-center gap-2'>
+        <div className={styles["expenseType"]}>
           <TbGasStation className='h-4 w-4 text-amber-500' />
-          <span className='text-sm font-medium'>Expense Type: Fuel</span>
+          <span className={styles["expenseTypeLabel"]}>Expense Type: Fuel</span>
         </div>
 
         {/* Fuel Details Grid */}
-        <div className='grid grid-cols-2 gap-2'>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+        <div className={styles["detailsGrid"]}>
+          <div className={styles["detailItem"]}>
             <TbGasStation className='h-4 w-4 text-amber-500' />
             <div>
-              <p className='text-muted-foreground text-xs'>Liters</p>
-              <p className='text-sm font-semibold'>~{liters}L</p>
+              <p className={styles["detailLabel"]}>Liters</p>
+              <p className={styles["detailValue"]}>~{liters}L</p>
             </div>
           </div>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+          <div className={styles["detailItem"]}>
             <TbCurrencyDollar className='h-4 w-4 text-green-500' />
             <div>
-              <p className='text-muted-foreground text-xs'>Price/L</p>
-              <p className='text-sm font-semibold'>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
+              <p className={styles["detailLabel"]}>Price/L</p>
+              <p className={styles["detailValue"]}>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
             </div>
           </div>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+          <div className={styles["detailItem"]}>
             <TbMapPin className='h-4 w-4 text-red-500' />
             <div>
-              <p className='text-muted-foreground text-xs'>Station</p>
-              <p className='text-sm font-semibold'>{station}</p>
+              <p className={styles["detailLabel"]}>Station</p>
+              <p className={styles["detailValue"]}>{station}</p>
             </div>
           </div>
-          <div className='flex items-center gap-2 rounded-lg border p-2.5'>
+          <div className={styles["detailItem"]}>
             <TbCar className='h-4 w-4 text-blue-500' />
             <div>
-              <p className='text-muted-foreground text-xs'>Vehicle</p>
-              <p className='text-muted-foreground text-sm font-semibold'>Not set</p>
+              <p className={styles["detailLabel"]}>Vehicle</p>
+              <p className={styles["detailValueMuted"]}>Not set</p>
             </div>
           </div>
         </div>
 
         {/* Monthly Fuel Spending Chart */}
-        <div className='space-y-2'>
-          <h4 className='text-muted-foreground text-sm font-medium'>Monthly Fuel Spending</h4>
+        <div className={styles["chartSection"]}>
+          <h4 className={styles["chartTitle"]}>Monthly Fuel Spending</h4>
           <ChartContainer
             config={{
               amount: {label: "Amount", color: "hsl(var(--chart-1))"},
@@ -155,39 +156,39 @@ export function VehicleCard(): React.JSX.Element {
         </div>
 
         {/* Stats Cards */}
-        <div className='grid grid-cols-3 gap-2'>
-          <div className='bg-card rounded-lg border p-2.5 text-center'>
+        <div className={styles["statsGrid"]}>
+          <div className={styles["statCard"]}>
             <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
-            <p className='text-muted-foreground text-xs'>This Month</p>
-            <p className='text-sm font-semibold'>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
-            <p className='text-muted-foreground text-xs'>{fillUps} fill-ups</p>
+            <p className={styles["statLabel"]}>This Month</p>
+            <p className={styles["statValue"]}>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
+            <p className={styles["statSub"]}>{fillUps} fill-ups</p>
           </div>
-          <div className='bg-card rounded-lg border p-2.5 text-center'>
+          <div className={styles["statCard"]}>
             <TbGauge className='mx-auto mb-1 h-4 w-4 text-green-500' />
-            <p className='text-muted-foreground text-xs'>Cost/km</p>
-            <p className='text-sm font-semibold'>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
-            <p className='text-muted-foreground text-xs'>estimated</p>
+            <p className={styles["statLabel"]}>Cost/km</p>
+            <p className={styles["statValue"]}>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
+            <p className={styles["statSub"]}>estimated</p>
           </div>
-          <div className='bg-card rounded-lg border p-2.5 text-center'>
+          <div className={styles["statCard"]}>
             <TbTrendingUp className='mx-auto mb-1 h-4 w-4 text-red-500' />
-            <p className='text-muted-foreground text-xs'>Fuel Price</p>
-            <p className='text-sm font-semibold text-red-500'>+{priceChange}%</p>
-            <p className='text-muted-foreground text-xs'>this month</p>
+            <p className={styles["statLabel"]}>Fuel Price</p>
+            <p className={`${styles["statValue"]} ${styles["statValueRed"]}`}>+{priceChange}%</p>
+            <p className={styles["statSub"]}>this month</p>
           </div>
         </div>
 
         {/* Maintenance Reminders */}
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2'>
+        <div>
+          <div className={styles["remindersHeader"]}>
             <TbBarrel className='h-4 w-4 text-gray-500' />
-            <h4 className='text-sm font-medium'>Maintenance Reminders</h4>
+            <h4 className={styles["remindersTitle"]}>Maintenance Reminders</h4>
           </div>
-          <ul className='text-muted-foreground space-y-1 text-sm'>
+          <ul className={styles["remindersList"]}>
             {reminders.map((r) => (
               <li
                 key={r.id}
-                className='flex items-center gap-2'>
-                <span className='text-muted-foreground'>•</span>
+                className={styles["reminderItem"]}>
+                <span className={styles["reminderBullet"]}>•</span>
                 {r.task}
               </li>
             ))}
@@ -195,18 +196,18 @@ export function VehicleCard(): React.JSX.Element {
         </div>
 
         {/* Cheapest Nearby */}
-        <div className='flex items-start gap-2 rounded-lg border border-green-200 bg-green-500/10 p-3 dark:border-green-800'>
+        <div className={styles["tipBox"]}>
           <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-green-600' />
           <div>
-            <p className='text-sm font-medium'>Cheapest Nearby</p>
-            <p className='text-muted-foreground text-sm'>
+            <p className={styles["tipTitle"]}>Cheapest Nearby</p>
+            <p className={styles["tipDescription"]}>
               {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/L
             </p>
           </div>
         </div>
 
         {/* CTA Buttons */}
-        <div className='flex gap-2'>
+        <div className={styles["ctaButtons"]}>
           <Button
             variant='outline'
             size='sm'

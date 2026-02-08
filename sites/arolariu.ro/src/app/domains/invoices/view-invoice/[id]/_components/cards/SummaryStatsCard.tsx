@@ -3,6 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {TbGrid3X3, TbPackage, TbPercentage, TbReceipt, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {InvoiceSummary} from "../../_utils/analytics";
+import styles from "./SummaryStatsCard.module.scss";
 
 type Props = {
   summary: InvoiceSummary;
@@ -44,45 +45,45 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
         <CardDescription className='text-xs'>Key statistics at a glance</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className='grid grid-cols-2 gap-3'>
+        <div className={styles["statsGrid"]}>
           {stats.map((stat) => (
-            <div
+            <div 
               key={stat.label}
-              className='space-y-0.5'>
-              <div className='text-muted-foreground flex items-center gap-1.5'>
+              className={styles["statItem"]}>
+              <div className={styles["statLabel"]}>
                 <stat.icon className='h-3.5 w-3.5' />
-                <span className='text-xs'>{stat.label}</span>
+                <span className={styles["statLabelText"]}>{stat.label}</span>
               </div>
-              <p className='text-lg font-semibold'>{stat.value}</p>
-              <p className='text-muted-foreground text-xs'>{stat.description}</p>
+              <p className={styles["statValue"]}>{stat.value}</p>
+              <p className={styles["statDescription"]}>{stat.description}</p>
             </div>
           ))}
         </div>
 
-        <div className='border-border mt-4 space-y-2 border-t pt-3'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-1.5'>
+        <div className={styles["extremesSection"]}>
+          <div className={styles["extremeRow"]}>
+            <div className={styles["extremeLabel"]}>
               <TbTrendingUp className='h-3.5 w-3.5 text-emerald-500' />
-              <span className='text-xs'>Highest</span>
+              <span className={styles["extremeLabelText"]}>Highest</span>
             </div>
-            <div className='text-right'>
-              <p className='text-sm font-medium'>
+            <div className={styles["extremeRight"]}>
+              <p className={styles["extremePrice"]}>
                 {summary.highestItem.price.toFixed(2)} {currency}
               </p>
-              <p className='text-muted-foreground max-w-[100px] truncate text-xs'>{summary.highestItem.name}</p>
+              <p className={styles["extremeName"]}>{summary.highestItem.name}</p>
             </div>
           </div>
 
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-1.5'>
+          <div className={styles["extremeRow"]}>
+            <div className={styles["extremeLabel"]}>
               <TbTrendingDown className='h-3.5 w-3.5 text-blue-500' />
-              <span className='text-xs'>Lowest</span>
+              <span className={styles["extremeLabelText"]}>Lowest</span>
             </div>
-            <div className='text-right'>
-              <p className='text-sm font-medium'>
+            <div className={styles["extremeRight"]}>
+              <p className={styles["extremePrice"]}>
                 {summary.lowestItem.price.toFixed(2)} {currency}
               </p>
-              <p className='text-muted-foreground max-w-[100px] truncate text-xs'>{summary.lowestItem.name}</p>
+              <p className={styles["extremeName"]}>{summary.lowestItem.name}</p>
             </div>
           </div>
         </div>

@@ -1,0 +1,112 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.budgetSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.budgetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: font-size('sm');
+}
+
+.budgetLabel {
+  color: color('muted-foreground');
+}
+
+.budgetValue {
+  font-weight: font-weight('medium');
+}
+
+.budgetMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.impactBox {
+  border: 1px solid color('border');
+  background-color: color-alpha('muted', 0.3);
+  border-radius: radius('lg');
+  padding: space(3);
+
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.impactLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.impactPercent {
+  font-size: font-size('2xl');
+  font-weight: font-weight('semibold');
+  font-variant-numeric: tabular-nums;
+}
+
+.impactDescription {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.statsGrid {
+  @include grid(2, space(3));
+}
+
+.statItem {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.statLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.statValue {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  font-variant-numeric: tabular-nums;
+}
+
+.overBudgetText {
+  color: color('destructive');
+}
+
+.overBudgetLabel {
+  color: color('destructive');
+  font-size: font-size('xs');
+}
+
+.dailyAllowanceBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid color('border');
+  border-radius: radius('lg');
+  padding: space(3);
+}
+
+.dailyAllowanceContent {
+  & > * + * {
+    margin-top: space(0.5);
+  }
+}
+
+.dailyAllowanceLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.dailyAllowanceValue {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}

@@ -1,0 +1,93 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.item {
+  position: relative;
+  padding-bottom: space(4);
+
+  &.isLast {
+    padding-bottom: 0;
+  }
+}
+
+.connectorLine {
+  position: absolute;
+  top: space(4);
+  left: 7px;
+  height: 100%;
+  width: 2px;
+  background-color: color('border');
+}
+
+.contentRow {
+  display: flex;
+  gap: space(3);
+}
+
+.iconCircle {
+  position: relative;
+  z-index: z('content');
+  @include flex-center;
+  height: space(4);
+  width: space(4);
+  flex-shrink: 0;
+  border-radius: radius('full');
+}
+
+.iconCompleted {
+  background-color: color('primary');
+  color: color('primary-foreground');
+}
+
+.iconPending {
+  background-color: color('muted');
+  color: color('muted-foreground');
+}
+
+.contentBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: space(2);
+}
+
+.titleContent {
+  display: flex;
+  align-items: center;
+  gap: space(1.5);
+  min-width: 0;
+}
+
+.eventTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  line-height: line-height('tight');
+  @include truncate;
+}
+
+.dateLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  flex-shrink: 0;
+}
+
+.description {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  margin-top: space(0.5);
+}
+
+.relativeTime {
+  color: color-alpha('muted-foreground', 0.7);
+  font-size: font-size('xs');
+  margin-top: space(0.5);
+}
+
+.confidenceText {
+  color: color('muted-foreground');
+  margin-top: space(1);
+}

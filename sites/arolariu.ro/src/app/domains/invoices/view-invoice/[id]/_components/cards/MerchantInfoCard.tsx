@@ -5,6 +5,7 @@ import {MerchantCategory} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components";
 import {TbGlobe, TbMapPin, TbPhone} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
+import styles from "./MerchantInfoCard.module.scss";
 
 export function MerchantInfoCard(): React.JSX.Element {
   const {merchant} = useInvoiceContext();
@@ -14,25 +15,25 @@ export function MerchantInfoCard(): React.JSX.Element {
         <CardTitle className='text-lg'>{merchant.name}</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <div className='flex items-start gap-2'>
+        <div className={styles["infoRowStart"]}>
           <TbMapPin className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
-          <span className='text-sm'>{merchant.address.address}</span>
+          <span className={styles["infoText"]}>{merchant.address.address}</span>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className={styles["infoRow"]}>
           <TbPhone className='text-muted-foreground h-4 w-4' />
-          <span className='text-sm'>{merchant.address.phoneNumber}</span>
+          <span className={styles["infoText"]}>{merchant.address.phoneNumber}</span>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className={styles["infoRow"]}>
           <Badge variant='outline'>{formatEnum(MerchantCategory, merchant.category)}</Badge>
         </div>
         {Boolean(merchant.address.website) && (
-          <div className='flex items-center gap-2'>
+          <div className={styles["infoRow"]}>
             <TbGlobe className='text-muted-foreground h-4 w-4' />
             <a
               href={merchant.address.website}
               target='_blank'
               rel='noopener noreferrer'
-              className='text-primary text-sm underline-offset-4 hover:underline'>
+              className={styles["websiteLink"]}>
               {merchant.address.website.replace(/^https?:\/\//u, "")}
             </a>
           </div>

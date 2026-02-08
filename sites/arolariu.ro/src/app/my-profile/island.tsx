@@ -1,9 +1,10 @@
 "use client";
 
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import type {User} from "@clerk/nextjs/server";
+import {usePreferencesStore} from "@/stores/preferencesStore";
+import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {TbBell, TbBrain, TbChartBar, TbDatabase, TbPalette, TbShield, TbUser} from "react-icons/tb";
 
 import {ProfileHeader} from "./_components/ProfileHeader";
@@ -17,6 +18,7 @@ import {SettingsNotifications} from "./_components/SettingsNotifications";
 import {SettingsSecurity} from "./_components/SettingsSecurity";
 import {getDefaultSettings, getMockStatistics} from "./_utils/helpers";
 import type {SettingsSection, UserSettings} from "./_utils/types";
+import styles from "./island.module.scss";
 
 type Props = Readonly<{
   user: User | null;
@@ -33,14 +35,49 @@ const TAB_CONFIG = [
   {id: "data", icon: TbDatabase, key: "data"},
 ] as const;
 
+const PANEL_VARIANTS = {
+  initial: {opacity: 0, y: 8},
+  animate: {opacity: 1, y: 0},
+  exit: {opacity: 0, y: -8},
+};
+
 export default function RenderMyProfileScreen({user}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.sidebar.nav");
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [settings, setSettings] = useState<UserSettings>(getDefaultSettings);
   const statistics = getMockStatistics();
 
-  const handleTabChange = useCallback((value: string) => {
-    setActiveSection(value as SettingsSection);
+  // Derive appearance settings from the Zustand preferences store (persisted in IndexedDB).
+  // After hydration, the store is the source of truth — including cross-tab sync updates.
+  const prefsStore = usePreferencesStore();
+  const appearanceSettings = useMemo(
+    () =>
+      prefsStore.hasHydrated
+        ? {
+            theme: prefsStore.theme,
+            primaryColor: prefsStore.primaryColor,
+            secondaryColor: prefsStore.secondaryColor,
+            fontType: prefsStore.fontType,
+            locale: prefsStore.locale,
+            compactMode: prefsStore.compactMode,
+            animationsEnabled: prefsStore.animationsEnabled,
+          }
+        : settings.appearance,
+    [
+      prefsStore.hasHydrated,
+      prefsStore.theme,
+      prefsStore.primaryColor,
+      prefsStore.secondaryColor,
+      prefsStore.fontType,
+      prefsStore.locale,
+      prefsStore.compactMode,
+      prefsStore.animationsEnabled,
+      settings.appearance,
+    ],
+  );
+
+  const handleSectionChange = useCallback((value: SettingsSection) => {
+    setActiveSection(value);
   }, []);
 
   const handleAppearanceChange = useCallback((newSettings: Partial<UserSettings["appearance"]>) => {
@@ -89,115 +126,132 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
     return <ProfileSkeleton />;
   }
 
+  const renderPanel = (): React.JSX.Element => {
+    switch (activeSection) {
+      case "profile":
+        return <QuickStats statistics={statistics} />;
+      case "appearance":
+        return (
+          <SettingsAppearance
+            settings={appearanceSettings}
+            onSettingsChange={handleAppearanceChange}
+          />
+        );
+      case "ai":
+        return (
+          <SettingsAI
+            settings={settings.ai}
+            onSettingsChange={handleAIChange}
+          />
+        );
+      case "analytics":
+        return (
+          <SettingsAnalytics
+            settings={settings.analytics}
+            onSettingsChange={handleAnalyticsChange}
+          />
+        );
+      case "notifications":
+        return (
+          <SettingsNotifications
+            settings={settings.notifications}
+            onSettingsChange={handleNotificationsChange}
+          />
+        );
+      case "security":
+        return (
+          <SettingsSecurity
+            settings={settings.security}
+            onSettingsChange={handleSecurityChange}
+          />
+        );
+      case "data":
+        return (
+          <SettingsData
+            settings={settings.data}
+            onSettingsChange={handleDataChange}
+          />
+        );
+    }
+  };
+
   return (
-    <div className='container mx-auto max-w-7xl px-4 py-8'>
+    <section className={styles["page"]}>
       {/* Bento Grid Header Section */}
-      <div className='mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-        {/* Profile Card - spans 2 columns on large screens */}
-        <div className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm md:col-span-2 lg:col-span-2'>
+      <section className={styles["bentoGrid"]}>
+        <div className={styles["bentoProfileCard"]}>
           <ProfileHeader
             user={user}
             userIdentifier={user.id}
           />
         </div>
 
-        {/* Quick Stats Summary Card */}
-        <div className='from-background to-muted/50 rounded-xl border bg-gradient-to-br p-6 shadow-sm'>
-          <div className='flex flex-col items-center justify-center space-y-2 text-center'>
-            <div className='text-primary text-4xl font-bold'>{statistics.totalInvoices}</div>
-            <p className='text-muted-foreground text-sm'>Total Invoices</p>
-            <div className='text-muted-foreground mt-2 flex gap-4 text-xs'>
+        <div className={styles["bentoStatsCard"]}>
+          <div className={styles["statsCardInner"]}>
+            <div className={styles["statsNumber"]}>{statistics.totalInvoices}</div>
+            <p className={styles["statsLabel"]}>Total Invoices</p>
+            <div className={styles["statsMeta"]}>
               <span>{statistics.totalMerchants} merchants</span>
               <span>{statistics.totalScans} scans</span>
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Two-column layout: sidebar + content */}
+      <div className={styles["layoutRow"]}>
+        {/* Desktop Sidebar */}
+        <nav
+          className={styles["sidebar"]}
+          aria-label='Settings navigation'>
+          {TAB_CONFIG.map(({id, icon: Icon, key}) => (
+            <button
+              key={id}
+              type='button'
+              className={activeSection === id ? styles["sidebarItemActive"] : styles["sidebarItem"]}
+              onClick={() => handleSectionChange(id as SettingsSection)}
+              aria-current={activeSection === id ? "page" : undefined}>
+              <Icon aria-hidden='true' />
+              <span>{t(key)}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Content Panel */}
+        <section className={styles["content"]}>
+          <AnimatePresence
+            mode='wait'
+            initial={false}>
+            <motion.div
+              key={activeSection}
+              className={styles["panelEnter"]}
+              variants={PANEL_VARIANTS}
+              initial='initial'
+              animate='animate'
+              exit='exit'
+              transition={{duration: 0.2}}>
+              {renderPanel()}
+            </motion.div>
+          </AnimatePresence>
+        </section>
       </div>
 
-      {/* Tabs Navigation */}
-      <Tabs
-        value={activeSection}
-        onValueChange={handleTabChange}
-        className='w-full'>
-        {/* Tab List - Responsive with horizontal scroll on mobile */}
-        <TabsList className='mb-6 flex h-auto w-full flex-wrap justify-start gap-1 overflow-x-auto bg-transparent p-0 md:gap-2'>
-          {TAB_CONFIG.map(({id, icon: Icon, key}) => (
-            <TabsTrigger
-              key={id}
-              value={id}
-              className='bg-background data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all md:px-4'>
-              <Icon
-                className='h-4 w-4'
-                aria-hidden='true'
-              />
-              <span className='hidden sm:inline'>{t(key)}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {/* Tab Content - All content panels */}
-        <div className='bg-background rounded-xl border p-4 shadow-sm md:p-6'>
-          <TabsContent
-            value='profile'
-            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-            <QuickStats statistics={statistics} />
-          </TabsContent>
-
-          <TabsContent
-            value='appearance'
-            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-            <SettingsAppearance
-              settings={settings.appearance}
-              onSettingsChange={handleAppearanceChange}
-            />
-          </TabsContent>
-
-          <TabsContent
-            value='ai'
-            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-            <SettingsAI
-              settings={settings.ai}
-              onSettingsChange={handleAIChange}
-            />
-          </TabsContent>
-
-          <TabsContent
-            value='analytics'
-            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-            <SettingsAnalytics
-              settings={settings.analytics}
-              onSettingsChange={handleAnalyticsChange}
-            />
-          </TabsContent>
-
-          <TabsContent
-            value='notifications'
-            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-            <SettingsNotifications
-              settings={settings.notifications}
-              onSettingsChange={handleNotificationsChange}
-            />
-          </TabsContent>
-
-          <TabsContent
-            value='security'
-            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-            <SettingsSecurity
-              settings={settings.security}
-              onSettingsChange={handleSecurityChange}
-            />
-          </TabsContent>
-
-          <TabsContent
-            value='data'
-            className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
-            <SettingsData
-              settings={settings.data}
-              onSettingsChange={handleDataChange}
-            />
-          </TabsContent>
-        </div>
-      </Tabs>
-    </div>
+      {/* Bottom Nav (mobile/tablet) */}
+      <nav
+        className={styles["bottomNav"]}
+        aria-label='Settings navigation'>
+        {TAB_CONFIG.map(({id, icon: Icon, key}) => (
+          <button
+            key={id}
+            type='button'
+            className={activeSection === id ? styles["bottomNavItemActive"] : styles["bottomNavItem"]}
+            onClick={() => handleSectionChange(id as SettingsSection)}
+            aria-current={activeSection === id ? "page" : undefined}>
+            <Icon aria-hidden='true' />
+            <span>{t(key)}</span>
+          </button>
+        ))}
+      </nav>
+    </section>
   );
 }

@@ -1,0 +1,13 @@
+/// ===========================================
+/// ANIMATIONS — Barrel Export
+/// ===========================================
+/// Forwards all animation-layer partials: `@keyframes` definitions
+/// and transition/duration utility classes.
+///
+/// @group animations
+/// @author arolariu
+/// @see animations/_keyframes.scss — @keyframes definitions
+/// @see animations/_transitions.scss — duration, timing, and transition utilities
+/// ===========================================
+@forward 'keyframes';
+@forward 'transitions';

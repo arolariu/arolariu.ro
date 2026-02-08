@@ -24,6 +24,7 @@ import {motion} from "motion/react";
 import {useRef, useState} from "react";
 import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
 import {MessageList} from "../MessageList";
+import styles from "./GenerativeView.module.scss";
 
 type Message = {
   id: string;
@@ -61,17 +62,17 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
       initial={{opacity: 0}}
       animate={{opacity: 1}}
       transition={{duration: 0.5}}
-      className='space-y-6'>
-      <div className='flex items-center justify-between'>
+      className={styles["container"]}>
+      <div className={styles["header"]}>
         <div>
-          <h2 className='text-2xl font-bold tracking-tight'>Live Analysis</h2>
-          <p className='text-muted-foreground'>Chat with AI to analyze your invoices and get insights</p>
+          <h2 className={styles["title"]}>Live Analysis</h2>
+          <p className={styles["subtitle"]}>Chat with AI to analyze your invoices and get insights</p>
         </div>
         <Button
           variant='outline'
           size='sm'
           className='cursor-help gap-1'>
-          <TbHelpCircle className='h-4 w-4' />
+          <TbHelpCircle className={styles["actionIcon"]} />
           <span>Help</span>
         </Button>
       </div>
@@ -83,13 +84,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           <TabsTrigger
             value='chat'
             className='flex cursor-pointer items-center gap-2'>
-            <TbMessage className='h-4 w-4' />
+            <TbMessage className={styles["actionIcon"]} />
             <span>Chat</span>
           </TabsTrigger>
           <TabsTrigger
             value='settings'
             className='flex cursor-pointer items-center gap-2'>
-            <TbSettings className='h-4 w-4' />
+            <TbSettings className={styles["actionIcon"]} />
             <span>Settings</span>
           </TabsTrigger>
         </TabsList>
@@ -104,12 +105,12 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='flex h-[600px] flex-col overflow-hidden rounded-lg border'>
-                <div className='flex-1 overflow-y-auto p-4'>
+              <div className={styles["chatContainer"]}>
+                <div className={styles["chatMessages"]}>
                   <MessageList messages={messages} />
                   <div ref={messagesEndRef} />
                 </div>
-                <div className='border-t p-4' />
+                <div className={styles["chatInput"]} />
               </div>
             </CardContent>
           </Card>
@@ -123,8 +124,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
               <CardDescription>Configure your AI assistant preferences</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='space-y-4'>
-                <div className='grid gap-2'>
+              <div className={styles["settingsContainer"]}>
+                <div className={styles["settingsField"]}>
                   <Label htmlFor='history'>Chat History</Label>
                   <Select defaultValue='30'>
                     <SelectTrigger id='history'>
@@ -139,9 +140,9 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   </Select>
                 </div>
 
-                <div className='grid gap-2'>
-                  <span className='text-sm font-medium'>Data Access</span>
-                  <div className='flex items-center space-x-2'>
+                <div className={styles["settingsField"]}>
+                  <span className={styles["settingsLabel"]}>Data Access</span>
+                  <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='access-invoices'
                       defaultChecked
@@ -152,7 +153,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                       Allow access to invoice data
                     </Label>
                   </div>
-                  <div className='flex items-center space-x-2'>
+                  <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='access-merchants'
                       defaultChecked
@@ -165,9 +166,9 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   </div>
                 </div>
 
-                <div className='grid gap-2'>
-                  <span className='text-sm font-medium'>Notification Preferences</span>
-                  <div className='flex items-center space-x-2'>
+                <div className={styles["settingsField"]}>
+                  <span className={styles["settingsLabel"]}>Notification Preferences</span>
+                  <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='notify-insights'
                       defaultChecked
