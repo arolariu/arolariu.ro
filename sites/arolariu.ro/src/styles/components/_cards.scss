@@ -1,7 +1,39 @@
-// ===========================================
-// CARD COMPONENT STYLES
-// Custom card styles using BEM methodology
-// ===========================================
+/// ===========================================
+/// CARD COMPONENT — BEM
+/// ===========================================
+/// Comprehensive card system using BEM methodology with elements
+/// and modifiers for various layouts and visual treatments.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## BEM Elements
+/// - `.card__header` — top section with title and description
+/// - `.card__title` — heading with tight tracking
+/// - `.card__description` — muted subtitle text
+/// - `.card__content` — main body area
+/// - `.card__footer` — bottom action area
+/// - `.card__image` — media container (responsive img)
+/// - `.card__actions` — button group container
+///
+/// ## BEM Modifiers
+/// - `.card--interactive` — clickable with hover shadow/scale
+/// - `.card--elevated` — no border, stronger shadow, lift on hover
+/// - `.card--gradient-overlay` — gradient overlay on hover (0.1 opacity)
+/// - `.card--bordered` — 2px border
+/// - `.card--compact` — reduced padding
+/// - `.card--full-height` — flex column, stretches to fill container
+/// - `.card--horizontal` — side-by-side image + content layout
+/// - `.card--featured` — gradient border via mask composite
+/// - `.card--disabled` — dimmed with no pointer events
+///
+/// ## Grid Layout
+/// - `.card-grid` — responsive grid: 1→2→3→4 columns
+/// - `.card-grid--cols-2` — max 2 columns
+/// - `.card-grid--cols-3` — max 3 columns
+///
+/// @see abstracts/_mixins.scss — `shadow`, `gradient-bg`, `transition` mixins
+/// ===========================================
 @use '../abstracts' as *;
 
 .card {

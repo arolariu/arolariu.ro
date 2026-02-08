@@ -1,7 +1,30 @@
-// ===========================================
-// MODERN CSS RESET
-// Based on Josh Comeau's CSS Reset
-// ===========================================
+/// ===========================================
+/// MODERN CSS RESET
+/// ===========================================
+/// Opinionated CSS reset based on Josh Comeau's Modern CSS Reset.
+/// Establishes sensible defaults for all elements before component
+/// styles are applied.
+///
+/// @group base
+/// @author arolariu
+/// @link https://www.joshwcomeau.com/css/custom-css-reset/
+///
+/// ## Rules
+/// 1. Border-box sizing on all elements
+/// 2. Remove default margin
+/// 3. Improve text rendering (antialiased)
+/// 4. Responsive media defaults (block, max-width: 100%)
+/// 5. Inherit font on form elements
+/// 6. Prevent text overflow on headings/paragraphs
+/// 7. Root stacking context isolation (`#root`, `#__next`)
+/// 8. Remove list styles (`ul`, `ol`)
+/// 9. Remove anchor underlines
+/// 10. Button reset (no bg, border, padding)
+/// 11. Table reset (collapsed borders)
+/// 12. Border color reset (uses `--border` CSS variable)
+/// 13. Optimized text rendering on `<html>`
+/// 14. Minimum viewport height (`100dvh`)
+/// ===========================================
 
 // 1. Use border-box sizing
 *,

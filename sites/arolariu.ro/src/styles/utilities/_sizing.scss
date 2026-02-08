@@ -1,9 +1,42 @@
-// ===========================================
-// SIZING UTILITIES
-// ===========================================
-// Width, height, min/max dimension, typography alignment,
-// border radius, and border width utilities.
-// ===========================================
+/// ===========================================
+/// SIZING UTILITIES
+/// ===========================================
+/// Atomic utility classes for width, height, min/max dimensions,
+/// aspect ratios, typography alignment, text wrapping, border radius
+/// (using `radius()` tokens), and border widths.
+///
+/// @group utilities
+/// @author arolariu
+///
+/// ## Width
+/// `.w-full/screen/auto/fit/min/max`,
+/// `.w-1\/2`, `.w-1\/3`, `.w-2\/3`, `.w-1\/4`, `.w-3\/4`,
+/// `.w-1\/5`, `.w-2\/5`, `.w-3\/5`, `.w-4\/5`
+///
+/// ## Height
+/// `.h-full/screen/dvh/auto/fit/min`
+///
+/// ## Min / Max
+/// `.min-h-0/full/screen/dvh`, `.min-w-0/full`,
+/// `.max-w-none/full/screen`, `.max-w-xs` through `.max-w-7xl`
+///
+/// ## Aspect Ratios
+/// `.aspect-auto/square/video/photo`
+///
+/// ## Text Alignment & Wrapping
+/// `.text-left/center/right/justify`, `.truncate`,
+/// `.whitespace-nowrap/pre-wrap`, `.break-words/all`
+///
+/// ## Border Radius (uses `radius()` tokens)
+/// `.rounded-none/sm/md/lg/xl/2xl/3xl/full`
+///
+/// ## Border Width
+/// `.border`, `.border-0`, `.border-2`,
+/// `.border-t/b/l/r`
+///
+/// @see abstracts/_variables.scss — `$radii` map for radius tokens
+/// @see abstracts/_mixins.scss — `truncate` mixin
+/// ===========================================
 @use '../abstracts' as *;
 
 // Width

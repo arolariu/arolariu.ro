@@ -1,7 +1,18 @@
-// ===========================================
-// COMPONENTS
-// Reusable component styles (BEM)
-// ===========================================
+/// ===========================================
+/// COMPONENTS — Barrel Export
+/// ===========================================
+/// Forwards all shared global component partials using BEM methodology.
+/// For page-specific components, prefer `.module.scss` with camelCase.
+///
+/// @group components
+/// @author arolariu
+/// @see components/_header.scss — site header chrome
+/// @see components/_navigation.scss — desktop and mobile navigation
+/// @see components/_footer.scss — site footer with grid layout
+/// @see components/_buttons.scss — gradient, outline, icon, and link buttons
+/// @see components/_cards.scss — card system with BEM modifiers
+/// @see components/_badges.scss — badge with semantic variants
+/// ===========================================
 @forward 'header';
 @forward 'navigation';
 @forward 'footer';

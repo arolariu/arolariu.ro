@@ -1,10 +1,38 @@
-// ===========================================
-// COLOR UTILITIES
-// ===========================================
-// Utility classes for text, background, and border colors.
-// All colors reference CSS custom properties for automatic
-// light/dark mode support.
-// ===========================================
+/// ===========================================
+/// COLOR UTILITIES
+/// ===========================================
+/// Atomic utility classes for text, background, and border colors.
+/// All semantic colors reference CSS custom properties for automatic
+/// light/dark mode support. Includes gradient utilities and opacity scale.
+///
+/// @group utilities
+/// @author arolariu
+///
+/// ## Text Colors
+/// `.text-foreground`, `.text-primary`, `.text-primary-foreground`,
+/// `.text-secondary-foreground`, `.text-muted`, `.text-accent`,
+/// `.text-destructive`, `.text-card-foreground`
+///
+/// ## Background Colors
+/// `.bg-background`, `.bg-card`, `.bg-primary`, `.bg-secondary`,
+/// `.bg-muted`, `.bg-accent`, `.bg-destructive`, `.bg-popover`,
+/// `.bg-transparent`
+///
+/// ## Border Colors
+/// `.border-border`, `.border-input`, `.border-primary`,
+/// `.border-destructive`, `.border-transparent`
+///
+/// ## Gradients
+/// `.gradient-text` — gradient clipped to text
+/// `.gradient-bg` — gradient background
+///
+/// ## Opacity
+/// `.opacity-0` through `.opacity-100` (14 steps)
+///
+/// @see abstracts/_colors.scss — `color()` and `color-alpha()` functions
+/// @see abstracts/_mixins.scss — `gradient-text`, `gradient-bg` mixins
+/// @see base/_globals.scss — CSS custom property definitions
+/// ===========================================
 @use '../abstracts' as *;
 
 // Semantic text colors

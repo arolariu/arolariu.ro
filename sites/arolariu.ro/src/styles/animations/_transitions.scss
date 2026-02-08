@@ -1,6 +1,34 @@
-// ===========================================
-// TRANSITION UTILITIES
-// ===========================================
+/// ===========================================
+/// TRANSITION & ANIMATION UTILITIES
+/// ===========================================
+/// Utility classes for transition durations, timing functions,
+/// property presets, and named animation shortcuts.
+///
+/// Includes a `prefers-reduced-motion` media query that disables
+/// all animations and transitions for users who prefer reduced motion.
+///
+/// @group animations
+/// @author arolariu
+///
+/// ## Duration Classes
+/// `.duration-75` through `.duration-1000` (ms)
+///
+/// ## Timing Functions
+/// `.ease-linear`, `.ease-in`, `.ease-out`, `.ease-in-out`
+///
+/// ## Transition Presets
+/// `.transition-none`, `.transition-all`, `.transition`,
+/// `.transition-colors`, `.transition-opacity`,
+/// `.transition-shadow`, `.transition-transform`
+///
+/// ## Animation Classes
+/// `.animate-accordion-down/up`, `.animate-fade-in/out`,
+/// `.animate-scale-in/out`, `.animate-float`, `.animate-glow`,
+/// `.animate-pulse`, `.animate-spin`, `.animate-bounce`,
+/// `.animate-shimmer`
+///
+/// @see animations/_keyframes.scss — `@keyframes` consumed by `.animate-*`
+/// ===========================================
 
 // Duration
 .duration-75 { transition-duration: 75ms; }

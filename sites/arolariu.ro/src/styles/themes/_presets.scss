@@ -1,34 +1,47 @@
-// ===========================================
-// THEME PRESETS — Single Source of Truth
-// ===========================================
-// This file defines all named theme preset CSS variables.
-// Each preset overrides the defaults from base/_globals.scss.
-//
-// ARCHITECTURE:
-//   - $theme-presets SCSS map defines light and dark color overrides
-//   - @each loop generates [data-theme-preset="name"] and
-//     [data-theme-preset="name"].dark CSS selectors
-//   - useThemePreset hook sets the data-theme-preset attribute
-//   - next-themes toggles .dark class — SCSS handles the rest
-//   - No runtime JavaScript needed for named presets
-//
-// HOW TO ADD A NEW PRESET:
-//   1. Add entry to $theme-presets map below (both light and dark)
-//   2. Add metadata to src/lib/theme-presets.ts (name, description, preview)
-//   3. Update ThemePresetName type if needed
-//
-// CSS VARIABLE REFERENCE:
-//   --primary            Semantic primary brand color (HSL)
-//   --primary-foreground Text color on primary backgrounds (HSL)
-//   --gradient-from      Gradient start color (HSL)
-//   --gradient-via       Gradient middle color (HSL)
-//   --gradient-to        Gradient end color (HSL)
-//   --accent-primary     Accent color for text/icons (HSL)
-//   --footer-bg          Footer background color (HSL)
-//
-// NOTE: "default" preset is intentionally omitted — its values
-// are the CSS variable defaults defined in base/_globals.scss.
-// ===========================================
+/// ===========================================
+/// THEME PRESETS — Single Source of Truth
+/// ===========================================
+/// Defines all named theme preset CSS variables as an SCSS map.
+/// Each preset overrides the defaults from `base/_globals.scss`.
+///
+/// @group themes
+/// @author arolariu
+///
+/// ## Architecture
+/// 1. `$theme-presets` SCSS map defines light and dark color overrides
+/// 2. `@each` loop generates `[data-theme-preset="name"]` and
+///    `[data-theme-preset="name"].dark` CSS selectors
+/// 3. `useThemePreset` hook sets the `data-theme-preset` attribute on `<html>`
+/// 4. `next-themes` toggles `.dark` class — SCSS handles the rest
+/// 5. No runtime JavaScript needed for named presets
+///
+/// ## How to Add a New Preset
+/// 1. Add entry to `$theme-presets` map below (both `light` and `dark`)
+/// 2. Add metadata to `src/lib/theme-presets.ts` (name, description, preview)
+/// 3. Update `ThemePresetName` type if needed
+///
+/// ## CSS Variable Reference
+/// | Variable | Purpose |
+/// |----------|---------|
+/// | `--primary` | Semantic primary brand color (HSL) |
+/// | `--primary-foreground` | Text on primary backgrounds (HSL) |
+/// | `--ring` | Focus ring color (HSL) |
+/// | `--gradient-from` | Gradient start color (HSL) |
+/// | `--gradient-via` | Gradient middle color (HSL) |
+/// | `--gradient-to` | Gradient end color (HSL) |
+/// | `--accent-primary` | Accent for text/icons (HSL) |
+/// | `--footer-bg` | Footer background color (HSL) |
+///
+/// ## Available Presets
+/// `midnight`, `ocean`, `sunset`, `forest`, `rose`, `monochrome`
+///
+/// **Note:** "default" preset is intentionally omitted — its values
+/// are the CSS variable defaults in `base/_globals.scss`.
+///
+/// @type Map
+/// @see base/_globals.scss — default CSS variable values
+/// @see {hook} useThemePreset — sets `data-theme-preset` attribute
+/// ===========================================
 
 @use 'sass:map';
 

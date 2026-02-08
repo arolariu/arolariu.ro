@@ -1,10 +1,36 @@
-// ===========================================
-// LAYOUT UTILITIES
-// ===========================================
-// Global utility classes for flexbox, grid, and positioning.
-// For complex responsive layouts, prefer using mixins in your
-// .module.scss file (e.g., @include responsive-grid).
-// ===========================================
+/// ===========================================
+/// LAYOUT UTILITIES
+/// ===========================================
+/// Atomic utility classes for flexbox, grid, positioning, and z-index.
+/// For complex responsive layouts, prefer using mixins in your
+/// `.module.scss` file (e.g., `@include responsive-grid`).
+///
+/// @group utilities
+/// @author arolariu
+///
+/// ## Flexbox
+/// `.flex`, `.flex-row`, `.flex-col`, `.flex-wrap`, `.flex-nowrap`,
+/// `.flex-1`, `.flex-auto`, `.flex-initial`, `.flex-none`,
+/// `.flex-grow`, `.flex-shrink-0`
+///
+/// ## Alignment
+/// `.items-start/center/end/stretch/baseline`,
+/// `.justify-start/center/end/between/around/evenly`,
+/// `.self-start/center/end/stretch`
+///
+/// ## Grid
+/// `.grid`, `.grid-cols-1/2/3/4/6/12`, `.col-span-full`
+///
+/// ## Positioning
+/// `.relative`, `.absolute`, `.fixed`, `.sticky`, `.static`,
+/// `.inset-0`, `.top-0`, `.right-0`, `.bottom-0`, `.left-0`
+///
+/// ## Z-Index (uses `z()` function from design tokens)
+/// `.z-0`, `.z-behind`, `.z-content`, `.z-content-high`, `.z-overlay-subtle`
+///
+/// @see abstracts/_variables.scss — `$z-layers` map
+/// @see abstracts/_mixins.scss — `flex-center`, `responsive-grid` mixins
+/// ===========================================
 @use '../abstracts' as *;
 
 // Flexbox

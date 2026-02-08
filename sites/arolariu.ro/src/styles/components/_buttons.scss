@@ -1,7 +1,23 @@
-// ===========================================
-// BUTTON COMPONENT STYLES
-// Custom buttons NOT covered by @arolariu/components
-// ===========================================
+/// ===========================================
+/// BUTTON COMPONENT — BEM
+/// ===========================================
+/// Custom button styles NOT covered by `@arolariu/components`.
+/// These complement the shadcn/ui `Button` with gradient and
+/// specialized variants.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## Classes
+/// - `.btn-gradient` — gradient-filled button with `--sm` and `--lg` sizes
+/// - `.btn-outline-gradient` — transparent with gradient border (mask trick)
+/// - `.btn-icon` — square icon button with `--sm`, `--lg`, `--ghost` variants
+/// - `.btn-link` — link-styled button with underline
+///
+/// All buttons include focus-ring, disabled state, and transitions.
+///
+/// @see abstracts/_mixins.scss — `gradient-bg`, `focus-ring`, `transition` mixins
+/// ===========================================
 @use '../abstracts' as *;
 
 // Gradient filled button

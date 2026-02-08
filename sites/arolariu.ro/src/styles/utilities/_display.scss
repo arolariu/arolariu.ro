@@ -1,6 +1,40 @@
-// ===========================================
-// DISPLAY & VISIBILITY UTILITIES
-// ===========================================
+/// ===========================================
+/// DISPLAY & VISIBILITY UTILITIES
+/// ===========================================
+/// Atomic utility classes for display, visibility, overflow,
+/// object-fit, pointer-events, cursor, user-select, screen reader,
+/// and print visibility.
+///
+/// @group utilities
+/// @author arolariu
+///
+/// ## Display
+/// `.block`, `.inline-block`, `.inline`, `.inline-flex`,
+/// `.inline-grid`, `.hidden`, `.contents`
+///
+/// ## Visibility
+/// `.visible`, `.invisible`
+///
+/// ## Overflow
+/// `.overflow-auto/hidden/visible/scroll`,
+/// `.overflow-x-auto/hidden`, `.overflow-y-auto/hidden`
+///
+/// ## Object Fit
+/// `.object-cover/contain/fill`, `.object-center`
+///
+/// ## Pointer / Cursor / Select
+/// `.pointer-events-none/auto`, `.cursor-pointer/default/not-allowed`,
+/// `.select-none/text/all`
+///
+/// ## Accessibility
+/// `.sr-only` — visually hidden, accessible to screen readers
+///
+/// ## Print
+/// `.print-hidden` — hidden when printing
+/// `.print-only` — visible only when printing
+///
+/// @see abstracts/_mixins.scss — `visually-hidden` mixin used by `.sr-only`
+/// ===========================================
 @use '../abstracts' as *;
 
 // Display

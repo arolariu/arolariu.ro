@@ -1,6 +1,24 @@
-// ===========================================
-// ANIMATION KEYFRAMES
-// ===========================================
+/// ===========================================
+/// ANIMATION KEYFRAMES
+/// ===========================================
+/// All `@keyframes` definitions used across the design system.
+/// Consumed by animation utility classes in `_transitions.scss`
+/// and by component styles via `animation` property.
+///
+/// @group animations
+/// @author arolariu
+///
+/// ## Keyframe Categories
+/// - **UI** — `accordion-down`, `accordion-up` (Radix UI)
+/// - **Fade** — `fade-in`, `fade-out`
+/// - **Slide** — `slide-in-from-top/bottom/left/right`
+/// - **Scale** — `scale-in`, `scale-out`
+/// - **Decorative** — `float`, `glow`, `pulse`, `spin`, `bounce`, `shimmer`
+/// - **Effects** — `glowing` (border animation for `.glow-effect`)
+///
+/// @see animations/_transitions.scss — `.animate-*` classes consuming these
+/// @see utilities/_effects.scss — `.glow-effect` using `glowing` keyframe
+/// ===========================================
 
 // Accordion (for Radix UI components)
 @keyframes accordion-down {

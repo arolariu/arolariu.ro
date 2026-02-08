@@ -1,6 +1,26 @@
-// ===========================================
-// BADGE COMPONENT STYLES
-// ===========================================
+/// ===========================================
+/// BADGE COMPONENT — BEM
+/// ===========================================
+/// Inline badge with semantic color variants, size variants,
+/// and an outline modifier. Uses CSS custom properties for
+/// automatic light/dark mode support.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## Semantic Variants
+/// `.badge--primary`, `.badge--success`, `.badge--warning`,
+/// `.badge--destructive`, `.badge--info`
+///
+/// ## Size Variants
+/// `.badge--sm`, `.badge--lg`
+///
+/// ## Elements & Modifiers
+/// - `.badge__icon` — fixed-size icon inside badge (14px)
+/// - `.badge--outline` — transparent bg with `currentColor` border
+///
+/// @see base/_globals.scss — semantic CSS variables (--success, --warning, etc.)
+/// ===========================================
 @use '../abstracts' as *;
 
 .badge {

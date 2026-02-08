@@ -1,6 +1,11 @@
-// ===========================================
-// PAGES
-// Page-specific global styles
-// For truly global page styles only
-// Prefer page.module.scss for scoped styles
-// ===========================================
+/// ===========================================
+/// PAGES — Barrel Export
+/// ===========================================
+/// Reserved for truly global page-specific styles.
+/// Prefer `page.module.scss` for scoped, per-page styles.
+///
+/// Currently empty — all page styles use CSS Modules.
+///
+/// @group pages
+/// @author arolariu
+/// ===========================================

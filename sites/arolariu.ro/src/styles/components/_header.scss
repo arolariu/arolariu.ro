@@ -1,6 +1,27 @@
-// ===========================================
-// HEADER COMPONENT STYLES
-// ===========================================
+/// ===========================================
+/// HEADER COMPONENT — BEM
+/// ===========================================
+/// Site header chrome with brand, navigation, and action areas.
+/// Fixed on mobile (< lg), relative on desktop (>= lg).
+/// Hidden when printing.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## BEM Structure
+/// ```
+/// .header
+///   .header__nav          — flex container (fixed mobile, relative desktop)
+///   .header__start        — left section (brand)
+///   .header__brand        — logo + title link
+///   .header__logo         — avatar image (hidden < lg)
+///   .header__title        — site name text
+///   .header__center       — center section
+///   .header__end          — right section (actions)
+/// ```
+///
+/// @see components/_navigation.scss — desktop and mobile nav inside header
+/// ===========================================
 @use '../abstracts' as *;
 
 .header {

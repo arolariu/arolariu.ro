@@ -1,6 +1,21 @@
-// ===========================================
-// BASE ELEMENT STYLES
-// ===========================================
+/// ===========================================
+/// BASE ELEMENT STYLES
+/// ===========================================
+/// Default styles for HTML elements: body, headings (h1-h6),
+/// paragraphs, links, code/pre, blockquote, hr, and text selection.
+///
+/// Uses design token functions (`font-size()`, `space()`, `radius()`)
+/// and CSS custom properties for automatic light/dark mode support.
+///
+/// Links use `:where(a)` for zero specificity (0,0,0) so component
+/// classes (Tailwind, CSS Modules) automatically win without `!important`.
+///
+/// @group base
+/// @author arolariu
+/// @see abstracts/_typography.scss — font tokens used here
+/// @see abstracts/_variables.scss — spacing and radius tokens
+/// @see base/_globals.scss — CSS custom properties referenced here
+/// ===========================================
 @use '../abstracts' as *;
 
 // ===========================================

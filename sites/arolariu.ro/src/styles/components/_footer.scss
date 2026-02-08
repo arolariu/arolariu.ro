@@ -1,7 +1,43 @@
-// ===========================================
-// FOOTER COMPONENT STYLES
-// Migrated from Tailwind utility classes
-// ===========================================
+/// ===========================================
+/// FOOTER COMPONENT — BEM
+/// ===========================================
+/// Full site footer migrated from Tailwind utility classes to BEM.
+/// Responsive grid layout: 1 col mobile → 2 cols tablet → 3 cols desktop.
+/// Hidden when printing.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## BEM Structure
+/// ```
+/// .footer                       — main wrapper (bg: --footer-bg)
+///   .footer__wave               — SVG wave decoration (absolute, top)
+///   .footer__container          — inner content wrapper
+///     .footer__grid             — responsive grid (1/2/3 cols)
+///       .footer__brand-section  — logo, name, description (spans 2 cols on lg)
+///         .footer__brand-link   — logo + name link (scale on hover)
+///         .footer__logo         — rounded avatar image
+///         .footer__brand-name   — uppercase site name
+///         .footer__brand-description — description wrapper
+///         .footer__rich-text    — prose-styled content
+///       .footer__nav-section    — nav columns container
+///         .footer__nav-title    — column heading
+///         .footer__nav-list     — links list
+///         .footer__nav-link     — individual link (teal hover)
+///     .footer__meta             — border-top section
+///       .footer__copyright      — copyright text
+///       .footer__source-prefix  — indentation for source line
+///       .footer__source-link    — yellow italic source link
+///       .footer__social         — social icon row
+///       .footer__social-icon    — individual social icon
+///     .footer__build-info       — build metadata (slate text)
+///     .footer__build-tooltip    — tooltip trigger
+///     .footer__commit-link      — italic commit SHA link
+/// ```
+///
+/// @see base/_globals.scss — `--footer-bg` CSS variable
+/// @see themes/_presets.scss — preset overrides for `--footer-bg`
+/// ===========================================
 @use '../abstracts' as *;
 
 // Main footer wrapper

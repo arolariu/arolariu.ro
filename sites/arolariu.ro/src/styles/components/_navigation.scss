@@ -1,6 +1,50 @@
-// ===========================================
-// NAVIGATION COMPONENT STYLES
-// ===========================================
+/// ===========================================
+/// NAVIGATION COMPONENT — BEM
+/// ===========================================
+/// Desktop and mobile navigation systems for the site header.
+///
+/// **Desktop nav** uses hover-reveal dropdowns with smooth opacity transitions.
+/// **Mobile nav** uses a slide-in overlay panel with expand/collapse children.
+/// Dark mode overrides are at the bottom using `.dark` ancestor selector.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## Desktop BEM Structure
+/// ```
+/// .desktop-nav
+///   .desktop-nav__list          — flex row of nav items
+///   .desktop-nav__item          — single nav entry (hover reveals dropdown)
+///   .desktop-nav__link          — top-level link
+///   .desktop-nav__dropdown      — absolute dropdown panel
+///   .desktop-nav__child-title   — section heading inside dropdown
+///   .desktop-nav__child-list    — links inside dropdown section
+///   .desktop-nav__child-link    — individual dropdown link
+///   .desktop-nav__arrow         — dropdown indicator icon
+/// ```
+///
+/// ## Mobile BEM Structure
+/// ```
+/// .mobile-nav__toggle           — hamburger button (hidden >= md)
+/// .mobile-nav__overlay          — fixed full-screen overlay
+/// .mobile-nav__backdrop         — semi-transparent backdrop
+/// .mobile-nav__panel            — slide-in panel (max 20rem)
+/// .mobile-nav__header           — panel header with title + close
+/// .mobile-nav__list             — nav items list
+/// .mobile-nav__item             — single nav entry
+/// .mobile-nav__item-header      — entry with expand button
+/// .mobile-nav__item-link        — top-level mobile link
+/// .mobile-nav__expand-btn       — chevron toggle
+/// .mobile-nav__expand-icon      — icon with rotate animation
+/// .mobile-nav__children         — expanded child section
+/// .mobile-nav__child            — child entry
+/// .mobile-nav__child-title      — child heading link
+/// .mobile-nav__grandchild-list  — grandchild links list
+/// .mobile-nav__grandchild-link  — grandchild link
+/// ```
+///
+/// @see components/_header.scss — header container for this navigation
+/// ===========================================
 @use '../abstracts' as *;
 
 // ===========================================

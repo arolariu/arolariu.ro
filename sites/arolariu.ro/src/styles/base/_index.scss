@@ -1,7 +1,15 @@
-// ===========================================
-// BASE
-// Global CSS custom properties, reset, element defaults
-// ===========================================
+/// ===========================================
+/// BASE — Barrel Export
+/// ===========================================
+/// Forwards all base-layer partials: CSS custom properties,
+/// modern CSS reset, and default element typography & styles.
+///
+/// @group base
+/// @author arolariu
+/// @see base/_globals.scss — CSS custom properties (:root / .dark)
+/// @see base/_reset.scss — modern CSS reset (Josh Comeau inspired)
+/// @see base/_elements.scss — default element styles & typography
+/// ===========================================
 @forward 'globals';
 @forward 'reset';
 @forward 'elements';
