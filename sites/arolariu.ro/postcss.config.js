@@ -1,5 +1,6 @@
 const postcssConfig = {
   plugins: {
+    autoprefixer: {},
     cssnano: {},
   },
 };

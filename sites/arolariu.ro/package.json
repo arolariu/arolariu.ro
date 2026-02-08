@@ -97,6 +97,7 @@
     "@vitejs/plugin-react": "*",
     "@vitest/coverage-v8": "*",
     "@vitest/ui": "*",
+    "autoprefixer": "10.4.24",
     "cross-env": "*",
     "cssnano": "*",
     "fake-indexeddb": "*",
