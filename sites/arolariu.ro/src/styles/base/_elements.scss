@@ -7,6 +7,10 @@
 /// Uses design token functions (`font-size()`, `space()`, `radius()`)
 /// and CSS custom properties for automatic light/dark mode support.
 ///
+/// **Fluid typography**: Headings (h1-h4) use single fluid `font-size()` tokens
+/// that scale smoothly via `clamp()` between mobile and desktop viewports,
+/// replacing the previous `@include respond-to('md')` breakpoint jumps.
+///
 /// Links use `:where(a)` for zero specificity (0,0,0) so component
 /// classes (Tailwind, CSS Modules) automatically win without `!important`.
 ///
@@ -39,37 +43,15 @@ h1, h2, h3, h4, h5, h6 {
   color: hsl(var(--foreground));
 }
 
-h1 {
-  font-size: font-size('4xl');
-
-  @include respond-to('md') {
-    font-size: font-size('5xl');
-  }
-}
-
-h2 {
-  font-size: font-size('3xl');
-
-  @include respond-to('md') {
-    font-size: font-size('4xl');
-  }
-}
-
-h3 {
-  font-size: font-size('2xl');
-
-  @include respond-to('md') {
-    font-size: font-size('3xl');
-  }
-}
-
-h4 {
-  font-size: font-size('xl');
-
-  @include respond-to('md') {
-    font-size: font-size('2xl');
-  }
-}
+// Fluid typography: each token's clamp() range interpolates smoothly
+// from the previous step's size at 320px to the target size at 1280px.
+// e.g. font-size('5xl') → clamp(2.25rem, 2rem + 1.25vw, 3rem)
+// This replaces the old breakpoint jumps (e.g. 4xl→5xl at md) with
+// continuous scaling — smoother UX, less CSS, better intermediate sizes.
+h1 { font-size: font-size('5xl'); }
+h2 { font-size: font-size('4xl'); }
+h3 { font-size: font-size('3xl'); }
+h4 { font-size: font-size('2xl'); }
 
 h5 {
   font-size: font-size('lg');
