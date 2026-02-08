@@ -1,7 +1,7 @@
 # RFC 1008: SCSS System Architecture
 
 - **Status**: Implemented
-- **Date**: 2026-02-05
+- **Date**: 2026-02-08 (updated from 2026-02-05)
 - **Authors**: Alexandru-Razvan Olariu
 - **Related Components**: `sites/arolariu.ro/src/styles/`, SCSS Modules across `src/app/`
 
@@ -17,6 +17,8 @@ Key features:
 - **Design Token Integration**: SCSS functions that reference CSS variables for theming
 - **Mobile-First Responsive**: Comprehensive mixin library for responsive design
 - **Tailwind Alignment**: Spacing scale and breakpoints match Tailwind for seamless migration
+- **SassDoc Documentation**: All public APIs documented with `///` annotations (`@group`, `@param`, `@return`, `@example`)
+- **Feature Flags**: Configurable system via `_config.scss` (fluid type, logical properties, container queries, etc.)
 
 ---
 
@@ -54,11 +56,12 @@ The arolariu.ro frontend requires a styling solution that:
 sites/arolariu.ro/src/styles/
 ├── abstracts/                    # No CSS output - configuration only
 │   ├── _index.scss              # Barrel export (@forward)
-│   ├── _variables.scss          # Spacing, breakpoints, z-index, radius
+│   ├── _config.scss             # Feature flags, namespace prefix, defaults
+│   ├── _variables.scss          # Spacing, breakpoints, z-index, radius, shadows, motion
 │   ├── _colors.scss             # CSS variable references, color functions
 │   ├── _typography.scss         # Font families, sizes, weights, line-heights
-│   ├── _mixins.scss             # Responsive, flexbox, grid, effects
-│   └── _functions.scss          # Unit converters, map utilities
+│   ├── _mixins.scss             # Responsive, flexbox, grid, effects, decorative
+│   └── _functions.scss          # Unit converters, map utilities, string helpers
 ├── base/                         # Reset and element defaults
 │   ├── _index.scss
 │   ├── _reset.scss
@@ -1335,11 +1338,12 @@ The SCSS system is designed for gradual migration:
 |------|---------|
 | `src/styles/main.scss` | 7-1 pattern entry point |
 | `src/styles/abstracts/_index.scss` | Barrel export for abstracts |
-| `src/styles/abstracts/_variables.scss` | Spacing, breakpoints, z-index, radius |
-| `src/styles/abstracts/_colors.scss` | CSS variable helpers |
-| `src/styles/abstracts/_typography.scss` | Font scale functions |
-| `src/styles/abstracts/_mixins.scss` | All mixins |
-| `src/styles/abstracts/_functions.scss` | Utility functions |
+| `src/styles/abstracts/_config.scss` | Feature flags, namespace prefix, defaults |
+| `src/styles/abstracts/_variables.scss` | Spacing, breakpoints, z-index, radius, shadows, motion |
+| `src/styles/abstracts/_colors.scss` | CSS variable helpers, static/interactive colors |
+| `src/styles/abstracts/_typography.scss` | Font families, sizes, weights, heights, spacing |
+| `src/styles/abstracts/_mixins.scss` | 30+ mixins (responsive, layout, visual, a11y, decorative) |
+| `src/styles/abstracts/_functions.scss` | Unit conversion, map/list/string utilities |
 | `src/styles/base/_reset.scss` | CSS reset |
 | `src/styles/animations/_keyframes.scss` | Animation definitions |
 | `src/styles/components/_header.scss` | Header styles |
@@ -1370,3 +1374,121 @@ The SCSS system is designed for gradual migration:
 - [RFC 1006: Component Library Architecture](./1006-component-library-architecture.md)
 - [RFC 1007: Advanced Frontend Patterns](./1007-advanced-frontend-patterns.md)
 - [CLAUDE.md](../../CLAUDE.md) - Project development guide
+
+---
+
+## 12. Documentation Standards
+
+### 12.1 SassDoc Annotations
+
+All public SCSS APIs (variables, functions, mixins) are documented using [SassDoc](http://sassdoc.com/) triple-slash (`///`) comment syntax. This enables automated documentation generation and IDE support.
+
+**Required annotations for functions:**
+```scss
+/// Get a spacing value by its scale key.
+/// @param {Number} $key - Scale key (e.g. 4, 8, 12)
+/// @return {Length} The rem-based spacing value
+/// @throws Unknown spacing key: #{$key}
+/// @group tokens-spacing
+/// @example scss
+///   padding: space(4);     // → 1rem
+@function space($key) { ... }
+```
+
+**Required annotations for mixins:**
+```scss
+/// Mobile-first responsive breakpoint mixin.
+/// @param {String} $breakpoint - Breakpoint name (e.g. 'sm', 'md', 'lg')
+/// @content Styles to apply at and above this breakpoint
+/// @throws Unknown breakpoint: #{$breakpoint}
+/// @group mixins-responsive
+/// @example scss
+///   .sidebar {
+///     @include respond-to('lg') { display: block; }
+///   }
+@mixin respond-to($breakpoint) { ... }
+```
+
+**Required annotations for variables/maps:**
+```scss
+/// Spacing scale map — matches Tailwind usage patterns.
+/// @type Map
+/// @group tokens-spacing
+/// @prop {Length} 0 [0] - No spacing
+/// @prop {Length} 4 [1rem] - 16px (base)
+$spacing: ( ... );
+```
+
+### 12.2 SassDoc Groups
+
+| Group | File | Description |
+|-------|------|-------------|
+| `config` | `_config.scss` | Feature flags and global settings |
+| `tokens` | `_variables.scss` | File-level overview |
+| `tokens-spacing` | `_variables.scss` | Spacing scale tokens |
+| `tokens-breakpoints` | `_variables.scss` | Responsive breakpoints |
+| `tokens-z-index` | `_variables.scss` | Z-index layering system |
+| `tokens-radius` | `_variables.scss` | Border radius tokens |
+| `tokens-shadows` | `_variables.scss` | Shadow elevation tokens |
+| `tokens-motion` | `_variables.scss` | Duration and easing tokens |
+| `tokens-colors` | `_colors.scss` | Color system (CSS var refs + static) |
+| `tokens-typography` | `_typography.scss` | Font sizes, weights, heights, spacing |
+| `functions` | `_functions.scss` | Unit conversion and utility functions |
+| `mixins-responsive` | `_mixins.scss` | Breakpoint media query mixins |
+| `mixins-layout` | `_mixins.scss` | Flex, grid, container mixins |
+| `mixins-visual` | `_mixins.scss` | Shadow, transition, gradient mixins |
+| `mixins-utility` | `_mixins.scss` | Truncate, dark mode, content-visibility |
+| `mixins-a11y` | `_mixins.scss` | Visually-hidden, focus-ring, reduced-motion |
+| `mixins-decorative` | `_mixins.scss` | Orb, accent-bar, icon-color variants |
+
+### 12.3 Shadow Elevation Guide
+
+The shadow system uses a 6-level elevation scale inspired by Material Design 3:
+
+| Level | Elevation | Use Case | Example Component |
+|-------|-----------|----------|-------------------|
+| `none` | 0dp | Flat elements, no depth | Inline text, flat buttons |
+| `sm` | 1dp | Subtle resting depth | Cards at rest, input fields |
+| `md` | 3dp | Standard raised surface | Raised cards, dropdowns |
+| `lg` | 6dp | Elevated interactive state | Hovered cards, popovers |
+| `xl` | 12dp | High-emphasis surface | Modals, dialogs |
+| `2xl` | 24dp | Maximum emphasis | Full-screen overlays |
+
+**Usage pattern:**
+```scss
+// At rest: use 'sm' or 'md'
+.card { @include shadow('sm'); }
+
+// On hover: elevate to 'lg' or 'xl'
+.card:hover { @include shadow('lg'); }
+
+// Modal/dialog: use 'xl'
+.modal { @include shadow('xl'); }
+```
+
+Dark mode shadows use stronger opacity (0.3-0.6 vs 0.05-0.25) for visibility against dark backgrounds. The `shadow()` mixin handles this automatically.
+
+---
+
+## 13. Configuration System
+
+### 13.1 Feature Flags (`_config.scss`)
+
+The design system supports compile-time feature flags:
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `$enable-fluid-type` | `true` | Enable `clamp()`-based fluid typography |
+| `$enable-logical-properties` | `true` | Enable `margin-inline` / `padding-block` |
+| `$enable-container-queries` | `true` | Enable CSS container queries |
+| `$enable-reduced-motion` | `true` | Enable `prefers-reduced-motion` wrappers |
+| `$enable-high-contrast` | `true` | Enable high-contrast mode adjustments |
+| `$enable-print-styles` | `true` | Enable print stylesheet generation |
+| `$enable-css-layers` | `true` | Enable CSS `@layer` for cascade control |
+
+### 13.2 Overriding Defaults
+
+Consumer modules can override configuration:
+```scss
+@use 'abstracts' with ($enable-fluid-type: false, $css-prefix: 'custom');
+```
