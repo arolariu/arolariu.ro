@@ -1,6 +1,7 @@
 // ===========================================
 // BASE
-// Reset, element defaults
+// Global CSS custom properties, reset, element defaults
 // ===========================================
+@forward 'globals';
 @forward 'reset';
 @forward 'elements';

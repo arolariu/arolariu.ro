@@ -18,9 +18,6 @@ import "@arolariu/components/styles.css";
 // @ts-ignore -- scss file has no typings.
 import "./globals.scss";
 
-// @ts-ignore -- scss file has no typings.
-import "@/styles/main.scss";
-
 export const metadata: Metadata = {
   title: "arolariu.ro | 404",
   description: "Page not found.",

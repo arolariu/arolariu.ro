@@ -3,9 +3,9 @@
 // ===========================================
 // Architecture: 7-1 Pattern (adapted)
 //
-// This file is imported in layout.tsx AFTER:
+// This file is imported in layout.tsx via app/globals.scss AFTER:
 // - @arolariu/components/styles.css (Tailwind-based component library)
-// - globals.scss (CSS variables for theming)
+// CSS custom properties are defined in base/_globals.scss.
 //
 // NAMING CONVENTIONS:
 //   Module files (.module.scss): camelCase (e.g., .cardWrapper, .heroSection)
@@ -21,7 +21,7 @@
 //   Decorative colors (orbs, icons) → raw rgba() acceptable for specific hues
 //
 // THEMING:
-//   globals.scss → :root and .dark CSS variable defaults
+//   base/_globals.scss → :root and .dark CSS variable defaults
 //   themes/_presets.scss → [data-theme-preset] CSS variable overrides
 //   next-themes → toggles .dark class on <html>
 //   useThemePreset → sets data-theme-preset attribute on <html>
@@ -41,7 +41,7 @@
 // ===========================================
 // 3. THEMES
 // Theme preset CSS variable overrides
-// (Base variables defined in globals.scss)
+// (Base variables defined in base/_globals.scss)
 // ===========================================
 @use 'themes';
 

@@ -2,7 +2,7 @@
 // THEME PRESETS — Single Source of Truth
 // ===========================================
 // This file defines all named theme preset CSS variables.
-// Each preset overrides the defaults from globals.scss.
+// Each preset overrides the defaults from base/_globals.scss.
 //
 // ARCHITECTURE:
 //   - $theme-presets SCSS map defines light and dark color overrides
@@ -27,7 +27,7 @@
 //   --footer-bg          Footer background color (HSL)
 //
 // NOTE: "default" preset is intentionally omitted — its values
-// are the CSS variable defaults defined in globals.scss.
+// are the CSS variable defaults defined in base/_globals.scss.
 // ===========================================
 
 @use 'sass:map';

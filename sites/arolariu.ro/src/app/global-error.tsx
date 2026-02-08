@@ -6,9 +6,6 @@ import "@arolariu/components/styles.css";
 // @ts-ignore -- scss file has no typings.
 import "./globals.scss";
 
-// @ts-ignore -- scss file has no typings.
-import "@/styles/main.scss";
-
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {
