@@ -111,7 +111,6 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
 
   const handleLocaleChange = useCallback(
     (locale: string) => {
-      void setCookie("locale", locale);
       storeSetLocale(locale as "en" | "ro" | "fr");
       onSettingsChange({locale});
     },

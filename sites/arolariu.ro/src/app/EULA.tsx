@@ -1,6 +1,7 @@
 "use client";
 
 import {getCookie, setCookie} from "@/lib/actions/cookies";
+import {usePreferencesStore} from "@/stores/preferencesStore";
 import {
   Accordion,
   AccordionContent,
@@ -53,13 +54,14 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
   });
 
   const handleLocale = useCallback((locale: Locale) => {
-    void setCookie("locale", locale);
+    usePreferencesStore.getState().setLocale(locale as "en" | "ro" | "fr");
   }, []);
 
   const handleAccept = useCallback(() => {
     void setCookie("eula-accepted", "true");
     void setCookie("accepted-cookies", JSON.stringify(cookieState));
-    void setCookie("locale", locale);
+    // Locale cookie is handled by the store's locale → cookie subscription
+    usePreferencesStore.getState().setLocale(locale as "en" | "ro" | "fr");
     setEulaCookie(true);
   }, [cookieState, locale]);
 

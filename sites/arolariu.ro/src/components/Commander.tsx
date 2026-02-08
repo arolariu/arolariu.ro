@@ -1,8 +1,8 @@
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
+import {usePreferencesStore} from "@/stores/preferencesStore";
 import styles from "./Commander.module.scss";
-import {setCookie} from "@/lib/actions/cookies";
 import {
   CommandDialog,
   CommandEmpty,
@@ -218,7 +218,7 @@ function Commander(): React.JSX.Element {
   const onSelectLangEnglish = useCallback(
     (_: string) => {
       runCommand(() => {
-        void setCookie("locale", "en");
+        usePreferencesStore.getState().setLocale("en");
       });
     },
     [runCommand],
@@ -227,7 +227,7 @@ function Commander(): React.JSX.Element {
   const onSelectLangRomanian = useCallback(
     (_: string) => {
       runCommand(() => {
-        void setCookie("locale", "ro");
+        usePreferencesStore.getState().setLocale("ro");
       });
     },
     [runCommand],
@@ -236,7 +236,7 @@ function Commander(): React.JSX.Element {
   const onSelectLangFrench = useCallback(
     (_: string) => {
       runCommand(() => {
-        void setCookie("locale", "fr");
+        usePreferencesStore.getState().setLocale("fr");
       });
     },
     [runCommand],
