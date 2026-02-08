@@ -283,7 +283,9 @@ export const usePreferencesStore = process.env.NODE_ENV === "development" ? crea
 
 /**
  * Sets up cross-tab sync via BroadcastChannel.
- * When preferences change in one tab, other tabs rehydrate from IndexedDB.
+ * Sends the full partialized state in each broadcast so receiving tabs
+ * can apply it directly — avoids a race where the IndexedDB write from
+ * the source tab hasn't landed before the receiver tries to rehydrate.
  */
 function setupCrossTabSync(): void {
   if (typeof BroadcastChannel === "undefined") return;
@@ -291,22 +293,20 @@ function setupCrossTabSync(): void {
   const channel = new BroadcastChannel("zustand-preferences-sync");
   let isSyncing = false;
 
-  // When another tab changes preferences, re-read from IndexedDB
-  channel.addEventListener("message", () => {
+  // When another tab sends updated state, apply it directly (no IndexedDB read)
+  channel.addEventListener("message", (event: MessageEvent<PreferencesPersistedState>) => {
     isSyncing = true;
-    void usePreferencesStore.persist.rehydrate();
-    // Allow rehydration's state merge to settle before re-enabling broadcast
+    usePreferencesStore.setState(event.data);
     setTimeout(() => {
       isSyncing = false;
     }, 100);
   });
 
-  // When this tab changes preferences, notify other tabs
-  usePreferencesStore.subscribe(() => {
-    if (!isSyncing) {
-      // eslint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel.postMessage has no targetOrigin parameter
-      channel.postMessage("sync");
-    }
+  // When this tab changes preferences, broadcast the partialized state
+  usePreferencesStore.subscribe((state) => {
+    if (isSyncing || !state.hasHydrated) return;
+    // eslint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel.postMessage has no targetOrigin parameter
+    channel.postMessage(persistConfig.partialize(state));
   });
 }
 
