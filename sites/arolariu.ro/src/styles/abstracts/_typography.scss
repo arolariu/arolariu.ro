@@ -7,8 +7,11 @@
 /// @group tokens-typography
 /// @author arolariu
 ///
-/// @example scss - Font size
-///   font-size: font-size('xl');              // → 1.25rem (20px)
+/// @example scss - Font size (static)
+///   font-size: font-size('base');            // → 1rem (16px)
+///
+/// @example scss - Font size (fluid, when $enable-fluid-type is true)
+///   font-size: font-size('xl');              // → clamp(1.125rem, 1.08rem + 0.21vw, 1.25rem)
 ///
 /// @example scss - Font weight
 ///   font-weight: font-weight('bold');        // → 700
@@ -33,6 +36,8 @@
 /// @see {variable} $letter-spacing
 /// ===========================================
 @use 'sass:map';
+@use 'sass:math';
+@use 'config' as config;
 
 // ===========================================
 // FONT FAMILIES
@@ -90,6 +95,81 @@ $font-sizes: (
   '8xl': 6rem,       // 96px
   '9xl': 8rem,       // 128px
 );
+
+// ===========================================
+// FLUID TYPOGRAPHY
+// ===========================================
+
+/// Minimum font sizes for fluid typography (mobile viewport).
+/// Each token maps to its clamp() minimum — the size at `$fluid-min-viewport`.
+///
+/// Tokens `xs` through `lg` are static (min equals max, no clamp generated).
+/// Tokens `xl` through `9xl` scale progressively, with each min equal to the
+/// previous step's static (max) value. This mirrors the current heading pattern
+/// where h1 uses 4xl on mobile and 5xl on desktop.
+///
+/// @type Map
+/// @group tokens-typography
+/// @see {variable} $font-sizes — the max (desktop) values
+/// @see {function} font-size — accessor that generates clamp() when fluid is enabled
+$font-size-fluid-min: (
+  'xs':   0.75rem,     // 12px → static
+  'sm':   0.875rem,    // 14px → static
+  'base': 1rem,        // 16px → static
+  'lg':   1.125rem,    // 18px → static
+  'xl':   1.125rem,    // 18px → scales to 20px (from lg)
+  '2xl':  1.25rem,     // 20px → scales to 24px (from xl)
+  '3xl':  1.5rem,      // 24px → scales to 30px (from 2xl)
+  '4xl':  1.875rem,    // 30px → scales to 36px (from 3xl)
+  '5xl':  2.25rem,     // 36px → scales to 48px (from 4xl)
+  '6xl':  2.75rem,     // 44px → scales to 60px
+  '7xl':  3.25rem,     // 52px → scales to 72px
+  '8xl':  4rem,        // 64px → scales to 96px
+  '9xl':  5rem,        // 80px → scales to 128px
+) !default;
+
+/// Compute a CSS `clamp()` expression for fluid typography.
+/// Uses linear interpolation between min and max viewport widths
+/// following the Utopia methodology.
+///
+/// Formula: `clamp(min, intercept + slope * vw, max)`
+/// where slope = (max - min) / (maxVP - minVP)
+///
+/// @param {Length} $min-size - Minimum font size in rem
+/// @param {Length} $max-size - Maximum font size in rem
+/// @return {String} A `clamp()` CSS expression, or the static value if min == max
+/// @group tokens-typography
+/// @access private
+@function _fluid-clamp($min-size, $max-size) {
+  // Static: no clamp needed when min equals max
+  @if $min-size == $max-size {
+    @return $max-size;
+  }
+
+  // Guard: min must not exceed max
+  @if $min-size > $max-size {
+    @error 'Fluid type error: min (#{$min-size}) cannot exceed max (#{$max-size})';
+  }
+
+  $base: math.div(config.$base-font-size, 1px); // strip px unit → 16
+  $min-vw: math.div(config.$fluid-min-viewport, 1px);
+  $max-vw: math.div(config.$fluid-max-viewport, 1px);
+
+  // Convert rem to px for calculation
+  $min-px: math.div($min-size, 1rem) * $base;
+  $max-px: math.div($max-size, 1rem) * $base;
+
+  // Linear interpolation: slope in px/px, then convert to vw + rem
+  $slope: math.div($max-px - $min-px, $max-vw - $min-vw);
+  $intercept-px: $min-px - $slope * $min-vw;
+
+  // slope × 100 converts px/px to vw coefficient (1vw = viewport / 100)
+  // Round slope to 2 decimals, intercept to 4 decimals
+  $slope-vw: math.div(math.round($slope * 10000), 100);
+  $intercept-rem: math.div(math.round(math.div($intercept-px, $base) * 10000), 10000);
+
+  @return clamp(#{$min-size}, #{$intercept-rem}rem + #{$slope-vw}vw, #{$max-size});
+}
 
 /// Font weight scale map.
 /// @type Map
@@ -156,18 +236,38 @@ $letter-spacing: (
 // ===========================================
 
 /// Get a font size by its scale name.
+///
+/// When `$enable-fluid-type` is `true` (default), returns a CSS `clamp()`
+/// expression for tokens `xl` and above, providing smooth scaling between
+/// `$fluid-min-viewport` and `$fluid-max-viewport`. Tokens `xs` through `lg`
+/// always return static rem values.
+///
+/// When `$enable-fluid-type` is `false`, always returns the static rem value.
+///
 /// @param {String} $key - Size name (e.g. 'base', 'xl', '3xl')
-/// @return {Length} The rem-based font size
+/// @return {Length|String} Static rem value or `clamp()` expression
 /// @throws Unknown font-size: #{$key}
 /// @group tokens-typography
-/// @example scss
-///   font-size: font-size('xl');   // → 1.25rem
-///   font-size: font-size('3xl');  // → 1.875rem
+/// @example scss - Static (fluid disabled or small token)
+///   font-size: font-size('base');  // → 1rem
+/// @example scss - Fluid (when enabled, xl+)
+///   font-size: font-size('3xl');   // → clamp(1.5rem, 1.375rem + 0.63vw, 1.875rem)
+/// @see {variable} $font-sizes — max (desktop) values
+/// @see {variable} $font-size-fluid-min — min (mobile) values
+/// @see {variable} config.$enable-fluid-type — toggle fluid behavior
 @function font-size($key) {
-  @if map.has-key($font-sizes, $key) {
-    @return map.get($font-sizes, $key);
+  @if not map.has-key($font-sizes, $key) {
+    @error "Unknown font-size: #{$key}. Available: #{map.keys($font-sizes)}";
   }
-  @error "Unknown font-size: #{$key}";
+
+  $max: map.get($font-sizes, $key);
+
+  @if config.$enable-fluid-type and map.has-key($font-size-fluid-min, $key) {
+    $min: map.get($font-size-fluid-min, $key);
+    @return _fluid-clamp($min, $max);
+  }
+
+  @return $max;
 }
 
 /// Get a font weight by name.

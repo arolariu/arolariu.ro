@@ -13,9 +13,26 @@
 /// ===========================================
 
 /// Enable fluid typography using `clamp()` for responsive font sizes.
+/// When enabled, `font-size()` returns `clamp()` expressions for tokens
+/// `xl` and above, scaling smoothly between `$fluid-min-viewport` and
+/// `$fluid-max-viewport`. Tokens `xs` through `lg` remain static.
 /// @type Boolean
 /// @group config
 $enable-fluid-type: true !default;
+
+/// Minimum viewport width for fluid typography clamp() calculations.
+/// Below this width, font sizes are clamped to their minimum value.
+/// @type Length
+/// @group config
+/// @see {function} font-size
+$fluid-min-viewport: 320px !default;
+
+/// Maximum viewport width for fluid typography clamp() calculations.
+/// Above this width, font sizes are clamped to their maximum (static) value.
+/// @type Length
+/// @group config
+/// @see {function} font-size
+$fluid-max-viewport: 1280px !default;
 
 /// Enable CSS logical properties (`margin-inline`, `padding-block`, etc.).
 /// @type Boolean
