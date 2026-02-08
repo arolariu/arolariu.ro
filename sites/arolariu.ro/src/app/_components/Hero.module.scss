@@ -81,12 +81,16 @@
 // CTA button container
 .ctaWrapper {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  justify-content: center;
+  width: fit-content;
   margin-top: space(8);
-  margin-left: 26%;
+  margin-left: auto;
+  margin-right: auto;
 
   @include respond-to('md') {
     margin-left: 0;
+    margin-right: 0;
   }
 }
 
