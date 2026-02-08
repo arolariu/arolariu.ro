@@ -4,6 +4,7 @@
  * @module stores/preferencesStore
  */
 
+import {setCookie} from "@/lib/actions/cookies";
 import type {CustomThemeColors, ThemePresetName} from "@/lib/theme-presets";
 import {create} from "zustand";
 import {devtools, persist} from "zustand/middleware";
@@ -275,7 +276,9 @@ const createProdStore = () => create<PreferencesStore>()(persist((set, get) => c
 export const usePreferencesStore = process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();
 
 // ===========================================
-// CROSS-TAB SYNCHRONIZATION
+// BROWSER-SIDE SUBSCRIPTIONS
+// Zustand subscribe handlers for cross-tab sync, locale cookie, and theme preset DOM sync.
+// No React components needed — these run as pure store subscriptions.
 // ===========================================
 
 /**
@@ -319,8 +322,103 @@ function setupVisibilitySync(): void {
   });
 }
 
-// Initialize cross-tab sync in browser environment
+// ===========================================
+// LOCALE → COOKIE SYNC
+// The Zustand store is the single source of truth for locale.
+// This subscription keeps the HTTP cookie (read by next-intl server-side) in sync.
+// A callback registered from React triggers router.refresh() for re-rendering.
+// ===========================================
+
+let _onLocaleSync: (() => void) | null = null;
+
+/**
+ * Registers a callback invoked after locale is synced to the cookie.
+ * Intended for `router.refresh()` — the only React touchpoint.
+ * @returns Unsubscribe function for cleanup.
+ */
+export function onLocaleSync(callback: () => void): () => void {
+  _onLocaleSync = callback;
+  return () => {
+    _onLocaleSync = null;
+  };
+}
+
+function setupLocaleCookieSync(): void {
+  let prevLocale: string | null = null;
+
+  usePreferencesStore.subscribe((state) => {
+    if (!state.hasHydrated) return;
+
+    // First run after hydration: record current value, don't sync
+    if (prevLocale === null) {
+      prevLocale = state.locale;
+      return;
+    }
+
+    if (state.locale !== prevLocale) {
+      prevLocale = state.locale;
+      void setCookie("locale", state.locale).then(() => _onLocaleSync?.());
+    }
+  });
+}
+
+// ===========================================
+// THEME PRESET → DOM SYNC
+// Applies data-theme-preset attribute and custom CSS variables on <html>.
+// Replaces the former ThemePresetApplier React component.
+// ===========================================
+
+/** CSS properties managed by the theme preset system. */
+const THEME_CSS_PROPS = [
+  "--primary",
+  "--primary-foreground",
+  "--gradient-from",
+  "--gradient-via",
+  "--gradient-to",
+  "--accent-primary",
+  "--footer-bg",
+] as const;
+
+function clearInlineThemeStyles(root: HTMLElement): void {
+  for (const prop of THEME_CSS_PROPS) {
+    root.style.removeProperty(prop);
+  }
+}
+
+function applyCustomThemeColors(root: HTMLElement, colors: CustomThemeColors): void {
+  root.style.setProperty("--gradient-from", colors.gradientFrom);
+  root.style.setProperty("--gradient-via", colors.gradientVia);
+  root.style.setProperty("--gradient-to", colors.gradientTo);
+  root.style.setProperty("--primary", colors.primary);
+  root.style.setProperty("--primary-foreground", colors.primaryForeground);
+  root.style.setProperty("--accent-primary", colors.gradientFrom);
+  root.style.setProperty("--footer-bg", colors.footerBg);
+}
+
+function setupThemePresetSync(): void {
+  usePreferencesStore.subscribe((state) => {
+    if (!state.hasHydrated) return;
+
+    const root = document.documentElement;
+
+    // Set data attribute — SCSS handles named preset variables
+    root.setAttribute("data-theme-preset", state.themePreset);
+
+    if (state.themePreset === "custom" && state.customThemeColors) {
+      applyCustomThemeColors(root, state.customThemeColors);
+    } else {
+      clearInlineThemeStyles(root);
+    }
+  });
+}
+
+// ===========================================
+// INITIALIZATION
+// ===========================================
+
 if (typeof globalThis.window !== "undefined") {
   setupCrossTabSync();
   setupVisibilitySync();
+  setupLocaleCookieSync();
+  setupThemePresetSync();
 }
