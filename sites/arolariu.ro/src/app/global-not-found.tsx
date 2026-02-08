@@ -63,12 +63,12 @@ export default async function NotFound(): Promise<React.JSX.Element> {
                 <Button
                   asChild
                   variant='outline'
-                  className={styles["actionButton"]}>
+                  className={styles["actionButtonOutline"]}>
                   <Link href='/'>{t("buttons.submitErrorButton")}</Link>
                 </Button>
                 <Button
                   asChild
-                  className={styles["actionButton"]}>
+                  className={styles["actionButtonDefault"]}>
                   <Link href='https://arolariu.ro/'>{t("buttons.returnButton")}</Link>
                 </Button>
               </div>

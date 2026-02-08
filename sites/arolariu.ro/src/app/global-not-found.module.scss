@@ -90,3 +90,17 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+// Explicit text colors to guarantee WCAG AA contrast ratios.
+// The component library's Tailwind utility classes sit inside a @layer and
+// can be overridden by the unlayered global SCSS cascade. These rules
+// ensure proper contrast regardless of cascade ordering.
+.actionButtonOutline {
+  composes: actionButton;
+  color: color('foreground');
+}
+
+.actionButtonDefault {
+  composes: actionButton;
+  color: static-color('white');
+}
