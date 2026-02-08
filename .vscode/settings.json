@@ -811,5 +811,8 @@
   "zenMode.hideStatusBar": true,
   "zenMode.restore": true,
   "zenMode.showTabs": "multiple",
-  "zenMode.silentNotifications": true
+  "zenMode.silentNotifications": true,
+  "[scss]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  }
 }
