@@ -148,3 +148,182 @@
   @include flex-center;
   margin-bottom: space(4);
 }
+
+// ===========================================
+// SKELETON SIZING
+// Replacements for Tailwind utility classes
+// ===========================================
+
+// Header skeletons
+.skelTitle {
+  height: 2.5rem;
+  width: 16rem;
+  margin: 0 auto space(2);
+}
+
+.skelSubtitleWide {
+  height: 1rem;
+  width: 24rem;
+  margin: 0 auto space(1);
+}
+
+.skelSubtitleNarrow {
+  height: 1rem;
+  width: 20rem;
+  margin: 0 auto;
+}
+
+// Last updated
+.skelLastUpdated {
+  height: 1rem;
+  width: 14rem;
+  margin: 0 auto;
+}
+
+// Search & Filters
+.skelSearchInput {
+  height: 2.5rem;
+  width: 100%;
+}
+
+.skelFilterInput {
+  height: 2.5rem;
+  flex: 1;
+}
+
+// Tabs
+.tabsFull {
+  width: 100%;
+}
+
+.tabsListLayout {
+  margin: 0 auto space(8);
+  display: grid;
+  width: 100%;
+  max-width: 28rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+// Card
+.cardFullHeight {
+  height: 100%;
+}
+
+// Card header
+.skelCardName {
+  height: 1.5rem;
+  width: 8rem;
+}
+
+.skelVersionBadge {
+  height: 1.25rem;
+  width: 4rem;
+  border-radius: radius('full');
+}
+
+.skelLicenseBadge {
+  height: 1.25rem;
+  width: 6rem;
+  border-radius: radius('full');
+}
+
+// Card description lines
+.skelLineFull {
+  height: 1rem;
+  width: 100%;
+}
+
+.skelLineThreeQuarter {
+  height: 1rem;
+  width: 75%;
+}
+
+// Card detail labels & values
+.skelLabelSm {
+  margin-right: space(2);
+  height: 1rem;
+  width: 6rem;
+}
+
+.skelValueSm {
+  height: 1rem;
+  width: 4rem;
+}
+
+.skelLabelMd {
+  margin-right: space(2);
+  height: 1rem;
+  width: 7rem;
+}
+
+.skelValueXs {
+  height: 1rem;
+  width: 2rem;
+}
+
+// Card action buttons
+.skelBtnSm {
+  height: 2rem;
+  width: 6rem;
+}
+
+.skelBtnMd {
+  height: 2rem;
+  width: 8rem;
+}
+
+// Table header & cell sizes
+.skelColXs {
+  height: 1rem;
+  width: 3rem;
+}
+
+.skelColSm {
+  height: 1rem;
+  width: 4rem;
+}
+
+.skelColMd {
+  height: 1rem;
+  width: 6rem;
+}
+
+.skelColLg {
+  height: 1rem;
+  width: 8rem;
+}
+
+.skelColFull {
+  height: 1rem;
+  width: 100%;
+}
+
+.skelTableBadge {
+  height: 1.25rem;
+  width: 6rem;
+  border-radius: radius('full');
+}
+
+.skelActionBtn {
+  height: 2rem;
+  width: 7rem;
+}
+
+.skelIconBtn {
+  height: 2rem;
+  width: 2rem;
+  margin: 0 auto;
+  border-radius: radius('md');
+}
+
+// Footer
+.skelFooterIcon {
+  margin-right: space(2);
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.skelFooterTitle {
+  height: 1.5rem;
+  width: 12rem;
+}
