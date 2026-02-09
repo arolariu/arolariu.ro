@@ -1,6 +1,7 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-01-22"
+version: "1.1.0"
+lastUpdated: "2026-02-09"
+name: 'React Patterns'
 applyTo: '**/*.jsx, **/*.tsx'
 description: 'Core React patterns for the arolariu.ro monorepo. Applies to component library, websites, and all React code. For Next.js-specific patterns, see frontend.instructions.md.'
 ---

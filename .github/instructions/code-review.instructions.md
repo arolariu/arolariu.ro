@@ -1,6 +1,7 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-01-22"
+version: "1.1.0"
+lastUpdated: "2026-02-09"
+name: 'Code Review Guidelines'
 applyTo: '**'
 description: 'Uncompromising code review guidelines. Technical excellence is non-negotiable.'
 ---

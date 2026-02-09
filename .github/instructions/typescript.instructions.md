@@ -1,6 +1,7 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-01-22"
+version: "1.1.0"
+lastUpdated: "2026-02-09"
+name: 'TypeScript Standards'
 description: 'Guidelines for TypeScript Development targeting TypeScript 5.x and ES2022 output'
 applyTo: '**/*.ts'
 ---

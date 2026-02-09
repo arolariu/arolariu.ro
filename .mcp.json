@@ -3,40 +3,26 @@
   "mcpServers": {
     "sequential-thinking": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
-      "description": "Sequential thinking for complex multi-step reasoning and planning"
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
     "playwright": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@playwright/mcp@latest"],
-      "description": "Browser automation for E2E testing with Playwright"
+      "args": ["/c", "npx", "-y", "@playwright/mcp@latest"]
     },
     "eslint": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@eslint/mcp@latest"],
-      "description": "ESLint integration for linting JavaScript/TypeScript"
-    },
-    "filesystem": {
-      "_comment": "Path is machine-specific. Update to your local repo clone path.",
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@anthropics/mcp-server-filesystem",
-        "C:\\Users\\aolariu\\source\\repos\\arolariu\\arolariu.ro"
-      ],
-      "description": "Filesystem operations within the project directory"
+      "args": ["/c", "npx", "-y", "@eslint/mcp@latest"]
     },
     "memory": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
-      "description": "Persistent memory for storing and retrieving context across sessions"
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"]
     },
-    "fetch": {
+    "github": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@anthropics/mcp-server-fetch"],
-      "description": "HTTP fetch operations for API calls and web content retrieval"
+      "args": ["/c", "npx", "-y", "github-mcp"],
+      "env": {
+        "GITHUB_ACCESS_TOKEN": "${GITHUB_ACCESS_TOKEN}"
+      }
     }
   }
 }
