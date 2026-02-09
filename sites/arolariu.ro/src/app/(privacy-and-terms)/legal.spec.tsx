@@ -55,10 +55,11 @@ test.describe("Legal Pages @legal", () => {
       test(tagged(`${name} should have readable content`, TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
         await safeNavigate(path);
 
-        // Check for content in main or body
+        // Wait for main content to be fully rendered before checking length
         const main = page.locator("main");
-        const mainExists = (await main.count()) > 0;
-        const content = mainExists ? await main.textContent() : await page.locator("body").textContent();
+        await expect(main).toBeVisible();
+        await page.waitForLoadState("networkidle");
+        const content = await main.textContent();
         expect(content).toBeTruthy();
         expect(content!.length).toBeGreaterThan(50);
       });
