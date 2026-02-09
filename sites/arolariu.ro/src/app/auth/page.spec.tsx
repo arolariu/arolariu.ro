@@ -71,8 +71,8 @@ test.describe("Authentication @auth", () => {
         await safeNavigate("/domains/invoices/");
 
         // Should redirect to auth or show auth prompt
-        // Wait for potential redirect
-        await page.waitForTimeout(2000);
+        // Wait for navigation to settle (page load or redirect)
+        await page.waitForLoadState("domcontentloaded");
 
         const currentUrl = page.url();
         // Either redirected to auth or stayed but shows auth requirements
@@ -90,8 +90,8 @@ test.describe("Authentication @auth", () => {
         // Try to access user dashboard
         await safeNavigate("/domains/");
 
-        // Wait for potential redirect
-        await page.waitForTimeout(2000);
+        // Wait for navigation to settle
+        await page.waitForLoadState("domcontentloaded");
 
         // Page should load without crashing
         await expect(page.locator("body")).toBeVisible();

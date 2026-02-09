@@ -201,7 +201,7 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
       await safeNavigate("/");
 
       // Should have at least one heading (h1-h6)
-      const headingCount = await page.locator("h1, h2, h3, h4, h5, h6").count();
+      const headingCount = await page.getByRole("heading").count();
       expect(headingCount).toBeGreaterThanOrEqual(1);
     });
 
@@ -212,7 +212,7 @@ test.describe("Full Site Accessibility Audit @a11y @regression", () => {
         await safeNavigate(path);
 
         // Pages should have at least one heading
-        const headingCount = await page.locator("h1, h2, h3, h4, h5, h6").count();
+        const headingCount = await page.getByRole("heading").count();
         expect(headingCount, `${path} should have headings`).toBeGreaterThanOrEqual(1);
       }
     });

@@ -24,13 +24,13 @@ const HEADER_SELECTORS = {
   logo: "header img[alt*='logo'], header svg",
 
   /** Logo link (home) */
-  logoLink: "header a[href='/'], header a[href='https://localhost:3000']",
+  logoLink: "header a[href='/']",
 
   /** Navigation container */
-  nav: "header nav, header [role='navigation']",
+  nav: "header nav",
 
   /** All navigation links */
-  navLinks: "header nav a, header [role='navigation'] a",
+  navLinks: "header nav a",
 
   /** About page link */
   aboutLink: "header a[href*='about']",
@@ -252,6 +252,7 @@ export class HeaderComponent extends BaseComponent {
    * Assert there are at least N navigation links.
    */
   async shouldHaveNavLinks(minCount: number = 1): Promise<this> {
+    await expect(this.navLinks.first()).toBeVisible({timeout: TIMEOUTS.element});
     const count = await this.navLinks.count();
     expect(count).toBeGreaterThanOrEqual(minCount);
     return this;

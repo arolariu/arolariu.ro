@@ -16,16 +16,17 @@ test.describe("Global Error (5xx) Tests @error", () => {
     expect(response?.status()).toBe(404);
 
     // Should display 404 content
-    const bodyText = await page.textContent("body");
+    const bodyText = await page.locator("body").textContent();
     expect(bodyText).toMatch(/404|not found/i);
   });
 
   test("should have navigation back to home from 404", async ({page}) => {
     await page.goto("/non-existent-page-xyz");
 
-    // Look for a link back to home
-    const homeLink = page.locator("a[href='/'], a[href*='home']");
-    const count = await homeLink.count();
+    // Look for a link back to home using role-based locator or href fallback
+    const homeLink = page.getByRole("link", {name: /home/i});
+    const homeLinkByHref = page.locator("a[href='/']");
+    const count = (await homeLink.count()) + (await homeLinkByHref.count());
 
     expect(count).toBeGreaterThanOrEqual(0);
   });

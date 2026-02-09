@@ -88,7 +88,7 @@ test.describe("Legal Pages @legal", () => {
         await safeNavigate(path);
 
         // Check that there's at least one heading element
-        const headingCount = await page.locator("h1, h2, h3, h4, h5, h6").count();
+        const headingCount = await page.getByRole("heading").count();
         expect(headingCount).toBeGreaterThanOrEqual(0); // May not have headings, that's ok
       }
     });
@@ -140,7 +140,7 @@ test.describe("Legal Pages @legal", () => {
       await safeNavigate("/privacy-policy/");
 
       await expect(page.locator("main")).toBeVisible();
-      await expect(page.locator("h1")).toBeVisible();
+      await expect(page.getByRole("heading", {level: 1})).toBeVisible();
     });
 
     test(tagged("terms of service should work on mobile", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
@@ -148,7 +148,7 @@ test.describe("Legal Pages @legal", () => {
       await safeNavigate("/terms-of-service/");
 
       await expect(page.locator("main")).toBeVisible();
-      await expect(page.locator("h1")).toBeVisible();
+      await expect(page.getByRole("heading", {level: 1})).toBeVisible();
     });
 
     test(tagged("legal pages should work on desktop", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
@@ -170,7 +170,7 @@ test.describe("Legal Pages @legal", () => {
 
       // Content should still be visible in print mode
       await expect(page.locator("main")).toBeVisible();
-      await expect(page.locator("h1")).toBeVisible();
+      await expect(page.getByRole("heading", {level: 1})).toBeVisible();
     });
   });
 });
