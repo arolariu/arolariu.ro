@@ -1,6 +1,7 @@
 "use client";
 
 import {RichText} from "@/presentation/Text";
+import styles from "./EnhancedLegalArticles.module.scss";
 
 type TranslatedPage = Readonly<"privacyPolicy" | "termsOfService">;
 type TranslatedPageArticle = Readonly<{titleKey: string; contentKey: string}>;
@@ -75,15 +76,15 @@ export default function EnhancedLegalArticles({pageType}: Readonly<{pageType: Tr
         const contentKey = section.contentKey as keyof TranslatedPageArticle;
         return (
           <article
-            className='w-full py-4'
+            className={styles["article"]}
             key={titleKey}>
-            <span className='text-2xl font-black tracking-widest underline'>
+            <span className={styles["articleTitle"]}>
               <RichText
                 sectionKey={pageType}
                 textKey={titleKey}
               />
             </span>
-            <section className='text-pretty italic'>
+            <section className={styles["articleContent"]}>
               <RichText
                 sectionKey={pageType}
                 textKey={contentKey}

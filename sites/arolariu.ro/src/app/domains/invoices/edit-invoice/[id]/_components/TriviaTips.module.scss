@@ -1,0 +1,103 @@
+@use '../../../../../../styles/abstracts' as *;
+@use '../../../_styles/invoice-shared' as invoice;
+
+.savingsBanner {
+  border-radius: radius('md');
+  border: 1px solid color-alpha('primary', 0.2);
+  background-color: color-alpha('primary', 0.1);
+  padding: space(3);
+}
+
+.savingsBannerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.savingsLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.savingsAmount {
+  font-size: font-size('lg');
+  font-weight: font-weight('bold');
+}
+
+.savingsHint {
+  color: color('muted-foreground');
+  margin-top: space(1);
+  font-size: font-size('xs');
+}
+
+.tipsList {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.tipCard {
+  border-radius: radius('md');
+  border: 1px solid color('border');
+  padding: space(3);
+
+  &:hover {
+    border-color: color-alpha('primary', 0.5);
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.tipInner {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+}
+
+.tipIconWrapper {
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+  margin-top: space(0.5);
+  border-radius: radius('md');
+  padding: space(1.5);
+}
+
+.tipContent {
+  flex: 1;
+}
+
+.tipHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.tipTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.tipSavings {
+  display: flex;
+  align-items: center;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: hsl(var(--success, 142 76% 36%));
+}
+
+.tipDescription {
+  color: color('muted-foreground');
+  margin-top: space(1);
+  font-size: font-size('sm');
+}
+
+.moreButton {
+  padding-top: space(2);
+}
+
+.disclaimer {
+  color: color('muted-foreground');
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('xs');
+}

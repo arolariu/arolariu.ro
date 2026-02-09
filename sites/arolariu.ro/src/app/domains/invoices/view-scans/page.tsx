@@ -4,6 +4,7 @@ import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {redirect} from "next/navigation";
 import RenderViewScansScreen from "./island";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the view scans page.
@@ -36,8 +37,8 @@ export default async function ViewScansPage(_props: Readonly<PageProps<"/domains
   }
 
   return (
-    <main className='min-h-screen px-4 py-12 sm:px-6 lg:px-8'>
+    <div className={styles["page"]}>
       <RenderViewScansScreen />
-    </main>
+    </div>
   );
 }

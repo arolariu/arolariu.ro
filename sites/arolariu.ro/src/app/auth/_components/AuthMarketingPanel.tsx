@@ -3,9 +3,10 @@
 import {motion, type Variants} from "motion/react";
 import Image from "next/image";
 import AuthBulletList from "./AuthBulletList";
+import styles from "./AuthMarketingPanel.module.scss";
 import AuthTrustBadgesRow from "./AuthTrustBadgesRow";
 
-export type AuthMarketingPanelProps = Readonly<{
+type Props = Readonly<{
   title: string;
   subtitle: string;
   illustrationSrc: string;
@@ -38,144 +39,66 @@ const itemVariants: Variants = {
   },
 };
 
-const floatingAnimation = {
-  y: [0, -10, 0],
-  rotate: [0, 2, 0],
-  transition: {
-    duration: 5,
-    repeat: Infinity,
-    ease: "easeInOut" as const,
-  },
-};
-
 /**
- * Enhanced marketing panel for authentication pages with animations.
- *
- * @remarks
- * **Rendering Context**: Client Component with motion animations.
- *
- * **Features**:
- * - Staggered entrance animations
- * - Floating illustration effect
- * - Gradient glow backgrounds
- * - Trust badge integration
- * - Animated bullet points
- *
- * @param props - Component properties
- *
- * @returns Animated marketing panel JSX element
+ * Marketing panel for authentication pages with animations.
  */
-export default function AuthMarketingPanel(props: AuthMarketingPanelProps): React.JSX.Element {
+export default function AuthMarketingPanel(props: Readonly<Props>): React.JSX.Element {
   return (
     <motion.div
-      className='relative space-y-8'
+      className={styles["panel"]}
       variants={containerVariants}
       initial='hidden'
       animate='visible'>
-      {/* Background glow effects */}
-      <motion.div
+      {/* Background glow */}
+      <div
         aria-hidden='true'
-        className='bg-primary/10 pointer-events-none absolute top-1/4 -left-20 h-64 w-64 rounded-full blur-3xl'
-        animate={{
-          scale: [1, 1.1, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        className={styles["glow"]}
       />
 
-      {/* Header section */}
+      {/* Header */}
       <motion.div
-        className='relative space-y-4'
+        className={styles["header"]}
         variants={itemVariants}>
-        <h1 className='from-foreground via-foreground/90 to-foreground/70 bg-linear-to-r bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl lg:text-5xl'>
-          {props.title}
-        </h1>
-        <p className='text-muted-foreground text-base leading-relaxed sm:text-lg'>{props.subtitle}</p>
+        <h1 className={styles["title"]}>{props.title}</h1>
+        <p className={styles["subtitle"]}>{props.subtitle}</p>
 
-        {props.trustBadges && props.trustBadges.length > 0 ? (
-          <motion.div variants={itemVariants}>
-            <AuthTrustBadgesRow
-              className='mt-4 flex flex-wrap items-center gap-2'
-              badges={props.trustBadges}
-            />
+        {props.trustBadges && props.trustBadges.length > 0 && (
+          <motion.div
+            className={styles["trustBadges"]}
+            variants={itemVariants}>
+            <AuthTrustBadgesRow badges={props.trustBadges} />
           </motion.div>
-        ) : null}
+        )}
       </motion.div>
 
       {/* Illustration card */}
       <motion.div
-        variants={itemVariants}
-        className='bg-card/40 border-border/50 relative mx-auto max-w-md overflow-hidden rounded-2xl border p-6 backdrop-blur-sm lg:mx-0'>
-        {/* Gradient glows */}
-        <motion.div
+        className={styles["card"]}
+        variants={itemVariants}>
+        <div
           aria-hidden='true'
-          className='bg-primary/15 pointer-events-none absolute -top-20 -left-20 h-56 w-56 rounded-full blur-3xl'
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.4, 0.6, 0.4],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          className={styles["cardGlowPrimary"]}
         />
-        <motion.div
+        <div
           aria-hidden='true'
-          className='bg-secondary/15 pointer-events-none absolute -right-20 -bottom-20 h-56 w-56 rounded-full blur-3xl'
-          animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 7,
-            delay: 1,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          className={styles["cardGlowSecondary"]}
         />
 
-        {/* Floating illustration */}
-        <motion.div
-          animate={floatingAnimation}
-          className='relative'>
+        <div className={styles["illustration"]}>
           <Image
             src={props.illustrationSrc}
             alt={props.illustrationAlt}
             width={320}
             height={320}
-            className='mx-auto h-48 w-48 object-contain drop-shadow-lg sm:h-56 sm:w-56'
+            className={styles["image"]}
             priority
           />
-        </motion.div>
+        </div>
 
-        {/* Animated bullet list */}
         <motion.div
-          className='mt-6'
+          className={styles["bullets"]}
           variants={itemVariants}>
-          <AuthBulletList
-            className='text-muted-foreground space-y-3 text-sm'
-            bullets={props.bullets}
-            bulletAdornment={
-              <motion.span
-                className='bg-primary/70 mt-1.5 inline-block h-2 w-2 rounded-full'
-                aria-hidden='true'
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-            }
-          />
+          <AuthBulletList bullets={props.bullets} />
         </motion.div>
       </motion.div>
     </motion.div>

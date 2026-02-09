@@ -23,6 +23,7 @@ import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
 import {copySvgToClipboard} from "../_utils";
+import styles from "./ShareInvoiceDialog.module.scss";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
 
@@ -58,18 +59,18 @@ interface SelectionModeProps {
  */
 function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): React.JSX.Element {
   return (
-    <div className='space-y-4'>
-      <p className='text-muted-foreground text-sm'>Choose how you want to share this invoice. Your choice affects who can access it.</p>
+    <div className={styles["selectionBody"]}>
+      <p className={styles["selectionDescription"]}>Choose how you want to share this invoice. Your choice affects who can access it.</p>
 
-      <div className='grid gap-4'>
+      <div className={styles["selectionGrid"]}>
         <Card
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPublic}>
-          <CardHeader className='flex flex-row items-start gap-4 space-y-0 pb-4'>
-            <div className='flex size-12 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30'>
-              <TbGlobe className='size-6 text-orange-600 dark:text-orange-400' />
+          <CardHeader className={styles["cardHeaderRow"]}>
+            <div className={`${styles["iconCircle"]} ${styles["iconCircleOrange"]}`}>
+              <TbGlobe className={styles["globeIcon"]} />
             </div>
-            <div className='flex-1 space-y-1'>
+            <div className={styles["cardContent"]}>
               <CardTitle className='text-base'>Public Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Generate a link or QR code that <strong>anyone</strong> can use to view this invoice.
@@ -81,11 +82,11 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
         <Card
           className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
           onClick={onSelectPrivate}>
-          <CardHeader className='flex flex-row items-start gap-4 space-y-0 pb-4'>
-            <div className='flex size-12 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30'>
-              <TbLock className='size-6 text-green-600 dark:text-green-400' />
+          <CardHeader className={styles["cardHeaderRow"]}>
+            <div className={`${styles["iconCircle"]} ${styles["iconCircleGreen"]}`}>
+              <TbLock className={styles["lockIcon"]} />
             </div>
-            <div className='flex-1 space-y-1'>
+            <div className={styles["cardContent"]}>
               <CardTitle className='text-base'>Private Sharing</CardTitle>
               <CardDescription className='text-sm'>
                 Send an email invitation to a <strong>specific person</strong>. Only they will have access.
@@ -98,7 +99,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
       <Alert
         variant='default'
         className='mt-4'>
-        <TbAlertTriangle className='size-4' />
+        <TbAlertTriangle className={styles["alertIcon"]} />
         <AlertTitle>Privacy Notice</AlertTitle>
         <AlertDescription className='text-xs'>
           Public links can be accessed by anyone who has the URL. Private sharing restricts access to the specific recipient.

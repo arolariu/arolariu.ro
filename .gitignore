@@ -26,9 +26,21 @@
 **/artifacts/
 **/test-file.txt
 
+# Windows shell artifacts:
+nul
+
+# Editor user settings:
+*.DotSettings.user
+
+# Merge conflict backups:
+*.orig
+
 # Exceptions:
 !.vs/settings.vssettings
 
+
+# Claude Code local settings (user-specific auto-granted permissions):
+.claude/settings.local.json
 
 # Environment variables:
 **/.env

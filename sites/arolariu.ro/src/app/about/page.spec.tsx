@@ -13,7 +13,7 @@ test.describe("About Section @about", () => {
       await safeNavigate("/about/");
 
       await expect(page.locator("main")).toBeVisible();
-      await expect(page.locator("h1")).toBeVisible();
+      await expect(page.getByRole("heading", {level: 1})).toBeVisible();
     });
 
     test(tagged("should have proper structure", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {

@@ -3,6 +3,7 @@
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
+import styles from "./ForbiddenScreen.module.scss";
 
 /**
  * @fileoverview Presentation component for the "forbidden" (HTTP 403) state.
@@ -40,26 +41,26 @@ export default function RenderForbiddenScreen(): React.JSX.Element {
   const t = useTranslations("Forbidden.Screen");
 
   return (
-    <section className='container mx-auto flex flex-col items-center justify-center px-5 py-12'>
+    <section className={styles["container"]}>
       <Image
         src='/images/auth/forbidden.svg'
         alt=''
         aria-hidden
-        className='mb-4 h-full w-full rounded object-cover object-center md:w-3/6 lg:w-2/6'
+        className={styles["image"]}
         width={500}
         height={500}
       />
-      <article className='w-full text-center lg:w-2/3'>
-        <h1 className='mb-4 inline bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl'>
+      <article className={styles["content"]}>
+        <h1 className={styles["title"]}>
           {t("title")}
         </h1>
-        <span className='mb-4 inline text-4xl font-black sm:text-4xl'>😭</span>
-        <p className='my-8 leading-relaxed'>{t("description")}</p>
+        <span className={styles["emoji"]}>😭</span>
+        <p className={styles["description"]}>{t("description")}</p>
       </article>
-      <article className='mb-12 flex justify-center'>
+      <article className={styles["ctaWrapper"]}>
         <Link
           href='/auth'
-          className='inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
+          className={styles["ctaLink"]}>
           {t("callToAction")}
         </Link>
       </article>

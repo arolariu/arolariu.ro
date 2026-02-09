@@ -21,6 +21,7 @@ import {useLocale} from "next-intl";
 import {useCallback} from "react";
 import {TbEdit} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./ItemsTable.module.scss";
 
 type Props = {
   invoice: Invoice;
@@ -92,8 +93,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
   return (
     <div>
-      <div className='mb-2 flex items-center justify-between'>
-        <h3 className='text-sm font-medium'>Items</h3>
+      <div className={styles["headerRow"]}>
+        <h3 className={styles["itemsLabel"]}>Items</h3>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -112,16 +113,16 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
           </Tooltip>
         </TooltipProvider>
       </div>
-      <div className='overflow-hidden rounded-md border'>
+      <div className={styles["tableWrapper"]}>
         <Table className='divide-border min-w-full divide-y'>
           <TableHeader>
             <TableRow className='bg-muted/50'>
-              <TableHead className='text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wider uppercase'>Item</TableHead>
-              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>Qty</TableHead>
-              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+              <TableHead className={styles["tableHeader"]}>Item</TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>Qty</TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>
                 Price
               </TableHead>
-              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+              <TableHead className={styles["tableHeaderRight"]}>
                 Total
               </TableHead>
             </TableRow>
@@ -133,15 +134,15 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 initial={{opacity: 0, y: -20}}
                 animate={{opacity: 1, y: 0}}
                 transition={{delay: index * 0.05}}
-                className='hover:bg-muted/50'>
-                <td className='px-4 py-3 text-sm whitespace-nowrap'>{item.rawName}</td>
-                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
+                className={styles["tableRow"]}>
+                <td className={styles["tableCell"]}>{item.rawName}</td>
+                <td className={styles["tableCellRight"]}>
                   {item.quantity} {item.quantityUnit}
                 </td>
-                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
+                <td className={styles["tableCellRight"]}>
                   {formatCurrency(item.price, {currencyCode: invoice.paymentInformation.currency.code, locale})}
                 </td>
-                <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>
+                <td className={styles["tableCellRightBold"]}>
                   {formatCurrency(item.price * item.quantity, {currencyCode: invoice.paymentInformation.currency.code, locale})}
                 </td>
               </motion.tr>
@@ -152,11 +153,11 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 initial={{opacity: 0, x: 0}}
                 animate={{opacity: 1, x: 0}}
                 transition={{delay: index * 0.05}}
-                className='h-12'>
-                <td className='px-4 py-3 text-sm whitespace-nowrap' />
-                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
-                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
-                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
+                className={styles["emptyRow"]}>
+                <td className={styles["tableCell"]} />
+                <td className={styles["tableCellRight"]} />
+                <td className={styles["tableCellRight"]} />
+                <td className={styles["tableCellRight"]} />
               </motion.tr>
             ))}
           </TableBody>
@@ -164,10 +165,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             <TableRow className='bg-muted/50'>
               <TableHead
                 colSpan={3}
-                className='px-4 py-3 text-right text-sm font-medium'>
+                className={styles["footerLabel"]}>
                 Total
               </TableHead>
-              <TableHead className='px-4 py-3 text-right text-sm font-medium'>
+              <TableHead className={styles["footerLabel"]}>
                 {formatCurrency(totalAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
               </TableHead>
             </TableRow>
@@ -176,11 +177,11 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
 
         {/* Pagination controls - only show when more than one page */}
         {totalPages > 1 && (
-          <div className='bg-popover flex items-center justify-between border-t p-4'>
-            <div className='text-muted-foreground text-sm'>
+          <div className={styles["paginationBar"]}>
+            <div className={styles["paginationInfo"]}>
               {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
             </div>
-            <div className='flex items-center gap-2'>
+            <div className={styles["paginationControls"]}>
               <Button
                 variant='outline'
                 className='cursor-pointer'
@@ -188,7 +189,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 onClick={handlePreviousPage}>
                 Previous
               </Button>
-              <span className='text-sm font-medium'>
+              <span className={styles["paginationText"]}>
                 Page {currentPage} of {totalPages}
               </span>
               <Button

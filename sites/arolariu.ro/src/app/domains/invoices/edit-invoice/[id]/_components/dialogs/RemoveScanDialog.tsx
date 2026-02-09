@@ -8,6 +8,7 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbLoader2, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./RemoveScanDialog.module.scss";
 
 /**
  * Payload structure for the remove scan dialog.
@@ -108,24 +109,24 @@ export default function RemoveScanDialog(): React.JSX.Element {
         </DialogHeader>
 
         {scan ? (
-          <div className='py-4'>
-            <div className='bg-muted overflow-hidden rounded-md border'>
+          <div className={styles["previewSection"]}>
+            <div className={styles["previewImage"]}>
               <Image
                 src={scan.location}
                 alt={`Scan ${scanIndex + 1}`}
                 width={400}
                 height={300}
-                className='h-48 w-full object-cover'
+                className={styles["scanPreviewImage"]}
               />
             </div>
-            <p className='text-muted-foreground mt-2 text-center text-xs'>Scan {scanIndex + 1}</p>
+            <p className={styles["previewCaption"]}>Scan {scanIndex + 1}</p>
           </div>
         ) : null}
 
         {isLastScan ? (
-          <div className='bg-destructive/10 text-destructive rounded-md p-3'>
-            <p className='text-sm font-medium'>Cannot remove last scan</p>
-            <p className='text-xs'>Every invoice must have at least one scan attached. Add another scan before removing this one.</p>
+          <div className={styles["warningBox"]}>
+            <p className={styles["warningTitle"]}>Cannot remove last scan</p>
+            <p className={styles["warningText"]}>Every invoice must have at least one scan attached. Add another scan before removing this one.</p>
           </div>
         ) : null}
 

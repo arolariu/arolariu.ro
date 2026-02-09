@@ -1,0 +1,200 @@
+// ===========================================
+// SIGN-IN PAGE - ISLAND STYLES
+// Scoped to /auth/sign-in/island.tsx only
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// ISLAND LAYOUT
+// ===========================================
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  justify-items: center;
+  gap: space(10);
+  width: 100%;
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.column {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.columnReverse {
+  order: 2;
+
+  @include respond-to('lg') {
+    order: 1;
+  }
+}
+
+.columnForward {
+  order: 1;
+
+  @include respond-to('lg') {
+    order: 2;
+  }
+}
+
+// ===========================================
+// FORM CONTAINER & CARD
+// ===========================================
+.formContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  overflow: hidden;
+  border-radius: radius('2xl');
+  border: 1px solid color-alpha('border', 0.5);
+  padding: space(3);
+  background-color: color-alpha('card', 0.6);
+  backdrop-filter: blur(12px);
+  @include shadow('2xl');
+  @include transition((border-color, box-shadow));
+
+  @include respond-to('sm') {
+    padding: space(4);
+  }
+
+  &:hover {
+    border-color: color-alpha('primary', 0.3);
+    box-shadow: 0 25px 50px -12px color-alpha('primary', 0.1);
+  }
+}
+
+// ===========================================
+// GLOW EFFECTS
+// ===========================================
+.glow {
+  position: absolute;
+  border-radius: radius('full');
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.glowBackground {
+  inset: -1rem;
+  border-radius: radius('3xl');
+  opacity: 0.4;
+  background-color: color-alpha('primary', 0.2);
+}
+
+
+// ===========================================
+// CLERK SKELETON LOADING
+// Shown via Clerk's fallback prop while SignIn mounts
+// ===========================================
+.clerkSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+  padding: space(6);
+  width: 100%;
+  min-width: 20rem;
+  min-height: 28rem;
+}
+
+.clerkSkeletonHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(3);
+  margin-bottom: space(2);
+}
+
+.clerkSkeletonLogo {
+  width: 3rem;
+  height: 3rem;
+  border-radius: radius('full');
+}
+
+.clerkSkeletonTitle {
+  width: 70%;
+  height: 1.75rem;
+  border-radius: radius('md');
+}
+
+.clerkSkeletonSubtitle {
+  width: 85%;
+  height: 1rem;
+  border-radius: radius('md');
+}
+
+.clerkSkeletonSocial {
+  display: flex;
+  gap: space(3);
+  justify-content: center;
+  margin-bottom: space(2);
+}
+
+.clerkSkeletonSocialButton {
+  width: 4.5rem;
+  height: 2.5rem;
+  border-radius: radius('md');
+}
+
+.clerkSkeletonDivider {
+  width: 100%;
+  height: 1rem;
+  border-radius: radius('md');
+  margin: space(2) 0;
+}
+
+.clerkSkeletonInput {
+  width: 100%;
+  height: 2.75rem;
+  border-radius: radius('md');
+}
+
+.clerkSkeletonButton {
+  width: 100%;
+  height: 2.75rem;
+  border-radius: radius('md');
+  margin-top: space(2);
+}
+
+.clerkSkeletonFooter {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: space(4);
+}
+
+.clerkSkeletonFooterText {
+  width: 60%;
+  height: 1rem;
+  border-radius: radius('md');
+}
+
+.clerkShimmer {
+  background: linear-gradient(
+    90deg,
+    color-alpha('muted', 0.3) 0%,
+    color-alpha('muted', 0.5) 50%,
+    color-alpha('muted', 0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: clerkShimmer 1.5s infinite;
+}
+
+@keyframes clerkShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

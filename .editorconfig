@@ -12,7 +12,6 @@ max_line_length = 140
 charset = utf-8
 indent_style = space
 indent_size = 2
-tab_width = 4
 
 # Web files
 [*.{js,jsx,ts,tsx}]
@@ -33,6 +32,18 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.svelte]
+indent_style = space
+indent_size = 2
+
+[Dockerfile*]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+
+[*.sh]
+end_of_line = lf
 
 # C# files
 [*.cs]

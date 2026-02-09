@@ -1,0 +1,56 @@
+@use '../../../../../../../styles/abstracts' as *;
+@use '../../../../_styles/invoice-shared' as invoice;
+
+.body {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.filterRow {
+  display: flex;
+  flex-direction: column;
+  gap: space(3);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.searchWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.filterControls {
+  display: flex;
+  gap: space(2);
+}
+
+.selectWrapper {
+  width: space(40);
+}
+
+.tableOuter {
+  overflow: hidden;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.tableHeader {
+  color: color('muted-foreground');
+  padding: space(3) space(4);
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  text-transform: uppercase;
+  letter-spacing: letter-spacing('wider');
+}
+
+.tableHeaderRight {
+  composes: tableHeader;
+  text-align: right;
+}

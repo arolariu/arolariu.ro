@@ -1,0 +1,154 @@
+/// ===========================================
+/// BASE ELEMENT STYLES
+/// ===========================================
+/// Default styles for HTML elements: body, headings (h1-h6),
+/// paragraphs, links, code/pre, blockquote, hr, and text selection.
+///
+/// Uses design token functions (`font-size()`, `space()`, `radius()`)
+/// and CSS custom properties for automatic light/dark mode support.
+///
+/// **Fluid typography**: Headings (h1-h4) use single fluid `font-size()` tokens
+/// that scale smoothly via `clamp()` between mobile and desktop viewports,
+/// replacing the previous `@include respond-to('md')` breakpoint jumps.
+///
+/// Links use `:where(a)` for zero specificity (0,0,0) so component
+/// classes (Tailwind, CSS Modules) automatically win without `!important`.
+///
+/// @group base
+/// @author arolariu
+/// @see abstracts/_typography.scss — font tokens used here
+/// @see abstracts/_variables.scss — spacing and radius tokens
+/// @see base/_globals.scss — CSS custom properties referenced here
+/// ===========================================
+@use '../abstracts' as *;
+
+// ===========================================
+// BODY
+// ===========================================
+body {
+  font-family: $font-family-default;
+  font-size: font-size('base');
+  font-weight: font-weight('normal');
+  line-height: line-height('normal');
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
+// ===========================================
+// HEADINGS
+// ===========================================
+h1, h2, h3, h4, h5, h6 {
+  font-weight: font-weight('semibold');
+  line-height: line-height('tight');
+  color: hsl(var(--foreground));
+}
+
+// Fluid typography: each token's clamp() range interpolates smoothly
+// from the previous step's size at 320px to the target size at 1280px.
+// e.g. font-size('5xl') → clamp(2.25rem, 2rem + 1.25vw, 3rem)
+// This replaces the old breakpoint jumps (e.g. 4xl→5xl at md) with
+// continuous scaling — smoother UX, less CSS, better intermediate sizes.
+h1 { font-size: font-size('5xl'); }
+h2 { font-size: font-size('4xl'); }
+h3 { font-size: font-size('3xl'); }
+h4 { font-size: font-size('2xl'); }
+
+h5 {
+  font-size: font-size('lg');
+}
+
+h6 {
+  font-size: font-size('base');
+}
+
+// ===========================================
+// PARAGRAPHS
+// ===========================================
+p {
+  margin-bottom: space(4);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// ===========================================
+// LINKS
+// ===========================================
+// Wrapped in :where() for zero specificity (0,0,0) so component-level
+// classes (Tailwind, CSS Modules) automatically win. This prevents the
+// global link color from overriding Button asChild text colors.
+:where(a) {
+  color: hsl(var(--primary));
+  @include transition((color, opacity));
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+// ===========================================
+// CODE
+// ===========================================
+code {
+  font-family: $font-family-mono;
+  font-size: 0.875em;
+  background-color: hsl(var(--muted));
+  padding: 0.125rem 0.25rem;
+  border-radius: radius('sm');
+}
+
+pre {
+  font-family: $font-family-mono;
+  font-size: font-size('sm');
+  background-color: hsl(var(--muted));
+  padding: space(4);
+  border-radius: radius('lg');
+  overflow-x: auto;
+
+  code {
+    background: none;
+    padding: 0;
+  }
+}
+
+// ===========================================
+// OTHER ELEMENTS
+// ===========================================
+small {
+  font-size: font-size('sm');
+}
+
+strong {
+  font-weight: font-weight('semibold');
+}
+
+blockquote {
+  border-left: 4px solid hsl(var(--border));
+  padding-left: space(4);
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: space(8) 0;
+}
+
+// ===========================================
+// FONT UTILITY (was in globals.scss)
+// ===========================================
+.text {
+  font-family: var(--font-default);
+  font-weight: font-weight('normal');
+  font-style: normal;
+}
+
+// ===========================================
+// SELECTION
+// ===========================================
+::selection {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}

@@ -6,6 +6,7 @@ import {useLocale} from "next-intl";
 import {TbCreditCard, TbMinus, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {computeBudgetImpact} from "../../_utils/analytics";
+import styles from "./BudgetImpactCard.module.scss";
 
 export function BudgetImpactCard(): React.JSX.Element {
   const locale = useLocale();
@@ -50,50 +51,50 @@ export function BudgetImpactCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Budget progress */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between text-sm'>
-            <span className='text-muted-foreground'>Monthly Budget</span>
-            <span className='font-medium'>{formatCurrency(monthlyBudget, {currencyCode: currency.code, locale})}</span>
+        <div className={styles["budgetSection"]}>
+          <div className={styles["budgetRow"]}>
+            <span className={styles["budgetLabel"]}>Monthly Budget</span>
+            <span className={styles["budgetValue"]}>{formatCurrency(monthlyBudget, {currencyCode: currency.code, locale})}</span>
           </div>
           <Progress
             value={Math.min(percentUsed, 100)}
             className={`h-3 ${getProgressColorClass()}`}
           />
-          <div className='text-muted-foreground flex items-center justify-between text-xs'>
+          <div className={styles["budgetMeta"]}>
             <span>{formatCurrency(totalSpent, {currencyCode: currency.code, locale})} spent</span>
             <span>{percentUsed.toFixed(0)}%</span>
           </div>
         </div>
 
         {/* This invoice impact */}
-        <div className='border-border bg-muted/30 space-y-1 rounded-lg border p-3'>
-          <p className='text-muted-foreground text-xs'>This invoice used</p>
-          <p className='text-2xl font-semibold tabular-nums'>{thisInvoicePercent.toFixed(1)}%</p>
-          <p className='text-muted-foreground text-xs'>of your monthly budget</p>
+        <div className={styles["impactBox"]}>
+          <p className={styles["impactLabel"]}>This invoice used</p>
+          <p className={styles["impactPercent"]}>{thisInvoicePercent.toFixed(1)}%</p>
+          <p className={styles["impactDescription"]}>of your monthly budget</p>
         </div>
 
         {/* Remaining stats */}
-        <div className='grid grid-cols-2 gap-3'>
-          <div className='space-y-1'>
-            <p className='text-muted-foreground text-xs'>Remaining</p>
-            <p className={`text-lg font-semibold tabular-nums ${isOverBudget ? "text-destructive" : ""}`}>
+        <div className={styles["statsGrid"]}>
+          <div className={styles["statItem"]}>
+            <p className={styles["statLabel"]}>Remaining</p>
+            <p className={`${styles["statValue"]} ${isOverBudget ? styles["overBudgetText"] : ""}`}>
               {formatCurrency(Math.abs(remaining), {currencyCode: currency.code, locale})}
             </p>
-            {isOverBudget ? <p className='text-destructive text-xs'>Over budget</p> : null}
+            {isOverBudget ? <p className={styles["overBudgetLabel"]}>Over budget</p> : null}
           </div>
-          <div className='space-y-1'>
-            <p className='text-muted-foreground text-xs'>Days Left</p>
-            <p className='text-lg font-semibold tabular-nums'>{daysRemaining}</p>
-            <p className='text-muted-foreground text-xs'>in {monthName}</p>
+          <div className={styles["statItem"]}>
+            <p className={styles["statLabel"]}>Days Left</p>
+            <p className={styles["statValue"]}>{daysRemaining}</p>
+            <p className={styles["statLabel"]}>in {monthName}</p>
           </div>
         </div>
 
         {/* Daily allowance */}
         {!isOverBudget && (
-          <div className='border-border flex items-center justify-between rounded-lg border p-3'>
-            <div className='space-y-0.5'>
-              <p className='text-muted-foreground text-xs'>Daily Allowance</p>
-              <p className='text-sm font-medium'>{formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})}/day</p>
+          <div className={styles["dailyAllowanceBox"]}>
+            <div className={styles["dailyAllowanceContent"]}>
+              <p className={styles["dailyAllowanceLabel"]}>Daily Allowance</p>
+              <p className={styles["dailyAllowanceValue"]}>{formatCurrency(dailyAllowance, {currencyCode: currency.code, locale})}/day</p>
             </div>
             {getDailyAllowanceIcon()}
           </div>

@@ -32,6 +32,7 @@ import {
   TbTrash,
 } from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./RecipeCard.module.scss";
 
 type Props = {
   recipe: Recipe;
@@ -103,7 +104,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
     <Card className='overflow-hidden transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
         <CardTitle>
-          <h3 className='text-lg font-semibold'>{name}</h3>
+          <h3 className={styles["title"]}>{name}</h3>
           <Badge
             variant={getBadgeVariant()}
             className='mt-1'>
@@ -154,11 +155,11 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         </CardAction>
       </CardHeader>
       <CardContent className='h-full p-4'>
-        <p className='text-muted-foreground mb-2 text-sm'>{description}</p>
+        <p className={styles["description"]}>{description}</p>
 
-        <div className='space-y-4'>
-          <h4 className='text-muted-foreground text-sm'>Ingredients:</h4>
-          <ul className='list-disc pl-5 text-sm'>
+        <div className={styles["ingredientsSection"]}>
+          <h4 className={styles["ingredientsLabel"]}>Ingredients:</h4>
+          <ul className={styles["ingredientsList"]}>
             {ingredients.slice(0, 3).map((ingredient) => (
               <li key={ingredient.rawName}>{ingredient.rawName}</li>
             ))}
@@ -166,11 +167,11 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <li className='text-muted-foreground cursor-help'>+{ingredients.length - 3} more</li>
+                    <li className={styles["moreIngredients"]}>+{ingredients.length - 3} more</li>
                   </TooltipTrigger>
                   <TooltipContent className='max-w-xs'>
-                    <p className='mb-1 font-medium'>Additional ingredients:</p>
-                    <ul className='list-disc pl-5'>
+                    <p className={styles["tooltipTitle"]}>Additional ingredients:</p>
+                    <ul className={styles["tooltipIngredientsList"]}>
                       {ingredients.slice(3).map((ingredient) => (
                         <li key={ingredient.rawName}>{ingredient.rawName}</li>
                       ))}
@@ -183,11 +184,11 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         </div>
 
         {/** Prep + Cook times */}
-        <div className='text-muted-foreground flex cursor-help gap-4 pt-4 text-xs'>
+        <div className={styles["timingRow"]}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className='flex items-center'>
+                <div className={styles["timeItem"]}>
                   <TbClock className='mr-1 h-3 w-3' />
                   Prep: {preparationTime}&lsquo;
                 </div>
@@ -198,7 +199,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className='flex items-center'>
+                <div className={styles["timeItem"]}>
                   <TbToolsKitchen className='mr-1 h-3 w-3' />
                   Cook: {cookingTime}&lsquo;
                 </div>

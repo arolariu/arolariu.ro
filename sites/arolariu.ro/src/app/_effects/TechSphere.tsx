@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useRef} from "react";
+import styles from "./TechSphere.module.scss";
 import {
   BufferAttribute,
   BufferGeometry,
@@ -117,10 +118,10 @@ export default function TechSphere(): React.JSX.Element {
   }, []);
 
   return (
-    <div className='relative mx-auto w-full max-w-[600px] overflow-hidden'>
+    <div className={styles["container"]}>
       <div
         ref={containerRef}
-        className='aspect-square w-full'
+        className={styles["canvas"]}
       />
     </div>
   );

@@ -1,0 +1,131 @@
+// ===========================================
+// THE AUTHOR - COMPETENCIES COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+// Header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  color: color('muted-foreground');
+}
+
+// Grid
+.grid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+// Card wrapper (for hover scale)
+.cardWrapper {
+  // Animation handled by motion
+}
+
+// Card
+.card {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: radius('xl');
+  border: 1px solid color-alpha('border', 0.5);
+  background-color: color('card');
+  padding: space(6);
+  @include shadow('md');
+  @include transition((border-color, box-shadow, background-color));
+
+  &:hover {
+    border-color: color-alpha('primary', 0.3);
+    background-color: color-alpha('card', 0.8);
+    @include shadow('xl');
+  }
+}
+
+// Gradient accent bar
+.accentTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(to right, color('primary'), color-alpha('primary', 0.3));
+}
+
+// Card header
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+  margin-bottom: space(4);
+}
+
+// Icon container
+.iconWrapper {
+  padding: space(3);
+  border-radius: radius('lg');
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+  @include transition((background-color, color));
+
+  .card:hover & {
+    background-color: color('primary');
+    color: color('primary-foreground');
+  }
+}
+
+.icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+// Card title
+.cardTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('semibold');
+
+  .card:hover & {
+    text-shadow: 0 0 20px color-alpha('primary', 0.5);
+  }
+}
+
+// Card description
+.cardDescription {
+  color: color('muted-foreground');
+}

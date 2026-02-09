@@ -1,0 +1,226 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.analyzingSection {
+  & > * + * {
+    margin-top: space(6);
+  }
+  padding-block: space(8);
+}
+
+.spinnerWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.spinnerIcon {
+  border-radius: radius('full');
+  background-color: rgba(168, 85, 247, 0.1);
+  padding: space(4);
+
+  :global(.dark) & {
+    background-color: rgba(168, 85, 247, 0.3);
+  }
+}
+
+.analyzingTitle {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+.analyzingStep {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.progressWrapper {
+  margin-inline: auto;
+  max-width: 28rem;
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.progressText {
+  color: color('muted-foreground');
+  text-align: center;
+  font-size: font-size('xs');
+}
+
+.optionsSection {
+  & > * + * {
+    margin-top: space(6);
+  }
+}
+
+.sectionLabel {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.optionsGrid {
+  display: grid;
+  gap: space(3);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.optionCardSelected {
+  border-color: #a855f7;
+  background-color: rgba(168, 85, 247, 0.05);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+
+  :global(.dark) & {
+    background-color: rgba(168, 85, 247, 0.2);
+  }
+}
+
+.optionCardDefault {
+  &:hover {
+    background-color: color-alpha('muted', 0.5);
+    border-color: rgba(168, 85, 247, 0.3);
+  }
+}
+
+.optionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.optionIconSelected {
+  border-radius: radius('lg');
+  padding: space(2);
+  background-color: #a855f7;
+  color: white;
+}
+
+.optionIconDefault {
+  border-radius: radius('lg');
+  padding: space(2);
+  background-color: color('muted');
+}
+
+.optionBadges {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.optionTime {
+  color: color('muted-foreground');
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('xs');
+}
+
+.featuresSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.featuresList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+.enhancementsSection {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.enhancementItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);  // space-x-3
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(3);
+  @include transition(colors);
+
+  &:hover {
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.enhancementContent {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: space(3);
+}
+
+.enhancementIconWrapper {
+  color: color('muted-foreground');
+  margin-top: space(0.5);
+}
+
+.enhancementText {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.enhancementDesc {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.summaryContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: space(4);
+}
+
+.summaryLeft {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.summarySubtext {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.summaryRight {
+  text-align: right;
+}
+
+.summaryTimeLabel {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.summaryTimeValue {
+  font-weight: font-weight('semibold');
+}
+
+.analyzeButton {
+  background-color: #9333ea;
+
+  &:hover {
+    background-color: #7e22ce;
+  }
+}
+
+.invoiceIdSnippet {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: font-size('xs');
+}
+
+.summaryTitle {
+  font-weight: font-weight('medium');
+}

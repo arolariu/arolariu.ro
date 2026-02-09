@@ -12,6 +12,7 @@ import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {generateTimelineFromInvoice, getEventIcon, groupEventsByDate} from "../../_utils/timeline";
 import {TimelineItem} from "./TimelineItem";
 import {TimelineSharedWithList} from "./TimelineSharedWithList";
+import styles from "./InvoiceTimeline.module.scss";
 
 /**
  * Renders a comprehensive timeline of invoice events with tooltips and sharing info.
@@ -35,7 +36,7 @@ export function InvoiceTimeline(): React.JSX.Element {
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-4'>
-        <div className='flex items-center justify-between'>
+        <div className={styles["headerRow"]}>
           <CardTitle className='flex items-center gap-2 text-lg'>
             <TbCalendar className='text-muted-foreground h-4 w-4' />
             Invoice Timeline
@@ -46,17 +47,17 @@ export function InvoiceTimeline(): React.JSX.Element {
             {totalEvents} {totalEvents === 1 ? "event" : "events"}
           </Badge>
         </div>
-        <p className='text-muted-foreground mt-1 text-xs'>Complete history of actions and changes</p>
+        <p className={styles["subtitle"]}>Complete history of actions and changes</p>
       </CardHeader>
 
       <CardContent className='space-y-6'>
         {/* Timeline events grouped by date */}
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-          <div
+          <div 
             key={dateKey}
-            className='space-y-3'>
-            <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>{dateKey}</p>
-            <div className='space-y-0'>
+            className={styles["dateGroup"]}>
+            <p className={styles["dateLabel"]}>{dateKey}</p>
+            <div className={styles["eventsContainer"]}>
               {dateEvents.map((event, idx) => (
                 <TimelineItem
                   key={event.id}

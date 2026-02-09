@@ -85,16 +85,31 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: 🚀 Starting workspace setup...
+    # ─────────────────────────────────────────────────────────────────
+    # Phase 1: Initialize and record start time
+    # ─────────────────────────────────────────────────────────────────
+    - name: 🚀 Initialize workspace setup
+      id: init
       shell: bash
-      run: echo "::notice::Setting up workspace with Node.js ${{ inputs.node-version }}${{ inputs.dotnet-version != '' && format(' and .NET {0}', inputs.dotnet-version) || '' }}"
+      run: |
+        echo "start_time=$(date +%s)" >> $GITHUB_OUTPUT
+        echo "::group::📋 Setup Configuration"
+        echo "  Node.js:    ${{ inputs.node-version }}"
+        echo "  .NET:       ${{ inputs.dotnet-version || 'disabled' }}"
+        echo "  Playwright: ${{ inputs.playwright }}"
+        echo "  Generate:   ${{ inputs.generate }}"
+        echo "  Cache key:  ${{ inputs.cache-key-prefix }}"
+        echo "::endgroup::"
 
-    - name: 📦 Setup Node.js ${{ inputs.node-version }}
+    # ─────────────────────────────────────────────────────────────────
+    # Phase 2: SDK Setup (Node.js + .NET)
+    # ─────────────────────────────────────────────────────────────────
+    - name: 📦 Setting up Node.js v${{ inputs.node-version }}...
       uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
 
-    - name: 💾 Cache Node.js dependencies
+    - name: 💾 Caching Node.js dependencies...
       id: cache-node
       uses: actions/cache@v5
       with:
@@ -106,13 +121,13 @@ runs:
           **/node_modules
         key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
 
-    - name: 📦 Setup .NET ${{ inputs.dotnet-version }}
+    - name: 📦 Setting up .NET v${{ inputs.dotnet-version }}...
       if: inputs.dotnet-version != ''
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
 
-    - name: 💾 Cache .NET packages
+    - name: 💾 Caching .NET packages...
       id: cache-dotnet
       if: inputs.dotnet-version != ''
       uses: actions/cache@v5
@@ -172,10 +187,25 @@ runs:
         echo "::endgroup::"
         echo "✅ Artifacts generated successfully"
 
+    # ─────────────────────────────────────────────────────────────────
+    # Phase 7: Summary and Timing
+    # ─────────────────────────────────────────────────────────────────
     - name: ✨ Workspace setup complete
+      id: timing
       shell: bash
       run: |
-        echo "::notice::✅ Workspace setup completed successfully!"
-        echo "📊 Summary:"
-        echo "  - Node.js cache hit: ${{ steps.cache-node.outputs.cache-hit || 'N/A' }}"
-        echo "  - .NET cache hit: ${{ steps.cache-dotnet.outputs.cache-hit || 'N/A' }}"
+        END=$(date +%s)
+        DURATION=$((END - ${{ steps.init.outputs.start_time }}))
+        echo "duration=${DURATION}" >> $GITHUB_OUTPUT
+
+        echo ""
+        echo "┌──────────────────────────────────────────────────────────┐"
+        echo "│  ✅ Workspace Setup Complete                             │"
+        echo "├──────────────────────────────────────────────────────────┤"
+        printf "│  ⏱️  Total time: %3ds                                    │\n" $DURATION
+        echo "├──────────────────────────────────────────────────────────┤"
+        echo "│  Cache Status:                                           │"
+        printf "│    • Node.js:    %-40s│\n" "${{ steps.cache-node.outputs.cache-hit == 'true' && '✅ HIT' || '❌ MISS' }}"
+        printf "│    • .NET:       %-40s│\n" "${{ steps.cache-dotnet.outputs.cache-hit == 'true' && '✅ HIT' || (inputs.dotnet-version == '' && '⏭️  SKIPPED' || '❌ MISS') }}"
+        printf "│    • Playwright: %-40s│\n" "${{ steps.cache-playwright.outputs.cache-hit == 'true' && '✅ HIT' || (inputs.playwright != 'true' && '⏭️  SKIPPED' || '❌ MISS') }}"
+        echo "└──────────────────────────────────────────────────────────┘"

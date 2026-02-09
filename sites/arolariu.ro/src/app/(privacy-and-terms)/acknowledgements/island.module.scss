@@ -1,0 +1,46 @@
+// ===========================================
+// ACKNOWLEDGEMENTS ISLAND STYLES
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+// ===========================================
+// MAIN LAYOUT
+// ===========================================
+.acknowledgementsMain {
+  @include flex-column;
+  min-height: 100vh;
+}
+
+// ===========================================
+// PACKAGES SECTION
+// ===========================================
+.packagesSection {
+  width: 100%;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: space(16) space(4);
+}
+
+.packagesSectionHeader {
+  margin-bottom: space(8);
+  text-align: center;
+}
+
+.packagesTitle {
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  margin-bottom: space(4);
+}
+
+.packagesTitleGradient {
+  @include gradient-text;
+}
+
+.packagesSubtitle {
+  color: color('muted-foreground');
+  font-size: font-size('lg');
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+}

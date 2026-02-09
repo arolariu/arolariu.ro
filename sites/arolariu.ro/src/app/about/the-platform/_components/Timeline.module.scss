@@ -1,0 +1,405 @@
+// ===========================================
+// THE PLATFORM - TIMELINE COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  padding: space(24) 0;
+}
+
+// Background
+.bgLayer {
+  position: absolute;
+  inset: 0;
+  z-index: z('behind');
+}
+
+.bgGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    color('background'),
+    color-alpha('primary', 0.05),
+    color('background')
+  );
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 space(4);
+}
+
+// Header
+.header {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(16);
+  max-width: 48rem;
+  text-align: center;
+}
+
+.badge {
+  margin-bottom: space(4);
+  padding: space(1) space(4);
+  font-size: font-size('sm');
+}
+
+.title {
+  margin-bottom: space(6);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+}
+
+.titleHighlight {
+  @include gradient-text-custom;
+}
+
+.description {
+  font-size: font-size('lg');
+  color: color('muted-foreground');
+
+  @include respond-to('md') {
+    font-size: font-size('xl');
+  }
+}
+
+// Timeline container
+.timeline {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 64rem;
+}
+
+// Center line
+.centerLine {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 100%;
+  border-radius: radius('full');
+  background: linear-gradient(
+    to bottom,
+    color-alpha('primary', 0.5),
+    color-alpha('primary', 0.3),
+    color-alpha('primary', 0.1)
+  );
+}
+
+// Events container
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: space(16);
+}
+
+// Event wrapper
+.eventWrapper {
+  position: relative;
+}
+
+// Event icon on timeline
+.eventIcon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: z('content-high');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: radius('full');
+  @include shadow('lg');
+}
+
+.eventIconInner {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: white;
+}
+
+// Icon gradient variants
+.iconBlue {
+  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+}
+
+.iconGreen {
+  background: linear-gradient(to bottom right, #22c55e, #10b981);
+}
+
+.iconPurple {
+  background: linear-gradient(to bottom right, #a855f7, #8b5cf6);
+}
+
+.iconOrange {
+  background: linear-gradient(to bottom right, #f97316, #f59e0b);
+}
+
+.iconRed {
+  background: linear-gradient(to bottom right, #ef4444, #ec4899);
+}
+
+.iconCyan {
+  background: linear-gradient(to bottom right, #06b6d4, #14b8a6);
+}
+
+.iconIndigo {
+  background: linear-gradient(to bottom right, #6366f1, #a855f7);
+}
+
+.iconTeal {
+  background: linear-gradient(to bottom right, #14b8a6, #22c55e);
+}
+
+// Event card positioning
+.eventCardWrapper {
+  width: 45%;
+}
+
+.eventCardLeft {
+  composes: eventCardWrapper;
+  margin-right: auto;
+  padding-right: space(8);
+}
+
+.eventCardRight {
+  composes: eventCardWrapper;
+  margin-left: auto;
+  padding-left: space(8);
+}
+
+// Event card
+.eventCard {
+  cursor: pointer;
+  overflow: hidden;
+  @include transition((border-color, box-shadow));
+
+  &:hover {
+    border-color: color('primary');
+    @include shadow('lg');
+  }
+}
+
+.eventCardActive {
+  composes: eventCard;
+  border-color: color('primary');
+  @include shadow('lg');
+}
+
+.eventCardGradient {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  @include transition(opacity);
+  pointer-events: none;
+}
+
+// Card header
+.eventCardHeader {
+  position: relative;
+  padding-bottom: space(2);
+}
+
+.dateBadge {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  margin-bottom: space(2);
+  width: fit-content;
+}
+
+.dateIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.eventTitle {
+  font-size: font-size('xl');
+}
+
+.eventDescription {
+  font-size: font-size('base');
+}
+
+// Card content
+.eventCardContent {
+  position: relative;
+}
+
+// Tags
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+  margin-bottom: space(4);
+}
+
+.tag {
+  font-size: font-size('xs');
+}
+
+// Expandable details
+.expandableDetails {
+  overflow: hidden;
+}
+
+.detailsInner {
+  padding-top: space(4);
+  border-top: 1px solid color-alpha('primary', 0.2);
+}
+
+.detailsTitle {
+  margin-bottom: space(3);
+  font-size: font-size('sm');
+  font-weight: font-weight('semibold');
+}
+
+.detailsList {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.detailItem {
+  display: flex;
+  align-items: flex-start;
+  gap: space(2);
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.detailIcon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+// Color variants for detail icons
+.detailIconBlue {
+  color: #3b82f6;
+}
+
+.detailIconGreen {
+  color: #22c55e;
+}
+
+.detailIconPurple {
+  color: #a855f7;
+}
+
+.detailIconOrange {
+  color: #f97316;
+}
+
+.detailIconRed {
+  color: #ef4444;
+}
+
+.detailIconCyan {
+  color: #06b6d4;
+}
+
+.detailIconIndigo {
+  color: #6366f1;
+}
+
+.detailIconTeal {
+  color: #14b8a6;
+}
+
+// Expand hint
+.expandHint {
+  margin-top: space(2);
+  text-align: center;
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+// Animated border
+.eventCardBorder {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 4px;
+
+  &.originLeft {
+    transform-origin: right;
+  }
+
+  &.originRight {
+    transform-origin: left;
+  }
+}
+
+// Border gradient variants
+.borderBlue {
+  background: linear-gradient(to right, #3b82f6, #06b6d4);
+}
+
+.borderGreen {
+  background: linear-gradient(to right, #22c55e, #10b981);
+}
+
+.borderPurple {
+  background: linear-gradient(to right, #a855f7, #8b5cf6);
+}
+
+.borderOrange {
+  background: linear-gradient(to right, #f97316, #f59e0b);
+}
+
+.borderRed {
+  background: linear-gradient(to right, #ef4444, #ec4899);
+}
+
+.borderCyan {
+  background: linear-gradient(to right, #06b6d4, #14b8a6);
+}
+
+.borderIndigo {
+  background: linear-gradient(to right, #6366f1, #a855f7);
+}
+
+.borderTeal {
+  background: linear-gradient(to right, #14b8a6, #22c55e);
+}
+
+// Future indicator
+.futureIndicator {
+  margin-top: space(16);
+  text-align: center;
+}
+
+.futureIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 5rem;
+  height: 5rem;
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+}
+
+.futureIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.futureText {
+  margin-top: space(4);
+  color: color('muted-foreground');
+}

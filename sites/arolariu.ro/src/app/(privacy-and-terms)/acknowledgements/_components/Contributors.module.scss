@@ -1,0 +1,141 @@
+// ===========================================
+// CONTRIBUTORS COMPONENT STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// SECTION
+// ===========================================
+.contributorsSection {
+  position: relative;
+  width: 100%;
+  padding: space(16) space(4);
+  background: linear-gradient(to bottom, transparent, rgba(168, 85, 247, 0.05), transparent);
+}
+
+.container {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// ===========================================
+// HEADER
+// ===========================================
+.sectionHeader {
+  margin-bottom: space(12);
+  text-align: center;
+}
+
+.title {
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+}
+
+.titleGradient {
+  background: linear-gradient(to right, #06b6d4, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// GRID
+// ===========================================
+.contributorsGrid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// ===========================================
+// CARD
+// ===========================================
+.contributorCard {
+  height: 100%;
+  @include transition(all, 'moderate');
+
+  &:hover {
+    transform: translateY(-0.25rem);
+    border-color: color-alpha('primary', 0.3);
+    @include shadow('lg');
+  }
+}
+
+// ===========================================
+// CARD CONTENT
+// ===========================================
+.cardContent {
+  @include flex-center;
+  flex-direction: column;
+  padding: space(6);
+  text-align: center;
+}
+
+.avatar {
+  margin-bottom: space(4);
+  height: 4rem;
+  width: 4rem;
+}
+
+.avatarFallback {
+  font-size: font-size('lg');
+  font-weight: font-weight('bold');
+  color: white;
+}
+
+// Gradient variants for avatars
+.gradientCyanBlue {
+  background: linear-gradient(to bottom right, #06b6d4, #3b82f6);
+}
+
+.gradientBluePurple {
+  background: linear-gradient(to bottom right, #2563eb, #9333ea);
+}
+
+.gradientPurplePink {
+  background: linear-gradient(to bottom right, #a855f7, #ec4899);
+}
+
+.gradientAmberOrange {
+  background: linear-gradient(to bottom right, #f59e0b, #f97316);
+}
+
+.contributorName {
+  margin-bottom: space(1);
+  font-weight: font-weight('semibold');
+}
+
+.packageCount {
+  @include flex-center;
+  gap: space(1);
+  margin-bottom: space(2);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('primary');
+}
+
+.packageIcon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.description {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}

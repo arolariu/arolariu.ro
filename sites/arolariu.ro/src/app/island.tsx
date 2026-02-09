@@ -11,11 +11,11 @@ import TechnologiesSection from "./_components/Technologies";
  */
 export default function RenderHomeScreen(): React.JSX.Element {
   return (
-    <main>
+    <section>
       <BackgroundBeams className='pointer-events-none' />
       <HeroSection />
       <TechnologiesSection />
       <FeaturesSection />
-    </main>
+    </section>
   );
 }

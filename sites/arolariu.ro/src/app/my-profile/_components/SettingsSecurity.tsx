@@ -17,10 +17,12 @@ import {
   Separator,
   Switch,
 } from "@arolariu/components";
+import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback} from "react";
+import {useCallback, useRef} from "react";
 import {TbClock, TbDevices, TbKey, TbLock, TbShieldCheck, TbTrash} from "react-icons/tb";
 import type {SecuritySettings} from "../_utils/types";
+import styles from "./SettingsSecurity.module.scss";
 
 type Props = Readonly<{
   settings: SecuritySettings;
@@ -29,6 +31,8 @@ type Props = Readonly<{
 
 export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.settings.security");
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, {once: true});
 
   const handleSessionTimeoutChange = useCallback(
     (value: string) => {
@@ -54,160 +58,187 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
   );
 
   return (
-    <div className='space-y-6'>
-      <div>
-        <h2 className='text-2xl font-bold'>{t("title")}</h2>
-        <p className='text-muted-foreground'>{t("description")}</p>
+    <motion.section
+      ref={sectionRef}
+      className={styles["section"]}
+      initial={{opacity: 0}}
+      animate={isInView ? {opacity: 1} : {opacity: 0}}
+      transition={{duration: 0.3}}>
+      <div className={styles["header"]}>
+        <h2>{t("title")}</h2>
+        <p>{t("description")}</p>
       </div>
 
-      <div className='grid gap-6 md:grid-cols-2'>
+      <div className={styles["grid"]}>
         {/* Two-Factor Authentication */}
-        <Card className='md:col-span-2'>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbKey className='h-4 w-4' />
-              {t("twoFactor.title")}
-            </CardTitle>
-            <CardDescription>{t("twoFactor.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='flex items-center justify-between'>
-              <div>
-                <Label>{t("twoFactor.enabled")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("twoFactor.enabledHint")}</p>
+        <motion.div
+          className={styles["fullWidthCard"]}
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.05}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbKey className='h-4 w-4' />
+                {t("twoFactor.title")}
+              </CardTitle>
+              <CardDescription>{t("twoFactor.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("twoFactor.enabled")}</Label>
+                  <p>{t("twoFactor.enabledHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.twoFactorEnabled}
+                  onCheckedChange={handleToggle("twoFactorEnabled")}
+                />
               </div>
-              <Switch
-                checked={settings.twoFactorEnabled}
-                onCheckedChange={handleToggle("twoFactorEnabled")}
-              />
-            </div>
-            {settings.twoFactorEnabled ? (
-              <div className='bg-muted/50 mt-4 rounded-lg p-3'>
-                <p className='flex items-center gap-2 text-sm font-medium text-green-600'>
-                  <TbShieldCheck className='h-4 w-4' />
-                  {t("twoFactor.activeMessage")}
-                </p>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+              {settings.twoFactorEnabled ? (
+                <div className={styles["twoFactorActive"]}>
+                  <p>
+                    <TbShieldCheck />
+                    {t("twoFactor.activeMessage")}
+                  </p>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Session Settings */}
-        <Card>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbClock className='h-4 w-4' />
-              {t("session.title")}
-            </CardTitle>
-            <CardDescription>{t("session.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            <div>
-              <Label>{t("session.timeout")}</Label>
-              <Select
-                value={settings.sessionTimeout.toString()}
-                onValueChange={handleSessionTimeoutChange}>
-                <SelectTrigger className='mt-2 cursor-pointer'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='15'>15 {t("session.minutes")}</SelectItem>
-                  <SelectItem value='30'>30 {t("session.minutes")}</SelectItem>
-                  <SelectItem value='60'>1 {t("session.hour")}</SelectItem>
-                  <SelectItem value='120'>2 {t("session.hours")}</SelectItem>
-                  <SelectItem value='480'>8 {t("session.hours")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Separator />
-            <div className='flex items-center justify-between'>
+        <motion.div
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.1}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbClock className='h-4 w-4' />
+                {t("session.title")}
+              </CardTitle>
+              <CardDescription>{t("session.description")}</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
               <div>
-                <Label>{t("session.loginNotifications")}</Label>
-                <p className='text-muted-foreground text-xs'>{t("session.loginNotificationsHint")}</p>
+                <Label>{t("session.timeout")}</Label>
+                <Select
+                  value={settings.sessionTimeout.toString()}
+                  onValueChange={handleSessionTimeoutChange}>
+                  <SelectTrigger className='mt-2 cursor-pointer'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='15'>15 {t("session.minutes")}</SelectItem>
+                    <SelectItem value='30'>30 {t("session.minutes")}</SelectItem>
+                    <SelectItem value='60'>1 {t("session.hour")}</SelectItem>
+                    <SelectItem value='120'>2 {t("session.hours")}</SelectItem>
+                    <SelectItem value='480'>8 {t("session.hours")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Switch
-                checked={settings.loginNotifications}
-                onCheckedChange={handleToggle("loginNotifications")}
-              />
-            </div>
-          </CardContent>
-        </Card>
+              <Separator />
+              <div className={styles["toggleRow"]}>
+                <div className={styles["toggleLabel"]}>
+                  <Label>{t("session.loginNotifications")}</Label>
+                  <p>{t("session.loginNotificationsHint")}</p>
+                </div>
+                <Switch
+                  checked={settings.loginNotifications}
+                  onCheckedChange={handleToggle("loginNotifications")}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Password & Access */}
-        <Card>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbLock className='h-4 w-4' />
-              {t("password.title")}
-            </CardTitle>
-            <CardDescription>{t("password.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            <Button
-              variant='outline'
-              className='w-full cursor-pointer'
-              asChild>
-              <a
-                href='https://accounts.arolariu.ro/user/security'
-                target='_blank'
-                rel='noopener noreferrer'>
-                {t("password.changePassword")}
-              </a>
-            </Button>
-            <p className='text-muted-foreground text-center text-xs'>{t("password.clerkNote")}</p>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.15}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbLock className='h-4 w-4' />
+                {t("password.title")}
+              </CardTitle>
+              <CardDescription>{t("password.description")}</CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <Button
+                variant='outline'
+                className='w-full cursor-pointer'
+                asChild>
+                <a
+                  href='https://accounts.arolariu.ro/user/security'
+                  target='_blank'
+                  rel='noopener noreferrer'>
+                  {t("password.changePassword")}
+                </a>
+              </Button>
+              <p className={styles["clerkNote"]}>{t("password.clerkNote")}</p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Trusted Devices */}
-        <Card className='md:col-span-2'>
-          <CardHeader className='pb-4'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-              <TbDevices className='h-4 w-4' />
-              {t("devices.title")}
-            </CardTitle>
-            <CardDescription>{t("devices.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {settings.trustedDevices.length > 0 ? (
-              <div className='space-y-3'>
-                {settings.trustedDevices.map((device) => (
-                  <div
-                    key={device.id}
-                    className='flex items-center justify-between rounded-lg border p-3'>
-                    <div>
-                      <p className='font-medium'>{device.name}</p>
-                      <p className='text-muted-foreground text-xs'>
-                        {t("devices.lastUsed")}: {new Date(device.lastUsed).toLocaleDateString()}
-                      </p>
+        <motion.div
+          className={styles["fullWidthCard"]}
+          initial={{opacity: 0, y: 10}}
+          animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
+          transition={{duration: 0.3, delay: 0.2}}>
+          <Card>
+            <CardHeader className='pb-4'>
+              <CardTitle className='flex items-center gap-2 text-base'>
+                <TbDevices className='h-4 w-4' />
+                {t("devices.title")}
+              </CardTitle>
+              <CardDescription>{t("devices.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {settings.trustedDevices.length > 0 ? (
+                <div className={styles["devicesList"]}>
+                  {settings.trustedDevices.map((device) => (
+                    <div
+                      key={device.id}
+                      className={styles["deviceItem"]}>
+                      <div className={styles["deviceInfo"]}>
+                        <p>{device.name}</p>
+                        <p>
+                          {t("devices.lastUsed")}: {new Date(device.lastUsed).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className={styles["deviceActions"]}>
+                        {device.isCurrent ? (
+                          <Badge variant='secondary'>{t("devices.current")}</Badge>
+                        ) : (
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='cursor-pointer'
+                            onClick={handleRemoveDevice(device.id)}
+                            aria-label={`Remove device ${device.name}`}>
+                            <TbTrash
+                              className='h-4 w-4'
+                              aria-hidden='true'
+                            />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className='flex items-center gap-2'>
-                      {device.isCurrent ? (
-                        <Badge variant='secondary'>{t("devices.current")}</Badge>
-                      ) : (
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='cursor-pointer'
-                          onClick={handleRemoveDevice(device.id)}
-                          aria-label={`Remove device ${device.name}`}>
-                          <TbTrash
-                            className='h-4 w-4'
-                            aria-hidden='true'
-                          />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className='bg-muted/50 rounded-lg p-4 text-center'>
-                <p className='text-muted-foreground text-sm'>{t("devices.empty")}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles["devicesEmpty"]}>
+                  <p>{t("devices.empty")}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
-    </div>
+    </motion.section>
   );
 }

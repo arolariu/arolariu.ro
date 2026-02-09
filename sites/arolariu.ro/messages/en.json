@@ -1501,6 +1501,7 @@
   },
   "EULA": {
     "accept": "Accept EULA",
+    "language": "Language",
     "content": "By using this website, you agree to the terms and conditions and to the privacy policy of the End User License Agreement (EULA). Please read the following documents carefully before using the website:",
     "cookiesPolicy": {
       "cookies": {
@@ -2074,6 +2075,12 @@
           "normal": "Standard",
           "dyslexic": "Dyslexic-friendly",
           "dyslexicHint": "OpenDyslexic font for improved readability"
+        },
+        "presets": {
+          "title": "Theme Preset",
+          "description": "Choose a pre-designed color scheme or create your own",
+          "custom": "Custom",
+          "customDescription": "Create your own color scheme"
         },
         "colors": {
           "title": "Custom Colors",

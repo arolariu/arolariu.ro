@@ -88,8 +88,8 @@ test.describe("Homepage @homepage", () => {
     });
 
     test(tagged("should have proper heading hierarchy", TEST_TYPE_TAGS.A11Y), async ({page}) => {
-      // Check that there's an h1 element
-      const h1Count = await page.locator("h1").count();
+      // Check that there's at least one level-1 heading
+      const h1Count = await page.getByRole("heading", {level: 1}).count();
       expect(h1Count).toBeGreaterThanOrEqual(1);
     });
 

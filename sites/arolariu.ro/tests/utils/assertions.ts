@@ -67,6 +67,28 @@ export async function assertExternalLink(page: Page, selector: string, expectedH
 }
 
 /**
+ * Assert a link is visible using role-based query (preferred over CSS selectors).
+ *
+ * @param page - Playwright page
+ * @param name - Accessible name of the link (string or regex)
+ * @param expectedHref - Expected href value
+ * @param options - Additional options
+ */
+export async function assertLinkByRole(
+  page: Page,
+  name: string | RegExp,
+  expectedHref: string,
+  options?: {external?: boolean},
+): Promise<void> {
+  const link = page.getByRole("link", {name});
+  await expect(link).toBeVisible({timeout: TIMEOUTS.element});
+  await expect(link).toHaveAttribute("href", expectedHref);
+  if (options?.external) {
+    await expect(link).toHaveAttribute("target", "_blank");
+  }
+}
+
+/**
  * Assert that an element contains specific text.
  *
  * @param locator - Element locator

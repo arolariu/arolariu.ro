@@ -1,0 +1,43 @@
+// ===========================================
+// AUTH FORM SHELL
+// Wrapper for authentication form with kicker, secondary link, and footer
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.shell {
+  width: 100%;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: space(6);
+  text-align: center;
+}
+
+.kicker {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.secondary {
+  margin-top: space(2);
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+.secondaryLink {
+  color: color('primary');
+  font-weight: font-weight('medium');
+  text-underline-offset: 4px;
+  @include transition(color);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.footer {
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}

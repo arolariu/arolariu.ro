@@ -33,9 +33,13 @@ package-lock.json
 **/**/*.jpeg
 **/**/*.mdx
 **/**/*.pem
+**/**/*.scss
+**/**/*.http
 **/**/*.json
 **/**/*.txt
 **/**/*.xml
+**/**/*.bicep
+**/**/*.sql
 **/**/*.pdf
 **/**/*.yml
 **/**/*.tsbuildinfo

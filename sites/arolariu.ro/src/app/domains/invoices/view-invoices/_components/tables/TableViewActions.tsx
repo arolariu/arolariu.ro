@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import {TbEdit, TbMenu3, TbShare, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
+import styles from "./TableViewActions.module.scss";
 
 type Props = {invoice: Invoice};
 
@@ -38,7 +39,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
             variant='ghost'
             size='icon'
             className='bg-background/80 h-8 w-8 print:hidden'>
-            <TbMenu3 className='h-4 w-4' />
+            <TbMenu3 className={styles["menuIcon"]} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -51,8 +52,8 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                 className='cursor-pointer'>
                 <Link
                   href={`/domains/invoices/edit-invoice/${invoice.id}`}
-                  className='flex items-center gap-2'>
-                  <TbEdit className='mr-2 h-4 w-4' />
+                  className={styles["editLink"]}>
+                  <TbEdit className={styles["menuItemIcon"]} />
                   Edit
                 </Link>
               </DropdownMenuItem>
@@ -64,7 +65,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
               <DropdownMenuItem
                 onClick={openShareDialog}
                 className='cursor-pointer'>
-                <TbShare className='mr-2 h-4 w-4' />
+                <TbShare className={styles["menuItemIcon"]} />
                 Share
               </DropdownMenuItem>
             </TooltipTrigger>
@@ -76,7 +77,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
               <DropdownMenuItem
                 className='text-destructive cursor-pointer'
                 onClick={openDeleteDialog}>
-                <TbTrash className='mr-2 h-4 w-4' />
+                <TbTrash className={styles["menuItemIcon"]} />
                 Delete
               </DropdownMenuItem>
             </TooltipTrigger>

@@ -1,0 +1,17 @@
+// ===========================================
+// AUTH TRUST BADGES ROW
+// Row of trust/feature badges
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+
+  @include respond-to('lg') {
+    justify-content: flex-start;
+  }
+}

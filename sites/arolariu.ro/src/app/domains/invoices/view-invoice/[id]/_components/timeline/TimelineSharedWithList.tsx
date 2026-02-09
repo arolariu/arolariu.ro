@@ -25,6 +25,7 @@ import {useMemo} from "react";
 import {TbExternalLink, TbGlobe, TbMail, TbUsers} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {getDisplayName, getInitials} from "../../_utils/timeline";
+import styles from "./TimelineSharedWithList.module.scss";
 
 /**
  * Renders a list of users the invoice has been shared with.
@@ -62,10 +63,10 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
   }
 
   return (
-    <div className='border-border space-y-3 border-t pt-4'>
-      <div className='flex items-center gap-2'>
+    <div className={styles["container"]}>
+      <div className={styles["header"]}>
         <TbUsers className='text-muted-foreground h-4 w-4' />
-        <p className='text-muted-foreground text-xs font-semibold tracking-wider uppercase'>Shared With</p>
+        <p className={styles["headerLabel"]}>Shared With</p>
         {Boolean(sharedUsers.length > 0 || isPublic) && (
           <Badge
             variant='secondary'
@@ -90,18 +91,18 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
 
       {/* Shared Users List */}
       {sharedUsers.length > 0 && (
-        <div className='space-y-2'>
+        <div className={styles["usersList"]}>
           {sharedUsers.map((user) => (
-            <div
+            <div 
               key={user}
-              className='bg-muted/50 hover:bg-muted flex items-center justify-between gap-2 rounded-md p-2 transition-colors'>
-              <div className='flex min-w-0 items-center gap-2'>
+              className={styles["userRow"]}>
+              <div className={styles["userInfo"]}>
                 <Avatar className='h-7 w-7'>
                   <AvatarFallback className='bg-primary/10 text-primary text-xs'>{getInitials(user)}</AvatarFallback>
                 </Avatar>
-                <div className='min-w-0'>
-                  <p className='truncate text-sm font-medium'>{getDisplayName(user)}</p>
-                  <p className='text-muted-foreground truncate text-xs'>{user}</p>
+                <div className={styles["userDetails"]}>
+                  <p className={styles["userName"]}>{getDisplayName(user)}</p>
+                  <p className={styles["userEmail"]}>{user}</p>
                 </div>
               </div>
               <TooltipProvider delayDuration={200}>

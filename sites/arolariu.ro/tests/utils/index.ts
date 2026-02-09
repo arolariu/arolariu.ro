@@ -31,6 +31,7 @@ export {
   assertImageLoaded,
   assertInternalLink,
   assertLink,
+  assertLinkByRole,
   assertNoConsoleErrors,
   assertPageTitle,
   assertPosition,

@@ -1,0 +1,16 @@
+@use '../../styles/abstracts' as *;
+
+.inlineCode {
+  background-color: color('muted');
+  color: color('foreground');
+  border-radius: radius('md');
+  padding: 0.125rem space(1.5);
+  font-family: ui-monospace, monospace;
+  font-weight: font-weight('semibold');
+}
+
+.richList {
+  list-style-position: inside;
+  list-style-type: disc;
+  padding-top: space(2);
+}

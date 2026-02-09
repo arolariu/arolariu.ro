@@ -1501,6 +1501,7 @@
   },
   "EULA": {
     "accept": "Accepter le CLUF",
+    "language": "Langue",
     "content": "En utilisant ce site web, vous acceptez les termes et conditions et la politique de confidentialité du Contrat de Licence Utilisateur Final (CLUF). Veuillez lire attentivement les documents suivants avant d'utiliser le site web :",
     "cookiesPolicy": {
       "cookies": {
@@ -2074,6 +2075,12 @@
           "normal": "Standard",
           "dyslexic": "Adapté aux dyslexiques",
           "dyslexicHint": "Police OpenDyslexic pour une meilleure lisibilité"
+        },
+        "presets": {
+          "title": "Thème Prédéfini",
+          "description": "Choisissez un jeu de couleurs prédéfini ou créez le vôtre",
+          "custom": "Personnalisé",
+          "customDescription": "Créez votre propre jeu de couleurs"
         },
         "colors": {
           "title": "Couleurs Personnalisées",

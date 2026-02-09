@@ -1,0 +1,394 @@
+/// ===========================================
+/// FOOTER COMPONENT — BEM
+/// ===========================================
+/// Full site footer migrated from Tailwind utility classes to BEM.
+/// Responsive grid layout: 1 col mobile → 2 cols tablet → 3 cols desktop.
+/// Hidden when printing.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## BEM Structure
+/// ```
+/// .footer                       — main wrapper (bg: --footer-bg)
+///   .footer__wave               — SVG wave decoration (absolute, top)
+///   .footer__container          — inner content wrapper
+///     .footer__grid             — responsive grid (1/2/3 cols)
+///       .footer__brand-section  — logo, name, description (spans 2 cols on lg)
+///         .footer__brand-link   — logo + name link (scale on hover)
+///         .footer__logo         — rounded avatar image
+///         .footer__brand-name   — uppercase site name
+///         .footer__brand-description — description wrapper
+///         .footer__rich-text    — prose-styled content
+///       .footer__nav-section    — nav columns container
+///         .footer__nav-title    — column heading
+///         .footer__nav-list     — links list
+///         .footer__nav-link     — individual link (teal hover)
+///     .footer__meta             — border-top section
+///       .footer__copyright      — copyright text
+///       .footer__source-prefix  — indentation for source line
+///       .footer__source-link    — yellow italic source link
+///       .footer__social         — social icon row
+///       .footer__social-icon    — individual social icon
+///     .footer__build-info       — build metadata (slate text)
+///     .footer__build-tooltip    — tooltip trigger
+///     .footer__commit-link      — italic commit SHA link
+/// ```
+///
+/// @see base/_globals.scss — `--footer-bg` CSS variable
+/// @see themes/_presets.scss — preset overrides for `--footer-bg`
+/// ===========================================
+@use '../abstracts' as *;
+
+// Main footer wrapper
+// Original: bg-footer-bg relative bottom-0 w-full print:hidden
+.footer {
+  display: block; // Explicitly set to block (override any Tailwind grid)
+  position: relative;
+  bottom: 0;
+  width: 100%;
+  background-color: hsl(var(--footer-bg));
+
+  @media print {
+    display: none;
+  }
+}
+
+// SVG wave decoration
+// Original: text-footer-bg absolute top-0 -mt-5 h-6 w-full sm:-mt-10 sm:h-16
+.footer__wave {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 1.5rem; // h-6
+  margin-top: -1.25rem; // -mt-5
+  color: hsl(var(--footer-bg));
+
+  @include respond-to('sm') {
+    height: 4rem; // sm:h-16
+    margin-top: -2.5rem; // sm:-mt-10
+  }
+}
+
+// Main container
+// Original: mx-auto pt-12 text-white md:px-24 lg:max-w-(--breakpoint-xl) lg:px-8
+// Note: Production shows no max-width and no centering margins (CSS var not resolved)
+.footer__container {
+  display: block; // Explicitly set to block (override any Tailwind grid)
+  width: 100%; // Ensure full width
+  max-width: none; // No max-width constraint
+  margin: 0; // No centering margins (match production)
+  padding-top: 3rem; // pt-12
+  color: static-color('white');
+
+  @include respond-to('md') {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
+  @include respond-to('lg') {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  @include respond-to('xl') {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+// Grid layout
+// Original: mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3
+.footer__grid {
+  display: grid;
+  gap: 2rem; // gap-8 for mobile
+  margin-bottom: 2rem; // mb-8
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('md') {
+    column-gap: 2rem;
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 2rem;
+  }
+
+  @include respond-to('xl') {
+    column-gap: 4rem;
+  }
+
+  @include respond-to('2xl') {
+    column-gap: 6rem;
+  }
+}
+
+// Brand section (left side)
+// Original: md:col-span-1 lg:col-span-2
+.footer__brand-section {
+  // Center content on small screens
+  @include respond-below('md') {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @include respond-to('md') {
+    grid-column: span 1;
+  }
+
+  @include respond-to('lg') {
+    grid-column: span 2;
+  }
+}
+
+// Brand link with logo
+// Original: 2xsm:ml-[20%] inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-yellow-500 md:ml-0
+.footer__brand-link {
+  display: inline-flex;
+  align-items: center;
+  transform: scale(1);
+  transition: transform 300ms ease-in-out, color 300ms ease-in-out;
+
+  &:hover {
+    transform: scale(1.1);
+    color: interactive-color('hover-accent-dark'); // yellow-500
+  }
+}
+
+// Logo image
+// Original: rounded-full (width/height handled by Image component)
+.footer__logo {
+  border-radius: 9999px;
+}
+
+// Site name text
+// Original: ml-2 text-xl font-bold tracking-wide uppercase
+.footer__brand-name {
+  margin-left: 0.5rem; // ml-2
+  font-size: 1.25rem; // text-xl
+  font-weight: 700; // font-bold
+  text-transform: uppercase;
+  letter-spacing: 0.025em; // tracking-wide
+  color: static-color('white'); // Ensure white color in footer
+
+  &:hover {
+    color: interactive-color('hover-accent-dark'); // yellow-500
+  }
+}
+
+// Brand description wrapper
+// Original: 2xsm:px-4 2xsm:text-center mt-4 text-sm md:px-0 md:text-left
+.footer__brand-description {
+  margin-top: 1rem; // mt-4
+  font-size: 0.875rem; // text-sm
+  padding: 0;
+  text-align: left; // Default: left aligned
+
+  // Mobile only: centered with padding
+  @include respond-below('md') {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    text-align: center;
+  }
+}
+
+// RichText prose styling
+// Original: prose 2xsm:text-center text-pretty text-white md:text-start
+.footer__rich-text {
+  color: static-color('white');
+  text-wrap: pretty;
+  text-align: left; // Default: left aligned
+
+  // Mobile only: centered
+  @include respond-below('md') {
+    text-align: center;
+  }
+}
+
+// Navigation section (right side)
+// Original: 2xsm:flex-col 2xsm:text-center flex gap-8 lg:flex-row lg:text-left
+.footer__nav-section {
+  display: flex;
+  gap: 2rem; // gap-8 for mobile
+  flex-direction: row; // Default: row on desktop
+  text-align: left; // Default: left aligned
+
+  // Mobile/tablet: column layout, centered
+  @include respond-below('lg') {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  // Responsive gaps between nav columns
+  @include respond-to('md') {
+    gap: 2rem;
+  }
+
+  @include respond-to('lg') {
+    gap: 4rem;
+  }
+
+  @include respond-to('xl') {
+    gap: 5rem;
+  }
+
+  @include respond-to('2xl') {
+    gap: 6rem;
+  }
+}
+
+// Navigation column title
+// Original: cursor-default font-semibold tracking-wide text-white hover:text-yellow-500
+.footer__nav-title {
+  font-weight: 600; // font-semibold
+  letter-spacing: 0.025em; // tracking-wide
+  color: static-color('white');
+  cursor: default;
+  transition: color 300ms ease-in-out;
+
+  &:hover {
+    color: interactive-color('hover-accent-dark'); // yellow-500
+  }
+}
+
+// Navigation list
+// Original: mt-2 space-y-2
+.footer__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 0.5rem; // mt-2
+
+  > * + * {
+    margin-top: 0.5rem; // space-y-2
+  }
+}
+
+// Navigation link
+// Original: text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300
+.footer__nav-link {
+  color: hsla(0, 0%, 100%, 0.9); // text-deep-purple-50 approximation
+  transition: color 300ms ease-in-out;
+
+  &:hover {
+    color: interactive-color('teal-accent'); // teal-accent-400
+  }
+
+  // Override global code styling within footer links
+  code {
+    color: inherit;
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+  }
+}
+
+// Footer metadata section
+// Original: flex flex-row flex-wrap justify-between gap-8 border-t py-5
+.footer__meta {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  width: 100%; // Ensure full width for space-between to work
+  gap: 2rem; // gap-8
+  border-top: 1px solid static-color('white');
+  padding-top: 1.25rem; // py-5
+  padding-bottom: 1.25rem;
+}
+
+// Copyright text
+// Original: 2xsm:text-center 2xsm:mx-auto text-sm md:mx-0 md:text-left
+.footer__copyright {
+  font-size: 0.875rem; // text-sm
+  text-align: left; // Default: left
+  margin: 0; // Default: no margin
+
+  // Mobile only: centered
+  @include respond-below('md') {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+// Source code prefix (indentation for "source code" line)
+// Original: ml-4
+.footer__source-prefix {
+  margin-left: space(4);
+}
+
+// Source code link
+// Original: text-yellow-500 italic
+.footer__source-link {
+  color: interactive-color('hover-accent-dark'); // yellow-500
+  font-style: italic;
+}
+
+// Social links container
+// Original: 2xsm:mx-auto flex flex-row items-center space-x-8 md:mx-0
+// The parent uses justify-between, so at md+ this will be pushed to the right
+.footer__social {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2rem; // space-x-8
+  margin: 0; // Default: no margin (pushed right by parent's justify-between)
+
+  // Mobile only: center the social icons
+  @include respond-below('md') {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+// Social icon
+// Original: h-7 w-7 hover:text-yellow-500
+.footer__social-icon {
+  height: 1.75rem; // h-7
+  width: 1.75rem; // w-7
+  color: static-color('white'); // Ensure white color in footer
+  transition: color 300ms ease-in-out;
+
+  &:hover {
+    color: interactive-color('hover-accent-dark'); // yellow-500
+  }
+}
+
+// Build info section
+// Original: 2xsm:text-center text-sm text-slate-300 md:text-end
+.footer__build-info {
+  width: 100%; // Ensure full width for text-align to work
+  font-size: 0.875rem; // text-sm
+  color: interactive-color('slate-light'); // text-slate-300
+  text-align: end; // Default: right aligned
+
+  // Mobile only: centered
+  @include respond-below('md') {
+    text-align: center;
+  }
+}
+
+// Tooltip trigger
+// Original: cursor-help
+.footer__build-tooltip {
+  cursor: help;
+
+  // Override Tooltip component defaults in footer context
+  &,
+  &[data-state] {
+    background-color: transparent;
+    color: static-color('white');
+  }
+}
+
+// Commit SHA link
+// Original: italic
+.footer__commit-link {
+  font-style: italic;
+}

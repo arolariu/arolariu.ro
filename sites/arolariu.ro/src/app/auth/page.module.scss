@@ -1,0 +1,27 @@
+// ===========================================
+// AUTH PAGE - PAGE WRAPPER STYLES
+// Scoped to /auth/page.tsx only
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+.main {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  padding: space(24) space(5);
+}
+
+.dotBackground {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  width: 100%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+}

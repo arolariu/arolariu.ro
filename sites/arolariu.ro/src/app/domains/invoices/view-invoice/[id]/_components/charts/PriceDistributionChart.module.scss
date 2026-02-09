@@ -1,0 +1,18 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.tooltip {
+  background-color: color('background');
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(2) space(3);
+  @include shadow('md');
+}
+
+.tooltipRange {
+  font-weight: font-weight('medium');
+}
+
+.tooltipCount {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}

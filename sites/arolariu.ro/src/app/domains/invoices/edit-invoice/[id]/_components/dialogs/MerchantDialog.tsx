@@ -14,6 +14,7 @@ import {
 } from "@arolariu/components";
 import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./MerchantDialog.module.scss";
 
 /**
  * Dialog displaying detailed merchant information for the current invoice.
@@ -77,13 +78,13 @@ export default function MerchantDialog(): React.JSX.Element {
           <DialogTitle>Merchant Details</DialogTitle>
           <DialogDescription>Information about {merchant.name}</DialogDescription>
         </DialogHeader>
-        <div className='space-y-4 py-2'>
-          <div className='flex items-center space-x-3'>
-            <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full'>
+        <div className={styles["body"]}>
+          <div className={styles["merchantProfile"]}>
+            <div className={styles["merchantAvatar"]}>
               <TbBuilding className='text-primary h-6 w-6' />
             </div>
             <div>
-              <h3 className='text-lg font-medium'>{merchant.name}</h3>
+              <h3 className={styles["merchantName"]}>{merchant.name}</h3>
               <Badge
                 variant='outline'
                 className='text-muted-foreground'>
@@ -96,27 +97,27 @@ export default function MerchantDialog(): React.JSX.Element {
             <TableBody>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <div className='flex items-center'>
+                  <div className={styles["detailRow"]}>
                     <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className='font-medium'>Address</span>
+                    <span className={styles["detailLabel"]}>Address</span>
                   </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.address}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <div className='flex items-center'>
+                  <div className={styles["detailRow"]}>
                     <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className='font-medium'>Phone</span>
+                    <span className={styles["detailLabel"]}>Phone</span>
                   </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.phoneNumber}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
-                  <div className='flex items-center'>
+                  <div className={styles["detailRow"]}>
                     <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className='font-medium'>Parent Company</span>
+                    <span className={styles["detailLabel"]}>Parent Company</span>
                   </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.parentCompanyId}</TableCell>
@@ -125,7 +126,7 @@ export default function MerchantDialog(): React.JSX.Element {
           </Table>
         </div>
 
-        <div className='flex flex-col items-center justify-center justify-items-center gap-2'>
+        <div className={styles["footer"]}>
           <Button
             type='button'
             className='w-full'>

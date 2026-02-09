@@ -5,6 +5,7 @@ import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {redirect} from "next/navigation";
 import RenderAuthScreen from "./island";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the authentication page with localized content.
@@ -94,12 +95,11 @@ export default async function AuthHomepage(_props: Readonly<PageProps<"/auth">>)
   const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   if (isAuthenticated) return redirect("/");
   return (
-    <main className='container mx-auto px-5 py-24'>
-      <DotBackground
-        glow
-        className='opacity-30'
-      />
-      <RenderAuthScreen />
-    </main>
+    <div className={styles["main"]}>
+      <DotBackground className={styles["dotBackground"]} />
+      <div className={styles["content"]}>
+        <RenderAuthScreen />
+      </div>
+    </div>
   );
 }

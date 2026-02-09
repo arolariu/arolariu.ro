@@ -1,0 +1,142 @@
+// ===========================================
+// AUTH MARKETING PANEL
+// Marketing content panel with illustration and features
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(8);
+  text-align: center;
+
+  @include respond-to('lg') {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+.glow {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16rem;
+  height: 16rem;
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.1);
+  filter: blur(48px);
+  pointer-events: none;
+
+  @include respond-to('lg') {
+    left: -5rem;
+    transform: none;
+  }
+}
+
+.header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.title {
+  background: linear-gradient(
+    to right,
+    color('foreground'),
+    color-alpha('foreground', 0.9),
+    color-alpha('foreground', 0.7)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('5xl');
+  }
+}
+
+.subtitle {
+  font-size: font-size('base');
+  line-height: line-height('relaxed');
+  color: color('muted-foreground');
+
+  @include respond-to('sm') {
+    font-size: font-size('lg');
+  }
+}
+
+.trustBadges {
+  margin-top: space(4);
+}
+
+// ===========================================
+// ILLUSTRATION CARD
+// ===========================================
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  overflow: hidden;
+  border-radius: radius('2xl');
+  border: 1px solid color-alpha('border', 0.5);
+  padding: space(6);
+  background-color: color-alpha('card', 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.cardGlowPrimary {
+  position: absolute;
+  top: -5rem;
+  left: -5rem;
+  width: 14rem;
+  height: 14rem;
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.15);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.cardGlowSecondary {
+  position: absolute;
+  bottom: -5rem;
+  right: -5rem;
+  width: 14rem;
+  height: 14rem;
+  border-radius: radius('full');
+  background-color: color-alpha('secondary', 0.15);
+  filter: blur(48px);
+  pointer-events: none;
+}
+
+.illustration {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.image {
+  width: 12rem;
+  height: 12rem;
+  object-fit: contain;
+  @include image-drop-shadow;
+
+  @include respond-to('sm') {
+    width: 14rem;
+    height: 14rem;
+  }
+}
+
+.bullets {
+  margin-top: space(6);
+}

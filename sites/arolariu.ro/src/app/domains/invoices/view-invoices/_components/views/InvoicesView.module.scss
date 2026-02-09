@@ -1,0 +1,93 @@
+// ===========================================
+// INVOICES VIEW STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.container {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+// ===========================================
+// TOOLBAR
+// ===========================================
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+// ===========================================
+// SEARCH
+// ===========================================
+.searchWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 0.625rem; // 2.5
+  left: 0.625rem;
+  height: 1rem;
+  width: 1rem;
+  color: color('muted-foreground');
+}
+
+// ===========================================
+// FILTERS
+// ===========================================
+.filtersRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+}
+
+.filterTriggerContent {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+// ===========================================
+// VIEW TOGGLE
+// ===========================================
+// ===========================================
+// ICON STYLES
+// ===========================================
+.filterIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.sunIcon {
+  width: space(4);
+  height: space(4);
+  color: #eab308; // Decorative: intentionally hardcoded (yellow-500)
+}
+
+.moonIcon {
+  width: space(4);
+  height: space(4);
+  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+}
+
+.viewToggle {
+  display: flex;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}

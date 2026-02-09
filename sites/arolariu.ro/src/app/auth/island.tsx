@@ -6,8 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import {TbArrowRight, TbLock, TbShield, TbUserPlus} from "react-icons/tb";
 import AuthTrustBadgesRow from "./_components/AuthTrustBadgesRow";
+import styles from "./island.module.scss";
 
 type AuthCardKey = "signUp" | "signIn";
+
+const gradientClassMap = {
+  emerald: "gradientEmerald",
+  violet: "gradientViolet",
+} as const;
 
 type AuthCard = Readonly<{
   key: AuthCardKey;
@@ -22,7 +28,7 @@ type AuthCard = Readonly<{
   secondaryAction: string;
   secondaryHref: string;
   icon: React.ComponentType<{className?: string}>;
-  gradient: string;
+  gradientKey: keyof typeof gradientClassMap;
 }>;
 
 /**
@@ -71,7 +77,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
       secondaryAction: t("signUp.secondaryAction"),
       secondaryHref: "/auth/sign-in/",
       icon: TbUserPlus,
-      gradient: "from-emerald-500/20 via-cyan-500/10 to-transparent",
+      gradientKey: "emerald",
     },
     {
       key: "signIn",
@@ -86,117 +92,112 @@ export default function RenderAuthScreen(): React.JSX.Element {
       secondaryAction: t("signIn.secondaryAction"),
       secondaryHref: "/auth/sign-up/",
       icon: TbLock,
-      gradient: "from-violet-500/20 via-purple-500/10 to-transparent",
+      gradientKey: "violet",
     },
   ];
 
   return (
-    <section className='relative mx-auto w-full max-w-6xl'>
-      <div className='relative flex flex-col gap-12'>
-        <div className='relative text-center'>
-          <div className='relative'>
+    <section className={styles["section"]}>
+      <div className={styles["container"]}>
+        <div className={styles["heroSection"]}>
+          <div className={styles["heroInner"]}>
             <Badge
               variant='secondary'
-              className='mb-4 px-4 py-1.5 text-sm font-medium'>
-              <TbShield className='mr-2 h-4 w-4' />
+              className={styles["heroBadge"]}>
+              <TbShield className={styles["heroBadgeIcon"]} />
               OAuth 2.0
             </Badge>
 
-            <h1 className='from-foreground via-foreground/90 to-foreground/70 bg-linear-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl lg:text-6xl'>
-              {t("hero.title")}
-            </h1>
+            <h1 className={styles["heroTitle"]}>{t("hero.title")}</h1>
 
-            <p className='text-muted-foreground mx-auto mt-4 max-w-2xl text-lg leading-relaxed sm:text-xl'>{t("hero.subtitle")}</p>
+            <p className={styles["heroSubtitle"]}>{t("hero.subtitle")}</p>
           </div>
 
-          <AuthTrustBadgesRow
-            className='mt-8 flex flex-wrap items-center justify-center gap-3'
-            badges={trustBadges}
-          />
+          <div className={styles["trustBadgesCenter"]}>
+            <AuthTrustBadgesRow badges={trustBadges} />
+          </div>
         </div>
 
-        <div className='grid gap-8 md:grid-cols-2 lg:gap-10'>
+        <div className={styles["cardsGrid"]}>
           {cards.map((card, index) => (
             <div
               key={card.key}
-              className='transition-transform duration-200 hover:-translate-y-1'>
-              <Card className='group bg-card/50 border-border/50 hover:border-primary/40 relative h-full overflow-hidden border backdrop-blur-sm transition-all duration-500 hover:shadow-2xl'>
+              className={styles["cardWrapper"]}>
+              <Card className={styles["card"]}>
                 {/* Gradient overlay */}
                 <div
-                  className={`pointer-events-none absolute inset-0 bg-linear-to-br ${card.gradient} opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
+                  className={`${styles["cardGradient"]} ${styles[gradientClassMap[card.gradientKey]]}`}
                   aria-hidden='true'
                 />
 
                 {/* Corner glow */}
                 <div
                   aria-hidden='true'
-                  className='bg-primary/30 pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100'
+                  className={styles["cardGlow"]}
                 />
 
-                <CardHeader className='relative space-y-6 pb-4'>
+                <CardHeader className={styles["cardHeader"]}>
                   {/* Icon badge */}
-                  <div className='flex items-center justify-between'>
-                    <div className='bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-xl'>
-                      <card.icon className='h-6 w-6' />
+                  <div className={styles["cardHeaderTop"]}>
+                    <div className={styles["cardIconWrapper"]}>
+                      <card.icon className={styles["cardIcon"]} />
                     </div>
-                    <div className='text-muted-foreground text-sm font-medium'>{index === 0 ? t("step1") : t("step2")}</div>
+                    <div className={styles["cardStep"]}>{index === 0 ? t("step1") : t("step2")}</div>
                   </div>
 
                   {/* Illustration */}
-                  <div className='from-muted/30 to-muted/10 relative mx-auto flex h-48 w-48 items-center justify-center rounded-2xl bg-linear-to-br p-4 transition-transform duration-300 hover:scale-105 sm:h-56 sm:w-56'>
+                  <div className={styles["cardIllustration"]}>
                     <Image
                       src={card.imageSrc}
                       alt={card.illustrationAlt}
                       width={200}
                       height={200}
-                      className='h-full w-full object-contain drop-shadow-lg'
+                      className={styles["cardImage"]}
                       priority={index === 0}
                     />
                   </div>
 
-                  <div className='space-y-2 text-center'>
-                    <CardTitle className='text-2xl font-bold tracking-tight sm:text-3xl'>{card.title}</CardTitle>
-                    <CardDescription className='text-muted-foreground text-base leading-relaxed'>{card.description}</CardDescription>
+                  <div className={styles["cardTitleSection"]}>
+                    <CardTitle className={styles["cardTitle"]}>{card.title}</CardTitle>
+                    <CardDescription className={styles["cardDescription"]}>{card.description}</CardDescription>
                   </div>
                 </CardHeader>
 
-                <CardContent className='relative space-y-6 pt-2'>
+                <CardContent className={styles["cardContent"]}>
                   {/* Benefits list */}
-                  <ul className='space-y-3'>
+                  <ul className={styles["bulletsList"]}>
                     {card.bullets.map((bullet) => (
                       <li
                         key={`${card.key}-${bullet}`}
-                        className='text-muted-foreground flex items-start gap-3 text-sm'>
-                        <span className='flex items-start gap-3'>
-                          <span
-                            className='bg-primary/70 mt-1.5 h-2 w-2 shrink-0 rounded-full'
-                            aria-hidden='true'
-                          />
-                          <span>{bullet}</span>
-                        </span>
+                        className={styles["bulletItem"]}>
+                        <span
+                          className={styles["bulletDot"]}
+                          aria-hidden='true'
+                        />
+                        <span>{bullet}</span>
                       </li>
                     ))}
                   </ul>
 
                   {/* CTA Section */}
-                  <div className='space-y-4 pt-2'>
-                    <div className='transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]'>
+                  <div className={styles["ctaSection"]}>
+                    <div className={styles["ctaButtonWrapper"]}>
                       <Button
                         asChild
                         size='lg'
-                        className='group/btn w-full text-base font-semibold'>
+                        className={styles["ctaButton"]}>
                         <Link href={card.href}>
                           {card.cta}
-                          <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1' />
+                          <TbArrowRight className={styles["ctaArrowIcon"]} />
                         </Link>
                       </Button>
                     </div>
 
-                    <p className='text-muted-foreground text-center text-sm'>
+                    <p className={styles["secondaryPrompt"]}>
                       {card.secondaryPrompt}{" "}
                       <Link
                         href={card.secondaryHref}
-                        className='text-primary font-medium underline-offset-4 transition-colors hover:underline'>
+                        className={styles["secondaryLink"]}>
                         {card.secondaryAction}
                       </Link>
                     </p>
@@ -208,7 +209,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
         </div>
 
         {/* Section footer note */}
-        <p className='text-muted-foreground mx-auto max-w-2xl text-center text-sm leading-relaxed'>{t("footer")}</p>
+        <p className={styles["footerNote"]}>{t("footer")}</p>
       </div>
     </section>
   );

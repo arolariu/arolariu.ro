@@ -21,6 +21,7 @@ import Image from "next/image";
 import {useCallback, useState} from "react";
 import {TbChevronLeft, TbChevronRight, TbPlus, TbTrash, TbZoomIn} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./ImageCard.module.scss";
 
 type Props = {invoice: Invoice};
 
@@ -114,11 +115,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 alt={`Receipt scan ${currentScanIndex + 1}`}
                 width={400}
                 height={600}
-                className={`w-full object-cover transition-all duration-200 group-hover/image:scale-105 ${
-                  isTransitioning ? "opacity-50 blur-sm" : "blur-0 opacity-100"
-                }`}
+                className={isTransitioning ? styles["receiptImageTransitioning"] : styles["receiptImageNormal"]}
               />
-              <div className='bg-background/80 absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/image:opacity-100'>
+              <div className={styles["zoomOverlayVisible"]}>
                 <TbZoomIn className='h-8 w-8' />
               </div>
             </Button>
@@ -126,13 +125,13 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               <DialogHeader>
                 <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
               </DialogHeader>
-              <div className='relative flex max-h-[80vh] justify-center overflow-auto'>
+              <div className={styles["zoomContainer"]}>
                 <Image
                   src={currentScanSrc}
                   alt={`Receipt scan ${currentScanIndex + 1} - full size`}
                   width={800}
                   height={1200}
-                  className='w-full object-contain'
+                  className={styles["zoomDialogImage"]}
                 />
               </div>
             </DialogContent>
@@ -157,7 +156,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
 
           {/* Navigation buttons */}
           {totalScans > 1 && (
-            <div className='flex w-full gap-2'>
+            <div className={styles["navButtons"]}>
               {currentScanIndex > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -194,7 +193,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
           )}
 
           {/* Add/Remove buttons */}
-          <div className='flex w-full gap-2'>
+          <div className={styles["actionButtons"]}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

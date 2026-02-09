@@ -1,0 +1,31 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.subtitle {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  margin-top: space(1);
+}
+
+.dateGroup {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.dateLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+  font-weight: font-weight('semibold');
+  letter-spacing: letter-spacing('wider');
+  text-transform: uppercase;
+}
+
+.eventsContainer {
+  // No spacing between timeline items (they have internal padding)
+}

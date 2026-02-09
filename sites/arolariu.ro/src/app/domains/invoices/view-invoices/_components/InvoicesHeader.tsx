@@ -6,6 +6,7 @@ import Link from "next/link";
 import {useCallback} from "react";
 import {TbDownload, TbPlus, TbPrinter, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
+import styles from "./InvoicesHeader.module.scss";
 
 /**
  * This function renders the header for the invoices page.
@@ -25,12 +26,12 @@ export default function InvoicesHeader(): React.JSX.Element {
       initial={{y: -20, opacity: 0}}
       animate={{y: 0, opacity: 1}}
       transition={{duration: 0.3}}
-      className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center print:hidden'>
+      className={styles["header"]}>
       <div>
-        <h1 className='text-3xl font-bold tracking-tight'>Invoice Management</h1>
-        <p className='text-muted-foreground mt-1'>Manage your receipts and track your spending habits</p>
+        <h1 className={styles["title"]}>Invoice Management</h1>
+        <p className={styles["description"]}>Manage your receipts and track your spending habits</p>
       </div>
-      <div className='flex items-center gap-2'>
+      <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -39,8 +40,8 @@ export default function InvoicesHeader(): React.JSX.Element {
                 size='sm'
                 className='cursor-pointer gap-1'
                 onClick={openImportDialog}>
-                <TbUpload className='h-4 w-4' />
-                <span className='hidden sm:inline'>Import</span>
+                <TbUpload className={styles["actionIcon"]} />
+                <span className={styles["buttonLabel"]}>Import</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Import invoices from files</TooltipContent>
@@ -55,8 +56,8 @@ export default function InvoicesHeader(): React.JSX.Element {
                 size='sm'
                 className='cursor-pointer gap-1'
                 onClick={openExportDialog}>
-                <TbDownload className='h-4 w-4' />
-                <span className='hidden sm:inline'>Export</span>
+                <TbDownload className={styles["actionIcon"]} />
+                <span className={styles["buttonLabel"]}>Export</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Export all invoices</TooltipContent>
@@ -71,8 +72,8 @@ export default function InvoicesHeader(): React.JSX.Element {
                 size='sm'
                 className='cursor-pointer gap-1'
                 onClick={handlePrintAction}>
-                <TbPrinter className='h-4 w-4' />
-                <span className='hidden sm:inline'>Print</span>
+                <TbPrinter className={styles["actionIcon"]} />
+                <span className={styles["buttonLabel"]}>Print</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Print invoices</TooltipContent>
@@ -86,7 +87,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                 <Button
                   size='sm'
                   className='cursor-pointer gap-1'>
-                  <TbPlus className='h-4 w-4' />
+                  <TbPlus className={styles["actionIcon"]} />
                   <span>New Invoice</span>
                 </Button>
               </Link>

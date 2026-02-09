@@ -6,11 +6,12 @@
 "use client";
 
 import {formatDate} from "@/lib/utils.generic";
-import {Button, cn, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {useLocale} from "next-intl";
 import {TbInfoCircle} from "react-icons/tb";
 import {TimelineEvent} from "../../_types/timeline";
 import {getEventTooltipContent, getRelativeTime} from "../../_utils/timeline";
+import styles from "./TimelineItem.module.scss";
 
 /**
  * Props for the TimelineItem component.
@@ -45,25 +46,21 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
   const tooltipContent = getEventTooltipContent(event.type, event.metadata);
 
   return (
-    <div className={cn("relative pb-4", isLast && "pb-0")}>
+    <div className={`${styles["item"]} ${isLast ? styles["isLast"] : ""}`}>
       {/* Connector line */}
-      {!isLast && <div className='bg-border absolute top-4 left-[7px] h-full w-0.5' />}
+      {!isLast && <div className={styles["connectorLine"]} />}
 
-      <div className='flex gap-3'>
+      <div className={styles["contentRow"]}>
         {/* Icon circle */}
-        <div
-          className={cn(
-            "relative z-10 flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
-            event.completed ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-          )}>
+        <div className={`${styles["iconCircle"]} ${event.completed ? styles["iconCompleted"] : styles["iconPending"]}`}>
           {icon}
         </div>
 
         {/* Content */}
-        <div className='min-w-0 flex-1'>
-          <div className='flex items-start justify-between gap-2'>
-            <div className='flex min-w-0 items-center gap-1.5'>
-              <p className='truncate text-sm leading-tight font-medium'>{event.title}</p>
+        <div className={styles["contentBody"]}>
+          <div className={styles["titleRow"]}>
+            <div className={styles["titleContent"]}>
+              <p className={styles["eventTitle"]}>{event.title}</p>
               {/* Info icon with tooltip */}
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
@@ -81,16 +78,16 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
                     {Boolean(event.metadata?.confidence) && (
-                      <p className='text-muted-foreground mt-1'>Confidence: {event.metadata!.confidence}%</p>
+                      <p className={styles["confidenceText"]}>Confidence: {event.metadata!.confidence}%</p>
                     )}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <span className='text-muted-foreground shrink-0 text-xs'>{formatDate(event.date, {locale})}</span>
+            <span className={styles["dateLabel"]}>{formatDate(event.date, {locale})}</span>
           </div>
-          <p className='text-muted-foreground mt-0.5 text-xs'>{event.description}</p>
-          <p className='text-muted-foreground/70 mt-0.5 text-xs'>{getRelativeTime(event.date)}</p>
+          <p className={styles["description"]}>{event.description}</p>
+          <p className={styles["relativeTime"]}>{getRelativeTime(event.date)}</p>
         </div>
       </div>
     </div>

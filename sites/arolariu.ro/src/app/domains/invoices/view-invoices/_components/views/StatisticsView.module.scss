@@ -1,0 +1,40 @@
+// ===========================================
+// STATISTICS VIEW STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.container {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: space(4);
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+.headerContent {
+  position: relative;
+  flex: 1;
+}
+
+.title {
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  letter-spacing: -0.025em;
+}
+
+.subtitle {
+  color: color('muted-foreground');
+  margin-top: space(1);
+}

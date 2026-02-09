@@ -1,0 +1,87 @@
+/// ===========================================
+/// SCSS Entry Point — arolariu.ro
+/// ===========================================
+/// Main entry point for the SCSS design system, following an adapted
+/// 7-1 pattern. Imported in `layout.tsx` via `app/globals.scss` AFTER
+/// `@arolariu/components/styles.css` (Tailwind-based component library).
+///
+/// CSS custom properties are defined in `base/_globals.scss`.
+///
+/// @group entry
+/// @author arolariu
+///
+/// ## Layer Import Order
+/// 1. **Abstracts** — variables, mixins, functions (no CSS output)
+/// 2. **Base** — CSS reset, element defaults, CSS custom properties
+/// 3. **Themes** — `[data-theme-preset]` CSS variable overrides
+/// 4. **Animations** — `@keyframes` and transition utilities
+/// 5. **Utilities** — atomic helper classes
+/// 6. **Components** — shared BEM component styles
+///
+/// ## Naming Conventions
+/// | Context | Convention | Example |
+/// |---------|-----------|---------|
+/// | CSS Modules (`.module.scss`) | camelCase | `.cardWrapper` |
+/// | Global components | BEM kebab-case | `.card__header--elevated` |
+/// | SCSS variables | kebab-case in maps | `'primary'`, `'gradient-from'` |
+/// | SCSS functions | kebab-case | `space()`, `font-size()`, `color()` |
+/// | SCSS mixins | kebab-case | `flex-center`, `respond-to` |
+/// | CSS custom properties | `--` prefix | `--primary`, `--gradient-from` |
+///
+/// ## Color System
+/// - **Semantic colors** → `color('primary')`, `color-alpha('card', 0.5)`
+/// - **Static colors** → `static-color('white')`, `static-color('black')`
+/// - **Decorative colors** (orbs, icons) → raw `rgba()` acceptable
+///
+/// ## Theming
+/// - `base/_globals.scss` → `:root` and `.dark` CSS variable defaults
+/// - `themes/_presets.scss` → `[data-theme-preset]` CSS variable overrides
+/// - `next-themes` → toggles `.dark` class on `<html>`
+/// - `useThemePreset` → sets `data-theme-preset` attribute on `<html>`
+///
+/// @see base/_globals.scss — CSS custom property definitions
+/// @see themes/_presets.scss — named theme preset overrides
+/// @see abstracts/ — all SCSS helpers (variables, mixins, functions)
+
+// ===========================================
+// 1. ABSTRACTS (No CSS output)
+// Variables, mixins, functions used by other partials
+// ===========================================
+@use 'abstracts' as *;
+
+// ===========================================
+// 2. BASE
+// Reset, element defaults
+// ===========================================
+@use 'base';
+
+// ===========================================
+// 3. THEMES
+// Theme preset CSS variable overrides
+// (Base variables defined in base/_globals.scss)
+// ===========================================
+@use 'themes';
+
+// ===========================================
+// 4. ANIMATIONS
+// Keyframes and transition utilities
+// ===========================================
+@use 'animations';
+
+// ===========================================
+// 5. UTILITIES (Optional - for gradual migration)
+// Utility classes if needed during transition
+// ===========================================
+@use 'utilities';
+
+// ===========================================
+// 6. COMPONENTS
+// Shared component styles (BEM)
+// ===========================================
+@use 'components';
+
+// ===========================================
+// 7. PAGES
+// Page-specific global styles
+// ===========================================
+// @use 'pages';

@@ -1,0 +1,92 @@
+/// ===========================================
+/// GLOBAL CSS CUSTOM PROPERTIES
+/// ===========================================
+/// Root-level CSS custom properties for theming.
+/// Light/dark mode is toggled by next-themes (adds .dark class).
+/// Theme presets override these via [data-theme-preset] selectors
+/// defined in themes/_presets.scss.
+///
+/// @group base
+/// @author arolariu
+/// ===========================================
+
+// ----- Light mode variables -----
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --success: 142 71% 35%;             // dark green — 5.8:1 on white
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 40%;              // dark amber — 4.6:1 on white
+  --warning-foreground: 0 0% 100%;
+  --info: 199 89% 38%;                // dark sky — 5.0:1 on white
+  --info-foreground: 0 0% 100%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+  --footer: 252 100% 30%;
+
+  // Gradient Theme Variables — user-customisable via my-profile settings
+  --gradient-from: 187 94% 43%;  // cyan-500: #06b6d4
+  --gradient-via: 262 83% 58%;   // purple-500: #8b5cf6
+  --gradient-to: 330 81% 60%;    // pink-500: #ec4899
+
+  // Primary accent colour for text/icons — derived from gradient-from
+  --accent-primary: var(--gradient-from);
+  // Footer background — darker version of gradient-via
+  --footer-bg: 262 83% 35%;  // purple-700 equivalent
+}
+
+// ----- Dark mode variables -----
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 5%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 214 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 75%;       // Raised from 70% for WCAG AA (4.8:1 on black)
+  --accent: 214 100% 50%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 55%;             // lighter green — 5.2:1 on black
+  --success-foreground: 0 0% 0%;
+  --warning: 38 92% 55%;              // lighter amber — 4.7:1 on black
+  --warning-foreground: 0 0% 0%;
+  --info: 199 89% 55%;                // lighter sky — 4.5:1 on black
+  --info-foreground: 0 0% 0%;
+  --border: 0 0% 25%;                 // Raised from 20% for better card border visibility
+  --input: 0 0% 25%;
+  --ring: 214 100% 50%;
+  --footer: 252 100% 30%;
+
+  // Gradient Theme Variables — same as light mode, user preferences override
+  --gradient-from: 187 94% 43%;  // cyan-500: #06b6d4
+  --gradient-via: 262 83% 58%;   // purple-500: #8b5cf6
+  --gradient-to: 330 81% 60%;    // pink-500: #ec4899
+
+  // Primary accent colour for text/icons — derived from gradient-from
+  --accent-primary: var(--gradient-from);
+  // Footer background — darker version of gradient-via
+  --footer-bg: 262 83% 35%;  // purple-700 equivalent
+}

@@ -2,19 +2,21 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {getCookie} from "@/lib/actions/cookies";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {Button} from "@arolariu/components";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {headers} from "next/headers";
 import Link from "next/link";
 import QRCode from "react-qr-code";
+import styles from "./global-not-found.module.scss";
 import ContextProviders from "./providers";
 import Tracking from "./tracking";
 
 // @ts-ignore -- css file has no typings.
 import "@arolariu/components/styles.css";
 
-// @ts-ignore -- css file has no typings.
-import "./globals.css";
+// @ts-ignore -- scss file has no typings.
+import "./globals.scss";
 
 export const metadata: Metadata = {
   title: "arolariu.ro | 404",
@@ -43,34 +45,35 @@ export default async function NotFound(): Promise<React.JSX.Element> {
       suppressHydrationWarning
       lang={locale}
       dir='ltr'>
-      <body className='bg-white text-black dark:bg-black dark:text-white'>
+      <body className={styles["body"]}>
         <ContextProviders locale={locale}>
           <Header />
-          <main className='2xsm:text-lg flex flex-col items-center justify-center justify-items-center px-5 py-24 text-xl'>
-            <section className='flex w-1/2 flex-col items-center justify-center justify-items-center text-center'>
-              <h1 className='2xsm:text-xl mx-auto pb-8 md:text-3xl'>{t("title")}</h1>
-              <span className='text-balance'>{t("subtitle")}</span>
+          <div className={styles["pageContainer"]}>
+            <section className={styles["heroContent"]}>
+              <h1 className={styles["title"]}>{t("title")}</h1>
+              <span className={styles["subtitle"]}>{t("subtitle")}</span>
             </section>
-            <section className='my-4 py-4'>
-              <h2 className='my-4 text-center text-xl font-bold'>{t("additionalInfo")}</h2>
+            <section className={styles["qrSection"]}>
+              <h2 className={styles["qrTitle"]}>{t("additionalInfo")}</h2>
               <QRCode value={qrCodeData} />
             </section>
-            <section>
-              <span className='text-center text-xs'>{t("falsePositive")}</span>
-              <div className='2xsm:flex-col mt-4 flex items-center justify-between justify-items-center gap-4 md:flex-row'>
-                <Link
-                  href='/'
-                  className='btn btn-secondary mx-auto'>
-                  {t("buttons.submitErrorButton")}
-                </Link>
-                <Link
-                  href='https://arolariu.ro/'
-                  className='btn btn-primary mx-auto'>
-                  {t("buttons.returnButton")}
-                </Link>
+            <section className={styles["bottomSection"]}>
+              <span className={styles["falsePositive"]}>{t("falsePositive")}</span>
+              <div className={styles["buttonRow"]}>
+                <Button
+                  asChild
+                  variant='outline'
+                  className={styles["actionButtonOutline"]}>
+                  <Link href='/'>{t("buttons.submitErrorButton")}</Link>
+                </Button>
+                <Button
+                  asChild
+                  className={styles["actionButtonDefault"]}>
+                  <Link href='https://arolariu.ro/'>{t("buttons.returnButton")}</Link>
+                </Button>
               </div>
             </section>
-          </main>
+          </div>
           <Footer />
           {Boolean(eulaCookie) && <Tracking />}
         </ContextProviders>

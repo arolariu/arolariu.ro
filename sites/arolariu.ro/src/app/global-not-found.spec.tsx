@@ -23,7 +23,7 @@ test.describe("Global Not Found (404) Tests @error @404", () => {
   test("should provide helpful error information", async ({page}) => {
     await page.goto("/test-404-page");
 
-    const bodyText = await page.textContent("body");
+    const bodyText = await page.locator("body").textContent();
 
     // Should provide some helpful information
     expect(bodyText!.length).toBeGreaterThan(20);

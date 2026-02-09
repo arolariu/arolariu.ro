@@ -1,0 +1,199 @@
+// ===========================================
+// THE PLATFORM - ARCHITECTURE COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  padding: space(24) 0;
+}
+
+// Background
+.bgLayer {
+  position: absolute;
+  inset: 0;
+  z-index: z('behind');
+}
+
+.bgGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    color('background'),
+    color-alpha('muted', 0.3),
+    color('background')
+  );
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 75%;
+  padding: 0 space(4);
+}
+
+// Header
+.header {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(16);
+  max-width: 48rem;
+  text-align: center;
+}
+
+.badge {
+  margin-bottom: space(4);
+  padding: space(1) space(4);
+  font-size: font-size('sm');
+}
+
+.title {
+  margin-bottom: space(6);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+}
+
+.titleHighlight {
+  @include gradient-text-custom;
+}
+
+.description {
+  font-size: font-size('lg');
+  color: color('muted-foreground');
+
+  @include respond-to('md') {
+    font-size: font-size('xl');
+  }
+}
+
+// Architecture diagram
+.diagram {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+// Layers grid
+.layersGrid {
+  position: relative;
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// Layer card
+.layerCard {
+  position: relative;
+  overflow: hidden;
+  @include transition((border-color, box-shadow, transform));
+
+  &:hover {
+    border-color: color-alpha('primary', 0.3);
+  }
+}
+
+.layerCardActive {
+  composes: layerCard;
+  border-color: color('primary');
+  transform: scale(1.05);
+  @include shadow('lg');
+}
+
+.layerGradient {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  @include transition(opacity);
+  pointer-events: none;
+}
+
+.layerContent {
+  position: relative;
+  padding: space(6);
+}
+
+.layerHeader {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+  margin-bottom: space(4);
+}
+
+.layerIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: radius('xl');
+  @include transition(transform);
+
+  .layerCard:hover & {
+    transform: scale(1.1) rotate(5deg);
+  }
+}
+
+.layerIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+}
+
+.layerName {
+  font-weight: font-weight('bold');
+}
+
+.layerDescription {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}
+
+// Technologies
+.technologies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+.techBadge {
+  font-size: font-size('xs');
+}
+
+// Animated border
+.layerBorder {
+  position: absolute;
+  inset: 0 0 auto 0;
+  bottom: 0;
+  height: 4px;
+  transform: scaleX(0);
+  transform-origin: left;
+  @include transition(transform);
+
+  .layerCard:hover & {
+    transform: scaleX(1);
+  }
+}
+
+// Gradient variants for layer backgrounds
+.gradientBlueCyan { background: linear-gradient(to bottom right, #3b82f6, #06b6d4); }
+.gradientGreenEmerald { background: linear-gradient(to bottom right, #22c55e, #10b981); }
+.gradientPurpleViolet { background: linear-gradient(to bottom right, #a855f7, #8b5cf6); }
+.gradientOrangeAmber { background: linear-gradient(to bottom right, #f97316, #f59e0b); }
+.gradientRedPink { background: linear-gradient(to bottom right, #ef4444, #ec4899); }
+.gradientIndigoBlue { background: linear-gradient(to bottom right, #6366f1, #3b82f6); }
+.gradientCyanTeal { background: linear-gradient(to bottom right, #06b6d4, #14b8a6); }
+.gradientSlateZinc { background: linear-gradient(to bottom right, #64748b, #71717a); }

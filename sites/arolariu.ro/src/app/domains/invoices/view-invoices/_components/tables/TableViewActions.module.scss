@@ -1,0 +1,24 @@
+// ===========================================
+// TABLE VIEW ACTIONS STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.menuIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.menuItemIcon {
+  width: space(4);
+  height: space(4);
+  margin-right: space(2);
+}
+
+.editLink {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}

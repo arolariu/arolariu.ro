@@ -1,0 +1,53 @@
+// ===========================================
+// INVOICES NOT FOUND STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: space(20);
+  text-align: center;
+}
+
+.title {
+  margin-bottom: space(4);
+  font-size: font-size('2xl');
+  font-weight: font-weight('medium');
+
+  @include respond-to('sm') {
+    font-size: font-size('3xl');
+  }
+}
+
+.description {
+  margin-inline: auto;
+  font-size: font-size('base');
+  line-height: line-height('relaxed');
+
+  @include respond-to('lg') {
+    width: 66.666%;
+  }
+}
+
+.ctaLink {
+  display: inline-flex;
+  align-items: center;
+  margin-inline: auto;
+  margin-top: space(8);
+  border: 0;
+  border-radius: radius('md');
+  background-color: #4f46e5; // indigo-600
+  padding: space(2) space(6);
+  font-size: font-size('lg');
+  color: white;
+
+  &:hover {
+    background-color: #4338ca; // indigo-700
+  }
+
+  &:focus {
+    outline: none;
+  }
+}

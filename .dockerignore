@@ -52,10 +52,11 @@ storybook-static/
 docs/
 **/*.stories.tsx
 **/*.stories.ts
-**/*.test.ts
-**/*.test.tsx
-**/*.spec.ts
-**/*.spec.tsx
+
+# AI tooling (not needed in container):
+.claude/
+.mcp.json
+docs/plans/
 
 # Logs
 logs/

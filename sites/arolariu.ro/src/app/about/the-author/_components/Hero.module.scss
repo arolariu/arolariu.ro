@@ -1,0 +1,106 @@
+// ===========================================
+// THE AUTHOR - HERO COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content {
+  z-index: z('content');
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 56rem;
+  padding: 0 space(4);
+  text-align: center;
+}
+
+.contentInner {
+  display: flex;
+  flex-direction: column;
+  gap: space(8);
+}
+
+// Profile image with glow effect
+.profileImage {
+  position: relative;
+  margin: 0 auto space(6);
+  width: 8rem;
+  height: 8rem;
+  border-radius: radius('full');
+  border: 4px solid color-alpha('primary', 0.2);
+  overflow: hidden;
+  box-shadow:
+    0 0 20px color-alpha('primary', 0.3),
+    0 0 40px color-alpha('primary', 0.2);
+
+  @include respond-to('md') {
+    width: 10rem;
+    height: 10rem;
+  }
+}
+
+// Title container
+.titleWrapper {
+  text-align: center;
+  justify-content: center;
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('sm') {
+    font-size: font-size('4xl');
+  }
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+
+  // Override TypewriterTextSmooth internal text sizing
+  div {
+    font-size: inherit;
+  }
+}
+
+.title {
+  text-align: center;
+  justify-content: center;
+  justify-items: center;
+}
+
+// Gradient word styling (for typewriter)
+.gradientWord {
+  display: inline-block;
+  text-align: center;
+  @include gradient-text-custom(#3b82f6, #a855f7, #a855f7);
+}
+
+// Image object-fit
+.imageObjectCover {
+  object-fit: cover;
+}
+
+// Hidden cursor for typewriter
+.cursorHidden {
+  display: none;
+}
+
+// Subtitle
+.subtitle {
+  max-width: 42rem;
+  font-size: font-size('lg');
+
+  @include respond-to('md') {
+    font-size: font-size('xl');
+  }
+}

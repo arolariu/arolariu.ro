@@ -17,6 +17,7 @@
       "description": "ESLint integration for linting JavaScript/TypeScript"
     },
     "filesystem": {
+      "_comment": "Path is machine-specific. Update to your local repo clone path.",
       "command": "cmd",
       "args": [
         "/c",

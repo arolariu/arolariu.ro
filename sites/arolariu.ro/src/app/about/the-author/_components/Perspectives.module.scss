@@ -1,0 +1,129 @@
+// ===========================================
+// THE AUTHOR - PERSPECTIVES COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  background-color: color-alpha('muted', 0.3);
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+// Header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+.titleUnderline {
+  position: absolute;
+  right: 0;
+  bottom: -0.5rem;
+  left: 0;
+  height: 4px;
+  border-radius: radius('full');
+  background: linear-gradient(to right, color('primary'), color-alpha('primary', 0.3));
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  color: color('muted-foreground');
+}
+
+// Grid
+.grid {
+  display: grid;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+// Card
+.card {
+  height: 100%;
+  overflow: visible;
+  border: none;
+  background-color: color('card');
+  @include shadow('lg');
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('xl');
+  }
+}
+
+// Card content
+.cardContent {
+  position: relative;
+  padding: space(12) space(6) space(8);
+}
+
+// Quote icon
+.quoteIconWrapper {
+  position: absolute;
+  top: -2rem;
+  left: space(6);
+  padding: space(4);
+  border-radius: radius('full');
+  background-color: color('primary');
+  @include shadow('lg');
+}
+
+.quoteIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: color('primary-foreground');
+}
+
+// Quote text
+.quote {
+  margin-bottom: space(6);
+  font-style: italic;
+  color: color('muted-foreground');
+}
+
+// Author info
+.authorInfo {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+}
+
+.authorName {
+  font-weight: font-weight('medium');
+}
+
+.authorPosition {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+}

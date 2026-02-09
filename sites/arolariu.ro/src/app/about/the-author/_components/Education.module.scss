@@ -1,0 +1,266 @@
+// ===========================================
+// THE AUTHOR - EDUCATION COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+  padding: space(20) space(4);
+
+  @include respond-to('md') {
+    padding-left: space(8);
+    padding-right: space(8);
+  }
+}
+
+// Header
+.header {
+  margin-bottom: space(16);
+  text-align: center;
+}
+
+.title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: space(4);
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+
+  @include respond-to('md') {
+    font-size: font-size('4xl');
+  }
+}
+
+.subtitle {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 42rem;
+  color: color('muted-foreground');
+}
+
+// Education list
+.educationList {
+  display: flex;
+  flex-direction: column;
+  gap: space(12);
+}
+
+// Card wrapper (perspective container)
+.cardWrapper {
+  position: relative;
+  perspective: 1000px;
+}
+
+// Card container (for flip)
+.cardContainer {
+  position: relative;
+  width: 100%;
+  height: 800px;
+
+  @include respond-to('md') {
+    height: 400px;
+  }
+}
+
+// Card (front/back)
+.card {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.cardInner {
+  height: 100%;
+  overflow: hidden;
+  border: none;
+  @include shadow('lg');
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('xl');
+  }
+}
+
+// Card content grid
+.cardContent {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100%;
+  width: 100%;
+
+  @include respond-to('md') {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+// Left side (icon + info)
+.cardLeft {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: space(6);
+  text-align: center;
+}
+
+// School icon
+.schoolIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  margin-bottom: space(4);
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.2);
+  cursor: pointer;
+}
+
+.schoolIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: color('primary');
+}
+
+.degree {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: space(1);
+  color: color('muted-foreground');
+}
+
+.metaIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+// Right side (courses)
+.cardRight {
+  display: flex;
+  flex-direction: column;
+  padding: space(6);
+}
+
+.coursesHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: space(4);
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+.coursesIcon {
+  margin-right: space(2);
+  width: 1.25rem;
+  height: 1.25rem;
+  color: color('primary');
+}
+
+// Course list
+.courseList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.courseItem {
+  display: flex;
+  align-items: flex-start;
+}
+
+.courseBullet {
+  margin-right: space(2);
+  color: color('primary');
+}
+
+.description {
+  margin-top: space(4);
+  color: color('muted-foreground');
+}
+
+// CTA button
+.ctaButton {
+  margin-top: space(4);
+  width: fit-content;
+  color: color('primary');
+}
+
+.ctaIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+// Back card
+.backCard {
+  display: flex;
+  flex-direction: column;
+  padding: space(6);
+}
+
+.backHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: space(6);
+}
+
+.backTitle {
+  font-size: font-size('xl');
+  font-weight: font-weight('bold');
+  text-shadow: 0 0 20px color-alpha('primary', 0.5);
+}
+
+.backButton {
+  color: color('primary');
+}
+
+.backIcon {
+  margin-right: space(2);
+  width: 1rem;
+  height: 1rem;
+}
+
+// Scrollable content
+.scrollContent {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: space(2);
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.scrollSection {
+  margin-bottom: space(4);
+}
+
+.scrollSectionTitle {
+  margin-bottom: space(2);
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+// Glow effect
+.glowEffect {
+  position: absolute;
+  inset: 0;
+  z-index: z('behind');
+  border-radius: radius('xl');
+  background-color: color-alpha('primary', 0.05);
+  filter: blur(24px);
+}

@@ -231,7 +231,7 @@ jobs:
           directory: "sites/arolariu.ro/code-cov"
 
   build:
-    if: github.repository == 'arolariu/arolariu.ro' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: "!cancelled() && github.repository == 'arolariu/arolariu.ro' && (needs.test.result == 'success' || needs.test.result == 'skipped')"
     name: ⚒️ Build phase (2/2)
     needs: test
     runs-on: ubuntu-latest

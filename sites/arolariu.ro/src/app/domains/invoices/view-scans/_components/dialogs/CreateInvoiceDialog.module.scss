@@ -1,0 +1,486 @@
+// ===========================================
+// CREATE INVOICE DIALOG STYLES
+// ===========================================
+@use '../../../../../../styles/abstracts' as *;
+
+// ===========================================
+// SCAN THUMBNAIL
+// ===========================================
+.thumbnail {
+  position: relative;
+  height: space(12);
+  width: space(12);
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: radius('lg');
+  border: 1px solid #e5e7eb; // gray-200
+  background-color: #f3f4f6; // gray-100
+
+  @include dark {
+    border-color: #374151; // gray-700
+    background-color: #1f2937; // gray-800
+  }
+}
+
+.thumbnailPdfPlaceholder {
+  @include flex-center;
+  height: 100%;
+}
+
+.thumbnailPdfIcon {
+  height: space(6);
+  width: space(6);
+  color: #ef4444; // red-500
+}
+
+.thumbnailImage {
+  object-fit: cover;
+}
+
+// ===========================================
+// PROCESS STEP
+// ===========================================
+.processStep {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  opacity: 0.5;
+}
+
+.processStepActive {
+  opacity: 1;
+}
+
+.stepCircle {
+  @include flex-center;
+  height: space(8);
+  width: space(8);
+  flex-shrink: 0;
+  border-radius: radius('full');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  @include transition((background-color, color));
+}
+
+.stepCircleDefault {
+  background-color: #e5e7eb; // gray-200
+  color: #4b5563; // gray-600
+
+  @include dark {
+    background-color: #374151; // gray-700
+    color: #9ca3af; // gray-400
+  }
+}
+
+.stepCircleActive {
+  background-color: #a855f7; // purple-500
+  color: white;
+}
+
+.stepCircleComplete {
+  background-color: #22c55e; // green-500
+  color: white;
+}
+
+.stepContent {
+  flex: 1;
+}
+
+.stepTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.stepDescription {
+  font-size: font-size('xs');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.stepCheckIcon {
+  height: space(4);
+  width: space(4);
+}
+
+// ===========================================
+// SELECT STEP
+// ===========================================
+.scansPreviewBox {
+  margin-top: space(4);
+  border-radius: radius('lg');
+  border: 1px solid #e5e7eb; // gray-200
+  background-color: #f9fafb; // gray-50
+  padding: space(4);
+
+  @include dark {
+    border-color: #374151; // gray-700
+    background-color: rgba(31, 41, 55, 0.5); // gray-800/50
+  }
+}
+
+.scansPreviewHeader {
+  @include flex-between;
+  margin-bottom: space(3);
+}
+
+.scansPreviewLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: #374151; // gray-700
+
+  @include dark {
+    color: #d1d5db; // gray-300
+  }
+}
+
+.scansPreviewSize {
+  font-size: font-size('xs');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.scansPreviewGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+.scansPreviewOverflow {
+  @include flex-center;
+  height: space(12);
+  width: space(12);
+  border-radius: radius('lg');
+  border: 1px dashed #d1d5db; // gray-300
+  background-color: #f3f4f6; // gray-100
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    border-color: #4b5563; // gray-600
+    background-color: #374151; // gray-700
+    color: #9ca3af; // gray-400
+  }
+}
+
+// ===========================================
+// MODE SELECTION
+// ===========================================
+.modeSection {
+  margin-top: space(4);
+}
+
+.modeLabel {
+  margin-bottom: space(3);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: #374151; // gray-700
+
+  @include dark {
+    color: #d1d5db; // gray-300
+  }
+}
+
+.modeOption {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+  border-radius: radius('lg');
+  border: 1px solid #e5e7eb; // gray-200
+  padding: space(4);
+  cursor: pointer;
+  @include transition(all);
+
+  &:hover {
+    border-color: #d1d5db; // gray-300
+  }
+
+  @include dark {
+    border-color: #374151; // gray-700
+
+    &:hover {
+      border-color: #4b5563; // gray-600
+    }
+  }
+}
+
+.modeOptionSelected {
+  border-color: #d8b4fe; // purple-300
+  background-color: #faf5ff; // purple-50
+
+  @include dark {
+    border-color: #7e22ce; // purple-700
+    background-color: rgba(88, 28, 135, 0.2); // purple-900/20
+  }
+}
+
+.modeOptionBatch {
+  margin-top: space(2);
+}
+
+.modeOptionContent {
+  flex: 1;
+}
+
+.modeOptionDescription {
+  margin-top: space(1);
+  font-size: font-size('sm');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+// ===========================================
+// SINGLE SCAN INFO BANNER
+// ===========================================
+.singleScanBanner {
+  margin-top: space(4);
+  border-radius: radius('lg');
+  border: 1px solid #bfdbfe; // blue-200
+  background-color: #eff6ff; // blue-50
+  padding: space(4);
+
+  @include dark {
+    border-color: #1e3a5f; // blue-800
+    background-color: rgba(30, 58, 138, 0.2); // blue-900/20
+  }
+}
+
+.singleScanBannerContent {
+  display: flex;
+  align-items: flex-start;
+  gap: space(3);
+}
+
+.singleScanBannerIcon {
+  margin-top: space(0.5);
+  height: space(5);
+  width: space(5);
+  flex-shrink: 0;
+  color: #3b82f6; // blue-500
+}
+
+.singleScanBannerTitle {
+  font-weight: font-weight('medium');
+  color: #1e3a5f; // blue-900
+
+  @include dark {
+    color: #dbeafe; // blue-100
+  }
+}
+
+.singleScanBannerDescription {
+  margin-top: space(1);
+  font-size: font-size('sm');
+  color: #1d4ed8; // blue-700
+
+  @include dark {
+    color: #93c5fd; // blue-300
+  }
+}
+
+// ===========================================
+// FOOTER
+// ===========================================
+.selectFooter {
+  margin-top: space(6);
+}
+
+// ===========================================
+// CREATING STEP
+// ===========================================
+.creatingWrapper {
+  padding-block: space(6);
+}
+
+.creatingCenter {
+  text-align: center;
+}
+
+.creatingIconCircle {
+  @include flex-center;
+  margin-inline: auto;
+  margin-bottom: space(4);
+  height: space(16);
+  width: space(16);
+  border-radius: radius('full');
+  background-color: #f3e8ff; // purple-100
+
+  @include dark {
+    background-color: rgba(88, 28, 135, 0.5); // purple-900/50
+  }
+}
+
+.creatingSpinIcon {
+  height: space(8);
+  width: space(8);
+  color: #a855f7; // purple-500
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.creatingTitle {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.creatingDescription {
+  margin-top: space(1);
+  font-size: font-size('sm');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.progressSection {
+  margin-top: space(6);
+}
+
+.progressLabel {
+  margin-top: space(2);
+  text-align: center;
+  font-size: font-size('xs');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.stepsSection {
+  margin-top: space(6);
+
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+// ===========================================
+// COMPLETE STEP
+// ===========================================
+.completeWrapper {
+  padding-block: space(6);
+  text-align: center;
+}
+
+.completeIconCircle {
+  @include flex-center;
+  margin-inline: auto;
+  margin-bottom: space(4);
+  height: space(16);
+  width: space(16);
+  border-radius: radius('full');
+  background-color: #dcfce7; // green-100
+
+  @include dark {
+    background-color: rgba(20, 83, 45, 0.5); // green-900/50
+  }
+}
+
+.completeCheckIcon {
+  height: space(8);
+  width: space(8);
+  color: #22c55e; // green-500
+}
+
+.completeTitle {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+  color: #111827; // gray-900
+
+  @include dark {
+    color: white;
+  }
+}
+
+.completeDescription {
+  margin-top: space(1);
+  font-size: font-size('sm');
+  color: #6b7280; // gray-500
+
+  @include dark {
+    color: #9ca3af; // gray-400
+  }
+}
+
+.completeNextSteps {
+  margin-top: space(6);
+  border-radius: radius('lg');
+  border: 1px solid #bbf7d0; // green-200
+  background-color: #f0fdf4; // green-50
+  padding: space(4);
+
+  @include dark {
+    border-color: #166534; // green-800
+    background-color: rgba(20, 83, 45, 0.2); // green-900/20
+  }
+}
+
+.completeNextStepsText {
+  font-size: font-size('sm');
+  color: #15803d; // green-700
+
+  @include dark {
+    color: #86efac; // green-300
+  }
+}
+
+.completeFooter {
+  margin-top: space(6);
+  justify-content: center;
+}
+
+// ===========================================
+// ICON STYLES
+// ===========================================
+.dialogTitleIcon {
+  width: space(5);
+  height: space(5);
+  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+}
+
+.modePurpleIcon {
+  width: space(4);
+  height: space(4);
+  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+}
+
+.modeBlueIcon {
+  width: space(4);
+  height: space(4);
+  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+}
+
+.arrowRightIcon {
+  width: space(4);
+  height: space(4);
+  margin-left: space(2);
+}

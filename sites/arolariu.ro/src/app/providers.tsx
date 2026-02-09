@@ -1,13 +1,16 @@
+"use client";
+
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
-import {GradientThemeProvider} from "@/contexts/GradientThemeContext";
+import {onLocaleSync} from "@/stores/preferencesStore";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {Locale, NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
-import React from "react";
+import {useRouter} from "next/navigation";
+import React, {useEffect} from "react";
 import enMessages from "../../messages/en.json";
 import frMessages from "../../messages/fr.json";
 import roMessages from "../../messages/ro.json";
@@ -128,6 +131,12 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
   const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
   const messages = messageMap[locale] as typeof enMessages;
   const localization = localizationMap[locale];
+
+  // Register router.refresh() as the callback for locale → cookie sync.
+  // The store subscription handles setCookie(); this just triggers re-rendering.
+  const router = useRouter();
+  useEffect(() => onLocaleSync(() => router.refresh()), [router]);
+
   return (
     <TranslationProvider
       locale={locale}
@@ -137,15 +146,15 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
           <ThemeProvider
             enableSystem
             enableColorScheme
+            disableTransitionOnChange
             defaultTheme='system'
             attribute='class'
+            storageKey='arolariu-theme'
             themes={["light", "dark"]}>
-            <GradientThemeProvider>
               {children}
               <ToastProvider />
               <Commander />
               <WebVitals />
-            </GradientThemeProvider>
           </ThemeProvider>
         </FontProvider>
       </AuthProvider>

@@ -147,7 +147,7 @@ describe("Navigation", () => {
       mockUseAuth.mockReturnValue({isSignedIn: true});
       const {container} = render(<DesktopNavigation />);
       // Get direct children list items (not nested ones)
-      const mainList = container.querySelector("ul.flex");
+      const mainList = container.querySelector("ul.desktop-nav__list");
       const directListItems = mainList?.querySelectorAll(":scope > li");
       expect(directListItems?.length).toBe(3); // Domains, About, My Profile
     });
@@ -447,7 +447,7 @@ describe("Navigation", () => {
     it("should render with correct container classes", () => {
       const {container} = render(<DesktopNavigation />);
       const navContainer = container.querySelector("div");
-      expect(navContainer).toHaveClass("dark:text-white");
+      expect(navContainer).toHaveClass("desktop-nav");
     });
 
     it("should render arrow icons in desktop dropdown", () => {

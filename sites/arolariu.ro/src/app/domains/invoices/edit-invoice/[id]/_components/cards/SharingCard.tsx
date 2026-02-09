@@ -25,6 +25,7 @@ import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbArrowRight, TbDeselect, TbGlobe, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
+import styles from "./SharingCard.module.scss";
 
 type Props = {
   invoice: Invoice;
@@ -130,15 +131,15 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
         <CardTitle>Sharing</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
-        <div className='flex items-center'>
-          <div className='bg-primary/10 mr-3 flex h-10 w-10 items-center justify-center rounded-full'>
+        <div className={styles["ownerRow"]}>
+          <div className={styles["ownerAvatar"]}>
             {userInformation?.user?.imageUrl ? (
               <Image
                 src={userInformation?.user?.imageUrl!}
                 alt='User'
                 width={40}
                 height={40}
-                className='rounded-full'
+                className={styles["ownerImage"]}
                 priority
               />
             ) : (
@@ -146,10 +147,10 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             )}
           </div>
           <div>
-            <p className='font-medium'>Owner</p>
-            <p className='text-muted-foreground text-sm'>{userInformation?.user?.username}</p>
+            <p className={styles["ownerName"]}>Owner</p>
+            <p className={styles["ownerUsername"]}>{userInformation?.user?.username}</p>
           </div>
-          <div className='ml-auto flex items-center justify-end'>
+          <div className={styles["manageArea"]}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -184,21 +185,21 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
         )}
 
         <div>
-          <h3 className='mb-2 text-sm font-medium'>Shared With</h3>
+          <h3 className={styles["sharedTitle"]}>Shared With</h3>
           {sharedUsers.length > 0 ? (
-            <div className='space-y-2'>
+            <div className={styles["sharedList"]}>
               {sharedUsers.map((userId, index) => (
                 <motion.div
                   key={userId}
-                  className='flex items-center'
+                  className={styles["sharedUserRow"]}
                   initial={{opacity: 0, x: -20}}
                   animate={{opacity: 1, x: 0}}
                   transition={{delay: index * 0.1}}
                   whileHover={{x: 5}}>
-                  <div className='bg-muted mr-2 flex h-8 w-8 items-center justify-center rounded-full'>
+                  <div className={styles["sharedUserAvatar"]}>
                     <TbUser className='h-4 w-4' />
                   </div>
-                  <span className='text-sm'>User {userId}</span>
+                  <span className={styles["sharedUserName"]}>User {userId}</span>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -218,7 +219,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
               ))}
             </div>
           ) : (
-            <p className='text-muted-foreground text-sm'>
+            <p className={styles["emptyShared"]}>
               {isInvoicePublic ? "No additional users have direct access" : "Not shared with anyone"}
             </p>
           )}

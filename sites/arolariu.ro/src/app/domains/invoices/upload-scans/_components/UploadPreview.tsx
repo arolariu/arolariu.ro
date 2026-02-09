@@ -13,6 +13,7 @@ import Image from "next/image";
 import {useCallback} from "react";
 import {TbCheck, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
+import styles from "./UploadPreview.module.scss";
 
 /**
  * Formats file size in human-readable format.
@@ -54,40 +55,40 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
     <Card className='relative overflow-hidden'>
       <CardContent className='p-0'>
         {/* Preview */}
-        <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div className={styles["previewArea"]}>
           {mimeType === "application/pdf" ? (
-            <div className='flex h-full items-center justify-center'>
-              <TbFileTypePdf className='h-16 w-16 text-red-500' />
+            <div className={styles["pdfPlaceholder"]}>
+              <TbFileTypePdf className={styles["pdfIcon"]} />
             </div>
           ) : (
             <Image
               src={preview}
               alt={name}
               fill
-              className='object-cover'
+              className={styles["imagePreview"]}
               unoptimized
             />
           )}
 
           {/* Status overlay */}
           {status === "uploading" && (
-            <div className='absolute inset-0 flex items-center justify-center bg-black/50'>
-              <TbLoader2 className='h-10 w-10 animate-spin text-white' />
+            <div className={`${styles["statusOverlay"]} ${styles["overlayUploading"]}`}>
+              <TbLoader2 className={`${styles["statusIcon"]} ${styles["spinIcon"]}`} />
             </div>
           )}
           {status === "completed" && (
-            <div className='absolute inset-0 flex items-center justify-center bg-green-500/50'>
-              <TbCheck className='h-10 w-10 text-white' />
+            <div className={`${styles["statusOverlay"]} ${styles["overlayCompleted"]}`}>
+              <TbCheck className={styles["statusIcon"]} />
             </div>
           )}
           {status === "failed" && (
-            <div className='absolute inset-0 flex items-center justify-center bg-red-500/50'>
-              <TbX className='h-10 w-10 text-white' />
+            <div className={`${styles["statusOverlay"]} ${styles["overlayFailed"]}`}>
+              <TbX className={styles["statusIcon"]} />
             </div>
           )}
 
           {/* Status badge */}
-          <div className='absolute top-2 right-2'>
+          <div className={styles["badgePosition"]}>
             {status === "idle" && (
               <Badge
                 variant='secondary'
@@ -128,7 +129,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
                     size='icon'
                     className='absolute top-2 left-2 h-8 w-8 bg-black/50 text-white hover:bg-black/70'
                     onClick={handleRemove}>
-                    <TbTrash className='h-4 w-4' />
+                    <TbTrash className={styles["removeIcon"]} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side='right'>Remove from queue</TooltipContent>
@@ -138,14 +139,14 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
         </div>
 
         {/* File info */}
-        <div className='p-3'>
+        <div className={styles["fileInfo"]}>
           <p
-            className='truncate text-sm font-medium text-gray-900 dark:text-white'
+            className={styles["fileName"]}
             title={name}>
             {name}
           </p>
-          <p className='text-xs text-gray-500 dark:text-gray-400'>{formatFileSize(size)}</p>
-          {error ? <p className='mt-1 truncate text-xs text-red-500'>{error}</p> : null}
+          <p className={styles["fileSize"]}>{formatFileSize(size)}</p>
+          {error ? <p className={styles["fileError"]}>{error}</p> : null}
         </div>
       </CardContent>
     </Card>
@@ -164,12 +165,12 @@ export default function UploadPreview(): React.JSX.Element | null {
   }
 
   return (
-    <div className='mb-8'>
-      <div className='mb-4 flex items-center justify-between'>
-        <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>Pending Uploads ({pendingUploads.length})</h2>
+    <div className={styles["container"]}>
+      <div className={styles["header"]}>
+        <h2 className={styles["title"]}>Pending Uploads ({pendingUploads.length})</h2>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+      <div className={styles["grid"]}>
         {pendingUploads.map((upload) => (
           <UploadCard
             key={upload.id}

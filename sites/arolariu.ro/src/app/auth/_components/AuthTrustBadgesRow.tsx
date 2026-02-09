@@ -1,15 +1,15 @@
 "use client";
 
 import {Badge} from "@arolariu/components";
+import styles from "./AuthTrustBadgesRow.module.scss";
 
-export type AuthTrustBadgesRowProps = Readonly<{
+type Props = Readonly<{
   badges: ReadonlyArray<string>;
-  className?: string;
 }>;
 
-export default function AuthTrustBadgesRow(props: AuthTrustBadgesRowProps): React.JSX.Element {
+export default function AuthTrustBadgesRow(props: Readonly<Props>): React.JSX.Element {
   return (
-    <div className={props.className ?? "flex flex-wrap items-center gap-2"}>
+    <div className={styles["row"]}>
       {props.badges.map((label) => (
         <Badge
           key={label}

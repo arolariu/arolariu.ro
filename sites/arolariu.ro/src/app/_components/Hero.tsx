@@ -1,8 +1,10 @@
 import {RichText} from "@/presentation/Text";
+import {Separator} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import TechSphere from "../_effects/TechSphere";
+import styles from "./Hero.module.scss";
 
 /**
  * The hero section of the homepage, CSR'ed.
@@ -14,51 +16,36 @@ import TechSphere from "../_effects/TechSphere";
 export default function HeroSection(): React.JSX.Element {
   const t = useTranslations("Home");
   return (
-    <section className='relative min-h-screen overflow-hidden py-20'>
-      <article className='mx-auto grid grid-cols-1 items-center gap-12 px-4 lg:grid-cols-2'>
+    <section className={styles["section"]}>
+      <article className={styles["article"]}>
         {/* Left side - h1 always visible for accessibility, container animates scale only */}
         <motion.div
           initial={{scale: 0.8}}
           animate={{scale: 1}}
           transition={{duration: 0.8, delay: 0.3}}
-          className='relative z-10'>
-          <h1 className='2xsm:text-center mt-6 text-4xl font-normal text-white sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>
-            <span className='from-gradient-from to-gradient-to bg-linear-to-r bg-clip-text text-transparent'>{t("title")}</span>
+          className={styles["content"]}>
+          <h1 className={styles["title"]}>
+            <span className={styles["titleGradient"]}>{t("title")}</span>
           </h1>
-          <p className='2xsm:text-center mt-4 max-w-lg text-xl text-gray-500 md:text-left lg:max-w-2xl'>
+          <p className={styles["subtitle"]}>
             <RichText
               sectionKey='Home'
               textKey='subtitle'
             />
           </p>
-          <div className='2xsm:ml-[26%] relative mt-8 inline-flex md:ml-0'>
-            <div className='from-gradient-from to-gradient-to absolute -inset-px rounded-full bg-linear-to-r transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50' />
+          <div className={styles["ctaWrapper"]}>
+            <div className={styles["ctaGlow"]} />
             <Link
               href='/domains'
               title=''
-              className='relative inline-flex rounded-full border border-transparent bg-black px-8 py-3 text-white'>
+              className={styles["ctaButton"]}>
               {t("cta")}
             </Link>
           </div>
 
-          <div>
-            <div className='mt-8 inline-flex items-center border-t border-gray-800 pt-6 dark:border-gray-300'>
-              <svg
-                className='h-6 w-6'
-                viewBox='0 0 24 24'
-                fill='none'
-                strokeWidth='1.5'
-                xmlns='http://www.w3.org/2000/svg'>
-                <path
-                  d='M13 7.00003H21M21 7.00003V15M21 7.00003L13 15L9 11L3 17'
-                  stroke='url(#a)'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
-
-              <span className='2xsm:text-center md:text-left'>{t("appreciation")}</span>
-            </div>
+          <div className={styles["appreciation"]}>
+            <Separator className={styles["appreciationSeparator"]} />
+            <span className={styles["appreciationText"]}>{t("appreciation")}</span>
           </div>
         </motion.div>
         {/* Right side */}
@@ -66,10 +53,10 @@ export default function HeroSection(): React.JSX.Element {
           initial={{opacity: 0, scale: 0.8}}
           animate={{opacity: 1, scale: 1}}
           transition={{duration: 0.8, delay: 0.3}}
-          className='relative flex flex-col items-center justify-center'>
-          <div className='relative mx-auto w-full max-w-[400px]'>
+          className={styles["visual"]}>
+          <div className={styles["visualContainer"]}>
             <motion.div
-              className='bg-primary/20 absolute -top-20 -left-20 h-40 w-40 rounded-full blur-3xl'
+              className={styles["orbPrimary"]}
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.5, 0.3],
@@ -81,7 +68,7 @@ export default function HeroSection(): React.JSX.Element {
               }}
             />
             <motion.div
-              className='absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-purple-500/20 blur-3xl'
+              className={styles["orbPurple"]}
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.5, 0.3],
@@ -93,15 +80,15 @@ export default function HeroSection(): React.JSX.Element {
               }}
             />
 
-            <div className='hidden lg:block'>
+            <div className={styles["techSphereWrapper"]}>
               <TechSphere />
             </div>
 
             {/* Mobile-only animation */}
-            <div className='block w-full sm:hidden'>
-              <div className='relative flex h-60 w-full items-center justify-center'>
+            <div className={styles["mobileAnimation"]}>
+              <div className={styles["mobileAnimationInner"]}>
                 <motion.div
-                  className='bg-primary/20 absolute h-32 w-32 rounded-full blur-xl'
+                  className={styles["mobileOrb"]}
                   animate={{
                     scale: [1, 1.2, 1],
                     opacity: [0.3, 0.5, 0.3],

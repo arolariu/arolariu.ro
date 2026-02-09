@@ -1,0 +1,52 @@
+// ===========================================
+// VIEW INVOICES PAGE STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+// ===========================================
+// LAYOUT
+// ===========================================
+.pageMain {
+  @include container(80rem);
+  padding-inline: space(5);
+  padding-block: space(24);
+}
+
+// ===========================================
+// HEADER SECTION
+// ===========================================
+.headerSection {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: space(20);
+  text-align: center;
+
+  @media print {
+    display: none;
+  }
+}
+
+.title {
+  margin-bottom: space(4);
+  background: linear-gradient(to right, #f472b6, #dc2626); // pink-400 -> red-600
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: font-size('2xl');
+  font-weight: font-weight('medium');
+
+  @include respond-to('sm') {
+    font-size: font-size('3xl');
+  }
+}
+
+.subtitleArticle {
+  margin-inline: auto;
+  font-size: font-size('base');
+  line-height: line-height('relaxed');
+
+  @include respond-to('lg') {
+    width: 66.666%;
+  }
+}

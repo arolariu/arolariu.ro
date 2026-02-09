@@ -2,6 +2,7 @@
 
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardContent} from "@arolariu/components/card";
+import {CountingNumber} from "@arolariu/components/counting-number";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {AnimatePresence, motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
@@ -25,11 +26,16 @@ import {
   TbDatabase,
   TbDeviceAnalytics,
   TbFileDatabase,
+  TbGlobe,
   TbServer,
   TbStackFront,
+  TbStar,
   TbTestPipe,
   TbTools,
+  TbUsers,
+  TbWorld,
 } from "react-icons/tb";
+import styles from "./TechStack.module.scss";
 
 interface TechConfig {
   id: string;
@@ -40,15 +46,50 @@ interface TechConfig {
 interface CategoryConfig {
   id: string;
   icon: React.ComponentType<{className?: string}>;
-  color: string;
+  colorKey: "blueCyan" | "purpleViolet" | "orangeAmber" | "greenEmerald";
   technologies: TechConfig[];
 }
+
+interface StatConfig {
+  id: string;
+  icon: React.ComponentType<{className?: string}>;
+  gradientKey: "blue" | "purple" | "green" | "orange" | "pink" | "indigo" | "yellow" | "teal";
+}
+
+const gradientClassMap = {
+  blueCyan: "gradientBlueCyan",
+  purpleViolet: "gradientPurpleViolet",
+  orangeAmber: "gradientOrangeAmber",
+  greenEmerald: "gradientGreenEmerald",
+} as const;
+
+const iconClassMap = {
+  blue: "iconBlue",
+  purple: "iconPurple",
+  green: "iconGreen",
+  orange: "iconOrange",
+  pink: "iconPink",
+  indigo: "iconIndigo",
+  yellow: "iconYellow",
+  teal: "iconTeal",
+} as const;
+
+const borderClassMap = {
+  blue: "borderBlue",
+  purple: "borderPurple",
+  green: "borderGreen",
+  orange: "borderOrange",
+  pink: "borderPink",
+  indigo: "borderIndigo",
+  yellow: "borderYellow",
+  teal: "borderTeal",
+} as const;
 
 const categoryConfigs: CategoryConfig[] = [
   {
     id: "frontend",
     icon: TbStackFront,
-    color: "from-blue-500 to-cyan-500",
+    colorKey: "blueCyan",
     technologies: [
       {id: "react", icon: TbBrandReact, version: "19"},
       {id: "nextjs", icon: TbBrandNextjs, version: "16"},
@@ -61,7 +102,7 @@ const categoryConfigs: CategoryConfig[] = [
   {
     id: "backend",
     icon: TbServer,
-    color: "from-purple-500 to-violet-500",
+    colorKey: "purpleViolet",
     technologies: [
       {id: "dotnet", icon: TbBrandCSharp, version: "10"},
       {id: "aspnet", icon: TbServer, version: "10"},
@@ -74,7 +115,7 @@ const categoryConfigs: CategoryConfig[] = [
   {
     id: "cloud",
     icon: TbCloud,
-    color: "from-orange-500 to-amber-500",
+    colorKey: "orangeAmber",
     technologies: [
       {id: "azure", icon: TbBrandAzure},
       {id: "vercel", icon: TbBrandVercel},
@@ -87,7 +128,7 @@ const categoryConfigs: CategoryConfig[] = [
   {
     id: "tooling",
     icon: TbTools,
-    color: "from-green-500 to-emerald-500",
+    colorKey: "greenEmerald",
     technologies: [
       {id: "git", icon: TbBrandGit},
       {id: "eslint", icon: TbCode},
@@ -99,33 +140,45 @@ const categoryConfigs: CategoryConfig[] = [
   },
 ];
 
-const statIds = ["technologies", "coverage", "typescript", "security"];
+const statConfigs: StatConfig[] = [
+  {id: "projects", icon: TbCode, gradientKey: "blue"},
+  {id: "commits", icon: TbBrandGithub, gradientKey: "purple"},
+  {id: "linesOfCode", icon: TbDatabase, gradientKey: "green"},
+  {id: "apis", icon: TbServer, gradientKey: "orange"},
+  {id: "users", icon: TbUsers, gradientKey: "pink"},
+  {id: "countries", icon: TbWorld, gradientKey: "indigo"},
+  {id: "stars", icon: TbStar, gradientKey: "yellow"},
+  {id: "contributors", icon: TbGlobe, gradientKey: "teal"},
+];
 
 /**
  * Enhanced TechStack component displaying technologies used in the platform.
- * Features tabbed navigation with animated cards and detailed descriptions.
+ * Features tabbed navigation with animated cards, detailed descriptions,
+ * and merged platform statistics with animated counters.
  * @returns The TechStack component, CSR'ed.
  */
 export default function TechStack(): React.JSX.Element {
   const t = useTranslations("About.Platform.techStack");
+  const tStats = useTranslations("About.Platform.statistics");
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, {once: true, margin: "-100px"});
   const [activeTab, setActiveTab] = useState<string>("frontend");
   const [hoveredTech, setHoveredTech] = useState<string | null>(null);
+  const [hoveredStat, setHoveredStat] = useState<string | null>(null);
 
   return (
     <section
       ref={ref}
-      className='relative py-24'>
+      className={styles["section"]}>
       {/* Background */}
-      <div className='absolute inset-0 -z-10'>
-        <div className='from-background via-primary/5 to-background absolute inset-0 bg-gradient-to-b' />
+      <div className={styles["bgLayer"]}>
+        <div className={styles["bgGradient"]} />
       </div>
 
-      <div className='container mx-auto px-4'>
+      <div className={styles["container"]}>
         {/* Section Header */}
         <motion.div
-          className='mx-auto mb-16 max-w-3xl text-center'
+          className={styles["header"]}
           initial={{opacity: 0, y: 30}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
           transition={{duration: 0.6}}>
@@ -135,17 +188,14 @@ export default function TechStack(): React.JSX.Element {
             transition={{duration: 0.5}}>
             <Badge
               variant='outline'
-              className='mb-4 px-4 py-1 text-sm'>
+              className={styles["badge"]}>
               {t("badge")}
             </Badge>
           </motion.div>
-          <h2 className='mb-6 text-4xl font-bold tracking-tight md:text-5xl'>
-            {t("title")}{" "}
-            <span className='bg-gradient-to-r from-blue-500 via-purple-500 to-orange-500 bg-clip-text text-transparent'>
-              {t("titleHighlight")}
-            </span>
+          <h2 className={styles["title"]}>
+            {t("title")} <span className={styles["titleHighlight"]}>{t("titleHighlight")}</span>
           </h2>
-          <p className='text-muted-foreground text-lg md:text-xl'>{t("description")}</p>
+          <p className={styles["description"]}>{t("description")}</p>
         </motion.div>
 
         {/* Tabs */}
@@ -153,24 +203,24 @@ export default function TechStack(): React.JSX.Element {
           defaultValue='frontend'
           value={activeTab}
           onValueChange={setActiveTab}
-          className='mx-auto max-w-6xl'>
+          className={styles["tabsContainer"]}>
           {/* Tab List */}
           <motion.div
-            className='mb-12 flex justify-center'
+            className={styles["tabListWrapper"]}
             initial={{opacity: 0, y: 20}}
             animate={isInView ? {opacity: 1, y: 0} : {}}
             transition={{duration: 0.5, delay: 0.2}}>
-            <TabsList className='bg-muted/50 grid h-auto grid-cols-2 gap-2 p-2 backdrop-blur-sm md:grid-cols-4'>
+            <TabsList className={styles["tabList"]}>
               {categoryConfigs.map((category) => (
                 <TabsTrigger
                   key={category.id}
                   value={category.id}
-                  className='data-[state=active]:bg-background relative flex items-center gap-2 px-4 py-3 transition-all'>
-                  <category.icon className='h-4 w-4' />
-                  <span className='hidden sm:inline'>{t(`categories.${category.id}.name` as Parameters<typeof t>[0])}</span>
+                  className={activeTab === category.id ? styles["tabTriggerActive"] : styles["tabTrigger"]}>
+                  <category.icon className={styles["tabIcon"]} />
+                  <span className={styles["tabLabel"]}>{t(`categories.${category.id}.name` as Parameters<typeof t>[0])}</span>
                   {activeTab === category.id && (
                     <motion.span
-                      className={`absolute inset-x-0 -bottom-px h-0.5 bg-gradient-to-r ${category.color}`}
+                      className={`${styles["tabIndicator"]} ${styles[gradientClassMap[category.colorKey]]}`}
                       layoutId='activeTechTab'
                     />
                   )}
@@ -185,19 +235,19 @@ export default function TechStack(): React.JSX.Element {
               <TabsContent
                 key={category.id}
                 value={category.id}
-                className='mt-0 focus-visible:ring-0 focus-visible:outline-none'>
+                className={styles["tabContent"]}>
                 <motion.div
                   initial={{opacity: 0, y: 20}}
                   animate={{opacity: 1, y: 0}}
                   exit={{opacity: 0, y: -20}}
                   transition={{duration: 0.3}}>
                   {/* Category Description */}
-                  <div className='mb-8 text-center'>
-                    <p className='text-muted-foreground text-lg'>{t(`categories.${category.id}.description` as Parameters<typeof t>[0])}</p>
+                  <div className={styles["categoryDescription"]}>
+                    <p>{t(`categories.${category.id}.description` as Parameters<typeof t>[0])}</p>
                   </div>
 
                   {/* Technologies Grid */}
-                  <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                  <div className={styles["techGrid"]}>
                     {category.technologies.map((tech, index) => (
                       <motion.div
                         key={tech.id}
@@ -208,41 +258,38 @@ export default function TechStack(): React.JSX.Element {
                         onHoverStart={() => setHoveredTech(tech.id)}
                         // eslint-disable-next-line react/jsx-no-bind -- simple page
                         onHoverEnd={() => setHoveredTech(null)}>
-                        <Card
-                          className={`group relative h-full overflow-hidden transition-all duration-300 ${
-                            hoveredTech === tech.id ? "border-primary shadow-primary/10 shadow-lg" : "hover:border-primary/30"
-                          }`}>
+                        <Card className={styles["techCard"]}>
                           {/* Gradient overlay */}
                           <motion.div
-                            className={`absolute inset-0 bg-gradient-to-br ${category.color} transition-opacity duration-300`}
+                            className={`${styles["techCardGradient"]} ${styles[gradientClassMap[category.colorKey]]}`}
                             style={{opacity: hoveredTech === tech.id ? 0.1 : 0}}
                           />
 
-                          <CardContent className='relative flex items-start gap-4 p-5'>
+                          <CardContent className={styles["techCardContent"]}>
                             {/* Icon */}
                             <motion.div
-                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${category.color}`}
+                              className={`${styles["techIconWrapper"]} ${styles[gradientClassMap[category.colorKey]]}`}
                               animate={{
                                 scale: hoveredTech === tech.id ? 1.1 : 1,
                                 rotate: hoveredTech === tech.id ? 5 : 0,
                               }}
                               transition={{duration: 0.3}}>
-                              <tech.icon className='h-6 w-6 text-white' />
+                              <tech.icon className={styles["techIcon"]} />
                             </motion.div>
 
                             {/* Content */}
-                            <div className='min-w-0 flex-1'>
-                              <div className='mb-1 flex items-center gap-2'>
-                                <h3 className='font-semibold'>{t(`technologies.${tech.id}.name` as Parameters<typeof t>[0])}</h3>
+                            <div className={styles["techInfo"]}>
+                              <div className={styles["techName"]}>
+                                <h3>{t(`technologies.${tech.id}.name` as Parameters<typeof t>[0])}</h3>
                                 {tech.version !== undefined && (
                                   <Badge
                                     variant='secondary'
-                                    className='text-xs'>
+                                    className={styles["techVersion"]}>
                                     v{tech.version}
                                   </Badge>
                                 )}
                               </div>
-                              <p className='text-muted-foreground text-sm'>
+                              <p className={styles["techDescription"]}>
                                 {t(`technologies.${tech.id}.description` as Parameters<typeof t>[0])}
                               </p>
                             </div>
@@ -250,7 +297,7 @@ export default function TechStack(): React.JSX.Element {
 
                           {/* Animated border */}
                           <motion.div
-                            className={`absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r ${category.color}`}
+                            className={`${styles["techCardBorder"]} ${styles[gradientClassMap[category.colorKey]]}`}
                             initial={{scaleX: 0}}
                             animate={{scaleX: hoveredTech === tech.id ? 1 : 0}}
                             transition={{duration: 0.3}}
@@ -266,26 +313,79 @@ export default function TechStack(): React.JSX.Element {
           </AnimatePresence>
         </Tabs>
 
-        {/* Tech Stats */}
+        {/* Platform Statistics (merged from Statistics component) */}
         <motion.div
-          className='mx-auto mt-16 grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-4'
+          className={styles["statsHeader"]}
           initial={{opacity: 0, y: 30}}
           animate={isInView ? {opacity: 1, y: 0} : {}}
-          transition={{duration: 0.6, delay: 0.5}}>
-          {statIds.map((statId, index) => (
+          transition={{duration: 0.6, delay: 0.4}}>
+          <Badge
+            variant='outline'
+            className={styles["badge"]}>
+            {tStats("badge")}
+          </Badge>
+          <h3 className={styles["statsTitle"]}>
+            {tStats("title")} <span className={styles["titleHighlight"]}>{tStats("titleHighlight")}</span>
+          </h3>
+          <p className={styles["statsDescription"]}>{tStats("description")}</p>
+        </motion.div>
+
+        <div className={styles["statsGrid"]}>
+          {statConfigs.map((stat, index) => (
             <motion.div
-              key={statId}
-              className='bg-muted/30 rounded-xl p-6 text-center backdrop-blur-sm'
-              initial={{opacity: 0, y: 20}}
+              key={stat.id}
+              initial={{opacity: 0, y: 30}}
               animate={isInView ? {opacity: 1, y: 0} : {}}
-              transition={{duration: 0.5, delay: 0.6 + index * 0.1}}
-              whileHover={{scale: 1.05, transition: {duration: 0.2}}}>
-              <div className='text-primary mb-1 text-3xl font-bold'>{t(`stats.${statId}.value` as Parameters<typeof t>[0])}</div>
-              <div className='font-medium'>{t(`stats.${statId}.label` as Parameters<typeof t>[0])}</div>
-              <div className='text-muted-foreground text-sm'>{t(`stats.${statId}.description` as Parameters<typeof t>[0])}</div>
+              transition={{duration: 0.5, delay: 0.5 + index * 0.1}}
+              // eslint-disable-next-line react/jsx-no-bind -- simple page
+              onHoverStart={() => setHoveredStat(stat.id)}
+              // eslint-disable-next-line react/jsx-no-bind -- simple page
+              onHoverEnd={() => setHoveredStat(null)}>
+              <Card className={hoveredStat === stat.id ? styles["statCardActive"] : styles["statCard"]}>
+                {/* Gradient overlay */}
+                <motion.div
+                  className={`${styles["statCardGradient"]} ${styles[iconClassMap[stat.gradientKey]]}`}
+                  style={{opacity: hoveredStat === stat.id ? 0.1 : 0}}
+                />
+
+                <CardContent className={styles["statCardContent"]}>
+                  {/* Icon */}
+                  <motion.div
+                    className={`${styles["statIconWrapper"]} ${styles[iconClassMap[stat.gradientKey]]}`}
+                    animate={{
+                      scale: hoveredStat === stat.id ? 1.1 : 1,
+                      rotate: hoveredStat === stat.id ? 5 : 0,
+                    }}
+                    transition={{duration: 0.3}}>
+                    <stat.icon className={styles["statIcon"]} />
+                  </motion.div>
+
+                  {/* Animated Number */}
+                  <div className={styles["statValue"]}>
+                    <CountingNumber
+                      number={Number(tStats(`items.${stat.id}.value` as Parameters<typeof tStats>[0]))}
+                      inView
+                    />
+                    {tStats(`items.${stat.id}.suffix` as Parameters<typeof tStats>[0])}
+                  </div>
+
+                  {/* Label */}
+                  <h3 className={styles["statLabel"]}>{tStats(`items.${stat.id}.label` as Parameters<typeof tStats>[0])}</h3>
+                  <p className={styles["statDescription"]}>{tStats(`items.${stat.id}.description` as Parameters<typeof tStats>[0])}</p>
+                </CardContent>
+
+                {/* Animated border */}
+                <motion.div
+                  className={`${styles["statCardBorder"]} ${styles[borderClassMap[stat.gradientKey]]}`}
+                  initial={{scaleX: 0}}
+                  animate={{scaleX: hoveredStat === stat.id ? 1 : 0}}
+                  transition={{duration: 0.3}}
+                  style={{transformOrigin: "left"}}
+                />
+              </Card>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

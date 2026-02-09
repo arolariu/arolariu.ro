@@ -1,0 +1,19 @@
+/// ===========================================
+/// UTILITIES — Barrel Export
+/// ===========================================
+/// Forwards all utility-layer partials: atomic helper classes for
+/// layout, display, colors, sizing, and visual effects.
+///
+/// @group utilities
+/// @author arolariu
+/// @see utilities/_layout.scss — flexbox, grid, positioning, z-index
+/// @see utilities/_display.scss — display, visibility, overflow, cursor
+/// @see utilities/_colors.scss — text, background, border colors, opacity
+/// @see utilities/_sizing.scss — width, height, aspect ratio, border radius
+/// @see utilities/_effects.scss — visual effects (grid pattern, glow, parallax)
+/// ===========================================
+@forward 'layout';
+@forward 'display';
+@forward 'colors';
+@forward 'sizing';
+@forward 'effects';

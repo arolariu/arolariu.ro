@@ -15,6 +15,7 @@ import {motion} from "motion/react";
 import {useCallback, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
+import styles from "./UploadArea.module.scss";
 
 /** Accepted MIME types for file uploads */
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
@@ -177,12 +178,8 @@ export default function UploadArea(): React.JSX.Element {
 
   if (pendingUploads.length === 0) {
     return (
-      <div
-        className={`mb-16 rounded-lg border-2 border-dashed p-16 text-center transition-all duration-300 ${
-          isDragActive
-            ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
-            : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-purple-900/20"
-        } cursor-pointer`}
+      <div 
+        className={`${styles["dropzoneEmpty"]} ${isDragActive ? styles["dropzoneEmptyActive"] : ""}`}
         role='button'
         tabIndex={0}
         onClick={handleClick}
@@ -194,15 +191,15 @@ export default function UploadArea(): React.JSX.Element {
         <motion.div
           animate={isDragActive ? {scale: 1.05} : {scale: 1}}
           transition={{duration: 0.2}}>
-          <motion.div className='mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-r from-blue-500 to-cyan-500'>
-            <TbUpload className='h-10 w-10 text-white' />
+          <motion.div className={styles["iconCircle"]}>
+            <TbUpload className={styles["iconCircleIcon"]} />
           </motion.div>
-          <h3 className='mb-4 text-2xl font-bold text-gray-900 lg:text-3xl dark:text-white'>Upload your scans</h3>
-          <p className='mb-6 text-lg text-gray-600 dark:text-gray-300'>
+          <h3 className={styles["dropzoneTitle"]}>Upload your scans</h3>
+          <p className={styles["dropzoneSubtitle"]}>
             {isDragActive ? "Drop your files here..." : "Drag and drop your files here, or click to browse"}
           </p>
-          <p className='mb-4 text-sm text-gray-500 dark:text-gray-400'>Supports JPG, PNG, PDF files up to 10MB each</p>
-          <p className='mb-8 text-xs text-gray-400 dark:text-gray-500'>
+          <p className={styles["dropzoneFormats"]}>Supports JPG, PNG, PDF files up to 10MB each</p>
+          <p className={styles["dropzoneNote"]}>
             Scans will be stored for later use. Create invoices from the View Scans page.
           </p>
           <input
@@ -211,7 +208,7 @@ export default function UploadArea(): React.JSX.Element {
             accept={ACCEPTED_EXTENSIONS}
             multiple
             onChange={handleFileChange}
-            className='hidden'
+            className={styles["hiddenInput"]}
             aria-label='Upload files'
           />
           <Button
@@ -225,13 +222,9 @@ export default function UploadArea(): React.JSX.Element {
   }
 
   return (
-    <div className='mt-8 flex flex-col gap-4'>
-      <div
-        className={`rounded-lg border-2 border-dashed p-6 text-center transition-all duration-300 ${
-          isDragActive
-            ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
-            : "border-gray-300 bg-transparent hover:border-blue-400 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-900/20"
-        } ${isUploading ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+    <div className={styles["wrapper"]}>
+      <div 
+        className={`${styles["dropzoneCompact"]} ${isDragActive ? styles["dropzoneCompactActive"] : ""} ${isUploading ? styles["dropzoneCompactDisabled"] : ""}`}
         role='button'
         tabIndex={isUploading ? -1 : 0}
         onClick={handleClick}
@@ -246,21 +239,21 @@ export default function UploadArea(): React.JSX.Element {
           accept={ACCEPTED_EXTENSIONS}
           multiple
           onChange={handleFileChange}
-          className='hidden'
+          className={styles["hiddenInput"]}
           aria-label='Upload files'
         />
-        <div className='flex items-center justify-center gap-4'>
-          <div className='flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800'>
-            <TbUpload className='h-6 w-6 text-gray-500 dark:text-gray-400' />
+        <div className={styles["compactContent"]}>
+          <div className={styles["compactIconCircle"]}>
+            <TbUpload className={styles["compactIcon"]} />
           </div>
-          <div className='text-left'>
-            <p className='text-base font-medium text-gray-900 dark:text-white'>{isDragActive ? "Drop to add..." : "Add more scans"}</p>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>JPG, PNG, PDF up to 10MB</p>
+          <div className={styles["compactTextBlock"]}>
+            <p className={styles["compactTitle"]}>{isDragActive ? "Drop to add..." : "Add more scans"}</p>
+            <p className={styles["compactSubtitle"]}>JPG, PNG, PDF up to 10MB</p>
           </div>
         </div>
       </div>
 
-      <div className='flex justify-end gap-4'>
+      <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

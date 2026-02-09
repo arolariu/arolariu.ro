@@ -1,0 +1,77 @@
+@use '../../../../../../../styles/abstracts' as *;
+@use '../../../../_styles/invoice-shared' as invoice;
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.detailLabel {
+  color: color('muted-foreground');
+  margin-bottom: space(1);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+}
+
+.categoryRow {
+  display: flex;
+  align-items: center;
+}
+
+.paymentRow {
+  display: flex;
+  align-items: center;
+}
+
+.totalAmount {
+  font-size: font-size('lg');
+  font-weight: font-weight('semibold');
+}
+
+.timePicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+}
+
+.timeColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(1);
+}
+
+.timeLabel {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.timeSeparator {
+  color: color('muted-foreground');
+  margin-top: space(5);
+  font-size: font-size('lg');
+  font-weight: font-weight('medium');
+}
+
+.timeUtc {
+  color: color('muted-foreground');
+  margin-top: space(5);
+  font-size: font-size('sm');
+}

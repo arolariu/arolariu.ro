@@ -1,0 +1,105 @@
+/// ===========================================
+/// BADGE COMPONENT — BEM
+/// ===========================================
+/// Inline badge with semantic color variants, size variants,
+/// and an outline modifier. Uses CSS custom properties for
+/// automatic light/dark mode support.
+///
+/// @group components
+/// @author arolariu
+///
+/// ## Semantic Variants
+/// `.badge--primary`, `.badge--success`, `.badge--warning`,
+/// `.badge--destructive`, `.badge--info`
+///
+/// ## Size Variants
+/// `.badge--sm`, `.badge--lg`
+///
+/// ## Elements & Modifiers
+/// - `.badge__icon` — fixed-size icon inside badge (14px)
+/// - `.badge--outline` — transparent bg with `currentColor` border
+///
+/// @see base/_globals.scss — semantic CSS variables (--success, --warning, etc.)
+/// ===========================================
+@use '../abstracts' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: space(1);
+  padding: space(0.5) space(2);
+  border-radius: radius('full');
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+  line-height: line-height('normal');
+  white-space: nowrap;
+  border: 1px solid transparent;
+  @include transition((background-color, color, border-color));
+
+  // Default variant
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+
+  // ==========================================
+  // SEMANTIC VARIANTS
+  // ==========================================
+  &--primary {
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary) / 0.2);
+  }
+
+  &--success {
+    background-color: hsl(var(--success) / 0.1);
+    color: hsl(var(--success));
+    border-color: hsl(var(--success) / 0.2);
+  }
+
+  &--warning {
+    background-color: hsl(var(--warning) / 0.1);
+    color: hsl(var(--warning));
+    border-color: hsl(var(--warning) / 0.2);
+  }
+
+  &--destructive {
+    background-color: hsl(var(--destructive) / 0.1);
+    color: hsl(var(--destructive));
+    border-color: hsl(var(--destructive) / 0.2);
+  }
+
+  &--info {
+    background-color: hsl(var(--info) / 0.1);
+    color: hsl(var(--info));
+    border-color: hsl(var(--info) / 0.2);
+  }
+
+  // ==========================================
+  // SIZE VARIANTS
+  // ==========================================
+  &--sm {
+    padding: 0 space(1.5);
+    font-size: font-size('xs');
+  }
+
+  &--lg {
+    padding: space(1) space(3);
+    font-size: font-size('sm');
+  }
+
+  // ==========================================
+  // ICON INSIDE BADGE
+  // ==========================================
+  &__icon {
+    width: 0.875rem;  // 14px
+    height: 0.875rem;
+    flex-shrink: 0;
+  }
+
+  // ==========================================
+  // OUTLINE VARIANT (higher contrast)
+  // ==========================================
+  &--outline {
+    background-color: transparent;
+    border-color: currentColor;
+  }
+}

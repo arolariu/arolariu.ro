@@ -1,0 +1,305 @@
+// ===========================================
+// THE PLATFORM - FEATURES COMPONENT
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  position: relative;
+  padding: space(24) 0;
+}
+
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 64rem;
+  padding: 0 space(4);
+}
+
+// Header
+.header {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(16);
+  max-width: 48rem;
+  text-align: center;
+}
+
+.badge {
+  margin-bottom: space(4);
+  padding: space(1) space(4);
+  font-size: font-size('sm');
+}
+
+.title {
+  margin-bottom: space(6);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  letter-spacing: letter-spacing('tight');
+
+  @include respond-to('md') {
+    font-size: font-size('5xl');
+  }
+}
+
+.titleHighlight {
+  @include gradient-text-custom;
+}
+
+.description {
+  font-size: font-size('lg');
+  color: color('muted-foreground');
+
+  @include respond-to('md') {
+    font-size: font-size('xl');
+  }
+}
+
+// Features grid (bento layout)
+.grid {
+  display: grid;
+  gap: space(6);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    > :first-child {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
+  }
+}
+
+// Feature card
+.card {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+  @include transition((border-color, box-shadow));
+
+  &:hover {
+    border-color: color('primary');
+  }
+}
+
+.cardActive {
+  composes: card;
+  border-color: color('primary');
+  @include shadow('lg');
+}
+
+.cardHero {
+  composes: card;
+
+  @include respond-to('lg') {
+    padding: space(8);
+  }
+}
+
+.cardGradient {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  @include transition(opacity);
+  pointer-events: none;
+
+  .card:hover &,
+  .cardActive & {
+    opacity: 1;
+  }
+}
+
+// Card header
+.cardHeader {
+  position: relative;
+}
+
+.cardHeaderInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(4);
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: radius('xl');
+  @include transition(transform);
+
+  .card:hover & {
+    transform: scale(1.1) rotate(5deg);
+  }
+}
+
+.icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.arrowIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0;
+  transform: translateX(10px);
+  @include transition((opacity, transform));
+
+  .card:hover & {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.cardTitle {
+  font-size: font-size('xl');
+}
+
+.cardDescription {
+  font-size: font-size('base');
+}
+
+// Card content (tags)
+.cardContent {
+  position: relative;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+}
+
+.tag {
+  font-size: font-size('xs');
+}
+
+// Modal
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: z('modal');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: space(4);
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.modalContent {
+  position: relative;
+  width: 100%;
+  max-width: 42rem;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: space(8);
+  border-radius: radius('2xl');
+  background-color: color('background');
+  @include shadow('2xl');
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: space(4);
+  margin-bottom: space(6);
+}
+
+.modalIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: radius('xl');
+}
+
+.modalIcon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.modalTitle {
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+}
+
+.modalSubtitle {
+  color: color('muted-foreground');
+}
+
+.modalDescription {
+  margin-bottom: space(6);
+  font-size: font-size('lg');
+  line-height: line-height('relaxed');
+  color: color('muted-foreground');
+}
+
+.modalTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+  margin-bottom: space(6);
+}
+
+.modalActions {
+  display: flex;
+  gap: space(4);
+}
+
+.modalLink {
+  display: inline-flex;
+  align-items: center;
+  gap: space(2);
+  padding: space(3) space(6);
+  border-radius: radius('lg');
+  font-weight: font-weight('medium');
+  @include transition(transform);
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.modalLinkIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.modalClose {
+  padding: space(3) space(6);
+  color: color('muted-foreground');
+
+  &:hover {
+    color: color('foreground');
+  }
+}
+
+// Color variants for icons
+.colorBlue { color: #3b82f6; }
+.colorPurple { color: #a855f7; }
+.colorGreen { color: #22c55e; }
+.colorOrange { color: #f97316; }
+.colorPink { color: #ec4899; }
+.colorCyan { color: #06b6d4; }
+.colorRed { color: #ef4444; }
+.colorIndigo { color: #6366f1; }
+.colorAmber { color: #f59e0b; }
+
+// Gradient variants for backgrounds
+.gradientBlue { background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1), transparent); }
+.gradientPurple { background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.1), transparent); }
+.gradientGreen { background: linear-gradient(to bottom right, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1), transparent); }
+.gradientOrange { background: linear-gradient(to bottom right, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.1), transparent); }
+.gradientPink { background: linear-gradient(to bottom right, rgba(236, 72, 153, 0.2), rgba(236, 72, 153, 0.1), transparent); }
+.gradientCyan { background: linear-gradient(to bottom right, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.1), transparent); }
+.gradientRed { background: linear-gradient(to bottom right, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1), transparent); }
+.gradientIndigo { background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1), transparent); }
+.gradientAmber { background: linear-gradient(to bottom right, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1), transparent); }

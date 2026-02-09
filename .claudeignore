@@ -8,3 +8,16 @@ logs/
 .nx/
 dist/
 build/
+.next/
+out/
+obj/
+bin/
+.svelte-kit/
+storybook-static/
+playwright-report/
+test-results/
+code-cov/
+__generated__/
+package-lock.json
+.env
+.env.*

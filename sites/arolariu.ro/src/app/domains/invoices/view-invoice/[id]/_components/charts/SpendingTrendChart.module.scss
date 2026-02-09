@@ -1,0 +1,31 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.tooltip {
+  background-color: color('background');
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(2) space(3);
+  @include shadow('md');
+}
+
+.tooltipName {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.tooltipDate {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.tooltipAmount {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  margin-top: space(1);
+}
+
+.tooltipCurrent {
+  color: color('primary');
+  font-size: font-size('xs');
+  margin-top: space(1);
+}

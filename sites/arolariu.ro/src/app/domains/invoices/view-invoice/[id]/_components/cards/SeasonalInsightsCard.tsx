@@ -7,6 +7,7 @@ import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/comp
 import {useLocale} from "next-intl";
 import {TbBulb, TbShoppingBag, TbSparkles, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
+import styles from "./SeasonalInsightsCard.module.scss";
 
 type Insight = {
   id: string;
@@ -145,21 +146,21 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
 }
 
 /**
- * Get the border and background CSS classes for an insight based on its type.
+ * Get the SCSS module class for an insight container based on its type.
  */
-function getInsightContainerClasses(type: Insight["type"]): string {
-  if (type === "warning") return "border-amber-500/30 bg-amber-500/5";
-  if (type === "success") return "border-emerald-500/30 bg-emerald-500/5";
-  return "border-border bg-muted/30";
+function getInsightContainerClass(type: Insight["type"]): string {
+  if (type === "warning") return styles["insightWarning"] ?? "";
+  if (type === "success") return styles["insightSuccess"] ?? "";
+  return styles["insightInfo"] ?? "";
 }
 
 /**
- * Get the text color CSS class for an insight icon based on its type.
+ * Get the SCSS module class for an insight icon based on its type.
  */
-function getInsightIconColorClass(type: Insight["type"]): string {
-  if (type === "warning") return "text-amber-500";
-  if (type === "success") return "text-emerald-500";
-  return "text-muted-foreground";
+function getInsightIconClass(type: Insight["type"]): string {
+  if (type === "warning") return styles["insightIconWarning"] ?? "";
+  if (type === "success") return styles["insightIconSuccess"] ?? "";
+  return styles["insightIconInfo"] ?? "";
 }
 
 export function SeasonalInsightsCard(): React.JSX.Element {
@@ -185,16 +186,16 @@ export function SeasonalInsightsCard(): React.JSX.Element {
       </CardHeader>
       <CardContent className='space-y-4'>
         {/* Month comparison */}
-        <div className='space-y-2'>
-          <div className='flex items-center justify-between text-sm'>
-            <span className='text-muted-foreground'>{monthName} so far</span>
-            <span className='font-medium'>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
+        <div className={styles["monthSection"]}>
+          <div className={styles["monthRow"]}>
+            <span className={styles["monthLabel"]}>{monthName} so far</span>
+            <span className={styles["monthValue"]}>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
           </div>
           <Progress
             value={percentOfAverage}
             className='h-2'
           />
-          <div className='text-muted-foreground flex items-center justify-between text-xs'>
+          <div className={styles["monthMeta"]}>
             <span>
               vs {monthName} avg: {formatCurrency(decemberAverage, {currencyCode: currency.code, locale})}
             </span>
@@ -203,15 +204,15 @@ export function SeasonalInsightsCard(): React.JSX.Element {
         </div>
 
         {/* Insights list */}
-        <div className='space-y-2'>
+        <div className={styles["insightsList"]}>
           {insights.map((insight) => (
-            <div
+            <div 
               key={insight.id}
-              className={`flex items-start gap-3 rounded-lg border p-3 ${getInsightContainerClasses(insight.type)}`}>
-              <div className={`mt-0.5 ${getInsightIconColorClass(insight.type)}`}>{insight.icon}</div>
-              <div className='min-w-0 flex-1'>
-                <p className='text-sm leading-tight font-medium'>{insight.title}</p>
-                <p className='text-muted-foreground text-xs'>{insight.description}</p>
+              className={`${styles["insightItem"]} ${getInsightContainerClass(insight.type)}`}>
+              <div className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</div>
+              <div className={styles["insightContent"]}>
+                <p className={styles["insightTitle"]}>{insight.title}</p>
+                <p className={styles["insightDescription"]}>{insight.description}</p>
               </div>
             </div>
           ))}

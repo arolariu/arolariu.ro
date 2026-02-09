@@ -23,23 +23,23 @@ const FOOTER_SELECTORS = {
   /** SVG wave decoration */
   svgWave: "footer > svg[preserveAspectRatio='none']",
 
-  /** Hero section with logo and site name */
-  heroLink: "footer a[title='AROLARIU.RO']",
+  /** Hero section with logo and site name - uses aria-label for accessible selection */
+  heroLink: "footer a[aria-label='Go home']",
 
   /** Logo image in footer */
-  logo: "footer a[title='AROLARIU.RO'] img",
+  logo: "footer a[aria-label='Go home'] img",
 
   /** Site name span */
-  siteName: "footer a[title='AROLARIU.RO'] span",
+  siteName: "footer a[aria-label='Go home'] span",
 
-  /** Footer description (prose content) */
-  description: "footer div[class*='md:col-span-1'] div[class*='mt-4'] .prose",
+  /** Footer description (prose content) - uses BEM class for stable selection */
+  description: "footer .footer__brand-description",
 
   /** Subdomains section heading */
-  subdomainsHeading: "footer div > p:has-text('Subdomains')",
+  subdomainsHeading: "footer .footer__nav-title:first-of-type",
 
   /** About section heading */
-  aboutHeading: "footer div > p:has-text('About')",
+  aboutHeading: "footer .footer__nav-section > div:last-child .footer__nav-title",
 
   /** All internal links */
   internalLinks: "footer a[href^='/']:not([href*='#'])",
@@ -66,7 +66,7 @@ const FOOTER_SELECTORS = {
   privacyLink: "footer a[href='/privacy-policy/']",
 
   /** Copyright text */
-  copyright: "footer p:has-text('Alexandru-Razvan Olariu')",
+  copyright: "footer .footer__copyright",
 
   /** GitHub repository link */
   githubRepoLink: "footer a[href='https://github.com/arolariu/arolariu.ro/']",
@@ -77,11 +77,11 @@ const FOOTER_SELECTORS = {
   /** Author's LinkedIn link */
   authorLinkedinLink: "footer a[href='https://linkedin.com/in/olariu-alexandru']",
 
-  /** Build info section */
-  buildInfo: "footer div.text-slate-300",
+  /** Build info section - uses BEM class for stable selection */
+  buildInfo: "footer .footer__build-info",
 
   /** Commit SHA element */
-  commitSha: "footer span:has-text('Commit SHA:') code",
+  commitSha: "footer .footer__build-info code",
 } as const;
 
 /**

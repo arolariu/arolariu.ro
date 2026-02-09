@@ -1,0 +1,205 @@
+// ===========================================
+// ROOT LOADING SKELETON STYLES
+// Scoped to /app/loading.tsx
+// ===========================================
+@use '../styles/abstracts' as *;
+
+.page {
+  min-height: 100vh;
+  background-color: color('background');
+}
+
+// ===========================================
+// HERO SECTION
+// ===========================================
+.heroSection {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding-top: space(20);
+}
+
+.heroContainer {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: space(4);
+  padding-right: space(4);
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: space(12);
+  min-height: 80vh;
+
+  @include respond-to('lg') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// ===========================================
+// HERO LEFT - TEXT
+// ===========================================
+.heroText {
+  position: relative;
+  z-index: z('raised');
+}
+
+.heroBadge {
+  width: 10rem;
+  height: 1.5rem;
+  margin-bottom: space(6);
+  border-radius: radius('md');
+}
+
+.heroTitle {
+  margin-bottom: space(4);
+  font-size: font-size('4xl');
+  font-weight: font-weight('bold');
+  color: color('muted-foreground');
+
+  @include respond-to('sm') {
+    font-size: font-size('5xl');
+  }
+
+  @include respond-to('lg') {
+    font-size: font-size('6xl');
+  }
+}
+
+.heroLine {
+  width: 100%;
+  max-width: 32rem;
+  height: 1.5rem;
+  margin-bottom: space(8);
+  border-radius: radius('md');
+}
+
+.heroButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(4);
+}
+
+.heroButton {
+  width: 9rem;
+  height: 2.5rem;
+  border-radius: radius('md');
+}
+
+// ===========================================
+// HERO RIGHT - SPHERE
+// ===========================================
+.heroVisual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sphereWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sphere {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: radius('full');
+  opacity: 0.5;
+}
+
+.orbitRing {
+  position: absolute;
+  inset: 0;
+  border-radius: radius('full');
+  border: 2px solid color-alpha('primary', 0.3);
+  animation: spin 8s linear infinite;
+}
+
+.orbitRingReverse {
+  position: absolute;
+  inset: 0;
+  border-radius: radius('full');
+  border: 1px solid color-alpha('primary', 0.2);
+  animation: spin 10s linear infinite reverse;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ===========================================
+// TECHNOLOGY CARDS SECTION
+// ===========================================
+.cardsSection {
+  position: relative;
+  padding-top: space(20);
+  padding-bottom: space(20);
+}
+
+.cardsContainer {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: space(4);
+  padding-right: space(4);
+}
+
+.cardsHeader {
+  text-align: center;
+  margin-bottom: space(16);
+}
+
+.cardsHeaderBadge {
+  width: 10rem;
+  height: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(4);
+  border-radius: radius('md');
+}
+
+.cardsHeaderTitle {
+  width: 16rem;
+  height: 2.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: space(6);
+  border-radius: radius('md');
+}
+
+.cardsHeaderSubtitle {
+  width: 24rem;
+  height: 1.25rem;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: radius('md');
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: space(8);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.cardSkeleton {
+  width: 100%;
+  height: 16rem;
+  border-radius: radius('lg');
+}

@@ -1,0 +1,41 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.previewSection {
+  padding-block: space(4);
+}
+
+.previewImage {
+  background-color: color('muted');
+  overflow: hidden;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+}
+
+.previewCaption {
+  color: color('muted-foreground');
+  margin-top: space(2);
+  text-align: center;
+  font-size: font-size('xs');
+}
+
+.warningBox {
+  background-color: color-alpha('destructive', 0.1);
+  color: color('destructive');
+  border-radius: radius('md');
+  padding: space(3);
+}
+
+.warningTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.warningText {
+  font-size: font-size('xs');
+}
+
+.scanPreviewImage {
+  height: space(48);
+  width: 100%;
+  object-fit: cover;
+}

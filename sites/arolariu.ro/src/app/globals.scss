@@ -1,0 +1,3 @@
+// Single entry point — all styles flow through the 7-1 architecture.
+// CSS custom properties are defined in styles/base/_globals.scss.
+@use '../styles/main';

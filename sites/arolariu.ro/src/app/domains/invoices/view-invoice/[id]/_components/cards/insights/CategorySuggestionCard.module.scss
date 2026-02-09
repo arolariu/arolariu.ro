@@ -1,0 +1,68 @@
+@use '../../../../../../../../styles/abstracts' as *;
+
+.description {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.mainGrid {
+  @include grid(5, space(2));
+}
+
+.moreSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.moreLabel {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+}
+
+.moreGrid {
+  @include grid(3, space(2));
+}
+
+.gamificationBox {
+  border-radius: radius('lg');
+  border: 1px solid rgba(#f59e0b, 0.3);
+  background: linear-gradient(to right, rgba(#f59e0b, 0.1), rgba(#f97316, 0.1));
+  padding: space(3);
+
+  & > * + * {
+    margin-top: space(2);
+  }
+
+  @include dark {
+    border-color: rgba(#92400e, 1);
+  }
+}
+
+.gamificationHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.gamificationLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.gamificationProgress {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+}
+
+.gamificationCount {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.categoryLabel {
+  font-size: font-size('xs');
+  font-weight: font-weight('medium');
+}

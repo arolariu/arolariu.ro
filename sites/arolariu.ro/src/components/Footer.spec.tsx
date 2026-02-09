@@ -39,19 +39,12 @@ test.describe("Footer Component Tests @footer", () => {
     test("should display and correctly link About section links", async ({page}) => {
       await footer.shouldHaveAboutSection();
 
-      // Check specific about section links
-      const aboutLink = page.locator("footer a[href='/about/']");
-      await expect(aboutLink).toBeVisible({timeout: 15000});
-      await expect(aboutLink).toHaveAttribute("href", "/about/");
-
-      const acknowledgementsLink = page.locator("footer a[href='/acknowledgements/']");
-      await expect(acknowledgementsLink).toBeVisible({timeout: 15000});
-
-      const termsLink = page.locator("footer a[href='/terms-of-service/']");
-      await expect(termsLink).toBeVisible({timeout: 15000});
-
-      const privacyLink = page.locator("footer a[href='/privacy-policy/']");
-      await expect(privacyLink).toBeVisible({timeout: 15000});
+      // Check specific about section links via href (locale-independent)
+      const footerEl = page.locator("footer");
+      await expect(footerEl.locator("a[href='/about/']")).toBeVisible({timeout: 15000});
+      await expect(footerEl.locator("a[href='/acknowledgements/']")).toBeVisible({timeout: 15000});
+      await expect(footerEl.locator("a[href='/terms-of-service/']")).toBeVisible({timeout: 15000});
+      await expect(footerEl.locator("a[href='/privacy-policy/']")).toBeVisible({timeout: 15000});
     });
   });
 

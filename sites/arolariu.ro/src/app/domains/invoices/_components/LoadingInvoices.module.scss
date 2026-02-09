@@ -1,0 +1,33 @@
+// ===========================================
+// LOADING INVOICES STYLES
+// ===========================================
+@use '../../../../styles/abstracts' as *;
+
+.section {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+.article {
+  margin-inline: auto;
+  flex: 0 0 auto;
+
+  @include respond-to('2xsm') {
+    width: 100%;
+  }
+
+  @include respond-to('lg') {
+    width: 50%;
+  }
+}
+
+.title {
+  text-align: center;
+  font-size: font-size('2xl');
+  font-weight: font-weight('bold');
+}
+
+.description {
+  text-align: center;
+}

@@ -1,0 +1,85 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.formBody {
+  & > * + * {
+    margin-top: space(4);
+  }
+  padding-block: space(2);
+}
+
+.fieldGroup {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ingredientItem {
+  position: relative;
+}
+
+.ingredientRow {
+  display: flex;
+  gap: space(2);
+}
+
+.ingredientInput {
+  position: relative;
+  flex: 1;
+}
+
+.timeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: space(4);
+}
+
+.timeRow {
+  display: flex;
+  align-items: center;
+}
+
+.footerActions {
+  display: flex;
+  gap: space(2);
+}
+
+.readBody {
+  & > * + * {
+    margin-top: space(4);
+  }
+  padding-block: space(2);
+}
+
+.readSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.readText {
+  font-size: font-size('sm');
+}
+
+.ingredientReadList {
+  list-style-type: disc;
+  padding-left: space(5);
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.instructionsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: space(4);
+}
+
+.tooltipText {
+  max-width: 20rem; /* max-w-xs */
+}

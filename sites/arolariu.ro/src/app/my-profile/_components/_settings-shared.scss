@@ -1,0 +1,101 @@
+// ===========================================
+// SETTINGS SHARED MIXINS
+// Reusable patterns for all settings panels
+// ===========================================
+@use '../../../styles/abstracts' as *;
+
+// ===========================================
+// SECTION LAYOUT
+// ===========================================
+
+// Main section container - flex column with gap
+@mixin settings-section {
+  @include flex-column;
+  gap: space(6);
+}
+
+// Section header - title + description
+@mixin settings-header {
+  h2 {
+    font-size: font-size('2xl');
+    font-weight: font-weight('bold');
+  }
+
+  p {
+    color: color('muted-foreground');
+  }
+}
+
+// ===========================================
+// GRID LAYOUT
+// ===========================================
+
+// Responsive grid: 1-col -> 2-col at md
+@mixin settings-grid {
+  @include grid(1, space(6));
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// Full-width card spanning both columns at md
+@mixin settings-card-full {
+  @include respond-to('md') {
+    grid-column: span 2;
+  }
+}
+
+// ===========================================
+// TOGGLE ROW
+// ===========================================
+
+// Toggle row: label+hint left, Switch right
+@mixin settings-toggle-row {
+  @include flex-between;
+}
+
+// Toggle label: label text + xs muted hint
+@mixin settings-toggle-label {
+  p {
+    font-size: font-size('xs');
+    color: color('muted-foreground');
+  }
+}
+
+// ===========================================
+// INFO & CALLOUT
+// ===========================================
+
+// Muted info/callout box
+@mixin settings-info-box {
+  background: color-alpha('muted', 0.5);
+  border-radius: radius('lg');
+  padding: space(3);
+}
+
+// ===========================================
+// CARD UTILITIES
+// ===========================================
+
+// Card icon (1rem, muted)
+@mixin settings-card-icon {
+  width: 1rem;
+  height: 1rem;
+  color: color('muted-foreground');
+}
+
+// Slider range labels row
+@mixin settings-range-labels {
+  @include flex-between;
+
+  span {
+    font-size: font-size('sm');
+    color: color('muted-foreground');
+
+    &:nth-child(2) {
+      font-weight: font-weight('medium');
+      color: color('foreground');
+    }
+  }
+}

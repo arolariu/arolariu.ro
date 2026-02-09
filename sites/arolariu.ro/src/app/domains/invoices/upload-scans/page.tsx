@@ -4,6 +4,7 @@ import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {redirect} from "next/navigation";
 import RenderUploadScansScreen from "./island";
+import styles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the scan upload page.
@@ -36,8 +37,8 @@ export default async function UploadScansPage(_props: Readonly<PageProps<"/domai
   }
 
   return (
-    <main className='min-h-screen px-4 py-12 sm:px-6 lg:px-8'>
+    <div className={styles["page"]}>
       <RenderUploadScansScreen />
-    </main>
+    </div>
   );
 }

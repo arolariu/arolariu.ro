@@ -1,0 +1,135 @@
+@use '../../../../../../../../styles/abstracts' as *;
+
+.sectionTitle {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.sectionTitleWithIcon {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.detectedBox {
+  border-radius: radius('lg');
+  border: 1px solid color('border');
+  padding: space(3);
+}
+
+.detectedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: space(2);
+}
+
+.detectedLabel {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.detectedName {
+  font-weight: font-weight('medium');
+}
+
+.detectedActions {
+  display: flex;
+  gap: space(2);
+}
+
+.budgetSection {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.budgetItem {
+  & > * + * {
+    margin-top: space(1);
+  }
+}
+
+.budgetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: font-size('sm');
+}
+
+.nearLimitText {
+  font-weight: font-weight('medium');
+  color: #ef4444;
+}
+
+.budgetMutedText {
+  color: color('muted-foreground');
+}
+
+.alertText {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('xs');
+  color: #d97706;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.checkboxSection {
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.vatText {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+  font-size: font-size('sm');
+  color: #16a34a;
+}
+
+.pastHeader {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.pastTitle {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.pastList {
+  color: color('muted-foreground');
+  font-size: font-size('sm');
+
+  & > * + * {
+    margin-top: space(1.5);
+  }
+}
+
+.pastItem {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.pastBullet {
+  color: color('muted-foreground');
+}
+
+.ctaButtons {
+  display: flex;
+  gap: space(2);
+}

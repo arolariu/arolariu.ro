@@ -25,6 +25,7 @@ import {useCallback, useState} from "react";
 import {TbCards, TbCategory, TbClock, TbFilter, TbMoon, TbSearch, TbSun, TbTable} from "react-icons/tb";
 import {GridView} from "../tables/GridView";
 import {TableView} from "../tables/TableView";
+import styles from "./InvoicesView.module.scss";
 
 type FiltersType = {category: string; time: string};
 
@@ -124,10 +125,10 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
     );
 
   return (
-    <div className='space-y-4'>
-      <div className='flex flex-col justify-between gap-4 sm:flex-row print:hidden'>
-        <div className='relative flex-1'>
-          <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
+    <div className={styles["container"]}>
+      <div className={styles["toolbar"]}>
+        <div className={styles["searchWrapper"]}>
+          <TbSearch className={styles["searchIcon"]} />
           <Input
             placeholder='Search invoices...'
             className='pl-8'
@@ -135,13 +136,13 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             onChange={handleSearch}
           />
         </div>
-        <div className='flex flex-wrap items-center gap-2'>
+        <div className={styles["filtersRow"]}>
           <Select
             value={filters.category}
             onValueChange={handleFilters}>
             <SelectTrigger className='w-[150px] cursor-pointer'>
-              <div className='flex items-center gap-2'>
-                <TbCategory className='h-4 w-4' />
+              <div className={styles["filterTriggerContent"]}>
+                <TbCategory className={styles["filterIcon"]} />
                 <span>Category</span>
               </div>
             </SelectTrigger>
@@ -188,8 +189,8 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             value={filters.time}
             onValueChange={handleFilters}>
             <SelectTrigger className='w-[150px] cursor-pointer'>
-              <div className='flex items-center gap-2'>
-                <TbClock className='h-4 w-4' />
+              <div className={styles["filterTriggerContent"]}>
+                <TbClock className={styles["filterIcon"]} />
                 <span>Time of Day</span>
               </div>
             </SelectTrigger>
@@ -202,16 +203,16 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
               <SelectItem
                 className='cursor-pointer'
                 value='day'>
-                <div className='flex items-center gap-2'>
-                  <TbSun className='h-4 w-4 text-yellow-500' />
+                <div className={styles["filterTriggerContent"]}>
+                  <TbSun className={styles["sunIcon"]} />
                   <span>Daytime (6am-6pm)</span>
                 </div>
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='night'>
-                <div className='flex items-center gap-2'>
-                  <TbMoon className='h-4 w-4 text-blue-500' />
+                <div className={styles["filterTriggerContent"]}>
+                  <TbMoon className={styles["moonIcon"]} />
                   <span>Nighttime (6pm-6am)</span>
                 </div>
               </SelectItem>
@@ -225,7 +226,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                   variant='outline'
                   size='sm'
                   className='cursor-pointer gap-1'>
-                  <TbFilter className='h-4 w-4' />
+                  <TbFilter className={styles["filterIcon"]} />
                 </Button>
               </SheetTrigger>
               <SheetContent>HELLO WORLD!</SheetContent>
@@ -237,14 +238,14 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                   variant='outline'
                   size='sm'
                   className='cursor-pointer gap-1'>
-                  <TbFilter className='h-4 w-4' />
+                  <TbFilter className={styles["filterIcon"]} />
                 </Button>
               </PopoverTrigger>
               <PopoverContent>HELLO WORLD!</PopoverContent>
             </Popover>
           )}
 
-          <div className='flex rounded-md border'>
+          <div className={styles["viewToggle"]}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
@@ -256,7 +257,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                     className='rounded-r-none'
                     // eslint-disable-next-line react/jsx-no-bind -- small fn
                     onClick={() => setView("table")}>
-                    <TbTable className='h-4 w-4' />
+                    <TbTable className={styles["filterIcon"]} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Table View</TooltipContent>
@@ -271,7 +272,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                     className='rounded-l-none'
                     // eslint-disable-next-line react/jsx-no-bind -- small fn
                     onClick={() => setView("grid")}>
-                    <TbCards className='h-4 w-4' />
+                    <TbCards className={styles["filterIcon"]} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Grid View</TooltipContent>
