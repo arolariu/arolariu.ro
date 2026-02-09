@@ -26,6 +26,15 @@
 **/artifacts/
 **/test-file.txt
 
+# Windows shell artifacts:
+nul
+
+# Editor user settings:
+*.DotSettings.user
+
+# Merge conflict backups:
+*.orig
+
 # Exceptions:
 !.vs/settings.vssettings
 

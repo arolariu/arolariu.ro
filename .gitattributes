@@ -73,6 +73,13 @@
 LICENSE text eol=crlf
 *.lock text eol=crlf
 
+# Infrastructure & API Testing
+*.bicep text eol=crlf
+*.sql text eol=crlf
+*.http text eol=crlf
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+
 # =============================================================================
 # Shell Scripts: Must use LF (Unix convention)
 # =============================================================================
@@ -91,7 +98,6 @@ LICENSE text eol=crlf
 *.ico binary
 *.bmp binary
 *.webp binary
-*.svg binary
 
 # Fonts
 *.woff binary

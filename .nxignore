@@ -11,3 +11,13 @@ coverage
 TestResults
 storybook-static
 .storybook-static
+code-cov
+artifacts
+test-results
+playwright-report
+.auth
+__generated__
+.vs
+.svelte-kit
+out
+tmp

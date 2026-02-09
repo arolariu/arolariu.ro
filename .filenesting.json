@@ -1,5 +1,15 @@
 {
   "$schema": "https://www.schemastore.org/vs-nesting.json",
   "help": "https://go.microsoft.com/fwlink/?linkid=866610",
-  "root": true
+  "root": true,
+  "dependentFileProviders": {
+    "add": {
+      "extensionToExtension": {
+        "add": {
+          ".ts": [".test.ts", ".spec.ts"],
+          ".tsx": [".test.tsx", ".spec.tsx", ".stories.tsx"]
+        }
+      }
+    }
+  }
 }

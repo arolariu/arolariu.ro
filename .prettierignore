@@ -38,6 +38,8 @@ package-lock.json
 **/**/*.json
 **/**/*.txt
 **/**/*.xml
+**/**/*.bicep
+**/**/*.sql
 **/**/*.pdf
 **/**/*.yml
 **/**/*.tsbuildinfo
