@@ -24,9 +24,9 @@
 <p align="center">
   <a href="https://arolariu.ro"><strong>🌐 View Live Site »</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="https://api.arolariu.ro/swagger"><strong>📡 Explore API »</strong></a>
+  <a href="https://api.arolariu.ro"><strong>📡 Explore the API »</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="https://docs.arolariu.ro"><strong>📚 Read Docs »</strong></a>
+  <a href="https://docs.arolariu.ro"><strong>📚 Read the docs »</strong></a>
 </p>
 
 <p align="center">
@@ -109,31 +109,39 @@
 <details open>
 <summary><b>Click to expand/collapse</b></summary>
 
-- [📸 Platform Preview](#-platform-preview)
-- [📋 Table of Contents](#-table-of-contents)
-- [🎯 About The Project](#-about-the-project)
-  - [🌐 Live Services](#-live-services)
-  - [✨ Key Features](#-key-features)
-- [🚀 Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start](#quick-start)
-  - [Development Commands](#development-commands)
-- [📂 Project Structure](#-project-structure)
-  - [📖 Sub-Project Documentation](#-sub-project-documentation)
-- [🏗️ Architecture](#️-architecture)
-  - [High-Level Overview](#high-level-overview)
-  - [Monorepo Dependency Flow](#monorepo-dependency-flow)
-  - [Backend — The Standard (5 Layers)](#backend--the-standard-5-layers)
-  - [Azure Infrastructure](#azure-infrastructure)
-- [🔄 CI/CD Pipeline](#-cicd-pipeline)
-- [🗺️ Roadmap](#️-roadmap)
-- [🤖 AI-Powered Development](#-ai-powered-development)
-- [📊 Repository Analytics](#-repository-analytics)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
-- [🔒 Security](#-security)
-- [📞 Contact](#-contact)
-- [🙏 Acknowledgments](#-acknowledgments)
+- [✨ AROLARIU.RO Monorepo](#-arolariuro-monorepo)
+    - [🏆 A Modern, Production-Grade Full-Stack Platform](#-a-modern-production-grade-full-stack-platform)
+    - [🛠️ Built With](#️-built-with)
+  - [📸 Platform Preview](#-platform-preview)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [🎯 About The Project](#-about-the-project)
+    - [🌐 Live Services](#-live-services)
+    - [✨ Key Features](#-key-features)
+  - [🚀 Getting Started](#-getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Quick Start](#quick-start)
+    - [Development Commands](#development-commands)
+  - [📂 Project Structure](#-project-structure)
+    - [📖 Sub-Project Documentation](#-sub-project-documentation)
+  - [🏗️ Architecture](#️-architecture)
+    - [High-Level Overview](#high-level-overview)
+    - [Monorepo Dependency Flow](#monorepo-dependency-flow)
+    - [Backend — The Standard (5 Layers)](#backend--the-standard-5-layers)
+    - [Azure Infrastructure](#azure-infrastructure)
+  - [🔄 CI/CD Pipeline](#-cicd-pipeline)
+    - [🌐 Website Pipelines](#-website-pipelines)
+    - [⚙️ API Pipeline](#️-api-pipeline)
+    - [📦 Additional Pipelines](#-additional-pipelines)
+  - [🗺️ Roadmap](#️-roadmap)
+  - [🤖 AI-Powered Development](#-ai-powered-development)
+  - [📊 Repository Analytics](#-repository-analytics)
+  - [🤝 Contributing](#-contributing)
+    - [👥 Top Contributors](#-top-contributors)
+  - [📜 License](#-license)
+  - [🔒 Security](#-security)
+  - [📞 Contact](#-contact)
+  - [🙏 Acknowledgments](#-acknowledgments)
+    - [💖 Support This Project](#-support-this-project)
 
 </details>
 
