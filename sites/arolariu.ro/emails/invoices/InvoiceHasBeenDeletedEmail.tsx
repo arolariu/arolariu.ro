@@ -9,12 +9,7 @@
 
 import {generateGuid} from "@/lib/utils.generic";
 import {Link, Text} from "@react-email/components";
-
-import {BRAND} from "../components/brand";
-import {BulletList} from "../components/BulletList";
-import {EmailCard} from "../components/EmailCard";
-import {EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../components/EmailLayout";
-import {KeyValueTable} from "../components/KeyValueTable";
+import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 
 /**
  * Properties for the InvoiceHasBeenDeletedEmail component.
