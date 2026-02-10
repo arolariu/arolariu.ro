@@ -20,8 +20,8 @@ import {useLocale} from "next-intl";
 import Image from "next/image";
 import {useCallback} from "react";
 import {TbCalendar, TbEye} from "react-icons/tb";
-import TableViewActions from "./TableViewActions";
 import styles from "./GridView.module.scss";
+import TableViewActions from "./TableViewActions";
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];
@@ -60,7 +60,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
       transition={{duration: 0.2}}
       className={styles["grid"]}>
       {invoices.map((invoice) => (
-        <div 
+        <div
           key={invoice.id}
           className={styles["cardWrapper"]}>
           <div className={styles["checkboxOverlay"]}>

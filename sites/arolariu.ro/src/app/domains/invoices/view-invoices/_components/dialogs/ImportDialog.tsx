@@ -131,7 +131,7 @@ export default function ImportDialog(): React.JSX.Element {
             <TabsTrigger value='xlsx'>Excel</TabsTrigger>
           </TabsList>
 
-          <div 
+          <div
             className={`${styles["dropzone"]} ${isDragActive ? styles["dropzoneActive"] : styles["dropzoneIdle"]}`}
             // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility
             {...getRootProps()}>
@@ -161,7 +161,7 @@ export default function ImportDialog(): React.JSX.Element {
               <h4 className={styles["fileListTitle"]}>Selected Files</h4>
               <div className={styles["fileList"]}>
                 {files.map((file, index) => (
-                  <div 
+                  <div
                     key={fileKey(file)}
                     className={styles["fileItem"]}>
                     <div className={styles["fileInfo"]}>

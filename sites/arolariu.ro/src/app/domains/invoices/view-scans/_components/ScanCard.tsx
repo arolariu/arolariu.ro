@@ -129,7 +129,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             )}
 
             {/* Selection checkbox */}
-            <div 
+            <div
               role='button'
               tabIndex={0}
               className={styles["checkboxPosition"]}
@@ -143,7 +143,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             </div>
 
             {/* Actions menu */}
-            <div 
+            <div
               role='button'
               tabIndex={0}
               className={styles["actionsPosition"]}

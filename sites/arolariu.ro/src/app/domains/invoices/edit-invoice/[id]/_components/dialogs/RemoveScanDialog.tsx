@@ -126,7 +126,9 @@ export default function RemoveScanDialog(): React.JSX.Element {
         {isLastScan ? (
           <div className={styles["warningBox"]}>
             <p className={styles["warningTitle"]}>Cannot remove last scan</p>
-            <p className={styles["warningText"]}>Every invoice must have at least one scan attached. Add another scan before removing this one.</p>
+            <p className={styles["warningText"]}>
+              Every invoice must have at least one scan attached. Add another scan before removing this one.
+            </p>
           </div>
         ) : null}
 

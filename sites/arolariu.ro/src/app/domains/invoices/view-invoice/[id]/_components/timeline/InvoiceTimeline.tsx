@@ -10,9 +10,9 @@ import {useLocale} from "next-intl";
 import {TbCalendar} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {generateTimelineFromInvoice, getEventIcon, groupEventsByDate} from "../../_utils/timeline";
+import styles from "./InvoiceTimeline.module.scss";
 import {TimelineItem} from "./TimelineItem";
 import {TimelineSharedWithList} from "./TimelineSharedWithList";
-import styles from "./InvoiceTimeline.module.scss";
 
 /**
  * Renders a comprehensive timeline of invoice events with tooltips and sharing info.
@@ -53,7 +53,7 @@ export function InvoiceTimeline(): React.JSX.Element {
       <CardContent className='space-y-6'>
         {/* Timeline events grouped by date */}
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-          <div 
+          <div
             key={dateKey}
             className={styles["dateGroup"]}>
             <p className={styles["dateLabel"]}>{dateKey}</p>

@@ -75,9 +75,7 @@ export default function Loading(): React.JSX.Element {
               className={styles["stepItem"]}
               key={`step-${stepNumber}`}>
               {/* Vertical Line */}
-              <div className={styles["stepLine"]}>
-                {stepNumber < 5 && <div className={styles["stepLineBar"]} />}
-              </div>
+              <div className={styles["stepLine"]}>{stepNumber < 5 && <div className={styles["stepLineBar"]} />}</div>
 
               {/* Circle Icon */}
               <Skeleton className='relative z-10 h-10 w-10 shrink-0 rounded-full' />

@@ -189,9 +189,7 @@ export default function FeedbackDialog(): React.JSX.Element {
                   onMouseEnter={handleStarEnter}
                   onMouseLeave={handleStarLeave}
                   onClick={handleStarClick}>
-                  <TbStar
-                    className={star <= (hoveredRating || rating) ? styles["starActive"] : styles["starInactive"]}
-                  />
+                  <TbStar className={star <= (hoveredRating || rating) ? styles["starActive"] : styles["starInactive"]} />
                 </Button>
               ))}
             </div>

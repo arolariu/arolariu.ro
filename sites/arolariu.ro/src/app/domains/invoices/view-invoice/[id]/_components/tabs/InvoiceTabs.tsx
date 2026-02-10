@@ -103,7 +103,7 @@ export function InvoiceTabs(): React.JSX.Element {
             {Object.keys(invoice.additionalMetadata).length > 0 ? (
               <dl className={styles["metadataList"]}>
                 {Object.entries(invoice.additionalMetadata).map(([key, value]) => (
-                  <div 
+                  <div
                     key={key}
                     className={styles["metadataItem"]}>
                     <dt className={styles["metadataKey"]}>{key}</dt>

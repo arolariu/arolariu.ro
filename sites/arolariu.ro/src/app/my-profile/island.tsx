@@ -1,7 +1,7 @@
 "use client";
 
-import type {User} from "@clerk/nextjs/server";
 import {usePreferencesStore} from "@/stores/preferencesStore";
+import type {User} from "@clerk/nextjs/server";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";

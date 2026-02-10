@@ -136,9 +136,7 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
   return (
     <div className={styles["pageMain"]}>
       <section className={styles["headerSection"]}>
-        <h1 className={styles["title"]}>
-          {t("title", {name: username})}
-        </h1>
+        <h1 className={styles["title"]}>{t("title", {name: username})}</h1>
         <article className={styles["subtitleArticle"]}>
           <RichText
             sectionKey='Domains.services.invoices.service.view-invoices'

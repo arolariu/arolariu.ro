@@ -16,14 +16,7 @@
  */
 
 import {Link, Text} from "@react-email/components";
-import {
-  BRAND,
-  BulletList,
-  EmailCard,
-  EmailLayout,
-  EmailLinkStyles,
-  EmailParagraphStyles,
-} from "../_components";
+import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../_components";
 
 /**
  * Properties for the WelcomeEmail component.
@@ -78,8 +71,8 @@ const WelcomeEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        Thanks for joining <strong>{BRAND.name}</strong>. We're glad you're here. Our platform helps you turn everyday receipts into organized
-        financial insights — powered by AI analysis.
+        Thanks for joining <strong>{BRAND.name}</strong>. We're glad you're here. Our platform helps you turn everyday receipts into
+        organized financial insights — powered by AI analysis.
       </Text>
 
       <EmailCard title='How it works'>

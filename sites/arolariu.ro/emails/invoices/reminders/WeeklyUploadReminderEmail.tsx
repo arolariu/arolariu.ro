@@ -21,15 +21,7 @@
  */
 
 import {Link, Text} from "@react-email/components";
-import {
-  BRAND,
-  BulletList,
-  EmailCard,
-  EmailLayout,
-  EmailLinkStyles,
-  EmailParagraphStyles,
-  MetricsGrid,
-} from "../../_components";
+import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, MetricsGrid} from "../../_components";
 
 /**
  * Properties for the WeeklyUploadReminderEmail component.

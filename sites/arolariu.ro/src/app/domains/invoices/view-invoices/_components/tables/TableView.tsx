@@ -26,8 +26,8 @@ import {useLocale} from "next-intl";
 import Link from "next/link";
 import {useCallback} from "react";
 import {TbArrowsUpDown, TbEye} from "react-icons/tb";
-import TableViewActions from "./TableViewActions";
 import styles from "./TableView.module.scss";
+import TableViewActions from "./TableViewActions";
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];

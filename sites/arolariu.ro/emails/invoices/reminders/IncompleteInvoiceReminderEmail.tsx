@@ -140,8 +140,8 @@ const IncompleteInvoiceReminderEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        We analyzed your invoice <strong>"{invoiceName}"</strong> but couldn't extract everything. A few details are missing, and completing them
-        will give you better spending insights and more accurate dashboards.
+        We analyzed your invoice <strong>"{invoiceName}"</strong> but couldn't extract everything. A few details are missing, and completing
+        them will give you better spending insights and more accurate dashboards.
       </Text>
 
       <KeyValueTable
@@ -153,7 +153,7 @@ const IncompleteInvoiceReminderEmail = (props: Readonly<Props>) => {
         ]}
       />
 
-      <EmailCard title='What's missing'>
+      <EmailCard title="What's missing">
         {descriptions.map(({label, suggestion}) => (
           <Text
             key={label}

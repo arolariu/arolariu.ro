@@ -19,15 +19,7 @@
  */
 
 import {Link, Text} from "@react-email/components";
-import {
-  BRAND,
-  BulletList,
-  EmailCard,
-  EmailLayout,
-  EmailLinkStyles,
-  EmailParagraphStyles,
-  KeyValueTable,
-} from "../_components";
+import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../_components";
 
 /**
  * Properties for the FirstInvoiceUploadedEmail component.
@@ -92,8 +84,8 @@ const FirstInvoiceUploadedEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        Congratulations on uploading your first invoice! You've taken the first step toward organized, insightful spending tracking. Here's what
-        we've got so far:
+        Congratulations on uploading your first invoice! You've taken the first step toward organized, insightful spending tracking. Here's
+        what we've got so far:
       </Text>
 
       <KeyValueTable
@@ -127,8 +119,8 @@ const FirstInvoiceUploadedEmail = (props: Readonly<Props>) => {
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        The more invoices you upload, the richer your spending insights become. Try uploading a few more receipts this week to see your dashboard
-        come to life.
+        The more invoices you upload, the richer your spending insights become. Try uploading a few more receipts this week to see your
+        dashboard come to life.
       </Text>
 
       <Text style={EmailParagraphStyles}>

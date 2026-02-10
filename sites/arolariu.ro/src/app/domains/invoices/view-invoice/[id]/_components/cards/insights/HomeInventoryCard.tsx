@@ -142,7 +142,7 @@ export function HomeInventoryCard(): React.JSX.Element {
               const pct = (supply.daysRemaining / supply.maxDays) * 100;
               const color = getSupplyProgressColor(pct, styles);
               return (
-                <div 
+                <div
                   key={supply.id}
                   className={styles["supplyItem"]}>
                   <div className={styles["supplyRow"]}>
@@ -153,7 +153,7 @@ export function HomeInventoryCard(): React.JSX.Element {
                     <span className={styles["supplyDays"]}>~{supply.daysRemaining} days</span>
                   </div>
                   <div className={styles["progressTrack"]}>
-                    <div 
+                    <div
                       className={`${styles["progressBar"]} ${color}`}
                       style={{width: `${pct}%`}}
                     />

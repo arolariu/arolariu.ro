@@ -151,10 +151,10 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
             attribute='class'
             storageKey='arolariu-theme'
             themes={["light", "dark"]}>
-              {children}
-              <ToastProvider />
-              <Commander />
-              <WebVitals />
+            {children}
+            <ToastProvider />
+            <Commander />
+            <WebVitals />
           </ThemeProvider>
         </FontProvider>
       </AuthProvider>

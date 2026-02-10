@@ -193,7 +193,7 @@ export default function AddScanDialog(): React.JSX.Element {
         {/* eslint-disable react/jsx-props-no-spreading, react/jsx-handler-names -- react-dropzone library requires spread props */}
         <div className={styles["body"]}>
           {/* Dropzone - using react-dropzone library pattern with spread props */}
-          <div 
+          <div
             {...getRootProps()}
             className={
               isUploading

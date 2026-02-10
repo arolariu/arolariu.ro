@@ -127,7 +127,7 @@ vi.mock("@arolariu/components", () => ({
   ),
   Dialog: ({children, open, onOpenChange}: {children: ReactNode; open: boolean; onOpenChange: (open: boolean) => void}) =>
     open ? (
-      <div 
+      <div
         role='dialog'
         data-testid='dialog'>
         {children}
@@ -141,7 +141,7 @@ vi.mock("@arolariu/components", () => ({
   DialogContent: ({children, className}: {children: ReactNode; className?: string}) => <div className={className}>{children}</div>,
   DialogDescription: ({children}: {children: ReactNode}) => <p data-testid='dialog-description'>{children}</p>,
   DialogFooter: ({children, className}: {children: ReactNode; className?: string}) => (
-    <div 
+    <div
       data-testid='dialog-footer'
       className={className}>
       {children}
@@ -163,14 +163,14 @@ vi.mock("@arolariu/components", () => ({
     </label>
   ),
   Progress: ({value, className}: {value: number; className?: string}) => (
-    <div 
+    <div
       data-testid='progress'
       data-value={value}
       className={className}
     />
   ),
   RadioGroup: ({children, value, onValueChange}: {children: ReactNode; value: string; onValueChange: (v: string) => void}) => (
-    <div 
+    <div
       data-testid='radio-group'
       data-value={value}>
       {children}
@@ -196,7 +196,7 @@ vi.mock("motion/react", () => ({
   AnimatePresence: ({children}: {children: ReactNode}) => <>{children}</>,
   motion: {
     div: ({children, className, key}: {children: ReactNode; className?: string; key?: string}) => (
-      <div 
+      <div
         className={className}
         data-key={key}>
         {children}

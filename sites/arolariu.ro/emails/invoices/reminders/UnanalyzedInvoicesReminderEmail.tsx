@@ -21,15 +21,7 @@
  */
 
 import {Link, Text} from "@react-email/components";
-import {
-  BRAND,
-  BulletList,
-  EmailCard,
-  EmailLayout,
-  EmailLinkStyles,
-  EmailParagraphStyles,
-  KeyValueTable,
-} from "../../_components";
+import {BRAND, BulletList, EmailCard, EmailLayout, EmailLinkStyles, EmailParagraphStyles, KeyValueTable} from "../../_components";
 
 /**
  * Represents a single unanalyzed invoice for display in the email.
@@ -106,8 +98,8 @@ const UnanalyzedInvoicesReminderEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        You have {count} invoice{count === 1 ? "" : "s"} that {count === 1 ? "hasn't" : "haven't"} been analyzed yet. Running our AI analysis
-        unlocks the full value of your uploaded receipts.
+        You have {count} invoice{count === 1 ? "" : "s"} that {count === 1 ? "hasn't" : "haven't"} been analyzed yet. Running our AI
+        analysis unlocks the full value of your uploaded receipts.
       </Text>
 
       <KeyValueTable

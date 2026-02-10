@@ -119,12 +119,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             <TableRow className='bg-muted/50'>
               <TableHead className={styles["tableHeader"]}>Item</TableHead>
               <TableHead className={styles["tableHeaderRight"]}>Qty</TableHead>
-              <TableHead className={styles["tableHeaderRight"]}>
-                Price
-              </TableHead>
-              <TableHead className={styles["tableHeaderRight"]}>
-                Total
-              </TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>Price</TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className='divide-border bg-popover divide-y'>

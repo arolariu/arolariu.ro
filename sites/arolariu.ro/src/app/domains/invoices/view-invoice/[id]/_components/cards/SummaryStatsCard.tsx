@@ -47,7 +47,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
       <CardContent>
         <div className={styles["statsGrid"]}>
           {stats.map((stat) => (
-            <div 
+            <div
               key={stat.label}
               className={styles["statItem"]}>
               <div className={styles["statLabel"]}>

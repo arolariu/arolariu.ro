@@ -52,9 +52,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
 
       <div className={styles["contentRow"]}>
         {/* Icon circle */}
-        <div className={`${styles["iconCircle"]} ${event.completed ? styles["iconCompleted"] : styles["iconPending"]}`}>
-          {icon}
-        </div>
+        <div className={`${styles["iconCircle"]} ${event.completed ? styles["iconCompleted"] : styles["iconPending"]}`}>{icon}</div>
 
         {/* Content */}
         <div className={styles["contentBody"]}>

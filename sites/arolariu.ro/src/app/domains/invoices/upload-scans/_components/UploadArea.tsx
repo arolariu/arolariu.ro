@@ -178,7 +178,7 @@ export default function UploadArea(): React.JSX.Element {
 
   if (pendingUploads.length === 0) {
     return (
-      <div 
+      <div
         className={`${styles["dropzoneEmpty"]} ${isDragActive ? styles["dropzoneEmptyActive"] : ""}`}
         role='button'
         tabIndex={0}
@@ -199,9 +199,7 @@ export default function UploadArea(): React.JSX.Element {
             {isDragActive ? "Drop your files here..." : "Drag and drop your files here, or click to browse"}
           </p>
           <p className={styles["dropzoneFormats"]}>Supports JPG, PNG, PDF files up to 10MB each</p>
-          <p className={styles["dropzoneNote"]}>
-            Scans will be stored for later use. Create invoices from the View Scans page.
-          </p>
+          <p className={styles["dropzoneNote"]}>Scans will be stored for later use. Create invoices from the View Scans page.</p>
           <input
             ref={fileInputRef}
             type='file'
@@ -223,7 +221,7 @@ export default function UploadArea(): React.JSX.Element {
 
   return (
     <div className={styles["wrapper"]}>
-      <div 
+      <div
         className={`${styles["dropzoneCompact"]} ${isDragActive ? styles["dropzoneCompactActive"] : ""} ${isUploading ? styles["dropzoneCompactDisabled"] : ""}`}
         role='button'
         tabIndex={isUploading ? -1 : 0}

@@ -183,7 +183,7 @@ export function NutritionCard(): React.JSX.Element {
               <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
               <span className={styles["compositionLabel"]}>Whole Foods</span>
               <div className={styles["progressTrack"]}>
-                <div 
+                <div
                   className={`${styles["progressBar"]} ${styles["progressGreen"]}`}
                   style={{width: `${wholeFoodPct}%`}}
                 />
@@ -194,7 +194,7 @@ export function NutritionCard(): React.JSX.Element {
               <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
               <span className={styles["compositionLabel"]}>Processed</span>
               <div className={styles["progressTrack"]}>
-                <div 
+                <div
                   className={`${styles["progressBar"]} ${styles["progressAmber"]}`}
                   style={{width: `${processedPct}%`}}
                 />
@@ -205,7 +205,7 @@ export function NutritionCard(): React.JSX.Element {
               <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
               <span className={styles["compositionLabel"]}>Dairy/Other</span>
               <div className={styles["progressTrack"]}>
-                <div 
+                <div
                   className={`${styles["progressBar"]} ${styles["progressBlue"]}`}
                   style={{width: `${dairySnackPct}%`}}
                 />
@@ -218,7 +218,7 @@ export function NutritionCard(): React.JSX.Element {
         {/* Food Groups Grid */}
         <div className={styles["foodGroupsGrid"]}>
           {foodGroups.map((group) => (
-            <div 
+            <div
               key={group.name}
               className={styles["foodGroupCard"]}>
               <div className={styles["foodGroupIconRow"]}>{group.icon}</div>
