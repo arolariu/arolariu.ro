@@ -219,9 +219,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
               ))}
             </div>
           ) : (
-            <p className={styles["emptyShared"]}>
-              {isInvoicePublic ? "No additional users have direct access" : "Not shared with anyone"}
-            </p>
+            <p className={styles["emptyShared"]}>{isInvoicePublic ? "No additional users have direct access" : "Not shared with anyone"}</p>
           )}
         </div>
       </CardContent>

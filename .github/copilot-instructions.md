@@ -2,6 +2,8 @@
 
 This document provides comprehensive guidelines for GitHub Copilot when working with the arolariu.ro monorepo codebase.
 
+> **See also**: `AGENTS.md` (root) for agent-level guidance | `.github/instructions/` for domain-specific rules | `.github/agents/` for specialized agents | `.github/prompts/` for task templates | `.github/skills/` for scaffolding capabilities
+
 ---
 
 ## TL;DR - Quick Reference

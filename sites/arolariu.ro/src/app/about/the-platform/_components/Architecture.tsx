@@ -5,16 +5,7 @@ import {Card, CardContent} from "@arolariu/components/card";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef, useState} from "react";
-import {
-  TbApi,
-  TbBrandAzure,
-  TbCloudComputing,
-  TbDatabase,
-  TbDeviceDesktop,
-  TbLock,
-  TbServer,
-  TbWorldWww,
-} from "react-icons/tb";
+import {TbApi, TbBrandAzure, TbCloudComputing, TbDatabase, TbDeviceDesktop, TbLock, TbServer, TbWorldWww} from "react-icons/tb";
 import styles from "./Architecture.module.scss";
 
 interface LayerConfig {

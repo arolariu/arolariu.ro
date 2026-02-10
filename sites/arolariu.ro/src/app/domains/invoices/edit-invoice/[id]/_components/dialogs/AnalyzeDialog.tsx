@@ -307,9 +307,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                       data-option-id={option.id}
                       onClick={handleOptionSelect}
                       className={`cursor-pointer transition-all duration-200 ${
-                        selectedOption === option.id
-                          ? styles["optionCardSelected"]
-                          : styles["optionCardDefault"]
+                        selectedOption === option.id ? styles["optionCardSelected"] : styles["optionCardDefault"]
                       }`}>
                       <CardHeader className='pb-2'>
                         <div className={styles["optionHeader"]}>
@@ -369,7 +367,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                 <Label className='text-base font-medium'>Enhancements (Optional)</Label>
                 <div className={styles["enhancementsSection"]}>
                   {ANALYSIS_ENHANCEMENTS.map((enhancement) => (
-                    <div 
+                    <div
                       key={enhancement.id}
                       className={styles["enhancementItem"]}>
                       <Checkbox

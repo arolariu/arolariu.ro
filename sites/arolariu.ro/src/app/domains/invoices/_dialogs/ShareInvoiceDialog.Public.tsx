@@ -91,9 +91,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             {copied ? <TbCheck className={styles["actionIcon"]} /> : <TbCopy className={styles["actionIcon"]} />}
           </Button>
         </div>
-        <p className={styles["linkHint"]}>
-          Copy this link and share it. Anyone who receives it will be able to view the invoice.
-        </p>
+        <p className={styles["linkHint"]}>Copy this link and share it. Anyone who receives it will be able to view the invoice.</p>
       </TabsContent>
 
       <TabsContent
@@ -173,9 +171,7 @@ export function AlreadyPublicMode({
           <TbShieldOff className={styles["tabIcon"]} />
           {isRevoking ? "Revoking Access..." : "Revoke Public Access"}
         </Button>
-        <p className={styles["revokeHint"]}>
-          This will make the invoice private. Existing links will stop working.
-        </p>
+        <p className={styles["revokeHint"]}>This will make the invoice private. Existing links will stop working.</p>
       </div>
     </div>
   );

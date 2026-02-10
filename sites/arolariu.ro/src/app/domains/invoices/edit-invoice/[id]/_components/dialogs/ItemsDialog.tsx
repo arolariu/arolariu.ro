@@ -176,24 +176,12 @@ export default function ItemsDialog(): React.JSX.Element {
             <Table className='divide-border min-w-full divide-y'>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className={styles["tableHeader"]}>
-                    Item
-                  </TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>
-                    Quantity
-                  </TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>
-                    Unit
-                  </TableHead>
-                  <TableHead className={styles["tableHeaderRight"]}>
-                    Price
-                  </TableHead>
-                  <TableHead className={styles["tableHeaderRight"]}>
-                    Total
-                  </TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>
-                    Actions
-                  </TableHead>
+                  <TableHead className={styles["tableHeader"]}>Item</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>Quantity</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>Unit</TableHead>
+                  <TableHead className={styles["tableHeaderRight"]}>Price</TableHead>
+                  <TableHead className={styles["tableHeaderRight"]}>Total</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className='divide-border bg-popover divide-y'>
@@ -315,7 +303,7 @@ export default function ItemsDialog(): React.JSX.Element {
               <TbPlus className='mr-2 h-4 w-4' />
               Add Item
             </Button>
-            <div 
+            <div
               className={styles["itemCount"]}
               role='status'
               aria-live='polite'>

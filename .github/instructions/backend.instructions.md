@@ -1,7 +1,8 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-01-22"
-description: "DDD and .NET architecture guidelines following The Standard pattern"
+version: "1.1.0"
+lastUpdated: "2026-02-09"
+name: 'Backend Architecture'
+description: 'DDD and .NET architecture guidelines following The Standard pattern'
 applyTo: '**/*.cs,**/*.csproj,**/Program.cs,**/appsettings.json'
 ---
 

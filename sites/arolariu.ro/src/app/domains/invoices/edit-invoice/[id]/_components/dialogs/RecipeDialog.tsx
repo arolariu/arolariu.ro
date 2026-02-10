@@ -96,7 +96,9 @@ const CreateDialog = () => {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className={styles["tooltipText"]}>Generate a recipe name based on your ingredients and difficulty level using AI</p>
+                      <p className={styles["tooltipText"]}>
+                        Generate a recipe name based on your ingredients and difficulty level using AI
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -138,7 +140,7 @@ const CreateDialog = () => {
 
             <div className={styles["fieldGroup"]}>
               {recipe.ingredients.map((ingredient, idx) => (
-                <div 
+                <div
                   key={idx}
                   className={styles["ingredientItem"]}>
                   <div className={styles["ingredientRow"]}>
@@ -394,7 +396,9 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className={styles["tooltipText"]}>Generate a recipe name based on your ingredients and difficulty level using AI</p>
+                      <p className={styles["tooltipText"]}>
+                        Generate a recipe name based on your ingredients and difficulty level using AI
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -437,7 +441,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
             <div className={styles["fieldGroup"]}>
               {recipeDetails.ingredients.map((ingredient, idx) => (
-                <div 
+                <div
                   key={ingredient.rawName}
                   className={styles["ingredientItem"]}>
                   <div className={styles["ingredientRow"]}>

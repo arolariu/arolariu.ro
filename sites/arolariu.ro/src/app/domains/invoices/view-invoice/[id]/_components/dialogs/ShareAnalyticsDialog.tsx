@@ -130,9 +130,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
             value='image'
             className='py-4'>
             <div className={styles["contentSection"]}>
-              <p className={styles["description"]}>
-                Download or copy the analytics graph as a PNG image that you can share or save.
-              </p>
+              <p className={styles["description"]}>Download or copy the analytics graph as a PNG image that you can share or save.</p>
               <div className={styles["previewContainer"]}>
                 <div className={styles["previewBox"]}>
                   <div className={styles["previewPlaceholder"]}>Analytics Preview</div>

@@ -206,7 +206,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
         {/* Insights list */}
         <div className={styles["insightsList"]}>
           {insights.map((insight) => (
-            <div 
+            <div
               key={insight.id}
               className={`${styles["insightItem"]} ${getInsightContainerClass(insight.type)}`}>
               <div className={`${styles["insightIconWrapper"]} ${getInsightIconClass(insight.type)}`}>{insight.icon}</div>

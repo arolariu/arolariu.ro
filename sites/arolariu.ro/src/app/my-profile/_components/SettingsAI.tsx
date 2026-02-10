@@ -163,9 +163,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                   ))}
                 </SelectContent>
               </Select>
-              <p className={styles["behaviorHint"]}>
-                {AI_BEHAVIOR_PRESETS.find((p) => p.id === settings.behaviorPreset)?.description}
-              </p>
+              <p className={styles["behaviorHint"]}>{AI_BEHAVIOR_PRESETS.find((p) => p.id === settings.behaviorPreset)?.description}</p>
             </CardContent>
           </Card>
         </motion.div>

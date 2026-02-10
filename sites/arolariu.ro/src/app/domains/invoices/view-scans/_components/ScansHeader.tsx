@@ -39,9 +39,7 @@ export default function ScansHeader(): React.JSX.Element {
     <div className={styles["header"]}>
       <div className={styles["headerLeft"]}>
         <div>
-          <h1 className={styles["headerTitle"]}>
-            {t("titleWithCount", {count: String(scans.length)})}
-          </h1>
+          <h1 className={styles["headerTitle"]}>{t("titleWithCount", {count: String(scans.length)})}</h1>
           {lastSyncTimestamp ? (
             <p className={styles["lastSynced"]}>{t("lastSynced", {time: formatRelativeTime(lastSyncTimestamp)})}</p>
           ) : null}

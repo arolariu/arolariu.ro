@@ -40,9 +40,7 @@ export function RichText({className, sectionKey, textKey}: Readonly<Props>): Rea
           <br />
         </>
       ),
-      code: (chunks: React.ReactNode) => (
-        <code className={styles["inlineCode"]}>{chunks}</code>
-      ),
+      code: (chunks: React.ReactNode) => <code className={styles["inlineCode"]}>{chunks}</code>,
       ul: (chunks: React.ReactNode) => <ul className={styles["richList"]}>{chunks}</ul>,
       li: (chunks: React.ReactNode) => <li>{chunks}</li>,
       span: (chunks: React.ReactNode) => <span>{chunks}</span>,

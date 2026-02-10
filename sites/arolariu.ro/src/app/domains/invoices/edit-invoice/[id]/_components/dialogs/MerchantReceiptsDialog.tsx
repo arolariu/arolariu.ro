@@ -171,12 +171,8 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                   <TableRow className='bg-muted/50'>
                     <TableHead className={styles["tableHeader"]}>Receipt</TableHead>
                     <TableHead className={styles["tableHeader"]}>Date</TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>
-                      Items #
-                    </TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>
-                      Actions
-                    </TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>Items #</TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className='divide-border bg-popover divide-y'>

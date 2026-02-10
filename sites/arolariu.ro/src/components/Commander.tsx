@@ -2,7 +2,6 @@
 
 import {useFontContext} from "@/contexts/FontContext";
 import {usePreferencesStore} from "@/stores/preferencesStore";
-import styles from "./Commander.module.scss";
 import {
   CommandDialog,
   CommandEmpty,
@@ -30,6 +29,7 @@ import {
   TbSun,
   TbTypeface,
 } from "react-icons/tb";
+import styles from "./Commander.module.scss";
 
 /**
  * Command palette component that provides a command input and a list of commands.

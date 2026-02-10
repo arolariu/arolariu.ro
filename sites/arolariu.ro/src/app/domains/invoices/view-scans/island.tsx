@@ -25,9 +25,7 @@ import styles from "./island.module.scss";
 function QuickTip({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
     <div className={styles["quickTip"]}>
-      <div className={styles["quickTipIconBox"]}>
-        {icon}
-      </div>
+      <div className={styles["quickTipIconBox"]}>{icon}</div>
       <div>
         <p className={styles["quickTipTitle"]}>{title}</p>
         <p className={styles["quickTipDescription"]}>{description}</p>

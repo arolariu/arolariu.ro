@@ -66,15 +66,10 @@ function WorkflowCard({
       transition={{duration: 0.5, delay}}>
       <Card className='group relative h-full overflow-hidden border-2 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg dark:hover:border-indigo-700'>
         {/* Step number badge */}
-        <div
-          className={`${styles["stepBadge"]} bg-linear-to-br ${gradient}`}>
-          {step}
-        </div>
+        <div className={`${styles["stepBadge"]} bg-linear-to-br ${gradient}`}>{step}</div>
 
         <CardHeader className='pb-2'>
-          <div className={`${styles["stepIconBox"]} bg-linear-to-br ${gradient}`}>
-            {icon}
-          </div>
+          <div className={`${styles["stepIconBox"]} bg-linear-to-br ${gradient}`}>{icon}</div>
           <CardTitle className='text-xl'>{title}</CardTitle>
           <CardDescription className='text-base'>{description}</CardDescription>
         </CardHeader>
@@ -102,9 +97,7 @@ function WorkflowCard({
 function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
     <div className={styles["featureItem"]}>
-      <div className={styles["featureIconBox"]}>
-        {icon}
-      </div>
+      <div className={styles["featureIconBox"]}>{icon}</div>
       <div>
         <h3 className={styles["featureTitle"]}>{title}</h3>
         <p className={styles["featureDescription"]}>{description}</p>
@@ -400,11 +393,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
                 animate={{opacity: 1, y: 0}}
                 transition={{duration: 0.6}}>
                 <h1 className={styles["heroTitle"]}>
-                  {t("hero.title")}{" "}
-                  <span className={styles["heroHighlight"]}>
-                    {t("hero.titleHighlight")}
-                  </span>{" "}
-                  {t("hero.titleSuffix")}
+                  {t("hero.title")} <span className={styles["heroHighlight"]}>{t("hero.titleHighlight")}</span> {t("hero.titleSuffix")}
                 </h1>
                 <p className={styles["heroDescription"]}>{t("hero.description")}</p>
 

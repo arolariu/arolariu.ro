@@ -10,12 +10,16 @@
  */
 
 import {Img, Link, Section, Text} from "@react-email/components";
-
-import {BRAND, EMAIL_COLORS} from "../components/brand";
-import {BulletList} from "../components/BulletList";
-import {EmailCard} from "../components/EmailCard";
-import {EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../components/EmailLayout";
-import {KeyValueTable} from "../components/KeyValueTable";
+import {
+  BRAND,
+  BulletList,
+  EMAIL_COLORS,
+  EmailCard,
+  EmailLayout,
+  EmailLinkStyles,
+  EmailParagraphStyles,
+  KeyValueTable,
+} from "../_components";
 
 /**
  * Properties for the InvoiceHasBeenMadePublicEmail component.

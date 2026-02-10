@@ -53,9 +53,7 @@ function EmptyStateStep({
 }: Readonly<{step: number; icon: React.ReactNode; title: string; description: string}>): React.JSX.Element {
   return (
     <div className={styles["emptyStep"]}>
-      <div className={styles["emptyStepNumber"]}>
-        {step}
-      </div>
+      <div className={styles["emptyStepNumber"]}>{step}</div>
       <div className={styles["emptyStepContent"]}>
         <div className={styles["emptyStepTitleRow"]}>
           {icon}
@@ -79,7 +77,7 @@ export default function ScansGrid(): React.JSX.Element {
     return (
       <div className={styles["skeletonGrid"]}>
         {SKELETON_KEYS.map((skeletonKey) => (
-          <div 
+          <div
             key={skeletonKey}
             className={styles["skeletonItem"]}
           />

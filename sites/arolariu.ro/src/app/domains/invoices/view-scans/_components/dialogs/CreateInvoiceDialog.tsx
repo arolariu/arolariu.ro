@@ -226,11 +226,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               scan={scan}
             />
           ))}
-          {selectedScans.length > 6 ? (
-            <div className={styles["scansPreviewOverflow"]}>
-              +{selectedScans.length - 6}
-            </div>
-          ) : null}
+          {selectedScans.length > 6 ? <div className={styles["scansPreviewOverflow"]}>+{selectedScans.length - 6}</div> : null}
         </div>
       </div>
 
@@ -242,7 +238,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             value={mode}
             onValueChange={(v) => setMode(v as CreationMode)}>
             {/* Single mode option */}
-            <div 
+            <div
               role='button'
               tabIndex={0}
               className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}
@@ -260,13 +256,11 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                   <TbPhoto className={styles["modePurpleIcon"]} />
                   {t("singleMode.title")}
                 </Label>
-                <p className={styles["modeOptionDescription"]}>
-                  {t("singleMode.description", {count: String(selectedScans.length)})}
-                </p>
+                <p className={styles["modeOptionDescription"]}>{t("singleMode.description", {count: String(selectedScans.length)})}</p>
               </div>
             </div>
             {/* Batch mode option */}
-            <div 
+            <div
               role='button'
               tabIndex={0}
               className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}
@@ -284,9 +278,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
                   <TbStack2 className={styles["modeBlueIcon"]} />
                   {t("batchMode.title")}
                 </Label>
-                <p className={styles["modeOptionDescription"]}>
-                  {t("batchMode.description", {count: String(selectedScans.length)})}
-                </p>
+                <p className={styles["modeOptionDescription"]}>{t("batchMode.description", {count: String(selectedScans.length)})}</p>
               </div>
             </div>
           </RadioGroup>
@@ -393,9 +385,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         <h3 className={styles["completeTitle"]}>
           {isPlural ? t("complete.titlePlural", {count: String(createdCount)}) : t("complete.title", {count: String(createdCount)})}
         </h3>
-        <p className={styles["completeDescription"]}>
-          {isPlural ? t("complete.descriptionPlural") : t("complete.description")}
-        </p>
+        <p className={styles["completeDescription"]}>{isPlural ? t("complete.descriptionPlural") : t("complete.description")}</p>
 
         <div className={styles["completeNextSteps"]}>
           <p className={styles["completeNextStepsText"]}>

@@ -76,9 +76,7 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
             onChange={(e) => onEmailChange(e.target.value)}
             required
           />
-          <p className={styles["emailHint"]}>
-            An email invitation will be sent to this address with a private link to view the invoice.
-          </p>
+          <p className={styles["emailHint"]}>An email invitation will be sent to this address with a private link to view the invoice.</p>
         </div>
         <Button
           type='submit'

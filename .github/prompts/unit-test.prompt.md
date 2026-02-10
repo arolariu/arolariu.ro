@@ -1,6 +1,9 @@
 ---
 name: "unit-test-generator"
-description: "Generates comprehensive unit tests for TypeScript/React (Vitest) and C# (xUnit/MSTest) following established codebase patterns and achieving 90%+ coverage."
+description: 'Generates comprehensive unit tests for TypeScript/React (Vitest) and C# (xUnit/MSTest) following established codebase patterns and achieving 90%+ coverage.'
+agent: 'agent'
+model: 'Claude Sonnet 4.5'
+tools: ['codebase', 'search', 'editFiles', 'terminalLastCommand']
 ---
 
 # Unit Test Generator

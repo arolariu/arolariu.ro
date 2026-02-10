@@ -4,14 +4,18 @@
  */
 
 import {Link, Text} from "@react-email/components";
-
-import {BRAND, EMAIL_COLORS} from "../../components/brand";
-import {BulletList} from "../../components/BulletList";
-import {DonutChart} from "../../components/DonutChart";
-import {EmailCard} from "../../components/EmailCard";
-import {EmailLayout, EmailLinkStyles, EmailParagraphStyles} from "../../components/EmailLayout";
-import {KeyValueTable} from "../../components/KeyValueTable";
-import {MetricsGrid} from "../../components/MetricsGrid";
+import {
+  BRAND,
+  BulletList,
+  DonutChart,
+  EMAIL_COLORS,
+  EmailCard,
+  EmailLayout,
+  EmailLinkStyles,
+  EmailParagraphStyles,
+  KeyValueTable,
+  MetricsGrid,
+} from "../../_components";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly";
 

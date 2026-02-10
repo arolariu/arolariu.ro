@@ -1,7 +1,6 @@
 "use client";
 
 import {useEffect, useRef} from "react";
-import styles from "./TechSphere.module.scss";
 import {
   BufferAttribute,
   BufferGeometry,
@@ -15,6 +14,7 @@ import {
   Scene,
   WebGLRenderer,
 } from "three";
+import styles from "./TechSphere.module.scss";
 
 /**
  * The TechSphere component renders a 3D sphere with particles using Three.js.

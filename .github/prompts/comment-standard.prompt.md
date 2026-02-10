@@ -1,6 +1,9 @@
 ---
 name: "comment-documentation-standard"
-description: "Analyzes, validates, and generates comprehensive documentation comments for TypeScript/React (JSDoc) and C# (XML) following RFC 1002 and RFC 2004 standards."
+description: 'Analyzes, validates, and generates comprehensive documentation comments for TypeScript/React (JSDoc) and C# (XML) following RFC 1002 and RFC 2004 standards.'
+agent: 'agent'
+model: 'Claude Sonnet 4.5'
+tools: ['codebase', 'search']
 ---
 
 # Comment Documentation Standard Checker and Generator

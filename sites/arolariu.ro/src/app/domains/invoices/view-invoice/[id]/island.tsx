@@ -86,15 +86,9 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
               <div className={styles["rightItem"]}>
                 <ReceiptScanCard />
               </div>
-              <div className={styles["rightItem"]}>
-                {Boolean(isOwner && !isLoadingUserInformation) && <ShoppingCalendarCard />}
-              </div>
-              <div className={styles["rightItem"]}>
-                {Boolean(isOwner && !isLoadingUserInformation) && <BudgetImpactCard />}
-              </div>
-              <div className={styles["rightItem"]}>
-                {Boolean(isOwner && !isLoadingUserInformation) && <SeasonalInsightsCard />}
-              </div>
+              <div className={styles["rightItem"]}>{Boolean(isOwner && !isLoadingUserInformation) && <ShoppingCalendarCard />}</div>
+              <div className={styles["rightItem"]}>{Boolean(isOwner && !isLoadingUserInformation) && <BudgetImpactCard />}</div>
+              <div className={styles["rightItem"]}>{Boolean(isOwner && !isLoadingUserInformation) && <SeasonalInsightsCard />}</div>
               <div className={styles["rightItem"]}>
                 <MerchantInfoCard />
               </div>

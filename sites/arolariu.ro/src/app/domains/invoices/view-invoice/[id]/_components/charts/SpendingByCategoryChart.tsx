@@ -50,10 +50,10 @@ function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
   return (
     <div className={styles["legendContainer"]}>
       {payload.map((entry) => (
-        <div 
+        <div
           key={`legend-${entry.value}`}
           className={styles["legendItem"]}>
-          <div 
+          <div
             className={styles["legendDot"]}
             style={{backgroundColor: entry.color}}
           />

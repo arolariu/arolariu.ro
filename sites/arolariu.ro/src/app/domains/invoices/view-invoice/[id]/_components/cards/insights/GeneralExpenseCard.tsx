@@ -101,7 +101,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
               const pct = (budget.spent / budget.limit) * 100;
               const isNearLimit = pct >= 90;
               return (
-                <div 
+                <div
                   key={budget.name}
                   className={styles["budgetItem"]}>
                   <div className={styles["budgetRow"]}>

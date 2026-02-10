@@ -51,9 +51,7 @@ export default function RenderForbiddenScreen(): React.JSX.Element {
         height={500}
       />
       <article className={styles["content"]}>
-        <h1 className={styles["title"]}>
-          {t("title")}
-        </h1>
+        <h1 className={styles["title"]}>{t("title")}</h1>
         <span className={styles["emoji"]}>😭</span>
         <p className={styles["description"]}>{t("description")}</p>
       </article>

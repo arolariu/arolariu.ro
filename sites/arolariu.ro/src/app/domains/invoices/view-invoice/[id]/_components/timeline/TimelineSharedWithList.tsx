@@ -93,7 +93,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
       {sharedUsers.length > 0 && (
         <div className={styles["usersList"]}>
           {sharedUsers.map((user) => (
-            <div 
+            <div
               key={user}
               className={styles["userRow"]}>
               <div className={styles["userInfo"]}>

@@ -1,6 +1,7 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-01-22"
+version: "1.1.0"
+lastUpdated: "2026-02-09"
+name: 'Azure Bicep IaC'
 description: 'Infrastructure as Code (IaC) with Bicep DSL - Best Practices and Guidelines'
 applyTo: '**/*.bicep'
 ---

@@ -27,18 +27,16 @@ export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Eleme
       </CardHeader>
       <CardContent className='space-y-4'>
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-          <div 
+          <div
             key={dateKey}
             className={styles["dateGroup"]}>
             <p className={styles["dateLabel"]}>{dateKey}</p>
             <div className={styles["eventsColumn"]}>
               {dateEvents.map((event) => (
-                <div 
+                <div
                   key={event.id}
                   className={styles["eventItem"]}>
-                  <div className={styles["eventDot"]}>
-                    {event.icon ?? getEventIcon(event)}
-                  </div>
+                  <div className={styles["eventDot"]}>{event.icon ?? getEventIcon(event)}</div>
                   <div className={styles["eventContent"]}>
                     <div className={styles["eventDetails"]}>
                       <p className={styles["eventTitle"]}>{event.title}</p>
