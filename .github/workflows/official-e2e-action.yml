@@ -167,7 +167,7 @@ jobs:
 
       - name: 📊 Upload frontend logs and reports
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: frontend-test-logs
           path: |
@@ -280,7 +280,7 @@ jobs:
 
       - name: 📊 Upload backend logs and reports
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: backend-test-logs
           path: |
