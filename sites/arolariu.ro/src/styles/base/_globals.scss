@@ -10,6 +10,49 @@
 /// @author arolariu
 /// ===========================================
 
+@use '../abstracts/config' as config;
+
+$prefixed-color-vars: (
+  'background',
+  'foreground',
+  'card',
+  'card-foreground',
+  'popover',
+  'popover-foreground',
+  'primary',
+  'primary-foreground',
+  'secondary',
+  'secondary-foreground',
+  'muted',
+  'muted-foreground',
+  'accent',
+  'accent-foreground',
+  'destructive',
+  'destructive-foreground',
+  'success',
+  'success-foreground',
+  'warning',
+  'warning-foreground',
+  'info',
+  'info-foreground',
+  'border',
+  'input',
+  'ring',
+  'gradient-from',
+  'gradient-via',
+  'gradient-to',
+  'accent-primary',
+  'footer-bg',
+);
+
+@mixin emit-prefixed-color-vars {
+  @if config.$css-prefix != '' {
+    @each $token in $prefixed-color-vars {
+      --#{config.$css-prefix}-#{$token}: var(--#{$token});
+    }
+  }
+}
+
 // ----- Light mode variables -----
 :root {
   --background: 0 0% 100%;
@@ -49,6 +92,8 @@
   --accent-primary: var(--gradient-from);
   // Footer background — darker version of gradient-via
   --footer-bg: 262 83% 35%;  // purple-700 equivalent
+
+  @include emit-prefixed-color-vars;
 }
 
 // ----- Dark mode variables -----
@@ -89,4 +134,20 @@
   --accent-primary: var(--gradient-from);
   // Footer background — darker version of gradient-via
   --footer-bg: 262 83% 35%;  // purple-700 equivalent
+
+  @include emit-prefixed-color-vars;
+}
+
+@if config.$enable-high-contrast {
+  @media (prefers-contrast: more), (forced-colors: active) {
+    :root {
+      --border: 0 0% 35%;
+      --ring: 221.2 100% 45%;
+    }
+
+    .dark {
+      --border: 0 0% 65%;
+      --ring: 214 100% 70%;
+    }
+  }
 }

@@ -36,6 +36,8 @@
 /// @see {function} interactive-color
 /// ===========================================
 @use 'sass:map';
+@use 'sass:string';
+@use 'config' as config;
 
 // ===========================================
 // CSS VARIABLE REFERENCES
@@ -108,6 +110,20 @@ $color-vars: (
 // COLOR HELPER FUNCTIONS
 // ===========================================
 
+/// Build a prefixed CSS variable name from a canonical `--token` variable.
+/// Falls back to the canonical name when no prefix is configured.
+/// @param {String} $raw-css-var - Canonical variable name (e.g. `--primary`)
+/// @return {String} Prefixed or canonical CSS variable name
+/// @group tokens-colors
+/// @access private
+@function _prefixed-css-var($raw-css-var) {
+  @if config.$css-prefix == '' {
+    @return $raw-css-var;
+  }
+
+  @return '--#{config.$css-prefix}-#{string.slice($raw-css-var, 3)}';
+}
+
 /// Get a semantic color as an HSL CSS variable reference.
 /// Returns a fully-formed `hsl(var(--name))` expression that
 /// responds automatically to light/dark mode.
@@ -122,7 +138,8 @@ $color-vars: (
 @function color($name) {
   @if map.has-key($color-vars, $name) {
     $var-name: map.get($color-vars, $name);
-    @return hsl(var(#{$var-name}));
+    $prefixed-var: _prefixed-css-var($var-name);
+    @return hsl(var(#{$prefixed-var}, var(#{$var-name})));
   }
   @error "Unknown color: #{$name}. Available: #{map.keys($color-vars)}";
 }
@@ -140,7 +157,8 @@ $color-vars: (
 @function color-alpha($name, $alpha) {
   @if map.has-key($color-vars, $name) {
     $var-name: map.get($color-vars, $name);
-    @return hsl(var(#{$var-name}) / #{$alpha});
+    $prefixed-var: _prefixed-css-var($var-name);
+    @return hsl(var(#{$prefixed-var}, var(#{$var-name})) / #{$alpha});
   }
   @error "Unknown color: #{$name}";
 }

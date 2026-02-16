@@ -44,6 +44,8 @@
 /// ===========================================
 
 @use 'sass:map';
+@use 'sass:string';
+@use '../abstracts/config' as config;
 
 // ===========================================
 // PRESET DEFINITIONS
@@ -206,6 +208,14 @@ $theme-presets: (
 // [data-theme-preset="name"].dark selectors
 // for each preset in the map.
 
+@function prefixed-token-var($raw-css-var) {
+  @if config.$css-prefix == '' {
+    @return $raw-css-var;
+  }
+
+  @return '--#{config.$css-prefix}-#{string.slice($raw-css-var, 3)}';
+}
+
 @each $name, $modes in $theme-presets {
   $light: map.get($modes, 'light');
   $dark: map.get($modes, 'dark');
@@ -214,6 +224,10 @@ $theme-presets: (
   [data-theme-preset='#{$name}'] {
     @each $prop, $value in $light {
       #{$prop}: #{$value};
+
+      @if config.$css-prefix != '' {
+        #{prefixed-token-var($prop)}: #{$value};
+      }
     }
   }
 
@@ -221,6 +235,10 @@ $theme-presets: (
   [data-theme-preset='#{$name}'].dark {
     @each $prop, $value in $dark {
       #{$prop}: #{$value};
+
+      @if config.$css-prefix != '' {
+        #{prefixed-token-var($prop)}: #{$value};
+      }
     }
   }
 }
