@@ -279,6 +279,51 @@
   overflow: hidden;
 }
 
+/// Square sizing shorthand for icons, avatars, and decorative elements.
+/// @param {Length} $size - Width and height value
+/// @group mixins-utility
+/// @example scss
+///   .icon { @include icon-size(1.5rem); }
+///   .avatar { @include icon-size(space(10)); }
+@mixin icon-size($size) {
+  width: $size;
+  height: $size;
+}
+
+/// Muted helper text styling (small font + muted-foreground color).
+/// @param {String} $size ['xs'] - Font-size token ('xs' or 'sm')
+/// @group mixins-utility
+/// @example scss
+///   .hint { @include text-muted; }
+///   .subtitle { @include text-muted('sm'); }
+@mixin text-muted($size: 'xs') {
+  font-size: font-size($size);
+  color: colors.color('muted-foreground');
+}
+
+/// Vertical stack layout (flex column with gap).
+/// @param {Length} $gap [space(4)] - Gap between children
+/// @group mixins-layout
+/// @example scss
+///   .form { @include stack(space(4)); }
+///   .section { @include stack(space(6)); }
+@mixin stack($gap: space(4)) {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+/// Owl-selector vertical spacing for direct children.
+/// @param {Length} $spacing [space(4)] - Margin between siblings
+/// @group mixins-layout
+/// @example scss
+///   .list { @include spaced-children(space(2)); }
+@mixin spaced-children($spacing: space(4)) {
+  > * + * {
+    margin-top: $spacing;
+  }
+}
+
 /// Centered container with responsive horizontal padding.
 /// @param {Length} $max-width [80rem] - Maximum container width (1280px)
 /// @group mixins-layout
@@ -354,31 +399,6 @@
   }
 }
 
-/// Container query wrapper with graceful fallback.
-/// When container queries are disabled, content is emitted without an `@container` wrapper.
-/// @param {String} $condition - Container query condition (e.g. `min-width: 40rem`)
-/// @param {String | null} $name [null] - Optional container name
-/// @content Styles to apply within container query bounds
-/// @group mixins-responsive
-/// @example scss
-///   @include container-query('min-width: 40rem') { grid-template-columns: repeat(2, 1fr); }
-///   @include container-query('min-width: 30rem', 'cards') { gap: space(6); }
-@mixin container-query($condition, $name: null) {
-  @if config.$enable-container-queries {
-    @if $name == null {
-      @container (#{$condition}) {
-        @content;
-      }
-    } @else {
-      @container #{$name} (#{$condition}) {
-        @content;
-      }
-    }
-  } @else {
-    @content;
-  }
-}
-
 // ===========================================
 // DECORATIVE ELEMENTS
 // ===========================================
@@ -408,29 +428,6 @@
 ///   .hero-image { @include image-drop-shadow; }
 @mixin image-drop-shadow {
   filter: drop-shadow(0 10px 8px colors.color-alpha('foreground', 0.04)) drop-shadow(0 4px 3px colors.color-alpha('foreground', 0.1));
-}
-
-// ===========================================
-// GRADIENT TEXT WITH CUSTOM COLORS
-// ===========================================
-
-/// Gradient text using specific hex colors (not CSS variable gradients).
-/// For CSS-variable-based gradient text, use `@include gradient-text` instead.
-/// NOTE: `-webkit-background-clip` is intentional — see gradient-text mixin.
-/// @param {Color} $from [#3b82f6] - Start color (default: blue-500)
-/// @param {Color} $via [#a855f7] - Middle color (default: purple-500)
-/// @param {Color} $to [#ec4899] - End color (default: pink-500)
-/// @param {String} $direction [to right] - Gradient direction
-/// @group mixins-visual
-/// @see {mixin} gradient-text
-/// @example scss
-///   .title { @include gradient-text-custom(#3b82f6, #a855f7, #ec4899); }
-///   .subtitle { @include gradient-text-custom($from: #10b981, $to: #3b82f6); }
-@mixin gradient-text-custom($from: null, $via: null, $to: null, $direction: to right) {
-  background: _semantic-gradient($direction);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 // ===========================================
@@ -510,25 +507,6 @@
       gap: $desktop-gap;
     }
   }
-}
-
-// ===========================================
-// CONTENT VISIBILITY
-// ===========================================
-
-/// Enable content-visibility for off-screen rendering optimization.
-/// The browser skips rendering of off-screen sections, improving
-/// initial paint and scroll performance on long pages.
-/// @param {Value} $height [auto 500px] - Intrinsic size hint.
-///   Use `auto <fallback>` for previously-rendered elements,
-///   or a fixed value for sections with predictable heights.
-/// @group mixins-utility
-/// @example scss
-///   .longSection { @include content-visibility; }
-///   .hero { @include content-visibility(auto 800px); }
-@mixin content-visibility($height: auto 500px) {
-  content-visibility: auto;
-  contain-intrinsic-size: $height;
 }
 
 // ===========================================

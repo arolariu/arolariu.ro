@@ -360,11 +360,10 @@ $shadows-dark: (
 ///   box-shadow: shadow('lg');   // Elevated hover shadow
 @function shadow($level) {
   @if map.has-key($shadows, $level) {
-    @return map.get($shadows, $level
-  );
-}
+    @return map.get($shadows, $level);
+  }
 
-@error "Unknown shadow level: #{$level}. Available: #{map.keys($shadows)}";
+  @error "Unknown shadow level: #{$level}. Available: #{map.keys($shadows)}";
 }
 
 // ===========================================
@@ -402,11 +401,10 @@ $durations: (
 ///   transition-duration: duration('moderate'); // → 250ms
 @function duration($key) {
   @if map.has-key($durations, $key) {
-    @return map.get($durations, $key
-  );
-}
+    @return map.get($durations, $key);
+  }
 
-@error "Unknown duration: #{$key}. Available: #{map.keys($durations)}";
+  @error "Unknown duration: #{$key}. Available: #{map.keys($durations)}";
 }
 
 /// Easing curve scale — named cubic-bezier tokens for consistent motion.
@@ -442,9 +440,8 @@ $easings: (
 ///   transition-timing-function: easing('spring'); // → cubic-bezier(0.34, 1.56, 0.64, 1)
 @function easing($key) {
   @if map.has-key($easings, $key) {
-    @return map.get($easings, $key
-  );
-}
+    @return map.get($easings, $key);
+  }
 
-@error "Unknown easing: #{$key}. Available: #{map.keys($easings)}";
+  @error "Unknown easing: #{$key}. Available: #{map.keys($easings)}";
 }

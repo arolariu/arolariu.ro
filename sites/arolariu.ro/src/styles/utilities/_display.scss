@@ -26,6 +26,8 @@
 }
 
 @if $enable-print-styles {
+  // Reserve utility: hides elements when printing.
+  // Not currently referenced in TSX but retained for future print-mode use.
   @media print {
     .print-hidden { display: none; }
   }
