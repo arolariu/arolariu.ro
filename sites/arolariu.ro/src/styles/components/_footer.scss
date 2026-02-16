@@ -275,10 +275,10 @@
 // Navigation link
 // Original: text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300
 .footer__nav-link {
-  color: color-alpha('primary-foreground', 0.92);
+  color: color('primary-foreground');
   transition: color 300ms ease-in-out, text-decoration-color 300ms ease-in-out;
   text-decoration: underline;
-  text-decoration-color: color-alpha('primary-foreground', 0.45);
+  text-decoration-color: color-alpha('primary-foreground', 0.6);
   text-underline-offset: 0.15em;
 
   &:hover {
@@ -286,7 +286,6 @@
     text-decoration-color: color('primary-foreground');
   }
 
-  // Override global code styling within footer links
   code {
     color: inherit;
     background-color: transparent;
@@ -334,10 +333,10 @@
 // Source code link
 // Original: text-yellow-500 italic
 .footer__source-link {
-  color: color-alpha('primary-foreground', 0.92);
+  color: color('primary-foreground');
   font-style: italic;
   text-decoration: underline;
-  text-decoration-color: color-alpha('primary-foreground', 0.45);
+  text-decoration-color: color-alpha('primary-foreground', 0.6);
   text-underline-offset: 0.15em;
 
   &:hover {

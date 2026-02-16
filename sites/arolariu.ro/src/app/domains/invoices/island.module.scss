@@ -425,6 +425,7 @@
   position: relative;
   overflow: visible;
   padding: abstracts.space(20) abstracts.space(4);
+  @include abstracts.gradient-bg(135deg);
 
   @include abstracts.respond-to('sm') {
     padding-inline: abstracts.space(6);
@@ -480,7 +481,7 @@
 .ctaDescription {
   margin-bottom: abstracts.space(8);
   font-size: abstracts.font-size('lg');
-  color: abstracts.color('primary');
+  color: abstracts.color-alpha('primary-foreground', 0.85);
 
   @include abstracts.respond-to('sm') {
     font-size: abstracts.font-size('xl');
@@ -505,7 +506,7 @@
   justify-content: center;
   gap: abstracts.space(6);
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('primary');
+  color: abstracts.color('primary-foreground');
 }
 
 .ctaBadge {
@@ -617,27 +618,33 @@
 .ctaUploadIcon {
   @include abstracts.icon-size(abstracts.space(5));
   margin-right: abstracts.space(2);
+  color: inherit;
   @include abstracts.transition(transform);
 }
 
 .ctaArrowIcon {
   @include abstracts.icon-size(abstracts.space(5));
   margin-left: abstracts.space(2);
+  color: inherit;
 }
 
 .badgeIcon {
   @include abstracts.icon-size(abstracts.space(4));
+  color: abstracts.color('primary-foreground');
 }
 
 .heroButtonIcon {
   @include abstracts.icon-size(abstracts.space(5));
   margin-right: abstracts.space(2);
+  color: inherit;
 }
 
 .workflowIcon {
   @include abstracts.icon-size(1.5rem);
+  color: abstracts.color('primary-foreground');
 }
 
 .featureIcon {
   @include abstracts.icon-size(abstracts.space(5));
+  color: abstracts.color('primary-foreground');
 }
