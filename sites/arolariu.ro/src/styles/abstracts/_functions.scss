@@ -21,6 +21,10 @@
 /// @example scss - String replace
 ///   $new: str-replace('foo-bar', '-', '_'); // → 'foo_bar'
 /// ===========================================
+@use 'sass:list';
+@use 'sass:map';
+@use 'sass:meta';
+@use 'sass:string';
 
 // ===========================================
 // UNIT FUNCTIONS
@@ -80,11 +84,13 @@
 ///   $val: map-deep-get($theme, 'colors', 'primary', 'base'); // → blue
 @function map-deep-get($map, $keys...) {
   @each $key in $keys {
-    @if type-of($map) != 'map' {
+    @if meta.type-of($map) != 'map' {
       @return null;
     }
-    $map: map-get($map, $key);
+
+    $map: map.get($map, $key);
   }
+
   @return $map;
 }
 
@@ -97,7 +103,7 @@
 ///   $has: list-contains(('a', 'b', 'c'), 'b'); // → true
 ///   $has: list-contains(('a', 'b', 'c'), 'z'); // → false
 @function list-contains($list, $value) {
-  @return index($list, $value) != null;
+  @return list.index($list, $value) != null;
 }
 
 // ===========================================
@@ -115,10 +121,10 @@
 ///   $new: str-replace('foo-bar-baz', '-', '_'); // → 'foo_bar_baz'
 ///   $new: str-replace('hello world', ' ', '');  // → 'helloworld'
 @function str-replace($string, $search, $replace: '') {
-  $index: str-index($string, $search);
+  $index: string.index($string, $search);
 
   @if $index {
-    @return str-slice($string, 1, $index - 1) + $replace + str-replace(str-slice($string, $index + str-length($search)), $search, $replace);
+    @return string.slice($string, 1, $index - 1) + $replace + str-replace(string.slice($string, $index + string.length($search)), $search, $replace);
   }
 
   @return $string;
