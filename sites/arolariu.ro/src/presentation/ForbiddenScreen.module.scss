@@ -1,3 +1,4 @@
+// FORBIDDEN SCREEN (403)
 @use '../styles/abstracts' as *;
 
 .container {
@@ -11,8 +12,7 @@
 
 .image {
   margin-bottom: space(4);
-  width: 100%;
-  height: 100%;
+  @include icon-size(100%);
   border-radius: radius('md');
   object-fit: cover;
   object-position: center;
@@ -70,7 +70,6 @@
   padding: space(2) space(6);
   border-radius: radius('md');
   border: 0;
-  // Decorative: intentionally hardcoded (brand CTA color)
   @include gradient-bg();
   color: static-color('white');
   font-size: font-size('lg');
