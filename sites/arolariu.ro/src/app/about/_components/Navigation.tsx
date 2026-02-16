@@ -11,12 +11,6 @@ import styles from "./Navigation.module.scss";
 
 type NavigationKey = "platform" | "author";
 
-// Map navigation keys to SCSS gradient class names
-const gradientClassMap = {
-  platform: "gradientPlatform",
-  author: "gradientAuthor",
-} as const;
-
 const navigationItems: Array<{
   key: NavigationKey;
   href: string;
