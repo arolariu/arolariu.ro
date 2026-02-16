@@ -6,7 +6,7 @@
 .section {
   position: relative;
   padding: abstracts.space(24) 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 // Background
@@ -19,12 +19,7 @@
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    abstracts.color('background'),
-    abstracts.color-alpha('primary', 0.1),
-    abstracts.color('background')
-  );
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 // Animated orbs
@@ -45,7 +40,7 @@
   left: 25%;
   width: 400px;
   height: 400px;
-  background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('blue-500', 0.2), abstracts.decorative-color-alpha('purple-500', 0.1), transparent);
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 .orbSecondary {
@@ -54,16 +49,15 @@
   bottom: 25%;
   width: 500px;
   height: 500px;
-  background: linear-gradient(to top left, abstracts.decorative-color-alpha('pink-500', 0.15), abstracts.decorative-color-alpha('purple-500', 0.1), transparent);
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 // Grid pattern
 .bgGrid {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(to right, abstracts.decorative-color-alpha('gray-500', 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, abstracts.decorative-color-alpha('gray-500', 0.02) 1px, transparent 1px);
+  background-image: linear-gradient(abstracts.color-alpha('secondary', 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, abstracts.color-alpha('tertiary', 0.14) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -105,12 +99,7 @@
 }
 
 .titleHighlight {
-  background: linear-gradient(
-    to right,
-    abstracts.color('gradient-from'),
-    abstracts.color('gradient-via'),
-    abstracts.color('gradient-to')
-  );
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -179,7 +168,7 @@
 .ctaOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, abstracts.color-alpha('primary', 0.2), abstracts.color-alpha('primary', 0.05));
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 // Secondary links
@@ -200,7 +189,7 @@
   @include abstracts.transition(color);
 
   &:hover {
-    color: abstracts.color('primary');
+    color: abstracts.color('link');
   }
 }
 
@@ -244,15 +233,15 @@
 }
 
 .trustAccentBlue {
-  @include abstracts.decorative-gradient-pair('blue-cyan');
+  background-color: abstracts.color('primary');
 }
 
 .trustAccentPurple {
-  @include abstracts.decorative-gradient-pair('purple-pink');
+  background-color: abstracts.color('primary');
 }
 
 .trustAccentOrange {
-  @include abstracts.decorative-gradient-pair('orange-amber');
+  background-color: abstracts.color('primary');
 }
 
 .trustTitle {

@@ -22,12 +22,7 @@
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    abstracts.color('background'),
-    abstracts.color-alpha('primary', 0.05),
-    abstracts.color('background')
-  );
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 .container {
@@ -63,7 +58,7 @@
 }
 
 .titleHighlight {
-  @include abstracts.gradient-text-custom;
+  color: abstracts.color('primary');
 }
 
 .description {
@@ -187,7 +182,7 @@
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color('primary');
+    border-color: abstracts.color('link');
     @include abstracts.shadow('lg');
   }
 }
@@ -322,7 +317,7 @@
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color('primary');
+    border-color: abstracts.color('link');
     @include abstracts.shadow('lg');
   }
 }
@@ -366,14 +361,14 @@
   }
 }
 
-.iconBlue { @include abstracts.decorative-gradient-pair('blue-cyan', to bottom right); }
-.iconPurple { @include abstracts.decorative-gradient-pair('purple-violet', to bottom right); }
-.iconGreen { @include abstracts.decorative-gradient-pair('green-emerald', to bottom right); }
-.iconOrange { @include abstracts.decorative-gradient-pair('orange-amber', to bottom right); }
-.iconPink { @include abstracts.decorative-gradient-pair('pink-rose', to bottom right); }
-.iconIndigo { @include abstracts.decorative-gradient-pair('indigo-blue', to bottom right); }
-.iconYellow { @include abstracts.decorative-gradient-pair('yellow-amber', to bottom right); }
-.iconTeal { background: linear-gradient(to bottom right, abstracts.decorative-color('teal-500'), abstracts.decorative-color('cyan-500')); }
+.iconBlue { background-color: abstracts.color('primary'); }
+.iconPurple { background-color: abstracts.color('primary'); }
+.iconGreen { background-color: abstracts.color('primary'); }
+.iconOrange { background-color: abstracts.color('primary'); }
+.iconPink { background-color: abstracts.color('primary'); }
+.iconIndigo { background-color: abstracts.color('primary'); }
+.iconYellow { background-color: abstracts.color('primary'); }
+.iconTeal { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
 
 .statIcon {
   width: 1.75rem;
@@ -416,17 +411,17 @@
 }
 
 // Gradient variants for borders
-.borderBlue { @include abstracts.decorative-gradient-pair('blue-cyan'); }
-.borderPurple { @include abstracts.decorative-gradient-pair('purple-violet'); }
-.borderGreen { @include abstracts.decorative-gradient-pair('green-emerald'); }
-.borderOrange { @include abstracts.decorative-gradient-pair('orange-amber'); }
-.borderPink { @include abstracts.decorative-gradient-pair('pink-rose'); }
-.borderIndigo { @include abstracts.decorative-gradient-pair('indigo-blue'); }
-.borderYellow { @include abstracts.decorative-gradient-pair('yellow-amber'); }
-.borderTeal { background: linear-gradient(to right, abstracts.decorative-color('teal-500'), abstracts.decorative-color('cyan-500')); }
+.borderBlue { background-color: abstracts.color('primary'); }
+.borderPurple { background-color: abstracts.color('primary'); }
+.borderGreen { background-color: abstracts.color('primary'); }
+.borderOrange { background-color: abstracts.color('primary'); }
+.borderPink { background-color: abstracts.color('primary'); }
+.borderIndigo { background-color: abstracts.color('primary'); }
+.borderYellow { background-color: abstracts.color('primary'); }
+.borderTeal { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
 
 // Gradient variants for categories
-.gradientBlueCyan { @include abstracts.decorative-gradient-pair('blue-cyan', to bottom right); }
-.gradientPurpleViolet { @include abstracts.decorative-gradient-pair('purple-violet', to bottom right); }
-.gradientOrangeAmber { @include abstracts.decorative-gradient-pair('orange-amber', to bottom right); }
-.gradientGreenEmerald { @include abstracts.decorative-gradient-pair('green-emerald', to bottom right); }
+.gradientBlueCyan { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientPurpleViolet { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientOrangeAmber { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientGreenEmerald { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }

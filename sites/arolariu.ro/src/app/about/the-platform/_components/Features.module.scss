@@ -42,7 +42,7 @@
 }
 
 .titleHighlight {
-  @include abstracts.gradient-text-custom;
+  color: abstracts.color('primary');
 }
 
 .description {
@@ -82,7 +82,7 @@
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color('primary');
+    border-color: abstracts.color('link');
   }
 }
 
@@ -189,7 +189,7 @@
   align-items: center;
   justify-content: center;
   padding: abstracts.space(4);
-  background-color: abstracts.decorative-color-alpha('black', 0.6);
+  background-color: abstracts.color-alpha('muted-foreground', 0.6);
   backdrop-filter: blur(8px);
 }
 
@@ -283,23 +283,23 @@
 }
 
 // Color variants for icons
-.colorBlue { color: abstracts.decorative-color('blue-500'); }
-.colorPurple { color: abstracts.decorative-color('purple-500'); }
-.colorGreen { color: abstracts.decorative-color('green-500'); }
-.colorOrange { color: abstracts.decorative-color('orange-500'); }
-.colorPink { color: abstracts.decorative-color('pink-500'); }
-.colorCyan { color: abstracts.decorative-color('cyan-500'); }
-.colorRed { color: abstracts.decorative-color('red-500'); }
-.colorIndigo { color: abstracts.decorative-color('indigo-500'); }
-.colorAmber { color: abstracts.decorative-color('amber-500'); }
+.colorBlue { color: abstracts.color('primary'); }
+.colorPurple { color: abstracts.color('primary'); }
+.colorGreen { color: abstracts.color('success'); }
+.colorOrange { color: abstracts.color('warning'); }
+.colorPink { color: abstracts.color('primary'); }
+.colorCyan { color: abstracts.color('primary'); }
+.colorRed { color: abstracts.color('destructive'); }
+.colorIndigo { color: abstracts.color('primary'); }
+.colorAmber { color: abstracts.color('warning'); }
 
 // Gradient variants for backgrounds
-.gradientBlue { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('blue-500', 0.2), abstracts.decorative-color-alpha('blue-500', 0.1), transparent); }
-.gradientPurple { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('purple-500', 0.2), abstracts.decorative-color-alpha('purple-500', 0.1), transparent); }
-.gradientGreen { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('green-500', 0.2), abstracts.decorative-color-alpha('green-500', 0.1), transparent); }
-.gradientOrange { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('orange-500', 0.2), abstracts.decorative-color-alpha('orange-500', 0.1), transparent); }
-.gradientPink { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('pink-500', 0.2), abstracts.decorative-color-alpha('pink-500', 0.1), transparent); }
-.gradientCyan { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('cyan-500', 0.2), abstracts.decorative-color-alpha('cyan-500', 0.1), transparent); }
-.gradientRed { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('red-500', 0.2), abstracts.decorative-color-alpha('red-500', 0.1), transparent); }
-.gradientIndigo { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('indigo-500', 0.2), abstracts.decorative-color-alpha('indigo-500', 0.1), transparent); }
-.gradientAmber { background: linear-gradient(to bottom right, abstracts.decorative-color-alpha('amber-500', 0.2), abstracts.decorative-color-alpha('amber-500', 0.1), transparent); }
+.gradientBlue { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientPurple { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientGreen { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientOrange { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientPink { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientCyan { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientRed { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientIndigo { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientAmber { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }

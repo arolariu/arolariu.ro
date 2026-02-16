@@ -241,32 +241,8 @@ export default function Hero(): React.JSX.Element {
               </Button>
             </motion.div>
           </motion.div>
-
-          {/* Scroll Indicator */}
-          <motion.div
-            className={styles["scrollIndicator"]}
-            initial={{opacity: 0}}
-            animate={{opacity: 1}}
-            transition={{duration: 0.6, delay: 1}}>
-            <motion.div
-              className={styles["scrollInner"]}
-              animate={{y: [0, 10, 0]}}
-              transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}>
-              <span className={styles["scrollText"]}>{t("scrollIndicator")}</span>
-              <div className={styles["scrollMouse"]}>
-                <motion.div
-                  className={styles["scrollDot"]}
-                  animate={{y: [0, 16, 0]}}
-                  transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut"}}
-                />
-              </div>
-            </motion.div>
-          </motion.div>
         </div>
       </motion.div>
-
-      {/* Bottom gradient fade */}
-      <div className={styles["bottomFade"]} />
     </section>
   );
 }

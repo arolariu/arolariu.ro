@@ -22,12 +22,7 @@
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    abstracts.color('background'),
-    abstracts.color-alpha('primary', 0.05),
-    abstracts.color('background')
-  );
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 .container {
@@ -63,7 +58,7 @@
 }
 
 .titleHighlight {
-  @include abstracts.gradient-text-custom;
+  color: abstracts.color('primary');
 }
 
 .description {
@@ -77,6 +72,7 @@
 
 // Timeline container
 .timeline {
+  --timeline-axis: 50%;
   position: relative;
   margin-left: auto;
   margin-right: auto;
@@ -86,17 +82,12 @@
 // Center line
 .centerLine {
   position: absolute;
-  left: 50%;
+  left: var(--timeline-axis);
   transform: translateX(-50%);
   width: 4px;
   height: 100%;
   border-radius: abstracts.radius('full');
-  background: linear-gradient(
-    to bottom,
-    abstracts.color-alpha('primary', 0.5),
-    abstracts.color-alpha('primary', 0.3),
-    abstracts.color-alpha('primary', 0.1)
-  );
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 // Events container
@@ -109,13 +100,14 @@
 // Event wrapper
 .eventWrapper {
   position: relative;
+  width: 100%;
 }
 
 // Event icon on timeline
 .eventIcon {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: var(--timeline-axis);
   transform: translate(-50%, -50%);
   z-index: abstracts.z('content-high');
   display: flex;
@@ -135,35 +127,35 @@
 
 // Icon gradient variants
 .iconBlue {
-  @include abstracts.decorative-gradient-pair('blue-cyan', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 .iconGreen {
-  @include abstracts.decorative-gradient-pair('green-emerald', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 .iconPurple {
-  @include abstracts.decorative-gradient-pair('purple-violet', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 .iconOrange {
-  @include abstracts.decorative-gradient-pair('orange-amber', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 .iconRed {
-  @include abstracts.decorative-gradient-pair('red-pink', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 .iconCyan {
-  @include abstracts.decorative-gradient-pair('cyan-teal', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 .iconIndigo {
-  @include abstracts.decorative-gradient-pair('indigo-purple', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 .iconTeal {
-  @include abstracts.decorative-gradient-pair('teal-green', to bottom right);
+  background-color: abstracts.color('primary');
 }
 
 // Event card positioning
@@ -190,7 +182,7 @@
   @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: abstracts.color('primary');
+    border-color: abstracts.color('link');
     @include abstracts.shadow('lg');
   }
 }
@@ -215,12 +207,20 @@
   padding-bottom: abstracts.space(2);
 }
 
+.mobileEventMeta {
+  display: none;
+}
+
 .dateBadge {
   display: flex;
   align-items: center;
   gap: abstracts.space(1);
   margin-bottom: abstracts.space(2);
   width: fit-content;
+}
+
+.dateBadgeDesktop {
+  display: flex;
 }
 
 .dateIcon {
@@ -292,35 +292,35 @@
 
 // Color variants for detail icons
 .detailIconBlue {
-  color: abstracts.decorative-color('blue-500');
+  color: abstracts.color('primary');
 }
 
 .detailIconGreen {
-  color: abstracts.decorative-color('green-500');
+  color: abstracts.color('success');
 }
 
 .detailIconPurple {
-  color: abstracts.decorative-color('purple-500');
+  color: abstracts.color('primary');
 }
 
 .detailIconOrange {
-  color: abstracts.decorative-color('orange-500');
+  color: abstracts.color('warning');
 }
 
 .detailIconRed {
-  color: abstracts.decorative-color('red-500');
+  color: abstracts.color('destructive');
 }
 
 .detailIconCyan {
-  color: abstracts.decorative-color('cyan-500');
+  color: abstracts.color('primary');
 }
 
 .detailIconIndigo {
-  color: abstracts.decorative-color('indigo-500');
+  color: abstracts.color('primary');
 }
 
 .detailIconTeal {
-  color: abstracts.decorative-color('teal-500');
+  color: abstracts.color('primary');
 }
 
 // Expand hint
@@ -348,35 +348,35 @@
 
 // Border gradient variants
 .borderBlue {
-  @include abstracts.decorative-gradient-pair('blue-cyan');
+  background-color: abstracts.color('primary');
 }
 
 .borderGreen {
-  @include abstracts.decorative-gradient-pair('green-emerald');
+  background-color: abstracts.color('primary');
 }
 
 .borderPurple {
-  @include abstracts.decorative-gradient-pair('purple-violet');
+  background-color: abstracts.color('primary');
 }
 
 .borderOrange {
-  @include abstracts.decorative-gradient-pair('orange-amber');
+  background-color: abstracts.color('primary');
 }
 
 .borderRed {
-  @include abstracts.decorative-gradient-pair('red-pink');
+  background-color: abstracts.color('primary');
 }
 
 .borderCyan {
-  @include abstracts.decorative-gradient-pair('cyan-teal');
+  background-color: abstracts.color('primary');
 }
 
 .borderIndigo {
-  @include abstracts.decorative-gradient-pair('indigo-purple');
+  background-color: abstracts.color('primary');
 }
 
 .borderTeal {
-  @include abstracts.decorative-gradient-pair('teal-green');
+  background-color: abstracts.color('primary');
 }
 
 // Future indicator
@@ -406,4 +406,61 @@
 .futureText {
   margin-top: abstracts.space(4);
   color: abstracts.color('muted-foreground');
+}
+
+@include abstracts.respond-below('md') {
+  .centerLine {
+    display: none;
+  }
+
+  .events {
+    gap: abstracts.space(8);
+  }
+
+  .eventIcon {
+    display: none;
+  }
+
+  .eventCardWrapper {
+    width: 100%;
+  }
+
+  .eventCardLeft,
+  .eventCardRight {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .mobileEventMeta {
+    display: flex;
+    align-items: center;
+    gap: abstracts.space(2);
+    margin-bottom: abstracts.space(2);
+  }
+
+  .mobileEventIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: abstracts.radius('full');
+    flex-shrink: 0;
+  }
+
+  .mobileEventIconInner {
+    width: 1rem;
+    height: 1rem;
+    color: white;
+  }
+
+  .dateBadgeDesktop {
+    display: none;
+  }
+
+  .dateBadge {
+    margin-bottom: 0;
+  }
 }
