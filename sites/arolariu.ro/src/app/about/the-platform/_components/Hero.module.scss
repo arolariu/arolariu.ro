@@ -48,7 +48,7 @@
   left: 16.67%;
   width: 500px;
   height: 500px;
-  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+  background: linear-gradient(to bottom right, decorative-color-alpha('blue-500', 0.2), decorative-color-alpha('purple-500', 0.1), transparent);
 }
 
 .orbSecondary {
@@ -57,7 +57,7 @@
   bottom: 25%;
   width: 600px;
   height: 600px;
-  background: linear-gradient(to top left, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.1), transparent);
+  background: linear-gradient(to top left, decorative-color-alpha('pink-500', 0.15), decorative-color-alpha('purple-500', 0.1), transparent);
 }
 
 .orbAccent {
@@ -67,7 +67,7 @@
   transform: translate(-50%, -50%);
   width: 400px;
   height: 400px;
-  background: linear-gradient(to right, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.05), transparent);
+  background: linear-gradient(to right, decorative-color-alpha('cyan-500', 0.1), decorative-color-alpha('blue-500', 0.05), transparent);
 }
 
 // Grid pattern
@@ -75,8 +75,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, rgba(128, 128, 128, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(128, 128, 128, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, decorative-color-alpha('gray-500', 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, decorative-color-alpha('gray-500', 0.03) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -132,7 +132,7 @@
   width: 100%;
   height: 100%;
   border-radius: radius('full');
-  background-color: #22c55e;
+  background-color: decorative-color('green-500');
   opacity: 0.75;
   animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
@@ -143,7 +143,7 @@
   width: 0.625rem;
   height: 0.625rem;
   border-radius: radius('full');
-  background-color: #22c55e;
+  background-color: decorative-color('green-500');
 }
 
 .statusIcon {

@@ -10,6 +10,7 @@
 /// ===========================================
 @use 'sass:map';
 @use 'sass:meta';
+@use 'sass:list';
 @use 'colors' as colors;
 @use 'config' as config;
 @use 'variables' as *;
@@ -273,6 +274,50 @@
     hsl(var(--gradient-from)),
     hsl(var(--gradient-via)),
     hsl(var(--gradient-to))
+  );
+}
+
+/// Reusable decorative gradient pairs used by About/Platform visual variants.
+/// @type Map
+/// @group mixins-decorative
+$decorative-gradient-pairs: (
+  'blue-cyan': ('blue-500', 'cyan-500'),
+  'purple-violet': ('purple-500', 'violet-500'),
+  'purple-pink': ('purple-500', 'pink-500'),
+  'orange-amber': ('orange-500', 'amber-500'),
+  'amber-orange': ('amber-500', 'orange-500'),
+  'green-emerald': ('green-500', 'emerald-500'),
+  'red-pink': ('red-500', 'pink-500'),
+  'pink-rose': ('pink-500', 'rose-500'),
+  'indigo-blue': ('indigo-500', 'blue-500'),
+  'indigo-purple': ('indigo-500', 'purple-500'),
+  'cyan-teal': ('cyan-500', 'teal-500'),
+  'teal-green': ('teal-500', 'green-500'),
+  'yellow-amber': ('yellow-500', 'amber-500'),
+  'slate-zinc': ('slate-500', 'zinc-500'),
+) !default;
+
+/// Apply a named decorative gradient pair.
+/// @param {String} $pair - Pair key from $decorative-gradient-pairs
+/// @param {String} $direction [to right] - Gradient direction
+/// @param {String} $property [background] - CSS property to set
+/// @group mixins-decorative
+/// @example scss
+///   @include decorative-gradient-pair('blue-cyan');
+///   @include decorative-gradient-pair('purple-pink', to bottom right, background-image);
+@mixin decorative-gradient-pair($pair, $direction: to right, $property: background) {
+  @if not map.has-key($decorative-gradient-pairs, $pair) {
+    @error "Unknown decorative gradient pair: #{$pair}. Available: #{map.keys($decorative-gradient-pairs)}";
+  }
+
+  $tokens: map.get($decorative-gradient-pairs, $pair);
+  $from: list.nth($tokens, 1);
+  $to: list.nth($tokens, 2);
+
+  #{$property}: linear-gradient(
+    $direction,
+    colors.decorative-color($from),
+    colors.decorative-color($to)
   );
 }
 

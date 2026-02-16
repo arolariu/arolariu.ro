@@ -131,35 +131,35 @@
 
 // Icon gradient variants
 .iconBlue {
-  background: linear-gradient(to bottom right, decorative-color('blue-500'), decorative-color('cyan-500'));
+  @include decorative-gradient-pair('blue-cyan', to bottom right);
 }
 
 .iconGreen {
-  background: linear-gradient(to bottom right, decorative-color('green-500'), decorative-color('emerald-500'));
+  @include decorative-gradient-pair('green-emerald', to bottom right);
 }
 
 .iconPurple {
-  background: linear-gradient(to bottom right, decorative-color('purple-500'), decorative-color('violet-500'));
+  @include decorative-gradient-pair('purple-violet', to bottom right);
 }
 
 .iconOrange {
-  background: linear-gradient(to bottom right, decorative-color('orange-500'), decorative-color('amber-500'));
+  @include decorative-gradient-pair('orange-amber', to bottom right);
 }
 
 .iconRed {
-  background: linear-gradient(to bottom right, decorative-color('red-500'), decorative-color('pink-500'));
+  @include decorative-gradient-pair('red-pink', to bottom right);
 }
 
 .iconCyan {
-  background: linear-gradient(to bottom right, decorative-color('cyan-500'), decorative-color('teal-500'));
+  @include decorative-gradient-pair('cyan-teal', to bottom right);
 }
 
 .iconIndigo {
-  background: linear-gradient(to bottom right, decorative-color('indigo-500'), decorative-color('purple-500'));
+  @include decorative-gradient-pair('indigo-purple', to bottom right);
 }
 
 .iconTeal {
-  background: linear-gradient(to bottom right, decorative-color('teal-500'), decorative-color('green-500'));
+  @include decorative-gradient-pair('teal-green', to bottom right);
 }
 
 // Event card positioning
@@ -344,35 +344,35 @@
 
 // Border gradient variants
 .borderBlue {
-  background: linear-gradient(to right, decorative-color('blue-500'), decorative-color('cyan-500'));
+  @include decorative-gradient-pair('blue-cyan');
 }
 
 .borderGreen {
-  background: linear-gradient(to right, decorative-color('green-500'), decorative-color('emerald-500'));
+  @include decorative-gradient-pair('green-emerald');
 }
 
 .borderPurple {
-  background: linear-gradient(to right, decorative-color('purple-500'), decorative-color('violet-500'));
+  @include decorative-gradient-pair('purple-violet');
 }
 
 .borderOrange {
-  background: linear-gradient(to right, decorative-color('orange-500'), decorative-color('amber-500'));
+  @include decorative-gradient-pair('orange-amber');
 }
 
 .borderRed {
-  background: linear-gradient(to right, decorative-color('red-500'), decorative-color('pink-500'));
+  @include decorative-gradient-pair('red-pink');
 }
 
 .borderCyan {
-  background: linear-gradient(to right, decorative-color('cyan-500'), decorative-color('teal-500'));
+  @include decorative-gradient-pair('cyan-teal');
 }
 
 .borderIndigo {
-  background: linear-gradient(to right, decorative-color('indigo-500'), decorative-color('purple-500'));
+  @include decorative-gradient-pair('indigo-purple');
 }
 
 .borderTeal {
-  background: linear-gradient(to right, decorative-color('teal-500'), decorative-color('green-500'));
+  @include decorative-gradient-pair('teal-green');
 }
 
 // Future indicator

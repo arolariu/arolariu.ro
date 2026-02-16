@@ -647,25 +647,25 @@
 // ===========================================
 
 .gradientBlue {
-  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+  @include decorative-gradient-pair('blue-cyan', to bottom right);
 }
 
 .gradientPurple {
-  background: linear-gradient(to bottom right, #a855f7, #8b5cf6);
+  @include decorative-gradient-pair('purple-violet', to bottom right);
 }
 
 .gradientOrange {
-  background: linear-gradient(to bottom right, #f97316, #f59e0b);
+  @include decorative-gradient-pair('orange-amber', to bottom right);
 }
 
 .gradientGreen {
-  background: linear-gradient(to bottom right, #22c55e, #10b981);
+  @include decorative-gradient-pair('green-emerald', to bottom right);
 }
 
 .gradientPink {
-  background: linear-gradient(to bottom right, #ec4899, #f43f5e);
+  @include decorative-gradient-pair('pink-rose', to bottom right);
 }
 
 .gradientIndigo {
-  background: linear-gradient(to bottom right, #6366f1, #8b5cf6);
+  @include decorative-gradient-pair('indigo-purple', to bottom right);
 }

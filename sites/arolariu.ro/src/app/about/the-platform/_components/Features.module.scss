@@ -189,7 +189,7 @@
   align-items: center;
   justify-content: center;
   padding: space(4);
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: decorative-color-alpha('black', 0.6);
   backdrop-filter: blur(8px);
 }
 
@@ -283,23 +283,23 @@
 }
 
 // Color variants for icons
-.colorBlue { color: #3b82f6; }
-.colorPurple { color: #a855f7; }
-.colorGreen { color: #22c55e; }
-.colorOrange { color: #f97316; }
-.colorPink { color: #ec4899; }
-.colorCyan { color: #06b6d4; }
-.colorRed { color: #ef4444; }
-.colorIndigo { color: #6366f1; }
-.colorAmber { color: #f59e0b; }
+.colorBlue { color: decorative-color('blue-500'); }
+.colorPurple { color: decorative-color('purple-500'); }
+.colorGreen { color: decorative-color('green-500'); }
+.colorOrange { color: decorative-color('orange-500'); }
+.colorPink { color: decorative-color('pink-500'); }
+.colorCyan { color: decorative-color('cyan-500'); }
+.colorRed { color: decorative-color('red-500'); }
+.colorIndigo { color: decorative-color('indigo-500'); }
+.colorAmber { color: decorative-color('amber-500'); }
 
 // Gradient variants for backgrounds
-.gradientBlue { background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1), transparent); }
-.gradientPurple { background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.1), transparent); }
-.gradientGreen { background: linear-gradient(to bottom right, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1), transparent); }
-.gradientOrange { background: linear-gradient(to bottom right, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.1), transparent); }
-.gradientPink { background: linear-gradient(to bottom right, rgba(236, 72, 153, 0.2), rgba(236, 72, 153, 0.1), transparent); }
-.gradientCyan { background: linear-gradient(to bottom right, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.1), transparent); }
-.gradientRed { background: linear-gradient(to bottom right, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1), transparent); }
-.gradientIndigo { background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1), transparent); }
-.gradientAmber { background: linear-gradient(to bottom right, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1), transparent); }
+.gradientBlue { background: linear-gradient(to bottom right, decorative-color-alpha('blue-500', 0.2), decorative-color-alpha('blue-500', 0.1), transparent); }
+.gradientPurple { background: linear-gradient(to bottom right, decorative-color-alpha('purple-500', 0.2), decorative-color-alpha('purple-500', 0.1), transparent); }
+.gradientGreen { background: linear-gradient(to bottom right, decorative-color-alpha('green-500', 0.2), decorative-color-alpha('green-500', 0.1), transparent); }
+.gradientOrange { background: linear-gradient(to bottom right, decorative-color-alpha('orange-500', 0.2), decorative-color-alpha('orange-500', 0.1), transparent); }
+.gradientPink { background: linear-gradient(to bottom right, decorative-color-alpha('pink-500', 0.2), decorative-color-alpha('pink-500', 0.1), transparent); }
+.gradientCyan { background: linear-gradient(to bottom right, decorative-color-alpha('cyan-500', 0.2), decorative-color-alpha('cyan-500', 0.1), transparent); }
+.gradientRed { background: linear-gradient(to bottom right, decorative-color-alpha('red-500', 0.2), decorative-color-alpha('red-500', 0.1), transparent); }
+.gradientIndigo { background: linear-gradient(to bottom right, decorative-color-alpha('indigo-500', 0.2), decorative-color-alpha('indigo-500', 0.1), transparent); }
+.gradientAmber { background: linear-gradient(to bottom right, decorative-color-alpha('amber-500', 0.2), decorative-color-alpha('amber-500', 0.1), transparent); }

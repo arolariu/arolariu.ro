@@ -45,7 +45,7 @@
   left: 25%;
   width: 400px;
   height: 400px;
-  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+  background: linear-gradient(to bottom right, decorative-color-alpha('blue-500', 0.2), decorative-color-alpha('purple-500', 0.1), transparent);
 }
 
 .orbSecondary {
@@ -54,7 +54,7 @@
   bottom: 25%;
   width: 500px;
   height: 500px;
-  background: linear-gradient(to top left, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.1), transparent);
+  background: linear-gradient(to top left, decorative-color-alpha('pink-500', 0.15), decorative-color-alpha('purple-500', 0.1), transparent);
 }
 
 // Grid pattern
@@ -62,8 +62,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, rgba(128, 128, 128, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(128, 128, 128, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, decorative-color-alpha('gray-500', 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, decorative-color-alpha('gray-500', 0.02) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -244,15 +244,15 @@
 }
 
 .trustAccentBlue {
-  background: linear-gradient(to right, #3b82f6, #06b6d4);
+  @include decorative-gradient-pair('blue-cyan');
 }
 
 .trustAccentPurple {
-  background: linear-gradient(to right, #a855f7, #ec4899);
+  @include decorative-gradient-pair('purple-pink');
 }
 
 .trustAccentOrange {
-  background: linear-gradient(to right, #f97316, #f59e0b);
+  @include decorative-gradient-pair('orange-amber');
 }
 
 .trustTitle {
