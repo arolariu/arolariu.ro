@@ -22,19 +22,12 @@
 /// `.border-border`, `.border-input`, `.border-primary`,
 /// `.border-destructive`, `.border-transparent`
 ///
-/// ## Gradients
-/// `.gradient-text` — gradient clipped to text
-/// `.gradient-bg` — gradient background
-///
 /// ## Opacity
 /// `.opacity-0` through `.opacity-100` (14 steps)
 ///
 /// @see abstracts/_colors.scss — `color()` and `color-alpha()` functions
-/// @see abstracts/_mixins.scss — `gradient-text`, `gradient-bg` mixins
 /// @see base/_globals.scss — CSS custom property definitions
 /// ===========================================
-@use '../abstracts' as *;
-
 // Migration note:
 // Semantic utility colors are retained for compatibility;
 // prefer component APIs or module-local semantic styling for new code.
@@ -66,15 +59,6 @@
 .border-primary { border-color: hsl(var(--primary)); }
 .border-destructive { border-color: hsl(var(--destructive)); }
 .border-transparent { border-color: transparent; }
-
-// Gradient utilities
-.gradient-text {
-  @include gradient-text;
-}
-
-.gradient-bg {
-  @include gradient-bg;
-}
 
 // Opacity modifiers
 .opacity-0 { opacity: 0; }

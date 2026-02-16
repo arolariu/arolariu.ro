@@ -114,12 +114,12 @@
   align-items: flex-start;
   gap: space(2);
   border-radius: radius('lg');
-  border: 1px solid rgba(#22c55e, 0.3);
-  background-color: rgba(#22c55e, 0.1);
+  border: 1px solid color-alpha('success', 0.3);
+  background-color: color-alpha('success', 0.1);
   padding: space(3);
 
   @include dark {
-    border-color: rgba(#166534, 1);
+    border-color: color('success');
   }
 }
 

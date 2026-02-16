@@ -14,10 +14,8 @@
 /// - **Slide** — `slide-in-from-top/bottom/left/right`
 /// - **Scale** — `scale-in`, `scale-out`
 /// - **Decorative** — `float`, `glow`, `pulse`, `spin`, `bounce`, `shimmer`
-/// - **Effects** — `glowing` (border animation for `.glow-effect`)
 ///
 /// @see animations/_transitions.scss — `.animate-*` classes consuming these
-/// @see utilities/_effects.scss — `.glow-effect` using `glowing` keyframe
 /// ===========================================
 
 // Accordion (for Radix UI components)
@@ -127,11 +125,4 @@
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
-}
-
-// Glowing border animation (used by .glow-effect utility)
-@keyframes glowing {
-  0% { background-position: 0 0; }
-  50% { background-position: 400% 0; }
-  100% { background-position: 0 0; }
 }

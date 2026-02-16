@@ -26,8 +26,8 @@
 
 .gamificationBox {
   border-radius: radius('lg');
-  border: 1px solid rgba(#f59e0b, 0.3);
-  background: linear-gradient(to right, rgba(#f59e0b, 0.1), rgba(#f97316, 0.1));
+  border: 1px solid color-alpha('warning', 0.3);
+  background: linear-gradient(to right, color-alpha('warning', 0.12), color-alpha('warning', 0.05));
   padding: space(3);
 
   & > * + * {
@@ -35,7 +35,7 @@
   }
 
   @include dark {
-    border-color: rgba(#92400e, 1);
+    border-color: color('warning');
   }
 }
 

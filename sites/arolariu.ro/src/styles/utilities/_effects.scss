@@ -9,38 +9,10 @@
 /// @author arolariu
 ///
 /// ## Classes
-/// - `.bg-grid-pattern` — subtle grid background (40px cells)
-/// - `.text-glow` — soft text glow using `--accent-primary`
-/// - `.text-glow-strong` — stronger text glow
 /// - `.blue-underline` — gradient underline pseudo-element using `--primary`
-/// - `.glow-effect` — animated gradient border glow on hover
-/// - `.parallax-layer` — GPU-accelerated layer (`will-change: transform`)
 ///
-/// @see animations/_keyframes.scss — `glowing` keyframe used by `.glow-effect`
 /// @see base/_globals.scss — `--accent-primary`, `--primary` CSS variables
 /// ===========================================
-@use '../abstracts' as *;
-
-// Migration note:
-// Keep these effect utilities for incremental migration only.
-// Prefer component-scoped decorative styles for new features.
-
-// Grid background pattern
-.bg-grid-pattern {
-  background-size: 40px 40px;
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-}
-
-// Text glow (theme-aware — uses accent-primary)
-.text-glow {
-  text-shadow: 0 0 10px hsl(var(--accent-primary) / 0.5);
-}
-
-.text-glow-strong {
-  text-shadow: 0 0 15px hsl(var(--accent-primary) / 0.8);
-}
 
 // Underline accent (theme-aware — uses primary)
 .blue-underline {
@@ -56,34 +28,4 @@
     background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)) 70%, hsl(var(--primary) / 0.3) 90%, hsl(var(--primary) / 0) 100%);
     border-radius: 2px;
   }
-}
-
-// Glow border effect (theme-aware — uses primary)
-.glow-effect {
-  position: relative;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, hsl(var(--primary)), transparent, hsl(var(--primary)));
-    z-index: z('behind');
-    border-radius: inherit;
-    opacity: 0;
-    @include transition(opacity, 'moderate');
-    animation: glowing 1.5s linear infinite;
-  }
-
-  &:hover::before {
-    opacity: 1;
-    animation: glowing 1.5s linear infinite;
-  }
-}
-
-// GPU-accelerated parallax layer
-.parallax-layer {
-  will-change: transform;
 }
