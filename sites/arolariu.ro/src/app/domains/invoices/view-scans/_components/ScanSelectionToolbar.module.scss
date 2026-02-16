@@ -53,11 +53,13 @@
 .clearIcon {
   @include icon-size(space(4));
   margin-right: space(1);
+  color: color('foreground');
 }
 
 .createIcon {
   @include icon-size(space(4));
   margin-right: space(2);
+  color: color('foreground');
 }
 
 .hiddenMobile {

@@ -68,15 +68,18 @@
 // ===========================================
 .infoIcon {
   @include icon-size(space(5));
+  color: color('foreground');
 }
 
 .actionIcon {
   @include icon-size(space(4));
+  color: color('foreground');
 }
 
 .syncIcon {
   height: space(4);
   width: space(4);
+  color: color('foreground');
 }
 
 .syncIconSpinning {

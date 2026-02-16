@@ -76,6 +76,7 @@
 // ===========================================
 .tipIcon {
   @include abstracts.icon-size(abstracts.space(4));
+  color: abstracts.color('foreground');
 }
 
 .statsCardLabel {
@@ -285,6 +286,7 @@
 .breadcrumbIcon {
   height: abstracts.space(4);
   width: abstracts.space(4);
+  color: abstracts.color('foreground');
 }
 
 // ===========================================

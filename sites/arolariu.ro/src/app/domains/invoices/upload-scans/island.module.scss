@@ -175,6 +175,7 @@
 .breadcrumbIcon {
   height: abstracts.space(4);
   width: abstracts.space(4);
+  color: abstracts.color('foreground');
 }
 
 // ===========================================
@@ -361,15 +362,18 @@
 // ===========================================
 .infoIcon {
   @include abstracts.icon-size(abstracts.space(5));
+  color: abstracts.color('foreground');
 }
 
 .actionIcon {
   @include abstracts.icon-size(abstracts.space(4));
+  color: abstracts.color('foreground');
 }
 
 .arrowIcon {
   @include abstracts.icon-size(abstracts.space(4));
   margin-left: abstracts.space(2);
+  color: abstracts.color('foreground');
 }
 
 .fileTypeIconAccent {

@@ -111,6 +111,7 @@
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
+  color: color('foreground');
 }
 
 // ===========================================
@@ -336,6 +337,7 @@
   margin-right: space(2);
   width: 1rem;
   height: 1rem;
+  color: color('primary-foreground');
 }
 
 .footerNote {

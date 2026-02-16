@@ -591,6 +591,7 @@
 
 .cardArrowIcon {
   @include abstracts.icon-size(abstracts.space(4));
+  color: abstracts.color('primary');
   @include abstracts.transition(transform);
 }
 
@@ -601,6 +602,7 @@
 
 .mobileIcon {
   @include abstracts.icon-size(abstracts.space(5));
+  color: abstracts.color('foreground');
 }
 
 .mobileText {

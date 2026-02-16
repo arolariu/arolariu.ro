@@ -69,6 +69,7 @@
 // ===========================================
 .filterIcon {
   @include icon-size(space(4));
+  color: color('foreground');
 }
 
 .sunIcon {
