@@ -87,10 +87,10 @@
 .globeAlertIcon {
   width: space(4);
   height: space(4);
-  color: #ea580c; // Decorative: intentionally hardcoded (orange-600)
+  color: color('primary'); // Decorative: intentionally hardcoded (orange-600)
 
   @include dark {
-    color: #fb923c; // orange-400
+    color: color('primary'); // orange-400
   }
 }
 

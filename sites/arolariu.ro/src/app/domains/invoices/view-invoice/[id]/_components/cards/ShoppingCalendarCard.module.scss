@@ -117,9 +117,9 @@
 }
 
 .colorRed {
-  color: #ef4444; // Decorative: intentionally hardcoded
+  color: color('destructive'); // Decorative: intentionally hardcoded
 }
 
 .colorGreen {
-  color: #22c55e; // Decorative: intentionally hardcoded
+  color: color('success'); // Decorative: intentionally hardcoded
 }

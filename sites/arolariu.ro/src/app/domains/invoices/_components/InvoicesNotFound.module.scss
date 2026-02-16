@@ -38,13 +38,13 @@
   margin-top: space(8);
   border: 0;
   border-radius: radius('md');
-  background-color: #4f46e5; // indigo-600
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // indigo-600
   padding: space(2) space(6);
   font-size: font-size('lg');
   color: white;
 
   &:hover {
-    background-color: #4338ca; // indigo-700
+    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary')); // indigo-700
   }
 
   &:focus {

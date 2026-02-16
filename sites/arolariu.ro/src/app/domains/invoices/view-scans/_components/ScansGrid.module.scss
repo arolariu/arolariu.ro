@@ -21,11 +21,11 @@
 .skeletonItem {
   aspect-ratio: 4 / 3;
   border-radius: radius('lg');
-  background-color: #e5e7eb; // gray-200
+  background-color: color('border'); // gray-200
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   @include dark {
-    background-color: #374151; // gray-700
+    background-color: color('foreground'); // gray-700
   }
 }
 
@@ -57,7 +57,7 @@
   height: space(16);
   width: space(16);
   border-radius: radius('full');
-  background: linear-gradient(to bottom right, #3b82f6, #06b6d4); // blue-500 → cyan-500
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // blue-500 → cyan-500
 }
 
 .emptyIcon {
@@ -70,7 +70,7 @@
   margin-bottom: space(2);
   font-size: font-size('2xl');
   font-weight: font-weight('bold');
-  color: #111827; // gray-900
+  color: color('foreground'); // gray-900
 
   @include dark {
     color: white;
@@ -78,10 +78,10 @@
 }
 
 .emptyDescription {
-  color: #4b5563; // gray-600
+  color: color('muted-foreground'); // gray-600
 
   @include dark {
-    color: #d1d5db; // gray-300
+    color: color('border'); // gray-300
   }
 }
 
@@ -108,7 +108,7 @@
   width: space(10);
   flex-shrink: 0;
   border-radius: radius('full');
-  background: linear-gradient(to bottom right, #a855f7, #ec4899); // purple-500 → pink-500
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // purple-500 → pink-500
   font-size: font-size('sm');
   font-weight: font-weight('bold');
   color: white;
@@ -127,7 +127,7 @@
 
 .emptyStepTitle {
   font-weight: font-weight('medium');
-  color: #111827; // gray-900
+  color: color('foreground'); // gray-900
 
   @include dark {
     color: white;
@@ -136,10 +136,10 @@
 
 .emptyStepDescription {
   font-size: font-size('sm');
-  color: #6b7280; // gray-500
+  color: color('muted-foreground'); // gray-500
 
   @include dark {
-    color: #9ca3af; // gray-400
+    color: color('muted-foreground'); // gray-400
   }
 }
 
@@ -172,13 +172,13 @@
 .iconPurple {
   width: space(4);
   height: space(4);
-  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+  color: color('primary'); // Decorative: intentionally hardcoded (purple-500)
 }
 
 .iconGreen {
   width: space(4);
   height: space(4);
-  color: #22c55e; // Decorative: intentionally hardcoded (green-500)
+  color: color('success'); // Decorative: intentionally hardcoded (green-500)
 }
 
 .iconUploadLg {

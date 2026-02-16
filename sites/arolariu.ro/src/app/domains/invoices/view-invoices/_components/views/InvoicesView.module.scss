@@ -77,13 +77,13 @@
 .sunIcon {
   width: space(4);
   height: space(4);
-  color: #eab308; // Decorative: intentionally hardcoded (yellow-500)
+  color: color('warning'); // Decorative: intentionally hardcoded (yellow-500)
 }
 
 .moonIcon {
   width: space(4);
   height: space(4);
-  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+  color: color('primary'); // Decorative: intentionally hardcoded (blue-500)
 }
 
 .viewToggle {

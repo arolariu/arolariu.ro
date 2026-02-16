@@ -17,11 +17,11 @@
 // ===========================================
 // Invoice and scan status badges
 $invoice-status-colors: (
-  'pending': #f59e0b,
-  'processing': #3b82f6,
-  'completed': #22c55e,
-  'failed': #ef4444,
-  'cancelled': #6b7280,
+  'pending': color('warning'),
+  'processing': color('primary'),
+  'completed': color('success'),
+  'failed': color('destructive'),
+  'cancelled': color('muted-foreground'),
 ) !default;
 
 @mixin status-badge($status) {

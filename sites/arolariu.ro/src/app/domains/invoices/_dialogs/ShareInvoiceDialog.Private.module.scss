@@ -38,10 +38,10 @@
 .lockIcon {
   width: space(4);
   height: space(4);
-  color: #16a34a; // Decorative: intentionally hardcoded (green-600)
+  color: color('success'); // Decorative: intentionally hardcoded (green-600)
 
   @include dark {
-    color: #4ade80; // green-400
+    color: color('success'); // green-400
   }
 }
 

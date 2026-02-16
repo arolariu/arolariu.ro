@@ -64,11 +64,11 @@
 }
 
 .trendAmber {
-  color: #f59e0b; // Decorative: intentionally hardcoded
+  color: color('warning'); // Decorative: intentionally hardcoded
 }
 
 .trendEmerald {
-  color: #10b981; // Decorative: intentionally hardcoded
+  color: color('success'); // Decorative: intentionally hardcoded
 }
 
 .trendMuted {

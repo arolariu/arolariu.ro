@@ -13,10 +13,10 @@
   gap: abstracts.space(3);
   border-radius: abstracts.radius('lg');
   padding: abstracts.space(3);
-  background-color: abstracts.decorative-color('gray-50'); // gray-50
+  background-color: abstracts.color('muted-foreground'); // gray-50
 
   @include abstracts.dark {
-    background-color: abstracts.decorative-color-alpha('gray-800', 0.5); // gray-800/50
+    background-color: abstracts.color-alpha('muted-foreground', 0.5); // gray-800/50
   }
 }
 
@@ -30,14 +30,14 @@
   @include abstracts.shadow('sm');
 
   @include abstracts.dark {
-    background-color: abstracts.decorative-color('gray-700'); // gray-700
+    background-color: abstracts.color('muted-foreground'); // gray-700
   }
 }
 
 .fileTypeLabel {
   font-size: abstracts.font-size('sm');
   font-weight: abstracts.font-weight('medium');
-  color: abstracts.decorative-color('gray-900'); // gray-900
+  color: abstracts.color('muted-foreground'); // gray-900
 
   @include abstracts.dark {
     color: white;
@@ -46,10 +46,10 @@
 
 .fileTypeExtensions {
   font-size: abstracts.font-size('xs');
-  color: abstracts.decorative-color('gray-500'); // gray-500
+  color: abstracts.color('muted-foreground'); // gray-500
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('gray-400'); // gray-400
+    color: abstracts.color('muted-foreground'); // gray-400
   }
 }
 
@@ -67,15 +67,15 @@
   height: abstracts.space(4);
   width: abstracts.space(4);
   flex-shrink: 0;
-  color: abstracts.decorative-color('green-500'); // green-500
+  color: abstracts.color('success'); // green-500
 }
 
 .tipText {
   font-size: abstracts.font-size('sm');
-  color: abstracts.decorative-color('gray-600'); // gray-600
+  color: abstracts.color('muted-foreground'); // gray-600
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('gray-300'); // gray-300
+    color: abstracts.color('muted-foreground'); // gray-300
   }
 }
 
@@ -85,13 +85,13 @@
 .statsBar {
   margin-bottom: abstracts.space(6);
   border-radius: abstracts.radius('lg');
-  border: 1px solid abstracts.decorative-color('gray-200'); // gray-200
+  border: 1px solid abstracts.color('muted-foreground'); // gray-200
   background-color: white;
   padding: abstracts.space(4);
 
   @include abstracts.dark {
-    border-color: abstracts.decorative-color('gray-700'); // gray-700
-    background-color: abstracts.decorative-color('gray-800'); // gray-800
+    border-color: abstracts.color('muted-foreground'); // gray-700
+    background-color: abstracts.color('muted-foreground'); // gray-800
   }
 }
 
@@ -119,7 +119,7 @@
 }
 
 .statValueDefault {
-  color: abstracts.decorative-color('gray-900'); // gray-900
+  color: abstracts.color('muted-foreground'); // gray-900
 
   @include abstracts.dark {
     color: white;
@@ -127,27 +127,27 @@
 }
 
 .statValueAmber {
-  color: abstracts.decorative-color('amber-500'); // amber-500
+  color: abstracts.color('warning'); // amber-500
 }
 
 .statValueBlue {
-  color: abstracts.decorative-color('blue-500'); // blue-500
+  color: abstracts.color('primary'); // blue-500
 }
 
 .statValueGreen {
-  color: abstracts.decorative-color('green-500'); // green-500
+  color: abstracts.color('success'); // green-500
 }
 
 .statValueRed {
-  color: abstracts.decorative-color('red-500'); // red-500
+  color: abstracts.color('destructive'); // red-500
 }
 
 .statLabel {
   font-size: abstracts.font-size('xs');
-  color: abstracts.decorative-color('gray-500'); // gray-500
+  color: abstracts.color('muted-foreground'); // gray-500
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('gray-400'); // gray-400
+    color: abstracts.color('muted-foreground'); // gray-400
   }
 }
 
@@ -168,18 +168,18 @@
   align-items: center;
   gap: abstracts.space(1);
   font-size: abstracts.font-size('sm');
-  color: abstracts.decorative-color('gray-500'); // gray-500
+  color: abstracts.color('muted-foreground'); // gray-500
   @include abstracts.transition(color);
 
   &:hover {
-    color: abstracts.decorative-color('gray-700'); // gray-700
+    color: abstracts.color('muted-foreground'); // gray-700
   }
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('gray-400'); // gray-400
+    color: abstracts.color('muted-foreground'); // gray-400
 
     &:hover {
-      color: abstracts.decorative-color('gray-200'); // gray-200
+      color: abstracts.color('muted-foreground'); // gray-200
     }
   }
 }
@@ -213,7 +213,7 @@
 .headerTitle {
   font-size: abstracts.font-size('2xl');
   font-weight: abstracts.font-weight('bold');
-  color: abstracts.decorative-color('gray-900'); // gray-900
+  color: abstracts.color('muted-foreground'); // gray-900
 
   @include abstracts.respond-to('lg') {
     font-size: abstracts.font-size('3xl');
@@ -226,10 +226,10 @@
 
 .headerDescription {
   font-size: abstracts.font-size('sm');
-  color: abstracts.decorative-color('gray-500'); // gray-500
+  color: abstracts.color('muted-foreground'); // gray-500
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('gray-400'); // gray-400
+    color: abstracts.color('muted-foreground'); // gray-400
   }
 }
 
@@ -282,7 +282,7 @@
 .sidebarTitle {
   margin-bottom: abstracts.space(4);
   font-weight: abstracts.font-weight('semibold');
-  color: abstracts.decorative-color('gray-900'); // gray-900
+  color: abstracts.color('muted-foreground'); // gray-900
 
   @include abstracts.dark {
     color: white;
@@ -298,10 +298,10 @@
 .maxSizeNote {
   margin-top: abstracts.space(3);
   font-size: abstracts.font-size('xs');
-  color: abstracts.decorative-color('gray-500'); // gray-500
+  color: abstracts.color('muted-foreground'); // gray-500
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('gray-400'); // gray-400
+    color: abstracts.color('muted-foreground'); // gray-400
   }
 }
 
@@ -325,29 +325,29 @@
   height: abstracts.space(5);
   width: abstracts.space(5);
   flex-shrink: 0;
-  color: abstracts.decorative-color('green-600'); // green-600
+  color: abstracts.color('success'); // green-600
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('green-400'); // green-400
+    color: abstracts.color('success'); // green-400
   }
 }
 
 .securityTitle {
   font-weight: abstracts.font-weight('semibold');
-  color: abstracts.decorative-color('green-900'); // green-900
+  color: abstracts.color('success'); // green-900
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('green-100'); // green-100
+    color: abstracts.color('success'); // green-100
   }
 }
 
 .securityDescription {
   margin-top: abstracts.space(1);
   font-size: abstracts.font-size('sm');
-  color: abstracts.decorative-color('green-700'); // green-700
+  color: abstracts.color('success'); // green-700
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('green-300'); // green-300
+    color: abstracts.color('success'); // green-300
   }
 }
 
@@ -357,20 +357,20 @@
 .nextStepsTitle {
   margin-bottom: abstracts.space(2);
   font-weight: abstracts.font-weight('semibold');
-  color: abstracts.decorative-color('purple-900'); // purple-900
+  color: abstracts.color('primary'); // purple-900
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('purple-100'); // purple-100
+    color: abstracts.color('primary'); // purple-100
   }
 }
 
 .nextStepsDescription {
   margin-bottom: abstracts.space(4);
   font-size: abstracts.font-size('sm');
-  color: abstracts.decorative-color('purple-700'); // purple-700
+  color: abstracts.color('primary'); // purple-700
 
   @include abstracts.dark {
-    color: abstracts.decorative-color('purple-300'); // purple-300
+    color: abstracts.color('primary'); // purple-300
   }
 }
 
@@ -402,5 +402,5 @@
 .fileTypeIconRed {
   width: abstracts.space(5);
   height: abstracts.space(5);
-  color: abstracts.decorative-color('red-500'); // Decorative: intentionally hardcoded (red-500)
+  color: abstracts.color('destructive'); // Decorative: intentionally hardcoded (red-500)
 }

@@ -9,14 +9,14 @@
   bottom: 0;
   left: 0;
   z-index: z('fixed');
-  border-top: 1px solid #e5e7eb; // gray-200
+  border-top: 1px solid color('border'); // gray-200
   background-color: white;
   padding: space(4);
   @include shadow('lg');
 
   @include dark {
-    border-color: #374151; // gray-700
-    background-color: #111827; // gray-900
+    border-color: color('foreground'); // gray-700
+    background-color: color('foreground'); // gray-900
   }
 }
 
@@ -34,7 +34,7 @@
 
 .selectedCount {
   font-weight: font-weight('medium');
-  color: #111827; // gray-900
+  color: color('foreground'); // gray-900
 
   @include dark {
     color: white;

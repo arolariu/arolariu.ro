@@ -24,7 +24,7 @@
 .headerTitle {
   font-size: font-size('2xl');
   font-weight: font-weight('bold');
-  color: #111827; // gray-900
+  color: color('foreground'); // gray-900
 
   @include respond-to('lg') {
     font-size: font-size('3xl');
@@ -37,10 +37,10 @@
 
 .lastSynced {
   font-size: font-size('sm');
-  color: #6b7280; // gray-500
+  color: color('muted-foreground'); // gray-500
 
   @include dark {
-    color: #9ca3af; // gray-400
+    color: color('muted-foreground'); // gray-400
   }
 }
 

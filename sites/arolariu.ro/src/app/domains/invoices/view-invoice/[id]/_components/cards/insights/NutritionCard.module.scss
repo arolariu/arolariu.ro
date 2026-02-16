@@ -140,29 +140,29 @@
 }
 
 .progressGreen {
-  background-color: #22c55e; // Decorative: intentionally hardcoded
+  background-color: color('success'); // Decorative: intentionally hardcoded
 }
 
 .progressAmber {
-  background-color: #f59e0b; // Decorative: intentionally hardcoded
+  background-color: color('warning'); // Decorative: intentionally hardcoded
 }
 
 .progressBlue {
-  background-color: #3b82f6; // Decorative: intentionally hardcoded
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // Decorative: intentionally hardcoded
 }
 
 .scoreGreen {
-  color: #16a34a; // Decorative: intentionally hardcoded
+  color: color('success'); // Decorative: intentionally hardcoded
 }
 
 .scoreEmerald {
-  color: #059669; // Decorative: intentionally hardcoded
+  color: color('primary'); // Decorative: intentionally hardcoded
 }
 
 .scoreYellow {
-  color: #ca8a04; // Decorative: intentionally hardcoded
+  color: color('warning'); // Decorative: intentionally hardcoded
 }
 
 .scoreRed {
-  color: #dc2626; // Decorative: intentionally hardcoded
+  color: color('destructive'); // Decorative: intentionally hardcoded
 }

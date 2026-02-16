@@ -26,8 +26,8 @@
 
 .dropzoneDragAccept {
   composes: dropzone;
-  border-color: #22c55e;
-  background-color: rgba(34, 197, 94, 0.05);
+  border-color: color('success');
+  background-color: color-alpha('success', 0.05);
 }
 
 .dropzoneDragReject {

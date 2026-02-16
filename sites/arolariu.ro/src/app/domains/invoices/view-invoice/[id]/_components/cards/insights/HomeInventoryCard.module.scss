@@ -48,15 +48,15 @@
 }
 
 .progressGreen {
-  background-color: #22c55e; // Decorative: intentionally hardcoded
+  background-color: color('success'); // Decorative: intentionally hardcoded
 }
 
 .progressYellow {
-  background-color: #eab308; // Decorative: intentionally hardcoded
+  background-color: color('warning'); // Decorative: intentionally hardcoded
 }
 
 .progressRed {
-  background-color: #ef4444; // Decorative: intentionally hardcoded
+  background-color: color('destructive'); // Decorative: intentionally hardcoded
 }
 
 .ecoSection {

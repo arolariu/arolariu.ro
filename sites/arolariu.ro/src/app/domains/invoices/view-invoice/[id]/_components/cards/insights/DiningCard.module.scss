@@ -95,12 +95,12 @@
   align-items: flex-start;
   gap: space(3);
   border-radius: radius('lg');
-  border: 1px solid rgba(#c084fc, 0.3);
-  background: linear-gradient(to right, rgba(#a855f7, 0.1), rgba(#ec4899, 0.1));
+  border: 1px solid color-alpha('primary', 0.3);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
   padding: space(3);
 
   @include dark {
-    border-color: rgba(#7e22ce, 1);
+    border-color: color-alpha('primary', 1);
   }
 }
 
@@ -116,17 +116,17 @@
 
 .challengeHighlight {
   font-weight: font-weight('semibold');
-  color: #9333ea;
+  color: color('primary');
 }
 
 .sodiumWarning {
-  color: #ef4444; // Decorative: intentionally hardcoded
+  color: color('destructive'); // Decorative: intentionally hardcoded
 }
 
 .spendDiffRed {
-  color: #ef4444; // Decorative: intentionally hardcoded
+  color: color('destructive'); // Decorative: intentionally hardcoded
 }
 
 .spendDiffGreen {
-  color: #22c55e; // Decorative: intentionally hardcoded
+  color: color('success'); // Decorative: intentionally hardcoded
 }

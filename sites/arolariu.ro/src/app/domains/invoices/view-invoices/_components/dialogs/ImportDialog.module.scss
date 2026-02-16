@@ -125,25 +125,25 @@
 .fileIconBlue {
   width: space(5);
   height: space(5);
-  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+  color: color('primary'); // Decorative: intentionally hardcoded (blue-500)
 }
 
 .fileIconRed {
   width: space(5);
   height: space(5);
-  color: #ef4444; // Decorative: intentionally hardcoded (red-500)
+  color: color('destructive'); // Decorative: intentionally hardcoded (red-500)
 }
 
 .fileIconGreen {
   width: space(5);
   height: space(5);
-  color: #22c55e; // Decorative: intentionally hardcoded (green-500)
+  color: color('success'); // Decorative: intentionally hardcoded (green-500)
 }
 
 .fileIconGray {
   width: space(5);
   height: space(5);
-  color: #6b7280; // Decorative: intentionally hardcoded (gray-500)
+  color: color('muted-foreground'); // Decorative: intentionally hardcoded (gray-500)
 }
 
 .statusIcon {
@@ -156,8 +156,8 @@
   align-items: center;
   border-radius: radius('md');
   padding: space(2);
-  background-color: #f0fdf4; // green-50
-  color: #16a34a; // green-600
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // green-50
+  color: color('success'); // green-600
 
   & > * + * {
     margin-left: space(2);
@@ -169,8 +169,8 @@
   align-items: center;
   border-radius: radius('md');
   padding: space(2);
-  background-color: #fef2f2; // red-50
-  color: #dc2626; // red-600
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // red-50
+  color: color('destructive'); // red-600
 
   & > * + * {
     margin-left: space(2);
