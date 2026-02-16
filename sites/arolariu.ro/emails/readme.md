@@ -1,17 +1,17 @@
 # Email Templates
 
-When developing e-mail templates using TailwindCSS, we need to manually use pixels (px) instead of the TailwindCSS default units (rem, em, etc). This is because most e-mail clients do not support the use of rem, em, etc.
+When developing e-mail templates, use pixels (px) instead of rem/em units because most e-mail clients do not support rem/em consistently.
 
-## TailwindCSS
+## Email utility wrapper
 
-To use TailwindCSS in the e-mail templates, we need to use the `Tailwind` HTML tag in the JSX/TSX file. This will allow us to use the TailwindCSS classes in the e-mail template.
+For email-only utility classes, use the `Tailwind` wrapper from `@react-email/components` inside the JSX/TSX template.
 
 ```tsx
 import { Tailwind, Text } from '@react-email/components';
 
 <Tailwind>
   <Text className="bg-red-500 text-white p-4">
-    This is a TailwindCSS class
+    This is an email utility class
   </Text>
 </Tailwind>
 ```

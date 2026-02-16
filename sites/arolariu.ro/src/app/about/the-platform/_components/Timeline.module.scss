@@ -3,6 +3,10 @@
 // ===========================================
 @use '../../../../styles/abstracts' as abstracts;
 
+// Decorative exception policy (high-visual module):
+// - Prefer abstracts.color()/color-alpha() for semantic surfaces, text, and borders.
+// - Use decorative tokens only for visual accents and annotate intentional hardcoded values.
+
 .section {
   position: relative;
   padding: abstracts.space(24) 0;

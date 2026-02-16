@@ -11,7 +11,7 @@ The front-end service is built using the Next.JS framework, which provides a pow
 - **React**: A JavaScript library for building user interfaces.
 - **Next.JS**: A React-based framework for building modern web applications.
 - **TypeScript**: A statically typed superset of JavaScript that compiles to plain JavaScript.
-- **Tailwind CSS**: A utility-first CSS framework for building custom designs.
+- **SCSS Design System**: Token-driven SCSS modules with semantic color helpers and reusable mixins.
 - **ESLint**: A pluggable JavaScript linter for identifying and fixing problems in your code.
 - **Prettier**: An opinionated code formatter that enforces a consistent coding style.
 - **PostCSS**: A tool for transforming CSS with JavaScript plugins.
