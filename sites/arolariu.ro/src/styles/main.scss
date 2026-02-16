@@ -80,8 +80,8 @@
 @include load-system-layer('animations', 'animations');
 
 // ===========================================
-// 5. UTILITIES (Optional - for gradual migration)
-// Utility classes if needed during transition
+// 5. UTILITIES
+// Curated global helper classes (usage-backed, no legacy aliases)
 // ===========================================
 @include load-system-layer('utilities', 'utilities');
 

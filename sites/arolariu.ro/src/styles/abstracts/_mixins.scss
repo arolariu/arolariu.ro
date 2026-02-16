@@ -59,22 +59,6 @@
   }
 }
 
-/// Between-breakpoints responsive mixin.
-/// Emits a media query for a range between two named breakpoints.
-/// @param {String} $min - Lower breakpoint name (inclusive)
-/// @param {String} $max - Upper breakpoint name (exclusive)
-/// @content Styles to apply within the range
-/// @group mixins-responsive
-/// @example scss
-///   .tablet-only {
-///     @include respond-between('sm', 'lg') { font-size: 1.1rem; }
-///   }
-@mixin respond-between($min, $max) {
-  @media (min-width: map.get($breakpoints, $min)) and (max-width: calc(map.get($breakpoints, $max) - 1px)) {
-    @content;
-  }
-}
-
 // ===========================================
 // FLEXBOX MIXINS
 // ===========================================
@@ -147,31 +131,6 @@
 @mixin grid($columns: 1, $gap: space(4)) {
   display: grid;
   grid-template-columns: repeat($columns, minmax(0, 1fr));
-  gap: $gap;
-}
-
-/// Auto-fit responsive grid — columns fill available space.
-/// Columns shrink to `$min-width` before wrapping.
-/// @param {Length} $min-width [250px] - Minimum column width
-/// @param {Length} $gap [space(4)] - Grid gap
-/// @group mixins-layout
-/// @example scss
-///   .gallery { @include grid-auto-fit(200px); }
-@mixin grid-auto-fit($min-width: 250px, $gap: space(4)) {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
-  gap: $gap;
-}
-
-/// Auto-fill responsive grid — creates empty tracks when space allows.
-/// @param {Length} $min-width [250px] - Minimum column width
-/// @param {Length} $gap [space(4)] - Grid gap
-/// @group mixins-layout
-/// @example scss
-///   .thumbnails { @include grid-auto-fill(150px); }
-@mixin grid-auto-fill($min-width: 250px, $gap: space(4)) {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($min-width, 1fr));
   gap: $gap;
 }
 
@@ -253,7 +212,7 @@
   );
 }
 
-/// Legacy gradient-text API using semantic gradient tones.
+/// Semantic gradient-text API using semantic gradient tones.
 /// Composes primary -> tertiary -> secondary.
 /// NOTE: `-webkit-background-clip` is intentional — required for Safari/Chrome;
 /// autoprefixer does not add it for `background-clip: text`.
@@ -276,29 +235,6 @@
 ///   .sidebar { @include gradient-bg(to bottom); }
 @mixin gradient-bg($direction: to right) {
   background: _semantic-gradient($direction);
-}
-
-/// Reusable decorative gradient pairs used by About/Platform visual variants.
-/// @type Map
-/// @group mixins-decorative
-$decorative-gradient-pairs: (
-  'primary': 'primary',
-  'secondary': 'secondary',
-  'tertiary': 'tertiary',
-  'accent': 'accent',
-  'info': 'info',
-  'success': 'success',
-  'warning': 'warning',
-  'destructive': 'destructive',
-) !default;
-
-/// Applies a semantic gradient (legacy API compatibility).
-@mixin decorative-gradient-pair($pair, $direction: to right, $property: background) {
-  @if not map.has-key($decorative-gradient-pairs, $pair) {
-    @error "Unknown decorative pair: #{$pair}. Available: #{map.keys($decorative-gradient-pairs)}";
-  }
-
-  #{$property}: _semantic-gradient($direction);
 }
 
 // ===========================================
@@ -415,42 +351,6 @@ $decorative-gradient-pairs: (
     }
   } @else {
     @content;
-  }
-}
-
-/// High-contrast media query wrapper.
-/// Wraps styles for users who prefer higher contrast or use forced colors.
-/// @content Styles to apply for higher contrast contexts
-/// @group mixins-a11y
-/// @example scss
-///   .card {
-///     border-color: color('border');
-///     @include high-contrast { border-width: 2px; }
-///   }
-@mixin high-contrast {
-  @if config.$enable-high-contrast {
-    @media (prefers-contrast: more), (forced-colors: active) {
-      @content;
-    }
-  } @else {
-    @content;
-  }
-}
-
-/// Container context helper for component-scoped responsiveness.
-/// Emits `container-type` and optional `container-name` when container queries are enabled.
-/// @param {String | null} $name [null] - Optional container name
-/// @param {String} $type [inline-size] - Container type
-/// @group mixins-responsive
-/// @example scss
-///   .cardGrid { @include container-context('cards'); }
-@mixin container-context($name: null, $type: inline-size) {
-  @if config.$enable-container-queries {
-    container-type: $type;
-
-    @if $name != null {
-      container-name: $name;
-    }
   }
 }
 
@@ -578,35 +478,6 @@ $decorative-gradient-pairs: (
   width: 100%;
   background: _semantic-gradient(to right);
   border-radius: radius('xl') radius('xl') 0 0;
-}
-
-// ===========================================
-// ICON COLOR VARIANTS
-// ===========================================
-
-/// Icon color palette (light mode) — used by `icon-color-variants` mixin.
-/// @type Map
-/// @group mixins-decorative
-$icon-color-tokens: (
-  'Blue': 'primary',
-  'Green': 'success',
-  'Purple': 'tertiary',
-  'Amber': 'warning',
-  'Pink': 'accent',
-  'Red': 'destructive',
-  'Teal': 'info',
-  'Orange': 'warning',
-  'Indigo': 'secondary',
-  'Cyan': 'primary',
-) !default;
-
-/// Generates color variant classes for icons used in timelines and competencies.
-@mixin icon-color-variants($prefix: 'icon') {
-  @each $name, $token in $icon-color-tokens {
-    &#{$name} {
-      color: colors.color($token);
-    }
-  }
 }
 
 // ===========================================

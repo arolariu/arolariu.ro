@@ -11,7 +11,6 @@
 /// ## Keyframe Categories
 /// - **UI** — `accordion-down`, `accordion-up` (Radix UI)
 /// - **Fade** — `fade-in`, `fade-out`
-/// - **Slide** — `slide-in-from-top/bottom/left/right`
 /// - **Scale** — `scale-in`, `scale-out`
 /// - **Decorative** — `float`, `glow`, `pulse`, `spin`, `bounce`, `shimmer`
 ///
@@ -38,27 +37,6 @@
 @keyframes fade-out {
   from { opacity: 1; }
   to { opacity: 0; }
-}
-
-// Slide
-@keyframes slide-in-from-top {
-  from { transform: translateY(-100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes slide-in-from-bottom {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes slide-in-from-left {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-@keyframes slide-in-from-right {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
 }
 
 // Scale
