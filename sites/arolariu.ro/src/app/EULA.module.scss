@@ -293,7 +293,7 @@
   gap: space(3);
 
   // Ensure the Switch toggle track has visible background colors
-  // (Tailwind data-attribute classes may not generate for library components)
+  // (library data-attribute style variants may not be emitted in all contexts)
   button[role='switch'] {
     flex-shrink: 0;
     background-color: color('input');

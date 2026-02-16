@@ -1,7 +1,7 @@
 /// ===========================================
 /// FOOTER COMPONENT — BEM
 /// ===========================================
-/// Full site footer migrated from Tailwind utility classes to BEM.
+/// Full site footer migrated from utility-style classes to BEM.
 /// Responsive grid layout: 1 col mobile → 2 cols tablet → 3 cols desktop.
 /// Hidden when printing.
 ///
@@ -43,7 +43,7 @@
 // Main footer wrapper
 // Original: bg-footer-bg relative bottom-0 w-full print:hidden
 .footer {
-  display: block; // Explicitly set to block (override any Tailwind grid)
+  display: block; // Explicitly set to block (override any inherited grid display)
   position: relative;
   bottom: 0;
   width: 100%;
@@ -76,7 +76,7 @@
 // Original: mx-auto pt-12 text-white md:px-24 lg:max-w-(--breakpoint-xl) lg:px-8
 // Note: Production shows no max-width and no centering margins (CSS var not resolved)
 .footer__container {
-  display: block; // Explicitly set to block (override any Tailwind grid)
+  display: block; // Explicitly set to block (override any inherited grid display)
   width: 100%; // Ensure full width
   max-width: none; // No max-width constraint
   margin: 0; // No centering margins (match production)

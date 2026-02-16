@@ -12,7 +12,7 @@
 /// replacing the previous `@include respond-to('md')` breakpoint jumps.
 ///
 /// Links use `:where(a)` for zero specificity (0,0,0) so component
-/// classes (Tailwind, CSS Modules) automatically win without `!important`.
+/// classes (global components, CSS Modules) automatically win without `!important`.
 ///
 /// @group base
 /// @author arolariu
@@ -84,7 +84,7 @@ p {
 // LINKS
 // ===========================================
 // Wrapped in :where() for zero specificity (0,0,0) so component-level
-// classes (Tailwind, CSS Modules) automatically win. This prevents the
+// classes (global components, CSS Modules) automatically win. This prevents the
 // global link color from overriding Button asChild text colors.
 :where(a) {
   color: hsl(var(--primary));

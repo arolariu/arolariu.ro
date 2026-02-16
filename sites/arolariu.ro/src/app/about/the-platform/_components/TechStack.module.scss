@@ -78,7 +78,7 @@
   max-width: 72rem;
 }
 
-// Tab list wrapper (replaces inline Tailwind)
+// Tab list wrapper (replaces inline utility-class strings)
 .tabListWrapper {
   margin-bottom: space(12);
   display: flex;
@@ -143,7 +143,7 @@
   height: 2px;
 }
 
-// Tab content (replaces inline Tailwind)
+// Tab content (replaces inline utility-class strings)
 .tabContent {
   margin-top: 0;
 

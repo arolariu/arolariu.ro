@@ -38,7 +38,7 @@
 // SPACING SCALE
 // ===========================================
 
-/// Spacing scale map — matches Tailwind usage patterns.
+/// Spacing scale map — aligned with the project utility spacing rhythm.
 /// Keys are unitless multipliers; values are rem-based lengths.
 /// @type Map
 /// @group tokens-spacing
@@ -139,7 +139,7 @@ $spacing: (
 // BREAKPOINTS
 // ===========================================
 
-/// Responsive breakpoint map — matches custom Tailwind breakpoints.
+/// Responsive breakpoint map — aligned with project-specific breakpoints.
 /// Used by `respond-to()`, `respond-below()`, and `respond-between()` mixins.
 /// @type Map
 /// @group tokens-breakpoints
