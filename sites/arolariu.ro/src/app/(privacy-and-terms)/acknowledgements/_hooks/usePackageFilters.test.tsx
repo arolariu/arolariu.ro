@@ -70,7 +70,7 @@ const typescriptPackage = createPackage("typescript", {
 const prettierPackage = createPackage("prettier", {
   version: "3.6.0",
   description: "Code formatter",
-  dependents: [{name: "prettier-plugin-tailwindcss", version: "1.0.0"}],
+  dependents: [{name: "prettier-plugin-organize-imports", version: "1.0.0"}],
 });
 
 const zustandPackage = createPackage("zustand", {
