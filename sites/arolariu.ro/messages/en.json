@@ -507,7 +507,7 @@
           "client": {
             "name": "Client Layer",
             "description": "Modern React-based frontends with SSR and SSG capabilities",
-            "technologies": "Next.js 16,React 19,TypeScript,Tailwind CSS"
+            "technologies": "Next.js 16,React 19,TypeScript,SCSS Modules"
           },
           "cdn": {
             "name": "Edge & CDN",
@@ -596,10 +596,6 @@
             "name": "TypeScript",
             "description": "Type-safe JavaScript for robust code"
           },
-          "tailwind": {
-            "name": "Tailwind CSS",
-            "description": "Utility-first CSS framework"
-          },
           "zustand": {
             "name": "Zustand",
             "description": "Lightweight state management"
@@ -679,6 +675,10 @@
           "pnpm": {
             "name": "pnpm/npm",
             "description": "Package management"
+          },
+          "scss": {
+            "description": "Component-scoped stylesheets with CSS Modules",
+            "name": "SCSS Modules"
           }
         },
         "stats": {

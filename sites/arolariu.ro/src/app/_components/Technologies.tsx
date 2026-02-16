@@ -70,17 +70,17 @@ export default function TechnologiesSection(): React.JSX.Element {
                 <code className={styles["codeContent"]}>
                   {`const platform = {
   frontend: {
-    framework: "Next.js 14",
-    styling: "TailwindCSS",
-    stateManagement: "React Context + Hooks",
+    framework: "Next.js 16",
+    styling: "SCSS Modules",
+    stateManagement: "Zustand + React Hooks",
     dataFetching: "Relay GraphQL"
   },
 
   backend: {
     language: "C#",
-    framework: ".NET 8",
+    framework: ".NET 10",
     api: "ASP.NET Minimal APIs",
-    database: "Azure SQL"
+    database: "Azure SQL + CosmosDB"
   },
 
   deployment: {
