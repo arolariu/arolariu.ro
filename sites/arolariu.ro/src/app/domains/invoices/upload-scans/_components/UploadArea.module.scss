@@ -1,104 +1,104 @@
 // ===========================================
 // UPLOAD AREA COMPONENT STYLES
 // ===========================================
-@use '../../../../../styles/abstracts' as *;
+@use '../../../../../styles/abstracts' as abstracts;
 
 // ===========================================
 // EMPTY DROPZONE (no pending uploads)
 // ===========================================
 .dropzoneEmpty {
-  margin-bottom: space(16);
-  border-radius: radius('lg');
-  border: 2px dashed decorative-color('gray-300'); // gray-300
-  padding: space(16);
+  margin-bottom: abstracts.space(16);
+  border-radius: abstracts.radius('lg');
+  border: 2px dashed abstracts.decorative-color('gray-300'); // gray-300
+  padding: abstracts.space(16);
   text-align: center;
-  @include transition(all, 'moderate');
+  @include abstracts.transition(all, 'moderate');
   cursor: pointer;
-  background-color: decorative-color('gray-50'); // gray-50
+  background-color: abstracts.decorative-color('gray-50'); // gray-50
 
   &:hover {
-    border-color: decorative-color('purple-400'); // purple-400
-    background-color: decorative-color('purple-50'); // purple-50
+    border-color: abstracts.decorative-color('purple-400'); // purple-400
+    background-color: abstracts.decorative-color('purple-50'); // purple-50
   }
 
-  @include dark {
-    border-color: decorative-color('gray-600'); // gray-600
-    background-color: decorative-color-alpha('gray-900', 0.5); // gray-900/50
+  @include abstracts.dark {
+    border-color: abstracts.decorative-color('gray-600'); // gray-600
+    background-color: abstracts.decorative-color-alpha('gray-900', 0.5); // gray-900/50
 
     &:hover {
-      background-color: decorative-color-alpha('purple-900', 0.2); // purple-900/20
+      background-color: abstracts.decorative-color-alpha('purple-900', 0.2); // purple-900/20
     }
   }
 }
 
 .dropzoneEmptyActive {
   transform: scale(1.05);
-  border-color: decorative-color('purple-400'); // purple-400
-  background-color: decorative-color('purple-50'); // purple-50
+  border-color: abstracts.decorative-color('purple-400'); // purple-400
+  background-color: abstracts.decorative-color('purple-50'); // purple-50
 
-  @include dark {
-    background-color: decorative-color-alpha('purple-900', 0.2); // purple-900/20
+  @include abstracts.dark {
+    background-color: abstracts.decorative-color-alpha('purple-900', 0.2); // purple-900/20
   }
 }
 
 .iconCircle {
-  @include flex-center;
+  @include abstracts.flex-center;
   margin-inline: auto;
-  margin-bottom: space(6);
-  height: space(20);
-  width: space(20);
-  border-radius: radius('full');
-  background: linear-gradient(to right, decorative-color('blue-500'), decorative-color('cyan-500')); // blue-500 → cyan-500
+  margin-bottom: abstracts.space(6);
+  height: abstracts.space(20);
+  width: abstracts.space(20);
+  border-radius: abstracts.radius('full');
+  background: linear-gradient(to right, abstracts.decorative-color('blue-500'), abstracts.decorative-color('cyan-500')); // blue-500 → cyan-500
 }
 
 .iconCircleIcon {
-  height: space(10);
-  width: space(10);
+  height: abstracts.space(10);
+  width: abstracts.space(10);
   color: white;
 }
 
 .dropzoneTitle {
-  margin-bottom: space(4);
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  color: decorative-color('gray-900'); // gray-900
+  margin-bottom: abstracts.space(4);
+  font-size: abstracts.font-size('2xl');
+  font-weight: abstracts.font-weight('bold');
+  color: abstracts.decorative-color('gray-900'); // gray-900
 
-  @include respond-to('lg') {
-    font-size: font-size('3xl');
+  @include abstracts.respond-to('lg') {
+    font-size: abstracts.font-size('3xl');
   }
 
-  @include dark {
+  @include abstracts.dark {
     color: white;
   }
 }
 
 .dropzoneSubtitle {
-  margin-bottom: space(6);
-  font-size: font-size('lg');
-  color: decorative-color('gray-600'); // gray-600
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('lg');
+  color: abstracts.decorative-color('gray-600'); // gray-600
 
-  @include dark {
-    color: decorative-color('gray-300'); // gray-300
+  @include abstracts.dark {
+    color: abstracts.decorative-color('gray-300'); // gray-300
   }
 }
 
 .dropzoneFormats {
-  margin-bottom: space(4);
-  font-size: font-size('sm');
-  color: decorative-color('gray-500'); // gray-500
+  margin-bottom: abstracts.space(4);
+  font-size: abstracts.font-size('sm');
+  color: abstracts.decorative-color('gray-500'); // gray-500
 
-  @include dark {
-    color: decorative-color('gray-400'); // gray-400
+  @include abstracts.dark {
+    color: abstracts.decorative-color('gray-400'); // gray-400
   }
 }
 
 .dropzoneNote {
-  margin-bottom: space(8);
-  font-size: font-size('xs');
-  color: decorative-color('gray-400'); // gray-400
+  margin-bottom: abstracts.space(8);
+  font-size: abstracts.font-size('xs');
+  color: abstracts.decorative-color('gray-400'); // gray-400
 
-  @include dark {
-    color: decorative-color('gray-500'); // gray-500
+  @include abstracts.dark {
+    color: abstracts.decorative-color('gray-500'); // gray-500
   }
 }
 
@@ -110,40 +110,40 @@
 // COMPACT DROPZONE (when files are pending)
 // ===========================================
 .wrapper {
-  margin-top: space(8);
-  @include flex-column;
-  gap: space(4);
+  margin-top: abstracts.space(8);
+  @include abstracts.flex-column;
+  gap: abstracts.space(4);
 }
 
 .dropzoneCompact {
-  border-radius: radius('lg');
-  border: 2px dashed decorative-color('gray-300'); // gray-300
-  padding: space(6);
+  border-radius: abstracts.radius('lg');
+  border: 2px dashed abstracts.decorative-color('gray-300'); // gray-300
+  padding: abstracts.space(6);
   text-align: center;
-  @include transition(all, 'moderate');
+  @include abstracts.transition(all, 'moderate');
   cursor: pointer;
   background-color: transparent;
 
   &:hover {
-    border-color: decorative-color('blue-400'); // blue-400
-    background-color: decorative-color('blue-50'); // blue-50
+    border-color: abstracts.decorative-color('blue-400'); // blue-400
+    background-color: abstracts.decorative-color('blue-50'); // blue-50
   }
 
-  @include dark {
-    border-color: decorative-color('gray-700'); // gray-700
+  @include abstracts.dark {
+    border-color: abstracts.decorative-color('gray-700'); // gray-700
 
     &:hover {
-      background-color: decorative-color-alpha('blue-900', 0.2); // blue-900/20
+      background-color: abstracts.decorative-color-alpha('blue-900', 0.2); // blue-900/20
     }
   }
 }
 
 .dropzoneCompactActive {
-  border-color: decorative-color('blue-400'); // blue-400
-  background-color: decorative-color('blue-50'); // blue-50
+  border-color: abstracts.decorative-color('blue-400'); // blue-400
+  background-color: abstracts.decorative-color('blue-50'); // blue-50
 
-  @include dark {
-    background-color: decorative-color-alpha('blue-900', 0.2); // blue-900/20
+  @include abstracts.dark {
+    background-color: abstracts.decorative-color-alpha('blue-900', 0.2); // blue-900/20
   }
 }
 
@@ -153,29 +153,29 @@
 }
 
 .compactContent {
-  @include flex-center;
-  gap: space(4);
+  @include abstracts.flex-center;
+  gap: abstracts.space(4);
 }
 
 .compactIconCircle {
-  @include flex-center;
-  height: space(12);
-  width: space(12);
-  border-radius: radius('full');
-  background-color: decorative-color('gray-100'); // gray-100
+  @include abstracts.flex-center;
+  height: abstracts.space(12);
+  width: abstracts.space(12);
+  border-radius: abstracts.radius('full');
+  background-color: abstracts.decorative-color('gray-100'); // gray-100
 
-  @include dark {
-    background-color: decorative-color('gray-800'); // gray-800
+  @include abstracts.dark {
+    background-color: abstracts.decorative-color('gray-800'); // gray-800
   }
 }
 
 .compactIcon {
-  height: space(6);
-  width: space(6);
-  color: decorative-color('gray-500'); // gray-500
+  height: abstracts.space(6);
+  width: abstracts.space(6);
+  color: abstracts.decorative-color('gray-500'); // gray-500
 
-  @include dark {
-    color: decorative-color('gray-400'); // gray-400
+  @include abstracts.dark {
+    color: abstracts.decorative-color('gray-400'); // gray-400
   }
 }
 
@@ -184,21 +184,21 @@
 }
 
 .compactTitle {
-  font-size: font-size('base');
-  font-weight: font-weight('medium');
-  color: decorative-color('gray-900'); // gray-900
+  font-size: abstracts.font-size('base');
+  font-weight: abstracts.font-weight('medium');
+  color: abstracts.decorative-color('gray-900'); // gray-900
 
-  @include dark {
+  @include abstracts.dark {
     color: white;
   }
 }
 
 .compactSubtitle {
-  font-size: font-size('sm');
-  color: decorative-color('gray-500'); // gray-500
+  font-size: abstracts.font-size('sm');
+  color: abstracts.decorative-color('gray-500'); // gray-500
 
-  @include dark {
-    color: decorative-color('gray-400'); // gray-400
+  @include abstracts.dark {
+    color: abstracts.decorative-color('gray-400'); // gray-400
   }
 }
 
@@ -208,5 +208,5 @@
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: space(4);
+  gap: abstracts.space(4);
 }

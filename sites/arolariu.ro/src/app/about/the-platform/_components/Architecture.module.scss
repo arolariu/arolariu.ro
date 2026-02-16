@@ -1,18 +1,18 @@
 // ===========================================
 // THE PLATFORM - ARCHITECTURE COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use '../../../../styles/abstracts' as abstracts;
 
 .section {
   position: relative;
-  padding: space(24) 0;
+  padding: abstracts.space(24) 0;
 }
 
 // Background
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: z('behind');
+  z-index: abstracts.z('behind');
 }
 
 .bgGradient {
@@ -20,9 +20,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    color('background'),
-    color-alpha('muted', 0.3),
-    color('background')
+    abstracts.color('background'),
+    abstracts.color-alpha('muted', 0.3),
+    abstracts.color('background')
   );
 }
 
@@ -30,45 +30,45 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 75%;
-  padding: 0 space(4);
+  padding: 0 abstracts.space(4);
 }
 
 // Header
 .header {
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: space(16);
+  margin-bottom: abstracts.space(16);
   max-width: 48rem;
   text-align: center;
 }
 
 .badge {
-  margin-bottom: space(4);
-  padding: space(1) space(4);
-  font-size: font-size('sm');
+  margin-bottom: abstracts.space(4);
+  padding: abstracts.space(1) abstracts.space(4);
+  font-size: abstracts.font-size('sm');
 }
 
 .title {
-  margin-bottom: space(6);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
   letter-spacing: letter-spacing('tight');
 
-  @include respond-to('md') {
-    font-size: font-size('5xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('5xl');
   }
 }
 
 .titleHighlight {
-  @include gradient-text-custom;
+  @include abstracts.gradient-text-custom;
 }
 
 .description {
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 
-  @include respond-to('md') {
-    font-size: font-size('xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('xl');
   }
 }
 
@@ -84,13 +84,13 @@
 .layersGrid {
   position: relative;
   display: grid;
-  gap: space(8);
+  gap: abstracts.space(8);
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include abstracts.respond-to('lg') {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -99,38 +99,38 @@
 .layerCard {
   position: relative;
   overflow: hidden;
-  @include transition((border-color, box-shadow, transform));
+  @include abstracts.transition((border-color, box-shadow, transform));
 
   &:hover {
-    border-color: color-alpha('primary', 0.3);
+    border-color: abstracts.color-alpha('primary', 0.3);
   }
 }
 
 .layerCardActive {
   composes: layerCard;
-  border-color: color('primary');
+  border-color: abstracts.color('primary');
   transform: scale(1.05);
-  @include shadow('lg');
+  @include abstracts.shadow('lg');
 }
 
 .layerGradient {
   position: absolute;
   inset: 0;
   opacity: 0;
-  @include transition(opacity);
+  @include abstracts.transition(opacity);
   pointer-events: none;
 }
 
 .layerContent {
   position: relative;
-  padding: space(6);
+  padding: abstracts.space(6);
 }
 
 .layerHeader {
   display: flex;
   align-items: center;
-  gap: space(4);
-  margin-bottom: space(4);
+  gap: abstracts.space(4);
+  margin-bottom: abstracts.space(4);
 }
 
 .layerIconWrapper {
@@ -139,8 +139,8 @@
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: radius('xl');
-  @include transition(transform);
+  border-radius: abstracts.radius('xl');
+  @include abstracts.transition(transform);
 
   .layerCard:hover & {
     transform: scale(1.1) rotate(5deg);
@@ -154,23 +154,23 @@
 }
 
 .layerName {
-  font-weight: font-weight('bold');
+  font-weight: abstracts.font-weight('bold');
 }
 
 .layerDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }
 
 // Technologies
 .technologies {
   display: flex;
   flex-wrap: wrap;
-  gap: space(2);
+  gap: abstracts.space(2);
 }
 
 .techBadge {
-  font-size: font-size('xs');
+  font-size: abstracts.font-size('xs');
 }
 
 // Animated border
@@ -181,7 +181,7 @@
   height: 4px;
   transform: scaleX(0);
   transform-origin: left;
-  @include transition(transform);
+  @include abstracts.transition(transform);
 
   .layerCard:hover & {
     transform: scaleX(1);
@@ -189,11 +189,11 @@
 }
 
 // Gradient variants for layer backgrounds
-.gradientBlueCyan { @include decorative-gradient-pair('blue-cyan', to bottom right); }
-.gradientGreenEmerald { @include decorative-gradient-pair('green-emerald', to bottom right); }
-.gradientPurpleViolet { @include decorative-gradient-pair('purple-violet', to bottom right); }
-.gradientOrangeAmber { @include decorative-gradient-pair('orange-amber', to bottom right); }
-.gradientRedPink { @include decorative-gradient-pair('red-pink', to bottom right); }
-.gradientIndigoBlue { @include decorative-gradient-pair('indigo-blue', to bottom right); }
-.gradientCyanTeal { @include decorative-gradient-pair('cyan-teal', to bottom right); }
-.gradientSlateZinc { @include decorative-gradient-pair('slate-zinc', to bottom right); }
+.gradientBlueCyan { @include abstracts.decorative-gradient-pair('blue-cyan', to bottom right); }
+.gradientGreenEmerald { @include abstracts.decorative-gradient-pair('green-emerald', to bottom right); }
+.gradientPurpleViolet { @include abstracts.decorative-gradient-pair('purple-violet', to bottom right); }
+.gradientOrangeAmber { @include abstracts.decorative-gradient-pair('orange-amber', to bottom right); }
+.gradientRedPink { @include abstracts.decorative-gradient-pair('red-pink', to bottom right); }
+.gradientIndigoBlue { @include abstracts.decorative-gradient-pair('indigo-blue', to bottom right); }
+.gradientCyanTeal { @include abstracts.decorative-gradient-pair('cyan-teal', to bottom right); }
+.gradientSlateZinc { @include abstracts.decorative-gradient-pair('slate-zinc', to bottom right); }

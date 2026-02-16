@@ -4,7 +4,7 @@
 // ===========================================
 @forward 'config';
 @forward 'variables';
-@forward 'colors';
+@forward 'colors' hide $color-vars, $static-colors, $decorative-colors, $interactive-colors;
 @forward 'typography';
-@forward 'mixins';
+@forward 'mixins' hide $decorative-gradient-pairs, $icon-colors, $icon-colors-dark;
 @forward 'functions';
