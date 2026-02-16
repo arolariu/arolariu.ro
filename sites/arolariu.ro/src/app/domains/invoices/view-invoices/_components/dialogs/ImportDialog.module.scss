@@ -12,7 +12,7 @@
   border-radius: radius('lg');
   border: 2px dashed;
   padding: space(6);
-  @include transition(all);
+  @include transition((border-color, background-color, box-shadow));
   transition-duration: 200ms;
 }
 

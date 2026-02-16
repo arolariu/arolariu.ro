@@ -51,7 +51,7 @@
 .transition-none { transition-property: none; }
 
 .transition-all {
-  transition-property: all;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
   transition-duration: duration('normal');
   transition-timing-function: easing('ease');
 }

@@ -44,7 +44,7 @@
 
 .progressBar {
   height: 100%;
-  @include transition(all);
+  @include transition((width, background-color));
 }
 
 .progressGreen {

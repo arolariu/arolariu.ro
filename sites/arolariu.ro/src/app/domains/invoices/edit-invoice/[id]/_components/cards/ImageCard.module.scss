@@ -45,7 +45,7 @@
 .receiptImage {
   width: 100%;
   object-fit: cover;
-  @include transition(all);
+  @include transition((transform, filter, opacity));
 
   &:global(.group-hover\/image) {
     transform: scale(1.05);
