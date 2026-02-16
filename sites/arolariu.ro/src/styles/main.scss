@@ -43,45 +43,56 @@
 /// @see themes/_presets.scss — named theme preset overrides
 /// @see abstracts/ — all SCSS helpers (variables, mixins, functions)
 
-// ===========================================
-// 1. ABSTRACTS (No CSS output)
-// Variables, mixins, functions used by other partials
-// ===========================================
+@use 'sass:meta';
 @use 'abstracts' as *;
+
+@if $enable-css-layers {
+  @layer base, themes, animations, utilities, components;
+}
+
+@mixin load-system-layer($layer-name, $module-path) {
+  @if $enable-css-layers {
+    @layer #{$layer-name} {
+      @include meta.load-css($module-path);
+    }
+  } @else {
+    @include meta.load-css($module-path);
+  }
+}
 
 // ===========================================
 // 2. BASE
 // Reset, element defaults
 // ===========================================
-@use 'base';
+@include load-system-layer('base', 'base');
 
 // ===========================================
 // 3. THEMES
 // Theme preset CSS variable overrides
 // (Base variables defined in base/_globals.scss)
 // ===========================================
-@use 'themes';
+@include load-system-layer('themes', 'themes');
 
 // ===========================================
 // 4. ANIMATIONS
 // Keyframes and transition utilities
 // ===========================================
-@use 'animations';
+@include load-system-layer('animations', 'animations');
 
 // ===========================================
 // 5. UTILITIES (Optional - for gradual migration)
 // Utility classes if needed during transition
 // ===========================================
-@use 'utilities';
+@include load-system-layer('utilities', 'utilities');
 
 // ===========================================
 // 6. COMPONENTS
 // Shared component styles (BEM)
 // ===========================================
-@use 'components';
+@include load-system-layer('components', 'components');
 
 // ===========================================
 // 7. PAGES
 // Page-specific global styles
 // ===========================================
-// @use 'pages';
+// @include load-system-layer('pages', 'pages');
