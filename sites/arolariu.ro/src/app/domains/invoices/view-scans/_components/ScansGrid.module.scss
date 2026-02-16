@@ -57,7 +57,7 @@
   height: space(16);
   width: space(16);
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // blue-500 → cyan-500
+  @include gradient-bg(); // blue-500 → cyan-500
 }
 
 .emptyIcon {
@@ -108,7 +108,7 @@
   width: space(10);
   flex-shrink: 0;
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // purple-500 → pink-500
+  @include gradient-bg(); // purple-500 → pink-500
   font-size: font-size('sm');
   font-weight: font-weight('bold');
   color: white;

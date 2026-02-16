@@ -98,7 +98,7 @@
 .optionIconSelected {
   border-radius: radius('lg');
   padding: space(2);
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   color: white;
 }
 
@@ -209,7 +209,7 @@
 }
 
 .analyzeButton {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 
   &:hover {
     background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));

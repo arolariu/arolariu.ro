@@ -19,7 +19,7 @@
 .spinnerWrapper {
   border-radius: radius('full');
   padding: space(4);
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // red-100
+  @include gradient-bg(); // red-100
 
   @include dark {
     background-color: color-alpha('destructive', 0.3); // red-900/30
@@ -68,7 +68,7 @@
 .summaryIconBox {
   border-radius: radius('lg');
   padding: space(2);
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // red-100
+  @include gradient-bg(); // red-100
 
   @include dark {
     background-color: color-alpha('destructive', 0.3); // red-900/30

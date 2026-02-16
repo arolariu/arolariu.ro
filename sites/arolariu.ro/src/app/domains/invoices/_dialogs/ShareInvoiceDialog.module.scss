@@ -45,7 +45,7 @@
 }
 
 .iconCircleOrange {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // orange-100
+  @include gradient-bg(); // orange-100
 
   @include dark {
     background-color: color-alpha('destructive', 0.3); // orange-900/30
@@ -53,7 +53,7 @@
 }
 
 .iconCircleGreen {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // green-100
+  @include gradient-bg(); // green-100
 
   @include dark {
     background-color: color-alpha('success', 0.3); // green-900/30

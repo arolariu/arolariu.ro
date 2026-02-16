@@ -38,7 +38,7 @@
   margin-top: space(8);
   border: 0;
   border-radius: radius('md');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // indigo-600
+  @include gradient-bg(); // indigo-600
   padding: space(2) space(6);
   font-size: font-size('lg');
   color: white;

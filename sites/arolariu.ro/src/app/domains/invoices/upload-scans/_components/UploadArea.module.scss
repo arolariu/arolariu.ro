@@ -48,7 +48,7 @@
   height: abstracts.space(20);
   width: abstracts.space(20);
   border-radius: abstracts.radius('full');
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); // blue-500 → cyan-500
+  @include abstracts.gradient-bg(); // blue-500 → cyan-500
 }
 
 .iconCircleIcon {

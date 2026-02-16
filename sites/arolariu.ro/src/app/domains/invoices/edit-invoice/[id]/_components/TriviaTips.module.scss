@@ -1,5 +1,4 @@
 @use '../../../../../../styles/abstracts' as *;
-@use '../../../_styles/invoice-shared' as invoice;
 
 .savingsBanner {
   border-radius: radius('md');
@@ -81,7 +80,7 @@
   align-items: center;
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  color: hsl(var(--success, 142 76% 36%));
+  color: color('success');
 }
 
 .tipDescription {

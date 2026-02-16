@@ -2,7 +2,6 @@
 // VIEW SCANS ISLAND STYLES
 // ===========================================
 @use '../../../../styles/abstracts' as abstracts;
-@use '../_styles/invoice-shared' as invoice;
 
 // ===========================================
 // QUICK TIP
@@ -324,10 +323,6 @@
   @include abstracts.respond-to('lg') {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-}
-
-.mainArea {
-  // Default: full width
 }
 
 .mainAreaWithSidebar {

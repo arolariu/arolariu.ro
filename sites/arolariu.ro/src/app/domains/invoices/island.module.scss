@@ -75,7 +75,7 @@
 }
 
 .heroHighlight {
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -386,7 +386,7 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
   @include abstracts.transition(transform);
   transition-duration: 700ms;
 }

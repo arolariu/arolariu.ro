@@ -67,24 +67,3 @@
   @include truncate;
 }
 
-.tooltipBorder {
-  border-top: 1px solid color('border');
-  padding-top: space(1);
-}
-
-.invoiceName {
-  color: color('muted-foreground');
-  @include truncate;
-}
-
-.moreText {
-  color: color('muted-foreground');
-}
-
-.historicalRow {
-  display: flex;
-  align-items: center;
-  gap: space(1);
-  border-top: 1px solid color('border');
-  padding-top: space(1);
-}
