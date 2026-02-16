@@ -65,10 +65,18 @@ h6 {
 // PARAGRAPHS
 // ===========================================
 p {
-  margin-bottom: space(4);
+  @if $enable-logical-properties {
+    margin-block-end: space(4);
 
-  &:last-child {
-    margin-bottom: 0;
+    &:last-child {
+      margin-block-end: 0;
+    }
+  } @else {
+    margin-bottom: space(4);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 
@@ -124,8 +132,14 @@ strong {
 }
 
 blockquote {
-  border-left: 4px solid hsl(var(--border));
-  padding-left: space(4);
+  @if $enable-logical-properties {
+    border-inline-start: 4px solid hsl(var(--border));
+    padding-inline-start: space(4);
+  } @else {
+    border-left: 4px solid hsl(var(--border));
+    padding-left: space(4);
+  }
+
   font-style: italic;
   color: hsl(var(--muted-foreground));
 }
@@ -133,7 +147,13 @@ blockquote {
 hr {
   border: none;
   border-top: 1px solid hsl(var(--border));
-  margin: space(8) 0;
+
+  @if $enable-logical-properties {
+    margin-block: space(8);
+    margin-inline: 0;
+  } @else {
+    margin: space(8) 0;
+  }
 }
 
 // ===========================================
