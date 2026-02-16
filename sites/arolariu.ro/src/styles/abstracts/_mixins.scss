@@ -10,6 +10,8 @@
 /// ===========================================
 @use 'sass:map';
 @use 'sass:meta';
+@use 'colors' as colors;
+@use 'config' as config;
 @use 'variables' as *;
 
 // ===========================================
@@ -325,14 +327,24 @@
 @mixin container($max-width: 80rem) {
   width: 100%;
   max-width: $max-width;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: space(4);
-  padding-right: space(4);
+
+  @if config.$enable-logical-properties {
+    margin-inline: auto;
+    padding-inline: space(4);
+  } @else {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: space(4);
+    padding-right: space(4);
+  }
 
   @include respond-to('lg') {
-    padding-left: space(8);
-    padding-right: space(8);
+    @if config.$enable-logical-properties {
+      padding-inline: space(8);
+    } @else {
+      padding-left: space(8);
+      padding-right: space(8);
+    }
   }
 }
 
@@ -372,7 +384,72 @@
 ///     @include reduced-motion { animation: none; }
 ///   }
 @mixin reduced-motion {
-  @media (prefers-reduced-motion: reduce) {
+  @if config.$enable-reduced-motion {
+    @media (prefers-reduced-motion: reduce) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+/// High-contrast media query wrapper.
+/// Wraps styles for users who prefer higher contrast or use forced colors.
+/// @content Styles to apply for higher contrast contexts
+/// @group mixins-a11y
+/// @example scss
+///   .card {
+///     border-color: color('border');
+///     @include high-contrast { border-width: 2px; }
+///   }
+@mixin high-contrast {
+  @if config.$enable-high-contrast {
+    @media (prefers-contrast: more), (forced-colors: active) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+/// Container context helper for component-scoped responsiveness.
+/// Emits `container-type` and optional `container-name` when container queries are enabled.
+/// @param {String | null} $name [null] - Optional container name
+/// @param {String} $type [inline-size] - Container type
+/// @group mixins-responsive
+/// @example scss
+///   .cardGrid { @include container-context('cards'); }
+@mixin container-context($name: null, $type: inline-size) {
+  @if config.$enable-container-queries {
+    container-type: $type;
+
+    @if $name != null {
+      container-name: $name;
+    }
+  }
+}
+
+/// Container query wrapper with graceful fallback.
+/// When container queries are disabled, content is emitted without an `@container` wrapper.
+/// @param {String} $condition - Container query condition (e.g. `min-width: 40rem`)
+/// @param {String | null} $name [null] - Optional container name
+/// @content Styles to apply within container query bounds
+/// @group mixins-responsive
+/// @example scss
+///   @include container-query('min-width: 40rem') { grid-template-columns: repeat(2, 1fr); }
+///   @include container-query('min-width: 30rem', 'cards') { gap: space(6); }
+@mixin container-query($condition, $name: null) {
+  @if config.$enable-container-queries {
+    @if $name == null {
+      @container (#{$condition}) {
+        @content;
+      }
+    } @else {
+      @container #{$name} (#{$condition}) {
+        @content;
+      }
+    }
+  } @else {
     @content;
   }
 }
@@ -600,12 +677,68 @@ $icon-colors-dark: (
 ///   .compact-section { @include section-layout(space(8), space(12)); }
 @mixin section-layout($py-mobile: space(12), $py-desktop: space(20)) {
   position: relative;
-  padding-top: $py-mobile;
-  padding-bottom: $py-mobile;
   overflow: hidden;
 
-  @include respond-to('lg') {
-    padding-top: $py-desktop;
-    padding-bottom: $py-desktop;
+  @if config.$enable-logical-properties {
+    padding-block: $py-mobile;
+  } @else {
+    padding-top: $py-mobile;
+    padding-bottom: $py-mobile;
   }
+
+  @include respond-to('lg') {
+    @if config.$enable-logical-properties {
+      padding-block: $py-desktop;
+    } @else {
+      padding-top: $py-desktop;
+      padding-bottom: $py-desktop;
+    }
+  }
+}
+
+/// Base card surface primitive for shared visual consistency.
+/// @param {String} $background ['card'] - Semantic background token
+/// @param {String} $border ['border'] - Semantic border token
+/// @param {String} $radius-token ['xl'] - Radius token key
+/// @group mixins-visual
+/// @example scss
+///   .card { @include surface-card; }
+///   .panel { @include surface-card('popover', 'input', 'lg'); }
+@mixin surface-card($background: 'card', $border: 'border', $radius-token: 'xl') {
+  background-color: colors.color($background);
+  border: 1px solid colors.color($border);
+  border-radius: radius($radius-token);
+}
+
+/// Tinted surface primitive for highlighted sections or cards.
+/// @param {String} $tone ['primary'] - Semantic color token
+/// @param {Number} $surface-alpha [0.08] - Surface tint alpha
+/// @param {Number} $border-alpha [0.22] - Border tint alpha
+/// @param {String} $radius-token ['xl'] - Radius token key
+/// @group mixins-visual
+/// @example scss
+///   .insight { @include tinted-surface('info'); }
+///   .warning { @include tinted-surface('warning', 0.12, 0.3, 'lg'); }
+@mixin tinted-surface($tone: 'primary', $surface-alpha: 0.08, $border-alpha: 0.22, $radius-token: 'xl') {
+  background-color: colors.color-alpha($tone, $surface-alpha);
+  border: 1px solid colors.color-alpha($tone, $border-alpha);
+  border-radius: radius($radius-token);
+}
+
+/// Theme-aware gradient surface primitive.
+/// @param {String} $direction [135deg] - Gradient direction
+/// @param {Number} $from-alpha [0.2] - Gradient start alpha
+/// @param {Number} $via-alpha [0.12] - Gradient middle alpha
+/// @param {Number} $to-alpha [0.18] - Gradient end alpha
+/// @group mixins-visual
+/// @example scss
+///   .heroSurface { @include gradient-surface; }
+///   .chip { @include gradient-surface(to right, 0.12, 0.08, 0.12); }
+@mixin gradient-surface($direction: 135deg, $from-alpha: 0.2, $via-alpha: 0.12, $to-alpha: 0.18) {
+  background: linear-gradient(
+    $direction,
+    colors.color-alpha('gradient-from', $from-alpha),
+    colors.color-alpha('gradient-via', $via-alpha),
+    colors.color-alpha('gradient-to', $to-alpha)
+  );
 }
