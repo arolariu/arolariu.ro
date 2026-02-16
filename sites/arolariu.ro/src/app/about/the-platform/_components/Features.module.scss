@@ -294,12 +294,12 @@
 .colorAmber { color: abstracts.color('warning'); }
 
 // Gradient variants for backgrounds
-.gradientBlue { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientPurple { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientGreen { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientOrange { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientPink { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientCyan { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientRed { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientIndigo { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientAmber { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientBlue { @include abstracts.gradient-bg(); }
+.gradientPurple { @include abstracts.gradient-bg(); }
+.gradientGreen { @include abstracts.gradient-bg(); }
+.gradientOrange { @include abstracts.gradient-bg(); }
+.gradientPink { @include abstracts.gradient-bg(); }
+.gradientCyan { @include abstracts.gradient-bg(); }
+.gradientRed { @include abstracts.gradient-bg(); }
+.gradientIndigo { @include abstracts.gradient-bg(); }
+.gradientAmber { @include abstracts.gradient-bg(); }

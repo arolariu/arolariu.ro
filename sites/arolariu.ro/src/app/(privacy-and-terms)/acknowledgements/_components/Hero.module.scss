@@ -33,7 +33,7 @@
   height: 20rem;
   width: 20rem;
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   filter: blur(48px);
 }
 
@@ -44,7 +44,7 @@
   height: 20rem;
   width: 20rem;
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   filter: blur(48px);
 }
 
@@ -87,7 +87,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

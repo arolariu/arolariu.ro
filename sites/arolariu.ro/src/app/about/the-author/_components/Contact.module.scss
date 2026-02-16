@@ -78,7 +78,7 @@
   left: 0;
   height: 4px;
   width: 100%;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 // Card title
@@ -180,7 +180,7 @@
   bottom: 0;
   left: 0;
   height: 2px;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 // Footer

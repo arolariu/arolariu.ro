@@ -56,7 +56,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -98,7 +98,7 @@
   position: absolute;
   inset: -1px;
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   @include transition(box-shadow);
 }
 

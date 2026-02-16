@@ -38,7 +38,7 @@
   border: 1px solid color('border');
   border-radius: radius('xl');
   padding: space(6);
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   @include shadow('sm');
 
   @include respond-to('md') {
@@ -50,7 +50,7 @@
   border: 1px solid color('border');
   border-radius: radius('xl');
   padding: space(6);
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   @include shadow('sm');
 }
 
@@ -143,7 +143,7 @@
 
 .sidebarItemActive {
   composes: sidebarItem;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   color: color('primary-foreground');
 
   &:hover {

@@ -308,54 +308,7 @@
 .ctaOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
-}
-
-// Scroll indicator
-.scrollIndicator {
-  padding-top: abstracts.space(16);
-}
-
-.scrollInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: abstracts.space(2);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.scrollText {
-  font-size: abstracts.font-size('xs');
-  text-transform: uppercase;
-  letter-spacing: letter-spacing('widest');
-  color: abstracts.color('muted-foreground');
-}
-
-.scrollMouse {
-  width: 1.5rem;
-  height: 2.5rem;
-  border-radius: abstracts.radius('full');
-  border: 2px solid abstracts.color-alpha('muted-foreground', 0.3);
-  padding: 0.25rem;
-}
-
-.scrollDot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: abstracts.radius('full');
-  background-color: abstracts.color('primary');
-}
-
-// Bottom fade
-.bottomFade {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 8rem;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
-  pointer-events: none;
+  @include abstracts.gradient-bg();
 }
 
 @keyframes ping {

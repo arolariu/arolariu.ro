@@ -42,7 +42,7 @@
 .badge {
   font-size: font-size('base');
   border-radius: radius('xl');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .title {

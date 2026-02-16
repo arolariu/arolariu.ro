@@ -272,7 +272,7 @@
   font-size: font-size('xs');
   font-weight: font-weight('medium');
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // green-100
+  @include gradient-bg(); // green-100
   color: color('primary'); // green-800
   @include transition(background-color);
 
@@ -296,7 +296,7 @@
   font-size: font-size('xs');
   font-weight: font-weight('medium');
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // amber-100
+  @include gradient-bg(); // amber-100
   color: color('warning'); // amber-800
   @include transition(background-color);
 
@@ -305,7 +305,7 @@
   }
 
   @include dark {
-    background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // amber-900
+    @include gradient-bg(); // amber-900
     color: color('primary'); // amber-100
 
     &:hover {

@@ -10,7 +10,7 @@
 .bannerGradient {
   position: relative;
   height: 8rem;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .bannerOrb {

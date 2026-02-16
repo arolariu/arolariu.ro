@@ -22,7 +22,7 @@
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 .container {
@@ -368,7 +368,7 @@
 .iconPink { background-color: abstracts.color('primary'); }
 .iconIndigo { background-color: abstracts.color('primary'); }
 .iconYellow { background-color: abstracts.color('primary'); }
-.iconTeal { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.iconTeal { @include abstracts.gradient-bg(); }
 
 .statIcon {
   width: 1.75rem;
@@ -418,10 +418,10 @@
 .borderPink { background-color: abstracts.color('primary'); }
 .borderIndigo { background-color: abstracts.color('primary'); }
 .borderYellow { background-color: abstracts.color('primary'); }
-.borderTeal { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.borderTeal { @include abstracts.gradient-bg(); }
 
 // Gradient variants for categories
-.gradientBlueCyan { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientPurpleViolet { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientOrangeAmber { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
-.gradientGreenEmerald { background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary')); }
+.gradientBlueCyan { @include abstracts.gradient-bg(); }
+.gradientPurpleViolet { @include abstracts.gradient-bg(); }
+.gradientOrangeAmber { @include abstracts.gradient-bg(); }
+.gradientGreenEmerald { @include abstracts.gradient-bg(); }

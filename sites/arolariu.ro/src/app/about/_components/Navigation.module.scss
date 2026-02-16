@@ -69,27 +69,6 @@
   }
 }
 
-.cardGradient {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  @include transition(opacity);
-  pointer-events: none;
-
-  .card:hover & {
-    opacity: 1;
-  }
-}
-
-// Gradient variants
-.gradientPlatform {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
-}
-
-.gradientAuthor {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
-}
-
 // Card header
 .cardHeader {
   position: relative;
@@ -107,7 +86,7 @@
   margin: 0 auto;
   padding: space(4);
   border-radius: radius('2xl');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   @include transition(transform);
 
   .card:hover & {

@@ -109,19 +109,19 @@
 
 // Gradient variants
 .gradientBlue {
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 .gradientPurple {
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 .gradientAmber {
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 .gradientGreen {
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 // Stat value with gradient text

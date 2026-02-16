@@ -268,7 +268,7 @@
 
 .badgeRequired {
   margin-left: space(2);
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .badgeOptional {
@@ -299,7 +299,7 @@
     background-color: color('input');
 
     &[data-state='checked'] {
-      background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+      @include gradient-bg();
     }
   }
 }
@@ -325,7 +325,7 @@
 .acceptButton {
   width: 100%;
   cursor: pointer;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 
   &:hover {
     background-color: color-alpha('primary', 0.9);

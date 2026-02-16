@@ -62,7 +62,7 @@
 }
 
 .heroTitle {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -218,7 +218,7 @@
   height: 12rem;
   border-radius: radius('2xl');
   padding: space(4);
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   @include transition(transform);
 
   &:hover {
@@ -362,9 +362,9 @@
 // GRADIENT VARIANTS
 // ===========================================
 .gradientEmerald {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .gradientViolet {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }

@@ -22,7 +22,7 @@
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 .container {
@@ -87,7 +87,7 @@
   width: 4px;
   height: 100%;
   border-radius: abstracts.radius('full');
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 // Events container

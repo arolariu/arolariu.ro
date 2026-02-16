@@ -33,7 +33,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -84,11 +84,11 @@
 }
 
 .gradientCyanBlue {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .gradientOrangeRed {
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .icon {
@@ -125,13 +125,13 @@
 .progressFillCyan {
   height: 100%;
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .progressFillOrange {
   height: 100%;
   border-radius: radius('full');
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 // ===========================================

@@ -19,7 +19,7 @@
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 // Animated orbs
@@ -40,7 +40,7 @@
   left: 25%;
   width: 400px;
   height: 400px;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 .orbSecondary {
@@ -49,7 +49,7 @@
   bottom: 25%;
   width: 500px;
   height: 500px;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 // Grid pattern
@@ -99,7 +99,7 @@
 }
 
 .titleHighlight {
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -168,7 +168,7 @@
 .ctaOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
+  @include abstracts.gradient-bg();
 }
 
 // Secondary links

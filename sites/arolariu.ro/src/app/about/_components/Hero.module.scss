@@ -35,7 +35,7 @@
   left: -10rem;
   width: 20rem;
   height: 20rem;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .orbPurple {
@@ -44,7 +44,7 @@
   bottom: -10rem;
   width: 24rem;
   height: 24rem;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 .orbIndigo {
@@ -54,7 +54,7 @@
   transform: translate(-50%, -50%);
   width: 16rem;
   height: 16rem;
-  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
+  @include gradient-bg();
 }
 
 // Grid pattern overlay
