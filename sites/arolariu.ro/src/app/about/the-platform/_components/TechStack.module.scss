@@ -362,14 +362,14 @@
   }
 }
 
-.iconBlue { background: linear-gradient(to bottom right, #3b82f6, #06b6d4); }
-.iconPurple { background: linear-gradient(to bottom right, #a855f7, #8b5cf6); }
-.iconGreen { background: linear-gradient(to bottom right, #22c55e, #10b981); }
-.iconOrange { background: linear-gradient(to bottom right, #f97316, #f59e0b); }
-.iconPink { background: linear-gradient(to bottom right, #ec4899, #f43f5e); }
-.iconIndigo { background: linear-gradient(to bottom right, #6366f1, #3b82f6); }
-.iconYellow { background: linear-gradient(to bottom right, #eab308, #f59e0b); }
-.iconTeal { background: linear-gradient(to bottom right, #14b8a6, #06b6d4); }
+.iconBlue { background: linear-gradient(to bottom right, decorative-color('blue-500'), decorative-color('cyan-500')); }
+.iconPurple { background: linear-gradient(to bottom right, decorative-color('purple-500'), decorative-color('violet-500')); }
+.iconGreen { background: linear-gradient(to bottom right, decorative-color('green-500'), decorative-color('emerald-500')); }
+.iconOrange { background: linear-gradient(to bottom right, decorative-color('orange-500'), decorative-color('amber-500')); }
+.iconPink { background: linear-gradient(to bottom right, decorative-color('pink-500'), decorative-color('rose-500')); }
+.iconIndigo { background: linear-gradient(to bottom right, decorative-color('indigo-500'), decorative-color('blue-500')); }
+.iconYellow { background: linear-gradient(to bottom right, decorative-color('yellow-500'), decorative-color('amber-500')); }
+.iconTeal { background: linear-gradient(to bottom right, decorative-color('teal-500'), decorative-color('cyan-500')); }
 
 .statIcon {
   width: 1.75rem;
@@ -412,17 +412,17 @@
 }
 
 // Gradient variants for borders
-.borderBlue { background: linear-gradient(to right, #3b82f6, #06b6d4); }
-.borderPurple { background: linear-gradient(to right, #a855f7, #8b5cf6); }
-.borderGreen { background: linear-gradient(to right, #22c55e, #10b981); }
-.borderOrange { background: linear-gradient(to right, #f97316, #f59e0b); }
-.borderPink { background: linear-gradient(to right, #ec4899, #f43f5e); }
-.borderIndigo { background: linear-gradient(to right, #6366f1, #3b82f6); }
-.borderYellow { background: linear-gradient(to right, #eab308, #f59e0b); }
-.borderTeal { background: linear-gradient(to right, #14b8a6, #06b6d4); }
+.borderBlue { background: linear-gradient(to right, decorative-color('blue-500'), decorative-color('cyan-500')); }
+.borderPurple { background: linear-gradient(to right, decorative-color('purple-500'), decorative-color('violet-500')); }
+.borderGreen { background: linear-gradient(to right, decorative-color('green-500'), decorative-color('emerald-500')); }
+.borderOrange { background: linear-gradient(to right, decorative-color('orange-500'), decorative-color('amber-500')); }
+.borderPink { background: linear-gradient(to right, decorative-color('pink-500'), decorative-color('rose-500')); }
+.borderIndigo { background: linear-gradient(to right, decorative-color('indigo-500'), decorative-color('blue-500')); }
+.borderYellow { background: linear-gradient(to right, decorative-color('yellow-500'), decorative-color('amber-500')); }
+.borderTeal { background: linear-gradient(to right, decorative-color('teal-500'), decorative-color('cyan-500')); }
 
 // Gradient variants for categories
-.gradientBlueCyan { background: linear-gradient(to bottom right, #3b82f6, #06b6d4); }
-.gradientPurpleViolet { background: linear-gradient(to bottom right, #a855f7, #8b5cf6); }
-.gradientOrangeAmber { background: linear-gradient(to bottom right, #f97316, #f59e0b); }
-.gradientGreenEmerald { background: linear-gradient(to bottom right, #22c55e, #10b981); }
+.gradientBlueCyan { background: linear-gradient(to bottom right, decorative-color('blue-500'), decorative-color('cyan-500')); }
+.gradientPurpleViolet { background: linear-gradient(to bottom right, decorative-color('purple-500'), decorative-color('violet-500')); }
+.gradientOrangeAmber { background: linear-gradient(to bottom right, decorative-color('orange-500'), decorative-color('amber-500')); }
+.gradientGreenEmerald { background: linear-gradient(to bottom right, decorative-color('green-500'), decorative-color('emerald-500')); }

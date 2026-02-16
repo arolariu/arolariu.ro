@@ -19,19 +19,19 @@
   width: space(8);
   flex-shrink: 0;
   border-radius: radius('lg');
-  background-color: #f3e8ff; // purple-100
-  color: #9333ea; // purple-600
+  background-color: decorative-color('purple-100'); // purple-100
+  color: decorative-color('purple-600'); // purple-600
 
   @include dark {
-    background-color: rgba(88, 28, 135, 0.5); // purple-900/50
-    color: #c084fc; // purple-400
+    background-color: decorative-color-alpha('purple-900', 0.5); // purple-900/50
+    color: decorative-color('purple-400'); // purple-400
   }
 }
 
 .quickTipTitle {
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  color: #111827; // gray-900
+  color: decorative-color('gray-900'); // gray-900
 
   @include dark {
     color: white;
@@ -40,10 +40,10 @@
 
 .quickTipDescription {
   font-size: font-size('xs');
-  color: #6b7280; // gray-500
+  color: decorative-color('gray-500'); // gray-500
 
   @include dark {
-    color: #9ca3af; // gray-400
+    color: decorative-color('gray-400'); // gray-400
   }
 }
 
@@ -60,7 +60,7 @@
 }
 
 .statsCardValueDefault {
-  color: #111827; // gray-900
+  color: decorative-color('gray-900'); // gray-900
 
   @include dark {
     color: white;
@@ -68,11 +68,11 @@
 }
 
 .statsCardValueGreen {
-  color: #22c55e; // Decorative: intentionally hardcoded (green-500)
+  color: decorative-color('green-500'); // Decorative: intentionally hardcoded (green-500)
 }
 
 .statsCardValuePurple {
-  color: #a855f7; // Decorative: intentionally hardcoded (purple-500)
+  color: decorative-color('purple-500'); // Decorative: intentionally hardcoded (purple-500)
 }
 
 // ===========================================
@@ -85,10 +85,10 @@
 
 .statsCardLabel {
   font-size: font-size('xs');
-  color: #6b7280; // gray-500
+  color: decorative-color('gray-500'); // gray-500
 
   @include dark {
-    color: #9ca3af; // gray-400
+    color: decorative-color('gray-400'); // gray-400
   }
 }
 
@@ -98,13 +98,13 @@
 .scanStatsBar {
   margin-bottom: space(6);
   border-radius: radius('lg');
-  border: 1px solid #e5e7eb; // gray-200
+  border: 1px solid decorative-color('gray-200'); // gray-200
   background-color: white;
   padding: space(4);
 
   @include dark {
-    border-color: #374151; // gray-700
-    background-color: #1f2937; // gray-800
+    border-color: decorative-color('gray-700'); // gray-700
+    background-color: decorative-color('gray-800'); // gray-800
   }
 }
 
@@ -124,10 +124,10 @@
 
 .selectHint {
   font-size: font-size('sm');
-  color: #6b7280; // gray-500
+  color: decorative-color('gray-500'); // gray-500
 
   @include dark {
-    color: #9ca3af; // gray-400
+    color: decorative-color('gray-400'); // gray-400
   }
 }
 
@@ -157,7 +157,7 @@
 .sidebarTitle {
   margin-bottom: space(4);
   font-weight: font-weight('semibold');
-  color: #111827; // gray-900
+  color: decorative-color('gray-900'); // gray-900
 
   @include dark {
     color: white;
@@ -184,38 +184,38 @@
   height: space(10);
   width: space(10);
   border-radius: radius('full');
-  background-color: #e9d5ff; // purple-200
+  background-color: decorative-color('purple-200'); // purple-200
 
   @include dark {
-    background-color: #6b21a8; // purple-800
+    background-color: decorative-color('purple-800'); // purple-800
   }
 }
 
 .selectionIcon {
   height: space(5);
   width: space(5);
-  color: #9333ea; // purple-600
+  color: decorative-color('purple-600'); // purple-600
 
   @include dark {
-    color: #d8b4fe; // purple-300
+    color: decorative-color('purple-300'); // purple-300
   }
 }
 
 .selectionTitle {
   font-weight: font-weight('semibold');
-  color: #581c87; // purple-900
+  color: decorative-color('purple-900'); // purple-900
 
   @include dark {
-    color: #f3e8ff; // purple-100
+    color: decorative-color('purple-100'); // purple-100
   }
 }
 
 .selectionDescription {
   font-size: font-size('sm');
-  color: #7e22ce; // purple-700
+  color: decorative-color('purple-700'); // purple-700
 
   @include dark {
-    color: #d8b4fe; // purple-300
+    color: decorative-color('purple-300'); // purple-300
   }
 }
 
@@ -234,20 +234,20 @@
   width: space(10);
   flex-shrink: 0;
   border-radius: radius('lg');
-  background-color: #dbeafe; // blue-100
+  background-color: decorative-color('blue-100'); // blue-100
 
   @include dark {
-    background-color: rgba(30, 58, 138, 0.5); // blue-900/50
+    background-color: decorative-color-alpha('blue-900', 0.5); // blue-900/50
   }
 }
 
 .quickUploadIcon {
   height: space(5);
   width: space(5);
-  color: #2563eb; // blue-600
+  color: decorative-color('blue-600'); // blue-600
 
   @include dark {
-    color: #60a5fa; // blue-400
+    color: decorative-color('blue-400'); // blue-400
   }
 }
 
@@ -258,7 +258,7 @@
 .quickUploadTitle {
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  color: #111827; // gray-900
+  color: decorative-color('gray-900'); // gray-900
 
   @include dark {
     color: white;
@@ -267,10 +267,10 @@
 
 .quickUploadDescription {
   font-size: font-size('xs');
-  color: #6b7280; // gray-500
+  color: decorative-color('gray-500'); // gray-500
 
   @include dark {
-    color: #9ca3af; // gray-400
+    color: decorative-color('gray-400'); // gray-400
   }
 }
 
@@ -291,18 +291,18 @@
   align-items: center;
   gap: space(1);
   font-size: font-size('sm');
-  color: #6b7280; // gray-500
+  color: decorative-color('gray-500'); // gray-500
   @include transition(color);
 
   &:hover {
-    color: #374151; // gray-700
+    color: decorative-color('gray-700'); // gray-700
   }
 
   @include dark {
-    color: #9ca3af; // gray-400
+    color: decorative-color('gray-400'); // gray-400
 
     &:hover {
-      color: #e5e7eb; // gray-200
+      color: decorative-color('gray-200'); // gray-200
     }
   }
 }

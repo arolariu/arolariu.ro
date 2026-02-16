@@ -35,6 +35,7 @@
 /// @see {function} static-color
 /// @see {function} interactive-color
 /// ===========================================
+@use 'sass:color';
 @use 'sass:map';
 @use 'sass:string';
 @use 'config' as config;
@@ -195,6 +196,93 @@ $static-colors: (
     @return map.get($static-colors, $name);
   }
   @error "Unknown static color: #{$name}";
+}
+
+// ===========================================
+// DECORATIVE COLOR PALETTE
+// ===========================================
+
+/// Decorative colors for visual-only accents (gradients, icon badges, glow
+/// effects). Keep semantic UI surfaces/text on `color()` / `color-alpha()`.
+/// @type Map
+/// @group tokens-colors
+$decorative-colors: (
+  'white': #ffffff,
+  'gray-50': #f9fafb,
+  'gray-100': #f3f4f6,
+  'gray-200': #e5e7eb,
+  'gray-300': #d1d5db,
+  'gray-400': #9ca3af,
+  'gray-500': #6b7280,
+  'gray-600': #4b5563,
+  'gray-700': #374151,
+  'gray-800': #1f2937,
+  'gray-900': #111827,
+  'slate-500': #64748b,
+  'zinc-500': #71717a,
+  'blue-50': #eff6ff,
+  'blue-100': #dbeafe,
+  'blue-400': #60a5fa,
+  'blue-500': #3b82f6,
+  'blue-600': #2563eb,
+  'blue-900': #1e3a8a,
+  'cyan-500': #06b6d4,
+  'teal-500': #14b8a6,
+  'green-100': #dcfce7,
+  'green-300': #86efac,
+  'green-400': #4ade80,
+  'green-500': #22c55e,
+  'emerald-500': #10b981,
+  'green-600': #16a34a,
+  'green-700': #15803d,
+  'green-900': #14532d,
+  'indigo-100': #eef2ff,
+  'indigo-200': #c7d2fe,
+  'indigo-300': #a5b4fc,
+  'indigo-400': #818cf8,
+  'indigo-500': #6366f1,
+  'indigo-600': #4f46e5,
+  'indigo-800': #3730a3,
+  'indigo-900': #312e81,
+  'purple-50': #faf5ff,
+  'purple-100': #f3e8ff,
+  'purple-200': #e9d5ff,
+  'purple-300': #d8b4fe,
+  'purple-400': #c084fc,
+  'purple-500': #a855f7,
+  'purple-600': #9333ea,
+  'purple-700': #7e22ce,
+  'purple-800': #6b21a8,
+  'purple-900': #581c87,
+  'violet-500': #8b5cf6,
+  'pink-500': #ec4899,
+  'rose-500': #f43f5e,
+  'red-500': #ef4444,
+  'amber-500': #f59e0b,
+  'orange-500': #f97316,
+  'yellow-500': #eab308,
+) !default;
+
+/// Get a decorative color token by name.
+/// @param {String} $name - Decorative color token key
+/// @return {Color} The color value
+/// @throws Unknown decorative color: #{$name}
+/// @group tokens-colors
+@function decorative-color($name) {
+  @if map.has-key($decorative-colors, $name) {
+    @return map.get($decorative-colors, $name);
+  }
+  @error "Unknown decorative color: #{$name}. Available: #{map.keys($decorative-colors)}";
+}
+
+/// Get a decorative color with alpha transparency.
+/// @param {String} $name - Decorative color token key
+/// @param {Number} $alpha - Opacity between 0 and 1
+/// @return {Color} Color value with alpha
+/// @throws Unknown decorative color: #{$name}
+/// @group tokens-colors
+@function decorative-color-alpha($name, $alpha) {
+  @return color.change(decorative-color($name), $alpha: $alpha);
 }
 
 // ===========================================

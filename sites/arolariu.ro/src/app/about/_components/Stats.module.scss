@@ -109,19 +109,19 @@
 
 // Gradient variants
 .gradientBlue {
-  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+  background: linear-gradient(to bottom right, decorative-color('blue-500'), decorative-color('cyan-500'));
 }
 
 .gradientPurple {
-  background: linear-gradient(to bottom right, #a855f7, #ec4899);
+  background: linear-gradient(to bottom right, decorative-color('purple-500'), decorative-color('pink-500'));
 }
 
 .gradientAmber {
-  background: linear-gradient(to bottom right, #f59e0b, #f97316);
+  background: linear-gradient(to bottom right, decorative-color('amber-500'), decorative-color('orange-500'));
 }
 
 .gradientGreen {
-  background: linear-gradient(to bottom right, #22c55e, #10b981);
+  background: linear-gradient(to bottom right, decorative-color('green-500'), decorative-color('emerald-500'));
 }
 
 // Stat value with gradient text
@@ -136,22 +136,22 @@
 
 .valueBlue {
   composes: value;
-  background-image: linear-gradient(to right, #3b82f6, #06b6d4);
+  background-image: linear-gradient(to right, decorative-color('blue-500'), decorative-color('cyan-500'));
 }
 
 .valuePurple {
   composes: value;
-  background-image: linear-gradient(to right, #a855f7, #ec4899);
+  background-image: linear-gradient(to right, decorative-color('purple-500'), decorative-color('pink-500'));
 }
 
 .valueAmber {
   composes: value;
-  background-image: linear-gradient(to right, #f59e0b, #f97316);
+  background-image: linear-gradient(to right, decorative-color('amber-500'), decorative-color('orange-500'));
 }
 
 .valueGreen {
   composes: value;
-  background-image: linear-gradient(to right, #22c55e, #10b981);
+  background-image: linear-gradient(to right, decorative-color('green-500'), decorative-color('emerald-500'));
 }
 
 // Labels
