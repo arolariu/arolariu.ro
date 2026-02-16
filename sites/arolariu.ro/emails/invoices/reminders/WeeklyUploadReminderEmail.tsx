@@ -96,7 +96,7 @@ const WeeklyUploadReminderEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        Here's a quick look at your receipt tracking activity. Consistent uploading gives you the most accurate spending insights.
+        Here&apos;s a quick look at your receipt tracking activity. Consistent uploading gives you the most accurate spending insights.
       </Text>
 
       <MetricsGrid

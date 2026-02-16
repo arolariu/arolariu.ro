@@ -90,6 +90,11 @@ function describeField(field: MissingField): {label: string; suggestion: string}
         label: "Invoice category",
         suggestion: "Select a category (groceries, fast food, household, etc.)",
       };
+    default:
+      return {
+        label: field,
+        suggestion: "Please review and update this information",
+      };
   }
 }
 
@@ -140,8 +145,8 @@ const IncompleteInvoiceReminderEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        We analyzed your invoice <strong>"{invoiceName}"</strong> but couldn't extract everything. A few details are missing, and completing
-        them will give you better spending insights and more accurate dashboards.
+        We analyzed your invoice <strong>&quot;{invoiceName}&quot;</strong> but couldn&apos;t extract everything. A few details are missing,
+        and completing them will give you better spending insights and more accurate dashboards.
       </Text>
 
       <KeyValueTable

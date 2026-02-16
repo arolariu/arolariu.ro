@@ -355,7 +355,7 @@ export function InvoiceUploadInactivityReminderEmail(props: Readonly<Props>) {
               borderRadius: "10px",
               padding: "12px",
             }}>
-            If you're stuck or something isn't working, reply to this email or contact support — we'll help.
+            If you&apos;re stuck or something isn&apos;t working, reply to this email or contact support — we&apos;ll help.
           </Text>
         </EmailCard>
       ) : null}

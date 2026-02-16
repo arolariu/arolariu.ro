@@ -17,7 +17,7 @@ export interface PrivateModeProps {
   readonly onBack: () => void;
   readonly email: string;
   readonly onEmailChange: (email: string) => void;
-  readonly onSendEmail: (e: React.FormEvent) => void;
+  readonly onSendEmail: (e: React.SubmitEvent) => void;
 }
 
 // ============================================================================

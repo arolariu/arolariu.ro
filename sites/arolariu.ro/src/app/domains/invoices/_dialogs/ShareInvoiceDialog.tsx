@@ -253,7 +253,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleSendEmail = useCallback(
-    (e: React.FormEvent) => {
+    (e: React.SubmitEvent) => {
       e.preventDefault();
 
       const sendEmailAction = async () => {

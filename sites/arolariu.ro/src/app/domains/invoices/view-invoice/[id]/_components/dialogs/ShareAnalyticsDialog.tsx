@@ -90,7 +90,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   }, [merchant, invoice]);
 
   const handleSendEmail = useCallback(
-    (e: React.FormEvent) => {
+    (e: React.SubmitEvent) => {
       e.preventDefault();
       toast("Email sent!", {
         description: `Analytics report sent to ${email}`,
