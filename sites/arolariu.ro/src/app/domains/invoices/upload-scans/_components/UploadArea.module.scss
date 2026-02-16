@@ -9,25 +9,16 @@
 .dropzoneEmpty {
   margin-bottom: abstracts.space(16);
   border-radius: abstracts.radius('lg');
-  border: 2px dashed abstracts.color('muted-foreground');
+  border: 2px dashed abstracts.color('border');
   padding: abstracts.space(16);
   text-align: center;
   @include abstracts.transition(all, 'moderate');
   cursor: pointer;
-  background-color: abstracts.color('muted-foreground');
+  background-color: abstracts.color('muted');
 
   &:hover {
-    border-color: abstracts.color('link');
-    background-color: abstracts.color('link');
-  }
-
-  @include abstracts.dark {
-    border-color: abstracts.color('muted-foreground');
-    background-color: abstracts.color-alpha('muted-foreground', 0.5);
-
-    &:hover {
-      background-color: abstracts.color-alpha('primary', 0.2);
-    }
+    border-color: abstracts.color('primary');
+    background-color: abstracts.color-alpha('primary', 0.05);
   }
 }
 

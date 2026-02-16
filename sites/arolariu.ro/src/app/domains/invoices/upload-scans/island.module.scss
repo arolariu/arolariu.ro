@@ -9,11 +9,7 @@
   gap: abstracts.space(3);
   border-radius: abstracts.radius('lg');
   padding: abstracts.space(3);
-  background-color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    background-color: abstracts.color-alpha('muted-foreground', 0.5);
-  }
+  background-color: abstracts.color('muted');
 }
 
 .fileTypeIconBox {
@@ -22,12 +18,8 @@
   width: abstracts.space(10);
   flex-shrink: 0;
   border-radius: abstracts.radius('lg');
-  background-color: white;
+  background-color: abstracts.color('background');
   @include abstracts.shadow('sm');
-
-  @include abstracts.dark {
-    background-color: abstracts.color('muted-foreground');
-  }
 }
 
 .fileTypeLabel {

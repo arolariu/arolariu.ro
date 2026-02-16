@@ -80,10 +80,6 @@
 .globeAlertIcon {
   @include icon-size(space(4));
   color: color('primary');
-
-  @include dark {
-    color: color('primary');
-  }
 }
 
 .qrCode {

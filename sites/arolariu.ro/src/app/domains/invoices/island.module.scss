@@ -307,7 +307,7 @@
   flex-shrink: 0;
   border-radius: abstracts.radius('lg');
   background-color: abstracts.color('primary');
-  color: abstracts.color('primary');
+  color: abstracts.color('primary-foreground');
 
   @include abstracts.dark {
     background-color: abstracts.color-alpha('primary', 0.5);
