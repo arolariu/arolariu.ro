@@ -109,19 +109,19 @@
 
 // Gradient variants
 .gradientBlue {
-  @include abstracts.decorative-gradient-pair('blue-cyan', to bottom right);
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 .gradientPurple {
-  @include abstracts.decorative-gradient-pair('purple-pink', to bottom right);
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 .gradientAmber {
-  @include abstracts.decorative-gradient-pair('amber-orange', to bottom right);
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 .gradientGreen {
-  @include abstracts.decorative-gradient-pair('green-emerald', to bottom right);
+  background: linear-gradient(to right, abstracts.color('primary'), abstracts.color('tertiary'), abstracts.color('secondary'));
 }
 
 // Stat value with gradient text
@@ -136,22 +136,22 @@
 
 .valueBlue {
   composes: value;
-  @include abstracts.decorative-gradient-pair('blue-cyan', to right, background-image);
+  background-color: abstracts.color('primary');
 }
 
 .valuePurple {
   composes: value;
-  @include abstracts.decorative-gradient-pair('purple-pink', to right, background-image);
+  background-color: abstracts.color('primary');
 }
 
 .valueAmber {
   composes: value;
-  @include abstracts.decorative-gradient-pair('amber-orange', to right, background-image);
+  background-color: abstracts.color('primary');
 }
 
 .valueGreen {
   composes: value;
-  @include abstracts.decorative-gradient-pair('green-emerald', to right, background-image);
+  background-color: abstracts.color('primary');
 }
 
 // Labels

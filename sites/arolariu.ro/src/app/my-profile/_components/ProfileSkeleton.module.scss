@@ -14,7 +14,7 @@
 // ===========================================
 .banner {
   height: 8rem;
-  background: linear-gradient(to right, color-alpha('primary', 0.2), color-alpha('primary', 0.1), transparent);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .headerBody {

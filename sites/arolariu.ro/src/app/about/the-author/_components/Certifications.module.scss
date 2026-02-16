@@ -214,7 +214,7 @@
   bottom: 0;
   left: 0;
   height: 4px;
-  background-color: color('primary');
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 // Glow effect

@@ -73,7 +73,7 @@
   text-align: center;
   font-size: font-size('4xl');
   font-weight: font-weight('bold');
-  @include gradient-text;
+  color: color('primary');
 
   @include respond-to('md') {
     font-size: font-size('6xl');
@@ -237,7 +237,7 @@
 
 .timelineIconInnerActive {
   composes: timelineIconInner;
-  background-color: color('primary');
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
   color: white;
 }
 
@@ -292,7 +292,7 @@
 
 // Gradient accent bar (top/bottom)
 .cardAccentTop {
-  @include accent-top-bar(4px, #ec4899, #a855f7, #3b82f6);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .cardAccentBottom {
@@ -300,7 +300,7 @@
   bottom: 0;
   left: 0;
   height: 4px;
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 // Card header
@@ -431,7 +431,7 @@
 .statValue {
   font-size: font-size('2xl');
   font-weight: font-weight('bold');
-  @include gradient-text-custom(#3b82f6, #a855f7, #a855f7);
+  color: color('primary');
 
   @include respond-to('md') {
     font-size: font-size('3xl');

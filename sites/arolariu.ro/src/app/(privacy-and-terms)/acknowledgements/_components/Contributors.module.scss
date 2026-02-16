@@ -10,7 +10,7 @@
   position: relative;
   width: 100%;
   padding: space(16) space(4);
-  background: linear-gradient(to bottom, transparent, rgba(168, 85, 247, 0.05), transparent);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .container {
@@ -34,7 +34,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, #06b6d4, #a855f7);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -101,19 +101,19 @@
 
 // Gradient variants for avatars
 .gradientCyanBlue {
-  background: linear-gradient(to bottom right, #06b6d4, #3b82f6);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .gradientBluePurple {
-  background: linear-gradient(to bottom right, #2563eb, #9333ea);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .gradientPurplePink {
-  background: linear-gradient(to bottom right, #a855f7, #ec4899);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .gradientAmberOrange {
-  background: linear-gradient(to bottom right, #f59e0b, #f97316);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .contributorName {

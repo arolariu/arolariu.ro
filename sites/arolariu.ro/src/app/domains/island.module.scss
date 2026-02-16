@@ -29,7 +29,7 @@
 .progressFill {
   height: 100%;
   width: space(24);
-  background-color: #4338ca; // indigo-700
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // indigo-700
 }
 
 .titleRow {
@@ -49,7 +49,7 @@
   text-align: center;
   font-size: font-size('5xl');
   font-weight: font-weight('bold');
-  background: linear-gradient(to right, #f472b6, #dc2626); // pink-400 → red-600
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary')); // pink-400 → red-600
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -134,7 +134,7 @@
   font-weight: font-weight('medium');
 
   @include dark {
-    color: #d1d5db; // gray-300
+    color: color('border'); // gray-300
   }
 }
 
@@ -149,7 +149,7 @@
   display: inline-flex;
   align-items: center;
   margin-top: space(3);
-  color: #6366f1; // indigo-500
+  color: color('primary'); // indigo-500
 }
 
 .ctaIcon {

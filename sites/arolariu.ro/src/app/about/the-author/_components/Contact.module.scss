@@ -78,7 +78,7 @@
   left: 0;
   height: 4px;
   width: 100%;
-  background: linear-gradient(to right, color('primary'), color-alpha('primary', 0.3));
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 // Card title
@@ -165,7 +165,7 @@
   @include transition(color);
 
   &:hover {
-    color: color('primary');
+    color: color('link');
   }
 }
 
@@ -180,7 +180,7 @@
   bottom: 0;
   left: 0;
   height: 2px;
-  background-color: color('primary');
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 // Footer
@@ -206,9 +206,8 @@
   position: absolute;
   inset: 0;
   opacity: 0.03;
-  background-image:
-    linear-gradient(color('foreground') 1px, transparent 1px),
-    linear-gradient(90deg, color('foreground') 1px, transparent 1px);
+  background-image: linear-gradient(color-alpha('secondary', 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, color-alpha('tertiary', 0.25) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 

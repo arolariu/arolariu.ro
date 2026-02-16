@@ -66,12 +66,6 @@ export default function Navigation(): React.JSX.Element {
               animate={isInView ? {opacity: 1, x: 0} : {}}
               transition={{delay: 0.3 + index * 0.15, duration: 0.5}}>
               <Card className={styles["card"]}>
-                {/* Gradient overlay */}
-                <div
-                  className={`${styles["cardGradient"]} ${styles[gradientClassMap[item.key]]}`}
-                  aria-hidden='true'
-                />
-
                 <CardHeader className={styles["cardHeader"]}>
                   {/* Image container */}
                   <div className={styles["imageWrapper"]}>

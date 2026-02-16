@@ -147,7 +147,7 @@
   @include transition(border-color);
 
   &:hover {
-    border-color: color('primary');
+    border-color: color('link');
   }
 }
 
@@ -268,7 +268,7 @@
 
 .badgeRequired {
   margin-left: space(2);
-  background-color: color('primary');
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .badgeOptional {
@@ -299,7 +299,7 @@
     background-color: color('input');
 
     &[data-state='checked'] {
-      background-color: color('primary');
+      background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
     }
   }
 }
@@ -325,7 +325,7 @@
 .acceptButton {
   width: 100%;
   cursor: pointer;
-  background-color: color('primary');
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 
   &:hover {
     background-color: color-alpha('primary', 0.9);

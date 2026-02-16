@@ -40,7 +40,7 @@
   margin-bottom: space(4);
   font-size: font-size('3xl');
   font-weight: font-weight('medium');
-  @include gradient-text-custom(#ec489a, #dc2626);
+  color: color('primary');
 
   @include respond-to('sm') {
     font-size: font-size('4xl');
@@ -71,13 +71,13 @@
   border-radius: radius('md');
   border: 0;
   // Decorative: intentionally hardcoded (brand CTA color)
-  background-color: #4f46e5;
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
   color: static-color('white');
   font-size: font-size('lg');
   @include transition(background-color);
 
   &:hover {
-    background-color: #4338ca;
+    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
   }
 
   &:focus {

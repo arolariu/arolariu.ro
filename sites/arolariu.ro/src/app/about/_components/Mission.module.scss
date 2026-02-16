@@ -39,7 +39,7 @@
   max-width: 36rem;
   font-size: font-size('2xl');
   font-weight: font-weight('semibold');
-  @include gradient-text-custom;
+  color: color('primary');
 
   @include respond-to('sm') {
     font-size: font-size('3xl');
@@ -110,15 +110,15 @@
 
 // Gradient variants for icons
 .iconBlue {
-  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .iconGreen {
-  background: linear-gradient(to bottom right, #22c55e, #10b981);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .iconPink {
-  background: linear-gradient(to bottom right, #ec4899, #f43f5e);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 // Card text

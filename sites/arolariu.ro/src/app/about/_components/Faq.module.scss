@@ -30,7 +30,7 @@
 .iconInner {
   padding: space(3);
   border-radius: radius('xl');
-  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .icon {
@@ -44,7 +44,7 @@
   margin-bottom: space(4);
   font-size: font-size('3xl');
   font-weight: font-weight('bold');
-  @include gradient-text;
+  color: color('primary');
 
   @include respond-to('sm') {
     font-size: font-size('4xl');

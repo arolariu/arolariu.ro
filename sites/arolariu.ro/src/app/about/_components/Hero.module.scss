@@ -12,14 +12,14 @@
   min-height: 80vh;
   width: 100%;
   padding: space(20) space(4);
-  overflow: hidden;
+  overflow: visible;
 }
 
 // Background orbs container
 .bgOrbs {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 
@@ -35,7 +35,7 @@
   left: -10rem;
   width: 20rem;
   height: 20rem;
-  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .orbPurple {
@@ -44,7 +44,7 @@
   bottom: -10rem;
   width: 24rem;
   height: 24rem;
-  background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .orbIndigo {
@@ -54,7 +54,7 @@
   transform: translate(-50%, -50%);
   width: 16rem;
   height: 16rem;
-  background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(59, 130, 246, 0.1));
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 // Grid pattern overlay
@@ -62,9 +62,8 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(rgba(100, 100, 100, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(100, 100, 100, 0.03) 1px, transparent 1px);
+  background-image: linear-gradient(color-alpha('secondary', 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, color-alpha('tertiary', 0.14) 1px, transparent 1px);
   background-size: 50px 50px;
 }
 
@@ -99,7 +98,7 @@
   font-size: font-size('5xl');
   font-weight: font-weight('bold');
   letter-spacing: letter-spacing('tight');
-  @include gradient-text;
+  color: color('primary');
 
   @include respond-to('sm') {
     font-size: font-size('6xl');

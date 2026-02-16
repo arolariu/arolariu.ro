@@ -7,7 +7,7 @@
   z-index: z('toast');
   padding: space(3);
   border-radius: radius('full');
-  background-color: color('primary');
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
   color: static-color('white');
   cursor: pointer;
   @include shadow('lg');

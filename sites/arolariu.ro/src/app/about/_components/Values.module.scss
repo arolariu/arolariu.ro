@@ -7,12 +7,6 @@
   position: relative;
   width: 100%;
   padding: space(20) space(4);
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    hsl(217 91% 60% / 0.05),
-    transparent
-  );
 }
 
 .container {
@@ -105,55 +99,55 @@
 // Icon color variants
 .iconBlue {
   composes: iconWrapper;
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: color-alpha('primary', 0.1);
 
   .icon {
-    color: #3b82f6;
+    color: color('primary');
   }
 }
 
 .iconAmber {
   composes: iconWrapper;
-  background-color: rgba(245, 158, 11, 0.1);
+  background-color: color-alpha('destructive', 0.1);
 
   .icon {
-    color: #f59e0b;
+    color: color('warning');
   }
 }
 
 .iconGreen {
   composes: iconWrapper;
-  background-color: rgba(34, 197, 94, 0.1);
+  background-color: color-alpha('success', 0.1);
 
   .icon {
-    color: #22c55e;
+    color: color('success');
   }
 }
 
 .iconPurple {
   composes: iconWrapper;
-  background-color: rgba(168, 85, 247, 0.1);
+  background-color: color-alpha('primary', 0.1);
 
   .icon {
-    color: #a855f7;
+    color: color('primary');
   }
 }
 
 .iconPink {
   composes: iconWrapper;
-  background-color: rgba(236, 72, 153, 0.1);
+  background-color: color-alpha('destructive', 0.1);
 
   .icon {
-    color: #ec4899;
+    color: color('primary');
   }
 }
 
 .iconCyan {
   composes: iconWrapper;
-  background-color: rgba(6, 182, 212, 0.1);
+  background-color: color-alpha('primary', 0.1);
 
   .icon {
-    color: #06b6d4;
+    color: color('primary');
   }
 }
 

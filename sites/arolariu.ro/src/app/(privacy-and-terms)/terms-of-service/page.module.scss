@@ -24,7 +24,7 @@
 }
 
 .pageTitle {
-  @include gradient-text;
+  color: color('primary');
   font-size: font-size('3xl');
   font-weight: font-weight('black');
 }
@@ -33,7 +33,7 @@
 // FOOTER SECTION
 // ===========================================
 .footerSection {
-  @include gradient-text;
+  color: color('primary');
   padding-top: space(8);
   font-size: font-size('3xl');
   font-weight: font-weight('black');

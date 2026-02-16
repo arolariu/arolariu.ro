@@ -34,7 +34,7 @@
   right: -5rem;
   width: 16rem;
   height: 16rem;
-  background-color: rgba(59, 130, 246, 1);
+  background-color: color-alpha('primary', 1);
 }
 
 .orbPurple {
@@ -43,7 +43,7 @@
   left: -5rem;
   width: 16rem;
   height: 16rem;
-  background-color: rgba(168, 85, 247, 1);
+  background-color: color-alpha('tertiary', 1);
 }
 
 // Content wrapper
@@ -90,7 +90,7 @@
 
 // Gradient accent bars
 .accentTop {
-  @include accent-top-bar;
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .accentBottom {
@@ -98,7 +98,7 @@
   bottom: 0;
   left: 0;
   height: 4px;
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);  // decorative bottom bar
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));  // decorative bottom bar
 }
 
 // Bio section item
@@ -137,22 +137,22 @@
 
 .iconGreen {
   composes: icon;
-  color: #22c55e;
+  color: color('success');
 }
 
 .iconPurple {
   composes: icon;
-  color: #a855f7;
+  color: color('primary');
 }
 
 .iconAmber {
   composes: icon;
-  color: #f59e0b;
+  color: color('warning');
 }
 
 .iconPink {
   composes: icon;
-  color: #ec4899;
+  color: color('primary');
 }
 
 // Bio text

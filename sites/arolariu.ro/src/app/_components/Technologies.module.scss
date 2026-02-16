@@ -6,28 +6,12 @@
 .section {
   position: relative;
   padding: space(20) 0;
-  overflow: hidden; // Prevent decorative orbs from causing horizontal scroll
+  overflow: visible;
 }
 
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    color('background'),
-    rgb(233, 213, 255), // purple-200 for light mode
-    color('background')
-  );
-  backdrop-filter: blur(2px);
-
-  @include dark {
-    background: linear-gradient(
-      to bottom,
-      color('background'),
-      rgb(23, 37, 84), // blue-950 for dark mode
-      color('background')
-    );
-  }
 }
 
 .container {
@@ -58,7 +42,7 @@
 .badge {
   font-size: font-size('base');
   border-radius: radius('xl');
-  background: linear-gradient(to right, color('gradient-from'), color('gradient-via'), color('gradient-to'));
+  background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
 }
 
 .title {
@@ -151,7 +135,7 @@
 }
 
 .decorOrbPurple {
-  @include orb(3rem, 24px, rgb(168 85 247 / 0.3)); // purple-500/30
+  @include orb(3rem, 24px, color-alpha('tertiary', 0.3));
   bottom: -1.5rem;
   left: -1.5rem;
 }
