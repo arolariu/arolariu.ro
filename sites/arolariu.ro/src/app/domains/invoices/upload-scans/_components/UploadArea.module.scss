@@ -153,21 +153,13 @@
   height: abstracts.space(12);
   width: abstracts.space(12);
   border-radius: abstracts.radius('full');
-  background-color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    background-color: abstracts.color('muted-foreground');
-  }
+  background-color: abstracts.color-alpha('primary', 0.1);
 }
 
 .compactIcon {
   height: abstracts.space(6);
   width: abstracts.space(6);
-  color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
+  color: abstracts.color('primary');
 }
 
 .compactTextBlock {

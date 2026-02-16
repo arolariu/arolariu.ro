@@ -131,7 +131,7 @@
 
 .fileIconGray {
   @include icon-size(space(5));
-  color: color('muted-foreground');
+  color: color('foreground');
 }
 
 .statusIcon {
