@@ -221,15 +221,15 @@ export interface TimelineItemProps {
  * Event data should be fetched server-side when possible.
  *
  * **Styling:**
- * Accepts an optional `className` for Tailwind CSS customization.
- * Internal styling follows the project's design system.
+ * Accepts an optional `className` for SCSS Module customization.
+ * Internal styling follows the project's design system using scoped CSS Modules.
  *
  * @example
  * ```tsx
  * <InvoiceTimeline
  *   invoiceId="inv_abc123"
  *   events={[creationEvent, analysisEvent, shareEvent]}
- *   className="mt-4"
+ *   className={styles.timelineContainer}
  * />
  * ```
  *
@@ -241,6 +241,6 @@ export interface InvoiceTimelineProps {
   invoiceId: string;
   /** Chronologically ordered array of timeline events. Should be sorted by date ascending. */
   events: TimelineEvent[];
-  /** Optional Tailwind CSS classes for container styling customization. */
+  /** Optional CSS Module classes for container styling customization. */
   className?: string;
 }

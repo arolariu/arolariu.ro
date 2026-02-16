@@ -27,7 +27,7 @@ import {
  * @property id - The unique identifier for the category (enum value or string key).
  * @property name - The display name of the category.
  * @property icon - The React node representing the category icon.
- * @property color - Tailwind CSS classes for hover states and coloring.
+ * @property color - CSS classes for hover states and coloring.
  */
 type CategoryOption = Readonly<{
   id: InvoiceCategory | string;
