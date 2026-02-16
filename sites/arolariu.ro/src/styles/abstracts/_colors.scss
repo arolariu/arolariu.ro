@@ -2,40 +2,12 @@
 /// DESIGN TOKENS — Colors
 /// ===========================================
 /// SCSS helpers for consuming CSS custom properties defined in base/_globals.scss.
-/// Colors are NOT defined here — they are referenced via CSS variables for
-/// automatic light/dark mode support.
+/// All color usage must go through semantic `color()` / `color-alpha()` tokens so
+/// light, dark, and high-contrast modes stay centralized and consistent.
 ///
 /// @group tokens-colors
 /// @author arolariu
-///
-/// @example scss - Semantic color
-///   color: color('primary');              // → hsl(var(--primary))
-///
-/// @example scss - Alpha transparency
-///   background: color-alpha('card', 0.5); // → hsl(var(--card) / 0.5)
-///
-/// @example scss - Static color
-///   color: static-color('white');         // → hsl(0, 0%, 100%)
-///
-/// @example scss - Interactive state
-///   color: interactive-color('hover-accent'); // → #4f46e5
-///
-/// EXTENDING:
-///   To add a new semantic color, add to $color-vars map AND define
-///   the CSS variable in base/_globals.scss (both :root and .dark blocks).
-///
-/// ARCHITECTURE:
-///   base/_globals.scss → defines CSS variables (:root / .dark)
-///   next-themes → toggles .dark class on <html>
-///   themes/_presets.scss / useThemePreset → sets gradient-* variables at runtime
-///   This file → SCSS helpers to reference those variables
-///
-/// @see {function} color
-/// @see {function} color-alpha
-/// @see {function} static-color
-/// @see {function} interactive-color
 /// ===========================================
-@use 'sass:color';
 @use 'sass:map';
 @use 'sass:string';
 @use 'config' as config;
@@ -44,43 +16,28 @@
 // CSS VARIABLE REFERENCES
 // ===========================================
 
-/// Semantic color variable name map — maps friendly names to CSS custom
-/// property names. Variables are set by base/_globals.scss and toggled by
-/// the `.dark` class via next-themes.
-/// @type Map
-/// @group tokens-colors
-/// @prop {String} 'background' [--background] - Page background
-/// @prop {String} 'foreground' [--foreground] - Default text color
-/// @prop {String} 'card' [--card] - Card surface color
-/// @prop {String} 'primary' [--primary] - Brand primary color
-/// @prop {String} 'secondary' [--secondary] - Brand secondary color
-/// @prop {String} 'muted' [--muted] - Muted surface color
-/// @prop {String} 'accent' [--accent] - Accent color
-/// @prop {String} 'destructive' [--destructive] - Error/danger color
-/// @prop {String} 'success' [--success] - Success state color
-/// @prop {String} 'warning' [--warning] - Warning state color
-/// @prop {String} 'info' [--info] - Informational state color
-/// @prop {String} 'border' [--border] - Default border color
-/// @prop {String} 'ring' [--ring] - Focus ring color
-/// @prop {String} 'gradient-from' [--gradient-from] - Gradient start (theme preset)
-/// @prop {String} 'gradient-via' [--gradient-via] - Gradient middle (theme preset)
-/// @prop {String} 'gradient-to' [--gradient-to] - Gradient end (theme preset)
 $color-vars: (
-  // Base colors
+  // Surface and content
   'background': '--background',
   'foreground': '--foreground',
+  'surface': '--surface',
+  'surface-elevated': '--surface-elevated',
+  'inverse-surface': '--inverse-surface',
+  'inverse-foreground': '--inverse-foreground',
   'card': '--card',
   'card-foreground': '--card-foreground',
   'popover': '--popover',
   'popover-foreground': '--popover-foreground',
 
-  // Brand colors
+  // Brand and intent
   'primary': '--primary',
   'primary-foreground': '--primary-foreground',
   'secondary': '--secondary',
   'secondary-foreground': '--secondary-foreground',
+  'tertiary': '--tertiary',
+  'tertiary-foreground': '--tertiary-foreground',
 
-  // Semantic colors
+  // Semantic support
   'muted': '--muted',
   'muted-foreground': '--muted-foreground',
   'accent': '--accent',
@@ -94,29 +51,19 @@ $color-vars: (
   'info': '--info',
   'info-foreground': '--info-foreground',
 
-  // UI colors
+  // Borders and focus
   'border': '--border',
+  'border-strong': '--border-strong',
   'input': '--input',
   'ring': '--ring',
 
-  // Gradient colors (set by themes/_presets.scss / useThemePreset)
-  'gradient-from': '--gradient-from',
-  'gradient-via': '--gradient-via',
-  'gradient-to': '--gradient-to',
+  // Link and utility aliases
+  'link': '--link',
+  'link-foreground': '--link-foreground',
   'accent-primary': '--accent-primary',
   'footer-bg': '--footer-bg',
 );
 
-// ===========================================
-// COLOR HELPER FUNCTIONS
-// ===========================================
-
-/// Build a prefixed CSS variable name from a canonical `--token` variable.
-/// Falls back to the canonical name when no prefix is configured.
-/// @param {String} $raw-css-var - Canonical variable name (e.g. `--primary`)
-/// @return {String} Prefixed or canonical CSS variable name
-/// @group tokens-colors
-/// @access private
 @function _prefixed-css-var($raw-css-var) {
   @if config.$css-prefix == '' {
     @return $raw-css-var;
@@ -125,17 +72,6 @@ $color-vars: (
   @return '--#{config.$css-prefix}-#{string.slice($raw-css-var, 3)}';
 }
 
-/// Get a semantic color as an HSL CSS variable reference.
-/// Returns a fully-formed `hsl(var(--name))` expression that
-/// responds automatically to light/dark mode.
-/// @param {String} $name - Semantic color name from $color-vars
-/// @return {Color} hsl(var(--name)) expression
-/// @throws Unknown color: #{$name}
-/// @group tokens-colors
-/// @example scss
-///   color: color('primary');
-///   background-color: color('card');
-///   border-color: color('border');
 @function color($name) {
   @if map.has-key($color-vars, $name) {
     $var-name: map.get($color-vars, $name);
@@ -145,37 +81,19 @@ $color-vars: (
   @error "Unknown color: #{$name}. Available: #{map.keys($color-vars)}";
 }
 
-/// Get a semantic color with alpha transparency.
-/// Uses the HSL space-separated syntax with `/` alpha notation.
-/// @param {String} $name - Semantic color name from $color-vars
-/// @param {Number} $alpha - Opacity value between 0 and 1
-/// @return {Color} hsl(var(--name) / alpha) expression
-/// @throws Unknown color: #{$name}
-/// @group tokens-colors
-/// @example scss
-///   background: color-alpha('primary', 0.5);
-///   border-color: color-alpha('border', 0.3);
 @function color-alpha($name, $alpha) {
   @if map.has-key($color-vars, $name) {
     $var-name: map.get($color-vars, $name);
     $prefixed-var: _prefixed-css-var($var-name);
     @return hsl(var(#{$prefixed-var}, var(#{$var-name})) / #{$alpha});
   }
-  @error "Unknown color: #{$name}";
+  @error "Unknown color: #{$name}. Available: #{map.keys($color-vars)}";
 }
 
 // ===========================================
 // STATIC COLOR PALETTE
 // ===========================================
 
-/// Static colors for non-themed elements (overlays, masks, etc.).
-/// These do NOT change with light/dark mode.
-/// @type Map
-/// @group tokens-colors
-/// @prop {Color} 'white' [hsl(0, 0%, 100%)] - Pure white
-/// @prop {Color} 'black' [hsl(0, 0%, 0%)] - Pure black
-/// @prop {Color} 'transparent' [transparent] - Fully transparent
-/// @prop {Color} 'current' [currentColor] - Inherits parent text color
 $static-colors: (
   'white': hsl(0, 0%, 100%),
   'black': hsl(0, 0%, 0%),
@@ -183,14 +101,6 @@ $static-colors: (
   'current': currentColor,
 );
 
-/// Get a static (non-themed) color by name.
-/// @param {String} $name - Static color name
-/// @return {Color} The static color value
-/// @throws Unknown static color: #{$name}
-/// @group tokens-colors
-/// @example scss
-///   color: static-color('white');
-///   background: static-color('transparent');
 @function static-color($name) {
   @if map.has-key($static-colors, $name) {
     @return map.get($static-colors, $name);
@@ -198,145 +108,3 @@ $static-colors: (
   @error "Unknown static color: #{$name}";
 }
 
-// ===========================================
-// DECORATIVE COLOR PALETTE
-// ===========================================
-
-/// Decorative colors for visual-only accents (gradients, icon badges, glow
-/// effects). Keep semantic UI surfaces/text on `color()` / `color-alpha()`.
-/// @type Map
-/// @group tokens-colors
-$decorative-colors: (
-  'black': #000000,
-  'white': #ffffff,
-  'gray-50': #f9fafb,
-  'gray-100': #f3f4f6,
-  'gray-200': #e5e7eb,
-  'gray-300': #d1d5db,
-  'gray-400': #9ca3af,
-  'gray-500': #6b7280,
-  'gray-600': #4b5563,
-  'gray-700': #374151,
-  'gray-800': #1f2937,
-  'gray-900': #111827,
-  'slate-500': #64748b,
-  'zinc-500': #71717a,
-  'blue-50': #eff6ff,
-  'blue-100': #dbeafe,
-  'blue-400': #60a5fa,
-  'blue-500': #3b82f6,
-  'blue-600': #2563eb,
-  'blue-900': #1e3a8a,
-  'cyan-500': #06b6d4,
-  'teal-500': #14b8a6,
-  'green-100': #dcfce7,
-  'green-300': #86efac,
-  'green-400': #4ade80,
-  'green-500': #22c55e,
-  'emerald-500': #10b981,
-  'green-600': #16a34a,
-  'green-700': #15803d,
-  'green-900': #14532d,
-  'indigo-100': #eef2ff,
-  'indigo-200': #c7d2fe,
-  'indigo-300': #a5b4fc,
-  'indigo-400': #818cf8,
-  'indigo-500': #6366f1,
-  'indigo-600': #4f46e5,
-  'indigo-800': #3730a3,
-  'indigo-900': #312e81,
-  'purple-50': #faf5ff,
-  'purple-100': #f3e8ff,
-  'purple-200': #e9d5ff,
-  'purple-300': #d8b4fe,
-  'purple-400': #c084fc,
-  'purple-500': #a855f7,
-  'purple-600': #9333ea,
-  'purple-700': #7e22ce,
-  'purple-800': #6b21a8,
-  'purple-900': #581c87,
-  'violet-500': #8b5cf6,
-  'pink-500': #ec4899,
-  'rose-500': #f43f5e,
-  'red-500': #ef4444,
-  'amber-500': #f59e0b,
-  'orange-500': #f97316,
-  'yellow-500': #eab308,
-) !default;
-
-/// Get a decorative color token by name.
-/// @param {String} $name - Decorative color token key
-/// @return {Color} The color value
-/// @throws Unknown decorative color: #{$name}
-/// @group tokens-colors
-@function decorative-color($name) {
-  @if map.has-key($decorative-colors, $name) {
-    @return map.get($decorative-colors, $name);
-  }
-  @error "Unknown decorative color: #{$name}. Available: #{map.keys($decorative-colors)}";
-}
-
-/// Get a decorative color with alpha transparency.
-/// @param {String} $name - Decorative color token key
-/// @param {Number} $alpha - Opacity between 0 and 1
-/// @return {Color} Color value with alpha
-/// @throws Unknown decorative color: #{$name}
-/// @group tokens-colors
-@function decorative-color-alpha($name, $alpha) {
-  @return color.change(decorative-color($name), $alpha: $alpha);
-}
-
-// ===========================================
-// INTERACTIVE STATE COLORS
-// ===========================================
-
-/// Static colors for hover, focus, and active states in navigation
-/// and UI chrome. These are STATIC (not theme-responsive) — they
-/// represent specific brand accent values used alongside the CSS
-/// variable theme system.
-///
-/// For theme-responsive colors, use `color()` / `color-alpha()` instead.
-///
-/// @type Map
-/// @group tokens-colors
-/// @prop {Color} 'hover-accent' [#4f46e5] - indigo-600 — link hover
-/// @prop {Color} 'hover-accent-light' [#fde047] - yellow-300 — brand hover on dark bg
-/// @prop {Color} 'hover-accent-dark' [#eab308] - yellow-500 — brand hover (footer)
-/// @prop {Color} 'hover-bg-subtle' [#f9fafb] - gray-50 — subtle hover bg
-/// @prop {Color} 'hover-bg-light' [#f3f4f6] - gray-100 — light hover bg
-/// @prop {Color} 'text-strong' [#111827] - gray-900
-/// @prop {Color} 'text-medium' [#374151] - gray-700
-/// @prop {Color} 'text-subtle' [#6b7280] - gray-500
-/// @prop {Color} 'border-subtle' [#f3f4f6] - gray-100
-/// @prop {Color} 'teal-accent' [#5eead4] - teal-400 (footer links)
-/// @prop {Color} 'slate-light' [#cbd5e1] - slate-300 (build info)
-/// @prop {Color} 'ring-brand' [#6366f1] - indigo-500 (logo ring)
-$interactive-colors: (
-  'hover-accent': #4f46e5,       // indigo-600 — link hover
-  'hover-accent-light': #fde047, // yellow-300 — brand hover on dark bg
-  'hover-accent-dark': #eab308,  // yellow-500 — brand hover (footer)
-  'hover-bg-subtle': #f9fafb,    // gray-50 — subtle hover bg
-  'hover-bg-light': #f3f4f6,     // gray-100 — light hover bg
-  'text-strong': #111827,        // gray-900
-  'text-medium': #374151,        // gray-700
-  'text-subtle': #6b7280,        // gray-500
-  'border-subtle': #f3f4f6,      // gray-100
-  'teal-accent': #5eead4,        // teal-accent-400 (footer links)
-  'slate-light': #cbd5e1,        // slate-300 (build info)
-  'ring-brand': #6366f1,         // indigo-500 (logo ring)
-) !default;
-
-/// Get an interactive state color by name.
-/// @param {String} $name - Interactive color name
-/// @return {Color} The hex color value
-/// @throws Unknown interactive color: #{$name}
-/// @group tokens-colors
-/// @example scss
-///   &:hover { color: interactive-color('hover-accent'); }
-///   border-color: interactive-color('border-subtle');
-@function interactive-color($name) {
-  @if map.has-key($interactive-colors, $name) {
-    @return map.get($interactive-colors, $name);
-  }
-  @error "Unknown interactive color: #{$name}. Available: #{map.keys($interactive-colors)}";
-}

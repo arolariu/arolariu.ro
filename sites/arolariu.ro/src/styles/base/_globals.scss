@@ -1,10 +1,8 @@
 /// ===========================================
 /// GLOBAL CSS CUSTOM PROPERTIES
 /// ===========================================
-/// Root-level CSS custom properties for theming.
-/// Light/dark mode is toggled by next-themes (adds .dark class).
-/// Theme presets override these via [data-theme-preset] selectors
-/// defined in themes/_presets.scss.
+/// Canonical semantic color contract for light/dark/high-contrast modes.
+/// Module SCSS must consume tokens via `color()` / `color-alpha()` only.
 ///
 /// @group base
 /// @author arolariu
@@ -13,16 +11,27 @@
 @use '../abstracts/config' as config;
 
 $prefixed-color-vars: (
+  // Surfaces and content
   'background',
   'foreground',
+  'surface',
+  'surface-elevated',
+  'inverse-surface',
+  'inverse-foreground',
   'card',
   'card-foreground',
   'popover',
   'popover-foreground',
+
+  // Brand and intent
   'primary',
   'primary-foreground',
   'secondary',
   'secondary-foreground',
+  'tertiary',
+  'tertiary-foreground',
+
+  // Semantic support
   'muted',
   'muted-foreground',
   'accent',
@@ -35,12 +44,16 @@ $prefixed-color-vars: (
   'warning-foreground',
   'info',
   'info-foreground',
+
+  // Borders and focus
   'border',
+  'border-strong',
   'input',
   'ring',
-  'gradient-from',
-  'gradient-via',
-  'gradient-to',
+
+  // Utility aliases
+  'link',
+  'link-foreground',
   'accent-primary',
   'footer-bg',
 );
@@ -53,87 +66,103 @@ $prefixed-color-vars: (
   }
 }
 
-// ----- Light mode variables -----
 :root {
+  // Surfaces and content
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
+  --surface: 0 0% 100%;
+  --surface-elevated: 210 40% 98%;
+  --inverse-surface: 222.2 47.4% 11.2%;
+  --inverse-foreground: 210 40% 98%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
+
+  // Brand and intent
   --primary: 221.2 83.2% 53.3%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 262 94% 52%;
+  --secondary-foreground: 0 0% 100%;
+  --tertiary: 330 92% 46%;
+  --tertiary-foreground: 0 0% 100%;
+
+  // Semantic support
   --muted: 210 40% 96.1%;
   --muted-foreground: 215.4 16.3% 46.9%;
   --accent: 210 40% 96.1%;
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --success: 142 71% 35%;             // dark green — 5.8:1 on white
+  --success: 142 71% 35%;
   --success-foreground: 0 0% 100%;
-  --warning: 38 92% 40%;              // dark amber — 4.6:1 on white
+  --warning: 38 92% 40%;
   --warning-foreground: 0 0% 100%;
-  --info: 199 89% 38%;                // dark sky — 5.0:1 on white
+  --info: 199 89% 38%;
   --info-foreground: 0 0% 100%;
+
+  // Borders and focus
   --border: 214.3 31.8% 91.4%;
+  --border-strong: 214.3 31.8% 82%;
   --input: 214.3 31.8% 91.4%;
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.5rem;
-  --footer: 252 100% 30%;
 
-  // Gradient Theme Variables — user-customisable via my-profile settings
-  --gradient-from: 187 94% 43%;  // cyan-500: #06b6d4
-  --gradient-via: 262 83% 58%;   // purple-500: #8b5cf6
-  --gradient-to: 330 81% 60%;    // pink-500: #ec4899
-
-  // Primary accent colour for text/icons — derived from gradient-from
-  --accent-primary: var(--gradient-from);
-  // Footer background — darker version of gradient-via
-  --footer-bg: 262 83% 35%;  // purple-700 equivalent
+  // Utility aliases
+  --link: var(--tertiary);
+  --link-foreground: var(--tertiary);
+  --accent-primary: var(--tertiary);
+  --footer-bg: var(--primary);
 
   @include emit-prefixed-color-vars;
 }
 
-// ----- Dark mode variables -----
 .dark {
+  // Surfaces and content
   --background: 0 0% 0%;
   --foreground: 0 0% 100%;
+  --surface: 0 0% 4%;
+  --surface-elevated: 0 0% 8%;
+  --inverse-surface: 210 40% 98%;
+  --inverse-foreground: 222.2 47.4% 11.2%;
   --card: 0 0% 5%;
   --card-foreground: 0 0% 100%;
   --popover: 0 0% 5%;
   --popover-foreground: 0 0% 100%;
-  --primary: 214 100% 50%;
+
+  // Brand and intent
+  --primary: 214 100% 47%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 10%;
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 268 96% 80%;
+  --secondary-foreground: 0 0% 0%;
+  --tertiary: 336 94% 76%;
+  --tertiary-foreground: 0 0% 0%;
+
+  // Semantic support
   --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 75%;       // Raised from 70% for WCAG AA (4.8:1 on black)
+  --muted-foreground: 0 0% 75%;
   --accent: 214 100% 50%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 100%;
-  --success: 142 71% 55%;             // lighter green — 5.2:1 on black
+  --success: 142 71% 55%;
   --success-foreground: 0 0% 0%;
-  --warning: 38 92% 55%;              // lighter amber — 4.7:1 on black
+  --warning: 38 92% 55%;
   --warning-foreground: 0 0% 0%;
-  --info: 199 89% 55%;                // lighter sky — 4.5:1 on black
+  --info: 199 89% 55%;
   --info-foreground: 0 0% 0%;
-  --border: 0 0% 25%;                 // Raised from 20% for better card border visibility
+
+  // Borders and focus
+  --border: 0 0% 25%;
+  --border-strong: 0 0% 35%;
   --input: 0 0% 25%;
-  --ring: 214 100% 50%;
-  --footer: 252 100% 30%;
+  --ring: 214 100% 47%;
 
-  // Gradient Theme Variables — same as light mode, user preferences override
-  --gradient-from: 187 94% 43%;  // cyan-500: #06b6d4
-  --gradient-via: 262 83% 58%;   // purple-500: #8b5cf6
-  --gradient-to: 330 81% 60%;    // pink-500: #ec4899
-
-  // Primary accent colour for text/icons — derived from gradient-from
-  --accent-primary: var(--gradient-from);
-  // Footer background — darker version of gradient-via
-  --footer-bg: 262 83% 35%;  // purple-700 equivalent
+  // Utility aliases
+  --link: var(--secondary);
+  --link-foreground: var(--secondary);
+  --accent-primary: var(--secondary);
+  --footer-bg: var(--primary);
 
   @include emit-prefixed-color-vars;
 }
@@ -141,13 +170,23 @@ $prefixed-color-vars: (
 @if config.$enable-high-contrast {
   @media (prefers-contrast: more), (forced-colors: active) {
     :root {
+      --foreground: 0 0% 0%;
+      --inverse-foreground: 0 0% 100%;
       --border: 0 0% 35%;
-      --ring: 221.2 100% 45%;
+      --border-strong: 0 0% 20%;
+      --ring: 221.2 100% 40%;
+      --link: var(--tertiary);
+      --link-foreground: var(--tertiary);
     }
 
     .dark {
+      --foreground: 0 0% 100%;
+      --inverse-foreground: 0 0% 0%;
       --border: 0 0% 65%;
-      --ring: 214 100% 70%;
+      --border-strong: 0 0% 82%;
+      --ring: 214 100% 72%;
+      --link: var(--secondary);
+      --link-foreground: var(--secondary);
     }
   }
 }

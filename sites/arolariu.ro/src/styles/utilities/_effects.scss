@@ -14,6 +14,8 @@
 /// @see base/_globals.scss — `--accent-primary`, `--primary` CSS variables
 /// ===========================================
 
+@use '../abstracts' as *;
+
 // Underline accent (theme-aware — uses primary)
 .blue-underline {
   position: relative;
@@ -25,7 +27,7 @@
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)) 70%, hsl(var(--primary) / 0.3) 90%, hsl(var(--primary) / 0) 100%);
+    background: linear-gradient(to right, color('primary'), color('tertiary'), color('secondary'));
     border-radius: 2px;
   }
 }

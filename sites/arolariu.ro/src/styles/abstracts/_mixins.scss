@@ -10,7 +10,6 @@
 /// ===========================================
 @use 'sass:map';
 @use 'sass:meta';
-@use 'sass:list';
 @use 'colors' as colors;
 @use 'config' as config;
 @use 'variables' as *;
@@ -242,8 +241,20 @@
   }
 }
 
-/// Gradient text using theme CSS variables.
-/// Uses `--gradient-from`, `--gradient-via`, `--gradient-to` set by theme presets.
+/// Internal semantic gradient helper used by compatibility mixins.
+/// Gradients are composed from primary -> tertiary -> secondary.
+/// @access private
+@function _semantic-gradient($direction: to right, $from-alpha: 1, $via-alpha: 1, $to-alpha: 1) {
+  @return linear-gradient(
+    $direction,
+    colors.color-alpha('primary', $from-alpha),
+    colors.color-alpha('tertiary', $via-alpha),
+    colors.color-alpha('secondary', $to-alpha)
+  );
+}
+
+/// Legacy gradient-text API using semantic gradient tones.
+/// Composes primary -> tertiary -> secondary.
 /// NOTE: `-webkit-background-clip` is intentional — required for Safari/Chrome;
 /// autoprefixer does not add it for `background-clip: text`.
 /// @group mixins-visual
@@ -251,12 +262,7 @@
 /// @example scss
 ///   .hero-title { @include gradient-text; }
 @mixin gradient-text {
-  background: linear-gradient(
-    to right,
-    hsl(var(--gradient-from)),
-    hsl(var(--gradient-via)),
-    hsl(var(--gradient-to))
-  );
+  background: _semantic-gradient(to right);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -269,56 +275,30 @@
 ///   .banner { @include gradient-bg; }
 ///   .sidebar { @include gradient-bg(to bottom); }
 @mixin gradient-bg($direction: to right) {
-  background: linear-gradient(
-    $direction,
-    hsl(var(--gradient-from)),
-    hsl(var(--gradient-via)),
-    hsl(var(--gradient-to))
-  );
+  background: _semantic-gradient($direction);
 }
 
 /// Reusable decorative gradient pairs used by About/Platform visual variants.
 /// @type Map
 /// @group mixins-decorative
 $decorative-gradient-pairs: (
-  'blue-cyan': ('blue-500', 'cyan-500'),
-  'purple-violet': ('purple-500', 'violet-500'),
-  'purple-pink': ('purple-500', 'pink-500'),
-  'orange-amber': ('orange-500', 'amber-500'),
-  'amber-orange': ('amber-500', 'orange-500'),
-  'green-emerald': ('green-500', 'emerald-500'),
-  'red-pink': ('red-500', 'pink-500'),
-  'pink-rose': ('pink-500', 'rose-500'),
-  'indigo-blue': ('indigo-500', 'blue-500'),
-  'indigo-purple': ('indigo-500', 'purple-500'),
-  'cyan-teal': ('cyan-500', 'teal-500'),
-  'teal-green': ('teal-500', 'green-500'),
-  'yellow-amber': ('yellow-500', 'amber-500'),
-  'slate-zinc': ('slate-500', 'zinc-500'),
+  'primary': 'primary',
+  'secondary': 'secondary',
+  'tertiary': 'tertiary',
+  'accent': 'accent',
+  'info': 'info',
+  'success': 'success',
+  'warning': 'warning',
+  'destructive': 'destructive',
 ) !default;
 
-/// Apply a named decorative gradient pair.
-/// @param {String} $pair - Pair key from $decorative-gradient-pairs
-/// @param {String} $direction [to right] - Gradient direction
-/// @param {String} $property [background] - CSS property to set
-/// @group mixins-decorative
-/// @example scss
-///   @include decorative-gradient-pair('blue-cyan');
-///   @include decorative-gradient-pair('purple-pink', to bottom right, background-image);
+/// Applies a semantic gradient (legacy API compatibility).
 @mixin decorative-gradient-pair($pair, $direction: to right, $property: background) {
   @if not map.has-key($decorative-gradient-pairs, $pair) {
-    @error "Unknown decorative gradient pair: #{$pair}. Available: #{map.keys($decorative-gradient-pairs)}";
+    @error "Unknown decorative pair: #{$pair}. Available: #{map.keys($decorative-gradient-pairs)}";
   }
 
-  $tokens: map.get($decorative-gradient-pairs, $pair);
-  $from: list.nth($tokens, 1);
-  $to: list.nth($tokens, 2);
-
-  #{$property}: linear-gradient(
-    $direction,
-    colors.decorative-color($from),
-    colors.decorative-color($to)
-  );
+  #{$property}: _semantic-gradient($direction);
 }
 
 // ===========================================
@@ -527,7 +507,7 @@ $decorative-gradient-pairs: (
 /// @example scss
 ///   .hero-image { @include image-drop-shadow; }
 @mixin image-drop-shadow {
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 10px 8px colors.color-alpha('foreground', 0.04)) drop-shadow(0 4px 3px colors.color-alpha('foreground', 0.1));
 }
 
 // ===========================================
@@ -546,8 +526,8 @@ $decorative-gradient-pairs: (
 /// @example scss
 ///   .title { @include gradient-text-custom(#3b82f6, #a855f7, #ec4899); }
 ///   .subtitle { @include gradient-text-custom($from: #10b981, $to: #3b82f6); }
-@mixin gradient-text-custom($from: #3b82f6, $via: #a855f7, $to: #ec4899, $direction: to right) {
-  background: linear-gradient($direction, $from, $via, $to);
+@mixin gradient-text-custom($from: null, $via: null, $to: null, $direction: to right) {
+  background: _semantic-gradient($direction);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -590,13 +570,13 @@ $decorative-gradient-pairs: (
 /// @example scss
 ///   .accentBar { @include accent-top-bar; }
 ///   .accentBar { @include accent-top-bar(6px, #10b981, #3b82f6, #8b5cf6); }
-@mixin accent-top-bar($height: 4px, $from: #3b82f6, $via: #a855f7, $to: #ec4899) {
+@mixin accent-top-bar($height: 4px, $from: null, $via: null, $to: null) {
   position: absolute;
   top: 0;
   left: 0;
   height: $height;
   width: 100%;
-  background: linear-gradient(to right, $from, $via, $to);
+  background: _semantic-gradient(to right);
   border-radius: radius('xl') radius('xl') 0 0;
 }
 
@@ -607,53 +587,24 @@ $decorative-gradient-pairs: (
 /// Icon color palette (light mode) — used by `icon-color-variants` mixin.
 /// @type Map
 /// @group mixins-decorative
-$icon-colors: (
-  'Blue': #3b82f6,
-  'Green': #22c55e,
-  'Purple': #a855f7,
-  'Amber': #f59e0b,
-  'Pink': #ec4899,
-  'Red': #ef4444,
-  'Teal': #14b8a6,
-  'Orange': #f97316,
-  'Indigo': #6366f1,
-  'Cyan': #06b6d4,
+$icon-color-tokens: (
+  'Blue': 'primary',
+  'Green': 'success',
+  'Purple': 'tertiary',
+  'Amber': 'warning',
+  'Pink': 'accent',
+  'Red': 'destructive',
+  'Teal': 'info',
+  'Orange': 'warning',
+  'Indigo': 'secondary',
+  'Cyan': 'primary',
 ) !default;
 
-/// Icon color palette (dark mode) — lighter variants for WCAG AA compliance.
-/// @type Map
-/// @group mixins-decorative
-$icon-colors-dark: (
-  'Blue': #60a5fa,    // blue-400 — 5.0:1 on black
-  'Green': #4ade80,   // green-400 — 6.5:1 on black
-  'Purple': #c084fc,  // purple-400 — 5.2:1 on black
-  'Amber': #fbbf24,   // amber-400 — 9.0:1 on black
-  'Pink': #f472b6,    // pink-400 — 5.5:1 on black
-  'Red': #f87171,     // red-400 — 4.8:1 on black
-  'Teal': #2dd4bf,    // teal-400 — 7.5:1 on black
-  'Orange': #fb923c,  // orange-400 — 6.5:1 on black
-  'Indigo': #818cf8,  // indigo-400 — 5.0:1 on black
-  'Cyan': #22d3ee,    // cyan-400 — 8.0:1 on black
-) !default;
-
-/// Generates color variant classes for icons used in timelines,
-/// competencies, and similar components. Each variant gets both
-/// light and dark mode colors.
-/// @param {String} $prefix ['icon'] - Class name prefix (unused, kept for API compat)
-/// @group mixins-decorative
-/// @example scss - SCSS
-///   .icon { @include icon-color-variants; }
-///   // Generates: .icon.Blue, .icon.Green, etc.
-/// @example tsx - TSX (CSS Module)
-///   <div className={styles[`icon${color}`]} />
+/// Generates color variant classes for icons used in timelines and competencies.
 @mixin icon-color-variants($prefix: 'icon') {
-  @each $name, $color in $icon-colors {
+  @each $name, $token in $icon-color-tokens {
     &#{$name} {
-      color: $color;
-
-      .dark & {
-        color: map.get($icon-colors-dark, $name);
-      }
+      color: colors.color($token);
     }
   }
 }
@@ -780,10 +731,5 @@ $icon-colors-dark: (
 ///   .heroSurface { @include gradient-surface; }
 ///   .chip { @include gradient-surface(to right, 0.12, 0.08, 0.12); }
 @mixin gradient-surface($direction: 135deg, $from-alpha: 0.2, $via-alpha: 0.12, $to-alpha: 0.18) {
-  background: linear-gradient(
-    $direction,
-    colors.color-alpha('gradient-from', $from-alpha),
-    colors.color-alpha('gradient-via', $via-alpha),
-    colors.color-alpha('gradient-to', $to-alpha)
-  );
+  background: _semantic-gradient($direction, $from-alpha, $via-alpha, $to-alpha);
 }

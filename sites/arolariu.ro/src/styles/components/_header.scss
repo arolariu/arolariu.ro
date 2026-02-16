@@ -25,6 +25,9 @@
 @use '../abstracts' as *;
 
 .header {
+  position: relative;
+  z-index: z('sticky');
+
   @if $enable-print-styles {
     @media print {
       display: none;
@@ -51,7 +54,7 @@
 
   @include respond-to('lg') {
     position: relative;
-    z-index: auto;
+    z-index: z('sticky');
   }
 }
 
@@ -70,14 +73,14 @@
   @include transition(color);
 
   &:hover {
-    color: interactive-color('hover-accent-light');
+    color: color('link');
   }
 }
 
 .header__logo {
   display: none;
   border-radius: 9999px;
-  box-shadow: 0 0 0 2px interactive-color('ring-brand');
+  box-shadow: 0 0 0 2px color('ring');
 
   @include respond-to('lg') {
     display: block;
@@ -90,7 +93,7 @@
   color: hsl(var(--foreground)); // Ensure black/white text, not link color
 
   &:hover {
-    color: interactive-color('hover-accent-light');
+    color: color('link');
   }
 }
 

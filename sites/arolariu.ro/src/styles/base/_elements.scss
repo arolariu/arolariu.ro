@@ -32,6 +32,11 @@ body {
   line-height: line-height('normal');
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
+  overflow-x: clip;
+
+  @supports not (overflow: clip) {
+    overflow-x: hidden;
+  }
 }
 
 // ===========================================
@@ -87,10 +92,11 @@ p {
 // classes (global components, CSS Modules) automatically win. This prevents the
 // global link color from overriding Button asChild text colors.
 :where(a) {
-  color: hsl(var(--primary));
+  color: hsl(var(--link));
   @include transition((color, opacity));
 
   &:hover {
+    color: hsl(var(--secondary));
     opacity: 0.8;
   }
 }
