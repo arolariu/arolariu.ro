@@ -11,42 +11,37 @@
   justify-content: center;
   padding-block: space(8);
 
-  & > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 .spinnerWrapper {
   border-radius: radius('full');
   padding: space(4);
-  @include gradient-bg(); // red-100
+  @include gradient-bg();
 
   @include dark {
-    background-color: color-alpha('destructive', 0.3); // red-900/30
+    background-color: color-alpha('destructive', 0.3);
   }
 }
 
 .deletingTitle {
   font-weight: font-weight('medium');
-  color: color('destructive'); // red-600
+  color: color('destructive');
 
   @include dark {
-    color: color('destructive'); // red-400
+    color: color('destructive');
   }
 }
 
 .deletingDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 // ===========================================
 // CONFIRM STATE
 // ===========================================
 .confirmBody {
-  & > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 // ===========================================
@@ -68,10 +63,10 @@
 .summaryIconBox {
   border-radius: radius('lg');
   padding: space(2);
-  @include gradient-bg(); // red-100
+  @include gradient-bg();
 
   @include dark {
-    background-color: color-alpha('destructive', 0.3); // red-900/30
+    background-color: color-alpha('destructive', 0.3);
   }
 }
 
@@ -102,9 +97,7 @@
 // IMPACT LIST
 // ===========================================
 .impactList {
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 
   font-size: font-size('sm');
 }
@@ -119,23 +112,19 @@
 // CONFIRMATION
 // ===========================================
 .confirmSection {
-  & > * + * {
-    margin-top: space(3);
-  }
+  @include spaced-children(space(3));
 }
 
 .confirmField {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .confirmHighlight {
   font-weight: font-weight('semibold');
-  color: color('destructive'); // red-600
+  color: color('destructive');
 
   @include dark {
-    color: color('destructive'); // red-400
+    color: color('destructive');
   }
 }
 
@@ -152,39 +141,32 @@
 }
 
 .checkboxContent {
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 }
 
 .checkboxDescription {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 // ===========================================
 // ICON STYLES
 // ===========================================
 .titleIcon {
-  width: space(5);
-  height: space(5);
+  @include icon-size(space(5));
 }
 
 .spinnerIcon {
-  width: 2.5rem;
-  height: 2.5rem;
-  color: color('destructive'); // Decorative: intentionally hardcoded (red-500)
+  @include icon-size(2.5rem);
+  color: color('destructive');
 }
 
 .summaryIcon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: color('destructive'); // Decorative: intentionally hardcoded (red-500)
+  @include icon-size(1.5rem);
+  color: color('destructive');
 }
 
 .impactIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
 }
 
 .impactIntro {
@@ -192,14 +174,12 @@
 }
 
 .buttonIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-right: space(2);
 }
 
 .buttonSpinnerIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-right: space(2);
   animation: spin 1s linear infinite;
 }

@@ -83,8 +83,7 @@
 }
 
 .stepDescription {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  @include text-muted;
 }
 
 .stepCheckIcon {
@@ -115,8 +114,7 @@
 }
 
 .scansPreviewSize {
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  @include text-muted;
 }
 
 .scansPreviewGrid {
@@ -181,8 +179,7 @@
 
 .modeOptionDescription {
   margin-top: space(1);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  @include text-muted('sm');
 }
 
 // ===========================================
@@ -273,8 +270,7 @@
 
 .creatingDescription {
   margin-top: space(1);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  @include text-muted('sm');
 }
 
 .progressSection {
@@ -284,16 +280,13 @@
 .progressLabel {
   margin-top: space(2);
   text-align: center;
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  @include text-muted;
 }
 
 .stepsSection {
   margin-top: space(6);
 
-  & > * + * {
-    margin-top: space(3);
-  }
+  @include spaced-children(space(3));
 }
 
 // ===========================================
@@ -328,8 +321,7 @@
 
 .completeDescription {
   margin-top: space(1);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  @include text-muted('sm');
 }
 
 .completeNextSteps {
@@ -354,25 +346,21 @@
 // ICON STYLES
 // ===========================================
 .dialogTitleIcon {
-  width: space(5);
-  height: space(5);
-  color: color('primary'); // Decorative: intentionally hardcoded (purple-500)
+  @include icon-size(space(5));
+  color: color('primary');
 }
 
 .modePurpleIcon {
-  width: space(4);
-  height: space(4);
-  color: color('primary'); // Decorative: intentionally hardcoded (purple-500)
+  @include icon-size(space(4));
+  color: color('primary');
 }
 
 .modeBlueIcon {
-  width: space(4);
-  height: space(4);
-  color: color('primary'); // Decorative: intentionally hardcoded (blue-500)
+  @include icon-size(space(4));
+  color: color('primary');
 }
 
 .arrowRightIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-left: space(2);
 }

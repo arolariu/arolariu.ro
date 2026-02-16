@@ -1,6 +1,3 @@
-// ===========================================
-// INVOICE DOMAIN ISLAND STYLES
-// ===========================================
 @use '../../../styles/abstracts' as abstracts;
 
 // ===========================================
@@ -59,7 +56,7 @@
   font-size: abstracts.font-size('4xl');
   font-weight: abstracts.font-weight('bold');
   letter-spacing: -0.025em;
-  color: abstracts.color('muted-foreground'); // gray-900
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.respond-to('sm') {
     font-size: abstracts.font-size('5xl');
@@ -85,14 +82,14 @@
   margin-bottom: abstracts.space(8);
   max-width: 42rem;
   font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground'); // gray-600
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.respond-to('lg') {
     font-size: abstracts.font-size('xl');
   }
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-300
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -138,7 +135,7 @@
   }
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('muted-foreground', 0.5); // gray-900/50
+    background-color: abstracts.color-alpha('muted-foreground', 0.5);
   }
 }
 
@@ -156,7 +153,7 @@
   margin-bottom: abstracts.space(4);
   font-size: abstracts.font-size('3xl');
   font-weight: abstracts.font-weight('bold');
-  color: abstracts.color('muted-foreground'); // gray-900
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.respond-to('sm') {
     font-size: abstracts.font-size('4xl');
@@ -171,10 +168,10 @@
   margin-inline: auto;
   max-width: 42rem;
   font-size: abstracts.font-size('lg');
-  color: abstracts.color('muted-foreground'); // gray-600
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -262,9 +259,7 @@
 .featuresContent {
   flex: 1;
 
-  &>*+* {
-    margin-top: abstracts.space(8);
-  }
+  @include abstracts.spaced-children(abstracts.space(8));
 }
 
 .featuresHeader {
@@ -272,29 +267,27 @@
 }
 
 .featuresList {
-  &>*+* {
-    margin-top: abstracts.space(6);
-  }
+  @include abstracts.spaced-children(abstracts.space(6));
 }
 
 .signInPrompt {
   border-radius: abstracts.radius('lg');
-  border: 1px solid abstracts.color('primary'); // indigo-200
-  background-color: abstracts.color('primary'); // indigo-50
+  border: 1px solid abstracts.color('primary');
+  background-color: abstracts.color('primary');
   padding: abstracts.space(4);
 
   @include abstracts.dark {
-    border-color: abstracts.color('primary'); // indigo-800
-    background-color: abstracts.color-alpha('primary', 0.3); // indigo-900/30
+    border-color: abstracts.color('primary');
+    background-color: abstracts.color-alpha('primary', 0.3);
   }
 }
 
 .signInPromptText {
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('primary'); // indigo-800
+  color: abstracts.color('primary');
 
   @include abstracts.dark {
-    color: abstracts.color('primary'); // indigo-200
+    color: abstracts.color('primary');
   }
 }
 
@@ -313,18 +306,18 @@
   width: 2.5rem;
   flex-shrink: 0;
   border-radius: abstracts.radius('lg');
-  background-color: abstracts.color('primary'); // indigo-100
-  color: abstracts.color('primary'); // indigo-600
+  background-color: abstracts.color('primary');
+  color: abstracts.color('primary');
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('primary', 0.5); // indigo-900/50
-    color: abstracts.color('primary'); // indigo-400
+    background-color: abstracts.color-alpha('primary', 0.5);
+    color: abstracts.color('primary');
   }
 }
 
 .featureTitle {
   font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('muted-foreground'); // gray-900
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
     color: white;
@@ -333,10 +326,10 @@
 
 .featureDescription {
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground'); // gray-600
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -355,7 +348,7 @@
   }
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('muted-foreground', 0.5); // gray-900/50
+    background-color: abstracts.color-alpha('muted-foreground', 0.5);
   }
 }
 
@@ -417,11 +410,11 @@
   align-items: center;
   justify-content: center;
   gap: abstracts.space(3);
-  color: abstracts.color('muted-foreground'); // gray-600
+  color: abstracts.color('muted-foreground');
   font-size: abstracts.font-size('sm');
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -487,7 +480,7 @@
 .ctaDescription {
   margin-bottom: abstracts.space(8);
   font-size: abstracts.font-size('lg');
-  color: abstracts.color('primary'); // indigo-100
+  color: abstracts.color('primary');
 
   @include abstracts.respond-to('sm') {
     font-size: abstracts.font-size('xl');
@@ -512,7 +505,7 @@
   justify-content: center;
   gap: abstracts.space(6);
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('primary'); // indigo-200
+  color: abstracts.color('primary');
 }
 
 .ctaBadge {
@@ -597,20 +590,17 @@
 }
 
 .cardArrowIcon {
-  width: abstracts.space(4);
-  height: abstracts.space(4);
+  @include abstracts.icon-size(abstracts.space(4));
   @include abstracts.transition(transform);
 }
 
 .bentoIcon {
-  width: 2rem;
-  height: 2rem;
+  @include abstracts.icon-size(2rem);
   color: white;
 }
 
 .mobileIcon {
-  width: abstracts.space(5);
-  height: abstracts.space(5);
+  @include abstracts.icon-size(abstracts.space(5));
 }
 
 .mobileText {
@@ -618,41 +608,34 @@
 }
 
 .sparklesIcon {
-  width: 3rem;
-  height: 3rem;
-  color: abstracts.color('primary'); // Decorative: intentionally hardcoded (yellow-300)
+  @include abstracts.icon-size(3rem);
+  color: abstracts.color('primary');
 }
 
 .ctaUploadIcon {
-  width: abstracts.space(5);
-  height: abstracts.space(5);
+  @include abstracts.icon-size(abstracts.space(5));
   margin-right: abstracts.space(2);
   @include abstracts.transition(transform);
 }
 
 .ctaArrowIcon {
-  width: abstracts.space(5);
-  height: abstracts.space(5);
+  @include abstracts.icon-size(abstracts.space(5));
   margin-left: abstracts.space(2);
 }
 
 .badgeIcon {
-  width: abstracts.space(4);
-  height: abstracts.space(4);
+  @include abstracts.icon-size(abstracts.space(4));
 }
 
 .heroButtonIcon {
-  width: abstracts.space(5);
-  height: abstracts.space(5);
+  @include abstracts.icon-size(abstracts.space(5));
   margin-right: abstracts.space(2);
 }
 
 .workflowIcon {
-  width: 1.5rem;
-  height: 1.5rem;
+  @include abstracts.icon-size(1.5rem);
 }
 
 .featureIcon {
-  width: abstracts.space(5);
-  height: abstracts.space(5);
+  @include abstracts.icon-size(abstracts.space(5));
 }

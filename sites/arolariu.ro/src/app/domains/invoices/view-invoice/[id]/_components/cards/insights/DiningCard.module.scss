@@ -1,8 +1,7 @@
 @use '../../../../../../../../styles/abstracts' as *;
 
 .sectionTitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   font-weight: font-weight('medium');
 }
 
@@ -20,8 +19,7 @@
 }
 
 .nutritionLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .nutritionValue {
@@ -42,8 +40,7 @@
 }
 
 .habitLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .habitValue {
@@ -52,8 +49,7 @@
 }
 
 .habitSub {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .swapsHeader {
@@ -68,17 +64,14 @@
 }
 
 .swapsList {
-  & > * + * {
-    margin-top: space(1.5);
-  }
+  @include spaced-children(space(1.5));
 }
 
 .swapItem {
   display: flex;
   align-items: flex-start;
   gap: space(2);
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .swapBullet {
@@ -110,8 +103,7 @@
 }
 
 .challengeDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .challengeHighlight {
@@ -120,13 +112,13 @@
 }
 
 .sodiumWarning {
-  color: color('destructive'); // Decorative: intentionally hardcoded
+  color: color('destructive');
 }
 
 .spendDiffRed {
-  color: color('destructive'); // Decorative: intentionally hardcoded
+  color: color('destructive');
 }
 
 .spendDiffGreen {
-  color: color('success'); // Decorative: intentionally hardcoded
+  color: color('success');
 }

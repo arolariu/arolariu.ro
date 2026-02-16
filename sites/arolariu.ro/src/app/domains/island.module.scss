@@ -29,7 +29,7 @@
 .progressFill {
   height: 100%;
   width: space(24);
-  @include gradient-bg(); // indigo-700
+  @include gradient-bg();
 }
 
 .titleRow {
@@ -49,7 +49,7 @@
   text-align: center;
   font-size: font-size('5xl');
   font-weight: font-weight('bold');
-  @include gradient-bg(); // pink-400 → red-600
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -134,7 +134,7 @@
   font-weight: font-weight('medium');
 
   @include dark {
-    color: color('border'); // gray-300
+    color: color('border');
   }
 }
 
@@ -149,7 +149,7 @@
   display: inline-flex;
   align-items: center;
   margin-top: space(3);
-  color: color('primary'); // indigo-500
+  color: color('primary');
 }
 
 .ctaIcon {

@@ -1,21 +1,16 @@
 @use '../../../../../../../../styles/abstracts' as *;
 
 .sectionTitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   font-weight: font-weight('medium');
 }
 
 .suppliesList {
-  & > * + * {
-    margin-top: space(3);
-  }
+  @include spaced-children(space(3));
 }
 
 .supplyItem {
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 }
 
 .supplyRow {
@@ -48,21 +43,19 @@
 }
 
 .progressGreen {
-  background-color: color('success'); // Decorative: intentionally hardcoded
+  background-color: color('success');
 }
 
 .progressYellow {
-  background-color: color('warning'); // Decorative: intentionally hardcoded
+  background-color: color('warning');
 }
 
 .progressRed {
-  background-color: color('destructive'); // Decorative: intentionally hardcoded
+  background-color: color('destructive');
 }
 
 .ecoSection {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .ecoHeader {
@@ -89,13 +82,10 @@
 }
 
 .ecoList {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   padding-left: space(6);
 
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 }
 
 .ecoItem {
@@ -132,6 +122,5 @@
 }
 
 .bulkDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }

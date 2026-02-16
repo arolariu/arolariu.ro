@@ -1,6 +1,3 @@
-// ===========================================
-// VIEW SCANS ISLAND STYLES
-// ===========================================
 @use '../../../../styles/abstracts' as abstracts;
 
 // ===========================================
@@ -18,19 +15,19 @@
   width: abstracts.space(8);
   flex-shrink: 0;
   border-radius: abstracts.radius('lg');
-  background-color: abstracts.color('primary'); // purple-100
-  color: abstracts.color('primary'); // purple-600
+  background-color: abstracts.color('primary');
+  color: abstracts.color('primary');
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('primary', 0.5); // purple-900/50
-    color: abstracts.color('primary'); // purple-400
+    background-color: abstracts.color-alpha('primary', 0.5);
+    color: abstracts.color('primary');
   }
 }
 
 .quickTipTitle {
   font-size: abstracts.font-size('sm');
   font-weight: abstracts.font-weight('medium');
-  color: abstracts.color('muted-foreground'); // gray-900
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
     color: white;
@@ -39,10 +36,10 @@
 
 .quickTipDescription {
   font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground'); // gray-500
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -59,7 +56,7 @@
 }
 
 .statsCardValueDefault {
-  color: abstracts.color('muted-foreground'); // gray-900
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
     color: white;
@@ -67,27 +64,26 @@
 }
 
 .statsCardValueGreen {
-  color: abstracts.color('success'); // Decorative: intentionally hardcoded (green-500)
+  color: abstracts.color('success');
 }
 
 .statsCardValuePurple {
-  color: abstracts.color('primary'); // Decorative: intentionally hardcoded (purple-500)
+  color: abstracts.color('primary');
 }
 
 // ===========================================
 // ICON SIZES
 // ===========================================
 .tipIcon {
-  width: abstracts.space(4);
-  height: abstracts.space(4);
+  @include abstracts.icon-size(abstracts.space(4));
 }
 
 .statsCardLabel {
   font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground'); // gray-500
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -97,13 +93,13 @@
 .scanStatsBar {
   margin-bottom: abstracts.space(6);
   border-radius: abstracts.radius('lg');
-  border: 1px solid abstracts.color('muted-foreground'); // gray-200
+  border: 1px solid abstracts.color('muted-foreground');
   background-color: white;
   padding: abstracts.space(4);
 
   @include abstracts.dark {
-    border-color: abstracts.color('muted-foreground'); // gray-700
-    background-color: abstracts.color('muted-foreground'); // gray-800
+    border-color: abstracts.color('muted-foreground');
+    background-color: abstracts.color('muted-foreground');
   }
 }
 
@@ -123,10 +119,10 @@
 
 .selectHint {
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground'); // gray-500
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -148,15 +144,13 @@
 // SIDEBAR
 // ===========================================
 .sidebar {
-  & > * + * {
-    margin-top: abstracts.space(6);
-  }
+  @include abstracts.spaced-children(abstracts.space(6));
 }
 
 .sidebarTitle {
   margin-bottom: abstracts.space(4);
   font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('muted-foreground'); // gray-900
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
     color: white;
@@ -164,9 +158,7 @@
 }
 
 .howToList {
-  & > * + * {
-    margin-top: abstracts.space(4);
-  }
+  @include abstracts.spaced-children;
 }
 
 // ===========================================
@@ -183,38 +175,38 @@
   height: abstracts.space(10);
   width: abstracts.space(10);
   border-radius: abstracts.radius('full');
-  background-color: abstracts.color('primary'); // purple-200
+  background-color: abstracts.color('primary');
 
   @include abstracts.dark {
-    background-color: abstracts.color('primary'); // purple-800
+    background-color: abstracts.color('primary');
   }
 }
 
 .selectionIcon {
   height: abstracts.space(5);
   width: abstracts.space(5);
-  color: abstracts.color('primary'); // purple-600
+  color: abstracts.color('primary');
 
   @include abstracts.dark {
-    color: abstracts.color('primary'); // purple-300
+    color: abstracts.color('primary');
   }
 }
 
 .selectionTitle {
   font-weight: abstracts.font-weight('semibold');
-  color: abstracts.color('primary'); // purple-900
+  color: abstracts.color('primary');
 
   @include abstracts.dark {
-    color: abstracts.color('primary'); // purple-100
+    color: abstracts.color('primary');
   }
 }
 
 .selectionDescription {
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('primary'); // purple-700
+  color: abstracts.color('primary');
 
   @include abstracts.dark {
-    color: abstracts.color('primary'); // purple-300
+    color: abstracts.color('primary');
   }
 }
 
@@ -233,20 +225,20 @@
   width: abstracts.space(10);
   flex-shrink: 0;
   border-radius: abstracts.radius('lg');
-  background-color: abstracts.color('primary'); // blue-100
+  background-color: abstracts.color('primary');
 
   @include abstracts.dark {
-    background-color: abstracts.color-alpha('primary', 0.5); // blue-900/50
+    background-color: abstracts.color-alpha('primary', 0.5);
   }
 }
 
 .quickUploadIcon {
   height: abstracts.space(5);
   width: abstracts.space(5);
-  color: abstracts.color('primary'); // blue-600
+  color: abstracts.color('primary');
 
   @include abstracts.dark {
-    color: abstracts.color('primary'); // blue-400
+    color: abstracts.color('primary');
   }
 }
 
@@ -257,7 +249,7 @@
 .quickUploadTitle {
   font-size: abstracts.font-size('sm');
   font-weight: abstracts.font-weight('medium');
-  color: abstracts.color('muted-foreground'); // gray-900
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
     color: white;
@@ -266,10 +258,10 @@
 
 .quickUploadDescription {
   font-size: abstracts.font-size('xs');
-  color: abstracts.color('muted-foreground'); // gray-500
+  color: abstracts.color('muted-foreground');
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
   }
 }
 
@@ -290,18 +282,18 @@
   align-items: center;
   gap: abstracts.space(1);
   font-size: abstracts.font-size('sm');
-  color: abstracts.color('muted-foreground'); // gray-500
+  color: abstracts.color('muted-foreground');
   @include abstracts.transition(color);
 
   &:hover {
-    color: abstracts.color('muted-foreground'); // gray-700
+    color: abstracts.color('muted-foreground');
   }
 
   @include abstracts.dark {
-    color: abstracts.color('muted-foreground'); // gray-400
+    color: abstracts.color('muted-foreground');
 
     &:hover {
-      color: abstracts.color('muted-foreground'); // gray-200
+      color: abstracts.color('muted-foreground');
     }
   }
 }

@@ -7,9 +7,7 @@
 // LAYOUT
 // ===========================================
 .container {
-  & > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 // ===========================================
@@ -70,20 +68,17 @@
 // ICON STYLES
 // ===========================================
 .filterIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
 }
 
 .sunIcon {
-  width: space(4);
-  height: space(4);
-  color: color('warning'); // Decorative: intentionally hardcoded (yellow-500)
+  @include icon-size(space(4));
+  color: color('warning');
 }
 
 .moonIcon {
-  width: space(4);
-  height: space(4);
-  color: color('primary'); // Decorative: intentionally hardcoded (blue-500)
+  @include icon-size(space(4));
+  color: color('primary');
 }
 
 .viewToggle {

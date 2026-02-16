@@ -38,13 +38,13 @@
   margin-top: space(8);
   border: 0;
   border-radius: radius('md');
-  @include gradient-bg(); // indigo-600
+  @include gradient-bg();
   padding: space(2) space(6);
   font-size: font-size('lg');
   color: white;
 
   &:hover {
-    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary')); // indigo-700
+    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
   }
 
   &:focus {

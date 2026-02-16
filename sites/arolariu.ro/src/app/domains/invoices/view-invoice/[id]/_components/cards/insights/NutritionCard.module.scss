@@ -1,9 +1,7 @@
 @use '../../../../../../../../styles/abstracts' as *;
 
 .scoreSection {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .scoreRow {
@@ -18,23 +16,18 @@
 }
 
 .compositionSection {
-  & > * + * {
-    margin-top: space(3);
-  }
+  @include spaced-children(space(3));
 }
 
 .compositionTitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   font-weight: font-weight('medium');
   letter-spacing: letter-spacing('wide');
   text-transform: uppercase;
 }
 
 .compositionList {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .compositionRow {
@@ -65,8 +58,7 @@
 .compositionPct {
   width: space(10);
   text-align: right;
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .foodGroupsGrid {
@@ -88,8 +80,7 @@
 }
 
 .foodGroupName {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .foodGroupCount {
@@ -98,14 +89,11 @@
 }
 
 .foodGroupAmount {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .allergensSection {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .allergensHeader {
@@ -135,34 +123,33 @@
 }
 
 .suggestionText {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .progressGreen {
-  background-color: color('success'); // Decorative: intentionally hardcoded
+  background-color: color('success');
 }
 
 .progressAmber {
-  background-color: color('warning'); // Decorative: intentionally hardcoded
+  background-color: color('warning');
 }
 
 .progressBlue {
-  @include gradient-bg(); // Decorative: intentionally hardcoded
+  @include gradient-bg();
 }
 
 .scoreGreen {
-  color: color('success'); // Decorative: intentionally hardcoded
+  color: color('success');
 }
 
 .scoreEmerald {
-  color: color('primary'); // Decorative: intentionally hardcoded
+  color: color('primary');
 }
 
 .scoreYellow {
-  color: color('warning'); // Decorative: intentionally hardcoded
+  color: color('warning');
 }
 
 .scoreRed {
-  color: color('destructive'); // Decorative: intentionally hardcoded
+  color: color('destructive');
 }

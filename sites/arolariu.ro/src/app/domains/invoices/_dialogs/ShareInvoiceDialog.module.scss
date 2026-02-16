@@ -7,14 +7,11 @@
 // SELECTION MODE
 // ===========================================
 .selectionBody {
-  & > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 .selectionDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .selectionGrid {
@@ -45,53 +42,48 @@
 }
 
 .iconCircleOrange {
-  @include gradient-bg(); // orange-100
+  @include gradient-bg();
 
   @include dark {
-    background-color: color-alpha('destructive', 0.3); // orange-900/30
+    background-color: color-alpha('destructive', 0.3);
   }
 }
 
 .iconCircleGreen {
-  @include gradient-bg(); // green-100
+  @include gradient-bg();
 
   @include dark {
-    background-color: color-alpha('success', 0.3); // green-900/30
+    background-color: color-alpha('success', 0.3);
   }
 }
 
 .cardContent {
   flex: 1;
 
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 }
 
 // ===========================================
 // ICON STYLES
 // ===========================================
 .globeIcon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: color('primary'); // orange-600
+  @include icon-size(1.5rem);
+  color: color('primary');
 
   @include dark {
-    color: color('primary'); // orange-400
+    color: color('primary');
   }
 }
 
 .lockIcon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: color('success'); // green-600
+  @include icon-size(1.5rem);
+  color: color('success');
 
   @include dark {
-    color: color('success'); // green-400
+    color: color('success');
   }
 }
 
 .alertIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
 }

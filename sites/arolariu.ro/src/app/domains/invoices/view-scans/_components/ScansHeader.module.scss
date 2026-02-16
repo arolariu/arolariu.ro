@@ -24,7 +24,7 @@
 .headerTitle {
   font-size: font-size('2xl');
   font-weight: font-weight('bold');
-  color: color('foreground'); // gray-900
+  color: color('foreground');
 
   @include respond-to('lg') {
     font-size: font-size('3xl');
@@ -37,10 +37,10 @@
 
 .lastSynced {
   font-size: font-size('sm');
-  color: color('muted-foreground'); // gray-500
+  color: color('muted-foreground');
 
   @include dark {
-    color: color('muted-foreground'); // gray-400
+    color: color('muted-foreground');
   }
 }
 
@@ -67,13 +67,11 @@
 // ICON STYLES
 // ===========================================
 .infoIcon {
-  width: space(5);
-  height: space(5);
+  @include icon-size(space(5));
 }
 
 .actionIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
 }
 
 .syncIcon {

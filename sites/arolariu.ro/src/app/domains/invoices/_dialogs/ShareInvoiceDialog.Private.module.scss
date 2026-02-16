@@ -4,49 +4,39 @@
 @use '../../../../styles/abstracts' as *;
 
 .body {
-  & > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 .formBody {
-  & > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 .fieldGroup {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .emailHint {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 // ===========================================
 // ICON STYLES
 // ===========================================
 .backIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-right: space(1);
 }
 
 .lockIcon {
-  width: space(4);
-  height: space(4);
-  color: color('success'); // Decorative: intentionally hardcoded (green-600)
+  @include icon-size(space(4));
+  color: color('success');
 
   @include dark {
-    color: color('success'); // green-400
+    color: color('success');
   }
 }
 
 .mailIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-right: space(2);
 }

@@ -9,14 +9,14 @@
   bottom: 0;
   left: 0;
   z-index: z('fixed');
-  border-top: 1px solid color('border'); // gray-200
+  border-top: 1px solid color('border');
   background-color: white;
   padding: space(4);
   @include shadow('lg');
 
   @include dark {
-    border-color: color('foreground'); // gray-700
-    background-color: color('foreground'); // gray-900
+    border-color: color('foreground');
+    background-color: color('foreground');
   }
 }
 
@@ -34,7 +34,7 @@
 
 .selectedCount {
   font-weight: font-weight('medium');
-  color: color('foreground'); // gray-900
+  color: color('foreground');
 
   @include dark {
     color: white;
@@ -51,14 +51,12 @@
 // ICON STYLES
 // ===========================================
 .clearIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-right: space(1);
 }
 
 .createIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-right: space(2);
 }
 

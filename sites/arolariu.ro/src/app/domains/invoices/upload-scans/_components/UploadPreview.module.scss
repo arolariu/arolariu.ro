@@ -18,7 +18,7 @@
 .title {
   font-size: font-size('xl');
   font-weight: font-weight('semibold');
-  color: color('foreground'); // gray-900
+  color: color('foreground');
 
   @include dark {
     color: white;
@@ -47,10 +47,10 @@
 .previewArea {
   position: relative;
   aspect-ratio: 4 / 3;
-  background-color: color('muted'); // gray-100
+  background-color: color('muted');
 
   @include dark {
-    background-color: color('foreground'); // gray-800
+    background-color: color('foreground');
   }
 }
 
@@ -62,7 +62,7 @@
 .pdfIcon {
   height: space(16);
   width: space(16);
-  color: color('destructive'); // red-500
+  color: color('destructive');
 }
 
 .imagePreview {
@@ -83,11 +83,11 @@
 }
 
 .overlayCompleted {
-  background-color: color-alpha('success', 0.5); // green-500/50
+  background-color: color-alpha('success', 0.5);
 }
 
 .overlayFailed {
-  background-color: color-alpha('destructive', 0.5); // red-500/50
+  background-color: color-alpha('destructive', 0.5);
 }
 
 .statusIcon {
@@ -129,7 +129,7 @@
   @include truncate;
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  color: color('foreground'); // gray-900
+  color: color('foreground');
 
   @include dark {
     color: white;
@@ -138,10 +138,10 @@
 
 .fileSize {
   font-size: font-size('xs');
-  color: color('muted-foreground'); // gray-500
+  color: color('muted-foreground');
 
   @include dark {
-    color: color('muted-foreground'); // gray-400
+    color: color('muted-foreground');
   }
 }
 
@@ -149,13 +149,12 @@
   margin-top: space(1);
   @include truncate;
   font-size: font-size('xs');
-  color: color('destructive'); // red-500
+  color: color('destructive');
 }
 
 // ===========================================
 // ICON STYLES
 // ===========================================
 .removeIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
 }
