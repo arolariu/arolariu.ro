@@ -19,6 +19,11 @@
 /// @see animations/_keyframes.scss — `glowing` keyframe used by `.glow-effect`
 /// @see base/_globals.scss — `--accent-primary`, `--primary` CSS variables
 /// ===========================================
+@use '../abstracts' as *;
+
+// Migration note:
+// Keep these effect utilities for incremental migration only.
+// Prefer component-scoped decorative styles for new features.
 
 // Grid background pattern
 .bg-grid-pattern {
@@ -68,7 +73,7 @@
     z-index: z('behind');
     border-radius: inherit;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    @include transition(opacity, 'moderate');
     animation: glowing 1.5s linear infinite;
   }
 

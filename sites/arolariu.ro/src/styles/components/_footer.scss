@@ -49,8 +49,10 @@
   width: 100%;
   background-color: hsl(var(--footer-bg));
 
-  @media print {
-    display: none;
+  @if $enable-print-styles {
+    @media print {
+      display: none;
+    }
   }
 }
 

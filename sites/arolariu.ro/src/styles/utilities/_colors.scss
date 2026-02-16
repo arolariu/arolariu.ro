@@ -35,6 +35,10 @@
 /// ===========================================
 @use '../abstracts' as *;
 
+// Migration note:
+// Semantic utility colors are retained for compatibility;
+// prefer component APIs or module-local semantic styling for new code.
+
 // Semantic text colors
 .text-foreground { color: hsl(var(--foreground)); }
 .text-primary { color: hsl(var(--primary)); }

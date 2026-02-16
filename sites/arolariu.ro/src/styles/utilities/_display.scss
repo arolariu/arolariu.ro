@@ -37,6 +37,10 @@
 /// ===========================================
 @use '../abstracts' as *;
 
+// Migration note:
+// Utility classes are kept for compatibility while modules migrate toward
+// component APIs and local styles. Prefer module-local styles for new work.
+
 // Display
 .block { display: block; }
 .inline-block { display: inline-block; }
@@ -85,12 +89,14 @@
   @include visually-hidden;
 }
 
-// Print utilities
-@media print {
-  .print-hidden { display: none !important; }
-  .print-only { display: block; }
-}
+// Print utilities (configurable via $enable-print-styles)
+@if $enable-print-styles {
+  @media print {
+    .print-hidden { display: none; }
+    .print-only { display: block; }
+  }
 
-.print-only {
-  display: none;
+  .print-only {
+    display: none;
+  }
 }

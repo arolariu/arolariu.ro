@@ -33,6 +33,10 @@
 /// ===========================================
 @use '../abstracts' as *;
 
+// Migration note:
+// Keep these aliases for backwards compatibility while legacy utility usage
+// is phased out in favor of component-local styles and composition APIs.
+
 // Flexbox
 .flex { display: flex; }
 .flex-row { flex-direction: row; }
