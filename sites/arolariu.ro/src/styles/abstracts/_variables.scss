@@ -22,8 +22,7 @@
 ///
 /// EXTENDING:
 ///   To add a new spacing value, add a key-value pair to $spacing.
-///   To add a new breakpoint, add to $breakpoints AND update
-///   tailwind.config.ts if Tailwind is still in use.
+///   To add a new breakpoint, add to $breakpoints.
 ///
 /// @see {variable} $spacing
 /// @see {variable} $breakpoints
@@ -51,39 +50,72 @@
 /// @prop {Length} 96 [24rem] - 384px (max)
 $spacing: (
   0: 0,
-  0.5: 0.125rem,   // 2px
-  1: 0.25rem,      // 4px
-  1.5: 0.375rem,   // 6px
-  2: 0.5rem,       // 8px
-  2.5: 0.625rem,   // 10px
-  3: 0.75rem,      // 12px
-  3.5: 0.875rem,   // 14px
-  4: 1rem,         // 16px
-  5: 1.25rem,      // 20px
-  6: 1.5rem,       // 24px
-  7: 1.75rem,      // 28px
-  8: 2rem,         // 32px
-  9: 2.25rem,      // 36px
-  10: 2.5rem,      // 40px
-  11: 2.75rem,     // 44px
-  12: 3rem,        // 48px
-  14: 3.5rem,      // 56px
-  16: 4rem,        // 64px
-  20: 5rem,        // 80px
-  24: 6rem,        // 96px
-  28: 7rem,        // 112px
-  32: 8rem,        // 128px
-  36: 9rem,        // 144px
-  40: 10rem,       // 160px
-  44: 11rem,       // 176px
-  48: 12rem,       // 192px
-  52: 13rem,       // 208px
-  56: 14rem,       // 224px
-  60: 15rem,       // 240px
-  64: 16rem,       // 256px
-  72: 18rem,       // 288px
-  80: 20rem,       // 320px
-  96: 24rem,       // 384px
+  0.5: 0.125rem,
+  // 2px
+  1: 0.25rem,
+  // 4px
+  1.5: 0.375rem,
+  // 6px
+  2: 0.5rem,
+  // 8px
+  2.5: 0.625rem,
+  // 10px
+  3: 0.75rem,
+  // 12px
+  3.5: 0.875rem,
+  // 14px
+  4: 1rem,
+  // 16px
+  5: 1.25rem,
+  // 20px
+  6: 1.5rem,
+  // 24px
+  7: 1.75rem,
+  // 28px
+  8: 2rem,
+  // 32px
+  9: 2.25rem,
+  // 36px
+  10: 2.5rem,
+  // 40px
+  11: 2.75rem,
+  // 44px
+  12: 3rem,
+  // 48px
+  14: 3.5rem,
+  // 56px
+  16: 4rem,
+  // 64px
+  20: 5rem,
+  // 80px
+  24: 6rem,
+  // 96px
+  28: 7rem,
+  // 112px
+  32: 8rem,
+  // 128px
+  36: 9rem,
+  // 144px
+  40: 10rem,
+  // 160px
+  44: 11rem,
+  // 176px
+  48: 12rem,
+  // 192px
+  52: 13rem,
+  // 208px
+  56: 14rem,
+  // 224px
+  60: 15rem,
+  // 240px
+  64: 16rem,
+  // 256px
+  72: 18rem,
+  // 288px
+  80: 20rem,
+  // 320px
+  96: 24rem,
+  // 384px
 );
 
 /// Get a spacing value by its scale key.
@@ -99,6 +131,7 @@ $spacing: (
   @if map.has-key($spacing, $key) {
     @return map.get($spacing, $key);
   }
+
   @error "Unknown spacing key: #{$key}. Available: #{map.keys($spacing)}";
 }
 
@@ -119,14 +152,22 @@ $spacing: (
 /// @prop {Length} '2xl' [1440px] - Large desktop (custom)
 /// @prop {Length} '3xl' [1976px] - Ultra-wide (custom)
 $breakpoints: (
-  '2xsm': 320px,   // Mobile-first (custom)
-  'xsm': 480px,    // Small phones (custom)
-  'sm': 640px,     // Standard mobile
-  'md': 768px,     // Tablets
-  'lg': 1024px,    // Small desktop
-  'xl': 1280px,    // Desktop
-  '2xl': 1440px,   // Large desktop (custom)
-  '3xl': 1976px,   // Ultra-wide (custom)
+  '2xsm': 320px,
+  // Mobile-first (custom)
+  'xsm': 480px,
+  // Small phones (custom)
+  'sm': 640px,
+  // Standard mobile
+  'md': 768px,
+  // Tablets
+  'lg': 1024px,
+  // Small desktop
+  'xl': 1280px,
+  // Desktop
+  '2xl': 1440px,
+  // Large desktop (custom)
+  '3xl': 1976px,
+  // Ultra-wide (custom)
 );
 
 /// Get a breakpoint value by name.
@@ -140,6 +181,7 @@ $breakpoints: (
   @if map.has-key($breakpoints, $key) {
     @return map.get($breakpoints, $key);
   }
+
   @error "Unknown breakpoint: #{$key}. Available: #{map.keys($breakpoints)}";
 }
 
@@ -166,12 +208,17 @@ $breakpoints: (
 /// @prop {Number} 'tooltip' [1070] - Tooltip overlays
 /// @prop {Number} 'toast' [1080] - Toast notifications (topmost)
 $z-index: (
-  'behind': -1,        // Background decorative elements (orbs, patterns)
+  'behind': -1,
+  // Background decorative elements (orbs, patterns)
   'base': 0,
-  'raised': 1,         // Slightly above siblings (loading spinners)
-  'content': 10,       // Content above decorative backgrounds
-  'content-high': 20,  // Content above other content (timeline connectors)
-  'overlay-subtle': 50, // Subtle overlays within sections
+  'raised': 1,
+  // Slightly above siblings (loading spinners)
+  'content': 10,
+  // Content above decorative backgrounds
+  'content-high': 20,
+  // Content above other content (timeline connectors)
+  'overlay-subtle': 50,
+  // Subtle overlays within sections
   'dropdown': 1000,
   'sticky': 1020,
   'fixed': 1030,
@@ -194,6 +241,7 @@ $z-index: (
   @if map.has-key($z-index, $key) {
     @return map.get($z-index, $key);
   }
+
   @error "Unknown z-index key: #{$key}. Available: #{map.keys($z-index)}";
 }
 
@@ -220,12 +268,18 @@ $radius-base: 0.5rem;
 /// @prop {Length} 'full' [9999px] - Fully rounded (circle/pill)
 $border-radius: (
   'none': 0,
-  'sm': 0.125rem,     // 2px
-  'md': 0.375rem,     // 6px
-  'lg': 0.5rem,       // 8px (default)
-  'xl': 0.75rem,      // 12px
-  '2xl': 1rem,        // 16px
-  '3xl': 1.5rem,      // 24px
+  'sm': 0.125rem,
+  // 2px
+  'md': 0.375rem,
+  // 6px
+  'lg': 0.5rem,
+  // 8px (default)
+  'xl': 0.75rem,
+  // 12px
+  '2xl': 1rem,
+  // 16px
+  '3xl': 1.5rem,
+  // 24px
   'full': 9999px,
 );
 
@@ -241,6 +295,7 @@ $border-radius: (
   @if map.has-key($border-radius, $key) {
     @return map.get($border-radius, $key);
   }
+
   @error "Unknown radius key: #{$key}. Available: #{map.keys($border-radius)}";
 }
 
@@ -277,7 +332,7 @@ $shadows: (
   'lg': (0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)),
   'xl': (0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)),
   '2xl': 0 25px 50px -12px rgb(0 0 0 / 0.25),
-) !default;
+  ) !default;
 
 /// Shadow elevation scale (dark mode) — stronger opacity for visibility
 /// on dark backgrounds. Mirrors $shadows keys exactly.
@@ -291,7 +346,7 @@ $shadows-dark: (
   'lg': (0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3)),
   'xl': (0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3)),
   '2xl': 0 25px 50px -12px rgb(0 0 0 / 0.6),
-) !default;
+  ) !default;
 
 /// Get a shadow value by elevation level (light mode only).
 /// For automatic dark mode support, use the `shadow()` mixin instead.
@@ -305,9 +360,11 @@ $shadows-dark: (
 ///   box-shadow: shadow('lg');   // Elevated hover shadow
 @function shadow($level) {
   @if map.has-key($shadows, $level) {
-    @return map.get($shadows, $level);
-  }
-  @error "Unknown shadow level: #{$level}. Available: #{map.keys($shadows)}";
+    @return map.get($shadows, $level
+  );
+}
+
+@error "Unknown shadow level: #{$level}. Available: #{map.keys($shadows)}";
 }
 
 // ===========================================
@@ -333,7 +390,7 @@ $durations: (
   'slow': 350ms,
   'slower': 500ms,
   'slowest': 700ms,
-) !default;
+  ) !default;
 
 /// Get a transition duration by name.
 /// @param {String} $key - Duration name (e.g. 'normal', 'slow')
@@ -345,9 +402,11 @@ $durations: (
 ///   transition-duration: duration('moderate'); // → 250ms
 @function duration($key) {
   @if map.has-key($durations, $key) {
-    @return map.get($durations, $key);
-  }
-  @error "Unknown duration: #{$key}. Available: #{map.keys($durations)}";
+    @return map.get($durations, $key
+  );
+}
+
+@error "Unknown duration: #{$key}. Available: #{map.keys($durations)}";
 }
 
 /// Easing curve scale — named cubic-bezier tokens for consistent motion.
@@ -361,12 +420,17 @@ $durations: (
 /// @prop {TimingFunction} 'spring' - Bounce-like overshoot effect
 $easings: (
   'linear': linear,
-  'ease': cubic-bezier(0.4, 0, 0.2, 1),        // standard (Material)
-  'ease-in': cubic-bezier(0.4, 0, 1, 1),        // decelerate
-  'ease-out': cubic-bezier(0, 0, 0.2, 1),       // accelerate
-  'ease-in-out': cubic-bezier(0.4, 0, 0.2, 1),  // standard
-  'spring': cubic-bezier(0.34, 1.56, 0.64, 1),  // bounce-like
-) !default;
+  'ease': cubic-bezier(0.4, 0, 0.2, 1),
+  // standard (Material)
+  'ease-in': cubic-bezier(0.4, 0, 1, 1),
+  // decelerate
+  'ease-out': cubic-bezier(0, 0, 0.2, 1),
+  // accelerate
+  'ease-in-out': cubic-bezier(0.4, 0, 0.2, 1),
+  // standard
+  'spring': cubic-bezier(0.34, 1.56, 0.64, 1),
+  // bounce-like
+  ) !default;
 
 /// Get an easing curve by name.
 /// @param {String} $key - Easing name (e.g. 'ease', 'spring')
@@ -378,7 +442,9 @@ $easings: (
 ///   transition-timing-function: easing('spring'); // → cubic-bezier(0.34, 1.56, 0.64, 1)
 @function easing($key) {
   @if map.has-key($easings, $key) {
-    @return map.get($easings, $key);
-  }
-  @error "Unknown easing: #{$key}. Available: #{map.keys($easings)}";
+    @return map.get($easings, $key
+  );
+}
+
+@error "Unknown easing: #{$key}. Available: #{map.keys($easings)}";
 }
