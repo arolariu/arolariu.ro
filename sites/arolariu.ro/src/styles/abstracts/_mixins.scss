@@ -212,21 +212,6 @@
   );
 }
 
-/// Semantic gradient-text API using semantic gradient tones.
-/// Composes primary -> tertiary -> secondary.
-/// NOTE: `-webkit-background-clip` is intentional — required for Safari/Chrome;
-/// autoprefixer does not add it for `background-clip: text`.
-/// @group mixins-visual
-/// @see {mixin} gradient-text-custom
-/// @example scss
-///   .hero-title { @include gradient-text; }
-@mixin gradient-text {
-  background: _semantic-gradient(to right);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 /// Gradient background using theme CSS variables.
 /// @param {String} $direction [to right] - CSS gradient direction
 /// @group mixins-visual
@@ -454,30 +439,6 @@
 }
 
 // ===========================================
-// ACCENT TOP BAR
-// ===========================================
-
-/// Gradient decorative bar at the top of a card or section.
-/// The parent element MUST have `position: relative`.
-/// @param {Length} $height [4px] - Bar height
-/// @param {Color} $from [#3b82f6] - Start color
-/// @param {Color} $via [#a855f7] - Middle color
-/// @param {Color} $to [#ec4899] - End color
-/// @group mixins-decorative
-/// @example scss
-///   .accentBar { @include accent-top-bar; }
-///   .accentBar { @include accent-top-bar(6px, #10b981, #3b82f6, #8b5cf6); }
-@mixin accent-top-bar($height: 4px, $from: null, $via: null, $to: null) {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: $height;
-  width: 100%;
-  background: _semantic-gradient(to right);
-  border-radius: radius('xl') radius('xl') 0 0;
-}
-
-// ===========================================
 // RESPONSIVE GRID
 // ===========================================
 
@@ -509,76 +470,4 @@
   }
 }
 
-// ===========================================
-// SECTION LAYOUT
-// ===========================================
-
-/// Standard page section with responsive vertical padding.
-/// @param {Length} $py-mobile [space(12)] - Vertical padding on mobile
-/// @param {Length} $py-desktop [space(20)] - Vertical padding on desktop (at 'lg')
-/// @group mixins-layout
-/// @example scss
-///   .section { @include section-layout; }
-///   .compact-section { @include section-layout(space(8), space(12)); }
-@mixin section-layout($py-mobile: space(12), $py-desktop: space(20)) {
-  position: relative;
-  overflow: hidden;
-
-  @if config.$enable-logical-properties {
-    padding-block: $py-mobile;
-  } @else {
-    padding-top: $py-mobile;
-    padding-bottom: $py-mobile;
-  }
-
-  @include respond-to('lg') {
-    @if config.$enable-logical-properties {
-      padding-block: $py-desktop;
-    } @else {
-      padding-top: $py-desktop;
-      padding-bottom: $py-desktop;
-    }
-  }
-}
-
-/// Base card surface primitive for shared visual consistency.
-/// @param {String} $background ['card'] - Semantic background token
-/// @param {String} $border ['border'] - Semantic border token
-/// @param {String} $radius-token ['xl'] - Radius token key
-/// @group mixins-visual
-/// @example scss
-///   .card { @include surface-card; }
-///   .panel { @include surface-card('popover', 'input', 'lg'); }
-@mixin surface-card($background: 'card', $border: 'border', $radius-token: 'xl') {
-  background-color: colors.color($background);
-  border: 1px solid colors.color($border);
-  border-radius: radius($radius-token);
-}
-
-/// Tinted surface primitive for highlighted sections or cards.
-/// @param {String} $tone ['primary'] - Semantic color token
-/// @param {Number} $surface-alpha [0.08] - Surface tint alpha
-/// @param {Number} $border-alpha [0.22] - Border tint alpha
-/// @param {String} $radius-token ['xl'] - Radius token key
-/// @group mixins-visual
-/// @example scss
-///   .insight { @include tinted-surface('info'); }
-///   .warning { @include tinted-surface('warning', 0.12, 0.3, 'lg'); }
-@mixin tinted-surface($tone: 'primary', $surface-alpha: 0.08, $border-alpha: 0.22, $radius-token: 'xl') {
-  background-color: colors.color-alpha($tone, $surface-alpha);
-  border: 1px solid colors.color-alpha($tone, $border-alpha);
-  border-radius: radius($radius-token);
-}
-
-/// Theme-aware gradient surface primitive.
-/// @param {String} $direction [135deg] - Gradient direction
-/// @param {Number} $from-alpha [0.2] - Gradient start alpha
-/// @param {Number} $via-alpha [0.12] - Gradient middle alpha
-/// @param {Number} $to-alpha [0.18] - Gradient end alpha
-/// @group mixins-visual
-/// @example scss
-///   .heroSurface { @include gradient-surface; }
-///   .chip { @include gradient-surface(to right, 0.12, 0.08, 0.12); }
-@mixin gradient-surface($direction: 135deg, $from-alpha: 0.2, $via-alpha: 0.12, $to-alpha: 0.18) {
-  background: _semantic-gradient($direction, $from-alpha, $via-alpha, $to-alpha);
-}
+ 
