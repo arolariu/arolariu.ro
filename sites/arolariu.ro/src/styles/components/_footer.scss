@@ -399,15 +399,10 @@
   }
 }
 
-// Tooltip trigger
+// Tooltip trigger (the "Built on" text — not the tooltip content popup)
 .footer__build-tooltip {
   cursor: help;
-
-  &,
-  &[data-state] {
-    background-color: transparent;
-    color: color('primary-foreground');
-  }
+  color: color('primary-foreground');
 }
 
 // Commit SHA link
