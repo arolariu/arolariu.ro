@@ -30,10 +30,6 @@
 .lockIcon {
   @include icon-size(space(4));
   color: color('success');
-
-  @include dark {
-    color: color('success');
-  }
 }
 
 .mailIcon {

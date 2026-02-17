@@ -87,10 +87,6 @@
   @include abstracts.respond-to('lg') {
     font-size: abstracts.font-size('xl');
   }
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .heroButtons {
@@ -169,10 +165,6 @@
   max-width: 42rem;
   font-size: abstracts.font-size('lg');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .workflowGrid {
@@ -285,10 +277,6 @@
 .signInPromptText {
   font-size: abstracts.font-size('sm');
   color: abstracts.color('primary');
-
-  @include abstracts.dark {
-    color: abstracts.color('primary');
-  }
 }
 
 // ===========================================
@@ -327,10 +315,6 @@
 .featureDescription {
   font-size: abstracts.font-size('sm');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -412,10 +396,6 @@
   gap: abstracts.space(3);
   color: abstracts.color('muted-foreground');
   font-size: abstracts.font-size('sm');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================

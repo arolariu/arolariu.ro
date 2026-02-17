@@ -67,30 +67,18 @@
   margin-bottom: abstracts.space(6);
   font-size: abstracts.font-size('lg');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .dropzoneFormats {
   margin-bottom: abstracts.space(4);
   font-size: abstracts.font-size('sm');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .dropzoneNote {
   margin-bottom: abstracts.space(8);
   font-size: abstracts.font-size('xs');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .hiddenInput {
@@ -179,10 +167,6 @@
 .compactSubtitle {
   font-size: abstracts.font-size('sm');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================

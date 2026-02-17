@@ -139,10 +139,6 @@
 .fileSize {
   font-size: font-size('xs');
   color: color('muted-foreground');
-
-  @include dark {
-    color: color('muted-foreground');
-  }
 }
 
 .fileError {

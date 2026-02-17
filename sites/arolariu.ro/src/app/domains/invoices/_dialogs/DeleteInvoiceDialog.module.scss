@@ -27,10 +27,6 @@
 .deletingTitle {
   font-weight: font-weight('medium');
   color: color('destructive');
-
-  @include dark {
-    color: color('destructive');
-  }
 }
 
 .deletingDescription {
@@ -122,10 +118,6 @@
 .confirmHighlight {
   font-weight: font-weight('semibold');
   color: color('destructive');
-
-  @include dark {
-    color: color('destructive');
-  }
 }
 
 .checkboxCard {

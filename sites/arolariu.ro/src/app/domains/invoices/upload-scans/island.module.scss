@@ -35,10 +35,6 @@
 .fileTypeExtensions {
   font-size: abstracts.font-size('xs');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -61,10 +57,6 @@
 .tipText {
   font-size: abstracts.font-size('sm');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -133,10 +125,6 @@
 .statLabel {
   font-size: abstracts.font-size('xs');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -161,14 +149,6 @@
 
   &:hover {
     color: abstracts.color('muted-foreground');
-  }
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-
-    &:hover {
-      color: abstracts.color('muted-foreground');
-    }
   }
 }
 
@@ -216,10 +196,6 @@
 .headerDescription {
   font-size: abstracts.font-size('sm');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .headerActions {
@@ -284,10 +260,6 @@
   margin-top: abstracts.space(3);
   font-size: abstracts.font-size('xs');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .tipsList {
@@ -309,29 +281,17 @@
   width: abstracts.space(5);
   flex-shrink: 0;
   color: abstracts.color('success');
-
-  @include abstracts.dark {
-    color: abstracts.color('success');
-  }
 }
 
 .securityTitle {
   font-weight: abstracts.font-weight('semibold');
   color: abstracts.color('success');
-
-  @include abstracts.dark {
-    color: abstracts.color('success');
-  }
 }
 
 .securityDescription {
   margin-top: abstracts.space(1);
   font-size: abstracts.font-size('sm');
   color: abstracts.color('success');
-
-  @include abstracts.dark {
-    color: abstracts.color('success');
-  }
 }
 
 // ===========================================
@@ -341,20 +301,12 @@
   margin-bottom: abstracts.space(2);
   font-weight: abstracts.font-weight('semibold');
   color: abstracts.color('primary');
-
-  @include abstracts.dark {
-    color: abstracts.color('primary');
-  }
 }
 
 .nextStepsDescription {
   margin-bottom: abstracts.space(4);
   font-size: abstracts.font-size('sm');
   color: abstracts.color('primary');
-
-  @include abstracts.dark {
-    color: abstracts.color('primary');
-  }
 }
 
 // ===========================================

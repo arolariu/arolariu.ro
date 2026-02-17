@@ -100,10 +100,6 @@
   justify-content: space-between;
   font-size: font-size('xs');
   color: color('muted-foreground');
-
-  @include dark {
-    color: color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -129,8 +125,4 @@
   margin-bottom: space(2);
   font-weight: font-weight('medium');
   color: color('warning');
-
-  @include dark {
-    color: color('warning');
-  }
 }

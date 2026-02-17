@@ -37,10 +37,6 @@
 .quickTipDescription {
   font-size: abstracts.font-size('xs');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -82,10 +78,6 @@
 .statsCardLabel {
   font-size: abstracts.font-size('xs');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -121,10 +113,6 @@
 .selectHint {
   font-size: abstracts.font-size('sm');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 .hiddenMobile {
@@ -244,10 +232,6 @@
 .quickUploadDescription {
   font-size: abstracts.font-size('xs');
   color: abstracts.color('muted-foreground');
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-  }
 }
 
 // ===========================================
@@ -272,14 +256,6 @@
 
   &:hover {
     color: abstracts.color('muted-foreground');
-  }
-
-  @include abstracts.dark {
-    color: abstracts.color('muted-foreground');
-
-    &:hover {
-      color: abstracts.color('muted-foreground');
-    }
   }
 }
 

@@ -38,10 +38,6 @@
 .lastSynced {
   font-size: font-size('sm');
   color: color('muted-foreground');
-
-  @include dark {
-    color: color('muted-foreground');
-  }
 }
 
 .headerActions {
