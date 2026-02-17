@@ -4,6 +4,18 @@
 /// Reusable SCSS mixins for responsive design, layout, visual effects,
 /// utilities, and decorative elements.
 ///
+/// ## Quick Reference
+/// | Category   | Mixins                                                                                      |
+/// |------------|---------------------------------------------------------------------------------------------|
+/// | Layout     | `flex`, `flex-center`, `flex-between`, `flex-column`, `flex-column-center`, `grid`,          |
+/// |            | `responsive-grid`, `container`, `stack`                                                     |
+/// | Visual     | `shadow`, `transition`, `hover-lift`, `card-hover`, `gradient-bg`, `backdrop-blur`, `glass`  |
+/// | Text       | `truncate`, `line-clamp`, `text-muted`, `text-balance`                                      |
+/// | Sizing     | `icon-size`, `spaced-children`                                                              |
+/// | A11y       | `visually-hidden`, `focus-ring`, `dark`, `reduced-motion`, `reduced-transparency`            |
+/// | Decorative | `orb`, `image-drop-shadow`                                                                  |
+/// | Responsive | `respond-to`, `respond-below`                                                               |
+///
 /// @group mixins
 /// @author arolariu
 /// @see {file} _variables.scss - Token maps used by these mixins
@@ -222,6 +234,44 @@
   background: _semantic-gradient($direction);
 }
 
+/// Backdrop blur (frosted glass effect).
+/// Includes `-webkit-` prefix for Safari compatibility.
+/// @param {Length} $blur [8px] - Blur radius
+/// @group mixins-visual
+/// @example scss
+///   .overlay { @include backdrop-blur; }
+///   .subtle { @include backdrop-blur(4px); }
+@mixin backdrop-blur($blur: 8px) {
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+}
+
+/// Glass morphism surface (frosted card/panel).
+/// Combines backdrop-blur with a semi-transparent background and border.
+/// @param {Length} $blur [8px] - Blur radius
+/// @param {Number} $opacity [0.5] - Background alpha
+/// @param {String} $bg ['card'] - Background color token
+/// @group mixins-visual
+/// @example scss
+///   .frosted-card { @include glass; }
+///   .modal-overlay { @include glass(12px, 0.8, 'background'); }
+@mixin glass($blur: 8px, $opacity: 0.5, $bg: 'card') {
+  background-color: colors.color-alpha($bg, $opacity);
+  @include backdrop-blur($blur);
+  border: 1px solid colors.color('border');
+}
+
+/// Balanced text wrapping (prevents orphan words in headings).
+/// Uses modern CSS `text-wrap` property.
+/// @param {String} $mode ['balance'] - 'balance' for headings, 'pretty' for body text
+/// @group mixins-utility
+/// @example scss
+///   .heading { @include text-balance; }
+///   .paragraph { @include text-balance('pretty'); }
+@mixin text-balance($mode: 'balance') {
+  text-wrap: $mode;
+}
+
 // ===========================================
 // UTILITY MIXINS
 // ===========================================
@@ -380,6 +430,24 @@
       @content;
     }
   } @else {
+    @content;
+  }
+}
+
+/// Reduced transparency media query wrapper (accessibility).
+/// Provides solid alternatives for users who prefer reduced transparency.
+/// @content Styles to apply when reduced transparency is preferred
+/// @group mixins-a11y
+/// @example scss
+///   .frosted-panel {
+///     @include backdrop-blur(8px);
+///     @include reduced-transparency {
+///       backdrop-filter: none;
+///       background-color: color('card');
+///     }
+///   }
+@mixin reduced-transparency {
+  @media (prefers-reduced-transparency: reduce) {
     @content;
   }
 }

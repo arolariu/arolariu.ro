@@ -445,3 +445,78 @@ $easings: (
 
   @error "Unknown easing: #{$key}. Available: #{map.keys($easings)}";
 }
+
+// ===========================================
+// BLUR SCALE
+// ===========================================
+
+/// Blur radius scale for `backdrop-filter` and `filter` usage.
+/// @type Map
+/// @group tokens-visual
+/// @prop {Length} 'sm' [2px] - Subtle blur
+/// @prop {Length} 'md' [4px] - Moderate blur
+/// @prop {Length} 'lg' [8px] - Standard frosted glass
+/// @prop {Length} 'xl' [12px] - Heavy frosted glass
+/// @prop {Length} '2xl' [16px] - Maximum blur
+$blurs: (
+  'sm': 2px,
+  'md': 4px,
+  'lg': 8px,
+  'xl': 12px,
+  '2xl': 16px,
+);
+
+/// Get a blur radius by name.
+/// @param {String} $key - Blur level (e.g. 'lg', 'xl')
+/// @return {Length} The blur radius
+/// @throws Unknown blur level: #{$key}
+/// @group tokens-visual
+/// @example scss
+///   @include backdrop-blur(blur-size('lg'));   // → blur(8px)
+@function blur-size($key) {
+  @if map.has-key($blurs, $key) {
+    @return map.get($blurs, $key);
+  }
+
+  @error "Unknown blur level: #{$key}. Available: #{map.keys($blurs)}";
+}
+
+// ===========================================
+// OPACITY SCALE
+// ===========================================
+
+/// Semantic opacity scale replacing magic numbers.
+/// @type Map
+/// @group tokens-visual
+/// @prop {Number} 'subtle' [0.05] - Barely visible tints
+/// @prop {Number} 'light' [0.1] - Light tints, icon backgrounds
+/// @prop {Number} 'medium' [0.2] - Borders, subtle overlays
+/// @prop {Number} 'semi' [0.5] - Half-transparent surfaces
+/// @prop {Number} 'heavy' [0.8] - Near-opaque overlays
+/// @prop {Number} 'near' [0.9] - Almost opaque
+/// @prop {Number} 'full' [1] - Fully opaque
+$opacities: (
+  'subtle': 0.05,
+  'light': 0.1,
+  'medium': 0.2,
+  'semi': 0.5,
+  'heavy': 0.8,
+  'near': 0.9,
+  'full': 1,
+);
+
+/// Get an opacity value by semantic name.
+/// @param {String} $key - Opacity name (e.g. 'light', 'semi')
+/// @return {Number} The opacity value
+/// @throws Unknown opacity: #{$key}
+/// @group tokens-visual
+/// @example scss
+///   opacity: opacity('semi');                         // → 0.5
+///   background: color-alpha('primary', opacity('light')); // → 0.1
+@function opacity($key) {
+  @if map.has-key($opacities, $key) {
+    @return map.get($opacities, $key);
+  }
+
+  @error "Unknown opacity: #{$key}. Available: #{map.keys($opacities)}";
+}
