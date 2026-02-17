@@ -131,7 +131,7 @@
   color: abstracts.color('primary');
   font-size: abstracts.font-size('sm');
   font-weight: abstracts.font-weight('medium');
-  backdrop-filter: blur(8px);
+  @include abstracts.backdrop-blur;
 }
 
 .statusDot {
@@ -249,7 +249,7 @@
   background-color: abstracts.color-alpha('muted', 0.5);
   color: abstracts.color('muted-foreground');
   font-size: abstracts.font-size('sm');
-  backdrop-filter: blur(8px);
+  @include abstracts.backdrop-blur;
 }
 
 .featurePillIcon {

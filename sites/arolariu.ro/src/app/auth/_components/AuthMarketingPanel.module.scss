@@ -87,7 +87,7 @@
   border: 1px solid color-alpha('border', 0.5);
   padding: space(6);
   background-color: color-alpha('card', 0.4);
-  backdrop-filter: blur(4px);
+  @include backdrop-blur(4px);
 }
 
 .cardGlowPrimary {

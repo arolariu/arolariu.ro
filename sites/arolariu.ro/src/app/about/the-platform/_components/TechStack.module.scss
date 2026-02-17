@@ -93,7 +93,7 @@
   margin-bottom: abstracts.space(12);
   border-radius: abstracts.radius('lg');
   background-color: abstracts.color-alpha('muted', 0.5);
-  backdrop-filter: blur(8px);
+  @include abstracts.backdrop-blur;
 
   @include abstracts.respond-to('md') {
     grid-template-columns: repeat(4, 1fr);

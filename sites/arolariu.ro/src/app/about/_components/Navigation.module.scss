@@ -57,7 +57,7 @@
   height: 100%;
   overflow: hidden;
   background-color: color-alpha('card', 0.5);
-  backdrop-filter: blur(8px);
+  @include backdrop-blur;
   border: 1px solid color('border');
   border-radius: radius('lg');
   @include transition((transform, border-color, box-shadow));

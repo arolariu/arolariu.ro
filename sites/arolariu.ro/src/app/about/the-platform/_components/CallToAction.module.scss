@@ -217,7 +217,7 @@
   padding: abstracts.space(6);
   border-radius: abstracts.radius('xl');
   background-color: abstracts.color-alpha('muted', 0.3);
-  backdrop-filter: blur(8px);
+  @include abstracts.backdrop-blur;
   @include abstracts.transition(transform);
 
   &:hover {

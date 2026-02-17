@@ -190,7 +190,7 @@
   justify-content: center;
   padding: abstracts.space(4);
   background-color: abstracts.color-alpha('muted-foreground', 0.6);
-  backdrop-filter: blur(8px);
+  @include abstracts.backdrop-blur;
 }
 
 .modalContent {

@@ -81,7 +81,7 @@
   background-color: color-alpha('card', 0.5);
   padding: space(6);
   @include shadow('lg');
-  backdrop-filter: blur(4px);
+  @include backdrop-blur(4px);
 
   @include respond-to('md') {
     padding: space(8);

@@ -104,7 +104,7 @@
   padding: space(2);
   background-color: color-alpha('card', 0.3);
   @include shadow('2xl');
-  backdrop-filter: blur(2px);
+  @include backdrop-blur(2px);
 }
 
 .codeLabel {
