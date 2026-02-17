@@ -398,15 +398,20 @@
   }
 }
 
-// Tooltip trigger
+// Tooltip trigger (span in footer) and tooltip content (code in portal).
+// The trigger needs primary-foreground to contrast against the footer bg.
+// The tooltip content must inherit from the Radix tooltip (dark bg + light
+// text in light mode, light bg + dark text in dark mode).
 .footer__build-tooltip {
   cursor: help;
+  color: color('primary-foreground');
+}
 
-  &,
-  &[data-state] {
-    background-color: transparent;
-    color: color('primary-foreground');
-  }
+// Inside the Radix tooltip portal, let the code inherit the tooltip's
+// own text color instead of forcing primary-foreground.
+[data-radix-popper-content-wrapper] .footer__build-tooltip {
+  color: inherit;
+  background-color: transparent;
 }
 
 // Commit SHA link
