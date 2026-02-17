@@ -179,6 +179,21 @@
 // ===========================================
 // WORKFLOW CARD
 // ===========================================
+.workflowCard {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border: 2px solid abstracts.color('border');
+  border-radius: abstracts.radius('xl');
+  background-color: abstracts.color('card');
+  @include abstracts.transition((border-color, box-shadow));
+
+  &:hover {
+    border-color: abstracts.color-alpha('primary', 0.3);
+    @include abstracts.shadow('lg');
+  }
+}
+
 .stepBadge {
   position: absolute;
   top: -1rem;
@@ -189,7 +204,8 @@
   border-radius: abstracts.radius('full');
   font-size: abstracts.font-size('2xl');
   font-weight: abstracts.font-weight('bold');
-  color: white;
+  background-color: abstracts.color('primary');
+  color: abstracts.color('primary-foreground');
   opacity: 0.2;
   @include abstracts.transition(opacity);
 }
@@ -200,8 +216,20 @@
   height: 3rem;
   width: 3rem;
   border-radius: abstracts.radius('xl');
-  color: white;
+  @include abstracts.gradient-bg(to bottom right);
+  color: abstracts.color('primary-foreground');
   @include abstracts.shadow('md');
+}
+
+.stepButton {
+  width: 100%;
+  @include abstracts.gradient-bg();
+  color: abstracts.color('primary-foreground');
+  @include abstracts.transition(transform);
+
+  &:hover {
+    transform: scale(1.02);
+  }
 }
 
 // ===========================================
@@ -359,6 +387,36 @@
   cursor: default;
 }
 
+// Bento gradient variants — each item gets a distinct color palette
+.gradientPurple {
+  background: linear-gradient(to bottom right, hsl(262 83% 58%), hsl(226 70% 55%));
+}
+
+.gradientEmerald {
+  background: linear-gradient(to bottom right, hsl(160 84% 39%), hsl(170 76% 36%));
+}
+
+.gradientBlue {
+  background: linear-gradient(to bottom right, hsl(210 90% 55%), hsl(190 90% 50%));
+}
+
+.gradientOrange {
+  background: linear-gradient(to bottom right, hsl(25 95% 53%), hsl(38 92% 50%));
+}
+
+.gradientSlate {
+  background: linear-gradient(to bottom right, hsl(215 20% 40%), hsl(215 25% 30%));
+}
+
+.gradientPink {
+  background: linear-gradient(to bottom right, hsl(330 80% 60%), hsl(350 80% 55%));
+}
+
+// Bento grid span variants
+.spanWide { grid-column: span 2; grid-row: span 1; }
+.spanTall { grid-column: span 1; grid-row: span 2; }
+.spanNormal { grid-column: span 1; grid-row: span 1; }
+
 .shimmerOverlay {
   position: absolute;
   inset: 0;
@@ -380,12 +438,12 @@
 .bentoItemTitle {
   font-size: abstracts.font-size('base');
   font-weight: abstracts.font-weight('bold');
-  color: white;
+  color: abstracts.color('primary-foreground');
 }
 
 .bentoItemDescription {
   font-size: abstracts.font-size('sm');
-  color: abstracts.color-alpha('muted-foreground', 0.8);
+  color: abstracts.color-alpha('primary-foreground', 0.8);
 }
 
 .mobileNote {
