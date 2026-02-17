@@ -45,7 +45,7 @@
 .footer {
   display: block;
   position: relative;
-  z-index: z('sticky');
+  z-index: z('content');
   bottom: 0;
   width: 100%;
   background-color: hsl(var(--footer-bg));
