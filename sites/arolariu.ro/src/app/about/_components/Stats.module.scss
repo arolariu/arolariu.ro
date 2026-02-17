@@ -1,12 +1,12 @@
 // ===========================================
 // ABOUT HUB - STATS COMPONENT
 // ===========================================
-@use '../../../styles/abstracts' as *;
+@use '../../../styles/abstracts' as abstracts;
 
 .section {
   position: relative;
   width: 100%;
-  padding: space(20) space(4);
+  padding: abstracts.space(20) abstracts.space(4);
 }
 
 .container {
@@ -17,18 +17,18 @@
 
 // Section header
 .header {
-  margin-bottom: space(12);
+  margin-bottom: abstracts.space(12);
   text-align: center;
 }
 
 .title {
   display: inline-block;
-  margin-bottom: space(4);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(4);
+  font-size: abstracts.font-size('3xl');
+  font-weight: abstracts.font-weight('bold');
 
-  @include respond-to('sm') {
-    font-size: font-size('4xl');
+  @include abstracts.respond-to('sm') {
+    font-size: abstracts.font-size('4xl');
   }
 }
 
@@ -36,20 +36,20 @@
   margin-left: auto;
   margin-right: auto;
   max-width: 42rem;
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 }
 
 // Stats grid
 .grid {
   display: grid;
-  gap: space(6);
+  gap: abstracts.space(6);
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include abstracts.respond-to('lg') {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -59,15 +59,15 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  border-radius: radius('lg');
-  border: 1px solid color('border');
-  background-color: color('card');
-  @include transition((transform, border-color, box-shadow));
+  border-radius: abstracts.radius('lg');
+  border: 1px solid abstracts.color('border');
+  background-color: abstracts.color('card');
+  @include abstracts.transition((transform, border-color, box-shadow));
 
   &:hover {
     transform: translateY(-4px);
-    border-color: color-alpha('primary', 0.3);
-    @include shadow('lg');
+    border-color: abstracts.color-alpha('primary', 0.3);
+    @include abstracts.shadow('lg');
   }
 }
 
@@ -75,7 +75,7 @@
   position: absolute;
   inset: 0;
   opacity: 0;
-  @include transition(opacity);
+  @include abstracts.transition(opacity);
   pointer-events: none;
 
   .card:hover & {
@@ -85,7 +85,7 @@
 
 .cardContent {
   position: relative;
-  padding: space(6);
+  padding: abstracts.space(6);
   text-align: center;
 }
 
@@ -93,12 +93,12 @@
 .iconWrapper {
   display: flex;
   justify-content: center;
-  margin-bottom: space(4);
+  margin-bottom: abstracts.space(4);
 }
 
 .iconInner {
-  padding: space(3);
-  border-radius: radius('xl');
+  padding: abstracts.space(3);
+  border-radius: abstracts.radius('xl');
 }
 
 .icon {
@@ -109,26 +109,26 @@
 
 // Gradient variants
 .gradientBlue {
-  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+  @include abstracts.gradient-bg();
 }
 
 .gradientPurple {
-  background: linear-gradient(to bottom right, #a855f7, #ec4899);
+  @include abstracts.gradient-bg();
 }
 
 .gradientAmber {
-  background: linear-gradient(to bottom right, #f59e0b, #f97316);
+  @include abstracts.gradient-bg();
 }
 
 .gradientGreen {
-  background: linear-gradient(to bottom right, #22c55e, #10b981);
+  @include abstracts.gradient-bg();
 }
 
 // Stat value with gradient text
 .value {
-  margin-bottom: space(2);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(2);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -136,32 +136,32 @@
 
 .valueBlue {
   composes: value;
-  background-image: linear-gradient(to right, #3b82f6, #06b6d4);
+  background-color: abstracts.color('primary');
 }
 
 .valuePurple {
   composes: value;
-  background-image: linear-gradient(to right, #a855f7, #ec4899);
+  background-color: abstracts.color('primary');
 }
 
 .valueAmber {
   composes: value;
-  background-image: linear-gradient(to right, #f59e0b, #f97316);
+  background-color: abstracts.color('primary');
 }
 
 .valueGreen {
   composes: value;
-  background-image: linear-gradient(to right, #22c55e, #10b981);
+  background-color: abstracts.color('primary');
 }
 
 // Labels
 .label {
-  margin-bottom: space(1);
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  margin-bottom: abstracts.space(1);
+  font-size: abstracts.font-size('lg');
+  font-weight: abstracts.font-weight('semibold');
 }
 
 .description {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }

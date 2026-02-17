@@ -7,9 +7,7 @@
 // LAYOUT
 // ===========================================
 .container {
-  & > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 // ===========================================
@@ -40,11 +38,11 @@
 
 .searchIcon {
   position: absolute;
-  top: 0.625rem; // 2.5
+  top: 0.625rem;
   left: 0.625rem;
   height: 1rem;
   width: 1rem;
-  color: color('muted-foreground');
+  color: color('foreground');
 }
 
 // ===========================================
@@ -70,20 +68,18 @@
 // ICON STYLES
 // ===========================================
 .filterIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
+  color: color('foreground');
 }
 
 .sunIcon {
-  width: space(4);
-  height: space(4);
-  color: #eab308; // Decorative: intentionally hardcoded (yellow-500)
+  @include icon-size(space(4));
+  color: color('warning');
 }
 
 .moonIcon {
-  width: space(4);
-  height: space(4);
-  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+  @include icon-size(space(4));
+  color: color('primary');
 }
 
 .viewToggle {

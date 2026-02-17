@@ -161,10 +161,21 @@ export default function Timeline(): React.JSX.Element {
                       />
 
                       <CardHeader className={styles["eventCardHeader"]}>
+                        <div className={styles["mobileEventMeta"]}>
+                          <span className={`${styles["mobileEventIcon"]} ${styles[iconClassMap[event.colorKey]]}`}>
+                            <event.icon className={styles["mobileEventIconInner"]} />
+                          </span>
+                          <Badge
+                            variant='outline'
+                            className={styles["dateBadge"]}>
+                            <TbCalendar className={styles["dateIcon"]} />
+                            {t(`events.${event.id}.date` as Parameters<typeof t>[0])}
+                          </Badge>
+                        </div>
                         {/* Date Badge */}
                         <Badge
                           variant='outline'
-                          className={styles["dateBadge"]}>
+                          className={`${styles["dateBadge"]} ${styles["dateBadgeDesktop"]}`}>
                           <TbCalendar className={styles["dateIcon"]} />
                           {t(`events.${event.id}.date` as Parameters<typeof t>[0])}
                         </Badge>

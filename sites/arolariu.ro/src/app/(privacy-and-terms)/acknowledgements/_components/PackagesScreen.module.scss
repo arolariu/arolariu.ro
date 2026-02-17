@@ -22,9 +22,7 @@
   margin-right: auto;
   margin-bottom: space(6);
 
-  > * + * {
-    margin-top: space(4);
-  }
+  @include spaced-children;
 }
 
 .searchContainer {
@@ -39,9 +37,7 @@
 }
 
 .filterRow {
-  display: flex;
-  flex-direction: column;
-  gap: space(2);
+  @include stack(space(2));
   max-width: 48rem;
   margin-left: auto;
   margin-right: auto;
@@ -133,9 +129,7 @@
   display: flex;
   flex-direction: column;
 
-  > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .detailRow {
@@ -159,12 +153,11 @@
 .websiteLink {
   display: flex;
   align-items: center;
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  @include text-muted('sm');
   @include transition(color);
 
   &:hover {
-    color: color('primary');
+    color: color('link');
   }
 }
 
@@ -256,7 +249,7 @@
   margin-left: auto;
   margin-right: auto;
   margin-bottom: space(4);
-  color: color('muted-foreground');
+  color: color('foreground');
 }
 
 .emptyText {
@@ -272,20 +265,20 @@
   font-size: font-size('xs');
   font-weight: font-weight('medium');
   border-radius: radius('full');
-  background-color: #dcfce7; // green-100
-  color: #166534; // green-800
+  @include gradient-bg();
+  color: color('primary');
   @include transition(background-color);
 
   &:hover {
-    background-color: #bbf7d0; // green-200
+    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
   }
 
   @include dark {
-    background-color: #14532d; // green-900
-    color: #dcfce7; // green-100
+    background-color: color('success');
+    color: color('primary');
 
     &:hover {
-      background-color: #166534; // green-800
+      background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
     }
   }
 }
@@ -296,20 +289,20 @@
   font-size: font-size('xs');
   font-weight: font-weight('medium');
   border-radius: radius('full');
-  background-color: #fef3c7; // amber-100
-  color: #92400e; // amber-800
+  @include gradient-bg();
+  color: color('warning');
   @include transition(background-color);
 
   &:hover {
-    background-color: #fde68a; // amber-200
+    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
   }
 
   @include dark {
-    background-color: #78350f; // amber-900
-    color: #fef3c7; // amber-100
+    @include gradient-bg();
+    color: color('primary');
 
     &:hover {
-      background-color: #92400e; // amber-800
+      background-color: color('warning');
     }
   }
 }

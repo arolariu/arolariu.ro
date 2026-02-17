@@ -62,12 +62,7 @@
 }
 
 .heroTitle {
-  background: linear-gradient(
-    to right,
-    color('foreground'),
-    color-alpha('foreground', 0.9),
-    color-alpha('foreground', 0.7)
-  );
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -137,7 +132,7 @@
   overflow: hidden;
   background-color: color-alpha('card', 0.5);
   border: 1px solid color-alpha('border', 0.5);
-  backdrop-filter: blur(4px);
+  @include backdrop-blur(4px);
   @include transition((border-color, box-shadow));
 
   &:hover {
@@ -223,7 +218,7 @@
   height: 12rem;
   border-radius: radius('2xl');
   padding: space(4);
-  background: linear-gradient(to bottom right, color-alpha('muted', 0.3), color-alpha('muted', 0.1));
+  @include gradient-bg();
   @include transition(transform);
 
   &:hover {
@@ -367,9 +362,9 @@
 // GRADIENT VARIANTS
 // ===========================================
 .gradientEmerald {
-  background: linear-gradient(to bottom right, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.1), transparent);
+  @include gradient-bg();
 }
 
 .gradientViolet {
-  background: linear-gradient(to bottom right, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+  @include gradient-bg();
 }

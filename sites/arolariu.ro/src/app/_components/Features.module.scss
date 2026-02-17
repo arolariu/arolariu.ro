@@ -60,7 +60,7 @@
 
 .titleWord {
   display: inline-block;
-  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

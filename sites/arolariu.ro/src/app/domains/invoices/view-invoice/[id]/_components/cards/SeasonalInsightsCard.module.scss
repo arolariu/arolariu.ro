@@ -45,13 +45,13 @@
 }
 
 .insightWarning {
-  border-color: rgba(#f59e0b, 0.3);
-  background-color: rgba(#f59e0b, 0.05);
+  border-color: color-alpha('warning', 0.3);
+  background-color: color-alpha('warning', 0.05);
 }
 
 .insightSuccess {
-  border-color: rgba(#22c55e, 0.3);
-  background-color: rgba(#22c55e, 0.05);
+  border-color: color-alpha('success', 0.3);
+  background-color: color-alpha('success', 0.05);
 }
 
 .insightInfo {
@@ -64,15 +64,15 @@
 }
 
 .insightIconWarning {
-  color: #f59e0b;
+  color: color('warning');
 }
 
 .insightIconSuccess {
-  color: #22c55e;
+  color: color('success');
 }
 
 .insightIconInfo {
-  color: color('muted-foreground');
+  color: color('foreground');
 }
 
 .insightContent {

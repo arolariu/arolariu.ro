@@ -1,9 +1,7 @@
 @use '../../../../../../../styles/abstracts' as *;
 
 .section {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .row {
@@ -27,8 +25,7 @@
 .mutedRow {
   display: flex;
   justify-content: space-between;
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .label {
@@ -36,8 +33,7 @@
 }
 
 .positionLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
   text-align: center;
 }
 
@@ -54,8 +50,7 @@
 }
 
 .subLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .trendValue {
@@ -64,11 +59,11 @@
 }
 
 .trendAmber {
-  color: #f59e0b; // Decorative: intentionally hardcoded
+  color: color('warning');
 }
 
 .trendEmerald {
-  color: #10b981; // Decorative: intentionally hardcoded
+  color: color('success');
 }
 
 .trendMuted {

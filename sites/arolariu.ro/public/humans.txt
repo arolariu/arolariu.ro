@@ -14,7 +14,7 @@
     Vercel & Next.js Team
     React Team
     TypeScript Team
-    Tailwind CSS Team
+    Sass Team
     Clerk Authentication Team
 
 /* SITE */
@@ -29,7 +29,7 @@
     Frontend Framework: Next.js 16 (App Router)
     UI Library: React 19
     Language: TypeScript 5.9
-    Styling: Tailwind CSS 4.x
+    Styling: SCSS Design System
     Components: shadcn/ui, Radix UI
     State Management: Zustand
     Authentication: Clerk

@@ -65,10 +65,10 @@
 
 .messageLine {
   margin-block: space(1);
-  color: #000;
+  color: color('foreground');
 
   @include dark {
-    color: #fff;
+    color: color('background');
   }
 }
 

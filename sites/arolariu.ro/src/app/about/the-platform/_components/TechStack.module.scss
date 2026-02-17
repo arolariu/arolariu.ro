@@ -1,73 +1,72 @@
 // ===========================================
 // THE PLATFORM - TECH STACK COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use '../../../../styles/abstracts' as abstracts;
+
+// Decorative exception policy (high-visual module):
+// - Prefer abstracts.color()/color-alpha() for semantic surfaces, text, and borders.
+// - Use decorative tokens only for visual accents and annotate intentional hardcoded values.
 
 .section {
   position: relative;
-  padding: space(24) 0;
+  padding: abstracts.space(24) 0;
 }
 
 // Background
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: z('behind');
+  z-index: abstracts.z('behind');
 }
 
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    color('background'),
-    color-alpha('primary', 0.05),
-    color('background')
-  );
+  @include abstracts.gradient-bg();
 }
 
 .container {
   margin-left: auto;
   margin-right: auto;
-  padding: 0 space(4);
+  padding: 0 abstracts.space(4);
 }
 
 // Header
 .header {
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: space(16);
+  margin-bottom: abstracts.space(16);
   max-width: 48rem;
   text-align: center;
 }
 
 .badge {
-  margin-bottom: space(4);
-  padding: space(1) space(4);
-  font-size: font-size('sm');
+  margin-bottom: abstracts.space(4);
+  padding: abstracts.space(1) abstracts.space(4);
+  font-size: abstracts.font-size('sm');
 }
 
 .title {
-  margin-bottom: space(6);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
   letter-spacing: letter-spacing('tight');
 
-  @include respond-to('md') {
-    font-size: font-size('5xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('5xl');
   }
 }
 
 .titleHighlight {
-  @include gradient-text-custom;
+  color: abstracts.color('primary');
 }
 
 .description {
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 
-  @include respond-to('md') {
-    font-size: font-size('xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('xl');
   }
 }
 
@@ -78,9 +77,9 @@
   max-width: 72rem;
 }
 
-// Tab list wrapper (replaces inline Tailwind)
+// Tab list wrapper (replaces inline utility-class strings)
 .tabListWrapper {
-  margin-bottom: space(12);
+  margin-bottom: abstracts.space(12);
   display: flex;
   justify-content: center;
 }
@@ -89,14 +88,14 @@
 .tabList {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: space(2);
-  padding: space(2);
-  margin-bottom: space(12);
-  border-radius: radius('lg');
-  background-color: color-alpha('muted', 0.5);
-  backdrop-filter: blur(8px);
+  gap: abstracts.space(2);
+  padding: abstracts.space(2);
+  margin-bottom: abstracts.space(12);
+  border-radius: abstracts.radius('lg');
+  background-color: abstracts.color-alpha('muted', 0.5);
+  @include abstracts.backdrop-blur;
 
-  @include respond-to('md') {
+  @include abstracts.respond-to('md') {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -106,22 +105,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: space(2);
-  padding: space(3) space(4);
-  border-radius: radius('md');
+  gap: abstracts.space(2);
+  padding: abstracts.space(3) abstracts.space(4);
+  border-radius: abstracts.radius('md');
   background: transparent;
   border: none;
   cursor: pointer;
-  @include transition(background-color);
+  @include abstracts.transition(background-color);
 
   &:hover {
-    background-color: color-alpha('background', 0.5);
+    background-color: abstracts.color-alpha('background', 0.5);
   }
 }
 
 .tabTriggerActive {
   composes: tabTrigger;
-  background-color: color('background');
+  background-color: abstracts.color('background');
 }
 
 .tabIcon {
@@ -132,7 +131,7 @@
 .tabLabel {
   display: none;
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     display: inline;
   }
 }
@@ -143,7 +142,7 @@
   height: 2px;
 }
 
-// Tab content (replaces inline Tailwind)
+// Tab content (replaces inline utility-class strings)
 .tabContent {
   margin-top: 0;
 
@@ -155,22 +154,22 @@
 
 // Category description
 .categoryDescription {
-  margin-bottom: space(8);
+  margin-bottom: abstracts.space(8);
   text-align: center;
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 }
 
 // Tech grid
 .techGrid {
   display: grid;
-  gap: space(4);
+  gap: abstracts.space(4);
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include abstracts.respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -180,11 +179,11 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  @include transition((border-color, box-shadow));
+  @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: color('primary');
-    @include shadow('lg');
+    border-color: abstracts.color('link');
+    @include abstracts.shadow('lg');
   }
 }
 
@@ -192,7 +191,7 @@
   position: absolute;
   inset: 0;
   opacity: 0;
-  @include transition(opacity);
+  @include abstracts.transition(opacity);
   pointer-events: none;
 }
 
@@ -200,8 +199,8 @@
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: space(4);
-  padding: space(5);
+  gap: abstracts.space(4);
+  padding: abstracts.space(5);
 }
 
 .techIconWrapper {
@@ -211,8 +210,8 @@
   flex-shrink: 0;
   width: 3rem;
   height: 3rem;
-  border-radius: radius('xl');
-  @include transition(transform);
+  border-radius: abstracts.radius('xl');
+  @include abstracts.transition(transform);
 
   .techCard:hover & {
     transform: scale(1.1) rotate(5deg);
@@ -233,18 +232,18 @@
 .techName {
   display: flex;
   align-items: center;
-  gap: space(2);
-  margin-bottom: space(1);
-  font-weight: font-weight('semibold');
+  gap: abstracts.space(2);
+  margin-bottom: abstracts.space(1);
+  font-weight: abstracts.font-weight('semibold');
 }
 
 .techVersion {
-  font-size: font-size('xs');
+  font-size: abstracts.font-size('xs');
 }
 
 .techDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }
 
 .techCardBorder {
@@ -253,7 +252,7 @@
   height: 2px;
   transform: scaleX(0);
   transform-origin: left;
-  @include transition(transform);
+  @include abstracts.transition(transform);
 
   .techCard:hover & {
     transform: scaleX(1);
@@ -267,45 +266,45 @@
 .statsHeader {
   margin-left: auto;
   margin-right: auto;
-  margin-top: space(20);
-  margin-bottom: space(16);
+  margin-top: abstracts.space(20);
+  margin-bottom: abstracts.space(16);
   max-width: 48rem;
   text-align: center;
 }
 
 .statsTitle {
-  margin-bottom: space(6);
-  font-size: font-size('3xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('3xl');
+  font-weight: abstracts.font-weight('bold');
   letter-spacing: letter-spacing('tight');
 
-  @include respond-to('md') {
-    font-size: font-size('4xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('4xl');
   }
 }
 
 .statsDescription {
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 
-  @include respond-to('md') {
-    font-size: font-size('xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('xl');
   }
 }
 
 // Statistics grid
 .statsGrid {
   display: grid;
-  gap: space(6);
+  gap: abstracts.space(6);
   margin-left: auto;
   margin-right: auto;
   max-width: 72rem;
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
+  @include abstracts.respond-to('lg') {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -315,25 +314,25 @@
   position: relative;
   height: 100%;
   overflow: hidden;
-  @include transition((border-color, box-shadow));
+  @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: color('primary');
-    @include shadow('lg');
+    border-color: abstracts.color('link');
+    @include abstracts.shadow('lg');
   }
 }
 
 .statCardActive {
   composes: statCard;
-  border-color: color('primary');
-  @include shadow('lg');
+  border-color: abstracts.color('primary');
+  @include abstracts.shadow('lg');
 }
 
 .statCardGradient {
   position: absolute;
   inset: 0;
   opacity: 0;
-  @include transition(opacity);
+  @include abstracts.transition(opacity);
   pointer-events: none;
 }
 
@@ -342,7 +341,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: space(6);
+  padding: abstracts.space(6);
   text-align: center;
 }
 
@@ -351,25 +350,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: space(4);
+  margin-bottom: abstracts.space(4);
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: radius('xl');
-  @include transition(transform);
+  border-radius: abstracts.radius('xl');
+  @include abstracts.transition(transform);
 
   .statCard:hover & {
     transform: scale(1.1) rotate(5deg);
   }
 }
 
-.iconBlue { background: linear-gradient(to bottom right, #3b82f6, #06b6d4); }
-.iconPurple { background: linear-gradient(to bottom right, #a855f7, #8b5cf6); }
-.iconGreen { background: linear-gradient(to bottom right, #22c55e, #10b981); }
-.iconOrange { background: linear-gradient(to bottom right, #f97316, #f59e0b); }
-.iconPink { background: linear-gradient(to bottom right, #ec4899, #f43f5e); }
-.iconIndigo { background: linear-gradient(to bottom right, #6366f1, #3b82f6); }
-.iconYellow { background: linear-gradient(to bottom right, #eab308, #f59e0b); }
-.iconTeal { background: linear-gradient(to bottom right, #14b8a6, #06b6d4); }
+.iconBlue { background-color: abstracts.color('primary'); }
+.iconPurple { background-color: abstracts.color('primary'); }
+.iconGreen { background-color: abstracts.color('primary'); }
+.iconOrange { background-color: abstracts.color('primary'); }
+.iconPink { background-color: abstracts.color('primary'); }
+.iconIndigo { background-color: abstracts.color('primary'); }
+.iconYellow { background-color: abstracts.color('primary'); }
+.iconTeal { @include abstracts.gradient-bg(); }
 
 .statIcon {
   width: 1.75rem;
@@ -379,22 +378,22 @@
 
 // Stat value
 .statValue {
-  margin-bottom: space(2);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
-  color: color('primary');
+  margin-bottom: abstracts.space(2);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
+  color: abstracts.color('primary');
 }
 
 // Stat label
 .statLabel {
-  margin-bottom: space(1);
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  margin-bottom: abstracts.space(1);
+  font-size: abstracts.font-size('lg');
+  font-weight: abstracts.font-weight('semibold');
 }
 
 .statDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }
 
 // Animated border
@@ -404,7 +403,7 @@
   height: 4px;
   transform: scaleX(0);
   transform-origin: left;
-  @include transition(transform);
+  @include abstracts.transition(transform);
 
   .statCard:hover & {
     transform: scaleX(1);
@@ -412,17 +411,17 @@
 }
 
 // Gradient variants for borders
-.borderBlue { background: linear-gradient(to right, #3b82f6, #06b6d4); }
-.borderPurple { background: linear-gradient(to right, #a855f7, #8b5cf6); }
-.borderGreen { background: linear-gradient(to right, #22c55e, #10b981); }
-.borderOrange { background: linear-gradient(to right, #f97316, #f59e0b); }
-.borderPink { background: linear-gradient(to right, #ec4899, #f43f5e); }
-.borderIndigo { background: linear-gradient(to right, #6366f1, #3b82f6); }
-.borderYellow { background: linear-gradient(to right, #eab308, #f59e0b); }
-.borderTeal { background: linear-gradient(to right, #14b8a6, #06b6d4); }
+.borderBlue { background-color: abstracts.color('primary'); }
+.borderPurple { background-color: abstracts.color('primary'); }
+.borderGreen { background-color: abstracts.color('primary'); }
+.borderOrange { background-color: abstracts.color('primary'); }
+.borderPink { background-color: abstracts.color('primary'); }
+.borderIndigo { background-color: abstracts.color('primary'); }
+.borderYellow { background-color: abstracts.color('primary'); }
+.borderTeal { @include abstracts.gradient-bg(); }
 
 // Gradient variants for categories
-.gradientBlueCyan { background: linear-gradient(to bottom right, #3b82f6, #06b6d4); }
-.gradientPurpleViolet { background: linear-gradient(to bottom right, #a855f7, #8b5cf6); }
-.gradientOrangeAmber { background: linear-gradient(to bottom right, #f97316, #f59e0b); }
-.gradientGreenEmerald { background: linear-gradient(to bottom right, #22c55e, #10b981); }
+.gradientBlueCyan { @include abstracts.gradient-bg(); }
+.gradientPurpleViolet { @include abstracts.gradient-bg(); }
+.gradientOrangeAmber { @include abstracts.gradient-bg(); }
+.gradientGreenEmerald { @include abstracts.gradient-bg(); }

@@ -29,7 +29,7 @@
 
 .title {
   margin-bottom: space(4);
-  background: linear-gradient(to right, #f472b6, #dc2626); // pink-400 -> red-600
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

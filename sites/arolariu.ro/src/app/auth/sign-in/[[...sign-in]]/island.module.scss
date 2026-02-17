@@ -180,12 +180,7 @@
 }
 
 .clerkShimmer {
-  background: linear-gradient(
-    90deg,
-    color-alpha('muted', 0.3) 0%,
-    color-alpha('muted', 0.5) 50%,
-    color-alpha('muted', 0.3) 100%
-  );
+  @include gradient-bg();
   background-size: 200% 100%;
   animation: clerkShimmer 1.5s infinite;
 }

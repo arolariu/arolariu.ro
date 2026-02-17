@@ -1,7 +1,7 @@
 /// ===========================================
 /// FOOTER COMPONENT — BEM
 /// ===========================================
-/// Full site footer migrated from Tailwind utility classes to BEM.
+/// Full site footer migrated from utility-style classes to BEM.
 /// Responsive grid layout: 1 col mobile → 2 cols tablet → 3 cols desktop.
 /// Hidden when printing.
 ///
@@ -43,14 +43,28 @@
 // Main footer wrapper
 // Original: bg-footer-bg relative bottom-0 w-full print:hidden
 .footer {
-  display: block; // Explicitly set to block (override any Tailwind grid)
+  display: block;
   position: relative;
+  z-index: z('content');
   bottom: 0;
   width: 100%;
   background-color: hsl(var(--footer-bg));
 
-  @media print {
-    display: none;
+  // Override global code element styling for ALL code elements in the footer.
+  // The global base layer sets code { background-color: hsl(var(--muted)) }
+  // which creates a WCAG color-contrast violation against the footer's
+  // primary background. This ensures code elements are transparent.
+  code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  @if $enable-print-styles {
+    @media print {
+      display: none;
+    }
   }
 }
 
@@ -74,12 +88,12 @@
 // Original: mx-auto pt-12 text-white md:px-24 lg:max-w-(--breakpoint-xl) lg:px-8
 // Note: Production shows no max-width and no centering margins (CSS var not resolved)
 .footer__container {
-  display: block; // Explicitly set to block (override any Tailwind grid)
+  display: block; // Explicitly set to block (override any inherited grid display)
   width: 100%; // Ensure full width
   max-width: none; // No max-width constraint
   margin: 0; // No centering margins (match production)
   padding-top: 3rem; // pt-12
-  color: static-color('white');
+  color: color('primary-foreground');
 
   @include respond-to('md') {
     padding-left: 3rem;
@@ -155,7 +169,7 @@
 
   &:hover {
     transform: scale(1.1);
-    color: interactive-color('hover-accent-dark'); // yellow-500
+    color: color('primary-foreground');
   }
 }
 
@@ -173,10 +187,10 @@
   font-weight: 700; // font-bold
   text-transform: uppercase;
   letter-spacing: 0.025em; // tracking-wide
-  color: static-color('white'); // Ensure white color in footer
+  color: color('primary-foreground');
 
   &:hover {
-    color: interactive-color('hover-accent-dark'); // yellow-500
+    color: color('primary-foreground');
   }
 }
 
@@ -199,7 +213,7 @@
 // RichText prose styling
 // Original: prose 2xsm:text-center text-pretty text-white md:text-start
 .footer__rich-text {
-  color: static-color('white');
+  color: color('primary-foreground');
   text-wrap: pretty;
   text-align: left; // Default: left aligned
 
@@ -246,12 +260,12 @@
 .footer__nav-title {
   font-weight: 600; // font-semibold
   letter-spacing: 0.025em; // tracking-wide
-  color: static-color('white');
+  color: color('primary-foreground');
   cursor: default;
   transition: color 300ms ease-in-out;
 
   &:hover {
-    color: interactive-color('hover-accent-dark'); // yellow-500
+    color: color('primary-foreground');
   }
 }
 
@@ -271,14 +285,17 @@
 // Navigation link
 // Original: text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300
 .footer__nav-link {
-  color: hsla(0, 0%, 100%, 0.9); // text-deep-purple-50 approximation
-  transition: color 300ms ease-in-out;
+  color: color('primary-foreground');
+  transition: color 300ms ease-in-out, text-decoration-color 300ms ease-in-out;
+  text-decoration: underline;
+  text-decoration-color: color-alpha('primary-foreground', 0.6);
+  text-underline-offset: 0.15em;
 
   &:hover {
-    color: interactive-color('teal-accent'); // teal-accent-400
+    color: color('primary-foreground');
+    text-decoration-color: color('primary-foreground');
   }
 
-  // Override global code styling within footer links
   code {
     color: inherit;
     background-color: transparent;
@@ -297,7 +314,7 @@
   justify-content: space-between;
   width: 100%; // Ensure full width for space-between to work
   gap: 2rem; // gap-8
-  border-top: 1px solid static-color('white');
+  border-top: 1px solid color-alpha('primary-foreground', 0.35);
   padding-top: 1.25rem; // py-5
   padding-bottom: 1.25rem;
 }
@@ -326,8 +343,16 @@
 // Source code link
 // Original: text-yellow-500 italic
 .footer__source-link {
-  color: interactive-color('hover-accent-dark'); // yellow-500
+  color: color('primary-foreground');
   font-style: italic;
+  text-decoration: underline;
+  text-decoration-color: color-alpha('primary-foreground', 0.6);
+  text-underline-offset: 0.15em;
+
+  &:hover {
+    color: color('primary-foreground');
+    text-decoration-color: color('primary-foreground');
+  }
 }
 
 // Social links container
@@ -352,43 +377,52 @@
 .footer__social-icon {
   height: 1.75rem; // h-7
   width: 1.75rem; // w-7
-  color: static-color('white'); // Ensure white color in footer
-  transition: color 300ms ease-in-out;
+  color: color('primary-foreground');
+  transition: color 300ms ease-in-out, opacity 300ms ease-in-out;
 
   &:hover {
-    color: interactive-color('hover-accent-dark'); // yellow-500
+    color: color('primary-foreground');
+    opacity: 0.82;
   }
 }
 
 // Build info section
-// Original: 2xsm:text-center text-sm text-slate-300 md:text-end
 .footer__build-info {
-  width: 100%; // Ensure full width for text-align to work
-  font-size: 0.875rem; // text-sm
-  color: interactive-color('slate-light'); // text-slate-300
-  text-align: end; // Default: right aligned
+  width: 100%;
+  font-size: 0.875rem;
+  color: color('primary-foreground');
+  text-align: end;
 
-  // Mobile only: centered
   @include respond-below('md') {
     text-align: center;
   }
 }
 
-// Tooltip trigger
-// Original: cursor-help
+// Tooltip trigger (span in footer) and tooltip content (code in portal).
+// The trigger needs primary-foreground to contrast against the footer bg.
+// The tooltip content must inherit from the Radix tooltip (dark bg + light
+// text in light mode, light bg + dark text in dark mode).
 .footer__build-tooltip {
   cursor: help;
+  color: color('primary-foreground');
+}
 
-  // Override Tooltip component defaults in footer context
-  &,
-  &[data-state] {
-    background-color: transparent;
-    color: static-color('white');
-  }
+// Inside the Radix tooltip portal, let the code inherit the tooltip's
+// own text color instead of forcing primary-foreground.
+[data-radix-popper-content-wrapper] .footer__build-tooltip {
+  color: inherit;
+  background-color: transparent;
 }
 
 // Commit SHA link
-// Original: italic
 .footer__commit-link {
   font-style: italic;
+  color: color('primary-foreground');
+  text-decoration: underline;
+  text-decoration-color: color-alpha('primary-foreground', 0.6);
+  text-underline-offset: 0.15em;
+
+  &:hover {
+    text-decoration-color: color('primary-foreground');
+  }
 }

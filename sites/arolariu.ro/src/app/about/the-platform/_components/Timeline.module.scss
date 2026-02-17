@@ -1,78 +1,78 @@
 // ===========================================
 // THE PLATFORM - TIMELINE COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use '../../../../styles/abstracts' as abstracts;
+
+// Decorative exception policy (high-visual module):
+// - Prefer abstracts.color()/color-alpha() for semantic surfaces, text, and borders.
+// - Use decorative tokens only for visual accents and annotate intentional hardcoded values.
 
 .section {
   position: relative;
-  padding: space(24) 0;
+  padding: abstracts.space(24) 0;
 }
 
 // Background
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: z('behind');
+  z-index: abstracts.z('behind');
 }
 
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    color('background'),
-    color-alpha('primary', 0.05),
-    color('background')
-  );
+  @include abstracts.gradient-bg();
 }
 
 .container {
   margin-left: auto;
   margin-right: auto;
-  padding: 0 space(4);
+  padding: 0 abstracts.space(4);
 }
 
 // Header
 .header {
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: space(16);
+  margin-bottom: abstracts.space(16);
   max-width: 48rem;
   text-align: center;
 }
 
 .badge {
-  margin-bottom: space(4);
-  padding: space(1) space(4);
-  font-size: font-size('sm');
+  margin-bottom: abstracts.space(4);
+  padding: abstracts.space(1) abstracts.space(4);
+  font-size: abstracts.font-size('sm');
 }
 
 .title {
-  margin-bottom: space(6);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
   letter-spacing: letter-spacing('tight');
 
-  @include respond-to('md') {
-    font-size: font-size('5xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('5xl');
   }
 }
 
 .titleHighlight {
-  @include gradient-text-custom;
+  color: abstracts.color('primary');
 }
 
 .description {
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 
-  @include respond-to('md') {
-    font-size: font-size('xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('xl');
   }
 }
 
 // Timeline container
 .timeline {
+  --timeline-axis: 50%;
   position: relative;
   margin-left: auto;
   margin-right: auto;
@@ -82,45 +82,41 @@
 // Center line
 .centerLine {
   position: absolute;
-  left: 50%;
+  left: var(--timeline-axis);
   transform: translateX(-50%);
   width: 4px;
   height: 100%;
-  border-radius: radius('full');
-  background: linear-gradient(
-    to bottom,
-    color-alpha('primary', 0.5),
-    color-alpha('primary', 0.3),
-    color-alpha('primary', 0.1)
-  );
+  border-radius: abstracts.radius('full');
+  @include abstracts.gradient-bg();
 }
 
 // Events container
 .events {
   display: flex;
   flex-direction: column;
-  gap: space(16);
+  gap: abstracts.space(16);
 }
 
 // Event wrapper
 .eventWrapper {
   position: relative;
+  width: 100%;
 }
 
 // Event icon on timeline
 .eventIcon {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: var(--timeline-axis);
   transform: translate(-50%, -50%);
-  z-index: z('content-high');
+  z-index: abstracts.z('content-high');
   display: flex;
   align-items: center;
   justify-content: center;
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: radius('full');
-  @include shadow('lg');
+  border-radius: abstracts.radius('full');
+  @include abstracts.shadow('lg');
 }
 
 .eventIconInner {
@@ -131,35 +127,35 @@
 
 // Icon gradient variants
 .iconBlue {
-  background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+  background-color: abstracts.color('primary');
 }
 
 .iconGreen {
-  background: linear-gradient(to bottom right, #22c55e, #10b981);
+  background-color: abstracts.color('primary');
 }
 
 .iconPurple {
-  background: linear-gradient(to bottom right, #a855f7, #8b5cf6);
+  background-color: abstracts.color('primary');
 }
 
 .iconOrange {
-  background: linear-gradient(to bottom right, #f97316, #f59e0b);
+  background-color: abstracts.color('primary');
 }
 
 .iconRed {
-  background: linear-gradient(to bottom right, #ef4444, #ec4899);
+  background-color: abstracts.color('primary');
 }
 
 .iconCyan {
-  background: linear-gradient(to bottom right, #06b6d4, #14b8a6);
+  background-color: abstracts.color('primary');
 }
 
 .iconIndigo {
-  background: linear-gradient(to bottom right, #6366f1, #a855f7);
+  background-color: abstracts.color('primary');
 }
 
 .iconTeal {
-  background: linear-gradient(to bottom right, #14b8a6, #22c55e);
+  background-color: abstracts.color('primary');
 }
 
 // Event card positioning
@@ -170,53 +166,61 @@
 .eventCardLeft {
   composes: eventCardWrapper;
   margin-right: auto;
-  padding-right: space(8);
+  padding-right: abstracts.space(8);
 }
 
 .eventCardRight {
   composes: eventCardWrapper;
   margin-left: auto;
-  padding-left: space(8);
+  padding-left: abstracts.space(8);
 }
 
 // Event card
 .eventCard {
   cursor: pointer;
   overflow: hidden;
-  @include transition((border-color, box-shadow));
+  @include abstracts.transition((border-color, box-shadow));
 
   &:hover {
-    border-color: color('primary');
-    @include shadow('lg');
+    border-color: abstracts.color('link');
+    @include abstracts.shadow('lg');
   }
 }
 
 .eventCardActive {
   composes: eventCard;
-  border-color: color('primary');
-  @include shadow('lg');
+  border-color: abstracts.color('primary');
+  @include abstracts.shadow('lg');
 }
 
 .eventCardGradient {
   position: absolute;
   inset: 0;
   opacity: 0;
-  @include transition(opacity);
+  @include abstracts.transition(opacity);
   pointer-events: none;
 }
 
 // Card header
 .eventCardHeader {
   position: relative;
-  padding-bottom: space(2);
+  padding-bottom: abstracts.space(2);
+}
+
+.mobileEventMeta {
+  display: none;
 }
 
 .dateBadge {
   display: flex;
   align-items: center;
-  gap: space(1);
-  margin-bottom: space(2);
+  gap: abstracts.space(1);
+  margin-bottom: abstracts.space(2);
   width: fit-content;
+}
+
+.dateBadgeDesktop {
+  display: flex;
 }
 
 .dateIcon {
@@ -225,11 +229,11 @@
 }
 
 .eventTitle {
-  font-size: font-size('xl');
+  font-size: abstracts.font-size('xl');
 }
 
 .eventDescription {
-  font-size: font-size('base');
+  font-size: abstracts.font-size('base');
 }
 
 // Card content
@@ -241,12 +245,12 @@
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: space(2);
-  margin-bottom: space(4);
+  gap: abstracts.space(2);
+  margin-bottom: abstracts.space(4);
 }
 
 .tag {
-  font-size: font-size('xs');
+  font-size: abstracts.font-size('xs');
 }
 
 // Expandable details
@@ -255,28 +259,28 @@
 }
 
 .detailsInner {
-  padding-top: space(4);
-  border-top: 1px solid color-alpha('primary', 0.2);
+  padding-top: abstracts.space(4);
+  border-top: 1px solid abstracts.color-alpha('primary', 0.2);
 }
 
 .detailsTitle {
-  margin-bottom: space(3);
-  font-size: font-size('sm');
-  font-weight: font-weight('semibold');
+  margin-bottom: abstracts.space(3);
+  font-size: abstracts.font-size('sm');
+  font-weight: abstracts.font-weight('semibold');
 }
 
 .detailsList {
   display: flex;
   flex-direction: column;
-  gap: space(2);
+  gap: abstracts.space(2);
 }
 
 .detailItem {
   display: flex;
   align-items: flex-start;
-  gap: space(2);
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  gap: abstracts.space(2);
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }
 
 .detailIcon {
@@ -288,43 +292,43 @@
 
 // Color variants for detail icons
 .detailIconBlue {
-  color: #3b82f6;
+  color: abstracts.color('primary');
 }
 
 .detailIconGreen {
-  color: #22c55e;
+  color: abstracts.color('success');
 }
 
 .detailIconPurple {
-  color: #a855f7;
+  color: abstracts.color('primary');
 }
 
 .detailIconOrange {
-  color: #f97316;
+  color: abstracts.color('warning');
 }
 
 .detailIconRed {
-  color: #ef4444;
+  color: abstracts.color('destructive');
 }
 
 .detailIconCyan {
-  color: #06b6d4;
+  color: abstracts.color('primary');
 }
 
 .detailIconIndigo {
-  color: #6366f1;
+  color: abstracts.color('primary');
 }
 
 .detailIconTeal {
-  color: #14b8a6;
+  color: abstracts.color('primary');
 }
 
 // Expand hint
 .expandHint {
-  margin-top: space(2);
+  margin-top: abstracts.space(2);
   text-align: center;
-  font-size: font-size('xs');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('xs');
+  color: abstracts.color('muted-foreground');
 }
 
 // Animated border
@@ -344,40 +348,40 @@
 
 // Border gradient variants
 .borderBlue {
-  background: linear-gradient(to right, #3b82f6, #06b6d4);
+  background-color: abstracts.color('primary');
 }
 
 .borderGreen {
-  background: linear-gradient(to right, #22c55e, #10b981);
+  background-color: abstracts.color('primary');
 }
 
 .borderPurple {
-  background: linear-gradient(to right, #a855f7, #8b5cf6);
+  background-color: abstracts.color('primary');
 }
 
 .borderOrange {
-  background: linear-gradient(to right, #f97316, #f59e0b);
+  background-color: abstracts.color('primary');
 }
 
 .borderRed {
-  background: linear-gradient(to right, #ef4444, #ec4899);
+  background-color: abstracts.color('primary');
 }
 
 .borderCyan {
-  background: linear-gradient(to right, #06b6d4, #14b8a6);
+  background-color: abstracts.color('primary');
 }
 
 .borderIndigo {
-  background: linear-gradient(to right, #6366f1, #a855f7);
+  background-color: abstracts.color('primary');
 }
 
 .borderTeal {
-  background: linear-gradient(to right, #14b8a6, #22c55e);
+  background-color: abstracts.color('primary');
 }
 
 // Future indicator
 .futureIndicator {
-  margin-top: space(16);
+  margin-top: abstracts.space(16);
   text-align: center;
 }
 
@@ -389,9 +393,9 @@
   margin-right: auto;
   width: 5rem;
   height: 5rem;
-  border-radius: radius('full');
-  background-color: color-alpha('primary', 0.1);
-  color: color('primary');
+  border-radius: abstracts.radius('full');
+  background-color: abstracts.color-alpha('primary', 0.1);
+  color: abstracts.color('primary');
 }
 
 .futureIcon {
@@ -400,6 +404,63 @@
 }
 
 .futureText {
-  margin-top: space(4);
-  color: color('muted-foreground');
+  margin-top: abstracts.space(4);
+  color: abstracts.color('muted-foreground');
+}
+
+@include abstracts.respond-below('md') {
+  .centerLine {
+    display: none;
+  }
+
+  .events {
+    gap: abstracts.space(8);
+  }
+
+  .eventIcon {
+    display: none;
+  }
+
+  .eventCardWrapper {
+    width: 100%;
+  }
+
+  .eventCardLeft,
+  .eventCardRight {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .mobileEventMeta {
+    display: flex;
+    align-items: center;
+    gap: abstracts.space(2);
+    margin-bottom: abstracts.space(2);
+  }
+
+  .mobileEventIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: abstracts.radius('full');
+    flex-shrink: 0;
+  }
+
+  .mobileEventIconInner {
+    width: 1rem;
+    height: 1rem;
+    color: white;
+  }
+
+  .dateBadgeDesktop {
+    display: none;
+  }
+
+  .dateBadge {
+    margin-bottom: 0;
+  }
 }

@@ -6,7 +6,7 @@
 .section {
   position: relative;
   min-height: 100vh;
-  overflow: hidden;
+  overflow: visible;
   padding: space(20) 0;
 }
 
@@ -56,7 +56,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -98,7 +98,7 @@
   position: absolute;
   inset: -1px;
   border-radius: radius('full');
-  background: linear-gradient(to right, color('gradient-from'), color('gradient-to'));
+  @include gradient-bg();
   @include transition(box-shadow);
 }
 
@@ -155,7 +155,7 @@
 }
 
 .orbPurple {
-  @include orb(10rem, 48px, rgb(168 85 247 / 0.2)); // purple-500/20
+  @include orb(10rem, 48px, color-alpha('tertiary', 0.2));
   bottom: -5rem;
   right: -5rem;
 }

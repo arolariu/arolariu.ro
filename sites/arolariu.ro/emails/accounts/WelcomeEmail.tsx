@@ -71,8 +71,8 @@ const WelcomeEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        Thanks for joining <strong>{BRAND.name}</strong>. We're glad you're here. Our platform helps you turn everyday receipts into
-        organized financial insights — powered by AI analysis.
+        Thanks for joining <strong>{BRAND.name}</strong>. We&apos;re glad you&apos;re here. Our platform helps you turn everyday receipts
+        into organized financial insights — powered by AI analysis.
       </Text>
 
       <EmailCard title='How it works'>
@@ -101,7 +101,7 @@ const WelcomeEmail = (props: Readonly<Props>) => {
       </Text>
 
       <Text style={EmailParagraphStyles}>
-        Questions or feedback? We'd love to hear from you at{" "}
+        Questions or feedback? We&apos;d love to hear from you at{" "}
         <Link
           href={`mailto:${BRAND.supportEmail}`}
           style={EmailLinkStyles}>

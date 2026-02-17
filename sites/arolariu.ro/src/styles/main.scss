@@ -3,7 +3,7 @@
 /// ===========================================
 /// Main entry point for the SCSS design system, following an adapted
 /// 7-1 pattern. Imported in `layout.tsx` via `app/globals.scss` AFTER
-/// `@arolariu/components/styles.css` (Tailwind-based component library).
+/// `@arolariu/components/styles.css` (shared component library stylesheet).
 ///
 /// CSS custom properties are defined in `base/_globals.scss`.
 ///
@@ -23,15 +23,15 @@
 /// |---------|-----------|---------|
 /// | CSS Modules (`.module.scss`) | camelCase | `.cardWrapper` |
 /// | Global components | BEM kebab-case | `.card__header--elevated` |
-/// | SCSS variables | kebab-case in maps | `'primary'`, `'gradient-from'` |
+/// | SCSS variables | kebab-case in maps | `'primary'`, `'tertiary'` |
 /// | SCSS functions | kebab-case | `space()`, `font-size()`, `color()` |
 /// | SCSS mixins | kebab-case | `flex-center`, `respond-to` |
-/// | CSS custom properties | `--` prefix | `--primary`, `--gradient-from` |
+/// | CSS custom properties | `--` prefix | `--primary`, `--surface-elevated` |
 ///
 /// ## Color System
 /// - **Semantic colors** → `color('primary')`, `color-alpha('card', 0.5)`
 /// - **Static colors** → `static-color('white')`, `static-color('black')`
-/// - **Decorative colors** (orbs, icons) → raw `rgba()` acceptable
+/// - **No decorative literals** → semantic tokens only
 ///
 /// ## Theming
 /// - `base/_globals.scss` → `:root` and `.dark` CSS variable defaults
@@ -43,45 +43,56 @@
 /// @see themes/_presets.scss — named theme preset overrides
 /// @see abstracts/ — all SCSS helpers (variables, mixins, functions)
 
-// ===========================================
-// 1. ABSTRACTS (No CSS output)
-// Variables, mixins, functions used by other partials
-// ===========================================
+@use 'sass:meta';
 @use 'abstracts' as *;
+
+@if $enable-css-layers {
+  @layer base, themes, animations, utilities, components;
+}
+
+@mixin load-system-layer($layer-name, $module-path) {
+  @if $enable-css-layers {
+    @layer #{$layer-name} {
+      @include meta.load-css($module-path);
+    }
+  } @else {
+    @include meta.load-css($module-path);
+  }
+}
 
 // ===========================================
 // 2. BASE
 // Reset, element defaults
 // ===========================================
-@use 'base';
+@include load-system-layer('base', 'base');
 
 // ===========================================
 // 3. THEMES
 // Theme preset CSS variable overrides
 // (Base variables defined in base/_globals.scss)
 // ===========================================
-@use 'themes';
+@include load-system-layer('themes', 'themes');
 
 // ===========================================
 // 4. ANIMATIONS
 // Keyframes and transition utilities
 // ===========================================
-@use 'animations';
+@include load-system-layer('animations', 'animations');
 
 // ===========================================
-// 5. UTILITIES (Optional - for gradual migration)
-// Utility classes if needed during transition
+// 5. UTILITIES
+// Curated global helper classes (usage-backed, no legacy aliases)
 // ===========================================
-@use 'utilities';
+@include load-system-layer('utilities', 'utilities');
 
 // ===========================================
 // 6. COMPONENTS
 // Shared component styles (BEM)
 // ===========================================
-@use 'components';
+@include load-system-layer('components', 'components');
 
 // ===========================================
 // 7. PAGES
 // Page-specific global styles
 // ===========================================
-// @use 'pages';
+// @include load-system-layer('pages', 'pages');

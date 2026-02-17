@@ -111,6 +111,7 @@
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
+  color: color('foreground');
 }
 
 // ===========================================
@@ -147,7 +148,7 @@
   @include transition(border-color);
 
   &:hover {
-    border-color: color('primary');
+    border-color: color('link');
   }
 }
 
@@ -268,7 +269,7 @@
 
 .badgeRequired {
   margin-left: space(2);
-  background-color: color('primary');
+  @include gradient-bg();
 }
 
 .badgeOptional {
@@ -293,13 +294,13 @@
   gap: space(3);
 
   // Ensure the Switch toggle track has visible background colors
-  // (Tailwind data-attribute classes may not generate for library components)
+  // (library data-attribute style variants may not be emitted in all contexts)
   button[role='switch'] {
     flex-shrink: 0;
     background-color: color('input');
 
     &[data-state='checked'] {
-      background-color: color('primary');
+      @include gradient-bg();
     }
   }
 }
@@ -325,7 +326,7 @@
 .acceptButton {
   width: 100%;
   cursor: pointer;
-  background-color: color('primary');
+  @include gradient-bg();
 
   &:hover {
     background-color: color-alpha('primary', 0.9);
@@ -336,6 +337,7 @@
   margin-right: space(2);
   width: 1rem;
   height: 1rem;
+  color: color('primary-foreground');
 }
 
 .footerNote {

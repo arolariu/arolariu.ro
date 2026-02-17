@@ -50,7 +50,7 @@ type Props = Readonly<{
  * @remarks
  * **Rendering Context**: React Email (Server-side rendering for email clients).
  *
- * **Design**: Uses Tailwind CSS for styling and includes a QR code for quick access.
+ * **Design**: Uses shared email primitives and includes a QR code for quick access.
  *
  * @param props - The invoice details to be displayed in the email.
  * @returns A rendered React Email template.

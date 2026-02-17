@@ -84,8 +84,8 @@ const FirstInvoiceUploadedEmail = (props: Readonly<Props>) => {
       <Text style={EmailParagraphStyles}>Hi {name},</Text>
 
       <Text style={EmailParagraphStyles}>
-        Congratulations on uploading your first invoice! You've taken the first step toward organized, insightful spending tracking. Here's
-        what we've got so far:
+        Congratulations on uploading your first invoice! You&apos;ve taken the first step toward organized, insightful spending tracking.
+        Here&apos;s what we&apos;ve got so far:
       </Text>
 
       <KeyValueTable

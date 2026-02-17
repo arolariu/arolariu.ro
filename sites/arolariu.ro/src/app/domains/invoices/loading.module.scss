@@ -53,9 +53,7 @@
 .descriptionBlock {
   margin-bottom: space(8);
 
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .descriptionLine {
@@ -117,14 +115,12 @@
   pointer-events: none;
   height: 100%;
   width: 0.25rem;
-  background-color: #e5e7eb; // gray-200
+  background-color: color('border');
 }
 
 .stepContent {
   flex-grow: 1;
   padding-left: space(4);
 
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }

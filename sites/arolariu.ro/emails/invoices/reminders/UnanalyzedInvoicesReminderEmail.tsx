@@ -135,7 +135,7 @@ const UnanalyzedInvoicesReminderEmail = (props: Readonly<Props>) => {
       </EmailCard>
 
       <Text style={EmailParagraphStyles}>
-        Analysis typically takes under a minute per invoice. Once complete, you'll receive a notification with the results.
+        Analysis typically takes under a minute per invoice. Once complete, you&apos;ll receive a notification with the results.
       </Text>
 
       <Text style={EmailParagraphStyles}>

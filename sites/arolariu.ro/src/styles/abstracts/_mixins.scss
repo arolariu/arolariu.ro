@@ -4,12 +4,26 @@
 /// Reusable SCSS mixins for responsive design, layout, visual effects,
 /// utilities, and decorative elements.
 ///
+/// ## Quick Reference
+/// | Category   | Mixins                                                                                      |
+/// |------------|---------------------------------------------------------------------------------------------|
+/// | Layout     | `flex`, `flex-center`, `flex-between`, `flex-column`, `flex-column-center`, `grid`,          |
+/// |            | `responsive-grid`, `container`, `stack`                                                     |
+/// | Visual     | `shadow`, `transition`, `hover-lift`, `card-hover`, `gradient-bg`, `backdrop-blur`, `glass`  |
+/// | Text       | `truncate`, `line-clamp`, `text-muted`, `text-balance`                                      |
+/// | Sizing     | `icon-size`, `spaced-children`                                                              |
+/// | A11y       | `visually-hidden`, `focus-ring`, `dark`, `reduced-motion`, `reduced-transparency`            |
+/// | Decorative | `orb`, `image-drop-shadow`                                                                  |
+/// | Responsive | `respond-to`, `respond-below`                                                               |
+///
 /// @group mixins
 /// @author arolariu
 /// @see {file} _variables.scss - Token maps used by these mixins
 /// ===========================================
 @use 'sass:map';
 @use 'sass:meta';
+@use 'colors' as colors;
+@use 'config' as config;
 @use 'variables' as *;
 
 // ===========================================
@@ -54,22 +68,6 @@
     }
   } @else {
     @error "Unknown breakpoint: #{$breakpoint}";
-  }
-}
-
-/// Between-breakpoints responsive mixin.
-/// Emits a media query for a range between two named breakpoints.
-/// @param {String} $min - Lower breakpoint name (inclusive)
-/// @param {String} $max - Upper breakpoint name (exclusive)
-/// @content Styles to apply within the range
-/// @group mixins-responsive
-/// @example scss
-///   .tablet-only {
-///     @include respond-between('sm', 'lg') { font-size: 1.1rem; }
-///   }
-@mixin respond-between($min, $max) {
-  @media (min-width: map.get($breakpoints, $min)) and (max-width: calc(map.get($breakpoints, $max) - 1px)) {
-    @content;
   }
 }
 
@@ -148,31 +146,6 @@
   gap: $gap;
 }
 
-/// Auto-fit responsive grid — columns fill available space.
-/// Columns shrink to `$min-width` before wrapping.
-/// @param {Length} $min-width [250px] - Minimum column width
-/// @param {Length} $gap [space(4)] - Grid gap
-/// @group mixins-layout
-/// @example scss
-///   .gallery { @include grid-auto-fit(200px); }
-@mixin grid-auto-fit($min-width: 250px, $gap: space(4)) {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
-  gap: $gap;
-}
-
-/// Auto-fill responsive grid — creates empty tracks when space allows.
-/// @param {Length} $min-width [250px] - Minimum column width
-/// @param {Length} $gap [space(4)] - Grid gap
-/// @group mixins-layout
-/// @example scss
-///   .thumbnails { @include grid-auto-fill(150px); }
-@mixin grid-auto-fill($min-width: 250px, $gap: space(4)) {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($min-width, 1fr));
-  gap: $gap;
-}
-
 // ===========================================
 // VISUAL EFFECTS
 // ===========================================
@@ -239,24 +212,16 @@
   }
 }
 
-/// Gradient text using theme CSS variables.
-/// Uses `--gradient-from`, `--gradient-via`, `--gradient-to` set by theme presets.
-/// NOTE: `-webkit-background-clip` is intentional — required for Safari/Chrome;
-/// autoprefixer does not add it for `background-clip: text`.
-/// @group mixins-visual
-/// @see {mixin} gradient-text-custom
-/// @example scss
-///   .hero-title { @include gradient-text; }
-@mixin gradient-text {
-  background: linear-gradient(
-    to right,
-    hsl(var(--gradient-from)),
-    hsl(var(--gradient-via)),
-    hsl(var(--gradient-to))
+/// Internal semantic gradient helper used by compatibility mixins.
+/// Gradients are composed from primary -> tertiary -> secondary.
+/// @access private
+@function _semantic-gradient($direction: to right, $from-alpha: 1, $via-alpha: 1, $to-alpha: 1) {
+  @return linear-gradient(
+    $direction,
+    colors.color-alpha('primary', $from-alpha),
+    colors.color-alpha('tertiary', $via-alpha),
+    colors.color-alpha('secondary', $to-alpha)
   );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /// Gradient background using theme CSS variables.
@@ -266,12 +231,45 @@
 ///   .banner { @include gradient-bg; }
 ///   .sidebar { @include gradient-bg(to bottom); }
 @mixin gradient-bg($direction: to right) {
-  background: linear-gradient(
-    $direction,
-    hsl(var(--gradient-from)),
-    hsl(var(--gradient-via)),
-    hsl(var(--gradient-to))
-  );
+  background: _semantic-gradient($direction);
+}
+
+/// Backdrop blur (frosted glass effect).
+/// Includes `-webkit-` prefix for Safari compatibility.
+/// @param {Length} $blur [8px] - Blur radius
+/// @group mixins-visual
+/// @example scss
+///   .overlay { @include backdrop-blur; }
+///   .subtle { @include backdrop-blur(4px); }
+@mixin backdrop-blur($blur: 8px) {
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+}
+
+/// Glass morphism surface (frosted card/panel).
+/// Combines backdrop-blur with a semi-transparent background and border.
+/// @param {Length} $blur [8px] - Blur radius
+/// @param {Number} $opacity [0.5] - Background alpha
+/// @param {String} $bg ['card'] - Background color token
+/// @group mixins-visual
+/// @example scss
+///   .frosted-card { @include glass; }
+///   .modal-overlay { @include glass(12px, 0.8, 'background'); }
+@mixin glass($blur: 8px, $opacity: 0.5, $bg: 'card') {
+  background-color: colors.color-alpha($bg, $opacity);
+  @include backdrop-blur($blur);
+  border: 1px solid colors.color('border');
+}
+
+/// Balanced text wrapping (prevents orphan words in headings).
+/// Uses modern CSS `text-wrap` property.
+/// @param {String} $mode ['balance'] - 'balance' for headings, 'pretty' for body text
+/// @group mixins-utility
+/// @example scss
+///   .heading { @include text-balance; }
+///   .paragraph { @include text-balance('pretty'); }
+@mixin text-balance($mode: 'balance') {
+  text-wrap: $mode;
 }
 
 // ===========================================
@@ -316,6 +314,51 @@
   overflow: hidden;
 }
 
+/// Square sizing shorthand for icons, avatars, and decorative elements.
+/// @param {Length} $size - Width and height value
+/// @group mixins-utility
+/// @example scss
+///   .icon { @include icon-size(1.5rem); }
+///   .avatar { @include icon-size(space(10)); }
+@mixin icon-size($size) {
+  width: $size;
+  height: $size;
+}
+
+/// Muted helper text styling (small font + muted-foreground color).
+/// @param {String} $size ['xs'] - Font-size token ('xs' or 'sm')
+/// @group mixins-utility
+/// @example scss
+///   .hint { @include text-muted; }
+///   .subtitle { @include text-muted('sm'); }
+@mixin text-muted($size: 'xs') {
+  font-size: font-size($size);
+  color: colors.color('muted-foreground');
+}
+
+/// Vertical stack layout (flex column with gap).
+/// @param {Length} $gap [space(4)] - Gap between children
+/// @group mixins-layout
+/// @example scss
+///   .form { @include stack(space(4)); }
+///   .section { @include stack(space(6)); }
+@mixin stack($gap: space(4)) {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+/// Owl-selector vertical spacing for direct children.
+/// @param {Length} $spacing [space(4)] - Margin between siblings
+/// @group mixins-layout
+/// @example scss
+///   .list { @include spaced-children(space(2)); }
+@mixin spaced-children($spacing: space(4)) {
+  > * + * {
+    margin-top: $spacing;
+  }
+}
+
 /// Centered container with responsive horizontal padding.
 /// @param {Length} $max-width [80rem] - Maximum container width (1280px)
 /// @group mixins-layout
@@ -325,14 +368,24 @@
 @mixin container($max-width: 80rem) {
   width: 100%;
   max-width: $max-width;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: space(4);
-  padding-right: space(4);
+
+  @if config.$enable-logical-properties {
+    margin-inline: auto;
+    padding-inline: space(4);
+  } @else {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: space(4);
+    padding-right: space(4);
+  }
 
   @include respond-to('lg') {
-    padding-left: space(8);
-    padding-right: space(8);
+    @if config.$enable-logical-properties {
+      padding-inline: space(8);
+    } @else {
+      padding-left: space(8);
+      padding-right: space(8);
+    }
   }
 }
 
@@ -372,7 +425,29 @@
 ///     @include reduced-motion { animation: none; }
 ///   }
 @mixin reduced-motion {
-  @media (prefers-reduced-motion: reduce) {
+  @if config.$enable-reduced-motion {
+    @media (prefers-reduced-motion: reduce) {
+      @content;
+    }
+  } @else {
+    @content;
+  }
+}
+
+/// Reduced transparency media query wrapper (accessibility).
+/// Provides solid alternatives for users who prefer reduced transparency.
+/// @content Styles to apply when reduced transparency is preferred
+/// @group mixins-a11y
+/// @example scss
+///   .frosted-panel {
+///     @include backdrop-blur(8px);
+///     @include reduced-transparency {
+///       backdrop-filter: none;
+///       background-color: color('card');
+///     }
+///   }
+@mixin reduced-transparency {
+  @media (prefers-reduced-transparency: reduce) {
     @content;
   }
 }
@@ -405,30 +480,7 @@
 /// @example scss
 ///   .hero-image { @include image-drop-shadow; }
 @mixin image-drop-shadow {
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
-}
-
-// ===========================================
-// GRADIENT TEXT WITH CUSTOM COLORS
-// ===========================================
-
-/// Gradient text using specific hex colors (not CSS variable gradients).
-/// For CSS-variable-based gradient text, use `@include gradient-text` instead.
-/// NOTE: `-webkit-background-clip` is intentional — see gradient-text mixin.
-/// @param {Color} $from [#3b82f6] - Start color (default: blue-500)
-/// @param {Color} $via [#a855f7] - Middle color (default: purple-500)
-/// @param {Color} $to [#ec4899] - End color (default: pink-500)
-/// @param {String} $direction [to right] - Gradient direction
-/// @group mixins-visual
-/// @see {mixin} gradient-text
-/// @example scss
-///   .title { @include gradient-text-custom(#3b82f6, #a855f7, #ec4899); }
-///   .subtitle { @include gradient-text-custom($from: #10b981, $to: #3b82f6); }
-@mixin gradient-text-custom($from: #3b82f6, $via: #a855f7, $to: #ec4899, $direction: to right) {
-  background: linear-gradient($direction, $from, $via, $to);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  filter: drop-shadow(0 10px 8px colors.color-alpha('foreground', 0.04)) drop-shadow(0 4px 3px colors.color-alpha('foreground', 0.1));
 }
 
 // ===========================================
@@ -451,88 +503,6 @@
   &:hover {
     border-color: hsl(var(--#{$border-color}) / #{$border-alpha});
     @include shadow($shadow-level);
-  }
-}
-
-// ===========================================
-// ACCENT TOP BAR
-// ===========================================
-
-/// Gradient decorative bar at the top of a card or section.
-/// The parent element MUST have `position: relative`.
-/// @param {Length} $height [4px] - Bar height
-/// @param {Color} $from [#3b82f6] - Start color
-/// @param {Color} $via [#a855f7] - Middle color
-/// @param {Color} $to [#ec4899] - End color
-/// @group mixins-decorative
-/// @example scss
-///   .accentBar { @include accent-top-bar; }
-///   .accentBar { @include accent-top-bar(6px, #10b981, #3b82f6, #8b5cf6); }
-@mixin accent-top-bar($height: 4px, $from: #3b82f6, $via: #a855f7, $to: #ec4899) {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: $height;
-  width: 100%;
-  background: linear-gradient(to right, $from, $via, $to);
-  border-radius: radius('xl') radius('xl') 0 0;
-}
-
-// ===========================================
-// ICON COLOR VARIANTS
-// ===========================================
-
-/// Icon color palette (light mode) — used by `icon-color-variants` mixin.
-/// @type Map
-/// @group mixins-decorative
-$icon-colors: (
-  'Blue': #3b82f6,
-  'Green': #22c55e,
-  'Purple': #a855f7,
-  'Amber': #f59e0b,
-  'Pink': #ec4899,
-  'Red': #ef4444,
-  'Teal': #14b8a6,
-  'Orange': #f97316,
-  'Indigo': #6366f1,
-  'Cyan': #06b6d4,
-) !default;
-
-/// Icon color palette (dark mode) — lighter variants for WCAG AA compliance.
-/// @type Map
-/// @group mixins-decorative
-$icon-colors-dark: (
-  'Blue': #60a5fa,    // blue-400 — 5.0:1 on black
-  'Green': #4ade80,   // green-400 — 6.5:1 on black
-  'Purple': #c084fc,  // purple-400 — 5.2:1 on black
-  'Amber': #fbbf24,   // amber-400 — 9.0:1 on black
-  'Pink': #f472b6,    // pink-400 — 5.5:1 on black
-  'Red': #f87171,     // red-400 — 4.8:1 on black
-  'Teal': #2dd4bf,    // teal-400 — 7.5:1 on black
-  'Orange': #fb923c,  // orange-400 — 6.5:1 on black
-  'Indigo': #818cf8,  // indigo-400 — 5.0:1 on black
-  'Cyan': #22d3ee,    // cyan-400 — 8.0:1 on black
-) !default;
-
-/// Generates color variant classes for icons used in timelines,
-/// competencies, and similar components. Each variant gets both
-/// light and dark mode colors.
-/// @param {String} $prefix ['icon'] - Class name prefix (unused, kept for API compat)
-/// @group mixins-decorative
-/// @example scss - SCSS
-///   .icon { @include icon-color-variants; }
-///   // Generates: .icon.Blue, .icon.Green, etc.
-/// @example tsx - TSX (CSS Module)
-///   <div className={styles[`icon${color}`]} />
-@mixin icon-color-variants($prefix: 'icon') {
-  @each $name, $color in $icon-colors {
-    &#{$name} {
-      color: $color;
-
-      .dark & {
-        color: map.get($icon-colors-dark, $name);
-      }
-    }
   }
 }
 
@@ -568,44 +538,4 @@ $icon-colors-dark: (
   }
 }
 
-// ===========================================
-// CONTENT VISIBILITY
-// ===========================================
-
-/// Enable content-visibility for off-screen rendering optimization.
-/// The browser skips rendering of off-screen sections, improving
-/// initial paint and scroll performance on long pages.
-/// @param {Value} $height [auto 500px] - Intrinsic size hint.
-///   Use `auto <fallback>` for previously-rendered elements,
-///   or a fixed value for sections with predictable heights.
-/// @group mixins-utility
-/// @example scss
-///   .longSection { @include content-visibility; }
-///   .hero { @include content-visibility(auto 800px); }
-@mixin content-visibility($height: auto 500px) {
-  content-visibility: auto;
-  contain-intrinsic-size: $height;
-}
-
-// ===========================================
-// SECTION LAYOUT
-// ===========================================
-
-/// Standard page section with responsive vertical padding.
-/// @param {Length} $py-mobile [space(12)] - Vertical padding on mobile
-/// @param {Length} $py-desktop [space(20)] - Vertical padding on desktop (at 'lg')
-/// @group mixins-layout
-/// @example scss
-///   .section { @include section-layout; }
-///   .compact-section { @include section-layout(space(8), space(12)); }
-@mixin section-layout($py-mobile: space(12), $py-desktop: space(20)) {
-  position: relative;
-  padding-top: $py-mobile;
-  padding-bottom: $py-mobile;
-  overflow: hidden;
-
-  @include respond-to('lg') {
-    padding-top: $py-desktop;
-    padding-bottom: $py-desktop;
-  }
-}
+ 

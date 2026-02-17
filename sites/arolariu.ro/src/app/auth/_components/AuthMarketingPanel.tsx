@@ -62,11 +62,11 @@ export default function AuthMarketingPanel(props: Readonly<Props>): React.JSX.El
         <h1 className={styles["title"]}>{props.title}</h1>
         <p className={styles["subtitle"]}>{props.subtitle}</p>
 
-        {props.trustBadges && props.trustBadges.length > 0 && (
+        {Boolean(props.trustBadges && props.trustBadges.length > 0) && (
           <motion.div
             className={styles["trustBadges"]}
             variants={itemVariants}>
-            <AuthTrustBadgesRow badges={props.trustBadges} />
+            <AuthTrustBadgesRow badges={props.trustBadges!} />
           </motion.div>
         )}
       </motion.div>

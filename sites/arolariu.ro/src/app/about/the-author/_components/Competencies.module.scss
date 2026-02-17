@@ -85,7 +85,7 @@
   left: 0;
   height: 4px;
   width: 100%;
-  background: linear-gradient(to right, color('primary'), color-alpha('primary', 0.3));
+  @include gradient-bg();
 }
 
 // Card header
@@ -105,7 +105,7 @@
   @include transition((background-color, color));
 
   .card:hover & {
-    background-color: color('primary');
+    @include gradient-bg();
     color: color('primary-foreground');
   }
 }

@@ -1,26 +1,4 @@
 @use '../../../../../../../styles/abstracts' as *;
-@use '../../../../_styles/invoice-shared' as invoice;
-
-.imageTransitioning {
-  opacity: 0.5;
-  filter: blur(4px);
-}
-
-.imageNormal {
-  filter: blur(0);
-  opacity: 1;
-}
-
-.zoomOverlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: color-alpha('background', 0.8);
-  opacity: 0;
-  @include transition(opacity);
-}
 
 .zoomContainer {
   position: relative;
@@ -45,7 +23,7 @@
 .receiptImage {
   width: 100%;
   object-fit: cover;
-  @include transition(all);
+  @include transition((transform, filter, opacity));
 
   &:global(.group-hover\/image) {
     transform: scale(1.05);

@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   gap: space(2);
-  color: color('muted-foreground');
+  color: color('foreground');
   font-size: font-size('sm');
   font-weight: font-weight('medium');
 }
@@ -64,7 +64,7 @@
 
 .nearLimitText {
   font-weight: font-weight('medium');
-  color: #ef4444;
+  color: color('destructive');
 }
 
 .budgetMutedText {
@@ -76,7 +76,7 @@
   align-items: center;
   gap: space(1);
   font-size: font-size('xs');
-  color: #d97706;
+  color: color('warning');
 }
 
 .checkboxRow {
@@ -96,7 +96,7 @@
   align-items: center;
   gap: space(1);
   font-size: font-size('sm');
-  color: #16a34a;
+  color: color('success');
 }
 
 .pastHeader {

@@ -91,7 +91,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * **UI Structure**:
  * - Header section: Personalized title with gradient styling and subtitle
  * - Content section: Invoice grid/list with interactive controls
- * - Uses responsive container with Tailwind CSS for mobile/desktop layouts
+ * - Uses responsive container with SCSS Modules for mobile/desktop layouts
  *
  * **Performance**: Server-side data fetching reduces client-side API calls.
  * Initial HTML includes all invoice data for immediate rendering. Client component

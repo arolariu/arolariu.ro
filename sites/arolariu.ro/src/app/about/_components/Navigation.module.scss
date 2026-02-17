@@ -7,12 +7,6 @@
   position: relative;
   width: 100%;
   padding: space(20) space(4);
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    hsl(270 67% 47% / 0.05),
-    transparent
-  );
 }
 
 .container {
@@ -32,7 +26,7 @@
   margin-bottom: space(4);
   font-size: font-size('3xl');
   font-weight: font-weight('bold');
-  @include gradient-text;
+  color: color('primary');
 
   @include respond-to('sm') {
     font-size: font-size('4xl');
@@ -63,7 +57,7 @@
   height: 100%;
   overflow: hidden;
   background-color: color-alpha('card', 0.5);
-  backdrop-filter: blur(8px);
+  @include backdrop-blur;
   border: 1px solid color('border');
   border-radius: radius('lg');
   @include transition((transform, border-color, box-shadow));
@@ -73,27 +67,6 @@
     border-color: color-alpha('primary', 0.4);
     @include shadow('2xl');
   }
-}
-
-.cardGradient {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  @include transition(opacity);
-  pointer-events: none;
-
-  .card:hover & {
-    opacity: 1;
-  }
-}
-
-// Gradient variants
-.gradientPlatform {
-  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.1), transparent);
-}
-
-.gradientAuthor {
-  background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.1), transparent);
 }
 
 // Card header
@@ -113,7 +86,7 @@
   margin: 0 auto;
   padding: space(4);
   border-radius: radius('2xl');
-  background: linear-gradient(to bottom right, color-alpha('muted', 0.3), color-alpha('muted', 0.1));
+  @include gradient-bg();
   @include transition(transform);
 
   .card:hover & {

@@ -137,14 +137,14 @@
 
 .timelineIconInnerActive {
   composes: timelineIconInner;
-  background-color: color('primary');
+  @include gradient-bg();
   color: white;
 }
 
 .timelineIconInnerInactive {
   composes: timelineIconInner;
   background-color: color('background');
-  color: color('muted-foreground');
+  color: color('foreground');
 }
 
 .timelineIconSvg {
@@ -213,7 +213,7 @@
   left: 0;
   height: 4px;
   width: 100%;
-  background: linear-gradient(to right, #ec4899, #a855f7, #3b82f6);
+  @include gradient-bg();
 }
 
 .cardAccentBottom {
@@ -221,7 +221,7 @@
   bottom: 0;
   left: 0;
   height: 4px;
-  background: linear-gradient(to right, #3b82f6, #a855f7, #ec4899);
+  @include gradient-bg();
 }
 
 // Card header
@@ -287,7 +287,7 @@
 .logoIcon {
   width: 2.5rem;
   height: 2.5rem;
-  color: color('muted-foreground');
+  color: color('foreground');
 }
 
 // Card description
@@ -343,7 +343,7 @@
   @include transition((background-color, color));
 
   &:hover {
-    background-color: color('primary');
+    background: linear-gradient(to right, color('link'), color('tertiary'), color('secondary'));
     color: white;
   }
 }

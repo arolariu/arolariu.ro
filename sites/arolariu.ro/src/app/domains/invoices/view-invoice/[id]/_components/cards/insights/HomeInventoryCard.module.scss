@@ -1,21 +1,16 @@
 @use '../../../../../../../../styles/abstracts' as *;
 
 .sectionTitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   font-weight: font-weight('medium');
 }
 
 .suppliesList {
-  & > * + * {
-    margin-top: space(3);
-  }
+  @include spaced-children(space(3));
 }
 
 .supplyItem {
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 }
 
 .supplyRow {
@@ -44,25 +39,23 @@
 
 .progressBar {
   height: 100%;
-  @include transition(all);
+  @include transition((width, background-color));
 }
 
 .progressGreen {
-  background-color: #22c55e; // Decorative: intentionally hardcoded
+  background-color: color('success');
 }
 
 .progressYellow {
-  background-color: #eab308; // Decorative: intentionally hardcoded
+  background-color: color('warning');
 }
 
 .progressRed {
-  background-color: #ef4444; // Decorative: intentionally hardcoded
+  background-color: color('destructive');
 }
 
 .ecoSection {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .ecoHeader {
@@ -89,13 +82,10 @@
 }
 
 .ecoList {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   padding-left: space(6);
 
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 }
 
 .ecoItem {
@@ -109,11 +99,11 @@
 }
 
 .ecoTipBullet {
-  color: #16a34a;
+  color: color('success');
 }
 
 .ecoTipText {
-  color: #16a34a;
+  color: color('success');
 }
 
 .bulkBox {
@@ -132,6 +122,5 @@
 }
 
 .bulkDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }

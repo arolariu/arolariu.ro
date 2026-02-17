@@ -35,8 +35,7 @@
   align-items: center;
   justify-content: center;
   gap: space(2);
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .legendBlocks {
@@ -88,8 +87,7 @@
 }
 
 .statLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .statValue {
@@ -107,8 +105,7 @@
 }
 
 .insightText {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .insightHighlight {
@@ -117,9 +114,9 @@
 }
 
 .colorRed {
-  color: #ef4444; // Decorative: intentionally hardcoded
+  color: color('destructive');
 }
 
 .colorGreen {
-  color: #22c55e; // Decorative: intentionally hardcoded
+  color: color('success');
 }

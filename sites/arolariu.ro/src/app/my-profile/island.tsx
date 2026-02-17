@@ -172,6 +172,10 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
             onSettingsChange={handleDataChange}
           />
         );
+      default: {
+        const exhaustiveCheck: never = activeSection;
+        return exhaustiveCheck;
+      }
     }
   };
 

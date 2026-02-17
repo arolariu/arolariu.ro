@@ -7,7 +7,7 @@
   position: relative;
   width: 100%;
   padding: space(24) space(4);
-  overflow: hidden;
+  overflow: visible;
 }
 
 // Background orbs
@@ -29,7 +29,7 @@
   left: 25%;
   width: 18rem;
   height: 18rem;
-  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+  @include gradient-bg();
 }
 
 .orbPurple {
@@ -38,7 +38,7 @@
   bottom: 25%;
   width: 18rem;
   height: 18rem;
-  background: linear-gradient(to bottom right, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+  @include gradient-bg();
 }
 
 // Grid pattern
@@ -46,9 +46,8 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(rgba(100, 100, 100, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(100, 100, 100, 0.03) 1px, transparent 1px);
+  background-image: linear-gradient(color-alpha('secondary', 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, color-alpha('tertiary', 0.14) 1px, transparent 1px);
   background-size: 50px 50px;
 }
 
@@ -73,7 +72,7 @@
 }
 
 .titleGradient {
-  @include gradient-text;
+  color: color('primary');
 }
 
 // Subtitle

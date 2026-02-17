@@ -1,8 +1,7 @@
 @use '../../../../../../../../styles/abstracts' as *;
 
 .sectionTitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   font-weight: font-weight('medium');
 }
 
@@ -20,8 +19,7 @@
 }
 
 .nutritionLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .nutritionValue {
@@ -42,8 +40,7 @@
 }
 
 .habitLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .habitValue {
@@ -52,8 +49,7 @@
 }
 
 .habitSub {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .swapsHeader {
@@ -68,17 +64,14 @@
 }
 
 .swapsList {
-  & > * + * {
-    margin-top: space(1.5);
-  }
+  @include spaced-children(space(1.5));
 }
 
 .swapItem {
   display: flex;
   align-items: flex-start;
   gap: space(2);
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .swapBullet {
@@ -87,7 +80,7 @@
 
 .swapSaving {
   font-weight: font-weight('medium');
-  color: #16a34a;
+  color: color('success');
 }
 
 .challengeBox {
@@ -95,12 +88,12 @@
   align-items: flex-start;
   gap: space(3);
   border-radius: radius('lg');
-  border: 1px solid rgba(#c084fc, 0.3);
-  background: linear-gradient(to right, rgba(#a855f7, 0.1), rgba(#ec4899, 0.1));
+  border: 1px solid color-alpha('primary', 0.3);
+  @include gradient-bg();
   padding: space(3);
 
   @include dark {
-    border-color: rgba(#7e22ce, 1);
+    border-color: color-alpha('primary', 1);
   }
 }
 
@@ -110,23 +103,22 @@
 }
 
 .challengeDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .challengeHighlight {
   font-weight: font-weight('semibold');
-  color: #9333ea;
+  color: color('primary');
 }
 
 .sodiumWarning {
-  color: #ef4444; // Decorative: intentionally hardcoded
+  color: color('destructive');
 }
 
 .spendDiffRed {
-  color: #ef4444; // Decorative: intentionally hardcoded
+  color: color('destructive');
 }
 
 .spendDiffGreen {
-  color: #22c55e; // Decorative: intentionally hardcoded
+  color: color('success');
 }

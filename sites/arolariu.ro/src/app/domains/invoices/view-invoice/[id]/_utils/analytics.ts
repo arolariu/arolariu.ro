@@ -532,7 +532,7 @@ export function computeShoppingPatterns(invoices: ReadonlyArray<Invoice>, target
  *
  * @param amount - The spending amount for the day
  * @param maxAmount - The maximum spending amount in the month (for relative scaling)
- * @returns Tailwind CSS class string for background color
+ * @returns CSS class string for background color intensity
  */
 export function getSpendingIntensityClass(amount: number, maxAmount: number): string {
   if (amount === 0 || maxAmount === 0) return "";

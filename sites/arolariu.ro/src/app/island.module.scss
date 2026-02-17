@@ -1,0 +1,21 @@
+// ROOT ISLAND — Homepage Client Component
+@use '../styles/abstracts' as abstracts;
+
+.section {
+  position: relative;
+  overflow: visible;
+}
+
+.pageBeams {
+  pointer-events: none;
+  z-index: abstracts.z('behind');
+}
+
+.headerOverflowBeams {
+  pointer-events: none;
+  z-index: abstracts.z('modal-backdrop');
+  inset: -7rem 0 auto;
+  height: 20rem;
+  opacity: 0.9;
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 1) 0%, rgb(0 0 0 / 0) 90%);
+}

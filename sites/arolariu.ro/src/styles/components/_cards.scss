@@ -111,7 +111,7 @@
     cursor: pointer;
 
     &:hover {
-      border-color: hsl(var(--primary) / 0.3);
+      border-color: hsl(var(--link) / 0.3);
       @include shadow('xl');
     }
 
@@ -144,7 +144,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      @include gradient-bg(to bottom right);
+      @include gradient-bg();
       opacity: 0;
       @include transition(opacity);
       pointer-events: none;
@@ -226,13 +226,13 @@
       inset: 0;
       border-radius: radius('xl');
       padding: 2px;
-      @include gradient-bg;
+      @include gradient-bg();
       -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+        linear-gradient(static-color('white'), static-color('white')) content-box,
+        linear-gradient(static-color('white'), static-color('white'));
       mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
+        linear-gradient(static-color('white'), static-color('white')) content-box,
+        linear-gradient(static-color('white'), static-color('white'));
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }

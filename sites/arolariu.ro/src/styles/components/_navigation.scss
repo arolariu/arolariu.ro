@@ -85,16 +85,17 @@
   @include transition(color);
 
   &:hover {
-    color: interactive-color('hover-accent');
+    color: color('link');
   }
 }
 
 .desktop-nav__dropdown {
   position: absolute;
   left: 0;
+  top: 100%;
   z-index: z('dropdown');
-  margin-top: space(2);
   padding: space(4);
+  padding-top: calc(#{space(2)} + #{space(4)});
   min-width: 200px;
   background-color: color('card');
   border-radius: radius('xl');
@@ -136,7 +137,7 @@
 
   &:hover {
     background-color: color('muted');
-    color: interactive-color('hover-accent');
+    color: color('link');
   }
 }
 
@@ -158,7 +159,7 @@
   @include transition(background-color);
 
   &:hover {
-    background-color: interactive-color('hover-bg-light');
+    background-color: color('muted');
   }
 
   @include respond-to('md') {
@@ -253,7 +254,7 @@
   @include transition(color);
 
   &:hover {
-    color: interactive-color('hover-accent');
+    color: color('link');
   }
 }
 
@@ -332,7 +333,7 @@
 
   &:hover {
     background-color: color('muted');
-    color: interactive-color('hover-accent');
+    color: color('link');
   }
 }
 
@@ -342,7 +343,7 @@
 // NOTE: Cannot use @include dark at top level (& requires parent).
 // Using .dark ancestor selector directly instead.
 .dark .desktop-nav__link:hover {
-  color: color('primary');
+  color: color('link');
 }
 
 .dark .desktop-nav__dropdown {
@@ -351,7 +352,7 @@
 
 .dark .desktop-nav__child-link:hover {
   background-color: color-alpha('accent', 0.1);
-  color: color('primary');
+  color: color('link');
 }
 
 .dark .mobile-nav__toggle:hover {
@@ -359,7 +360,7 @@
 }
 
 .dark .mobile-nav__item-link:hover {
-  color: color('primary');
+  color: color('link');
 }
 
 .dark .mobile-nav__expand-btn {
@@ -376,5 +377,5 @@
 
 .dark .mobile-nav__grandchild-link:hover {
   background-color: color-alpha('accent', 0.1);
-  color: color('primary');
+  color: color('link');
 }

@@ -1,3 +1,4 @@
+// SCROLL-TO-TOP BUTTON
 @use '../styles/abstracts' as *;
 
 .scrollButton {
@@ -7,7 +8,7 @@
   z-index: z('toast');
   padding: space(3);
   border-radius: radius('full');
-  background-color: color('primary');
+  @include gradient-bg();
   color: static-color('white');
   cursor: pointer;
   @include shadow('lg');

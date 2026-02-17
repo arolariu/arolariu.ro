@@ -11,102 +11,77 @@
 /// @author arolariu
 ///
 /// ## Duration Classes
-/// `.duration-75` through `.duration-1000` (ms)
+/// `.duration-200`, `.duration-300` (ms)
 ///
 /// ## Timing Functions
 /// `.ease-linear`, `.ease-in`, `.ease-out`, `.ease-in-out`
 ///
 /// ## Transition Presets
-/// `.transition-none`, `.transition-all`, `.transition`,
-/// `.transition-colors`, `.transition-opacity`,
-/// `.transition-shadow`, `.transition-transform`
+/// `.transition-all`, `.transition`,
+/// `.transition-colors`, `.transition-shadow`,
+/// `.transition-transform`
 ///
 /// ## Animation Classes
-/// `.animate-accordion-down/up`, `.animate-fade-in/out`,
-/// `.animate-scale-in/out`, `.animate-float`, `.animate-glow`,
-/// `.animate-pulse`, `.animate-spin`, `.animate-bounce`,
-/// `.animate-shimmer`
+/// `.animate-pulse`, `.animate-spin`
 ///
 /// @see animations/_keyframes.scss — `@keyframes` consumed by `.animate-*`
 /// ===========================================
+@use '../abstracts' as *;
 
 // Duration
-.duration-75 { transition-duration: 75ms; }
-.duration-100 { transition-duration: 100ms; }
-.duration-150 { transition-duration: 150ms; }
 .duration-200 { transition-duration: 200ms; }
 .duration-300 { transition-duration: 300ms; }
-.duration-500 { transition-duration: 500ms; }
-.duration-700 { transition-duration: 700ms; }
-.duration-1000 { transition-duration: 1000ms; }
 
 // Timing function
-.ease-linear { transition-timing-function: linear; }
 .ease-in { transition-timing-function: cubic-bezier(0.4, 0, 1, 1); }
 .ease-out { transition-timing-function: cubic-bezier(0, 0, 0.2, 1); }
 .ease-in-out { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
 
 // Transition property presets
-.transition-none { transition-property: none; }
-
 .transition-all {
-  transition-property: all;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-duration: duration('normal');
+  transition-timing-function: easing('ease');
 }
 
 .transition {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: duration('normal');
+  transition-timing-function: easing('ease');
 }
 
 .transition-colors {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.transition-opacity {
-  transition-property: opacity;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: duration('normal');
+  transition-timing-function: easing('ease');
 }
 
 .transition-shadow {
   transition-property: box-shadow;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: duration('normal');
+  transition-timing-function: easing('ease');
 }
 
 .transition-transform {
   transition-property: transform;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: duration('normal');
+  transition-timing-function: easing('ease');
 }
 
 // Animation classes
-.animate-accordion-down { animation: accordion-down 0.2s ease-out; }
-.animate-accordion-up { animation: accordion-up 0.2s ease-out; }
-.animate-fade-in { animation: fade-in 0.2s ease-out; }
-.animate-fade-out { animation: fade-out 0.2s ease-out; }
-.animate-scale-in { animation: scale-in 0.2s ease-out; }
-.animate-scale-out { animation: scale-out 0.2s ease-out; }
-.animate-float { animation: float 3s ease-in-out infinite; }
-.animate-glow { animation: glow 2s ease-in-out infinite; }
 .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 .animate-spin { animation: spin 1s linear infinite; }
-.animate-bounce { animation: bounce 1s infinite; }
-.animate-shimmer { animation: shimmer 2s linear infinite; }
 
-// Motion-safe: Respect reduced motion preference
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+// Motion-safe: Respect reduced motion preference when enabled by config.
+@if $enable-reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

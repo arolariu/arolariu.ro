@@ -1,74 +1,70 @@
 // ===========================================
 // THE PLATFORM - ARCHITECTURE COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use '../../../../styles/abstracts' as abstracts;
 
 .section {
   position: relative;
-  padding: space(24) 0;
+  padding: abstracts.space(24) 0;
 }
 
 // Background
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: z('behind');
+  z-index: abstracts.z('behind');
 }
 
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    color('background'),
-    color-alpha('muted', 0.3),
-    color('background')
-  );
+  @include abstracts.gradient-bg();
 }
 
 .container {
   margin-left: auto;
   margin-right: auto;
-  max-width: 75%;
-  padding: 0 space(4);
+  max-width: 90rem;
+  width: 100%;
+  padding: 0 abstracts.space(4);
 }
 
 // Header
 .header {
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: space(16);
+  margin-bottom: abstracts.space(16);
   max-width: 48rem;
   text-align: center;
 }
 
 .badge {
-  margin-bottom: space(4);
-  padding: space(1) space(4);
-  font-size: font-size('sm');
+  margin-bottom: abstracts.space(4);
+  padding: abstracts.space(1) abstracts.space(4);
+  font-size: abstracts.font-size('sm');
 }
 
 .title {
-  margin-bottom: space(6);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
   letter-spacing: letter-spacing('tight');
 
-  @include respond-to('md') {
-    font-size: font-size('5xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('5xl');
   }
 }
 
 .titleHighlight {
-  @include gradient-text-custom;
+  color: abstracts.color('primary');
 }
 
 .description {
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 
-  @include respond-to('md') {
-    font-size: font-size('xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('xl');
   }
 }
 
@@ -84,53 +80,69 @@
 .layersGrid {
   position: relative;
   display: grid;
-  gap: space(8);
+  gap: abstracts.space(10);
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  @include respond-to('lg') {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  @include abstracts.respond-to('lg') {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+.layerGridItem {
+  display: flex;
 }
 
 // Layer card
 .layerCard {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 22rem;
   overflow: hidden;
-  @include transition((border-color, box-shadow, transform));
+  @include abstracts.transition((border-color, box-shadow, transform));
+
+  @include abstracts.respond-to('lg') {
+    height: 23rem;
+  }
 
   &:hover {
-    border-color: color-alpha('primary', 0.3);
+    border-color: abstracts.color-alpha('primary', 0.3);
   }
 }
 
 .layerCardActive {
   composes: layerCard;
-  border-color: color('primary');
+  border-color: abstracts.color('primary');
   transform: scale(1.05);
-  @include shadow('lg');
+  @include abstracts.shadow('lg');
 }
 
 .layerGradient {
   position: absolute;
   inset: 0;
   opacity: 0;
-  @include transition(opacity);
+  @include abstracts.transition(opacity);
   pointer-events: none;
 }
 
 .layerContent {
   position: relative;
-  padding: space(6);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: abstracts.space(5);
+  padding: abstracts.space(8);
 }
 
 .layerHeader {
   display: flex;
   align-items: center;
-  gap: space(4);
-  margin-bottom: space(4);
+  gap: abstracts.space(5);
+  margin-bottom: 0;
 }
 
 .layerIconWrapper {
@@ -139,8 +151,8 @@
   justify-content: center;
   width: 3rem;
   height: 3rem;
-  border-radius: radius('xl');
-  @include transition(transform);
+  border-radius: abstracts.radius('xl');
+  @include abstracts.transition(transform);
 
   .layerCard:hover & {
     transform: scale(1.1) rotate(5deg);
@@ -154,23 +166,25 @@
 }
 
 .layerName {
-  font-weight: font-weight('bold');
+  font-weight: abstracts.font-weight('bold');
 }
 
 .layerDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }
 
 // Technologies
 .technologies {
   display: flex;
   flex-wrap: wrap;
-  gap: space(2);
+  margin-top: auto;
+  align-content: flex-start;
+  gap: abstracts.space(3);
 }
 
 .techBadge {
-  font-size: font-size('xs');
+  font-size: abstracts.font-size('xs');
 }
 
 // Animated border
@@ -181,7 +195,7 @@
   height: 4px;
   transform: scaleX(0);
   transform-origin: left;
-  @include transition(transform);
+  @include abstracts.transition(transform);
 
   .layerCard:hover & {
     transform: scaleX(1);
@@ -189,11 +203,11 @@
 }
 
 // Gradient variants for layer backgrounds
-.gradientBlueCyan { background: linear-gradient(to bottom right, #3b82f6, #06b6d4); }
-.gradientGreenEmerald { background: linear-gradient(to bottom right, #22c55e, #10b981); }
-.gradientPurpleViolet { background: linear-gradient(to bottom right, #a855f7, #8b5cf6); }
-.gradientOrangeAmber { background: linear-gradient(to bottom right, #f97316, #f59e0b); }
-.gradientRedPink { background: linear-gradient(to bottom right, #ef4444, #ec4899); }
-.gradientIndigoBlue { background: linear-gradient(to bottom right, #6366f1, #3b82f6); }
-.gradientCyanTeal { background: linear-gradient(to bottom right, #06b6d4, #14b8a6); }
-.gradientSlateZinc { background: linear-gradient(to bottom right, #64748b, #71717a); }
+.gradientBlueCyan { @include abstracts.gradient-bg(); }
+.gradientGreenEmerald { @include abstracts.gradient-bg(); }
+.gradientPurpleViolet { @include abstracts.gradient-bg(); }
+.gradientOrangeAmber { @include abstracts.gradient-bg(); }
+.gradientRedPink { @include abstracts.gradient-bg(); }
+.gradientIndigoBlue { @include abstracts.gradient-bg(); }
+.gradientCyanTeal { @include abstracts.gradient-bg(); }
+.gradientSlateZinc { @include abstracts.gradient-bg(); }

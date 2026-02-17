@@ -507,7 +507,7 @@
           "client": {
             "name": "Nivelul client",
             "description": "Frontend-uri moderne bazate pe React cu capacități SSR și SSG",
-            "technologies": "Next.js 16,React 19,TypeScript,Tailwind CSS"
+            "technologies": "Next.js 16,React 19,TypeScript,Module SCSS"
           },
           "cdn": {
             "name": "Edge și CDN",
@@ -596,10 +596,6 @@
             "name": "TypeScript",
             "description": "JavaScript cu tipuri pentru cod robust"
           },
-          "tailwind": {
-            "name": "Tailwind CSS",
-            "description": "Framework CSS bazat pe utilități"
-          },
           "zustand": {
             "name": "Zustand",
             "description": "Gestionare ușoară a stării"
@@ -679,6 +675,10 @@
           "pnpm": {
             "name": "pnpm/npm",
             "description": "Gestionare pachete"
+          },
+          "scss": {
+            "description": "Foi de stil cu domeniu de aplicare la nivel de component folosind CSS Modules",
+            "name": "Module SCSS"
           }
         },
         "stats": {

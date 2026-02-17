@@ -25,7 +25,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  @include gradient-bg;
+  @include gradient-bg();
   color: white;
   padding: space(2) space(4);
   border-radius: radius('md');
@@ -87,13 +87,13 @@
     inset: 0;
     border-radius: radius('md');
     padding: 2px;
-    @include gradient-bg;
+    @include gradient-bg();
     -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+      linear-gradient(static-color('white'), static-color('white')) content-box,
+      linear-gradient(static-color('white'), static-color('white'));
     mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
+      linear-gradient(static-color('white'), static-color('white')) content-box,
+      linear-gradient(static-color('white'), static-color('white'));
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -175,7 +175,7 @@
   padding: 0;
   background: none;
   border: none;
-  color: hsl(var(--primary));
+  color: hsl(var(--link));
   font-weight: font-weight('medium');
   text-decoration: underline;
   text-underline-offset: 4px;
@@ -183,7 +183,7 @@
   @include transition((color, text-decoration-color));
 
   &:hover {
-    color: hsl(var(--primary) / 0.8);
+    color: hsl(var(--link) / 0.8);
   }
 
   &:focus-visible {

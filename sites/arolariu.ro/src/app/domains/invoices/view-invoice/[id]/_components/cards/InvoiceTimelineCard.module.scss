@@ -32,7 +32,7 @@
   height: space(4);
   width: space(4);
   border-radius: radius('full');
-  background-color: color('primary');
+  @include gradient-bg();
   color: color('primary-foreground');
 }
 

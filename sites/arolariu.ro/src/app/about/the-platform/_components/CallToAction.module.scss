@@ -1,30 +1,25 @@
 // ===========================================
 // THE PLATFORM - CALL TO ACTION COMPONENT
 // ===========================================
-@use '../../../../styles/abstracts' as *;
+@use '../../../../styles/abstracts' as abstracts;
 
 .section {
   position: relative;
-  padding: space(24) 0;
-  overflow: hidden;
+  padding: abstracts.space(24) 0;
+  overflow: visible;
 }
 
 // Background
 .bgLayer {
   position: absolute;
   inset: 0;
-  z-index: z('behind');
+  z-index: abstracts.z('behind');
 }
 
 .bgGradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    color('background'),
-    color-alpha('primary', 0.1),
-    color('background')
-  );
+  @include abstracts.gradient-bg();
 }
 
 // Animated orbs
@@ -35,7 +30,7 @@
 
 .orb {
   position: absolute;
-  border-radius: radius('full');
+  border-radius: abstracts.radius('full');
   filter: blur(48px);
 }
 
@@ -45,7 +40,7 @@
   left: 25%;
   width: 400px;
   height: 400px;
-  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.1), transparent);
+  @include abstracts.gradient-bg();
 }
 
 .orbSecondary {
@@ -54,16 +49,15 @@
   bottom: 25%;
   width: 500px;
   height: 500px;
-  background: linear-gradient(to top left, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.1), transparent);
+  @include abstracts.gradient-bg();
 }
 
 // Grid pattern
 .bgGrid {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(to right, rgba(128, 128, 128, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(128, 128, 128, 0.02) 1px, transparent 1px);
+  background-image: linear-gradient(abstracts.color-alpha('secondary', 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, abstracts.color-alpha('tertiary', 0.14) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -75,10 +69,10 @@
 // Container
 .container {
   position: relative;
-  z-index: z('content');
+  z-index: abstracts.z('content');
   margin-left: auto;
   margin-right: auto;
-  padding: 0 space(4);
+  padding: 0 abstracts.space(4);
 }
 
 .contentWrapper {
@@ -90,27 +84,22 @@
 
 // Title
 .title {
-  margin-bottom: space(6);
-  font-size: font-size('4xl');
-  font-weight: font-weight('bold');
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
   letter-spacing: letter-spacing('tight');
 
-  @include respond-to('md') {
-    font-size: font-size('5xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('5xl');
   }
 
-  @include respond-to('lg') {
-    font-size: font-size('6xl');
+  @include abstracts.respond-to('lg') {
+    font-size: abstracts.font-size('6xl');
   }
 }
 
 .titleHighlight {
-  background: linear-gradient(
-    to right,
-    color('gradient-from'),
-    color('gradient-via'),
-    color('gradient-to')
-  );
+  @include abstracts.gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -120,13 +109,13 @@
 .description {
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: space(10);
+  margin-bottom: abstracts.space(10);
   max-width: 42rem;
-  font-size: font-size('lg');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
 
-  @include respond-to('md') {
-    font-size: font-size('xl');
+  @include abstracts.respond-to('md') {
+    font-size: abstracts.font-size('xl');
   }
 }
 
@@ -136,9 +125,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: space(4);
+  gap: abstracts.space(4);
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     flex-direction: row;
   }
 }
@@ -147,19 +136,19 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: space(3);
+  gap: abstracts.space(3);
   height: 3.5rem;
-  padding: 0 space(8);
+  padding: 0 abstracts.space(8);
   overflow: hidden;
-  font-size: font-size('lg');
-  font-weight: font-weight('semibold');
+  font-size: abstracts.font-size('lg');
+  font-weight: abstracts.font-weight('semibold');
   cursor: pointer;
 }
 
 .ctaIcon {
   width: 1.25rem;
   height: 1.25rem;
-  @include transition(transform);
+  @include abstracts.transition(transform);
 }
 
 .ctaButton:hover .ctaIcon {
@@ -169,7 +158,7 @@
 .ctaArrow {
   width: 1.25rem;
   height: 1.25rem;
-  @include transition(transform);
+  @include abstracts.transition(transform);
 }
 
 .ctaButton:hover .ctaArrow {
@@ -179,7 +168,7 @@
 .ctaOverlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, color-alpha('primary', 0.2), color-alpha('primary', 0.05));
+  @include abstracts.gradient-bg();
 }
 
 // Secondary links
@@ -188,19 +177,19 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: space(6);
-  margin-top: space(10);
+  gap: abstracts.space(6);
+  margin-top: abstracts.space(10);
 }
 
 .secondaryLink {
   display: flex;
   align-items: center;
-  gap: space(2);
-  color: color('muted-foreground');
-  @include transition(color);
+  gap: abstracts.space(2);
+  color: abstracts.color('muted-foreground');
+  @include abstracts.transition(color);
 
   &:hover {
-    color: color('primary');
+    color: abstracts.color('link');
   }
 }
 
@@ -210,26 +199,26 @@
 }
 
 .linkDivider {
-  color: color-alpha('muted-foreground', 0.3);
+  color: abstracts.color-alpha('muted-foreground', 0.3);
 }
 
 // Trust indicators
 .trustGrid {
   display: grid;
-  gap: space(8);
-  margin-top: space(16);
+  gap: abstracts.space(8);
+  margin-top: abstracts.space(16);
 
-  @include respond-to('sm') {
+  @include abstracts.respond-to('sm') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 .trustCard {
-  padding: space(6);
-  border-radius: radius('xl');
-  background-color: color-alpha('muted', 0.3);
-  backdrop-filter: blur(8px);
-  @include transition(transform);
+  padding: abstracts.space(6);
+  border-radius: abstracts.radius('xl');
+  background-color: abstracts.color-alpha('muted', 0.3);
+  @include abstracts.backdrop-blur;
+  @include abstracts.transition(transform);
 
   &:hover {
     transform: scale(1.05);
@@ -237,46 +226,46 @@
 }
 
 .trustAccent {
-  margin-bottom: space(3);
+  margin-bottom: abstracts.space(3);
   height: 4px;
   width: 3rem;
-  border-radius: radius('full');
+  border-radius: abstracts.radius('full');
 }
 
 .trustAccentBlue {
-  background: linear-gradient(to right, #3b82f6, #06b6d4);
+  background-color: abstracts.color('primary');
 }
 
 .trustAccentPurple {
-  background: linear-gradient(to right, #a855f7, #ec4899);
+  background-color: abstracts.color('primary');
 }
 
 .trustAccentOrange {
-  background: linear-gradient(to right, #f97316, #f59e0b);
+  background-color: abstracts.color('primary');
 }
 
 .trustTitle {
-  margin-bottom: space(2);
-  font-weight: font-weight('semibold');
+  margin-bottom: abstracts.space(2);
+  font-weight: abstracts.font-weight('semibold');
 }
 
 .trustDescription {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }
 
 // Footer
 .footer {
-  margin-top: space(16);
+  margin-top: abstracts.space(16);
 }
 
 .footerText {
-  font-size: font-size('sm');
-  color: color('muted-foreground');
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
 }
 
 .footerLink {
-  color: color('primary');
+  color: abstracts.color('primary');
 
   &:hover {
     text-decoration: underline;

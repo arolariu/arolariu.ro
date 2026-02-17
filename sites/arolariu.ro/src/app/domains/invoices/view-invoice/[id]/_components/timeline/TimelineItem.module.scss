@@ -34,13 +34,13 @@
 }
 
 .iconCompleted {
-  background-color: color('primary');
+  @include gradient-bg();
   color: color('primary-foreground');
 }
 
 .iconPending {
   background-color: color('muted');
-  color: color('muted-foreground');
+  color: color('foreground');
 }
 
 .contentBody {

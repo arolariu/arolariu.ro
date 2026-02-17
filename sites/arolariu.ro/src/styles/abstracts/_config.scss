@@ -39,11 +39,6 @@ $fluid-max-viewport: 1280px !default;
 /// @group config
 $enable-logical-properties: true !default;
 
-/// Enable CSS container queries for component-level responsive design.
-/// @type Boolean
-/// @group config
-$enable-container-queries: true !default;
-
 /// Enable `prefers-reduced-motion` media query wrappers.
 /// @type Boolean
 /// @group config

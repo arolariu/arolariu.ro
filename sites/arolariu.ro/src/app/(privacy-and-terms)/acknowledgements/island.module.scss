@@ -34,7 +34,7 @@
 }
 
 .packagesTitleGradient {
-  @include gradient-text;
+  color: color('primary');
 }
 
 .packagesSubtitle {

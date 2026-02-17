@@ -33,7 +33,7 @@
 }
 
 .titleGradient {
-  background: linear-gradient(to right, #06b6d4, #a855f7);
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -94,19 +94,19 @@
 
 // Gradient variants for icons
 .gradientCyanBlue {
-  background: linear-gradient(to bottom right, #06b6d4, #3b82f6);
+  @include gradient-bg();
 }
 
 .gradientGreenEmerald {
-  background: linear-gradient(to bottom right, #22c55e, #10b981);
+  @include gradient-bg();
 }
 
 .gradientAmberOrange {
-  background: linear-gradient(to bottom right, #f59e0b, #f97316);
+  @include gradient-bg();
 }
 
 .gradientPurplePink {
-  background: linear-gradient(to bottom right, #a855f7, #ec4899);
+  @include gradient-bg();
 }
 
 .icon {

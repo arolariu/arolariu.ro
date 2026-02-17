@@ -9,10 +9,10 @@
 .previewArea {
   position: relative;
   aspect-ratio: 4 / 3;
-  background-color: #f3f4f6; // gray-100
+  background-color: color('muted');
 
   @include dark {
-    background-color: #1f2937; // gray-800
+    background-color: color('foreground');
   }
 }
 
@@ -24,7 +24,7 @@
 .pdfIcon {
   height: space(16);
   width: space(16);
-  color: #ef4444; // red-500
+  color: color('destructive');
 }
 
 .imagePreview {
@@ -63,7 +63,7 @@
   align-items: center;
   gap: space(1);
   border-radius: radius('full');
-  background-color: rgba(59, 130, 246, 0.9); // blue-500/90
+  background-color: color-alpha('primary', 0.9);
   padding: space(0.5) space(2);
   font-size: font-size('xs');
   font-weight: font-weight('medium');
@@ -86,7 +86,7 @@
   @include truncate;
   font-size: font-size('sm');
   font-weight: font-weight('medium');
-  color: #111827; // gray-900
+  color: color('foreground');
 
   @include dark {
     color: white;
@@ -99,11 +99,7 @@
   align-items: center;
   justify-content: space-between;
   font-size: font-size('xs');
-  color: #6b7280; // gray-500
-
-  @include dark {
-    color: #9ca3af; // gray-400
-  }
+  color: color('muted-foreground');
 }
 
 // ===========================================
@@ -113,14 +109,12 @@
 // ICON STYLES
 // ===========================================
 .trashIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
   margin-right: space(2);
 }
 
 .menuIcon {
-  width: space(4);
-  height: space(4);
+  @include icon-size(space(4));
 }
 
 // ===========================================
@@ -130,9 +124,5 @@
   display: block;
   margin-bottom: space(2);
   font-weight: font-weight('medium');
-  color: #d97706; // amber-600
-
-  @include dark {
-    color: #fbbf24; // amber-400
-  }
+  color: color('warning');
 }

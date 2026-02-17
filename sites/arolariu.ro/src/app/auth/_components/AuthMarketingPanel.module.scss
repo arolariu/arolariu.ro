@@ -44,12 +44,7 @@
 }
 
 .title {
-  background: linear-gradient(
-    to right,
-    color('foreground'),
-    color-alpha('foreground', 0.9),
-    color-alpha('foreground', 0.7)
-  );
+  @include gradient-bg();
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -92,7 +87,7 @@
   border: 1px solid color-alpha('border', 0.5);
   padding: space(6);
   background-color: color-alpha('card', 0.4);
-  backdrop-filter: blur(4px);
+  @include backdrop-blur(4px);
 }
 
 .cardGlowPrimary {

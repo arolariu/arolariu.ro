@@ -12,7 +12,7 @@
   border-radius: radius('lg');
   border: 2px dashed;
   padding: space(6);
-  @include transition(all);
+  @include transition((border-color, background-color, box-shadow));
   transition-duration: 200ms;
 }
 
@@ -34,9 +34,7 @@
   @include flex-column-center;
   justify-content: center;
 
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 
   text-align: center;
 }
@@ -58,13 +56,11 @@
 }
 
 .dropzoneSubtitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .dropzoneHint {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 // ===========================================
@@ -73,9 +69,7 @@
 .fileListWrapper {
   margin-top: space(4);
 
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .fileListTitle {
@@ -87,9 +81,7 @@
   max-height: 150px;
   overflow-y: auto;
 
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .fileItem {
@@ -123,32 +115,27 @@
 // ICON STYLES
 // ===========================================
 .fileIconBlue {
-  width: space(5);
-  height: space(5);
-  color: #3b82f6; // Decorative: intentionally hardcoded (blue-500)
+  @include icon-size(space(5));
+  color: color('primary');
 }
 
 .fileIconRed {
-  width: space(5);
-  height: space(5);
-  color: #ef4444; // Decorative: intentionally hardcoded (red-500)
+  @include icon-size(space(5));
+  color: color('destructive');
 }
 
 .fileIconGreen {
-  width: space(5);
-  height: space(5);
-  color: #22c55e; // Decorative: intentionally hardcoded (green-500)
+  @include icon-size(space(5));
+  color: color('success');
 }
 
 .fileIconGray {
-  width: space(5);
-  height: space(5);
-  color: #6b7280; // Decorative: intentionally hardcoded (gray-500)
+  @include icon-size(space(5));
+  color: color('foreground');
 }
 
 .statusIcon {
-  width: space(5);
-  height: space(5);
+  @include icon-size(space(5));
 }
 
 .statusSuccess {
@@ -156,8 +143,8 @@
   align-items: center;
   border-radius: radius('md');
   padding: space(2);
-  background-color: #f0fdf4; // green-50
-  color: #16a34a; // green-600
+  @include gradient-bg();
+  color: color('success');
 
   & > * + * {
     margin-left: space(2);
@@ -169,8 +156,8 @@
   align-items: center;
   border-radius: radius('md');
   padding: space(2);
-  background-color: #fef2f2; // red-50
-  color: #dc2626; // red-600
+  @include gradient-bg();
+  color: color('destructive');
 
   & > * + * {
     margin-left: space(2);

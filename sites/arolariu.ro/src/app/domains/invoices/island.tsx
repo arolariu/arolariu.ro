@@ -47,7 +47,6 @@ function WorkflowCard({
   icon,
   href,
   buttonText,
-  gradient,
   delay,
 }: Readonly<{
   step: number;
@@ -56,7 +55,6 @@ function WorkflowCard({
   icon: React.ReactNode;
   href: string;
   buttonText: string;
-  gradient: string;
   delay: number;
 }>): React.JSX.Element {
   return (
@@ -64,12 +62,12 @@ function WorkflowCard({
       initial={{opacity: 0, y: 20}}
       animate={{opacity: 1, y: 0}}
       transition={{duration: 0.5, delay}}>
-      <Card className='group relative h-full overflow-hidden border-2 transition-all duration-300 hover:border-indigo-300 hover:shadow-lg dark:hover:border-indigo-700'>
+      <Card className={styles["workflowCard"]}>
         {/* Step number badge */}
-        <div className={`${styles["stepBadge"]} bg-linear-to-br ${gradient}`}>{step}</div>
+        <div className={styles["stepBadge"]}>{step}</div>
 
         <CardHeader className='pb-2'>
-          <div className={`${styles["stepIconBox"]} bg-linear-to-br ${gradient}`}>{icon}</div>
+          <div className={styles["stepIconBox"]}>{icon}</div>
           <CardTitle className='text-xl'>{title}</CardTitle>
           <CardDescription className='text-base'>{description}</CardDescription>
         </CardHeader>
@@ -77,7 +75,7 @@ function WorkflowCard({
         <CardContent className='pt-2'>
           <Button
             asChild
-            className={`w-full bg-linear-to-r ${gradient} text-white transition-transform group-hover:scale-[1.02]`}>
+            className={styles["stepButton"]}>
             <Link
               href={href}
               className={styles["cardLink"]}>
@@ -110,12 +108,12 @@ function FeatureItem({icon, title, description}: Readonly<{icon: React.ReactNode
  * Bento grid item configuration.
  */
 const bentoItemsConfig = [
-  {key: "ai", icon: TbBrain, gradient: "from-purple-600 to-indigo-600", span: "col-span-2 row-span-1"},
-  {key: "analyticsCard", icon: TbChartPie, gradient: "from-emerald-500 to-teal-500", span: "col-span-1 row-span-1"},
-  {key: "cloud", icon: TbCloud, gradient: "from-blue-500 to-cyan-500", span: "col-span-1 row-span-2"},
-  {key: "ocr", icon: TbReceipt, gradient: "from-orange-500 to-amber-500", span: "col-span-1 row-span-1"},
-  {key: "secure", icon: TbLock, gradient: "from-slate-600 to-slate-800", span: "col-span-1 row-span-1"},
-  {key: "share", icon: TbShare, gradient: "from-pink-500 to-rose-500", span: "col-span-1 row-span-1"},
+  {key: "ai", icon: TbBrain, gradientKey: "gradientPurple", spanKey: "spanWide"},
+  {key: "analyticsCard", icon: TbChartPie, gradientKey: "gradientEmerald", spanKey: "spanNormal"},
+  {key: "cloud", icon: TbCloud, gradientKey: "gradientBlue", spanKey: "spanTall"},
+  {key: "ocr", icon: TbReceipt, gradientKey: "gradientOrange", spanKey: "spanNormal"},
+  {key: "secure", icon: TbLock, gradientKey: "gradientSlate", spanKey: "spanNormal"},
+  {key: "share", icon: TbShare, gradientKey: "gradientPink", spanKey: "spanNormal"},
 ] as const;
 
 type BentoKey = (typeof bentoItemsConfig)[number]["key"];
@@ -156,7 +154,7 @@ function BentoSection({
           {bentoItemsConfig.map((item, index) => (
             <motion.div
               key={item.key}
-              className={`${styles["bentoItem"]} bg-gradient-to-br ${item.gradient} ${item.span}`}
+              className={`${styles["bentoItem"]} ${styles[item.gradientKey]} ${styles[item.spanKey]}`}
               initial={{opacity: 0, y: 30, scale: 0.95}}
               animate={isInView ? {opacity: 1, y: 0, scale: 1} : {}}
               transition={{delay: 0.1 + index * 0.08, duration: 0.5, ease: "easeOut"}}
@@ -461,7 +459,6 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               icon={<TbUpload className={styles["workflowIcon"]} />}
               href='/domains/invoices/upload-scans'
               buttonText={t("workflow.step1.button")}
-              gradient='from-blue-500 to-cyan-500'
               delay={0.1}
             />
 
@@ -472,7 +469,6 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               icon={<TbEye className={styles["workflowIcon"]} />}
               href='/domains/invoices/view-scans'
               buttonText={t("workflow.step2.button")}
-              gradient='from-purple-500 to-pink-500'
               delay={0.2}
             />
 
@@ -483,7 +479,6 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
               icon={<TbFileInvoice className={styles["workflowIcon"]} />}
               href='/domains/invoices/view-invoices'
               buttonText={t("workflow.step3.button")}
-              gradient='from-green-500 to-emerald-500'
               delay={0.3}
             />
           </div>

@@ -11,7 +11,6 @@
 .fullWidthCard { @include settings.settings-card-full; }
 .toggleRow     { @include settings.settings-toggle-row; }
 .toggleLabel   { @include settings.settings-toggle-label; }
-.infoBox       { @include settings.settings-info-box; }
 
 // ===========================================
 // SECURITY-SPECIFIC
@@ -32,7 +31,7 @@
     gap: space(2);
     font-size: font-size('sm');
     font-weight: font-weight('medium');
-    color: #16a34a; // green-600
+    color: color('success');
   }
 
   svg {

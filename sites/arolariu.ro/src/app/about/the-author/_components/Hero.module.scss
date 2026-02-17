@@ -82,7 +82,7 @@
 .gradientWord {
   display: inline-block;
   text-align: center;
-  @include gradient-text-custom(#3b82f6, #a855f7, #a855f7);
+  color: color('primary');
 }
 
 // Image object-fit

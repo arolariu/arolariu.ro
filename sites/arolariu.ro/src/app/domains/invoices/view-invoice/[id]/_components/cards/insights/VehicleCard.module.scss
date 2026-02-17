@@ -25,8 +25,7 @@
 }
 
 .detailLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .detailValue {
@@ -35,20 +34,16 @@
 }
 
 .detailValueMuted {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   font-weight: font-weight('semibold');
 }
 
 .chartSection {
-  & > * + * {
-    margin-top: space(2);
-  }
+  @include spaced-children(space(2));
 }
 
 .chartTitle {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
   font-weight: font-weight('medium');
 }
 
@@ -65,8 +60,7 @@
 }
 
 .statLabel {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .statValue {
@@ -75,8 +69,7 @@
 }
 
 .statSub {
-  color: color('muted-foreground');
-  font-size: font-size('xs');
+  @include text-muted;
 }
 
 .remindersHeader {
@@ -91,12 +84,9 @@
 }
 
 .remindersList {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 
-  & > * + * {
-    margin-top: space(1);
-  }
+  @include spaced-children(space(1));
 }
 
 .reminderItem {
@@ -114,12 +104,12 @@
   align-items: flex-start;
   gap: space(2);
   border-radius: radius('lg');
-  border: 1px solid rgba(#22c55e, 0.3);
-  background-color: rgba(#22c55e, 0.1);
+  border: 1px solid color-alpha('success', 0.3);
+  background-color: color-alpha('success', 0.1);
   padding: space(3);
 
   @include dark {
-    border-color: rgba(#166534, 1);
+    border-color: color('success');
   }
 }
 
@@ -129,8 +119,7 @@
 }
 
 .tipDescription {
-  color: color('muted-foreground');
-  font-size: font-size('sm');
+  @include text-muted('sm');
 }
 
 .ctaButtons {
@@ -139,5 +128,5 @@
 }
 
 .statValueRed {
-  color: #ef4444; // Decorative: intentionally hardcoded
+  color: color('destructive');
 }

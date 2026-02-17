@@ -94,7 +94,7 @@ export default function FeedbackDialog(): React.JSX.Element {
   }, []);
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
+    async (e: React.SubmitEvent) => {
       e.preventDefault();
 
       // Show loading toast

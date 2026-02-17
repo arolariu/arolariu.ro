@@ -58,7 +58,7 @@ import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
  * **Styling Architecture:**
  * - Base: footer-bg background (dynamic, derived from gradient theme) with white text
  * - Hover Effects: Yellow 500 accent color on interactive elements
- * - Responsive Classes: Uses Tailwind's `2xsm:` (custom), `sm:`, `md:`, `lg:` breakpoints
+ * - Responsive Design: Custom breakpoints via SCSS mixins (`2xsm`, `sm`, `md`, `lg`)
  *
  * **Dependencies:**
  * - `@arolariu/components`: Tooltip components from shared UI library
