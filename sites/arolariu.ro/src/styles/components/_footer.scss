@@ -388,25 +388,21 @@
 }
 
 // Build info section
-// Original: 2xsm:text-center text-sm text-slate-300 md:text-end
 .footer__build-info {
-  width: 100%; // Ensure full width for text-align to work
-  font-size: 0.875rem; // text-sm
-  color: color('muted-foreground'); // text-slate-300
-  text-align: end; // Default: right aligned
+  width: 100%;
+  font-size: 0.875rem;
+  color: color-alpha('primary-foreground', 0.7);
+  text-align: end;
 
-  // Mobile only: centered
   @include respond-below('md') {
     text-align: center;
   }
 }
 
 // Tooltip trigger
-// Original: cursor-help
 .footer__build-tooltip {
   cursor: help;
 
-  // Override Tooltip component defaults in footer context
   &,
   &[data-state] {
     background-color: transparent;
@@ -415,7 +411,11 @@
 }
 
 // Commit SHA link
-// Original: italic
 .footer__commit-link {
   font-style: italic;
+  color: color-alpha('primary-foreground', 0.85);
+
+  &:hover {
+    color: color('primary-foreground');
+  }
 }
