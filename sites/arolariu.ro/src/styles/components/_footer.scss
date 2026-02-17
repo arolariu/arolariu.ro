@@ -51,6 +51,17 @@
   width: 100%;
   background-color: hsl(var(--footer-bg));
 
+  // Override global code element styling for ALL code elements in the footer.
+  // The global base layer sets code { background-color: hsl(var(--muted)) }
+  // which creates a WCAG color-contrast violation against the footer's
+  // primary background. This ensures code elements are transparent.
+  code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+  }
+
   @if $enable-print-styles {
     @media print {
       display: none;
