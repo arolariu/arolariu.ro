@@ -391,7 +391,7 @@
 .footer__build-info {
   width: 100%;
   font-size: 0.875rem;
-  color: color-alpha('primary-foreground', 0.7);
+  color: color('primary-foreground');
   text-align: end;
 
   @include respond-below('md') {
@@ -413,9 +413,12 @@
 // Commit SHA link
 .footer__commit-link {
   font-style: italic;
-  color: color-alpha('primary-foreground', 0.85);
+  color: color('primary-foreground');
+  text-decoration: underline;
+  text-decoration-color: color-alpha('primary-foreground', 0.6);
+  text-underline-offset: 0.15em;
 
   &:hover {
-    color: color('primary-foreground');
+    text-decoration-color: color('primary-foreground');
   }
 }
