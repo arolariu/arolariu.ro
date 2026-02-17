@@ -43,9 +43,8 @@
 // Main footer wrapper
 // Original: bg-footer-bg relative bottom-0 w-full print:hidden
 .footer {
-  display: block; // Explicitly set to block (override any inherited grid display)
+  display: block;
   position: relative;
-  isolation: isolate;
   z-index: z('sticky');
   bottom: 0;
   width: 100%;
