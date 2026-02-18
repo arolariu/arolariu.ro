@@ -71,6 +71,14 @@ For architecture-sensitive tasks, follow `.github/agent-governance/rfc-grounding
 - Always verify RFC claims against source files before implementation.
 - If RFC and source disagree, source wins; log drift and include evidence in output.
 
+### Self-Audit and Uncertainty Protocol
+
+For non-trivial tasks, apply `.github/agent-governance/self-audit-protocol.md` before final output.
+
+- Include assumptions, risk flags, confidence level, and evidence checklist.
+- Escalate for user confirmation on security/auth/infra/destructive/behavior-shift changes.
+- Never claim success without file/command evidence.
+
 ---
 
 ## Table of Contents

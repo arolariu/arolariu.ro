@@ -185,3 +185,14 @@ npm run test:website
 - Provide impacted files and rollback-safe next steps.
 - Request user confirmation when risk or ambiguity blocks safe continuation.
 
+## Self-Audit and Uncertainty Protocol (Mandatory)
+
+For non-trivial tasks, complete this checklist before final output:
+
+1. **Assumptions:** list non-obvious assumptions that influenced decisions.
+2. **Risk Flags:** identify security, behavior, deployment, or data risks.
+3. **Confidence:** report `high`, `medium`, or `low` with brief justification.
+4. **Evidence:** cite changed files, executed commands, and validation outcomes.
+
+Escalate to the user before continuing when security/auth/infra/destructive or major behavior-changing decisions are involved.
+

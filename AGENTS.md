@@ -84,6 +84,10 @@ If rules conflict, resolve in this order:
 Use `.github/agent-governance/rfc-grounding-protocol.md` whenever a task touches architecture, workflow design, security, state management, observability, or public API contracts.  
 If RFC text conflicts with source code, treat source code as truth and record RFC drift for follow-up.
 
+### Self-Audit Protocol
+For non-trivial work, apply `.github/agent-governance/self-audit-protocol.md` before finalizing output.  
+Always disclose assumptions, confidence level, risk flags, and validation evidence; escalate to user when risk thresholds are hit.
+
 ---
 
 ## Repository Structure

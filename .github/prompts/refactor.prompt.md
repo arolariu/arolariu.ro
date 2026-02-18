@@ -137,3 +137,14 @@ Ask the user before proceeding when:
 - **Success:** list files changed, validations run, and residual risks.
 - **Failure:** provide exact failing step/output, impacted files, and a safe next action.
 
+## Self-Audit and Uncertainty Protocol (Mandatory)
+
+For non-trivial tasks, complete this checklist before final output:
+
+1. **Assumptions:** list non-obvious assumptions that influenced decisions.
+2. **Risk Flags:** identify security, behavior, deployment, or data risks.
+3. **Confidence:** report `high`, `medium`, or `low` with brief justification.
+4. **Evidence:** cite changed files, executed commands, and validation outcomes.
+
+Escalate to the user before continuing when security/auth/infra/destructive or major behavior-changing decisions are involved.
+
