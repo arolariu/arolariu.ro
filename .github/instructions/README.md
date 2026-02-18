@@ -14,6 +14,7 @@
 | `components.instructions.md` | Component Library | `packages/components/**` | Shared UI component work |
 | `bicep.instructions.md` | Azure Bicep IaC | `**/*.bicep` | Azure infrastructure code |
 | `workflows.instructions.md` | GitHub Actions Workflows | `.github/workflows/*.yml` | CI/CD pipeline changes |
+| `agent-governance.instructions.md` | Agent Governance Contract | `.github/**/*.md` | Updating AI customization artifacts |
 | `code-review.instructions.md` | Code Review Guidelines | `**` | All code reviews |
 
 ## How Instructions Work

@@ -27,24 +27,63 @@ This document provides comprehensive guidelines for GitHub Copilot when working 
 
 ---
 
+## Agent Governance Contract (Mandatory)
+
+Every AI asset in this repository (`instructions`, `agents`, `skills`, `prompts`) must follow this execution contract:
+
+1. **Task Intake**
+   - Restate task intent internally and identify affected domains.
+   - Enumerate assumptions before implementing non-trivial changes.
+2. **Constraint Gate**
+   - Apply repository policies, security boundaries, and architecture constraints before editing files.
+3. **RFC Grounding Trigger**
+   - If task touches architecture, workflows, security, state management, observability, or public API contracts, read relevant RFCs from `docs/rfc/` and verify referenced source files.
+4. **Verification Gate**
+   - Do not claim success without command output or direct file evidence.
+   - Run relevant existing validation commands for changed surfaces.
+5. **Uncertainty Reporting**
+   - Explicitly report unresolved assumptions, risk level, and required human decision points.
+
+### Instruction Conflict Resolution Order
+
+When rules overlap, apply the most specific instruction in this precedence:
+
+1. Platform/system constraints (runtime safety + tool constraints)
+2. Repository root governance (`.github/copilot-instructions.md`, `AGENTS.md`)
+3. Domain instructions (`.github/instructions/*.instructions.md`)
+4. Task artifacts (`.github/agents/*.agent.md`, `.github/skills/*/SKILL.md`, `.github/prompts/*.prompt.md`)
+5. File-local conventions and examples
+
+### Violation Severity Model
+
+| Severity | Definition | Required Response |
+|----------|------------|-------------------|
+| **Critical** | Security, credential handling, destructive operations, policy bypass | Stop, surface blocker, request explicit user confirmation |
+| **High** | Architecture/rule violations, unsupported claims, missing verification | Block completion until corrected |
+| **Medium** | Partial standards drift, incomplete validation coverage | Fix before merge unless user explicitly defers |
+| **Low** | Clarity/documentation improvements with no behavior risk | Queue for follow-up improvement |
+
+---
+
 ## Table of Contents
 
 1. [TL;DR - Quick Reference](#tldr---quick-reference)
-2. [Monorepo Architecture](#monorepo-architecture)
-3. [Context-Aware Instructions](#context-aware-instructions)
-4. [Documentation & Architecture RFCs](#documentation--architecture-rfcs)
-5. [Technology Stack](#technology-stack)
-6. [Code Quality Standards](#code-quality-standards)
-7. [Frontend Development (Next.js)](#frontend-development-nextjs)
-8. [Backend Development (.NET)](#backend-development-net)
-9. [Shared Components Library](#shared-components-library)
-10. [Type Safety & TypeScript](#type-safety--typescript)
-11. [State Management](#state-management)
-12. [Testing Practices](#testing-practices)
-13. [Infrastructure & Deployment](#infrastructure--deployment)
-14. [Naming Conventions](#naming-conventions)
-15. [Performance Considerations](#performance-considerations)
-16. [Security Guidelines](#security-guidelines)
+2. [Agent Governance Contract (Mandatory)](#agent-governance-contract-mandatory)
+3. [Monorepo Architecture](#monorepo-architecture)
+4. [Context-Aware Instructions](#context-aware-instructions)
+5. [Documentation & Architecture RFCs](#documentation--architecture-rfcs)
+6. [Technology Stack](#technology-stack)
+7. [Code Quality Standards](#code-quality-standards)
+8. [Frontend Development (Next.js)](#frontend-development-nextjs)
+9. [Backend Development (.NET)](#backend-development-net)
+10. [Shared Components Library](#shared-components-library)
+11. [Type Safety & TypeScript](#type-safety--typescript)
+12. [State Management](#state-management)
+13. [Testing Practices](#testing-practices)
+14. [Infrastructure & Deployment](#infrastructure--deployment)
+15. [Naming Conventions](#naming-conventions)
+16. [Performance Considerations](#performance-considerations)
+17. [Security Guidelines](#security-guidelines)
 
 ---
 
