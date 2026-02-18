@@ -1,9 +1,10 @@
 # RFC 2003: The Standard Implementation in arolariu.ro Backend
 
-**Status**: Accepted
-**Authors**: Alexandru Olariu
-**Created**: 2025-01-26
-**References**: [The Standard by Hassan Habib](https://github.com/hassanhabib/The-Standard)
+- **Status**: Implemented
+- **Date**: 2025-01-26
+- **Authors**: Alexandru Olariu
+- **Related Components**: `sites/api.arolariu.ro/src/Invoices`, `sites/api.arolariu.ro/src/Common`, `sites/api.arolariu.ro/tests`
+- **References**: [The Standard by Hassan Habib](https://github.com/hassanhabib/The-Standard)
 
 ---
 
@@ -12,6 +13,12 @@
 This RFC documents how the arolariu.ro backend (`api.arolariu.ro`) implements "The Standard" — Hassan Habib's comprehensive software engineering standard for building enterprise-grade systems. The Standard defines a layered architecture based on the Tri-Nature theory (Dependencies, Purpose, Exposure) with strict service segregation principles, business language mapping, and the Florance Pattern for dependency management.
 
 Our .NET 10.0 modular monolith backend adheres to The Standard's architectural principles while integrating Domain-Driven Design (documented in RFC 2001) to create a robust, maintainable, and testable system for invoice management.
+
+---
+
+## Documentation Accuracy Note
+
+If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be updated.
 
 ---
 

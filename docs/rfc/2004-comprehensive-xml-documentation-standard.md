@@ -1,9 +1,10 @@
 # RFC 2004: Comprehensive XML Documentation Standard
 
-**Status**: Accepted
-**Authors**: Alexandru Olariu
-**Created**: 2025-01-26
-**Related RFCs**: RFC 2001 (DDD), RFC 2003 (The Standard), RFC 1001/2002 (OpenTelemetry)
+- **Status**: Implemented
+- **Date**: 2025-01-26
+- **Authors**: Alexandru Olariu
+- **Related Components**: `sites/api.arolariu.ro/src`, `sites/api.arolariu.ro/Directory.Build.props`
+- **Related RFCs**: RFC 2001 (DDD), RFC 2003 (The Standard), RFC 1001/2002 (OpenTelemetry)
 
 ---
 
@@ -12,6 +13,12 @@
 This RFC documents the comprehensive XML documentation standard employed throughout the arolariu.ro backend (`api.arolariu.ro`) codebase. Unlike typical C# XML comments that provide minimal IntelliSense support, our documentation standard creates **tutorial-level, production-ready documentation** embedded directly in source code, serving multiple audiences: developers (IDE IntelliSense), API consumers (generated documentation), and new team members (onboarding material).
 
 This standard leverages the full power of C# XML documentation tags (`<summary>`, `<remarks>`, `<para>`, `<list>`, `<see cref="">`, `<example>`, etc.) to create rich, structured, cross-referenced documentation that explains not just **what** the code does, but **why** it exists, **how** it should be used, **when** it applies, and **what** trade-offs were made.
+
+---
+
+## Documentation Accuracy Note
+
+If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be updated.
 
 ---
 

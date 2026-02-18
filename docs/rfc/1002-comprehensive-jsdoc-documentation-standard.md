@@ -1,9 +1,10 @@
 # RFC 1002: Comprehensive JSDoc/TSDoc Documentation Standard
 
-**Status**: Accepted
-**Authors**: Alexandru Olariu
-**Created**: 2025-01-26
-**Related RFCs**: RFC 1001 (OpenTelemetry Observability), RFC 2004 (XML Documentation Standard)
+- **Status**: Implemented
+- **Date**: 2025-01-26
+- **Authors**: Alexandru Olariu
+- **Related Components**: `sites/arolariu.ro`, `eslint.config.ts`, `typedoc.website.json`, `typedoc.components.json`
+- **Related RFCs**: RFC 1001 (OpenTelemetry Observability), RFC 2004 (XML Documentation Standard)
 
 ---
 
@@ -14,6 +15,12 @@ This RFC documents the comprehensive JSDoc/TSDoc documentation standard employed
 Unlike minimal code comments, our JSDoc standard creates **production-grade, tutorial-level documentation** embedded in source code. This documentation explains not just the *what* (visible in code), but the *why* (architectural context), *how* (usage patterns), *when* (appropriate use cases), and *what trade-offs* were considered during implementation.
 
 This standard leverages JSDoc/TSDoc tags (`@param`, `@returns`, `@example`, `@fileoverview`, `@see`, `@remarks`, etc.) to create rich, structured, cross-referenced documentation that transforms the codebase into a **living technical manual** for TypeScript/React development.
+
+---
+
+## Documentation Accuracy Note
+
+If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be updated.
 
 ---
 
