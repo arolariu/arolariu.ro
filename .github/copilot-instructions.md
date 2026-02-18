@@ -22,7 +22,7 @@ This document provides comprehensive guidelines for GitHub Copilot when working 
 - Server Components by default; add `"use client"` only when needed
 - Use `@arolariu/components` for shared UI components
 - Check `docs/rfc/` before architectural changes
-- Follow DDD in backend (`sites/api.arolariu.ro/src/Domain/`)
+- Follow DDD in backend (`sites/api.arolariu.ro/src/Invoices/`)
 - TypeScript strict mode everywhere - no `any` types
 
 ---
@@ -119,6 +119,9 @@ docs/
     ├── 1002-comprehensive-jsdoc-documentation-standard.md
     ├── 1003-internationalization-system.md
     ├── 1004-metadata-seo-system.md
+    ├── 1005-state-management-zustand.md
+    ├── 1006-component-library-architecture.md
+    ├── 1007-advanced-frontend-patterns.md
     ├── 2001-domain-driven-design-architecture.md
     ├── 2002-opentelemetry-backend-observability.md
     ├── 2003-the-standard-implementation.md
@@ -139,11 +142,14 @@ docs/
 | 1002 | JSDoc/TSDoc Documentation Standard | All `*.ts`/`*.tsx` files |
 | 1003 | Internationalization (i18n) | `src/i18n/`, `messages/*.json` |
 | 1004 | Metadata & SEO System | `src/metadata.ts`, `app/**/page.tsx` |
+| 1005 | State Management (Zustand) | `src/stores/`, `src/stores/createEntityStore.ts` |
+| 1006 | Component Library Architecture | `packages/components/src/` |
+| 1007 | Advanced Frontend Patterns | `src/stores/`, `src/lib/utils.server.ts` |
 
 #### Key Backend RFCs (2xxx series)
 | RFC | Topic | Key Files |
 |-----|-------|-----------|
-| 2001 | Domain-Driven Design Architecture | `src/Domain/` bounded contexts |
+| 2001 | Domain-Driven Design Architecture | `src/Invoices/DDD/` bounded contexts |
 | 2002 | Backend OpenTelemetry | Telemetry middleware, spans |
 | 2003 | The Standard Implementation | SOLID principles, clean architecture |
 | 2004 | XML Documentation Standard | All `*.cs` public APIs |
@@ -186,16 +192,16 @@ When making architectural changes:
 ## Technology Stack
 
 ### Frontend (sites/arolariu.ro)
-- **Framework**: Next.js 16.0.0-beta.0 (App Router)
-- **React**: v19.2.0 (with React Server Components)
+- **Framework**: Next.js 16.1.6 (App Router)
+- **React**: v19.2.4 (with React Server Components)
 - **TypeScript**: v5.9.3 (strict mode)
-- **Styling**: Tailwind CSS v4.1.14 + PostCSS
+- **Styling**: Tailwind CSS v4.1.18 + PostCSS
 - **UI Components**: Radix UI + shadcn/ui patterns
-- **State Management**: Zustand v5.0.8
-- **Authentication**: Clerk (@clerk/nextjs)
-- **Internationalization**: next-intl v4.3.11
+- **State Management**: Zustand v5.0.11 (4 stores with IndexedDB persistence)
+- **Authentication**: Clerk (@clerk/nextjs v6.37.4)
+- **Internationalization**: next-intl v4.8.3
 - **Forms**: react-hook-form + zod validation
-- **Testing**: Jest + Playwright
+- **Testing**: Vitest v4.0.18 + Playwright
 
 ### Backend (sites/api.arolariu.ro)
 - **Framework**: .NET 10.0 (LTS)
@@ -707,41 +713,87 @@ export enum InvoiceAnalysisOptions {
 
 ## State Management
 
-### Zustand Store
-```typescript
-// hooks/stateStore.tsx
-import {create} from "zustand";
-import {devtools, persist} from "zustand/middleware";
+### Zustand Stores
 
-interface StoreState {
-  selectedInvoices: string[];
-  setSelectedInvoices: (ids: string[]) => void;
-  // ... other state
+The project has **4 Zustand stores** in `src/stores/`, all using IndexedDB persistence via Dexie:
+
+| Store | File | Persisted State | Notes |
+|-------|------|-----------------|-------|
+| `useInvoicesStore` | `invoicesStore.tsx` | `invoices[]` | Hand-rolled (custom fields/actions) |
+| `useMerchantsStore` | `merchantsStore.tsx` | `merchants[]` | Hand-rolled |
+| `useScansStore` | `scansStore.tsx` | `entities[]` | Uses `createEntityStore` factory |
+| `usePreferencesStore` | `preferencesStore.ts` | `theme`, `font`, `locale`, etc. | UI preferences, separate schema |
+
+### createEntityStore Factory (RFC 1005)
+```typescript
+// src/stores/createEntityStore.ts
+import {createEntityStore} from "@/stores/createEntityStore";
+import type {Scan} from "@/types/scans";
+
+// Each entity type extends BaseEntity (requires an `id: string` field)
+export const useScansStore = createEntityStore<Scan>({
+  tableName: "scans",
+  storeName: "ScansStore",
+  persistName: "scans-store",
+});
+
+// Generated store interface includes:
+// entities: ReadonlyArray<E>        (persisted to IndexedDB)
+// selectedEntities: E[]             (in-memory only)
+// hasHydrated: boolean              (in-memory only)
+// setEntities / upsertEntity / removeEntity / updateEntity
+// toggleEntitySelection / clearSelectedEntities / clearEntities
+// getEntityById / setHasHydrated
+```
+
+### Importing Stores
+```typescript
+// Always import from the barrel export
+import {useInvoicesStore, useMerchantsStore, useScansStore, usePreferencesStore} from "@/stores";
+
+// Use useShallow for object selectors to prevent unnecessary re-renders
+import {useShallow} from "zustand/react/shallow";
+
+function InvoicesList() {
+  const {invoices, upsertInvoice} = useInvoicesStore(
+    useShallow((state) => ({
+      invoices: state.invoices,
+      upsertInvoice: state.upsertInvoice,
+    })),
+  );
+  // ...
+}
+```
+
+### ServerActionResult<T> Pattern
+```typescript
+// src/lib/utils.server.ts — standardized server action return type
+export type ServerActionErrorCode =
+  | "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR"
+  | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR";
+
+export type ServerActionResult<T> =
+  | {success: true; data: T}
+  | {success: false; error: {code: ServerActionErrorCode; message: string; status?: number}};
+
+// Usage in server actions:
+"use server";
+export default async function fetchInvoices(): Promise<ServerActionResult<Invoice[]>> {
+  try {
+    const data = await callApi();
+    return {success: true, data};
+  } catch (error) {
+    return createErrorResult(error, "Failed to fetch invoices");
+  }
 }
 
-const prodStore = create<StoreState>()(
-  persist(
-    (set) => ({
-      selectedInvoices: [],
-      setSelectedInvoices: (ids) => set({selectedInvoices: ids}),
-    }),
-    {name: "app-storage"}
-  )
-);
-
-const devStore = create<StoreState>()(
-  devtools(
-    persist(
-      (set) => ({
-        selectedInvoices: [],
-        setSelectedInvoices: (ids) => set({selectedInvoices: ids}),
-      }),
-      {name: "app-storage"}
-    )
-  )
-);
-
-export const useZustandStore = isProduction ? prodStore : devStore;
+// Consuming in client components:
+const result = await fetchInvoices();
+if (result.success) {
+  // result.data is Invoice[]
+} else {
+  // result.error.code, result.error.message, result.error.status?
+}
 ```
 
 ### React Context Pattern
@@ -779,10 +831,11 @@ export const useFontContext = () => {
 
 ## Testing Practices
 
-### Unit Tests (Jest)
+### Unit Tests (Vitest)
 ```typescript
-// component.test.tsx
+// component.test.tsx  — use .test. suffix (not .spec. — that's reserved for Playwright)
 import {render, screen} from "@testing-library/react";
+import {describe, expect, it} from "vitest";
 import {Button} from "./button";
 
 describe("Button", () => {
@@ -797,6 +850,21 @@ describe("Button", () => {
     expect(button).toHaveClass("bg-destructive");
   });
 });
+```
+
+### Running Tests
+```bash
+# Run all website tests
+npm run test:website
+
+# Run a single test file (Vitest)
+npx vitest run src/lib/utils.generic.test.ts
+
+# Run a single .NET test by method name
+dotnet test --filter "MethodName_Condition_ExpectedResult"
+
+# Run with coverage (90% threshold enforced)
+npm run test:unit
 ```
 
 ### E2E Tests (Playwright)
@@ -1093,7 +1161,7 @@ import {cn} from "@/lib/utils";
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
 
 // State
-import {useZustandStore} from "@/hooks/stateStore";
+import {useInvoicesStore, useMerchantsStore, useScansStore, usePreferencesStore} from "@/stores";
 ```
 
 ### File Header Template
