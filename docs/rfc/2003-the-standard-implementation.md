@@ -187,34 +187,60 @@ Brokers are thin abstractions over external dependencies (databases, APIs, time,
 /// translation. It MUST NOT implement domain validation, cross-aggregate orchestration,
 /// authorization, business workflow branching, or exception classification beyond
 /// direct dependency errors.</para>
+/// <para><b>Cancellation:</b> All async methods accept an optional <c>CancellationToken</c>
+/// to support request abort and timeouts.</para>
+/// <para><b>Partitioning:</b> Invoices are partitioned by <c>UserIdentifier</c>;
+/// merchants by <c>ParentCompanyId</c>. Overloads with optional partition parameters
+/// perform cross-partition (fan-out) operations at higher RU cost.</para>
 /// </remarks>
 public interface IInvoiceNoSqlBroker
 {
+  #region Invoice Storage Broker
+
   /// <summary>Persists a new invoice document.</summary>
-  ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice);
+  ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice, CancellationToken cancellationToken = default);
 
-  /// <summary>Retrieves a single invoice by identifier (cross-partition).</summary>
-  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier);
+  /// <summary>Retrieves a single invoice; cross-partition if <paramref name="userIdentifier"/> is null.</summary>
+  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 
-  /// <summary>Retrieves a single invoice by identifier scoped to partition.</summary>
-  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
-
-  /// <summary>Lists all non soft-deleted invoices across all partitions.</summary>
-  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync();
-
-  /// <summary>Lists all non soft-deleted invoices for a specific partition.</summary>
-  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier);
+  /// <summary>Lists all non-soft-deleted invoices for a specific partition.</summary>
+  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default);
 
   /// <summary>Replaces (upserts) an invoice by identifier.</summary>
-  ValueTask<Invoice?> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice);
+  ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice, CancellationToken cancellationToken = default);
 
-  /// <summary>Soft-deletes an invoice (sets IsSoftDeleted flag).</summary>
-  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
+  /// <summary>Replaces (upserts) an invoice using current and updated aggregate snapshots.</summary>
+  ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice, CancellationToken cancellationToken = default);
 
-  /// <summary>Soft-deletes an invoice with partition scoping.</summary>
-  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+  /// <summary>Soft-deletes an invoice; cross-partition if <paramref name="userIdentifier"/> is null.</summary>
+  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 
-  // Merchant CRUD methods omitted for brevity...
+  /// <summary>Soft-deletes all invoices for a given user partition.</summary>
+  ValueTask DeleteInvoicesAsync(Guid userIdentifier, CancellationToken cancellationToken = default);
+
+  #endregion
+
+  #region Merchant Storage Broker
+
+  /// <summary>Persists a new merchant entity.</summary>
+  ValueTask<Merchant> CreateMerchantAsync(Merchant merchant, CancellationToken cancellationToken = default);
+
+  /// <summary>Retrieves a merchant; cross-partition if <paramref name="parentCompanyId"/> is null.</summary>
+  ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+
+  /// <summary>Lists merchants filtered by parent company partition.</summary>
+  ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken = default);
+
+  /// <summary>Replaces (upserts) a merchant by identifier.</summary>
+  ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant, CancellationToken cancellationToken = default);
+
+  /// <summary>Replaces (upserts) a merchant using current and updated snapshots.</summary>
+  ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken = default);
+
+  /// <summary>Soft-deletes (or physically removes) a merchant by identifier.</summary>
+  ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null, CancellationToken cancellationToken = default);
+
+  #endregion
 }
 ```
 
@@ -309,19 +335,19 @@ public interface IInvoiceStorageFoundationService
   /// <para><b>Validation:</b> Ensures invoice id is non-empty, required collections initialized,
   /// and monetary totals non-negative.</para>
   /// </remarks>
-  Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null);
+  Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 
   /// <summary>Retrieves a single invoice by its identifier (and optional partition).</summary>
-  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 
-  /// <summary>Enumerates all invoices for a given partition (or across partitions if none supplied).</summary>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null);
+  /// <summary>Enumerates all invoices for a given partition.</summary>
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier, CancellationToken cancellationToken = default);
 
   /// <summary>Replaces an existing invoice with updated state.</summary>
-  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 
   /// <summary>Performs a logical or physical delete (implementation-defined) of an invoice.</summary>
-  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default);
 }
 ```
 
@@ -346,39 +372,28 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
   }
 
   /// <inheritdoc/>
-  public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null) =>
+  public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
     ValidateInvoiceInformationIsValid(invoice); // ← Validation before broker call
 
     await invoiceNoSqlBroker
-      .CreateInvoiceAsync(invoice)
+      .CreateInvoiceAsync(invoice, cancellationToken)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
 
   /// <inheritdoc/>
-  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null) =>
+  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null, CancellationToken cancellationToken = default) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
     ValidateIdentifierIsSet(identifier); // ← Validation
 
-    if (userIdentifier is null)
-    {
-      logger.LogUserIdentifierNotSetWarning();
-      var invoice = await invoiceNoSqlBroker
-        .ReadInvoiceAsync(identifier)
-        .ConfigureAwait(false);
-      return invoice!;
-    }
-    else
-    {
-      var invoice = await invoiceNoSqlBroker
-        .ReadInvoiceAsync(identifier, (Guid)userIdentifier)
-        .ConfigureAwait(false);
-      return invoice!;
-    }
+    var invoice = await invoiceNoSqlBroker
+      .ReadInvoiceAsync(identifier, userIdentifier, cancellationToken)
+      .ConfigureAwait(false);
+    return invoice!;
   }).ConfigureAwait(false);
 
   // UpdateInvoiceObject, DeleteInvoiceObject, ReadAllInvoiceObjects follow same pattern
@@ -768,22 +783,21 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
   private readonly ILogger<IInvoiceStorageFoundationService> logger; // ← Logging (not counted)
 }
 
-// Processing Service: 2-3 foundation services
-public class InvoiceProcessingService : IInvoiceProcessingService
+// Orchestration Service: 2-3 foundation services
+public class InvoiceOrchestrationService : IInvoiceOrchestrationService
 {
   private readonly IInvoiceStorageFoundationService invoiceStorageFoundationService; // ← 1
   private readonly IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService; // ← 2
-  // Potential 3rd: IMerchantStorageFoundationService if cross-entity logic needed
 }
 
-// Orchestration Service: 2-3 processing services
-public class InvoiceOrchestrationService : IInvoiceOrchestrationService
+// Processing Service: 2-3 orchestration services
+public class InvoiceProcessingService : IInvoiceProcessingService
 {
-  private readonly IInvoiceProcessingService invoiceProcessingService; // ← 1
-  private readonly IMerchantProcessingService merchantProcessingService; // ← 2
+  private readonly IInvoiceOrchestrationService invoiceOrchestrationService; // ← 1
+  private readonly IMerchantOrchestrationService merchantOrchestrationService; // ← 2
 }
 
-// Exposer: Single processing/orchestration service
+// Exposer: Single processing service
 public static partial class InvoiceEndpoints
 {
   internal static async Task<IResult> CreateNewInvoiceAsync(
@@ -796,25 +810,25 @@ public static partial class InvoiceEndpoints
 
 Services only call **downward** in the hierarchy (never sideways or upward):
 
-```plaintext
-Exposers → Orchestration → Processing → Foundation → Brokers
-   ↓            ↓             ↓            ↓           ↓
-  HTTP       Complex       Higher-      CRUD +     Database
- Mapping      Flows        Order       Validation   Access
-                          Logic
-```
+`plaintext
+Exposers → Processing → Orchestration → Foundation → Brokers
+   ↓            ↓             ↓              ↓           ↓
+  HTTP       Higher-      Cross-Domain    CRUD +     Database
+ Mapping      Order       Coordination  Validation   Access
+              Logic
+`
 
 **Forbidden**:
 
 - ❌ Foundation calling another foundation service
-- ❌ Processing calling orchestration service
+- ❌ Orchestration calling a processing service (upward call)
 - ❌ Broker calling any service
 
 **Allowed**:
 
-- ✅ Exposer → Orchestration
-- ✅ Orchestration → Processing
-- ✅ Processing → Foundation
+- ✅ Exposer → Processing
+- ✅ Processing → Orchestration
+- ✅ Orchestration → Foundation
 - ✅ Foundation → Broker
 
 ### 4. Pure Contracting (Interface-Driven Design)
