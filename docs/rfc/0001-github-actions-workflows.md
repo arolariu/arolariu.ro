@@ -50,7 +50,7 @@ Trigger (push/PR) → Build → Test → Validate → [Manual Approval] → Rele
 - Separate build and release workflows
 - Build artifacts are validated before deployment
 - Manual approval gates for production
-- Suitable for critical applications (website, API)
+- Suitable for high-risk deployments (currently website pipeline)
 
 **Examples:**
 - `official-website-build.yml` + `official-website-release.yml`
@@ -81,21 +81,21 @@ Trigger (push/PR) → Lint → Format → Test → Report
 - Parallel job execution for speed
 
 **Examples:**
-- `official-hygiene-check.yml` (stats, format, lint, summary)
+- `official-hygiene-check-v2.yml` (stats, format, lint, summary)
 - `official-e2e-action.yml` (end-to-end testing)
 
 ### 2.2 Workflow Inventory
 
 | Workflow | Pattern | Trigger | Purpose | Tech Stack |
 |----------|---------|---------|---------|------------|
-| `official-website-build.yml` | Build-Release | Push to main/preview | Build and test Next.js website | Node.js 24, Playwright |
-| `official-website-release.yml` | Build-Release | Manual | Deploy website to Azure | Azure deployment |
-| `official-api-trigger.yml` | Trigger | Push to main/preview | Build, test, and deploy .NET API | .NET 10, Azure |
+| `official-website-build.yml` | Build-Release | Push to preview + Manual | Build and test Next.js website | Node.js 24, Playwright |
+| `official-website-release.yml` | Build-Release | workflow_run (preview) + Manual | Deploy website to Azure | Azure deployment |
+| `official-api-trigger.yml` | Trigger | Push to main + Manual | Build, test, and deploy .NET API | .NET 10, Azure |
 | `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit CV site | Node.js 24, Azure SWA |
 | `official-docs-trigger.yml` | Trigger | Push to main | Generate and deploy DocFX docs | .NET 10, DocFX |
-| `official-hygiene-check-v2.yml` | Validation | PR | Code quality checks (lint, format, tests) | Node.js 24, ESLint, Prettier |
-| `official-e2e-action.yml` | Validation | Schedule, Manual | End-to-end testing | Node.js 24, Playwright |
-| `official-components-publish.yml` | Trigger | Push to main | Publish component library to npm | Node.js 24, RSLib |
+| `official-hygiene-check-v2.yml` | Validation | PR + Manual | Code quality checks (lint, format, tests) | Node.js 24, ESLint, Prettier |
+| `official-e2e-action.yml` | Validation | Schedule, Manual | End-to-end API and frontend test runs | Node.js 24, Newman |
+| `official-components-publish.yml` | Trigger | Tag push (`components-v*`) + Manual | Publish component library to npm | Node.js 24, RSLib |
 
 ---
 
@@ -111,7 +111,6 @@ Trigger (push/PR) → Lint → Format → Test → Report
 - Node.js setup with version control
 - .NET setup with version control
 - Intelligent dependency caching (hash-based, no fallback)
-- Azure authentication integration
 - Playwright browser installation
 - GraphQL artifact generation
 - Progress indicators with emojis
@@ -230,7 +229,7 @@ jobs:
     
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: 🔐 Azure authentication (if needed)
         uses: azure/login@v2
@@ -262,13 +261,13 @@ jobs:
 
 **Build Workflow** (`official-website-build.yml`):
 ```
-Trigger: Push to main/preview
+Trigger: Push to preview (+ manual dispatch)
 ├─ Job: test
 │  ├─ Setup workspace (Node.js 24, Playwright, Generate)
 │  ├─ Run tests
 │  └─ Upload test results
 └─ Job: build
-   ├─ Setup workspace (Node.js 24, Azure, Playwright, Generate)
+   ├─ Setup workspace (Node.js 24, Playwright, Generate)
    ├─ Build Docker image
    ├─ Push to Azure Container Registry
    └─ Tag with commit SHA
@@ -276,8 +275,7 @@ Trigger: Push to main/preview
 
 **Release Workflow** (`official-website-release.yml`):
 ```
-Trigger: Manual (workflow_dispatch)
-├─ Input: Environment (production/preview)
+Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
 ├─ Azure authentication
 └─ Deploy container to Azure App Service
 ```
@@ -291,7 +289,7 @@ Trigger: Manual (workflow_dispatch)
 
 **API Trigger** (`official-api-trigger.yml`):
 ```
-Trigger: Push to main/preview
+Trigger: Push to main (+ manual dispatch)
 ├─ Job: test
 │  ├─ Setup workspace (.NET 10)
 │  ├─ Run unit tests
@@ -421,8 +419,6 @@ The composite action provides clear visual feedback:
   ✅ Using cached .NET packages (cache hit)
 📥 Restore .NET dependencies
   ✅ .NET dependencies restored successfully
-⚙️ Setup Azure configuration
-  ✅ Azure configuration completed
 🎭 Install Playwright browsers
   ✅ Playwright browsers installed
 🔨 Generate artifacts (GraphQL schemas, types, etc.)

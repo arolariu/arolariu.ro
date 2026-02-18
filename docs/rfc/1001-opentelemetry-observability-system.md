@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This RFC documents the implementation of a comprehensive observability system for the arolariu.ro Next.js 16 application using OpenTelemetry SDK 1.x. The system provides distributed tracing, metrics collection, and structured logging with a strongly-typed API that enforces semantic conventions and prevents common instrumentation errors through compile-time type checking.
+This RFC documents the implementation of a comprehensive observability system for the arolariu.ro Next.js 16 application using the current OpenTelemetry JavaScript SDK stack configured in `sites/arolariu.ro/package.json`. The system provides distributed tracing, metrics collection, and structured logging with a strongly-typed API that enforces semantic conventions and prevents common instrumentation errors through compile-time type checking.
 
 ---
 
@@ -544,7 +544,7 @@ NODE_ENV=production
 
 ```typescript
 // src/instrumentation.ts
-import {startTelemetry} from "@/lib/telemetry";
+import {startTelemetry} from "@/instrumentation.server";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
@@ -641,7 +641,7 @@ curl http://localhost:3000/api/user
 
 ```typescript
 // tests/telemetry.test.ts
-import {createHttpServerAttributes, createNextJsAttributes} from '@/lib/telemetry';
+import {createHttpServerAttributes, createNextJsAttributes} from "@/instrumentation.server";
 
 describe('Telemetry Helpers', () => {
   it('creates valid HTTP server attributes', () => {
@@ -799,7 +799,7 @@ This implementation complies with:
 
 ## 14. Conclusion
 
-This RFC documents a production-ready observability system that leverages OpenTelemetry SDK 1.x with a strongly-typed API tailored for Next.js 16 applications. The type system enforces semantic conventions, prevents common instrumentation errors, and provides excellent developer experience through IntelliSense support.
+This RFC documents a production-ready observability system that leverages the OpenTelemetry packages currently declared for the website runtime with a strongly-typed API tailored for Next.js 16 applications. The type system enforces semantic conventions, prevents common instrumentation errors, and provides excellent developer experience through IntelliSense support.
 
 **Key Achievements**:
 - ✅ Type-safe API with compile-time enforcement

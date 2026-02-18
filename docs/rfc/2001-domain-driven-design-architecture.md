@@ -40,24 +40,30 @@ Traditional layered architectures often lead to:
 ```
 arolariu.Backend (Modular Monolith)
 ├── Core/                   # Application entry point
-│   ├── Program.cs         # Bootstrap and configuration
-│   └── Domain/
-│       └── General/       # Infrastructure domain
-├── Core.Auth/             # Authentication domain
-│   ├── Domain/
-│   ├── Application/
-│   └── Infrastructure/
+│   └── Program.cs         # Bootstrap and configuration
+├── Common/                # Shared DDD contracts, telemetry, options, validators
+│   ├── DDD/
+│   ├── Telemetry/
+│   ├── Options/
+│   └── Validators/
+├── Core.Auth/             # Authentication bounded context
+│   ├── Brokers/
+│   ├── Endpoints/
+│   ├── Models/
+│   └── Modules/
 ├── Invoices/              # Business domain
-│   ├── Domain/
-│   │   ├── Aggregates/
-│   │   ├── ValueObjects/
-│   │   ├── Events/
-│   │   └── Services/
-│   ├── Application/
-│   └── Infrastructure/
-└── Common/                # Shared infrastructure
-    ├── Entities/
-    └── Services/
+│   ├── Brokers/
+│   ├── DDD/
+│   │   ├── AggregatorRoots/
+│   │   ├── Entities/
+│   │   └── ValueObjects/
+│   ├── DTOs/
+│   ├── Endpoints/
+│   ├── Modules/
+│   └── Services/
+│       ├── Foundation/
+│       ├── Orchestration/
+│       └── Processing/
 ```
 
 ### 2.2 Domain Organization
@@ -89,81 +95,18 @@ arolariu.Backend (Modular Monolith)
 - Merchant relationship management
 - Product and line item handling
 - Business rule validation
-- Domain event publishing
 
-**Aggregates:**
-```csharp
-// Invoice Aggregate (Root)
-public class Invoice : BaseEntity<Guid>, NamedEntity<Guid>
-{
-    public Guid MerchantId { get; private set; }
-    public DateTime InvoiceDate { get; private set; }
-    public decimal TotalAmount { get; private set; }
-    public Currency Currency { get; private set; }
-    public IReadOnlyList<Product> Products { get; private set; }
-    
-    // Business logic methods
-    public void AddProduct(Product product) { /* ... */ }
-    public void UpdateMerchant(Guid merchantId) { /* ... */ }
-    public void CalculateTotal() { /* ... */ }
-}
+**Implemented Aggregate/Entity Model (source-aligned):**
 
-// Merchant Aggregate
-public class Merchant : BaseEntity<Guid>, NamedEntity<Guid>
-{
-    public string LegalName { get; private set; }
-    public TaxIdentifier TaxId { get; private set; }
-    public Address RegisteredAddress { get; private set; }
-}
-
-// Product (Entity within Invoice aggregate)
-public class Product : BaseEntity<Guid>
-{
-    public string Name { get; private set; }
-    public decimal UnitPrice { get; private set; }
-    public int Quantity { get; private set; }
-    public ProductCategory Category { get; private set; }
-}
-```
-
-**Value Objects:**
-```csharp
-public record Currency(string Code, string Symbol)
-{
-    public static Currency RON = new("RON", "lei");
-    public static Currency EUR = new("EUR", "€");
-    public static Currency USD = new("USD", "$");
-}
-
-public record TaxIdentifier(string Value, TaxIdType Type);
-
-public record Address(
-    string Street,
-    string City,
-    string PostalCode,
-    string Country
-);
-```
+- `Invoice` aggregate root: `Invoices/DDD/AggregatorRoots/Invoices/Invoice.cs`
+  - Core fields include `UserIdentifier`, `MerchantReference`, `Scans`, `PaymentInformation`, `Items`, `PossibleRecipes`, and `AdditionalMetadata`.
+- `Merchant` referenced entity: `Invoices/DDD/Entities/Merchants/Merchant.cs`
+  - Includes category, structured contact information, parent company linkage, and referenced invoice identifiers.
+- Invoice domain value objects are located under `Invoices/DDD/ValueObjects/**` and currently include `PaymentInformation`, `Recipe`, `Allergen`, and product-centric value objects under `ValueObjects/Products/`.
 
 **Domain Events:**
-```csharp
-public record InvoiceCreatedEvent(
-    Guid InvoiceId,
-    Guid MerchantId,
-    DateTime CreatedAt
-) : IDomainEvent;
 
-public record InvoiceUpdatedEvent(
-    Guid InvoiceId,
-    DateTime UpdatedAt
-) : IDomainEvent;
-
-public record ProductAddedEvent(
-    Guid InvoiceId,
-    Guid ProductId,
-    DateTime AddedAt
-) : IDomainEvent;
-```
+At the time of this RFC update, the invoices bounded context does **not** expose explicit domain event types such as `InvoiceCreatedEvent` in the source tree. Workflow coordination is implemented through The Standard service layering (Foundation/Orchestration/Processing) and endpoint handlers.
 
 #### 2.2.3 Authentication Domain (Core.Auth)
 
@@ -174,10 +117,10 @@ public record ProductAddedEvent(
 - External identity provider integration
 
 **Key Components:**
-- Authentication middleware
-- JWT token handlers
-- Authorization policy providers
-- User identity services
+- `Core.Auth/Brokers/AuthDbContext.cs` for identity persistence
+- `Core.Auth/Endpoints/AuthEndpoints.cs` for minimal API exposure
+- `Core.Auth/Modules/WebApplicationBuilderExtensions.cs` for auth service registration
+- Authentication and authorization wiring invoked through general-domain startup extensions
 
 ### 2.3 SOLID Principles Implementation
 
@@ -185,64 +128,55 @@ public record ProductAddedEvent(
 
 Each class has one reason to change:
 - **Domain entities**: Manage their own state and business rules
-- **Repositories**: Handle persistence only
-- **Application services**: Orchestrate domain operations
-- **Domain services**: Encapsulate complex business logic
+- **Brokers**: Handle external dependency integration only
+- **Foundation services**: Encapsulate CRUD + validation boundaries
+- **Orchestration/Processing services**: Coordinate flows and heavy operations
 
 #### 2.3.2 Open/Closed Principle (OCP)
 
 Extension through:
-- Domain event handlers (add new handlers without modifying existing)
+- Additional processing/orchestration service implementations behind interfaces
 - Policy-based authorization (add new policies without changing core)
 - Strategy pattern for business rules
 
 #### 2.3.3 Liskov Substitution Principle (LSP)
 
 ```csharp
-// Base entity interface
-public interface BaseEntity<T>
+// Base entity abstract class
+public abstract class BaseEntity<T>
 {
-    T Id { get; }
+    public abstract T id { get; init; }
 }
 
 // Named entity extends base
-public interface NamedEntity<T> : BaseEntity<T>
+public abstract class NamedEntity<T> : BaseEntity<T>
 {
-    string Name { get; }
+    public string Name { get; set; }
+    public string Description { get; set; }
 }
 
 // All entities are substitutable
-public class Invoice : NamedEntity<Guid> { }
-public class Merchant : NamedEntity<Guid> { }
+public sealed class Invoice : NamedEntity<Guid> { }
+public sealed class Merchant : NamedEntity<Guid> { }
 ```
 
 #### 2.3.4 Interface Segregation Principle (ISP)
 
 Focused interfaces:
 ```csharp
-// Separate concerns
-public interface IInvoiceRepository
-{
-    Task<Invoice?> GetByIdAsync(Guid id);
-    Task<IEnumerable<Invoice>> GetAllAsync();
-    Task AddAsync(Invoice invoice);
-}
-
-public interface IInvoiceQueryService
-{
-    Task<IEnumerable<Invoice>> SearchAsync(InvoiceSearchCriteria criteria);
-}
+public interface IInvoiceNoSqlBroker { /* data access boundary */ }
+public interface IInvoiceStorageFoundationService { /* CRUD + validation */ }
+public interface IInvoiceOrchestrationService { /* multi-service coordination */ }
+public interface IInvoiceProcessingService { /* higher-order business flows */ }
 ```
 
 #### 2.3.5 Dependency Inversion Principle (DIP)
 
 All dependencies injected through abstractions:
 ```csharp
-// Application service depends on abstractions
-public class InvoiceApplicationService(
-    IInvoiceRepository repository,
-    IInvoiceDomainService domainService,
-    IEventBus eventBus)
+public class InvoiceOrchestrationService(
+    IInvoiceStorageFoundationService invoiceStorageFoundationService,
+    IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService)
 {
     // Implementation
 }
@@ -265,14 +199,12 @@ internal static class Program
         // Configure domains
         builder.AddGeneralDomainConfiguration();
         builder.AddInvoicesDomainConfiguration();
-        builder.AddAuthDomainConfiguration();
 
         WebApplication app = builder.Build();
 
         // Configure middleware pipeline
         app.AddGeneralApplicationConfiguration();
         app.AddInvoiceDomainConfiguration();
-        app.AddAuthDomainConfiguration();
 
         app.Run();
     }
@@ -288,18 +220,13 @@ public static class GeneralDomainExtensions
     public static WebApplicationBuilder AddGeneralDomainConfiguration(
         this WebApplicationBuilder builder)
     {
-        // Register logging
-        builder.Services.AddLogging();
-        
-        // Register telemetry
-        builder.Services.AddOpenTelemetry();
-        
-        // Register health checks
+        // Register health checks and OpenAPI support
         builder.Services.AddHealthChecks();
-        
-        // Register Swagger
-        builder.Services.AddSwaggerGen(
-            SwaggerConfigurationService.GetSwaggerGenOptions());
+        builder.Services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
+        builder.AddOTelLogging();
+        builder.AddOTelMetering();
+        builder.AddOTelTracing();
+        builder.AddAuthServices();
         
         return builder;
     }
@@ -328,16 +255,16 @@ public static class GeneralDomainExtensions
 // Invoice endpoints
 public static void MapInvoiceEndpoints(this WebApplication app)
 {
-    var invoices = app.MapGroup("/api/invoices")
-        .RequireAuthorization()
+    var invoices = app.MapGroup("rest/v1")
         .WithTags("Invoices");
 
     invoices.MapGet("/{id:guid}", async (
         Guid id,
-        IInvoiceRepository repository) =>
+        IInvoiceProcessingService invoiceProcessingService,
+        ClaimsPrincipal principal) =>
     {
-        var invoice = await repository.GetByIdAsync(id);
-        return invoice is not null 
+        var invoice = await invoiceProcessingService.ReadInvoice(id, RetrieveUserIdentifierClaimFromPrincipal(principal));
+        return invoice is not null
             ? Results.Ok(invoice) 
             : Results.NotFound();
     })
@@ -346,11 +273,13 @@ public static void MapInvoiceEndpoints(this WebApplication app)
     .Produces(StatusCodes.Status404NotFound);
 
     invoices.MapPost("/", async (
-        CreateInvoiceRequest request,
-        IInvoiceApplicationService service) =>
+        CreateInvoiceDto invoiceDto,
+        IInvoiceProcessingService invoiceProcessingService,
+        ClaimsPrincipal principal) =>
     {
-        var invoice = await service.CreateInvoiceAsync(request);
-        return Results.Created($"/api/invoices/{invoice.Id}", invoice);
+        var invoice = invoiceDto.ToInvoice();
+        await invoiceProcessingService.CreateInvoice(invoice);
+        return Results.Created($"/rest/v1/invoices/{invoice.id}", invoice);
     })
     .WithName("CreateInvoice")
     .Produces<Invoice>(StatusCodes.Status201Created)
@@ -473,10 +402,10 @@ public void CreateInvoice_WithEmptyProducts_ThrowsArgumentException()
 ## 8. Future Enhancements
 
 Potential future work:
-- **RFC 1001**: Domain event bus and eventual consistency patterns
+- **RFC 1001**: Extended observability coverage for additional domain flows
 - **RFC 1002**: CQRS for read-heavy operations
 - **RFC 1003**: Multi-tenancy support
-- **RFC 1004**: Distributed tracing correlation with domain events
+- **RFC 1004**: Metadata and API discoverability alignment for cross-domain assets
 - **RFC 1005**: Background job processing for long-running operations
 
 ---

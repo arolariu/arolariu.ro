@@ -8,6 +8,38 @@ applyTo: '**/*.cs'
 
 # C# Coding Standards
 
+## Instruction Contract
+
+### Scope
+Applies to C# coding standards for backend source and tests.
+
+### Mandatory Rules
+- Use strict nullable-safe, async-first C# patterns with explicit naming conventions.
+- Document public APIs using XML docs that align with RFC 2004.
+- Use TryCatch and exception classification patterns where service code requires it.
+
+### Prohibited Actions
+- Do not use sync-over-async patterns (`.Result`, `.Wait()`).
+- Do not swallow exceptions without logging and typed wrapping.
+- Do not weaken compiler or analyzer guarantees via broad suppressions.
+
+### Required Verification Commands
+```bash
+dotnet build sites/api.arolariu.ro/src/Core
+dotnet test sites/api.arolariu.ro/tests
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Framework/runtime version references
+- Exception taxonomy names
+- Required analyzer and warning policy assumptions
+
+
 Specific C# coding guidelines for the arolariu.ro backend. For architecture patterns, see `backend.instructions.md`.
 
 ---

@@ -14,6 +14,7 @@
 | `components.instructions.md` | Component Library | `packages/components/**` | Shared UI component work |
 | `bicep.instructions.md` | Azure Bicep IaC | `**/*.bicep` | Azure infrastructure code |
 | `workflows.instructions.md` | GitHub Actions Workflows | `.github/workflows/*.yml` | CI/CD pipeline changes |
+| `agent-governance.instructions.md` | Agent Governance Contract | `.github/**/*.md` | Updating AI customization artifacts |
 | `code-review.instructions.md` | Code Review Guidelines | `**` | All code reviews |
 
 ## How Instructions Work
@@ -67,8 +68,9 @@ applyTo: 'pattern/**/*.ext'
 1. Create `<topic>.instructions.md` in this directory (lowercase with hyphens)
 2. Add YAML frontmatter with required fields: `description`, `applyTo`
 3. Add recommended fields: `name`, `version`, `lastUpdated`
-4. Document key patterns with actionable DO/DON'T code examples
-5. Update this README with the new file entry
+4. Add an `## Instruction Contract` section with: Scope, Mandatory Rules, Prohibited Actions, Required Verification Commands, Failure Handling, Drift Watchpoints
+5. Document key patterns with actionable DO/DON'T code examples
+6. Update this README with the new file entry
 
 ## File Naming
 

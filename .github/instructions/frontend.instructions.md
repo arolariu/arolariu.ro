@@ -8,6 +8,38 @@ applyTo: 'sites/arolariu.ro/**/*.tsx, sites/arolariu.ro/**/*.ts, sites/arolariu.
 
 # Frontend Development Guidelines
 
+## Instruction Contract
+
+### Scope
+Applies to Next.js frontend code in `sites/arolariu.ro/`.
+
+### Mandatory Rules
+- Default to Server Components and use Client Components only when required.
+- Route all user-facing strings through `next-intl` and include locale coverage.
+- Preserve metadata, observability, and state-management conventions defined by RFC 1001-1008.
+
+### Prohibited Actions
+- Do not bypass i18n for visible UI text.
+- Do not introduce client-only behavior into Server Components without explicit intent.
+- Do not ship frontend changes without relevant test or build verification evidence.
+
+### Required Verification Commands
+```bash
+npm run build:website
+npm run test:website
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Next.js/React version assumptions
+- Store inventory and wiring patterns
+- Metadata/i18n behavior examples and file paths
+
+
 Comprehensive guidelines for the arolariu.ro Next.js frontend application.
 
 ---

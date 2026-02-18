@@ -294,46 +294,55 @@ The providers file wraps the app with necessary context:
 
 ```typescript
 // app/providers.tsx
+import Commander from "@/components/Commander";
+import {onLocaleSync} from "@/stores/preferencesStore";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
-import {NextIntlClientProvider as TranslationProvider} from "next-intl";
+import {Locale, NextIntlClientProvider as TranslationProvider} from "next-intl";
+import {useRouter} from "next/navigation";
+import {useEffect} from "react";
+import enMessages from "../../messages/en.json";
+import frMessages from "../../messages/fr.json";
+import roMessages from "../../messages/ro.json";
 
 type Props = {
-  locale: "en" | "ro" | "fr";
+  locale: Locale;
   children: React.ReactNode;
 };
 
-const clerkLocalizations = {
-  en: enUS,
-  ro: roRO,
-  fr: frFR,
-};
-
 export default function ContextProviders({locale, children}: Props) {
+  const messageMap = {en: enMessages, ro: roMessages, fr: frMessages};
+  const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
+  const messages = messageMap[locale] as typeof enMessages;
+  const localization = localizationMap[locale];
+
+  const router = useRouter();
+  useEffect(() => onLocaleSync(() => router.refresh()), [router]);
+
   return (
-    <AuthProvider localization={clerkLocalizations[locale]}>
-      <FontProvider>
-        <ThemeProvider>
-          <TranslationProvider>
+    <TranslationProvider locale={locale} messages={messages}>
+      <AuthProvider localization={localization}>
+        <FontProvider>
+          <ThemeProvider>
             {children}
             <ToastProvider />
             <Commander />
-          </TranslationProvider>
-        </ThemeProvider>
-      </FontProvider>
-    </AuthProvider>
+          </ThemeProvider>
+        </FontProvider>
+      </AuthProvider>
+    </TranslationProvider>
   );
 }
 ```
 
 **Provider Stack**:
 
-1. **AuthProvider (Clerk)**: Localized authentication UI
-2. **FontProvider**: Font preference context
-3. **ThemeProvider**: Light/dark mode
-4. **TranslationProvider**: next-intl client context
+1. **TranslationProvider**: next-intl client context (locale + messages)
+2. **AuthProvider (Clerk)**: Localized authentication UI
+3. **FontProvider**: Font preference context
+4. **ThemeProvider**: Light/dark mode
 5. **ToastProvider**: Notification system
-6. **Commander**: Command palette (includes locale switcher)
+6. **Commander**: Command palette (locale updates `usePreferencesStore`)
 
 ### 2.4 Locale Switching Mechanism
 
@@ -353,24 +362,16 @@ export async function getCookie(name: string): Promise<string | undefined> {
 }
 
 export async function setCookie(name: string, value: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(name, value, {
-    path: "/",
-    httpOnly: false, // Allow client-side reading for immediate UI updates
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 365, // 1 year
-  });
+  const allCookies = await cookies();
+  allCookies.set(name, value, {path: "/"});
 }
 ```
 
 **Cookie Configuration**:
 
 - **Name**: `"locale"`
-- **Lifetime**: 1 year (365 days)
 - **Scope**: Site-wide (`path: "/"`)
-- **Security**: Secure in production, lax SameSite
-- **Accessibility**: Not httpOnly for client-side reading
+- **Current implementation**: No explicit maxAge/httpOnly/sameSite flags are set in this wrapper
 
 #### 2.4.2 Language Switcher Implementation
 
@@ -380,26 +381,20 @@ The Commander component provides a command palette with locale switching:
 // components/Commander.tsx
 "use client";
 
-import {setCookie} from "@/lib/actions/cookies";
-import {useRouter} from "next/navigation";
+import {usePreferencesStore} from "@/stores/preferencesStore";
 
 export function Commander() {
-  const router = useRouter();
-
   const onSelectLangEnglish = useCallback(() => {
-    void setCookie("locale", "en");
-    router.refresh(); // Trigger server re-render with new locale
-  }, [router]);
+    usePreferencesStore.getState().setLocale("en");
+  }, []);
 
   const onSelectLangRomanian = useCallback(() => {
-    void setCookie("locale", "ro");
-    router.refresh();
-  }, [router]);
+    usePreferencesStore.getState().setLocale("ro");
+  }, []);
 
   const onSelectLangFrench = useCallback(() => {
-    void setCookie("locale", "fr");
-    router.refresh();
-  }, [router]);
+    usePreferencesStore.getState().setLocale("fr");
+  }, []);
 
   return (
     <CommandDialog>
@@ -427,11 +422,11 @@ export function Commander() {
 **Switching Flow**:
 
 1. User selects language from command palette
-2. Server Action updates `locale` cookie
-3. `router.refresh()` triggers server re-render
-4. `getLocale()` reads new cookie value
-5. App re-renders with new translations
-6. No full page reload required
+2. `usePreferencesStore.setLocale(...)` updates the persisted preference
+3. Store subscription syncs the `locale` cookie via `setCookie("locale", locale)`
+4. `onLocaleSync` callback triggers `router.refresh()` from `app/providers.tsx`
+5. `getLocale()` reads the updated cookie value server-side
+6. App re-renders with new translations (no full page reload)
 
 ### 2.5 Next.js Configuration
 
@@ -731,10 +726,8 @@ import {useTranslations} from "next-intl";
 #### Cookie-Based Locale Persistence
 
 ```typescript
-// Set once, persist for 1 year
-cookieStore.set("locale", value, {
-  maxAge: 60 * 60 * 24 * 365
-});
+// Current cookie action wrapper
+allCookies.set("locale", value, {path: "/"});
 ```
 
 #### Request-Level Caching
@@ -944,14 +937,14 @@ const SUPPORTED_LOCALES = ["ro", "fr", "es"] as const;
 // app/providers.tsx
 import {enUS, esES, frFR, roRO} from "@clerk/localizations";
 
-const clerkLocalizations = {
+const localizationMap = {
   en: enUS,
   ro: roRO,
   fr: frFR,
   es: esES,
-};
+} as const;
 
-<AuthProvider localization={clerkLocalizations[locale]}>
+<AuthProvider localization={localizationMap[locale]}>
 ```
 
 #### Step 6: Update Locale Switcher
@@ -959,9 +952,8 @@ const clerkLocalizations = {
 ```typescript
 // components/Commander.tsx
 const onSelectLangSpanish = useCallback(() => {
-  void setCookie("locale", "es");
-  router.refresh();
-}, [router]);
+  usePreferencesStore.getState().setLocale("es");
+}, []);
 
 <CommandItem onSelect={onSelectLangSpanish}>
   <Languages />
@@ -1137,13 +1129,14 @@ npx next-intl compile --src ./messages
 
 User's language preference resets on page refresh.
 
-**Solution**: Check cookie settings
+**Solution**: Verify locale preference sync (store -> cookie -> refresh)
 
 ```typescript
-// Ensure maxAge is set
-cookieStore.set("locale", value, {
-  maxAge: 60 * 60 * 24 * 365
-});
+// preferencesStore subscription
+if (state.locale !== prevLocale) {
+  prevLocale = state.locale;
+  void setCookie("locale", state.locale).then(() => _onLocaleSync?.());
+}
 ```
 
 ### 10.2 Debugging
@@ -1153,7 +1146,8 @@ cookieStore.set("locale", value, {
 ```typescript
 // i18n/request.ts
 export default getRequestConfig(async () => {
-  const locale = (await getCookie("locale")) ?? "en";
+  const allCookies = await cookies();
+  const locale = (allCookies.get("locale")?.value ?? "en") as Locale;
   console.log("[i18n] Resolved locale:", locale);
   
   return {

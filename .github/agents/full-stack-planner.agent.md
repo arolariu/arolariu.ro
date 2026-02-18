@@ -141,3 +141,24 @@ Zustand stores                    Azure OpenAI / Doc Intelligence
 - Create plans without test strategy
 - Ignore existing patterns in favor of "better" approaches
 - Make code changes (planning only)
+
+## RFC Grounding Checklist (Mandatory)
+
+Before final output or code changes:
+
+1. Map task scope to relevant RFC IDs using `.github/agent-governance/rfc-grounding-protocol.md`.
+2. Read the referenced source files and verify RFC guidance is still current.
+3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
+4. Include concrete evidence in outputs (file paths, command results, and validation notes).
+
+## Self-Audit and Uncertainty Protocol (Mandatory)
+
+For non-trivial tasks, complete this checklist before final output:
+
+1. **Assumptions:** list non-obvious assumptions that influenced decisions.
+2. **Risk Flags:** identify security, behavior, deployment, or data risks.
+3. **Confidence:** report `high`, `medium`, or `low` with brief justification.
+4. **Evidence:** cite changed files, executed commands, and validation outcomes.
+
+Escalate to the user before continuing when security/auth/infra/destructive or major behavior-changing decisions are involved.
+

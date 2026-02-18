@@ -1,6 +1,6 @@
 # RFC 1007: Advanced Frontend Patterns
 
-- **Status**: Implemented
+- **Status**: Partially Implemented
 - **Date**: 2026-01-15
 - **Authors**: arolariu
 - **Related Components**: `sites/arolariu.ro/src/stores/`, `sites/arolariu.ro/src/lib/actions/`, `sites/arolariu.ro/src/app/domains/invoices/_contexts/`
@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This RFC documents advanced frontend patterns implemented in the arolariu.ro Next.js application that go beyond basic React patterns. These patterns provide type-safe, reusable abstractions for common concerns: entity state management with persistence, type-safe server action results, and modal dialog state management. These patterns eliminate code duplication and enforce consistent behavior across the application.
+This RFC documents advanced frontend patterns implemented in the arolariu.ro Next.js application that go beyond basic React patterns. These patterns provide type-safe, reusable abstractions for common concerns: entity state management with persistence, type-safe server action results, and modal dialog state management. Some patterns are production-adopted, while others are available as utilities pending broader migration.
 
 ---
 
@@ -19,7 +19,7 @@ This RFC documents advanced frontend patterns implemented in the arolariu.ro Nex
 
 As the application grew, several recurring patterns emerged that required standardization:
 
-1. **Entity Store Duplication**: Multiple stores (invoices, merchants, scans) had nearly identical CRUD logic
+1. **Entity Store Duplication**: Multiple stores (invoices, merchants, scans) still have similar CRUD logic and can be migrated to a shared factory
 2. **Server Action Error Handling**: Inconsistent error handling across server actions
 3. **Dialog Management Complexity**: Modal dialogs needed mode/payload support beyond simple open/close
 
@@ -32,11 +32,11 @@ As the application grew, several recurring patterns emerged that required standa
 
 ---
 
-## 2. Generic Entity Store Factory
+## 2. Generic Entity Store Factory (Available, Partial Adoption)
 
 ### 2.1 Overview
 
-The `createEntityStore<E>` factory function creates Zustand stores with IndexedDB persistence, eliminating boilerplate across entity types.
+The `createEntityStore<E>` factory function provides a reusable way to create Zustand stores with IndexedDB persistence. It is implemented and tested, but the production invoice/merchant/scan stores are currently still hand-rolled.
 
 **Location**: `sites/arolariu.ro/src/stores/createEntityStore.ts`
 
@@ -105,6 +105,7 @@ export type EntityStore<E extends BaseEntity> = EntityState<E> & EntityActions<E
 ### 2.4 Usage Pattern
 
 ```typescript
+// Example usage for future migrations (not yet used by current invoice/merchant/scan stores)
 // 1. Define entity type
 interface Invoice extends BaseEntity {
   name: string;
@@ -152,11 +153,11 @@ function InvoicesList() {
 | **Upsert Operation** | Single method handles both insert and update |
 | **Partial Updates** | `updateEntity` accepts partial entity data |
 
-### 2.6 Stores Using This Pattern
+### 2.6 Current Adoption Status
 
-- `useInvoicesStore` - Invoice entities
-- `useMerchantsStore` - Merchant entities
-- `useScansStore` - Scan entities
+- `createEntityStore` utility: implemented (`sites/arolariu.ro/src/stores/createEntityStore.ts`)
+- Utility tests: implemented (`createEntityStore.test.ts`)
+- `useInvoicesStore`, `useMerchantsStore`, `useScansStore`: currently hand-rolled stores
 
 ---
 
@@ -277,23 +278,23 @@ import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 
 export function useInvoices() {
   const [isError, setIsError] = useState(false);
-  const {entities, setEntities, hasHydrated} = useInvoicesStore(useShallow(...));
+  const {invoices, setInvoices, hasHydrated} = useInvoicesStore(useShallow(...));
 
   useEffect(() => {
     const fetchData = async () => {
       const result = await fetchInvoices();
 
       if (result.success) {
-        setEntities([...result.data]);
+        setInvoices([...result.data]);
       } else {
         console.error(`[${result.error.code}] ${result.error.message}`);
         setIsError(true);
       }
     };
     fetchData();
-  }, [setEntities]);
+  }, [setInvoices]);
 
-  return {invoices: entities, isLoading: !hasHydrated, isError};
+  return {invoices, isLoading: !hasHydrated, isError};
 }
 ```
 
@@ -668,10 +669,10 @@ These advanced patterns provide the foundation for scalable, maintainable fronte
 - **Server Action Result Pattern**: Ensures type-safe, consistent error handling
 - **Dialog Context with Mode/Payload**: Enables complex modal workflows
 
-These patterns are production-tested across the invoices, merchants, and scans domains, demonstrating their reliability and flexibility.
+The server action result and dialog context patterns are production-tested across active domains. The entity store factory is implemented and validated through tests, and is ready for incremental adoption in production stores.
 
 ---
 
 **Document Version**: 1.0
 **Last Updated**: 2026-01-15
-**Status**: Implemented
+**Status**: Partially Implemented

@@ -1,9 +1,10 @@
 # RFC 1002: Comprehensive JSDoc/TSDoc Documentation Standard
 
-**Status**: Accepted
-**Authors**: Alexandru Olariu
-**Created**: 2025-01-26
-**Related RFCs**: RFC 1001 (OpenTelemetry Observability), RFC 2004 (XML Documentation Standard)
+- **Status**: Implemented
+- **Date**: 2025-01-26
+- **Authors**: Alexandru Olariu
+- **Related Components**: `sites/arolariu.ro`, `eslint.config.ts`, `typedoc.website.json`, `typedoc.components.json`
+- **Related RFCs**: RFC 1001 (OpenTelemetry Observability), RFC 2004 (XML Documentation Standard)
 
 ---
 
@@ -14,6 +15,12 @@ This RFC documents the comprehensive JSDoc/TSDoc documentation standard employed
 Unlike minimal code comments, our JSDoc standard creates **production-grade, tutorial-level documentation** embedded in source code. This documentation explains not just the *what* (visible in code), but the *why* (architectural context), *how* (usage patterns), *when* (appropriate use cases), and *what trade-offs* were considered during implementation.
 
 This standard leverages JSDoc/TSDoc tags (`@param`, `@returns`, `@example`, `@fileoverview`, `@see`, `@remarks`, etc.) to create rich, structured, cross-referenced documentation that transforms the codebase into a **living technical manual** for TypeScript/React development.
+
+---
+
+## Documentation Accuracy Note
+
+If any example in this RFC diverges from the live implementation, source code in this repository is the source of truth and this RFC must be updated.
 
 ---
 
@@ -146,12 +153,12 @@ Use `@fileoverview` for comprehensive module documentation:
  *
  * @example
  * // Initialize in instrumentation.ts
- * import { startTelemetry } from '@/lib/telemetry';
+ * import { startTelemetry } from "@/instrumentation.server";
  * startTelemetry();
  *
  * @example
  * // Use in application code
- * import { withSpan, createCounter, logWithTrace } from '@/lib/telemetry';
+ * import { withSpan, createCounter, logWithTrace } from "@/instrumentation.server";
  *
  * const counter = createCounter('requests.total', 'Total number of requests');
  * counter.add(1, { method: 'GET' });
@@ -1174,17 +1181,14 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 - Supports Markdown in JSDoc comments
 - Cross-references resolve automatically
 
-**Configuration** (`typedoc.json`):
+**Configuration** (`typedoc.website.json`, `typedoc.components.json`):
 
 ```json
 {
-  "entryPoints": ["src/index.ts"],
-  "out": "docs",
-  "exclude": ["**/*.test.ts", "**/*.spec.ts"],
-  "excludePrivate": true,
-  "excludeProtected": false,
-  "readme": "README.md",
-  "theme": "default",
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["sites/arolariu.ro/src/types/index.ts", "sites/arolariu.ro/src/lib"],
+  "entryPointStrategy": "expand",
+  "out": "sites/docs.arolariu.ro/articles/ts-api/latest/website/reference",
   "plugin": ["typedoc-plugin-markdown"]
 }
 ```
@@ -1192,7 +1196,8 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 **Generation Command**:
 
 ```bash
-npx typedoc --options typedoc.json
+npm run docs:typedoc:website
+npm run docs:typedoc:components
 ```
 
 ### 3. GitHub Copilot Context
@@ -1218,23 +1223,27 @@ npx typedoc --options typedoc.json
 - Validates JSDoc syntax and completeness
 - Checks for mismatches between code and documentation
 
-**Configuration** (`.eslintrc.js`):
+**Configuration** (`eslint.config.ts`):
 
-```javascript
-module.exports = {
-  plugins: ["jsdoc"],
-  rules: {
-    "jsdoc/check-alignment": "error",
-    "jsdoc/check-param-names": "error",
-    "jsdoc/check-tag-names": "error",
-    "jsdoc/check-types": "error",
-    "jsdoc/require-description": "warn",
-    "jsdoc/require-param": "error",
-    "jsdoc/require-param-description": "warn",
-    "jsdoc/require-returns": "error",
-    "jsdoc/require-returns-description": "warn",
+```typescript
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: {jsdoc},
+    rules: {
+      "jsdoc/check-alignment": "error",
+      "jsdoc/check-param-names": "error",
+      "jsdoc/check-tag-names": "error",
+      "jsdoc/check-types": "error",
+      "jsdoc/require-description": "warn",
+      "jsdoc/require-param": "error",
+      "jsdoc/require-param-description": "warn",
+      "jsdoc/require-returns": "error",
+      "jsdoc/require-returns-description": "warn",
+    },
   },
-};
+];
 ```
 
 ---

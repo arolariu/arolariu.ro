@@ -8,6 +8,37 @@ applyTo: '**/*.ts'
 
 # TypeScript Development Guidelines
 
+## Instruction Contract
+
+### Scope
+Applies to TypeScript code and type design conventions.
+
+### Mandatory Rules
+- Preserve strict type-safety (`noImplicitAny`, null safety, explicit return contracts).
+- Use `import type` and runtime guards when narrowing unknown data.
+- Document public APIs with JSDoc aligned to RFC 1002.
+
+### Prohibited Actions
+- Do not introduce `any` or unsafe type assertions as shortcuts.
+- Do not skip runtime validation for external/untrusted inputs.
+- Do not weaken strict compiler guarantees with broad ignores.
+
+### Required Verification Commands
+```bash
+npm run lint
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- TypeScript version assumptions and strict flags
+- Typedoc/eslint config file names
+- Domain type location examples
+
+
 Comprehensive TypeScript standards for the arolariu.ro monorepo targeting TypeScript 5.9.3 with ES2022 output.
 
 ---

@@ -16,7 +16,7 @@ This RFC documents the comprehensive metadata and Search Engine Optimization (SE
 
 Modern web applications require sophisticated metadata management to achieve optimal search engine rankings, social media engagement, and user experience. The arolariu.ro platform faces several specific challenges:
 
-1. **Multi-language SEO**: Supporting English and Romanian content requires locale-aware metadata generation
+1. **Multi-language SEO**: Supporting English, Romanian, and French content requires locale-aware metadata generation
 2. **Consistent Branding**: Maintaining consistent titles, descriptions, and Open Graph data across 20+ routes
 3. **Type Safety**: Preventing metadata errors through compile-time validation
 4. **Performance**: Minimizing metadata computation overhead in Server Components
@@ -71,7 +71,7 @@ The foundation of the metadata system - provides global defaults and helper func
 import type {Metadata} from "next";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
-import type {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
+import type {Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
 import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {SITE_URL} from "./lib/utils.generic";
@@ -142,9 +142,9 @@ openGraph: {
   countryName: "Romania",
   description: options.description,
   siteName: options.siteName,
-  locale: "en",
+  locale: "en_US",
   title: `${options.siteName} | ${options.author}`,
-  alternateLocale: "ro_RO",
+  alternateLocale: ["ro_RO"],
 } satisfies OpenGraph,
 ```
 
@@ -155,7 +155,7 @@ twitter: {
   creator: options.author,
   title: `${options.siteName} | ${options.author}`,
   description: options.description,
-  card: "summary",
+  card: "summary_large_image",
 } satisfies Twitter,
 ```
 
@@ -225,7 +225,14 @@ robots: {
   "max-image-preview": "large",
   "max-snippet": -1,
   "max-video-preview": -1,
-  googleBot: "index, follow",
+  googleBot: {
+    index: true,
+    follow: true,
+    "max-image-preview": "large",
+    "max-snippet": -1,
+    "max-video-preview": -1,
+    noimageindex: false,
+  },
 } satisfies Robots,
 ```
 
@@ -240,12 +247,12 @@ alternates: {
 **Additional SEO Properties**:
 
 ```typescript
-classification: "Personal",
+classification: "Personal Website, Technology, Software Engineering, Invoice Management",
 applicationName: options.siteName,
-authors: {name: options.author, url: options.siteUrl} satisfies Author,
+authors: [{name: options.author, url: options.siteUrl}],
 category: "Technology",
 creator: options.author,
-keywords: ["arolariu", options.siteName, options.author, "Technology"],
+keywords: ["arolariu", options.siteName, options.author, "software engineer", "invoice management", "technology"],
 ```
 
 #### 6. The `createMetadata` Helper Function
@@ -299,7 +306,7 @@ export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metad
 - **Immutability**: All objects are `Readonly` to prevent mutations
 - **Composition**: Merges base metadata with route-specific overrides
 - **Automatic Propagation**: Title/description automatically update Open Graph and Twitter metadata
-- **Locale Mapping**: Converts simple locale codes to Open Graph format
+- **Locale Mapping**: Converts simple locale codes to Open Graph format (`en`/`ro` explicit map; other locales currently fall back to `alternateLocale: "en_US"`)
 
 ### Route-Level Metadata Generation
 
@@ -398,7 +405,7 @@ const metadata = createMetadata({
 
 // Output includes:
 // openGraph.locale = "ro_RO"
-// openGraph.alternateLocale = "en_US"
+// openGraph.alternateLocale = "ro_RO" (current LOCALE_ALTERNATES lookup behavior)
 ```
 
 ## Sitemap Configuration
@@ -732,7 +739,7 @@ openGraph: {
 
 **Solution**:
 
-1. Verify `__metadata__` namespace exists in both `en.json` and `ro.json`
+1. Verify `__metadata__` namespace exists in all locale files (`en.json`, `ro.json`, `fr.json`)
 2. Run `npm run generate:i18n` to regenerate TypeScript types
 3. Check translation key spelling matches exactly
 

@@ -53,6 +53,43 @@ dotnet test sites/api.arolariu.ro/tests --collect:"XPlat Code Coverage"
 
 ---
 
+## Agent Operating Contract
+
+All agent assets in this repository must apply the same execution contract to ensure reliable, RFC-grounded outcomes.
+
+### Required Execution Sequence
+1. **Intake**: identify task scope, touched domains, and assumptions.
+2. **Policy gate**: enforce security, architecture, and repository constraints before edits.
+3. **RFC grounding**: when task is architecture-sensitive, read relevant `docs/rfc/*.md` and validate referenced source files.
+4. **Verification**: do not report success without command/file evidence.
+5. **Uncertainty reporting**: explicitly disclose assumptions, confidence risks, and required user checkpoints.
+
+### Instruction Precedence
+If rules conflict, resolve in this order:
+1. Runtime/system safety constraints
+2. Root governance (`.github/copilot-instructions.md`, `AGENTS.md`)
+3. Domain instructions (`.github/instructions/*.instructions.md`)
+4. Artifact instructions (`.github/agents`, `.github/skills`, `.github/prompts`)
+5. File-local conventions
+
+### Violation Severity
+| Severity | Definition | Response |
+|----------|------------|----------|
+| Critical | Security/policy bypass or destructive-risk action | Stop and require explicit user approval |
+| High | Architecture or verification breach | Block completion until fixed |
+| Medium | Standards drift or partial validation | Fix before merge unless explicitly deferred |
+| Low | Non-risk clarity/documentation gaps | Queue as follow-up |
+
+### RFC Lookup Protocol
+Use `.github/agent-governance/rfc-grounding-protocol.md` whenever a task touches architecture, workflow design, security, state management, observability, or public API contracts.  
+If RFC text conflicts with source code, treat source code as truth and record RFC drift for follow-up.
+
+### Self-Audit Protocol
+For non-trivial work, apply `.github/agent-governance/self-audit-protocol.md` before finalizing output.  
+Always disclose assumptions, confidence level, risk flags, and validation evidence; escalate to user when risk thresholds are hit.
+
+---
+
 ## Repository Structure
 
 ```

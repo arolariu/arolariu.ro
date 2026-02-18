@@ -666,3 +666,56 @@ This prompt should be invoked:
 - **For legacy code** - Add missing documentation
 
 **Goal**: Production-grade, tutorial-level documentation that transforms the codebase into a living technical manual.
+
+## RFC Grounding Checklist (Mandatory)
+
+Before final output or code changes:
+
+1. Map task scope to relevant RFC IDs using `.github/agent-governance/rfc-grounding-protocol.md`.
+2. Read the referenced source files and verify RFC guidance is still current.
+3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
+4. Include concrete evidence in outputs (file paths, command results, and validation notes).
+
+## Execution Contract
+
+### Context Intake
+- Read target file language-specific instruction file first.
+- Consult RFC 1002 (JSDoc) or RFC 2004 (XML docs) based on language.
+- Inspect existing local comment style before writing updates.
+
+### RFC and Source Checks
+1. Identify impacted domain and map to RFC IDs using `.github/agent-governance/rfc-grounding-protocol.md`.
+2. Read the referenced source files before generating edits.
+3. If RFC and source conflict, follow source and flag RFC drift.
+
+### Implementation Steps
+1. Produce a file-level change plan before edits.
+2. Apply minimal, behavior-safe modifications aligned with repository conventions.
+3. Record assumptions explicitly when requirements are ambiguous.
+
+### Validation Steps
+```bash
+npm run lint
+```
+
+### Ask-User Criteria
+Ask the user before proceeding when:
+- design choices materially change behavior or UX,
+- security, auth, infra, or destructive actions are involved,
+- scope boundaries are ambiguous and multiple valid options exist.
+
+### Output Contract
+- **Success:** list files changed, validations run, and residual risks.
+- **Failure:** provide exact failing step/output, impacted files, and a safe next action.
+
+## Self-Audit and Uncertainty Protocol (Mandatory)
+
+For non-trivial tasks, complete this checklist before final output:
+
+1. **Assumptions:** list non-obvious assumptions that influenced decisions.
+2. **Risk Flags:** identify security, behavior, deployment, or data risks.
+3. **Confidence:** report `high`, `medium`, or `low` with brief justification.
+4. **Evidence:** cite changed files, executed commands, and validation outcomes.
+
+Escalate to the user before continuing when security/auth/infra/destructive or major behavior-changing decisions are involved.
+
