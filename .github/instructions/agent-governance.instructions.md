@@ -72,9 +72,3 @@ All new or updated `.github` agent assets should include:
 | High | Architecture/policy violations or unsupported success claims | Block completion until resolved |
 | Medium | Partial standards compliance | Correct before merge unless user defers |
 | Low | Clarity/documentation quality issues | Record and address in follow-up pass |
-
-## Evaluation and Red-Team Requirements
-
-- Use `.github/agent-governance/evals/scenarios.json` to evaluate major agent asset changes.
-- Score results using `.github/agent-governance/evals/scorecard.md`.
-- Treat failing critical scenarios as release blockers.
