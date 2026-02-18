@@ -306,7 +306,7 @@ export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metad
 - **Immutability**: All objects are `Readonly` to prevent mutations
 - **Composition**: Merges base metadata with route-specific overrides
 - **Automatic Propagation**: Title/description automatically update Open Graph and Twitter metadata
-- **Locale Mapping**: Converts simple locale codes to Open Graph format
+- **Locale Mapping**: Converts simple locale codes to Open Graph format (`en`/`ro` explicit map; other locales currently fall back to `alternateLocale: "en_US"`)
 
 ### Route-Level Metadata Generation
 
