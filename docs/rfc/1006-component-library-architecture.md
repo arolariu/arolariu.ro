@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This RFC documents the architecture and design decisions for the @arolariu/components shared React component library. Built on Radix UI primitives with Tailwind CSS styling, the library provides 60+ accessible, production-ready components for building modern web interfaces. The library is published to npm and consumed by the arolariu.ro website and potentially other projects.
+This RFC documents the architecture and design decisions for the @arolariu/components shared React component library. Built on Radix UI primitives with Tailwind CSS styling, the library provides 70+ accessible, production-ready components for building modern web interfaces. The library is published to npm and consumed by the arolariu.ro website and potentially other projects.
 
 ---
 
@@ -45,7 +45,7 @@ Modern web applications require consistent UI components that:
 packages/components/
 ├── src/
 │   ├── components/
-│   │   └── ui/                    # All 60+ UI components
+│   │   └── ui/                    # All 70+ UI components
 │   │       ├── button.tsx
 │   │       ├── card.tsx
 │   │       ├── dialog.tsx
@@ -70,29 +70,29 @@ The library uses **RSLib** (built on Rsbuild) for bundling:
 
 ```typescript
 // rslib.config.ts
-export default {
+import {pluginReact} from "@rsbuild/plugin-react";
+import {defineConfig} from "@rslib/core";
+
+export default defineConfig({
+  source: {
+    entry: {
+      index: ["./src/**", "!./src/**/*.test.*"],
+    },
+  },
   lib: [
     {
       format: "esm",
-      output: { distPath: { root: "./dist/esm" } },
-    },
-    {
-      format: "cjs", 
-      output: { distPath: { root: "./dist/cjs" } },
+      bundle: false,
+      dts: true,
+      output: { distPath: { root: "./dist/" } },
     },
   ],
-  source: {
-    entry: { index: "./src/index.ts" },
-  },
-  output: {
-    externals: ["react", "react-dom"],
-  },
-};
+  plugins: [pluginReact()],
+});
 ```
 
 **Build Outputs**:
 - ESM modules for modern bundlers (Next.js, Vite)
-- CommonJS for legacy Node.js environments
 - TypeScript declarations (`.d.ts`)
 - Source maps for debugging
 
@@ -109,7 +109,7 @@ export default {
 | **Form Controls** | Form, InputOTP, RadioGroup, Switch, Textarea | Form inputs |
 | **Feedback** | Alert, Progress, Skeleton, Sonner | User feedback |
 
-### 2.4 Component Inventory (60+ Components)
+### 2.4 Component Inventory (70+ Components)
 
 ```text
 accordion          alert-dialog       alert              aspect-ratio
@@ -333,24 +333,26 @@ export const Destructive: Story = {
 {
   "name": "@arolariu/components",
   "version": "1.x.x",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
-    "./styles": "./dist/esm/index.css",
-    "./button": "./dist/esm/components/ui/button.js",
-    "./card": "./dist/esm/components/ui/card.js"
+    "./styles": "./dist/index.css",
+    "./button": {
+      "import": "./dist/components/ui/button.js",
+      "types": "./dist/components/ui/button.d.ts"
+    }
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
-  "sideEffects": ["*.css"]
+  "sideEffects": false
 }
 ```
 
@@ -358,7 +360,7 @@ export const Destructive: Story = {
 
 The `official-components-publish.yml` GitHub Action:
 
-1. Triggers on push to main (when `packages/components` changes)
+1. Triggers on tag push (`components-v*`) and manual `workflow_dispatch`
 2. Builds library with RSLib
 3. Runs tests
 4. Publishes to npm registry

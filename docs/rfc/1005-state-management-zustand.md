@@ -3,7 +3,7 @@
 - **Status**: Implemented
 - **Date**: 2025-12-25
 - **Authors**: Alexandru-Razvan Olariu
-- **Related Components**: `sites/arolariu.ro/src/stores/`, `src/stores/invoicesStore.tsx`, `src/stores/merchantsStore.tsx`
+- **Related Components**: `sites/arolariu.ro/src/stores/`, `src/stores/invoicesStore.tsx`, `src/stores/merchantsStore.tsx`, `src/stores/scansStore.tsx`, `src/stores/preferencesStore.ts`
 
 ---
 
@@ -163,6 +163,8 @@ export const useInvoicesStore =
 |-------|--------|------------------|------------------|
 | `useInvoicesStore` | Invoice | invoices[] | selectedInvoices[], hasHydrated |
 | `useMerchantsStore` | Merchant | merchants[] | selectedMerchants[], hasHydrated |
+| `useScansStore` | Scan | scans[] | selectedScans[], hasHydrated |
+| `usePreferencesStore` | Preferences | locale, theme, fontType, gradient/theme preset fields | hasHydrated |
 
 ---
 
@@ -265,7 +267,7 @@ export function InvoicesClient({initialData}: {initialData: Invoice[]}) {
 ### 4.1 IndexedDB Schema
 
 ```
-Database: arolariu-store
+Database: zustand-store
 ├── Table: invoices
 │   ├─ id: string (Primary Key)
 │   ├─ name: string
@@ -273,10 +275,19 @@ Database: arolariu-store
 │   ├─ totalAmount: number
 │   └─ ...Invoice fields
 │
-└── Table: merchants
-    ├─ id: string (Primary Key)
-    ├─ name: string
-    └─ ...Merchant fields
+├── Table: merchants
+│   ├─ id: string (Primary Key)
+│   ├─ name: string
+│   └─ ...Merchant fields
+│
+├── Table: scans
+│   ├─ id: string (Primary Key)
+│   ├─ status: string (Indexed)
+│   └─ ...Scan fields
+│
+└── Table: shared
+    ├─ key: string (Primary Key)
+    └─ value: string (Serialized preferences snapshot)
 ```
 
 ### 4.2 Storage Lifecycle
@@ -363,4 +374,6 @@ upsertInvoice({id: "123"}); // Error: Missing properties
 | `src/stores/index.ts` | Barrel export for all stores |
 | `src/stores/invoicesStore.tsx` | Invoices Zustand store |
 | `src/stores/merchantsStore.tsx` | Merchants Zustand store |
+| `src/stores/scansStore.tsx` | Scans Zustand store |
+| `src/stores/preferencesStore.ts` | Preferences store with locale/cookie sync |
 | `src/stores/storage/indexedDBStorage.ts` | Custom IndexedDB adapter |

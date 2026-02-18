@@ -153,12 +153,12 @@ Use `@fileoverview` for comprehensive module documentation:
  *
  * @example
  * // Initialize in instrumentation.ts
- * import { startTelemetry } from '@/lib/telemetry';
+ * import { startTelemetry } from "@/instrumentation.server";
  * startTelemetry();
  *
  * @example
  * // Use in application code
- * import { withSpan, createCounter, logWithTrace } from '@/lib/telemetry';
+ * import { withSpan, createCounter, logWithTrace } from "@/instrumentation.server";
  *
  * const counter = createCounter('requests.total', 'Total number of requests');
  * counter.add(1, { method: 'GET' });
@@ -1181,17 +1181,14 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 - Supports Markdown in JSDoc comments
 - Cross-references resolve automatically
 
-**Configuration** (`typedoc.json`):
+**Configuration** (`typedoc.website.json`, `typedoc.components.json`):
 
 ```json
 {
-  "entryPoints": ["src/index.ts"],
-  "out": "docs",
-  "exclude": ["**/*.test.ts", "**/*.spec.ts"],
-  "excludePrivate": true,
-  "excludeProtected": false,
-  "readme": "README.md",
-  "theme": "default",
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["sites/arolariu.ro/src/types/index.ts", "sites/arolariu.ro/src/lib"],
+  "entryPointStrategy": "expand",
+  "out": "sites/docs.arolariu.ro/articles/ts-api/latest/website/reference",
   "plugin": ["typedoc-plugin-markdown"]
 }
 ```
@@ -1199,7 +1196,8 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 **Generation Command**:
 
 ```bash
-npx typedoc --options typedoc.json
+npm run docs:typedoc:website
+npm run docs:typedoc:components
 ```
 
 ### 3. GitHub Copilot Context
@@ -1225,23 +1223,27 @@ npx typedoc --options typedoc.json
 - Validates JSDoc syntax and completeness
 - Checks for mismatches between code and documentation
 
-**Configuration** (`.eslintrc.js`):
+**Configuration** (`eslint.config.ts`):
 
-```javascript
-module.exports = {
-  plugins: ["jsdoc"],
-  rules: {
-    "jsdoc/check-alignment": "error",
-    "jsdoc/check-param-names": "error",
-    "jsdoc/check-tag-names": "error",
-    "jsdoc/check-types": "error",
-    "jsdoc/require-description": "warn",
-    "jsdoc/require-param": "error",
-    "jsdoc/require-param-description": "warn",
-    "jsdoc/require-returns": "error",
-    "jsdoc/require-returns-description": "warn",
+```typescript
+import jsdoc from "eslint-plugin-jsdoc";
+
+export default [
+  {
+    plugins: {jsdoc},
+    rules: {
+      "jsdoc/check-alignment": "error",
+      "jsdoc/check-param-names": "error",
+      "jsdoc/check-tag-names": "error",
+      "jsdoc/check-types": "error",
+      "jsdoc/require-description": "warn",
+      "jsdoc/require-param": "error",
+      "jsdoc/require-param-description": "warn",
+      "jsdoc/require-returns": "error",
+      "jsdoc/require-returns-description": "warn",
+    },
   },
-};
+];
 ```
 
 ---

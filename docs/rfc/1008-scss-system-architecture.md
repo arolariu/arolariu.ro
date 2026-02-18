@@ -68,7 +68,6 @@ sites/arolariu.ro/src/styles/
 │   └── _elements.scss
 ├── themes/                       # Theme documentation and presets
 │   ├── _index.scss
-│   ├── _variables.scss          # CSS variable documentation
 │   └── _presets.scss            # Preset-specific overrides
 ├── animations/                   # Keyframes and transitions
 │   ├── _index.scss
@@ -84,8 +83,6 @@ sites/arolariu.ro/src/styles/
 ├── utilities/                    # Optional utility classes
 │   ├── _index.scss
 │   └── ...
-├── pages/                        # Page-specific globals (if needed)
-│   └── _index.scss
 └── main.scss                     # Entry point - imports all partials
 ```
 
@@ -107,11 +104,8 @@ sites/arolariu.ro/src/styles/
 // 5. Components - Shared component styles
 @use 'components';
 
-// 6. Utilities (optional) - Utility classes for migration
-// @use 'utilities';
-
-// 7. Pages (optional) - Page-specific globals
-// @use 'pages';
+// 6. Utilities - Utility classes
+@use 'utilities';
 ```
 
 ### 2.3 CSS Module Files
@@ -137,10 +131,11 @@ src/app/
 
 SCSS is processed automatically by Next.js:
 
-1. `main.scss` imported in `layout.tsx` AFTER globals.css
-2. CSS Modules compiled with unique class names
-3. Dart Sass used for SCSS compilation
-4. CSS variables from globals.css available at runtime
+1. `app/globals.scss` is imported in `layout.tsx`
+2. `app/globals.scss` loads `src/styles/main.scss`
+3. CSS Modules compiled with unique class names
+4. Dart Sass used for SCSS compilation
+5. CSS variables from `styles/base/_globals.scss` are available at runtime
 
 ---
 
@@ -722,7 +717,7 @@ For styles that should ONLY apply on mobile:
 
 ### 7.1 CSS Variables Architecture
 
-Theme values are defined in `globals.css` using CSS custom properties:
+Theme values are defined by the SCSS system (`app/globals.scss` + `styles/base/_globals.scss`) using CSS custom properties:
 
 ```css
 /* Light mode (default) */
