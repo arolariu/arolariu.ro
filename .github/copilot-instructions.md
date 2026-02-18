@@ -63,6 +63,14 @@ When rules overlap, apply the most specific instruction in this precedence:
 | **Medium** | Partial standards drift, incomplete validation coverage | Fix before merge unless user explicitly defers |
 | **Low** | Clarity/documentation improvements with no behavior risk | Queue for follow-up improvement |
 
+### RFC Grounding Protocol
+
+For architecture-sensitive tasks, follow `.github/agent-governance/rfc-grounding-protocol.md`.
+
+- Trigger conditions: architecture, workflows, security, state, observability, metadata/SEO, shared component contracts, backend layering, and public API documentation changes.
+- Always verify RFC claims against source files before implementation.
+- If RFC and source disagree, source wins; log drift and include evidence in output.
+
 ---
 
 ## Table of Contents

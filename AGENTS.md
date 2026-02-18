@@ -80,6 +80,10 @@ If rules conflict, resolve in this order:
 | Medium | Standards drift or partial validation | Fix before merge unless explicitly deferred |
 | Low | Non-risk clarity/documentation gaps | Queue as follow-up |
 
+### RFC Lookup Protocol
+Use `.github/agent-governance/rfc-grounding-protocol.md` whenever a task touches architecture, workflow design, security, state management, observability, or public API contracts.  
+If RFC text conflicts with source code, treat source code as truth and record RFC drift for follow-up.
+
 ---
 
 ## Repository Structure

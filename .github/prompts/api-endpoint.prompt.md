@@ -126,3 +126,13 @@ public class [Entity]StorageFoundationServiceTests
 - [ ] DI registration in Extensions class
 - [ ] xUnit tests with 85%+ coverage
 - [ ] `dotnet build` passes with no warnings
+
+## RFC Grounding Checklist (Mandatory)
+
+Before final output or code changes:
+
+1. Map task scope to relevant RFC IDs using `.github/agent-governance/rfc-grounding-protocol.md`.
+2. Read the referenced source files and verify RFC guidance is still current.
+3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
+4. Include concrete evidence in outputs (file paths, command results, and validation notes).
+

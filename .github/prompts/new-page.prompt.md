@@ -135,3 +135,13 @@ describe("Render[PageName]Screen", () => {
 - [ ] No `any` types used
 - [ ] JSDoc comments on the island component
 - [ ] All user-facing strings use `useTranslations()` or `getTranslations()`
+
+## RFC Grounding Checklist (Mandatory)
+
+Before final output or code changes:
+
+1. Map task scope to relevant RFC IDs using `.github/agent-governance/rfc-grounding-protocol.md`.
+2. Read the referenced source files and verify RFC guidance is still current.
+3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
+4. Include concrete evidence in outputs (file paths, command results, and validation notes).
+
