@@ -142,21 +142,22 @@ Extension through:
 #### 2.3.3 Liskov Substitution Principle (LSP)
 
 ```csharp
-// Base entity interface
-public interface BaseEntity<T>
+// Base entity abstract class
+public abstract class BaseEntity<T>
 {
-    T Id { get; }
+    public abstract T id { get; init; }
 }
 
 // Named entity extends base
-public interface NamedEntity<T> : BaseEntity<T>
+public abstract class NamedEntity<T> : BaseEntity<T>
 {
-    string Name { get; }
+    public string Name { get; set; }
+    public string Description { get; set; }
 }
 
 // All entities are substitutable
-public class Invoice : NamedEntity<Guid> { }
-public class Merchant : NamedEntity<Guid> { }
+public sealed class Invoice : NamedEntity<Guid> { }
+public sealed class Merchant : NamedEntity<Guid> { }
 ```
 
 #### 2.3.4 Interface Segregation Principle (ISP)
@@ -272,11 +273,13 @@ public static void MapInvoiceEndpoints(this WebApplication app)
     .Produces(StatusCodes.Status404NotFound);
 
     invoices.MapPost("/", async (
-        CreateInvoiceRequest request,
-        IInvoiceApplicationService service) =>
+        CreateInvoiceDto invoiceDto,
+        IInvoiceProcessingService invoiceProcessingService,
+        ClaimsPrincipal principal) =>
     {
-        var invoice = await service.CreateInvoiceAsync(request);
-        return Results.Created($"/api/invoices/{invoice.Id}", invoice);
+        var invoice = invoiceDto.ToInvoice();
+        await invoiceProcessingService.CreateInvoice(invoice);
+        return Results.Created($"/rest/v1/invoices/{invoice.id}", invoice);
     })
     .WithName("CreateInvoice")
     .Produces<Invoice>(StatusCodes.Status201Created)
