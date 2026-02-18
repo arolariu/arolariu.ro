@@ -153,7 +153,7 @@ sites/api.arolariu.ro/src/
 
 | The Standard Layer | arolariu.ro Implementation | Location |
 |-------------------|---------------------------|----------|
-| **Brokers** | `IInvoiceNoSqlBroker`, `IInvoiceAnalysisBroker`, `ITranslatorBroker` | `Invoices/Brokers/` |
+| **Brokers** | `IInvoiceNoSqlBroker`, `IOpenAiBroker`, `IFormRecognizerBroker`, `ITranslatorBroker` | `Invoices/Brokers/` |
 | **Foundation Services** | `IInvoiceStorageFoundationService`, `IMerchantStorageFoundationService`, `IInvoiceAnalysisFoundationService` | `Invoices/Services/Foundation/` |
 | **Processing Services** | `IInvoiceProcessingService` | `Invoices/Services/Processing/` |
 | **Orchestration Services** | `IInvoiceOrchestrationService`, `IMerchantOrchestrationService` | `Invoices/Services/Orchestration/` |
@@ -1054,17 +1054,13 @@ public class InvoiceStorageFoundationServiceTests
 
 ```
 sites/api.arolariu.ro/tests/
-├── Domain/
-│   ├── General/          # General domain tests (health checks, etc.)
-│   ├── Invoices/         # Invoice domain tests
-│   │   ├── Brokers/      # Broker integration tests
-│   │   ├── Services/
-│   │   │   ├── Foundation/     # Foundation service unit tests
-│   │   │   ├── Processing/     # Processing service unit tests
-│   │   │   └── Orchestration/  # Orchestration service unit tests
-│   │   └── Endpoints/    # Endpoint (exposer) unit tests
-│   └── Auth/             # Auth domain tests
-└── Integration/          # End-to-end integration tests
+├── arolariu.Backend.Core.Tests/
+│   ├── Common/           # Shared/common infrastructure tests
+│   ├── CoreAuth/         # Authentication domain tests
+│   └── Shared/           # Test helpers and shared fixtures
+└── arolariu.Backend.Domain.Tests/
+    ├── Builders/         # Domain test data builders
+    └── Invoices/         # Invoices domain broker/service tests
 ```
 
 ---

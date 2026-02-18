@@ -188,18 +188,21 @@ public static partial class Log
   - `http.client.request.duration`: Dependency call latency
   - `http.client.active_requests`: Concurrent outbound requests
 
-#### 2.2.4 Application Insights Telemetry
+#### 2.2.4 Azure Monitor Export Integration
 
-**Location**: `Common/Telemetry/TelemetryExtensions.cs`
+**Location**: Implemented directly in:
 
-**Purpose**: Legacy Application Insights SDK integration for additional features
+- `Common/Telemetry/Logging/LoggingExtensions.cs`
+- `Common/Telemetry/Metering/MeteringExtensions.cs`
+- `Common/Telemetry/Tracing/TracingExtensions.cs`
+
+**Purpose**: Export OpenTelemetry logs, metrics, and traces to Azure Monitor/Application Insights using `Azure.Monitor.OpenTelemetry.Exporter`.
 
 **Features**:
 
-- Automatic exception tracking with stack traces
-- Dependency tracking (Redis, Azure services)
-- Performance counters (CPU, memory, GC)
-- Custom event tracking for business metrics
+- Azure Monitor exporters configured per signal (logs/metrics/traces)
+- `DefaultAzureCredential` + managed identity support via `AZURE_CLIENT_ID`
+- Debug-time console exporters for local diagnostics
 
 ### 2.3 Configuration & Integration
 
@@ -210,7 +213,6 @@ public static void AddGeneralDomainConfiguration(this WebApplicationBuilder buil
 {
   // ... other services
 
-  builder.AddTelemetry();        // Application Insights SDK
   builder.AddOTelLogging();      // OpenTelemetry logging
   builder.AddOTelMetering();     // OpenTelemetry metrics
   builder.AddOTelTracing();      // OpenTelemetry tracing

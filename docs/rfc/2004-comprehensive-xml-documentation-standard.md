@@ -560,7 +560,7 @@ public class MyClass { }
 ```csharp
 /// <summary>
 /// Represents the main entry point for the arolariu.ro backend API.
-/// This class configures and bootstraps a .NET 9.0 STS modular monolith web application.
+/// This class configures and bootstraps a .NET 10.0 LTS modular monolith web application.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -907,7 +907,7 @@ Explain why certain decisions were made:
 ```csharp
 /// <summary>
 /// Represents the main entry point for the arolariu.ro backend API.
-/// This class configures and bootstraps a .NET 9.0 STS (Standard Terms Support) modular monolith web application
+/// This class configures and bootstraps a .NET 10.0 LTS modular monolith web application
 /// that provides invoice management and authentication services.
 /// </summary>
 /// <remarks>
