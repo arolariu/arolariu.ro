@@ -8,6 +8,37 @@ applyTo: 'packages/components/**/*.tsx, packages/components/**/*.ts'
 
 # Component Library Guidelines
 
+## Instruction Contract
+
+### Scope
+Applies to shared component library changes in `packages/components/`.
+
+### Mandatory Rules
+- Use `cn()` class merging and `forwardRef` patterns where required.
+- Keep components domain-agnostic and exported through `src/index.ts`.
+- Include Storybook coverage for newly added public components.
+
+### Prohibited Actions
+- Do not import from application-specific `sites/` paths.
+- Do not ship component changes without barrel export updates.
+- Do not introduce inline styles instead of Tailwind utility classes.
+
+### Required Verification Commands
+```bash
+npm run build:components
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Barrel export completeness
+- Component API signatures and story coverage
+- Build/publish assumptions for `@arolariu/components`
+
+
 Guidelines for developing and maintaining the `@arolariu/components` shared UI library.
 
 ---

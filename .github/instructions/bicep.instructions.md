@@ -8,6 +8,37 @@ applyTo: '**/*.bicep'
 
 # Azure Bicep Infrastructure Guidelines
 
+## Instruction Contract
+
+### Scope
+Applies to Azure Bicep IaC changes in `infra/Azure/Bicep/`.
+
+### Mandatory Rules
+- Use parameter decorators, tagging standards, and cost-aware defaults.
+- Validate against current module structure before documenting architecture flow.
+- Prefer managed identities and least-privilege RBAC patterns.
+
+### Prohibited Actions
+- Do not hardcode credentials, secrets, or environment URLs.
+- Do not introduce premium SKUs without explicit cost rationale.
+- Do not bypass Bicep lint expectations defined in `bicepconfig.json`.
+
+### Required Verification Commands
+```bash
+az bicep build --file infra/Azure/Bicep/main.bicep
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Resource API versions and SKU defaults
+- Deployment flow dependencies
+- Required tags and policy defaults
+
+
 Comprehensive guidelines for the arolariu.ro Azure Bicep infrastructure-as-code.
 
 ---

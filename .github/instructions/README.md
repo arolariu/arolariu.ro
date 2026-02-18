@@ -68,8 +68,9 @@ applyTo: 'pattern/**/*.ext'
 1. Create `<topic>.instructions.md` in this directory (lowercase with hyphens)
 2. Add YAML frontmatter with required fields: `description`, `applyTo`
 3. Add recommended fields: `name`, `version`, `lastUpdated`
-4. Document key patterns with actionable DO/DON'T code examples
-5. Update this README with the new file entry
+4. Add an `## Instruction Contract` section with: Scope, Mandatory Rules, Prohibited Actions, Required Verification Commands, Failure Handling, Drift Watchpoints
+5. Document key patterns with actionable DO/DON'T code examples
+6. Update this README with the new file entry
 
 ## File Naming
 

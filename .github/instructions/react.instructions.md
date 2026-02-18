@@ -8,6 +8,37 @@ description: 'Core React patterns for the arolariu.ro monorepo. Applies to compo
 
 # React Development Guidelines
 
+## Instruction Contract
+
+### Scope
+Applies to React component and hook patterns across the monorepo.
+
+### Mandatory Rules
+- Use `Readonly<Props>`, explicit return types, and proper hook cleanup.
+- Preserve accessibility-first semantics and keyboard support for interactivity.
+- Align component patterns with frontend RFCs and project-level style constraints.
+
+### Prohibited Actions
+- Do not use class components or `any`-typed props.
+- Do not create effects without deterministic dependencies and cleanup.
+- Do not introduce prop-drilling where context/store patterns already exist.
+
+### Required Verification Commands
+```bash
+npm run test:website
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Hook usage patterns and React version features
+- State management hierarchy guidance
+- Accessibility checklist expectations
+
+
 Core React patterns for the arolariu.ro monorepo. These guidelines apply to **all React code** across the repository.
 
 **Scope:** Component library, all websites, shared code

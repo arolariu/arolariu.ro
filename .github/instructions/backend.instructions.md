@@ -8,6 +8,38 @@ applyTo: '**/*.cs,**/*.csproj,**/Program.cs,**/appsettings.json'
 
 # Backend Architecture Guidelines
 
+## Instruction Contract
+
+### Scope
+Applies to backend .NET architecture and implementation changes under `sites/api.arolariu.ro/`.
+
+### Mandatory Rules
+- Use The Standard layer boundaries and Florance dependency limits.
+- Consult RFC 2001-2004 for architecture, observability, and XML docs before significant design changes.
+- Require XML documentation and `.ConfigureAwait(false)` where mandated by current backend standards.
+
+### Prohibited Actions
+- Do not move business logic into Brokers.
+- Do not bypass orchestration layering with sideways service calls.
+- Do not claim backend validation success without build/test evidence.
+
+### Required Verification Commands
+```bash
+dotnet build sites/api.arolariu.ro/src/Core
+dotnet test sites/api.arolariu.ro/tests
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Project target framework/runtime references
+- Service layer examples and broker names
+- Telemetry wiring paths and extension method names
+
+
 You are an AI assistant specialized in Domain-Driven Design (DDD), The Standard architecture pattern, SOLID principles, and .NET 10.0 development for the arolariu.ro backend API. Follow these guidelines for building robust, maintainable systems.
 
 ---

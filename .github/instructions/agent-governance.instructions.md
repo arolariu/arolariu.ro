@@ -8,6 +8,37 @@ description: "Mandatory contract for agent-facing assets: intake, RFC grounding,
 
 # Agent Governance Contract
 
+## Instruction Contract
+
+### Scope
+Applies to AI customization assets under `.github/`.
+
+### Mandatory Rules
+- Enforce intake, RFC grounding, verification, and uncertainty disclosure contracts.
+- Require all agent-facing assets to define scope, constraints, validation, and escalation sections.
+- Ensure RFC-source conflicts are resolved in favor of source-of-truth code and logged as drift.
+
+### Prohibited Actions
+- Do not claim completion without command/file evidence.
+- Do not bypass escalation requirements for risky operations.
+- Do not omit policy constraints from agent, skill, or prompt templates.
+
+### Required Verification Commands
+```bash
+git --no-pager diff .github/**/*.md
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Instruction hierarchy precedence
+- RFC map coverage across domains
+- Template contract section completeness
+
+
 This instruction governs AI customization assets in `.github/` (`instructions`, `agents`, `prompts`, `skills`) and standardizes behavior requirements.
 
 ## Required Contract

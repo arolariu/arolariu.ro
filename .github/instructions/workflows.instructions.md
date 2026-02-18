@@ -8,6 +8,37 @@ description: 'GitHub Actions workflow development guidelines for the arolariu.ro
 
 # GitHub Actions Workflow Development Guidelines
 
+## Instruction Contract
+
+### Scope
+Applies to GitHub Actions workflows and automation under `.github/workflows/`.
+
+### Mandatory Rules
+- Use setup-workspace patterns, OIDC authentication, and hash-based cache strategy.
+- Keep workflow trigger/path filters aligned with actual repository structure.
+- Preserve least-privilege permissions and pinned action versions.
+
+### Prohibited Actions
+- Do not introduce long-lived credentials where OIDC is available.
+- Do not add fallback cache restore keys contrary to RFC 0001 strategy.
+- Do not modify deployment workflows without explicit environment/risk consideration.
+
+### Required Verification Commands
+```bash
+npm run lint
+```
+
+### Failure Handling
+- If verification fails, stop and report failing command output with impacted files.
+- If constraints conflict with task requests, escalate and request explicit user direction.
+- If uncertainty remains on behavior-impacting choices, ask before continuing.
+
+### Drift Watchpoints
+- Workflow trigger matrices
+- Composite action inputs/outputs
+- Deployment sequencing and environment gate descriptions
+
+
 This document provides guidelines for developing and maintaining GitHub Actions workflows in the arolariu.ro monorepo. All workflows must follow established patterns documented in RFC 0001.
 
 ---
