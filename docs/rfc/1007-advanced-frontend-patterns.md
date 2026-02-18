@@ -278,23 +278,23 @@ import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 
 export function useInvoices() {
   const [isError, setIsError] = useState(false);
-  const {entities, setEntities, hasHydrated} = useInvoicesStore(useShallow(...));
+  const {invoices, setInvoices, hasHydrated} = useInvoicesStore(useShallow(...));
 
   useEffect(() => {
     const fetchData = async () => {
       const result = await fetchInvoices();
 
       if (result.success) {
-        setEntities([...result.data]);
+        setInvoices([...result.data]);
       } else {
         console.error(`[${result.error.code}] ${result.error.message}`);
         setIsError(true);
       }
     };
     fetchData();
-  }, [setEntities]);
+  }, [setInvoices]);
 
-  return {invoices: entities, isLoading: !hasHydrated, isError};
+  return {invoices, isLoading: !hasHydrated, isError};
 }
 ```
 
