@@ -136,3 +136,36 @@ Before final output or code changes:
 3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
 4. Include concrete evidence in outputs (file paths, command results, and validation notes).
 
+## Execution Contract
+
+### Context Intake
+- Review affected backend bounded context in `sites/api.arolariu.ro/src/**`.
+- Read `.github/instructions/backend.instructions.md` and `.github/instructions/csharp.instructions.md`.
+- Consult RFC 2001, RFC 2003, and RFC 2004 before generating code.
+
+### RFC and Source Checks
+1. Identify impacted domain and map to RFC IDs using `.github/agent-governance/rfc-grounding-protocol.md`.
+2. Read the referenced source files before generating edits.
+3. If RFC and source conflict, follow source and flag RFC drift.
+
+### Implementation Steps
+1. Produce a file-level change plan before edits.
+2. Apply minimal, behavior-safe modifications aligned with repository conventions.
+3. Record assumptions explicitly when requirements are ambiguous.
+
+### Validation Steps
+```bash
+dotnet build sites/api.arolariu.ro/src/Core
+dotnet test sites/api.arolariu.ro/tests
+```
+
+### Ask-User Criteria
+Ask the user before proceeding when:
+- design choices materially change behavior or UX,
+- security, auth, infra, or destructive actions are involved,
+- scope boundaries are ambiguous and multiple valid options exist.
+
+### Output Contract
+- **Success:** list files changed, validations run, and residual risks.
+- **Failure:** provide exact failing step/output, impacted files, and a safe next action.
+

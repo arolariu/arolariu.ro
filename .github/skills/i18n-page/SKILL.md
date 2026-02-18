@@ -152,3 +152,36 @@ Before final output or code changes:
 3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
 4. Include concrete evidence in outputs (file paths, command results, and validation notes).
 
+## Execution Contract
+
+### Prerequisites
+- Confirm feature scope and expected behavior before creating or modifying files.
+- Identify whether this task changes architecture-sensitive behavior and trigger RFC grounding.
+
+### Required Context Reads
+- `.github/instructions/frontend.instructions.md`
+- `.github/instructions/react.instructions.md`
+- `docs/rfc/1003-internationalization-system.md`
+- `sites/arolariu.ro/messages/en.json`
+- `sites/arolariu.ro/src/i18n/request.ts`
+
+### File Mutation Boundaries
+- Allowed: `sites/arolariu.ro/src/app/**`, `sites/arolariu.ro/messages/*.json`.
+- Disallowed: backend or infra changes unless explicitly requested.
+
+### Validation Commands
+```bash
+npm run build:website
+npm run test:website
+```
+
+### Success Output Contract
+- Return created/updated file paths.
+- Summarize validation commands and outcomes.
+- Report assumptions made during generation.
+
+### Failure Output Contract
+- Report failing step and exact error output.
+- Provide impacted files and rollback-safe next steps.
+- Request user confirmation when risk or ambiguity blocks safe continuation.
+

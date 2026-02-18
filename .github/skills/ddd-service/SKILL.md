@@ -191,3 +191,36 @@ Before final output or code changes:
 3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
 4. Include concrete evidence in outputs (file paths, command results, and validation notes).
 
+## Execution Contract
+
+### Prerequisites
+- Confirm feature scope and expected behavior before creating or modifying files.
+- Identify whether this task changes architecture-sensitive behavior and trigger RFC grounding.
+
+### Required Context Reads
+- `.github/instructions/backend.instructions.md`
+- `.github/instructions/csharp.instructions.md`
+- `docs/rfc/2001-domain-driven-design-architecture.md`
+- `docs/rfc/2003-the-standard-implementation.md`
+- `docs/rfc/2004-comprehensive-xml-documentation-standard.md`
+
+### File Mutation Boundaries
+- Allowed: `sites/api.arolariu.ro/src/**`, `sites/api.arolariu.ro/tests/**`.
+- Disallowed: unrelated frontend files unless explicitly requested.
+
+### Validation Commands
+```bash
+dotnet build sites/api.arolariu.ro/src/Core
+dotnet test sites/api.arolariu.ro/tests
+```
+
+### Success Output Contract
+- Return created/updated file paths.
+- Summarize validation commands and outcomes.
+- Report assumptions made during generation.
+
+### Failure Output Contract
+- Report failing step and exact error output.
+- Provide impacted files and rollback-safe next steps.
+- Request user confirmation when risk or ambiguity blocks safe continuation.
+
