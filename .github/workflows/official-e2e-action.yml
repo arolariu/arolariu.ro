@@ -185,7 +185,7 @@ jobs:
           E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
           E2E_TEST_ENVIRONMENT: production
           NEWMAN_REPORT_DIR: e2e-logs
-          NEWMAN_STRICT_MODE: ${{ needs.prepare.outputs.strict-mode }}
+          NEWMAN_STRICT_MODE: ${{ needs.prepare.outputs['strict-mode'] }}
 
       - name: 📊 Summarize Newman metrics
         if: always()
