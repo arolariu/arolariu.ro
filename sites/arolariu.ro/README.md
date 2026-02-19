@@ -201,11 +201,11 @@ newman run sites/arolariu.ro/postman-collection.json \
 ### Collection Variables
 
 The collection uses the following variables:
-- `baseUrl`: Constructed as `{{baseProtocol}}://{{baseHost}}{{basePath}}`
+- `baseUrl`: Constructed as `{{baseProtocol}}://{{baseHost}}`
 - `baseHost`: `arolariu.ro` (production) or your local host
 - `baseProtocol`: `https` (production) or `http` (local)
 - `authToken`: Runtime-injected for authenticated checks
-- `warningLatencyMs` / `failureLatencyMs`: latency thresholds
+- `max*ResponseTimeMs`: latency thresholds used by the tests (see the collection for concrete variable names)
 
 ### Runtime Execution Model
 
