@@ -87,6 +87,12 @@
       "enabled": true
     },
     {
+      "key": "testedCriticalRoutes",
+      "value": "/,/about,/about/the-author,/about/the-platform,/domains,/domains/invoices,/privacy-policy,/terms-of-service,/acknowledgements,/auth,/auth/sign-in,/auth/sign-up,/my-profile,/domains/invoices/upload-scans,/domains/invoices/view-scans,/domains/invoices/view-invoices,/domains/invoices/view-invoice/:id,/domains/invoices/edit-invoice/:id,/api/user",
+      "type": "default",
+      "enabled": true
+    },
+    {
       "key": "warnOnSitemapDrift",
       "value": "true",
       "type": "default",
