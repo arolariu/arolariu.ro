@@ -239,11 +239,20 @@
           "",
           "// Strict response time check (configurable via collection/environment variable)",
           "pm.test('Response time is under configured threshold', function () {",
-          "    const threshold = readNumberVar('maxResponseTimeMs', 5000);",
+          "    const thresholdDefaults = {",
+          "        maxApiResponseTimeMs: 1000,",
+          "        maxPublicPageResponseTimeMs: 3000,",
+          "        maxStaticAssetResponseTimeMs: 2500,",
+          "        maxResponseTimeMs: 5000",
+          "    };",
+          "    const thresholdKey = isApiUser()",
+          "        ? 'maxApiResponseTimeMs'",
+          "        : (isPublicPage() ? 'maxPublicPageResponseTimeMs' : (isStaticAsset() ? 'maxStaticAssetResponseTimeMs' : 'maxResponseTimeMs'));",
+          "    const threshold = readNumberVar(thresholdKey, thresholdDefaults[thresholdKey]);",
           "    pm.expect(threshold.isValid).to.equal(true,",
-          "        `maxResponseTimeMs must be a positive number. Received: ${threshold.raw}`);",
+          "        `${thresholdKey} must be a positive number. Received: ${threshold.raw}`);",
           "    pm.expect(pm.response.responseTime).to.be.below(threshold.value,",
-          "        `Response time ${pm.response.responseTime}ms exceeds ${threshold.value}ms SLA`);",
+          "        `${thresholdKey} SLA exceeded: ${pm.response.responseTime}ms > ${threshold.value}ms`);",
           "});",
           "",
           "// Content-Type header validation (covers HTML, JSON, XML, icons, SVG, RSC, CSS, JS)",
@@ -2005,6 +2014,18 @@
       "value": "5000",
       "type": "string",
       "description": "Maximum allowed response time in milliseconds (SLA threshold)"
+    },
+    {
+      "key": "maxPublicPageResponseTimeMs",
+      "value": "3000",
+      "type": "string",
+      "description": "Maximum allowed response time for public pages (milliseconds)"
+    },
+    {
+      "key": "maxStaticAssetResponseTimeMs",
+      "value": "2500",
+      "type": "string",
+      "description": "Maximum allowed response time for static assets (milliseconds)"
     },
     {
       "key": "maxApiResponseTimeMs",
