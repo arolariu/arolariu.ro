@@ -9,8 +9,8 @@
  * **Runtime**: Node.js.
  *
  * **Coverage**:
- * - Includes `helpers/**/*.ts` (implementation files)
- * - Excludes `**/*.test.ts`, `**/*.spec.ts`, and `**/node_modules/**`
+ * - Includes helper implementation files under `helpers/`
+ * - Excludes test/spec files and node_modules content
  *
  * @example
  * ```bash

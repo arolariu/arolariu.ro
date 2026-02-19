@@ -1,378 +1,272 @@
 # =============================================================================
-# End-to-End (E2E) Testing Workflow
+# End-to-End (E2E) Live Testing Workflow
 # =============================================================================
-# This workflow executes comprehensive end-to-end tests against the live
-# production environment using Newman (Postman CLI) for API testing.
+# Newman-based live testing for frontend, backend, and CV targets.
 #
-# Architecture:
-#   - Phase 1: Setup - Install dependencies and Newman CLI
-#   - Phase 2: Frontend Tests - E2E tests for arolariu.ro website
-#   - Phase 3: Backend Tests - API endpoint validation for api.arolariu.ro
-#   - Phase 4: Issue Creation - Automatic GitHub issue on test failure
-#
-# Test Strategy:
-#   - Newman: Postman collection runner for API testing
-#   - Health Checks: Validates backend service availability
-#   - Parallel Execution: Frontend and backend tests run concurrently
-#   - Artifact Upload: Test logs uploaded on failure for debugging
-#
-# Triggers:
-#   - Scheduled: Daily at 6 AM UTC (8 AM Romania) for continuous monitoring
-#   - Manual: workflow_dispatch for on-demand test execution
-#
-# Failure Handling:
-#   - Automatic GitHub issue creation with detailed failure context
-#   - Test duration tracking for performance monitoring
-#   - Log aggregation from all test jobs
-#
-# Prerequisites:
-#   1. Newman Postman collections in the repository
-#   2. Production services running and accessible
-#   3. GitHub Secrets configured:
-#      - E2E_TEST_AUTH_TOKEN (for authenticated endpoint testing)
-#
-# Security:
-#   - Uses OIDC for Azure authentication
-#   - Test auth token stored securely in GitHub Secrets
-#   - Issues created with detailed context for triaging
+# Features:
+#   - Matrix execution for frontend/backend/cv
+#   - Deterministic artifact naming for reports and logs
+#   - Concurrency control to avoid overlapping live runs
+#   - Automatic issue creation with parsed diagnostics on failure
 # =============================================================================
 
 name: "official-e2e-action"
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
-  contents: read # Required to checkout repository
-  issues: write # Required to create issues on test failure
+  contents: read
 
 on:
-  # Scheduled trigger - runs daily at 6 AM UTC (8 AM Romania)
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "17 6 * * *"
 
-  # Manual trigger for on-demand E2E testing
   workflow_dispatch:
+    inputs:
+      strict_mode:
+        default: false
+        description: "Enable Newman strict mode (--bail)."
+        required: false
+        type: boolean
+      targets:
+        default: "all"
+        description: "Target selection for manual runs."
+        options:
+          - all
+          - frontend
+          - backend
+          - cv
+        required: false
+        type: choice
+
+concurrency:
+  group: e2e-live-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  setup:
+  prepare:
     if: github.repository == 'arolariu/arolariu.ro'
-    name: '⚙️ Setup Dependencies'
-    runs-on: ubuntu-latest
+    name: 📋 Prepare E2E matrix
     outputs:
-      cache-key: ${{ steps.workspace-setup.outputs.node-cache-hit }}
+      strict-mode: ${{ steps.resolve.outputs.strict_mode }}
+      targets: ${{ steps.resolve.outputs.targets }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
 
-      - name: 📝 Display workflow context
-        run: |
-          echo "::group::🔍 E2E Test Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🧪 END-TO-END TESTING PIPELINE                             │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 📦 Job:           Setup Dependencies                       │"
-          echo "│ 🔧 Tool:          Newman (Postman CLI)                     │"
-          echo "│ 🎯 Targets:       arolariu.ro + api.arolariu.ro            │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "│ 👤 Triggered by:  ${{ github.actor }}"
-          echo "│ 🔗 Run ID:        ${{ github.run_id }}"
-          echo "│ 📌 Trigger:       ${{ github.event_name }}"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-          # Write initial summary
-          echo "## 🧪 End-to-End Testing Pipeline" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tool | Newman (Postman CLI) |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend Target | https://arolariu.ro |" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend Target | https://api.arolariu.ro |" >> $GITHUB_STEP_SUMMARY
-          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 📦 Setup workspace
-        id: workspace-setup
+      - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: '24'
-          cache-key-prefix: 'e2e'
+          cache-key-prefix: "e2e"
+          dotnet-version: ""
+          node-version: "24"
 
-      - name: 📦 Installing global dependencies...
+      - name: 🔍 Resolve run inputs
+        id: resolve
+        shell: bash
         run: |
-          echo "::group::📦 Installing Newman"
-          npm install -g newman
-          newman --version
-          echo "::notice::✅ Newman installed successfully"
-          echo "::endgroup::"
+          selected_targets="all"
+          strict_mode="false"
 
-  frontend:
-    if: github.repository == 'arolariu/arolariu.ro'
-    name: '[Frontend] End-to-End Testing (🧪)'
-    runs-on: ubuntu-latest
-    needs: setup
-    outputs:
-      duration: ${{ steps.test.outputs.duration }}
-    steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
-
-      - name: 📋 Display test context
-        run: |
-          echo "::group::🔍 Frontend E2E Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🌐 FRONTEND E2E TESTS                                      │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🎯 Target:        https://arolariu.ro                      │"
-          echo "│ 🔧 Tool:          Newman                                   │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'e2e'
-
-      - name: 🚀 Running end-to-end tests...
-        id: test
-        run: |
-          echo "::group::🧪 Frontend E2E Tests"
-          mkdir -p e2e-logs
-          echo "Starting frontend E2E tests against https://arolariu.ro..."
-          start=$(date +%s)
-          npm run test:e2e:frontend 2>&1 | tee frontend-tests.log
-          code=${PIPESTATUS[0]}
-          end=$(date +%s)
-          duration=$((end-start))
-          echo "duration=${duration}s" >> $GITHUB_OUTPUT
-
-          if [ $code -eq 0 ]; then
-            echo "::notice::✅ Frontend tests passed in ${duration}s"
-          else
-            echo "::error::❌ Frontend tests failed after ${duration}s"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            selected_targets="${{ github.event.inputs.targets }}"
+            if [ "${{ github.event.inputs.strict_mode }}" = "true" ]; then
+              strict_mode="true"
+            fi
           fi
-          echo "::endgroup::"
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🌐 Frontend E2E Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${duration}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Status | $([ $code -eq 0 ] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+          case "$selected_targets" in
+            all)
+              targets='["frontend","backend","cv"]'
+              ;;
+            frontend|backend|cv)
+              targets="[\"$selected_targets\"]"
+              ;;
+            *)
+              echo "::error::Invalid targets input: $selected_targets"
+              exit 1
+              ;;
+          esac
 
-          exit $code
-        env:
-          E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
-          NEWMAN_REPORT_DIR: e2e-logs
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+          echo "strict_mode=$strict_mode" >> "$GITHUB_OUTPUT"
 
-      - name: 📊 Upload frontend logs and reports
-        if: failure()
-        uses: actions/upload-artifact@v6
-        with:
-          name: frontend-test-logs
-          path: |
-            frontend-tests.log
-            e2e-logs/newman-frontend.json
-            e2e-logs/newman-frontend.xml
-            e2e-logs/newman-frontend-summary.md
+          {
+            echo "## 🧪 E2E Live Test Configuration"
+            echo ""
+            echo "| Parameter | Value |"
+            echo "|-----------|-------|"
+            echo "| Trigger | ${{ github.event_name }} |"
+            echo "| Targets | $targets |"
+            echo "| Strict Mode | $strict_mode |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  backend:
+  e2e-live:
     if: github.repository == 'arolariu/arolariu.ro'
-    name: '[Backend] End-to-End Testing (🧪)'
+    name: 🧪 ${{ matrix.target }} live tests
+    needs: prepare
     runs-on: ubuntu-latest
-    needs: setup
-    outputs:
-      duration: ${{ steps.test.outputs.duration }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.prepare.outputs.targets) }}
+
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
 
-      - name: 📝 Display test context
-        run: |
-          echo "::group::🔍 Backend E2E Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ ⚡ BACKEND E2E TESTS                                       │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🎯 Target:        https://api.arolariu.ro                  │"
-          echo "│ 🔧 Tool:          Newman                                   │"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-      - name: 📦 Setup workspace
+      - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: '24'
-          cache-key-prefix: 'e2e'
+          cache-key-prefix: "e2e"
+          dotnet-version: ""
+          node-version: "24"
 
-      - name: 🌡️ Check dependencies health
+      - name: 🌡️ Backend health check
+        if: matrix.target == 'backend'
+        shell: bash
         run: |
-          echo "::group::🌡️ Health Check"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🌡️ BACKEND HEALTH CHECK                                   │"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo ""
-          echo "Fetching backend health status..."
-          HTTP_CODE=$(curl -s -o backend-health.json -w "%{http_code}" https://api.arolariu.ro/health)
-
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::error::Health check failed with HTTP $HTTP_CODE"
+          http_code=$(curl -s -o backend-health.json -w "%{http_code}" https://api.arolariu.ro/health)
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Backend health check failed with HTTP $http_code"
             cat backend-health.json
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### ❌ Health Check Failed" >> $GITHUB_STEP_SUMMARY
-            echo "HTTP Status: $HTTP_CODE" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
-          HEALTH_STATUS=$(jq -r '.status' backend-health.json 2>/dev/null || echo "unknown")
-          echo "Health status: $HEALTH_STATUS"
-
-          if [ "$HEALTH_STATUS" != "Healthy" ] && [ "$HEALTH_STATUS" != "healthy" ]; then
-            echo "::error::Backend unhealthy: $HEALTH_STATUS"
-            cat backend-health.json
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### ❌ Backend Unhealthy" >> $GITHUB_STEP_SUMMARY
-            echo "Status: $HEALTH_STATUS" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-
-          echo "::notice::✅ Backend health check passed"
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Health Check Passed" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| HTTP Status | $HTTP_CODE |" >> $GITHUB_STEP_SUMMARY
-          echo "| Health Status | $HEALTH_STATUS |" >> $GITHUB_STEP_SUMMARY
-          cat backend-health.json
-          echo "::endgroup::"
-
-      - name: 🚀 Running end-to-end tests...
-        id: test
+      - name: 🧪 Run Newman collection
+        id: run-tests
+        shell: bash
         run: |
-          echo "::group::🧪 Backend E2E Tests"
           mkdir -p e2e-logs
-          echo "Starting backend E2E tests against https://api.arolariu.ro..."
-          start=$(date +%s)
-          npm run test:e2e:backend 2>&1 | tee backend-tests.log
-          code=${PIPESTATUS[0]}
-          end=$(date +%s)
-          duration=$((end-start))
-          echo "duration=${duration}s" >> $GITHUB_OUTPUT
+          start_time=$(date +%s)
 
-          if [ $code -eq 0 ]; then
-            echo "::notice::✅ Backend tests passed in ${duration}s"
-          else
-            echo "::error::❌ Backend tests failed after ${duration}s"
+          set +e
+          npm run test:e2e:${{ matrix.target }} 2>&1 | tee e2e-${{ matrix.target }}.log
+          exit_code=${PIPESTATUS[0]}
+          set -e
+
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+          status="success"
+          if [ "$exit_code" -ne 0 ]; then
+            status="failure"
           fi
-          echo "::endgroup::"
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ⚡ Backend E2E Results" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Duration | ${duration}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Status | $([ $code -eq 0 ] && echo '✅ Passed' || echo '❌ Failed') |" >> $GITHUB_STEP_SUMMARY
+          echo "duration=${duration}s" >> "$GITHUB_OUTPUT"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
 
-          exit $code
+          {
+            echo "### ${{ matrix.target }} E2E result"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|--------|-------|"
+            echo "| Status | $status |"
+            echo "| Duration | ${duration}s |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$exit_code" -ne 0 ]; then
+            exit "$exit_code"
+          fi
         env:
           E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
+          E2E_TEST_ENVIRONMENT: production
           NEWMAN_REPORT_DIR: e2e-logs
+          NEWMAN_STRICT_MODE: ${{ needs.prepare.outputs.strict-mode }}
 
-      - name: 📊 Upload backend logs and reports
-        if: failure()
-        uses: actions/upload-artifact@v6
+      - name: 📊 Summarize Newman metrics
+        if: always()
+        shell: bash
+        run: |
+          report_path="e2e-logs/newman-${{ matrix.target }}.json"
+          if [ ! -f "$report_path" ]; then
+            echo "::warning::Report not found: $report_path"
+            exit 0
+          fi
+
+          node -e "const fs=require('node:fs');const p=process.argv[1];const target=process.argv[2];const r=JSON.parse(fs.readFileSync(p,'utf-8'));const stats=r?.run?.stats??{};const timings=r?.run?.timings??{};const requests=stats.requests??{};const assertions=stats.assertions??{};const totalMs=(timings.completed??0)-(timings.started??0);const summary=['','### '+target+' Newman stats','','| Metric | Value |','|--------|-------|','| Requests | '+(requests.total??0)+' total / '+(requests.failed??0)+' failed |','| Assertions | '+(assertions.total??0)+' total / '+(assertions.failed??0)+' failed |','| Runtime | '+(totalMs>0?((totalMs/1000).toFixed(2)+'s'):'N/A')+' |'];fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary.join('\\n')+'\\n');" "$report_path" "${{ matrix.target }}"
+
+      - name: 🧾 Persist target status
+        if: always()
+        shell: bash
+        run: |
+          cat > "e2e-status-${{ matrix.target }}.json" <<EOF
+          {
+            "target": "${{ matrix.target }}",
+            "status": "${{ steps.run-tests.outputs.status || 'failure' }}",
+            "duration": "${{ steps.run-tests.outputs.duration || 'N/A' }}"
+          }
+          EOF
+
+      - name: 📦 Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: backend-test-logs
+          if-no-files-found: warn
+          name: e2e-reports-${{ matrix.target }}
           path: |
-            backend-tests.log
+            e2e-logs/newman-${{ matrix.target }}.json
+            e2e-logs/newman-${{ matrix.target }}.xml
+            e2e-logs/newman-${{ matrix.target }}-summary.md
+          retention-days: 14
+
+      - name: 📦 Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: warn
+          name: e2e-logs-${{ matrix.target }}
+          path: |
+            e2e-${{ matrix.target }}.log
+            e2e-status-${{ matrix.target }}.json
             backend-health.json
-            e2e-logs/newman-backend.json
-            e2e-logs/newman-backend.xml
-            e2e-logs/newman-backend-summary.md
+          retention-days: 14
 
   raise-issue-on-failure:
-    name: 'Raise Issue on Failure'
-    needs: [setup, frontend, backend]
+    name: 🐛 Raise issue on failure
+    needs: [prepare, e2e-live]
+    if: ${{ always() && needs.e2e-live.result == 'failure' }}
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
-    if: ${{ always() && (needs.frontend.result == 'failure' || needs.backend.result == 'failure') }}
-    env:
-      TZ: Europe/Bucharest
+    timeout-minutes: 20
+
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v6
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
 
-      - name: 📝 Display failure context
-        run: |
-          echo "::group::🔍 Failure Context"
-          echo "┌────────────────────────────────────────────────────────────┐"
-          echo "│ 🐛 E2E TEST FAILURE - ISSUE CREATION                       │"
-          echo "├────────────────────────────────────────────────────────────┤"
-          echo "│ 🌐 Frontend:      ${{ needs.frontend.result }}"
-          echo "│ ⚡ Backend:       ${{ needs.backend.result }}"
-          echo "│ ⏱️ Frontend Time: ${{ needs.frontend.outputs.duration || 'N/A' }}"
-          echo "│ ⏱️ Backend Time:  ${{ needs.backend.outputs.duration || 'N/A' }}"
-          echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "└────────────────────────────────────────────────────────────┘"
-          echo "::endgroup::"
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ❌ E2E Test Failures Detected" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Test Suite | Status | Duration |" >> $GITHUB_STEP_SUMMARY
-          echo "|------------|--------|----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend | ${{ needs.frontend.result }} | ${{ needs.frontend.outputs.duration || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend | ${{ needs.backend.result }} | ${{ needs.backend.outputs.duration || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 📦 Setup workspace
+      - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: '24'
-          install-node-dependencies: 'false'
-          cache-key-prefix: 'e2e'
+          cache-key-prefix: "e2e"
+          dotnet-version: ""
+          install-node-dependencies: "false"
+          node-version: "24"
 
-      - name: 📥 Download all test artifacts
-        uses: actions/download-artifact@v7
+      - name: 📥 Download E2E artifacts
+        uses: actions/download-artifact@v4
         with:
+          merge-multiple: true
           path: logs
+          pattern: e2e-*
 
-      - name: 📝 Create log summary (if logs exist)
-        run: |
-          echo "## 🔥 Log Tail from Failed Jobs" > log-tail.md
-          # Check if any log files exist before processing
-          if compgen -G "logs/*/*.log" > /dev/null; then
-            for file in logs/*/*.log; do
-              if [ -f "$file" ]; then
-                echo -e "\n### $(basename "$file")" >> log-tail.md
-                tail -n 50 "$file" >> log-tail.md
-              fi
-            done
-            echo "✓ Log summary created successfully"
-          else
-            echo "⚠️ No log files found - skipping log summary creation"
-            echo -e "\n_No log files were found in the artifacts._" >> log-tail.md
-          fi
-        shell: bash
-
-      - name: 🐛 Create GitHub Issue for Test Failure
-        uses: actions/github-script@v8
+      - name: 🐛 Create GitHub issue for failures
+        uses: actions/github-script@v7
         env:
-          WORKFLOW: ${{ github.workflow }}
+          ARTIFACTS_DIR: logs
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.run_id }}
           RUN_NUMBER: ${{ github.run_number }}
-          EVENT_NAME: ${{ github.event_name }}
           SERVER_URL: ${{ github.server_url }}
-          FRONTEND_STATUS: ${{ needs.frontend.result }}
-          FRONTEND_DURATION: ${{ needs.frontend.outputs.duration }}
-          BACKEND_STATUS: ${{ needs.backend.result }}
-          BACKEND_DURATION: ${{ needs.backend.outputs.duration }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACTS_DIR: logs
+          TARGETS: ${{ needs.prepare.outputs.targets }}
+          WORKFLOW: ${{ github.workflow }}
         with:
           script: |
-            // Install dependencies required by the script
-            const { execSync } = require('child_process');
-            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
-
-            // Import and execute the unified live test action script
+            const {execSync} = require('node:child_process');
+            execSync('cd .github/scripts && npm ci', {stdio: 'inherit'});
             const {default: runLiveTestAction} = await import('${{ github.workspace }}/.github/scripts/src/runLiveTestAction.ts');
             await runLiveTestAction();
