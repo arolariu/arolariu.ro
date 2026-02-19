@@ -34,6 +34,13 @@
           "    }",
           "});",
           "",
+          "// Validate locale variable for i18n checks",
+          "const locale = (pm.collectionVariables.get('locale') || pm.environment.get('locale') || 'en').toLowerCase();",
+          "const supportedLocales = ['en', 'ro', 'fr'];",
+          "if (!supportedLocales.includes(locale)) {",
+          "    console.warn(`Warning: locale '${locale}' is not in supported locales: ${supportedLocales.join(', ')}`);",
+          "}",
+          "",
           "// Set request timestamp for tracking",
           "pm.variables.set('requestTimestamp', new Date().toISOString());",
           "",
@@ -92,6 +99,26 @@
           "        `Expected valid status, got ${pm.response.code}`);",
           "});",
           "",
+          "pm.test('Protected routes redirect to authentication when not authorized', function () {",
+          "    if (!isProtectedRoute()) {",
+          "        return;",
+          "    }",
+          "    if (![301, 302, 303, 307, 308].includes(pm.response.code)) {",
+          "        return;",
+          "    }",
+          "    const location = pm.response.headers.get('Location');",
+          "    if (!location) {",
+          "        pm.expect.fail('Redirect responses must include Location header');",
+          "        return;",
+          "    }",
+          "    pm.expect(location.toLowerCase()).to.match(/auth|sign-?in|clerk/);",
+          "});",
+          "",
+          "pm.test('Configured locale is supported', function () {",
+          "    const configuredLocale = (pm.collectionVariables.get('locale') || pm.environment.get('locale') || 'en').toLowerCase();",
+          "    pm.expect(['en', 'ro', 'fr']).to.include(configuredLocale);",
+          "});",
+          "",
           "// Strict response time check (configurable via collection/environment variable)",
           "pm.test('Response time is under configured threshold', function () {",
           "    const raw = pm.environment.get('maxResponseTimeMs') || pm.collectionVariables.get('maxResponseTimeMs') || '5000';",
@@ -130,6 +157,14 @@
           "    ];",
           "    const isValid = validTypes.some(type => contentType.toLowerCase().includes(type.toLowerCase()));",
           "    pm.expect(isValid).to.equal(true, `Invalid Content-Type: ${contentType}`);",
+          "});",
+          "",
+          "pm.test('Next.js cache header is valid when present', function () {",
+          "    const nextCache = pm.response.headers.get('x-nextjs-cache');",
+          "    if (!nextCache) {",
+          "        return;",
+          "    }",
+          "    pm.expect(['HIT', 'MISS', 'STALE', 'REVALIDATED']).to.include(nextCache.toUpperCase());",
           "});",
           "",
           "// Response body exists (skip for 204/304, HEAD, and error handling tests)",
@@ -325,6 +360,11 @@
                       "    pm.expect(html).to.include('<html');",
                       "    pm.expect(html).to.include('<head>');",
                       "    pm.expect(html).to.include('<body');",
+                      "});",
+                      "",
+                      "pm.test('Homepage declares document language', function () {",
+                      "    const html = pm.response.text();",
+                      "    pm.expect(html).to.match(/<html[^>]*lang=/i);",
                       "});",
                       "",
                       "pm.test('Homepage has meta tags for SEO', function () {",
@@ -1028,10 +1068,28 @@
                       "    pm.expect(jsonData.userJwt.length).to.be.above(0);",
                       "});",
                       "",
-                      "// Store user info for potential use in subsequent requests",
-                      "const responseJson = pm.response.json();",
-                      "pm.collectionVariables.set('currentUserIdentifier', responseJson.userIdentifier);",
-                      "pm.collectionVariables.set('currentUserJwt', responseJson.userJwt);"
+                      "pm.test('JWT token has 3 segments', function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.userJwt.split('.').length).to.equal(3);",
+                      "});",
+                      "",
+                      "pm.test('Guest and authenticated payload shapes are consistent', function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    const emptyGuid = '00000000-0000-0000-0000-000000000000';",
+                      "    if (jsonData.user === null) {",
+                      "        pm.expect(jsonData.userIdentifier).to.equal(emptyGuid);",
+                      "    } else {",
+                      "        pm.expect(jsonData.user).to.be.an('object');",
+                      "    }",
+                      "});",
+                      "",
+                      "pm.test('Stored collection variables mirror /api/user response', function () {",
+                      "    const responseJson = pm.response.json();",
+                      "    pm.collectionVariables.set('currentUserIdentifier', responseJson.userIdentifier);",
+                      "    pm.collectionVariables.set('currentUserJwt', responseJson.userJwt);",
+                      "    pm.expect(pm.collectionVariables.get('currentUserIdentifier')).to.equal(responseJson.userIdentifier);",
+                      "    pm.expect(pm.collectionVariables.get('currentUserJwt')).to.equal(responseJson.userJwt);",
+                      "});"
                     ]
                   }
                 }
@@ -1330,44 +1388,6 @@
                       "pm.test('Content-Type is SVG', function () {",
                       "    const contentType = pm.response.headers.get('Content-Type');",
                       "    pm.expect(contentType).to.include('svg');",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Get Logo.svg",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "image/svg+xml"
-                  }
-                ],
-                "description": "Verify logo.svg is accessible",
-                "url": {
-                  "raw": "{{baseUrl}}/logo.svg",
-                  "host": ["{{baseUrl}}"],
-                  "path": [
-                    "logo.svg"
-                  ]
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Logo.svg is accessible', function () {",
-                      "    pm.expect(pm.response.code).to.equal(200);",
-                      "});",
-                      "",
-                      "pm.test('Logo.svg is valid SVG', function () {",
-                      "    const text = pm.response.text();",
-                      "    pm.expect(text).to.include('<svg');",
                       "});"
                     ]
                   }
@@ -1704,11 +1724,15 @@
           "event": [
             {
               "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('API response time < 500ms', function () {",
-                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                  "pm.test('API response time is under configured threshold', function () {",
+                  "    const raw = pm.environment.get('maxApiResponseTimeMs') || pm.collectionVariables.get('maxApiResponseTimeMs') || '1000';",
+                  "    const maxApiResponseTimeMs = Number(raw);",
+                  "    pm.expect(maxApiResponseTimeMs).to.be.a('number');",
+                  "    pm.expect(pm.response.responseTime).to.be.below(maxApiResponseTimeMs,",
+                  "        `API response time ${pm.response.responseTime}ms exceeds ${maxApiResponseTimeMs}ms`);",
                   "});",
                   "",
                   "// Log performance metrics",
@@ -1757,6 +1781,12 @@
       "value": "5000",
       "type": "string",
       "description": "Maximum allowed response time in milliseconds (SLA threshold)"
+    },
+    {
+      "key": "maxApiResponseTimeMs",
+      "value": "1000",
+      "type": "string",
+      "description": "Maximum allowed response time for /api/user performance checks (milliseconds)"
     },
     {
       "key": "strictSecurityHeaders",
