@@ -2,7 +2,7 @@
   "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
   "info": {
     "name": "api.arolariu.ro",
-    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create → read → update → delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
+    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create \u2192 read \u2192 update \u2192 delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "api-arolariu-ro-backend-tests",
     "version": "2.0.0"
@@ -23,29 +23,46 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Pre-request script: Validation and setup",
+          "// Pre-request script: Validation, setup, and production guardrails",
           "",
-          "// Validate required collection variables",
-          "const requiredVars = ['baseUrl', 'authToken', 'userIdentifier'];",
-          "requiredVars.forEach(varName => {",
-          "    const value = pm.collectionVariables.get(varName) || pm.environment.get(varName);",
+          "function readConfig(key, fallback) {",
+          "    const collectionValue = pm.collectionVariables.get(key);",
+          "    const environmentValue = pm.environment.get(key);",
+          "    const resolvedValue = environmentValue ?? collectionValue;",
+          "    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
+          "}",
+          "",
+          "function readFlag(key, fallback) {",
+          "    const value = readConfig(key, fallback ? 'true' : 'false').toLowerCase();",
+          "    return ['true', '1', 'yes', 'on'].includes(value);",
+          "}",
+          "",
+          "const requiredVars = ['baseUrl', 'userIdentifier'];",
+          "requiredVars.forEach((variableName) => {",
+          "    const value = readConfig(variableName, '');",
           "    if (!value) {",
-          "        console.warn(`⚠️ Warning: Required variable '${varName}' is not set`);",
+          "        console.warn(`\u26a0\ufe0f Warning: Required variable '${variableName}' is not set`);",
           "    }",
           "});",
           "",
-          "// Validate GUID format for userIdentifier",
-          "const userIdentifier = pm.collectionVariables.get('userIdentifier');",
+          "const userIdentifier = readConfig('userIdentifier', '');",
           "const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
           "if (userIdentifier && !guidRegex.test(userIdentifier)) {",
-          "    console.warn(`⚠️ Warning: userIdentifier '${userIdentifier}' is not a valid GUID format`);",
+          "    console.warn(`\u26a0\ufe0f Warning: userIdentifier '${userIdentifier}' is not a valid GUID format`);",
           "}",
           "",
-          "// Set request timestamp for diagnostics",
-          "pm.variables.set('requestTimestamp', new Date().toISOString());",
+          "const requestMethod = pm.request.method.toUpperCase();",
+          "const isMutatingRequest = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod);",
+          "const baseUrl = readConfig('baseUrl', '').toLowerCase();",
+          "const isProductionTarget = baseUrl.includes('api.arolariu.ro');",
+          "const allowProductionCrud = readFlag('allowProductionCrud', false);",
           "",
-          "// Log request info",
-          "console.log(`📤 [${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
+          "if (isMutatingRequest && isProductionTarget && !allowProductionCrud) {",
+          "    throw new Error(`Production CRUD guardrail blocked ${requestMethod} for '${pm.info.requestName}'. Set allowProductionCrud=true to override intentionally.`);",
+          "}",
+          "",
+          "pm.variables.set('requestTimestamp', new Date().toISOString());",
+          "console.log(`\ud83d\udce4 [${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
         ]
       }
     },
@@ -57,25 +74,34 @@
           "// Collection-level tests: Default expectations for all requests",
           "// Request-level tests can override or extend these defaults",
           "",
-          "// Helper: Check if request expects non-2xx response",
-          "function expectsNon2xxResponse() {",
-          "    const requestName = pm.info.requestName;",
-          "    return requestName.includes('(None)') || ",
-          "           requestName.includes('Unauthorized') ||",
-          "           requestName.includes('Invalid') ||",
-          "           requestName.includes('Non-existent');",
+          "function readConfig(key, fallback) {",
+          "    const collectionValue = pm.collectionVariables.get(key);",
+          "    const environmentValue = pm.environment.get(key);",
+          "    const resolvedValue = environmentValue ?? collectionValue;",
+          "    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
           "}",
           "",
-          "// Helper: Check if request is analysis endpoint (long-running)",
+          "function readPositiveNumber(key, fallback) {",
+          "    const rawValue = readConfig(key, String(fallback));",
+          "    const parsedValue = Number(rawValue);",
+          "    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;",
+          "}",
+          "",
+          "function expectsNon2xxResponse() {",
+          "    const requestName = pm.info.requestName;",
+          "    return requestName.includes('(None)') ||",
+          "           requestName.includes('Unauthorized') ||",
+          "           requestName.includes('Invalid') ||",
+          "           requestName.includes('Non-existent') ||",
+          "           requestName.includes('Guardrail');",
+          "}",
+          "",
           "function isAnalysisRequest() {",
           "    return pm.info.requestName.toLowerCase().includes('analyze');",
           "}",
           "",
-          "// Status code validation: RESTful conventions",
           "pm.test('Response status follows RESTful conventions', function () {",
           "    if (expectsNon2xxResponse()) {",
-          "        // Skip status check for requests expecting errors",
-          "        this.skip();",
           "        return;",
           "    }",
           "",
@@ -89,14 +115,14 @@
           "            expectedRange = [200, 299];",
           "            break;",
           "        case 'POST':",
-          "            expectedRange = [200, 201]; // 200 OK or 201 Created",
+          "            expectedRange = [200, 201];",
           "            break;",
           "        case 'PUT':",
           "        case 'PATCH':",
-          "            expectedRange = [200, 202]; // 200 OK or 202 Accepted",
+          "            expectedRange = [200, 202];",
           "            break;",
           "        case 'DELETE':",
-          "            expectedRange = [200, 204]; // 200 OK or 204 No Content",
+          "            expectedRange = [200, 204];",
           "            break;",
           "        default:",
           "            expectedRange = [200, 299];",
@@ -106,18 +132,20 @@
           "        `Expected ${method} to return ${expectedRange[0]}-${expectedRange[1]}, got ${code}`);",
           "});",
           "",
-          "// Performance SLA: Response time validation",
-          "pm.test('Response time meets SLA threshold', function () {",
-          "    const threshold = isAnalysisRequest() ? 30000 : 3000; // 30s for analysis, 3s otherwise",
-          "    pm.expect(pm.response.responseTime).to.be.below(threshold,",
-          "        `Response time ${pm.response.responseTime}ms exceeds ${threshold}ms SLA`);",
+          "pm.test('Response time meets configured SLA thresholds', function () {",
+          "    const warningThreshold = readPositiveNumber('warningLatencyMs', isAnalysisRequest() ? 10000 : 1500);",
+          "    const failureThreshold = readPositiveNumber('failureLatencyMs', isAnalysisRequest() ? 30000 : 3000);",
+          "",
+          "    pm.expect(pm.response.responseTime).to.be.below(failureThreshold,",
+          "        `Response time ${pm.response.responseTime}ms exceeds ${failureThreshold}ms SLA`);",
+          "",
+          "    if (pm.response.responseTime > warningThreshold) {",
+          "        console.warn(`\u26a0\ufe0f Warning latency threshold exceeded: ${pm.response.responseTime}ms > ${warningThreshold}ms`);",
+          "    }",
           "});",
           "",
-          "// Content-Type header validation",
           "pm.test('Content-Type header is present and valid', function () {",
           "    if (pm.response.code === 204) {",
-          "        // 204 No Content doesn't require Content-Type",
-          "        this.skip();",
           "        return;",
           "    }",
           "",
@@ -127,59 +155,47 @@
           "        `Invalid Content-Type: ${contentType}`);",
           "});",
           "",
-          "// Response body validation",
           "pm.test('Response body is valid', function () {",
           "    if (pm.response.code === 204 || pm.request.method === 'HEAD') {",
-          "        // 204 No Content and HEAD requests have no body",
-          "        this.skip();",
           "        return;",
           "    }",
           "",
-          "    pm.expect(pm.response.text()).to.have.length.greaterThan(0,",
-          "        'Response body is empty');",
+          "    pm.expect(pm.response.text()).to.have.length.greaterThan(0, 'Response body is empty');",
           "});",
           "",
-          "// JSON structure validation",
           "pm.test('JSON responses are well-formed', function () {",
           "    const contentType = pm.response.headers.get('Content-Type');",
           "    if (contentType && contentType.includes('application/json')) {",
           "        pm.response.to.have.jsonBody();",
           "    } else {",
-          "        this.skip();",
+          "        return;",
           "    }",
           "});",
           "",
-          "// Security headers validation",
           "pm.test('Security headers are present', function () {",
           "    const headers = pm.response.headers;",
-          "    ",
-          "    // Check for CORS headers (expected in API responses)",
           "    const corsHeader = headers.get('Access-Control-Allow-Origin');",
           "    if (corsHeader) {",
           "        pm.expect(corsHeader).to.exist;",
           "    }",
           "",
-          "    // X-Content-Type-Options should be nosniff",
           "    const xContentType = headers.get('X-Content-Type-Options');",
           "    if (xContentType) {",
           "        pm.expect(xContentType).to.equal('nosniff');",
           "    }",
           "});",
           "",
-          "// Error response structure validation",
           "pm.test('Error responses have proper structure', function () {",
           "    if (pm.response.code >= 400) {",
           "        pm.response.to.have.jsonBody();",
           "        const jsonData = pm.response.json();",
-          "        // Most error responses should have title/detail/status per RFC 7807",
           "        pm.expect(jsonData).to.be.an('object');",
           "    } else {",
-          "        this.skip();",
+          "        return;",
           "    }",
           "});",
           "",
-          "// Log detailed diagnostics",
-          "const statusIcon = pm.response.code < 400 ? '✅' : '❌';",
+          "const statusIcon = pm.response.code < 400 ? '\u2705' : '\u274c';",
           "console.log(`${statusIcon} [${pm.info.requestName}] ${pm.response.code} | ${pm.response.responseTime}ms | ${pm.response.responseSize} bytes`);"
         ]
       }
@@ -243,7 +259,7 @@
                   "    pm.expect(pm.response.responseTime).to.be.below(2000);",
                   "});",
                   "",
-                  "console.log('🏥 Health check passed - API is operational');"
+                  "console.log('\ud83c\udfe5 Health check passed - API is operational');"
                 ]
               }
             }
@@ -351,7 +367,7 @@
                   "    ",
                   "    // Store for subsequent requests",
                   "    pm.collectionVariables.set('invoiceIdentifier', String(id));",
-                  "    console.log('📝 Created invoice: ' + id);",
+                  "    console.log('\ud83d\udcdd Created invoice: ' + id);",
                   "});",
                   "",
                   "pm.test('Invoice has required fields', function () {",
@@ -427,7 +443,7 @@
                   "    pm.expect(found).to.be.true;",
                   "});",
                   "",
-                  "console.log('📋 Retrieved ' + pm.response.json().length + ' invoice(s)');"
+                  "console.log('\ud83d\udccb Retrieved ' + pm.response.json().length + ' invoice(s)');"
                 ]
               }
             }
@@ -497,7 +513,7 @@
                   "    pm.expect(body).to.have.property('updatedAt');",
                   "});",
                   "",
-                  "console.log('✅ Retrieved invoice details');"
+                  "console.log('\u2705 Retrieved invoice details');"
                 ]
               }
             }
@@ -2026,7 +2042,7 @@
                   "    pm.response.to.have.jsonBody();",
                   "});",
                   "",
-                  "console.log('✅ 404 error handling verified');"
+                  "console.log('\u2705 404 error handling verified');"
                 ]
               }
             }
@@ -2070,7 +2086,7 @@
                   "    }",
                   "});",
                   "",
-                  "console.log('✅ 401 authorization check verified');"
+                  "console.log('\u2705 401 authorization check verified');"
                 ]
               }
             }
@@ -2132,7 +2148,7 @@
                   "    pm.response.to.have.jsonBody();",
                   "});",
                   "",
-                  "console.log('✅ 400 validation error verified');"
+                  "console.log('\u2705 400 validation error verified');"
                 ]
               }
             }
@@ -2273,52 +2289,88 @@
   ],
   "variable": [
     {
-      "key": "baseUrl",
-      "value": "https://api.arolariu.ro",
+      "key": "baseProtocol",
+      "value": "https",
       "type": "string",
-      "description": "Base URL for the API (e.g., https://api.arolariu.ro for production, http://localhost:5000 for local)"
+      "description": "Base protocol used to compose baseUrl (http/https)."
+    },
+    {
+      "key": "baseHost",
+      "value": "api.arolariu.ro",
+      "type": "string",
+      "description": "Base host used to compose baseUrl."
+    },
+    {
+      "key": "basePath",
+      "value": "",
+      "type": "string",
+      "description": "Optional base path prefix for reverse-proxy scenarios."
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{baseProtocol}}://{{baseHost}}{{basePath}}",
+      "type": "string",
+      "description": "Base URL for the API target environment."
     },
     {
       "key": "authToken",
       "value": "",
       "type": "string",
-      "description": "JWT Bearer token for authentication - obtain from auth provider or /api/user endpoint on frontend"
+      "description": "JWT Bearer token for authentication - injected at runtime by E2E runner."
     },
     {
       "key": "userIdentifier",
       "value": "00000000-0000-0000-0000-000000000000",
       "type": "string",
-      "description": "User GUID identifier matching the authenticated user - must be valid GUID format"
+      "description": "User GUID identifier matching the authenticated user."
     },
     {
       "key": "invoiceIdentifier",
       "value": "",
       "type": "string",
-      "description": "Invoice GUID - dynamically set after invoice creation in test flow"
+      "description": "Invoice GUID - dynamically set after invoice creation in test flow."
     },
     {
       "key": "merchantIdentifier",
       "value": "",
       "type": "string",
-      "description": "Merchant GUID - dynamically set after merchant creation in test flow"
+      "description": "Merchant GUID - dynamically set after merchant creation in test flow."
+    },
+    {
+      "key": "warningLatencyMs",
+      "value": "1500",
+      "type": "string",
+      "description": "Warning-only latency threshold in milliseconds."
+    },
+    {
+      "key": "failureLatencyMs",
+      "value": "3000",
+      "type": "string",
+      "description": "Failure latency threshold in milliseconds."
+    },
+    {
+      "key": "allowProductionCrud",
+      "value": "false",
+      "type": "string",
+      "description": "Set to true to allow mutating methods against production baseUrl."
     },
     {
       "key": "apiVersion",
       "value": "v1",
       "type": "string",
-      "description": "API version for REST endpoints (currently v1)"
+      "description": "API version for REST endpoints (currently v1)."
     },
     {
       "key": "maxRetries",
       "value": "3",
       "type": "string",
-      "description": "Maximum retry attempts for failed requests (for automated testing)"
+      "description": "Maximum retry attempts for failed requests (for automated testing)."
     },
     {
       "key": "retryDelay",
       "value": "1000",
       "type": "string",
-      "description": "Delay in milliseconds between retry attempts"
+      "description": "Delay in milliseconds between retry attempts."
     }
   ]
 }

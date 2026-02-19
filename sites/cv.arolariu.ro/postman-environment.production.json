@@ -1,0 +1,63 @@
+{
+  "id": "cv-arolariu-ro-production",
+  "name": "cv.arolariu.ro (production)",
+  "values": [
+    {
+      "key": "baseProtocol",
+      "value": "https",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "baseHost",
+      "value": "cv.arolariu.ro",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "basePath",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{baseProtocol}}://{{baseHost}}{{basePath}}",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "sectionName",
+      "value": "skills",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "etagValue",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "warningLatencyMs",
+      "value": "1500",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "failureLatencyMs",
+      "value": "3000",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-02-19T00:00:00.000Z",
+  "_postman_exported_using": "GitHub Copilot CLI"
+}

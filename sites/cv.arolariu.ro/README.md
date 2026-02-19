@@ -74,6 +74,32 @@ Manual trigger: available via workflow_dispatch in GitHub Actions.
 - yarn preview — preview production build locally
 - yarn format — format with Prettier (if configured in package.json)
 
+## E2E Testing (Newman)
+
+CV live checks are implemented with a dedicated Postman/Newman collection.
+
+- Collection: `postman-collection.json`
+- Environment profiles:
+  - `postman-environment.local.json`
+  - `postman-environment.production.json`
+
+Coverage includes:
+- Public routes: `/`, `/human`, `/json`, `/pdf`
+- JSON API contract: `/rest/json`, `format=minimal`, `format=resume`
+- Section contract: `/rest/json?section={{sectionName}}` and unknown-section 404
+- Caching behavior: `ETag` capture + `If-None-Match` follow-up validation
+
+Run from repository root:
+
+```bash
+npm run test:e2e:cv
+```
+
+Optional controls:
+- `E2E_TEST_ENVIRONMENT=local|production` (default: `production`)
+- `NEWMAN_STRICT_MODE=true|false` (default: `false`)
+- `NEWMAN_REPORT_DIR=<path>` (default: `e2e-logs`)
+
 ## Contributing
 
 This repository contains multiple applications; please keep changes scoped to sites/cv.arolariu.ro when editing the CV. Follow the existing formatting and commit conventions.

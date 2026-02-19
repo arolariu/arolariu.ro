@@ -181,6 +181,10 @@ public void CreateInvoice_WithValidData_ReturnsSuccessResult()
 
 **Location:** `postman-collection.json`
 
+**Environment profiles:**
+- `postman-environment.local.json`
+- `postman-environment.production.json`
+
 The collection contains comprehensive tests for all API endpoints:
 - **Invoices**: CRUD operations, filtering, pagination
 - **Merchants**: Management and relationships
@@ -197,27 +201,21 @@ npm run test:e2e:backend
 
 #### Using Newman directly:
 ```bash
-# Install Newman globally
-npm install -g newman
-
-# Run collection
-newman run sites/api.arolariu.ro/postman-collection.json
-
-# Run with environment
+# Run with production profile
 newman run sites/api.arolariu.ro/postman-collection.json \
+  --environment sites/api.arolariu.ro/postman-environment.production.json \
   --env-var "authToken=your-jwt-token"
 ```
 
 ### Collection Variables
 
-| Variable | Production | Local Development |
-|----------|-----------|-------------------|
-| `baseUrl` | `https://api.arolariu.ro` | `http://localhost:5000` |
-| `baseHost` | `api.arolariu.ro` | `localhost` |
-| `baseProtocol` | `https` | `http` |
-| `authToken` | *JWT token* | *JWT token* |
-
-**Important:** The collection intentionally omits port numbers for HTTPS (443) and HTTP (80) as these are default ports. Including them explicitly can cause issues with reverse proxies and load balancers.
+| Variable | Purpose |
+|----------|---------|
+| `baseProtocol`, `baseHost`, `basePath`, `baseUrl` | Environment URL contract |
+| `authToken` | Runtime JWT token |
+| `userIdentifier` | User scope identifier |
+| `warningLatencyMs`, `failureLatencyMs` | Latency thresholds |
+| `allowProductionCrud` | Explicit guardrail override for mutating production runs |
 
 ### Authentication
 
@@ -230,6 +228,13 @@ export E2E_TEST_AUTH_TOKEN="your-jwt-token"
 # Run tests
 npm run test:e2e:backend
 ```
+
+### Runner Controls
+
+Repository-level E2E runner options:
+- `E2E_TEST_ENVIRONMENT=local|production` (default: `production`)
+- `NEWMAN_STRICT_MODE=true|false` (default: `false`)
+- `NEWMAN_REPORT_DIR=<path>` (default: `e2e-logs`)
 
 ---
 
