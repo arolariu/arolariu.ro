@@ -52,7 +52,7 @@
     },
     {
       "key": "maxApiResponseTimeMs",
-      "value": "1000",
+      "value": "2500",
       "type": "default",
       "enabled": true
     },
