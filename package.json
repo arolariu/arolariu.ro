@@ -63,6 +63,7 @@
     "lint:inspect:eslint": "eslint --inspect-config",
     "test:e2e": "node scripts/test-e2e.ts all",
     "test:e2e:backend": "node scripts/test-e2e.ts backend",
+    "test:e2e:cv": "node scripts/test-e2e.ts cv",
     "test:e2e:frontend": "node scripts/test-e2e.ts frontend",
     "generate": "node scripts/generate.ts",
     "generate:acks": "node scripts/generate.acks.ts",

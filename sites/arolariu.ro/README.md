@@ -168,15 +168,22 @@ On the above platform you'll encountered a Grafana dashboard that provides real-
 
 ## E2E Testing
 
-The frontend service includes a Postman collection for end-to-end testing of public pages and health checks.
+The frontend service includes a Newman/Postman collection for live route and API contract verification.
 
 ### Postman Collection
 
 Location: `postman-collection.json`
 
-The collection contains basic health check tests:
-- Root page accessibility
-- About page accessibility
+Environment profiles:
+- `postman-environment.local.json`
+- `postman-environment.production.json`
+
+Coverage includes:
+- Public routes (home/about/domains/legal/auth)
+- Protected route behavior (redirect/auth indicators)
+- Static assets and SEO/PWA endpoints
+- `/api/user` contract checks
+- Route/sitemap drift warning visibility
 
 ### Running Tests
 
@@ -187,7 +194,8 @@ npm run test:e2e:frontend
 
 #### Using Newman directly:
 ```bash
-newman run sites/arolariu.ro/postman-collection.json
+newman run sites/arolariu.ro/postman-collection.json \
+  --environment sites/arolariu.ro/postman-environment.production.json
 ```
 
 ### Collection Variables
@@ -196,6 +204,21 @@ The collection uses the following variables:
 - `baseUrl`: Constructed as `{{baseProtocol}}://{{baseHost}}`
 - `baseHost`: `arolariu.ro` (production) or your local host
 - `baseProtocol`: `https` (production) or `http` (local)
+- `authToken`: Runtime-injected for authenticated checks
+- `max*ResponseTimeMs`: latency thresholds used by the tests (see the collection for concrete variable names)
+
+### Runtime Execution Model
+
+The repository runner keeps token injection at runtime and restores collection content after each run:
+
+```bash
+E2E_TEST_AUTH_TOKEN="jwt-token" npm run test:e2e:frontend
+```
+
+Optional runtime controls:
+- `E2E_TEST_ENVIRONMENT=local|production` (default: `production`)
+- `NEWMAN_STRICT_MODE=true|false` (default: `false`)
+- `NEWMAN_REPORT_DIR=<path>` (default: `e2e-logs`)
 
 **Note**: The collection intentionally omits port numbers for HTTPS (443) and HTTP (80) as these are default ports.
 

@@ -1,0 +1,571 @@
+{
+  "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
+  "info": {
+    "name": "cv.arolariu.ro",
+    "description": "Live E2E checks for cv.arolariu.ro routes and /rest/json API contract.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "cv-arolariu-ro-live-tests",
+    "version": "1.0.0"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function readConfig(key, fallback) {",
+          "    const collectionValue = pm.collectionVariables.get(key);",
+          "    const environmentValue = pm.environment.get(key);",
+          "    const resolvedValue = environmentValue ?? collectionValue;",
+          "    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
+          "}",
+          "",
+          "const baseUrl = readConfig('baseUrl', '');",
+          "if (!baseUrl) {",
+          "    console.warn('Warning: baseUrl is not set.');",
+          "}",
+          "pm.variables.set('requestTimestamp', new Date().toISOString());",
+          "console.log(`[${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function readConfig(key, fallback) {",
+          "    const collectionValue = pm.collectionVariables.get(key);",
+          "    const environmentValue = pm.environment.get(key);",
+          "    const resolvedValue = environmentValue ?? collectionValue;",
+          "    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
+          "}",
+          "",
+          "function readPositiveNumber(key, fallback) {",
+          "    const rawValue = readConfig(key, String(fallback));",
+          "    const parsedValue = Number(rawValue);",
+          "    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;",
+          "}",
+          "",
+          "const requestName = pm.info.requestName || '';",
+          "const expects404 = requestName.includes('(404)');",
+          "const expectedStatusCodes = expects404 ? [404] : [200, 301, 302, 303, 307, 308, 304];",
+          "",
+          "pm.test('Response status is expected for this route', function () {",
+          "    pm.expect(expectedStatusCodes).to.include(pm.response.code);",
+          "});",
+          "",
+          "pm.test('Response time is below configured failure threshold', function () {",
+          "    const warningThreshold = readPositiveNumber('warningLatencyMs', 1500);",
+          "    const failureThreshold = readPositiveNumber('failureLatencyMs', 3000);",
+          "    pm.expect(pm.response.responseTime).to.be.below(failureThreshold,",
+          "        `Response time ${pm.response.responseTime}ms exceeds ${failureThreshold}ms`);",
+          "    if (pm.response.responseTime > warningThreshold) {",
+          "        console.warn(`Warning latency threshold exceeded: ${pm.response.responseTime}ms > ${warningThreshold}ms`);",
+          "    }",
+          "});",
+          "",
+          "pm.test('Content-Type is present for non-304 responses', function () {",
+          "    if (pm.response.code === 304) {",
+          "        this.skip();",
+          "        return;",
+          "    }",
+          "    const contentType = pm.response.headers.get('Content-Type');",
+          "    pm.expect(contentType).to.exist;",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Pages",
+      "item": [
+        {
+          "name": "01 - Root /",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Root page returns HTML', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - Human /human",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/human",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "human"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Human page returns HTML', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 - JSON Page /json",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "json"
+              ]
+            }
+          }
+        },
+        {
+          "name": "04 - PDF Page /pdf",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pdf"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CV JSON API",
+      "item": [
+        {
+          "name": "05 - GET /rest/json (full)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rest/json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "json"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Full response has resume and meta', function () {",
+                  "    const payload = pm.response.json();",
+                  "    pm.expect(payload).to.have.property('resume');",
+                  "    pm.expect(payload).to.have.property('meta');",
+                  "    pm.expect(payload.meta.format).to.equal('cv.bundle');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 - GET /rest/json?format=minimal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rest/json?format=minimal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "json"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "minimal"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Minimal response includes basics/work', function () {",
+                  "    const payload = pm.response.json();",
+                  "    pm.expect(payload).to.have.property('basics');",
+                  "    pm.expect(payload).to.have.property('work');",
+                  "    pm.expect(payload.meta.format).to.equal('cv.minimal');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 - GET /rest/json?format=resume",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rest/json?format=resume",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "json"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "resume"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Resume format returns resume schema content', function () {",
+                  "    const payload = pm.response.json();",
+                  "    pm.expect(payload).to.have.property('basics');",
+                  "    pm.expect(payload).to.have.property('work');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 - GET /rest/json?section={{sectionName}}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rest/json?section={{sectionName}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "json"
+              ],
+              "query": [
+                {
+                  "key": "section",
+                  "value": "{{sectionName}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Section response returns selected section data', function () {",
+                  "    const payload = pm.response.json();",
+                  "    const sectionName = pm.environment.get('sectionName') || pm.collectionVariables.get('sectionName');",
+                  "    pm.expect(payload.section).to.equal(sectionName);",
+                  "    pm.expect(payload).to.have.property('data');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 - GET /rest/json?section=unknown (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rest/json?section=unknown-section",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "json"
+              ],
+              "query": [
+                {
+                  "key": "section",
+                  "value": "unknown-section"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Unknown section returns 404 contract', function () {",
+                  "    pm.expect(pm.response.code).to.equal(404);",
+                  "    const payload = pm.response.json();",
+                  "    pm.expect(payload).to.have.property('error');",
+                  "    pm.expect(payload).to.have.property('availableSections');",
+                  "    pm.expect(payload.availableSections).to.be.an('array').that.is.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Caching",
+      "item": [
+        {
+          "name": "10 - Capture ETag",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rest/json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "json"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('ETag header exists and is captured', function () {",
+                  "    const etag = pm.response.headers.get('ETag');",
+                  "    pm.expect(etag).to.exist;",
+                  "    pm.collectionVariables.set('etagValue', etag);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 - Validate If-None-Match (304)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "If-None-Match",
+                "value": "{{etagValue}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rest/json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rest",
+                "json"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('If-None-Match behavior is valid (304 or refreshed 200)', function () {",
+                  "    const previousEtag = pm.collectionVariables.get('etagValue');",
+                  "    pm.expect(previousEtag, 'etagValue should be captured before this request').to.exist;",
+                  "    pm.expect([200, 304]).to.include(pm.response.code);",
+                  "    if (pm.response.code === 304) {",
+                  "        return;",
+                  "    }",
+                  "    const currentEtag = pm.response.headers.get('ETag');",
+                  "    pm.expect(currentEtag).to.exist;",
+                  "    pm.expect(currentEtag).to.not.equal(previousEtag);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseProtocol",
+      "value": "https",
+      "type": "string",
+      "description": "Protocol used to compose baseUrl."
+    },
+    {
+      "key": "baseHost",
+      "value": "cv.arolariu.ro",
+      "type": "string",
+      "description": "Host used to compose baseUrl."
+    },
+    {
+      "key": "basePath",
+      "value": "",
+      "type": "string",
+      "description": "Optional base path prefix."
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{baseProtocol}}://{{baseHost}}{{basePath}}",
+      "type": "string",
+      "description": "Base URL of the CV website."
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string",
+      "description": "Reserved for cross-collection variable compatibility."
+    },
+    {
+      "key": "sectionName",
+      "value": "skills",
+      "type": "string",
+      "description": "Section used for section-specific API checks."
+    },
+    {
+      "key": "etagValue",
+      "value": "",
+      "type": "string",
+      "description": "Captured ETag value used by If-None-Match validation."
+    },
+    {
+      "key": "warningLatencyMs",
+      "value": "1500",
+      "type": "string",
+      "description": "Warning-only latency threshold."
+    },
+    {
+      "key": "failureLatencyMs",
+      "value": "3000",
+      "type": "string",
+      "description": "Failure latency threshold."
+    }
+  ]
+}

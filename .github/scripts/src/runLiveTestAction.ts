@@ -1,27 +1,10 @@
 /**
  * @fileoverview Unified live test (E2E) action script for GitHub Actions workflows.
  * @module github/scripts/src/runLiveTestAction
- *
- * @remarks
- * This module handles all live/E2E test failure tracking and reporting:
- * - **Test Result Extraction**: Gathers frontend and backend test execution results
- * - **Artifact Discovery**: Finds and parses Newman reports, logs, and health checks
- * - **Failure Analysis**: Categorizes failures by type (client errors, server errors, timeouts, etc.)
- * - **Issue Creation**: Creates comprehensive GitHub issues for test failures with detailed diagnostics
- * - **Duplicate Prevention**: Checks for existing issues to avoid duplicates
- *
- * The script automatically discovers test artifacts, analyzes Newman test reports, and generates
- * detailed failure reports that include health check data, log tails, and categorized error analysis.
- *
- * @example
- * ```typescript
- * // Called from GitHub Actions workflow
- * const { default: runLiveTestAction } = await import('./runLiveTestAction.ts');
- * await runLiveTestAction();
- * ```
  */
 
 import {basename} from "node:path";
+import {fileURLToPath} from "node:url";
 import {
   AUTOMATED_TEST_FAILURE_LABELS,
   DEFAULT_ARTIFACTS_DIR,
@@ -32,87 +15,197 @@ import {
   fs,
   newman,
 } from "../helpers/index.ts";
-import type {NewmanReport} from "../helpers/newman/index.ts";
+import type {NewmanExecutionStats, NewmanReport} from "../helpers/newman/index.ts";
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
-/**
- * Status of a job or workflow execution
- */
 export type JobStatus = "success" | "failure" | "cancelled" | "skipped" | "unknown";
 
-/**
- * Test execution result with duration tracking
- */
-export interface TestJobResult {
+export interface TargetTestResult {
+  readonly duration: string;
   readonly status: JobStatus;
-  readonly duration?: string;
 }
 
-/**
- * E2E test results for both frontend and backend
- */
-export interface E2ETestResults {
-  readonly frontend: TestJobResult;
-  readonly backend: TestJobResult;
-}
+export type E2ETestResults = Readonly<Record<string, TargetTestResult>>;
 
-/**
- * Workflow execution metadata
- */
 export interface WorkflowMetadata {
+  readonly eventName: string;
+  readonly executionDate: string;
   readonly name: string;
+  readonly repository: string;
   readonly runId: string;
   readonly runNumber: string;
-  readonly eventName: string;
   readonly serverUrl: string;
-  readonly repository: string;
-  readonly executionDate: string;
 }
 
-/**
- * Backend health check response structure
- */
 export interface BackendHealthCheck {
+  readonly dependencies?: Record<string, unknown>;
   readonly status: string;
   readonly timestamp: string;
-  readonly dependencies?: Record<string, unknown>;
   readonly version?: string;
   readonly [key: string]: unknown;
 }
 
-/**
- * Test artifact paths for logs and reports
- */
 export interface TestArtifactPaths {
-  readonly logs?: readonly string[];
-  readonly reports?: readonly string[];
   readonly healthCheck?: string;
-  readonly summaries?: readonly string[];
+  readonly logs: readonly string[];
+  readonly reports: readonly string[];
+  readonly statuses: readonly string[];
+  readonly summaries: readonly string[];
 }
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
+const DEFAULT_TARGETS = ["frontend", "backend", "cv"] as const;
+const DEFAULT_E2E_TEMPLATE_PATH = fileURLToPath(new URL("../../templates/e2e-test-template.md", import.meta.url));
+const TEMPLATE_PLACEHOLDER_REGEX = /\$([A-Z0-9_]+)/g;
+const DEFAULT_MAX_ISSUE_BODY_CHARS = 65_000;
+const DEFAULT_MAX_LOG_TAIL_CHARS = 2_000;
+const DEFAULT_MAX_ASSERTION_SUMMARY_CHARS = 12_000;
+const DEFAULT_MAX_TARGET_SUMMARY_CHARS = 4_000;
 
-/**
- * Discovers test artifacts in the specified directory
- * @param baseDir - Base directory to search for artifacts
- * @returns Object containing paths to discovered artifacts
- */
-async function discoverTestArtifacts(baseDir: string): Promise<TestArtifactPaths> {
-  // Use mutable types internally for building, will be readonly on return
-  const artifacts: {
-    logs: string[];
-    reports: string[];
-    summaries: string[];
-    healthCheck?: string;
-  } = {
-    logs: [],
-    reports: [],
-    summaries: [],
+function capitalizeTarget(target: string): string {
+  if (target.length === 0) {
+    return "Unknown";
+  }
+
+  return target[0]!.toUpperCase() + target.slice(1);
+}
+
+function normalizeTargetKey(target: string): string {
+  return target.replaceAll(/[^a-zA-Z0-9]/g, "_").toUpperCase();
+}
+
+function extractTargetFromLogPath(logPath: string): string | null {
+  const filename = basename(logPath);
+  const match = /^e2e-([a-z0-9-]+)\.log$/i.exec(filename);
+  return match ? match[1]!.toLowerCase() : null;
+}
+
+function fillTemplatePlaceholders(template: string, variables: Readonly<Record<string, string>>): string {
+  return template.replace(TEMPLATE_PLACEHOLDER_REGEX, (_match, key: string) => variables[key] ?? "N/A");
+}
+
+function readPositiveIntegerEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsedValue = Number(rawValue);
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsedValue);
+}
+
+function truncateText(content: string, maxChars: number, suffix: string): string {
+  if (content.length <= maxChars) {
+    return content;
+  }
+
+  const availableChars = Math.max(0, maxChars - suffix.length);
+  return content.slice(0, availableChars) + suffix;
+}
+
+function generateCompactIssueBody(
+  metadata: WorkflowMetadata,
+  results: E2ETestResults,
+  newmanReports: Readonly<Record<string, NewmanExecutionStats>>,
+): string {
+  const workflowUrl = `${metadata.serverUrl}/${metadata.repository}/actions/runs/${metadata.runId}`;
+
+  let body = "## 🚨 Live E2E Test Failure Report (Compact)\n\n";
+  body +=
+    "Issue body exceeded the GitHub limit, so detailed failure payload was trimmed. Use workflow artifacts and matrix job logs for full diagnostics.\n\n";
+  body += `- Workflow run: [${metadata.runId}](${workflowUrl})\n`;
+  body += `- Artifacts: [View artifacts](${workflowUrl}#artifacts)\n`;
+  body += `- Trigger: \`${metadata.eventName}\`\n`;
+  body += `- Execution date: \`${metadata.executionDate}\`\n\n`;
+  body += generateJobStatusTable(results);
+
+  if (Object.keys(newmanReports).length > 0) {
+    body += "## 📊 Failure Snapshot\n\n";
+    body += "| Target | Failed Requests | Failed Assertions |\n";
+    body += "|--------|-----------------|-------------------|\n";
+
+    for (const target of Object.keys(newmanReports).sort((left, right) => left.localeCompare(right))) {
+      const report = newmanReports[target]!;
+      body += `| ${capitalizeTarget(target)} | ${report.failedRequests} | ${report.failedAssertions} |\n`;
+    }
+
+    body += "\n";
+  }
+
+  body += "## 🔍 Next Steps\n\n";
+  body += "1. Open workflow artifacts and inspect `newman-*.json` / `newman-*-summary.md`\n";
+  body += "2. Inspect matrix job logs for target-specific stack traces and assertion errors\n";
+  body += "3. Reproduce locally with `node scripts/test-e2e.ts <target>`\n";
+
+  return body;
+}
+
+function enforceIssueBodyLimit(
+  body: string,
+  metadata: WorkflowMetadata,
+  results: E2ETestResults,
+  newmanReports: Readonly<Record<string, NewmanExecutionStats>>,
+): string {
+  const maxIssueBodyChars = readPositiveIntegerEnv("E2E_MAX_ISSUE_BODY_CHARS", DEFAULT_MAX_ISSUE_BODY_CHARS);
+  if (body.length <= maxIssueBodyChars) {
+    return body;
+  }
+
+  const compactBody = generateCompactIssueBody(metadata, results, newmanReports);
+  if (compactBody.length <= maxIssueBodyChars) {
+    return compactBody;
+  }
+
+  return truncateText(compactBody, maxIssueBodyChars, "\n\n...(trimmed due to issue size limit)");
+}
+
+export function parseTargetsFromEnvironment(): readonly string[] {
+  const rawTargets = process.env["TARGETS"];
+  if (!rawTargets) {
+    return [...DEFAULT_TARGETS];
+  }
+
+  try {
+    const parsedTargets = JSON.parse(rawTargets) as unknown;
+    if (!Array.isArray(parsedTargets)) {
+      return [...DEFAULT_TARGETS];
+    }
+
+    const normalizedTargets = parsedTargets
+      .filter((target): target is string => typeof target === "string")
+      .map((target) => target.trim().toLowerCase())
+      .filter((target) => target.length > 0);
+
+    if (normalizedTargets.length === 0) {
+      return [...DEFAULT_TARGETS];
+    }
+
+    return [...new Set(normalizedTargets)];
+  } catch {
+    return [...DEFAULT_TARGETS];
+  }
+}
+
+export function extractTargetFromReportPath(reportPath: string): string | null {
+  const filename = basename(reportPath);
+  const match = /^newman-([a-z0-9-]+)\.json$/i.exec(filename);
+  return match ? match[1]!.toLowerCase() : null;
+}
+
+function extractTargetFromStatusPath(statusPath: string): string | null {
+  const filename = basename(statusPath);
+  const match = /^e2e-status-([a-z0-9-]+)\.json$/i.exec(filename);
+  return match ? match[1]!.toLowerCase() : null;
+}
+
+export async function discoverTestArtifacts(baseDir: string): Promise<TestArtifactPaths> {
+  const artifacts = {
+    logs: [] as string[],
+    reports: [] as string[],
+    statuses: [] as string[],
+    summaries: [] as string[],
   };
 
   try {
@@ -121,20 +214,25 @@ async function discoverTestArtifacts(baseDir: string): Promise<TestArtifactPaths
       return artifacts;
     }
 
-    const files = await fs.list(baseDir);
+    const [logFiles, reportFiles, statusFiles, summaryFiles, healthCheckFiles] = await Promise.all([
+      fs.find(baseDir, /\.log$/i),
+      fs.find(baseDir, /^newman-[a-z0-9-]+\.json$/i),
+      fs.find(baseDir, /^e2e-status-[a-z0-9-]+\.json$/i),
+      fs.find(baseDir, /^newman-[a-z0-9-]+-summary\.md$/i),
+      fs.find(baseDir, new RegExp(`^${HEALTH_CHECK_FILENAME.replaceAll(".", "\\.")}$`, "i")),
+    ]);
 
-    for (const file of files) {
-      const filePath = `${baseDir}/${file}`;
+    artifacts.logs.push(...logFiles);
+    artifacts.reports.push(...reportFiles);
+    artifacts.statuses.push(...statusFiles);
+    artifacts.summaries.push(...summaryFiles);
 
-      if (file.endsWith(".log")) {
-        artifacts.logs.push(filePath);
-      } else if (file.endsWith(".json") && file.includes("newman")) {
-        artifacts.reports.push(filePath);
-      } else if (file.endsWith(".md") && file.includes("summary")) {
-        artifacts.summaries.push(filePath);
-      } else if (file === HEALTH_CHECK_FILENAME) {
-        artifacts.healthCheck = filePath;
-      }
+    const healthCheck = healthCheckFiles[0];
+    if (healthCheck) {
+      return {
+        ...artifacts,
+        healthCheck,
+      };
     }
   } catch (error) {
     console.warn(`Failed to discover artifacts in ${baseDir}:`, error);
@@ -143,40 +241,43 @@ async function discoverTestArtifacts(baseDir: string): Promise<TestArtifactPaths
   return artifacts;
 }
 
-/**
- * Markdown builder functions
- */
 function generateIssueHeader(metadata: WorkflowMetadata): string {
-  const {name, runId, runNumber, eventName, serverUrl, repository, executionDate} = metadata;
-  const workflowUrl = `${serverUrl}/${repository}/actions/runs/${runId}`;
+  const workflowUrl = `${metadata.serverUrl}/${metadata.repository}/actions/runs/${metadata.runId}`;
 
-  let markdown = `## 🚨 Live Test Failure Report\n\n`;
-  markdown += `**Workflow:** \`${name}\`\n`;
-  markdown += `**Run ID:** [${runId}](${workflowUrl})\n`;
-  markdown += `**Run Number:** \`${runNumber}\`\n`;
-  markdown += `**Triggered By:** \`${eventName}\`\n`;
-  markdown += `**Execution Time (UTC):** \`${executionDate}\`\n\n`;
-  markdown += `---\n\n`;
+  let markdown = "## 🚨 Live Test Failure Report\n\n";
+  markdown += `**Workflow:** \`${metadata.name}\`\n`;
+  markdown += `**Run ID:** [${metadata.runId}](${workflowUrl})\n`;
+  markdown += `**Run Number:** \`${metadata.runNumber}\`\n`;
+  markdown += `**Triggered By:** \`${metadata.eventName}\`\n`;
+  markdown += `**Execution Time (UTC):** \`${metadata.executionDate}\`\n\n`;
+  markdown += "---\n\n";
 
   return markdown;
 }
 
 function generateJobStatusTable(results: E2ETestResults): string {
-  const frontendEmoji = STATUS_EMOJI[results.frontend.status];
-  const backendEmoji = STATUS_EMOJI[results.backend.status];
+  const targets = Object.keys(results).sort((left, right) => left.localeCompare(right));
 
-  let table = `## 📋 Job Status\n\n`;
-  table += `| Job | Status | Duration |\n`;
-  table += `|-----|--------|----------|\n`;
-  table += `| Frontend Tests | ${frontendEmoji} ${results.frontend.status} | ${results.frontend.duration} |\n`;
-  table += `| Backend Tests | ${backendEmoji} ${results.backend.status} | ${results.backend.duration} |\n\n`;
-  table += `---\n\n`;
+  let table = "## 📋 Job Status\n\n";
+  table += "| Target | Status | Duration |\n";
+  table += "|--------|--------|----------|\n";
 
+  for (const target of targets) {
+    const result = results[target];
+    if (!result) {
+      continue;
+    }
+
+    const statusEmoji = STATUS_EMOJI[result.status];
+    table += `| ${capitalizeTarget(target)} | ${statusEmoji} ${result.status} | ${result.duration} |\n`;
+  }
+
+  table += "\n---\n\n";
   return table;
 }
 
 function generateHealthCheckSection(healthCheck: BackendHealthCheck | string): string {
-  let section = `## 🏥 Backend Health Check\n\n`;
+  let section = "## 🏥 Backend Health Check\n\n";
 
   if (typeof healthCheck === "string") {
     section += `${healthCheck}\n\n`;
@@ -184,45 +285,45 @@ function generateHealthCheckSection(healthCheck: BackendHealthCheck | string): s
     section += `\`\`\`json\n${JSON.stringify(healthCheck, null, 2)}\n\`\`\`\n\n`;
   }
 
-  section += `---\n\n`;
+  section += "---\n\n";
   return section;
 }
 
 function generateArtifactsSection(workflowUrl: string): string {
-  let section = `## 📦 Test Artifacts\n\n`;
-  section += `Test artifacts (logs, reports, screenshots) are available in the [workflow run artifacts](${workflowUrl}#artifacts).\n\n`;
-  section += `---\n\n`;
+  let section = "## 📦 Test Artifacts\n\n";
+  section += `Test artifacts (logs, reports, summaries) are available in the [workflow run artifacts](${workflowUrl}#artifacts).\n\n`;
+  section += "---\n\n";
   return section;
 }
 
 function generateNextStepsSection(): string {
-  let section = `## 🔍 Next Steps\n\n`;
-  section += `1. Review the failed test details above\n`;
-  section += `2. Check the health check data for backend issues\n`;
-  section += `3. Download and analyze the test artifacts\n`;
-  section += `4. Reproduce the failure locally if possible\n`;
-  section += `5. Fix the root cause and verify with a new test run\n\n`;
-  section += `---\n\n`;
+  let section = "## 🔍 Next Steps\n\n";
+  section += "1. Review the per-target failure sections and status table\n";
+  section += "2. Check backend health details and artifact summaries\n";
+  section += "3. Inspect Newman JSON reports for failing assertions and status mismatches\n";
+  section += "4. Reproduce the issue locally using the same collection/environment profile\n";
+  section += "5. Apply fix and rerun live E2E workflow\n\n";
+  section += "---\n\n";
   return section;
 }
 
-function generateAssertionSummaries(summaries: Array<[string, string]>): string {
+function generateAssertionSummaries(summaries: ReadonlyArray<readonly [string, string]>): string {
   if (summaries.length === 0) {
     return "";
   }
 
-  let section = `## 📝 Assertion Summaries\n\n`;
+  let section = "## 📝 Assertion Summaries\n\n";
 
   for (const [filename, content] of summaries) {
     section += `### ${filename}\n\n`;
     section += `${content}\n\n`;
   }
 
-  section += `---\n\n`;
+  section += "---\n\n";
   return section;
 }
 
-function generateLogTailSection(logTails: Array<[string, string]>): string {
+function generateLogTailSection(logTails: ReadonlyArray<readonly [string, string]>): string {
   if (logTails.length === 0) {
     return "";
   }
@@ -237,17 +338,6 @@ function generateLogTailSection(logTails: Array<[string, string]>): string {
   return section;
 }
 
-/**
- * Extracts workflow metadata from GitHub Actions environment variables
- * @param context - GitHub context containing repository information
- * @returns Workflow metadata object with run details and repository info
- * @throws {Error} When required environment variables (WORKFLOW, RUN_ID, RUN_NUMBER, EVENT_NAME) are missing
- * @example
- * ```typescript
- * const metadata = extractWorkflowMetadata({repo: {owner: 'arolariu', repo: 'arolariu.ro'}});
- * // Returns: {name: 'E2E Tests', runId: '12345', runNumber: '67', ...}
- * ```
- */
 function extractWorkflowMetadata(context: {repo: {owner: string; repo: string}}): WorkflowMetadata {
   const workflow = process.env["WORKFLOW"];
   const runId = process.env["RUN_ID"];
@@ -262,67 +352,62 @@ function extractWorkflowMetadata(context: {repo: {owner: string; repo: string}})
   const executionDate = new Date().toISOString().split("T")[0] ?? "Unknown Date";
 
   return {
+    eventName,
+    executionDate,
     name: workflow,
+    repository: `${context.repo.owner}/${context.repo.repo}`,
     runId,
     runNumber,
-    eventName,
     serverUrl,
-    repository: `${context.repo.owner}/${context.repo.repo}`,
-    executionDate,
   };
 }
 
-/**
- * Extracts E2E test results from environment variables set by the workflow
- * @returns Test results object containing frontend and backend job statuses and durations
- * @example
- * ```typescript
- * // With env vars: FRONTEND_STATUS=success, BACKEND_STATUS=failure
- * const results = extractTestResults();
- * // Returns: {frontend: {status: 'success', duration: '2m 30s'}, backend: {status: 'failure', duration: '1m 45s'}}
- * ```
- */
-function extractTestResults(): E2ETestResults {
-  const frontendStatus = (process.env["FRONTEND_STATUS"] ?? "unknown") as E2ETestResults["frontend"]["status"];
-  const frontendDuration = process.env["FRONTEND_DURATION"] ?? "N/A";
-  const backendStatus = (process.env["BACKEND_STATUS"] ?? "unknown") as E2ETestResults["backend"]["status"];
-  const backendDuration = process.env["BACKEND_DURATION"] ?? "N/A";
+export function extractTestResults(targets: readonly string[]): E2ETestResults {
+  const results: Record<string, TargetTestResult> = {};
 
-  return {
-    frontend: {
-      status: frontendStatus,
-      duration: frontendDuration,
-    },
-    backend: {
-      status: backendStatus,
-      duration: backendDuration,
-    },
-  };
+  for (const target of targets) {
+    const targetKey = normalizeTargetKey(target);
+    const status = ((process.env[`${targetKey}_STATUS`] ?? "unknown").toLowerCase() as JobStatus);
+    const duration = process.env[`${targetKey}_DURATION`] ?? "N/A";
+    results[target] = {duration, status};
+  }
+
+  return results;
 }
 
-/**
- * Loads backend health check data from environment variable or artifacts directory
- * @param artifacts - Discovered test artifact paths containing potential health check file
- * @returns Health check data object, or fallback error string if data unavailable
- * @example
- * ```typescript
- * const artifacts = {healthCheckPath: 'path/to/health-check.json', ...};
- * const health = await loadHealthCheckData(artifacts);
- * // Returns: {status: 'Healthy', timestamp: '2025-10-20T10:00:00Z', ...}
- * ```
- */
+async function loadStatusArtifacts(artifacts: TestArtifactPaths): Promise<E2ETestResults> {
+  const results: Record<string, TargetTestResult> = {};
+
+  for (const statusPath of artifacts.statuses) {
+    try {
+      const target = extractTargetFromStatusPath(statusPath);
+      if (!target) {
+        continue;
+      }
+
+      const payload = await fs.readJson<{duration?: string; status?: JobStatus}>(statusPath);
+      results[target] = {
+        duration: payload.duration ?? "N/A",
+        status: payload.status ?? "unknown",
+      };
+    } catch (error) {
+      console.warn(`Failed to parse status artifact ${statusPath}:`, error);
+    }
+  }
+
+  return results;
+}
+
 async function loadHealthCheckData(artifacts: TestArtifactPaths): Promise<BackendHealthCheck | string> {
-  // First try from environment variable
   const healthJson = process.env["HEALTH_JSON"];
   if (healthJson && healthJson !== "No health data available") {
     try {
       return JSON.parse(healthJson) as BackendHealthCheck;
     } catch {
-      // Fall through to file-based approach
+      // Fallback to file-based approach.
     }
   }
 
-  // Try loading from file
   if (artifacts.healthCheck && (await fs.exists(artifacts.healthCheck))) {
     try {
       return await fs.readJson<BackendHealthCheck>(artifacts.healthCheck);
@@ -334,25 +419,10 @@ async function loadHealthCheckData(artifacts: TestArtifactPaths): Promise<Backen
   return "No health data available";
 }
 
-/**
- * Loads assertion summaries from discovered test artifact files
- * @param artifacts - Discovered test artifact paths containing summary file locations
- * @returns Array of tuples where each contains [filename, file content]
- * @example
- * ```typescript
- * const artifacts = {summaries: ['path/to/summary1.md', 'path/to/summary2.md'], ...};
- * const summaries = await loadAssertionSummaries(artifacts);
- * // Returns: [['summary1.md', 'content...'], ['summary2.md', 'content...']]
- * ```
- */
 async function loadAssertionSummaries(artifacts: TestArtifactPaths): Promise<Array<[string, string]>> {
   const summaries: Array<[string, string]> = [];
 
-  if (!artifacts.summaries || artifacts.summaries.length === 0) {
-    return summaries;
-  }
-
-  for (const summaryPath of artifacts.summaries) {
+  for (const summaryPath of [...artifacts.summaries].sort((left, right) => left.localeCompare(right))) {
     try {
       const content = await fs.readText(summaryPath);
       summaries.push([basename(summaryPath), content]);
@@ -364,26 +434,10 @@ async function loadAssertionSummaries(artifacts: TestArtifactPaths): Promise<Arr
   return summaries;
 }
 
-/**
- * Loads log tails (last N lines) from discovered log files in test artifacts
- * @param artifacts - Discovered test artifact paths containing log file locations
- * @param tailLength - Number of lines to read from the end of each log file (default: 50)
- * @returns Array of tuples where each contains [log filename, log tail content]
- * @example
- * ```typescript
- * const artifacts = {logs: ['frontend.log', 'backend.log'], ...};
- * const tails = await loadLogTails(artifacts, 100);
- * // Returns: [['frontend.log', 'last 100 lines...'], ['backend.log', 'last 100 lines...']]
- * ```
- */
 async function loadLogTails(artifacts: TestArtifactPaths, tailLength: number = DEFAULT_LOG_TAIL_LENGTH): Promise<Array<[string, string]>> {
   const logTails: Array<[string, string]> = [];
 
-  if (!artifacts.logs || artifacts.logs.length === 0) {
-    return logTails;
-  }
-
-  for (const logPath of artifacts.logs) {
+  for (const logPath of [...artifacts.logs].sort((left, right) => left.localeCompare(right))) {
     try {
       const content = await fs.readText(logPath);
       const lines = content.split("\n");
@@ -397,141 +451,184 @@ async function loadLogTails(artifacts: TestArtifactPaths, tailLength: number = D
   return logTails;
 }
 
-/**
- * Loads and parses Newman JSON reports from test artifacts
- * @param artifacts - Discovered test artifact paths containing Newman JSON reports
- * @returns Promise resolving to object with parsed frontend and backend Newman stats (or null if not found)
- * @example
- * ```typescript
- * const newman = await loadNewmanReports(artifacts);
- * if (newman.frontend) console.log(`Frontend: ${newman.frontend.failedRequests} failures`);
- * ```
- */
-async function loadNewmanReports(artifacts: TestArtifactPaths): Promise<{
-  frontend: ReturnType<typeof newman.parseReport> | null;
-  backend: ReturnType<typeof newman.parseReport> | null;
-}> {
-  const reports = {
-    frontend: null as ReturnType<typeof newman.parseReport> | null,
-    backend: null as ReturnType<typeof newman.parseReport> | null,
-  };
+export async function loadNewmanReports(
+  artifacts: TestArtifactPaths,
+): Promise<Readonly<Record<string, NewmanExecutionStats>>> {
+  const reports: Record<string, NewmanExecutionStats> = {};
 
-  // Find Newman JSON reports
-  const frontendReport = artifacts.reports?.find((r) => r.includes("newman-frontend.json"));
-  const backendReport = artifacts.reports?.find((r) => r.includes("newman-backend.json"));
-
-  // Parse frontend report
-  if (frontendReport && (await fs.exists(frontendReport))) {
-    try {
-      const reportData = await fs.readJson<NewmanReport>(frontendReport);
-      reports.frontend = newman.parseReport(reportData);
-    } catch (error) {
-      console.warn(`Failed to parse frontend Newman report:`, error);
+  for (const reportPath of artifacts.reports) {
+    const target = extractTargetFromReportPath(reportPath);
+    if (!target) {
+      continue;
     }
-  }
 
-  // Parse backend report
-  if (backendReport && (await fs.exists(backendReport))) {
     try {
-      const reportData = await fs.readJson<NewmanReport>(backendReport);
-      reports.backend = newman.parseReport(reportData);
+      const reportData = await fs.readJson<NewmanReport>(reportPath);
+      reports[target] = newman.parseReport(reportData);
     } catch (error) {
-      console.warn(`Failed to parse backend Newman report:`, error);
+      console.warn(`Failed to parse Newman report (${reportPath}):`, error);
     }
   }
 
   return reports;
 }
 
-/**
- * Generates the complete markdown body for an E2E test failure GitHub issue
- * @param metadata - Workflow execution metadata (run ID, repository, date, etc.)
- * @param results - Test execution results for frontend and backend jobs
- * @param artifacts - Discovered test artifact paths (logs, summaries, health checks)
- * @returns Promise resolving to complete markdown issue body with all sections
- * @example
- * ```typescript
- * const body = await generateIssueBody(metadata, results, artifacts);
- * // Returns multi-section markdown with header, status table, health checks, logs, etc.
- * ```
- */
-async function generateIssueBody(metadata: WorkflowMetadata, results: E2ETestResults, artifacts: TestArtifactPaths): Promise<string> {
-  const workflowUrl = `${metadata.serverUrl}/${metadata.repository}/actions/runs/${metadata.runId}`;
+function mergeResults(
+  targets: readonly string[],
+  baseResults: E2ETestResults,
+  statusResults: E2ETestResults,
+  newmanReports: Readonly<Record<string, NewmanExecutionStats>>,
+): E2ETestResults {
+  const merged: Record<string, TargetTestResult> = {};
+  const allTargets = new Set([...targets, ...Object.keys(baseResults), ...Object.keys(statusResults), ...Object.keys(newmanReports)]);
 
-  let body = "";
+  for (const target of allTargets) {
+    const fromBase = baseResults[target];
+    const fromStatusArtifact = statusResults[target];
+    const fromReport = newmanReports[target];
 
-  // Add header
-  body += generateIssueHeader(metadata);
+    let status: JobStatus = fromStatusArtifact?.status ?? fromBase?.status ?? "unknown";
+    let duration = fromStatusArtifact?.duration ?? fromBase?.duration ?? "N/A";
 
-  // Add job status table
-  body += generateJobStatusTable(results);
-
-  // Add Newman test results (detailed statistics)
-  const newmanReports = await loadNewmanReports(artifacts);
-  if (newmanReports.frontend) {
-    body += newman.generateMarkdownSection(newmanReports.frontend, "Frontend");
-  }
-  if (newmanReports.backend) {
-    body += newman.generateMarkdownSection(newmanReports.backend, "Backend");
-  }
-
-  // Add failure categorization if we have Newman data
-  if (newmanReports.frontend || newmanReports.backend) {
-    body += "\n## 📊 Failure Analysis\n\n";
-
-    if (newmanReports.frontend) {
-      const frontendCategories = newman.categorizeFailures(newmanReports.frontend);
-      body += "### Frontend Failure Breakdown\n\n";
-      body += `- **Client Errors (4xx):** ${frontendCategories.clientErrors}\n`;
-      body += `- **Server Errors (5xx):** ${frontendCategories.serverErrors}\n`;
-      body += `- **Timeouts:** ${frontendCategories.timeouts}\n`;
-      body += `- **Assertion Failures:** ${frontendCategories.assertionFailures}\n`;
-      body += `- **Other Errors:** ${frontendCategories.other}\n\n`;
+    if (fromReport) {
+      status = fromReport.failedRequests > 0 || fromReport.failedAssertions > 0 ? "failure" : "success";
+      duration = `${(fromReport.timings.totalDuration / 1000).toFixed(2)}s`;
     }
 
-    if (newmanReports.backend) {
-      const backendCategories = newman.categorizeFailures(newmanReports.backend);
-      body += "### Backend Failure Breakdown\n\n";
-      body += `- **Client Errors (4xx):** ${backendCategories.clientErrors}\n`;
-      body += `- **Server Errors (5xx):** ${backendCategories.serverErrors}\n`;
-      body += `- **Timeouts:** ${backendCategories.timeouts}\n`;
-      body += `- **Assertion Failures:** ${backendCategories.assertionFailures}\n`;
-      body += `- **Other Errors:** ${backendCategories.other}\n\n`;
-    }
+    merged[target] = {duration, status};
   }
 
-  // Add health check section
-  const healthCheck = await loadHealthCheckData(artifacts);
-  body += generateHealthCheckSection(healthCheck);
-
-  // Add artifacts section
-  body += generateArtifactsSection(workflowUrl);
-
-  // Add next steps
-  body += generateNextStepsSection();
-
-  // Add assertion summaries
-  const summaries = await loadAssertionSummaries(artifacts);
-  body += generateAssertionSummaries(summaries);
-
-  // Add log tails
-  const logTails = await loadLogTails(artifacts);
-  body += generateLogTailSection(logTails);
-
-  return body;
+  return merged;
 }
 
-/**
- * Main function to create a GitHub issue for E2E/live test failures
- * Creates or updates an issue with comprehensive failure diagnostics including logs, health checks, and test results
- * @returns Promise that resolves when the issue is created or updated successfully
- * @throws {Error} When issue creation/update fails or artifact discovery encounters errors
- * @example
- * ```typescript
- * await runLiveTestAction();
- * console.log('E2E failure issue created successfully');
- * ```
- */
+async function generateIssueBody(
+  metadata: WorkflowMetadata,
+  results: E2ETestResults,
+  artifacts: TestArtifactPaths,
+  newmanReports: Readonly<Record<string, NewmanExecutionStats>>,
+): Promise<string> {
+  const workflowUrl = `${metadata.serverUrl}/${metadata.repository}/actions/runs/${metadata.runId}`;
+  const healthCheck = await loadHealthCheckData(artifacts);
+  const summaries = await loadAssertionSummaries(artifacts);
+  const logTails = await loadLogTails(artifacts);
+  const maxLogTailChars = readPositiveIntegerEnv("E2E_MAX_LOG_TAIL_CHARS", DEFAULT_MAX_LOG_TAIL_CHARS);
+  const maxAssertionSummaryChars = readPositiveIntegerEnv("E2E_MAX_ASSERTION_SUMMARY_CHARS", DEFAULT_MAX_ASSERTION_SUMMARY_CHARS);
+  const maxTargetSummaryChars = readPositiveIntegerEnv("E2E_MAX_TARGET_SUMMARY_CHARS", DEFAULT_MAX_TARGET_SUMMARY_CHARS);
+
+  const templatePath = process.env["E2E_TEST_TEMPLATE_PATH"] ?? DEFAULT_E2E_TEMPLATE_PATH;
+
+  if (await fs.exists(templatePath)) {
+    try {
+      const template = await fs.readText(templatePath);
+      const allTargets = [...new Set([...DEFAULT_TARGETS, ...Object.keys(results), ...Object.keys(newmanReports)])].sort((left, right) =>
+        left.localeCompare(right),
+      );
+
+      const logTailByTarget: Record<string, string> = {};
+      for (const [filename, content] of logTails) {
+        const target = extractTargetFromLogPath(filename);
+        if (!target) {
+          continue;
+        }
+
+        const normalizedContent = content.trim().length > 0 ? content : "(log file is empty)";
+        logTailByTarget[target] = truncateText(normalizedContent, maxLogTailChars, "\n...(log tail truncated)");
+      }
+
+      const assertionSummariesRaw =
+        summaries.length === 0 ? "No assertion summaries available." : summaries.map(([filename, content]) => `### ${filename}\n\n${content}`).join("\n\n");
+      const assertionSummariesContent = truncateText(
+        assertionSummariesRaw,
+        maxAssertionSummaryChars,
+        "\n\n...(assertion summaries truncated; see artifacts for full details)",
+      );
+
+      const healthJsonContent = typeof healthCheck === "string" ? healthCheck : JSON.stringify(healthCheck, null, 2);
+
+      const templateVariables: Record<string, string> = {
+        ASSERTION_SUMMARIES: assertionSummariesContent,
+        REPOSITORY: metadata.repository,
+        RUN_DATE: metadata.executionDate,
+        RUN_ID: metadata.runId,
+        RUN_NUMBER: metadata.runNumber,
+        SERVER_URL: metadata.serverUrl,
+        TARGETS: allTargets.map((target) => capitalizeTarget(target)).join(", "),
+        WORKFLOW: metadata.name,
+        EVENT_NAME: metadata.eventName,
+        HEALTH_JSON: healthJsonContent,
+      };
+
+      for (const target of allTargets) {
+        const normalizedTarget = target.toLowerCase();
+        const targetKey = normalizeTargetKey(normalizedTarget);
+        const targetResult = results[normalizedTarget] ?? {duration: "N/A", status: "unknown" as JobStatus};
+        const targetReport = newmanReports[normalizedTarget];
+        const failureCategories = targetReport ? newman.categorizeFailures(targetReport) : null;
+        const targetSummary = targetReport
+          ? truncateText(
+              newman.generateMarkdownSection(targetReport, capitalizeTarget(normalizedTarget), {includeFailureDetails: false}),
+              maxTargetSummaryChars,
+              "\n\n...(target summary truncated; see artifacts for full details)",
+            )
+          : "No Newman report captured for this target.";
+
+        templateVariables[`${targetKey}_STATUS`] = `${STATUS_EMOJI[targetResult.status]} ${targetResult.status}`;
+        templateVariables[`${targetKey}_DURATION`] = targetResult.duration;
+        templateVariables[`${targetKey}_FAILED_ASSERTIONS`] = targetReport ? String(targetReport.failedAssertions) : "N/A";
+        templateVariables[`${targetKey}_FAILED_REQUESTS`] = targetReport ? String(targetReport.failedRequests) : "N/A";
+        templateVariables[`${targetKey}_NEWMAN_SUMMARY`] = targetSummary;
+        templateVariables[`${targetKey}_CLIENT_ERRORS`] = failureCategories ? String(failureCategories.clientErrors) : "N/A";
+        templateVariables[`${targetKey}_SERVER_ERRORS`] = failureCategories ? String(failureCategories.serverErrors) : "N/A";
+        templateVariables[`${targetKey}_TIMEOUTS`] = failureCategories ? String(failureCategories.timeouts) : "N/A";
+        templateVariables[`${targetKey}_ASSERTION_FAILURES`] = failureCategories ? String(failureCategories.assertionFailures) : "N/A";
+        templateVariables[`${targetKey}_OTHER_FAILURES`] = failureCategories ? String(failureCategories.other) : "N/A";
+        templateVariables[`${targetKey}_LOG_TAIL`] = logTailByTarget[normalizedTarget] ?? "No log tail available.";
+      }
+
+      const renderedTemplate = fillTemplatePlaceholders(template, templateVariables);
+      return enforceIssueBodyLimit(renderedTemplate, metadata, results, newmanReports);
+    } catch (error) {
+      console.warn(`Failed to render E2E issue template at ${templatePath}, falling back to generated markdown:`, error);
+    }
+  }
+
+  let body = "";
+  body += generateIssueHeader(metadata);
+  body += generateJobStatusTable(results);
+
+  for (const target of Object.keys(newmanReports).sort((left, right) => left.localeCompare(right))) {
+    body += newman.generateMarkdownSection(newmanReports[target]!, capitalizeTarget(target));
+  }
+
+  if (Object.keys(newmanReports).length > 0) {
+    body += "\n## 📊 Failure Analysis\n\n";
+
+    for (const target of Object.keys(newmanReports).sort((left, right) => left.localeCompare(right))) {
+      const categories = newman.categorizeFailures(newmanReports[target]!);
+      body += `### ${capitalizeTarget(target)} Failure Breakdown\n\n`;
+      body += `- **Client Errors (4xx):** ${categories.clientErrors}\n`;
+      body += `- **Server Errors (5xx):** ${categories.serverErrors}\n`;
+      body += `- **Timeouts:** ${categories.timeouts}\n`;
+      body += `- **Assertion Failures:** ${categories.assertionFailures}\n`;
+      body += `- **Other Errors:** ${categories.other}\n\n`;
+    }
+  }
+
+  body += generateHealthCheckSection(healthCheck);
+  body += generateArtifactsSection(workflowUrl);
+  body += generateNextStepsSection();
+
+  body += generateAssertionSummaries(summaries);
+
+  body += generateLogTailSection(logTails);
+
+  return enforceIssueBodyLimit(body, metadata, results, newmanReports);
+}
+
+function hasFailures(results: E2ETestResults): boolean {
+  return Object.values(results).some((result) => result.status === "failure" || result.status === "unknown");
+}
+
 export default async function runLiveTestAction(): Promise<void> {
   const github = await import("@actions/github");
   const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
@@ -541,85 +638,53 @@ export default async function runLiveTestAction(): Promise<void> {
   try {
     core.info("🚀 Starting E2E failure issue creation process...");
 
-    // Extract metadata and results
-    core.debug("Extracting workflow metadata...");
     const metadata = extractWorkflowMetadata(context);
-    core.info(`📋 Workflow: ${metadata.name}, Run: ${metadata.runNumber}, Event: ${metadata.eventName}`);
+    const targets = parseTargetsFromEnvironment();
+    core.info(`📋 Workflow: ${metadata.name}, targets: ${targets.join(", ")}`);
 
-    core.debug("Extracting test results...");
-    const results = extractTestResults();
-    core.info(`🧪 Frontend: ${results.frontend.status}, Backend: ${results.backend.status}`);
+    const artifactsBaseDir = process.env["ARTIFACTS_DIR"] ?? DEFAULT_ARTIFACTS_DIR;
+    const artifacts = await discoverTestArtifacts(artifactsBaseDir);
+    const baseResults = extractTestResults(targets);
+    const statusResults = await loadStatusArtifacts(artifacts);
+    const newmanReports = await loadNewmanReports(artifacts);
+    const results = mergeResults(targets, baseResults, statusResults, newmanReports);
 
-    // Check if there are any failures
-    const hasFailures = results.frontend.status === "failure" || results.backend.status === "failure";
-    if (!hasFailures) {
+    core.info(
+      `📊 Artifact summary: ${artifacts.logs.length} logs, ${artifacts.reports.length} reports, ${artifacts.summaries.length} summaries, ${artifacts.statuses.length} statuses`,
+    );
+
+    if (!hasFailures(results)) {
       core.notice("✓ No test failures detected. Skipping issue creation.");
-      console.log("No test failures detected. Skipping issue creation.");
       return;
     }
 
-    core.warning("⚠️ Test failures detected - proceeding with issue creation");
-
-    // Discover artifacts
-    const artifactsBaseDir = process.env["ARTIFACTS_DIR"] ?? DEFAULT_ARTIFACTS_DIR;
-    core.info(`📂 Discovering test artifacts in: ${artifactsBaseDir}`);
-    const artifacts = await discoverTestArtifacts(artifactsBaseDir);
-
-    core.info(
-      `📊 Artifact summary: ${artifacts.logs?.length ?? 0} logs, ${artifacts.reports?.length ?? 0} reports, ${artifacts.summaries?.length ?? 0} summaries`,
-    );
-    core.debug(`Health check: ${artifacts.healthCheck ? "Found" : "Not found"}`);
-    console.log("Discovered artifacts:", {
-      logs: artifacts.logs?.length ?? 0,
-      reports: artifacts.reports?.length ?? 0,
-      summaries: artifacts.summaries?.length ?? 0,
-      healthCheck: artifacts.healthCheck ? "Found" : "Not found",
-    });
-
-    // Generate issue body
-    core.info("📝 Generating issue body with test results and artifacts...");
-    const issueBody = await generateIssueBody(metadata, results, artifacts);
-    core.debug(`Issue body length: ${issueBody.length} characters`);
-
-    // Create issue title with date
+    const issueBody = await generateIssueBody(metadata, results, artifacts, newmanReports);
     const issueTitle = `[${metadata.executionDate}] Hourly Live Test Failed 🚨`;
-    core.debug(`Issue title: "${issueTitle}"`);
-
-    // Check for existing issues to avoid duplicates
-    core.info(`🔍 Checking for existing issues (date: ${metadata.executionDate})...`);
 
     const searchQuery = `is:issue repo:${context.repo.owner}/${context.repo.repo} in:title "${metadata.executionDate}" label:${AUTOMATED_TEST_FAILURE_LABELS[0]}`;
     const searchResults = await octokit.rest.search.issuesAndPullRequests({
-      q: searchQuery,
-      sort: "created",
       order: "desc",
       per_page: 10,
+      q: searchQuery,
+      sort: "created",
     });
 
     const openIssues = searchResults.data.items.filter((issue) => issue.state === "open");
-    core.debug(`Found ${searchResults.data.total_count} total issues, ${openIssues.length} open`);
-
     if (openIssues.length > 0) {
       core.warning(`⏭️ Existing open issue found: #${openIssues[0]!.number}. Skipping duplicate creation.`);
-      console.log(`Found existing open issue: #${openIssues[0]!.number}. Skipping duplicate creation.`);
       return;
     }
 
-    // Create the issue
-    core.info(`✨ Creating new GitHub issue...`);
     const issueResponse = await octokit.rest.issues.create({
+      assignees: ["arolariu"],
+      body: issueBody,
+      labels: [...AUTOMATED_TEST_FAILURE_LABELS],
       owner: context.repo.owner,
       repo: context.repo.repo,
       title: issueTitle,
-      body: issueBody,
-      labels: [...AUTOMATED_TEST_FAILURE_LABELS],
-      assignees: ["arolariu"],
     });
 
-    core.info(`✓ Successfully created issue #${issueResponse.data.number}`);
     core.notice(`Created E2E test failure issue: ${issueResponse.data.html_url}`);
-    console.log(`Successfully created issue #${issueResponse.data.number}: ${issueResponse.data.html_url}`);
-    core.info("🎉 E2E failure issue process completed successfully");
   } catch (error) {
     const err = error as Error;
     core.error(`❌ E2E failure issue creation failed: ${err.message}`);

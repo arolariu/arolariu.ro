@@ -269,6 +269,9 @@ npm run dev:docs           # 📚 Docs → http://localhost:8080
 npm run test               # Run all tests
 npm run test:unit          # Unit tests only
 npm run test:e2e           # End-to-end tests
+npm run test:e2e:frontend  # Frontend Newman live tests
+npm run test:e2e:backend   # Backend Newman live tests
+npm run test:e2e:cv        # CV Newman live tests
 npm run lint               # ESLint (20+ plugins)
 npm run format             # Prettier formatting
 ```
