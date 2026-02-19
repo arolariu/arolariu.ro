@@ -141,7 +141,7 @@ jobs:
 
       - name: 📤 Upload test results...
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ github.run_id }}
           path: sites/api.arolariu.ro/TestResults/

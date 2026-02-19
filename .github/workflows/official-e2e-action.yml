@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -116,7 +116,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -202,7 +202,7 @@ jobs:
 
       - name: 📦 Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           if-no-files-found: warn
           name: e2e-reports-${{ matrix.target }}
@@ -214,7 +214,7 @@ jobs:
 
       - name: 📦 Upload logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           if-no-files-found: warn
           name: e2e-logs-${{ matrix.target }}
@@ -236,7 +236,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -247,14 +247,14 @@ jobs:
           node-version: "24"
 
       - name: 📥 Download E2E artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           merge-multiple: true
           path: logs
           pattern: e2e-*
 
       - name: 🐛 Create GitHub issue for failures
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           ARTIFACTS_DIR: logs
           EVENT_NAME: ${{ github.event_name }}
