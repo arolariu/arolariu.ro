@@ -1,0 +1,111 @@
+{
+  "id": "arolariu-ro-production",
+  "name": "arolariu.ro (production)",
+  "values": [
+    {
+      "key": "baseProtocol",
+      "value": "https",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "baseHost",
+      "value": "arolariu.ro",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{baseProtocol}}://{{baseHost}}",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "invoiceId",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "maxResponseTimeMs",
+      "value": "5000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "maxPublicPageResponseTimeMs",
+      "value": "3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "maxStaticAssetResponseTimeMs",
+      "value": "2500",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "maxApiResponseTimeMs",
+      "value": "1000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "maxCriticalPathResponseTimeMs",
+      "value": "2000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "maxCriticalPathTtfbMs",
+      "value": "1500",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "strictSecurityHeaders",
+      "value": "true",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "locale",
+      "value": "en",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "warnOnRouteDrift",
+      "value": "true",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "warnOnSitemapDrift",
+      "value": "true",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "currentUserIdentifier",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "currentUserJwt",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-02-19T00:00:00.000Z",
+  "_postman_exported_using": "GitHub Copilot CLI"
+}
