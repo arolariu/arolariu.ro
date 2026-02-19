@@ -55,6 +55,10 @@ export interface TestArtifactPaths {
 const DEFAULT_TARGETS = ["frontend", "backend", "cv"] as const;
 const DEFAULT_E2E_TEMPLATE_PATH = fileURLToPath(new URL("../../templates/e2e-test-template.md", import.meta.url));
 const TEMPLATE_PLACEHOLDER_REGEX = /\$([A-Z0-9_]+)/g;
+const DEFAULT_MAX_ISSUE_BODY_CHARS = 65_000;
+const DEFAULT_MAX_LOG_TAIL_CHARS = 2_000;
+const DEFAULT_MAX_ASSERTION_SUMMARY_CHARS = 12_000;
+const DEFAULT_MAX_TARGET_SUMMARY_CHARS = 4_000;
 
 function capitalizeTarget(target: string): string {
   if (target.length === 0) {
@@ -76,6 +80,85 @@ function extractTargetFromLogPath(logPath: string): string | null {
 
 function fillTemplatePlaceholders(template: string, variables: Readonly<Record<string, string>>): string {
   return template.replace(TEMPLATE_PLACEHOLDER_REGEX, (_match, key: string) => variables[key] ?? "N/A");
+}
+
+function readPositiveIntegerEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsedValue = Number(rawValue);
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsedValue);
+}
+
+function truncateText(content: string, maxChars: number, suffix: string): string {
+  if (content.length <= maxChars) {
+    return content;
+  }
+
+  const availableChars = Math.max(0, maxChars - suffix.length);
+  return content.slice(0, availableChars) + suffix;
+}
+
+function generateCompactIssueBody(
+  metadata: WorkflowMetadata,
+  results: E2ETestResults,
+  newmanReports: Readonly<Record<string, NewmanExecutionStats>>,
+): string {
+  const workflowUrl = `${metadata.serverUrl}/${metadata.repository}/actions/runs/${metadata.runId}`;
+
+  let body = "## 🚨 Live E2E Test Failure Report (Compact)\n\n";
+  body +=
+    "Issue body exceeded the GitHub limit, so detailed failure payload was trimmed. Use workflow artifacts and matrix job logs for full diagnostics.\n\n";
+  body += `- Workflow run: [${metadata.runId}](${workflowUrl})\n`;
+  body += `- Artifacts: [View artifacts](${workflowUrl}#artifacts)\n`;
+  body += `- Trigger: \`${metadata.eventName}\`\n`;
+  body += `- Execution date: \`${metadata.executionDate}\`\n\n`;
+  body += generateJobStatusTable(results);
+
+  if (Object.keys(newmanReports).length > 0) {
+    body += "## 📊 Failure Snapshot\n\n";
+    body += "| Target | Failed Requests | Failed Assertions |\n";
+    body += "|--------|-----------------|-------------------|\n";
+
+    for (const target of Object.keys(newmanReports).sort((left, right) => left.localeCompare(right))) {
+      const report = newmanReports[target]!;
+      body += `| ${capitalizeTarget(target)} | ${report.failedRequests} | ${report.failedAssertions} |\n`;
+    }
+
+    body += "\n";
+  }
+
+  body += "## 🔍 Next Steps\n\n";
+  body += "1. Open workflow artifacts and inspect `newman-*.json` / `newman-*-summary.md`\n";
+  body += "2. Inspect matrix job logs for target-specific stack traces and assertion errors\n";
+  body += "3. Reproduce locally with `node scripts/test-e2e.ts <target>`\n";
+
+  return body;
+}
+
+function enforceIssueBodyLimit(
+  body: string,
+  metadata: WorkflowMetadata,
+  results: E2ETestResults,
+  newmanReports: Readonly<Record<string, NewmanExecutionStats>>,
+): string {
+  const maxIssueBodyChars = readPositiveIntegerEnv("E2E_MAX_ISSUE_BODY_CHARS", DEFAULT_MAX_ISSUE_BODY_CHARS);
+  if (body.length <= maxIssueBodyChars) {
+    return body;
+  }
+
+  const compactBody = generateCompactIssueBody(metadata, results, newmanReports);
+  if (compactBody.length <= maxIssueBodyChars) {
+    return compactBody;
+  }
+
+  return truncateText(compactBody, maxIssueBodyChars, "\n\n...(trimmed due to issue size limit)");
 }
 
 export function parseTargetsFromEnvironment(): readonly string[] {
@@ -428,6 +511,9 @@ async function generateIssueBody(
   const healthCheck = await loadHealthCheckData(artifacts);
   const summaries = await loadAssertionSummaries(artifacts);
   const logTails = await loadLogTails(artifacts);
+  const maxLogTailChars = readPositiveIntegerEnv("E2E_MAX_LOG_TAIL_CHARS", DEFAULT_MAX_LOG_TAIL_CHARS);
+  const maxAssertionSummaryChars = readPositiveIntegerEnv("E2E_MAX_ASSERTION_SUMMARY_CHARS", DEFAULT_MAX_ASSERTION_SUMMARY_CHARS);
+  const maxTargetSummaryChars = readPositiveIntegerEnv("E2E_MAX_TARGET_SUMMARY_CHARS", DEFAULT_MAX_TARGET_SUMMARY_CHARS);
 
   const templatePath = process.env["E2E_TEST_TEMPLATE_PATH"] ?? DEFAULT_E2E_TEMPLATE_PATH;
 
@@ -446,11 +532,16 @@ async function generateIssueBody(
         }
 
         const normalizedContent = content.trim().length > 0 ? content : "(log file is empty)";
-        logTailByTarget[target] = normalizedContent;
+        logTailByTarget[target] = truncateText(normalizedContent, maxLogTailChars, "\n...(log tail truncated)");
       }
 
-      const assertionSummariesContent =
+      const assertionSummariesRaw =
         summaries.length === 0 ? "No assertion summaries available." : summaries.map(([filename, content]) => `### ${filename}\n\n${content}`).join("\n\n");
+      const assertionSummariesContent = truncateText(
+        assertionSummariesRaw,
+        maxAssertionSummaryChars,
+        "\n\n...(assertion summaries truncated; see artifacts for full details)",
+      );
 
       const healthJsonContent = typeof healthCheck === "string" ? healthCheck : JSON.stringify(healthCheck, null, 2);
 
@@ -474,7 +565,11 @@ async function generateIssueBody(
         const targetReport = newmanReports[normalizedTarget];
         const failureCategories = targetReport ? newman.categorizeFailures(targetReport) : null;
         const targetSummary = targetReport
-          ? newman.generateMarkdownSection(targetReport, capitalizeTarget(normalizedTarget))
+          ? truncateText(
+              newman.generateMarkdownSection(targetReport, capitalizeTarget(normalizedTarget), {includeFailureDetails: false}),
+              maxTargetSummaryChars,
+              "\n\n...(target summary truncated; see artifacts for full details)",
+            )
           : "No Newman report captured for this target.";
 
         templateVariables[`${targetKey}_STATUS`] = `${STATUS_EMOJI[targetResult.status]} ${targetResult.status}`;
@@ -490,7 +585,8 @@ async function generateIssueBody(
         templateVariables[`${targetKey}_LOG_TAIL`] = logTailByTarget[normalizedTarget] ?? "No log tail available.";
       }
 
-      return fillTemplatePlaceholders(template, templateVariables);
+      const renderedTemplate = fillTemplatePlaceholders(template, templateVariables);
+      return enforceIssueBodyLimit(renderedTemplate, metadata, results, newmanReports);
     } catch (error) {
       console.warn(`Failed to render E2E issue template at ${templatePath}, falling back to generated markdown:`, error);
     }
@@ -526,7 +622,7 @@ async function generateIssueBody(
 
   body += generateLogTailSection(logTails);
 
-  return body;
+  return enforceIssueBodyLimit(body, metadata, results, newmanReports);
 }
 
 function hasFailures(results: E2ETestResults): boolean {

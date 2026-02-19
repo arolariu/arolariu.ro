@@ -62,6 +62,10 @@ const managedEnvironmentVariables = [
   "BACKEND_STATUS",
   "CV_DURATION",
   "CV_STATUS",
+  "E2E_MAX_ASSERTION_SUMMARY_CHARS",
+  "E2E_MAX_ISSUE_BODY_CHARS",
+  "E2E_MAX_LOG_TAIL_CHARS",
+  "E2E_MAX_TARGET_SUMMARY_CHARS",
   "EVENT_NAME",
   "FRONTEND_DURATION",
   "FRONTEND_STATUS",
@@ -317,6 +321,39 @@ describe("runLiveTestAction", () => {
       expect(issueInput?.body).not.toMatch(/\$[A-Z0-9_]+/);
 
       expect(coreMocks.notice).toHaveBeenCalledWith(expect.stringContaining("Created E2E test failure issue"));
+    });
+
+    it("emits a compact issue body when the rendered payload exceeds GitHub size limits", async () => {
+      const root = await createTemporaryDirectory();
+      temporaryDirectories.push(root);
+
+      const nestedDirectory = join(root, "artifacts", "nested");
+      await mkdir(nestedDirectory, {recursive: true});
+
+      const oversizedLog = Array.from({length: 300}, (_, index) => `failure-line-${index}`).join("\n");
+      const oversizedSummary = Array.from({length: 200}, (_, index) => `summary-entry-${index}: assertion failed`).join("\n");
+
+      await writeFile(join(nestedDirectory, "newman-frontend.json"), JSON.stringify(createMockNewmanReport("frontend", true)), "utf-8");
+      await writeFile(join(nestedDirectory, "newman-frontend-summary.md"), oversizedSummary, "utf-8");
+      await writeFile(join(nestedDirectory, "e2e-frontend.log"), oversizedLog, "utf-8");
+
+      setWorkflowEnvironment({
+        ARTIFACTS_DIR: root,
+        E2E_MAX_ISSUE_BODY_CHARS: "1200",
+        FRONTEND_DURATION: "8.00s",
+        FRONTEND_STATUS: "failure",
+        TARGETS: '["frontend"]',
+      });
+
+      await runLiveTestAction();
+
+      expect(githubMocks.createIssue).toHaveBeenCalledOnce();
+      const issueInput = githubMocks.createIssue.mock.calls[0]?.[0];
+      expect(issueInput).toBeDefined();
+      expect(issueInput?.body.length).toBeLessThanOrEqual(1200);
+      expect(issueInput?.body).toContain("Live E2E Test Failure Report (Compact)");
+      expect(issueInput?.body).toContain("View artifacts");
+      expect(issueInput?.body).toContain("Failure Snapshot");
     });
 
     it("skips issue creation when all targets are successful", async () => {
