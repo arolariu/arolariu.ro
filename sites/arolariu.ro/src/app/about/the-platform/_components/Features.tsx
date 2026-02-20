@@ -107,8 +107,10 @@ export default function Features(): React.JSX.Element {
         {/* Features Grid */}
         <div className={styles["grid"]}>
           {featureConfigs.map((feature, index) => (
-            <motion.div
+            <motion.button
               key={feature.id}
+              type='button'
+              className={styles["cardButton"]}
               initial={{opacity: 0, y: 30}}
               animate={isInView ? {opacity: 1, y: 0} : {}}
               transition={{duration: 0.5, delay: index * 0.1}}
@@ -166,7 +168,7 @@ export default function Features(): React.JSX.Element {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -176,24 +178,34 @@ export default function Features(): React.JSX.Element {
         {selectedFeature !== null && (
           <motion.div
             className={styles["modal"]}
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby={`feature-modal-title-${selectedFeature.id}`}
             initial={{opacity: 0}}
             animate={{opacity: 1}}
-            exit={{opacity: 0}}
-            // eslint-disable-next-line react/jsx-no-bind -- simple modal
-            onClick={() => setSelectedFeature(null)}>
+            exit={{opacity: 0}}>
+            <button
+              type='button'
+              className={styles["modalBackdrop"]}
+              aria-label={t("modal.close")}
+              // eslint-disable-next-line react/jsx-no-bind -- simple modal close
+              onClick={() => setSelectedFeature(null)}
+            />
             <motion.div
               className={styles["modalContent"]}
               initial={{scale: 0.9, y: 20}}
               animate={{scale: 1, y: 0}}
-              exit={{scale: 0.9, y: 20}}
-              // eslint-disable-next-line react/jsx-no-bind -- simple modal
-              onClick={(e) => e.stopPropagation()}>
+              exit={{scale: 0.9, y: 20}}>
               <div className={styles["modalHeader"]}>
                 <div className={`${styles["modalIconWrapper"]} ${styles[gradientClassMap[selectedFeature.colorKey]]}`}>
                   <selectedFeature.icon className={`${styles["modalIcon"]} ${styles[colorClassMap[selectedFeature.colorKey]]}`} />
                 </div>
                 <div>
-                  <h3 className={styles["modalTitle"]}>{t(`items.${selectedFeature.id}.title` as Parameters<typeof t>[0])}</h3>
+                  <h3
+                    id={`feature-modal-title-${selectedFeature.id}`}
+                    className={styles["modalTitle"]}>
+                    {t(`items.${selectedFeature.id}.title` as Parameters<typeof t>[0])}
+                  </h3>
                   <p className={styles["modalSubtitle"]}>{t(`items.${selectedFeature.id}.description` as Parameters<typeof t>[0])}</p>
                 </div>
               </div>

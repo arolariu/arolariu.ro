@@ -215,10 +215,11 @@ describe("Navigation", () => {
       const openButton = screen.getByRole("button", {expanded: false});
 
       fireEvent.click(openButton);
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      const dialog = screen.getByRole("dialog");
+      expect(dialog).toBeInTheDocument();
 
-      // Find close button by aria-label
-      const closeButton = screen.getByRole("button", {name: /close navigation/i});
+      // Find the close button inside the dialog header.
+      const closeButton = within(dialog).getByRole("button", {name: /close navigation/i});
       fireEvent.click(closeButton);
 
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -232,7 +233,7 @@ describe("Navigation", () => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
 
       // Click the overlay
-      const overlay = document.querySelector("[aria-hidden='true']");
+      const overlay = document.querySelector(".mobile-nav__backdrop");
       expect(overlay).toBeInTheDocument();
       if (overlay) {
         fireEvent.click(overlay);

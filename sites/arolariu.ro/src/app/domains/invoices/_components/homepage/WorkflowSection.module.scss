@@ -1,0 +1,59 @@
+@use '../../../../../styles/abstracts' as abstracts;
+
+.workflowSection {
+  padding: abstracts.space(16) abstracts.space(4);
+
+  @include abstracts.respond-to('sm') {
+    padding-inline: abstracts.space(6);
+  }
+
+  @include abstracts.respond-to('lg') {
+    padding-inline: abstracts.space(8);
+  }
+
+  @include abstracts.dark {
+    background-color: abstracts.color-alpha('muted-foreground', 0.5);
+  }
+}
+
+.workflowContainer {
+  margin-inline: auto;
+  max-width: 80rem;
+}
+
+.workflowHeader {
+  margin-bottom: abstracts.space(12);
+  text-align: center;
+}
+
+.sectionTitle {
+  margin-bottom: abstracts.space(4);
+  font-size: abstracts.font-size('3xl');
+  font-weight: abstracts.font-weight('bold');
+  color: abstracts.color('muted-foreground');
+
+  @include abstracts.respond-to('sm') {
+    font-size: abstracts.font-size('4xl');
+  }
+
+  @include abstracts.dark {
+    color: white;
+  }
+}
+
+.sectionDescription {
+  margin-inline: auto;
+  max-width: 42rem;
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
+}
+
+.workflowGrid {
+  display: grid;
+  gap: abstracts.space(8);
+
+  @include abstracts.respond-to('md') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+

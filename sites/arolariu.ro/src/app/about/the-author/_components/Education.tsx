@@ -162,13 +162,15 @@ export default function Education(): React.JSX.Element {
                     <Card className={styles["cardInner"]}>
                       <CardContent className={styles["cardContent"]}>
                         <div className={styles["cardLeft"]}>
-                          <motion.div
+                          <motion.button
+                            type='button'
+                            aria-label={item.aboutTheProgramCta}
                             className={styles["schoolIconWrapper"]}
                             whileHover={{scale: 1.1, rotate: 5}}
                             data-index={index}
                             onClick={handleToggleFlipClick}>
                             <TbSchool className={styles["schoolIcon"]} />
-                          </motion.div>
+                          </motion.button>
                           <h3 className={styles["degree"]}>{item.degree}</h3>
                           <div className={styles["metaItem"]}>
                             <TbCalendar className={styles["metaIcon"]} />

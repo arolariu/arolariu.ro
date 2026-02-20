@@ -218,18 +218,8 @@ jobs:
           if-no-files-found: warn
           name: e2e-reports-${{ matrix.target }}
           path: |
-            e2e-logs/newman-${{ matrix.target }}.json
             e2e-logs/newman-${{ matrix.target }}.xml
             e2e-logs/newman-${{ matrix.target }}-summary.md
-          retention-days: 14
-
-      - name: 📦 Upload logs
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          if-no-files-found: warn
-          name: e2e-logs-${{ matrix.target }}
-          path: |
             e2e-${{ matrix.target }}.log
             e2e-status-${{ matrix.target }}.json
             backend-health.json
@@ -261,13 +251,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           merge-multiple: true
-          path: logs
+          path: reports
           pattern: e2e-*
 
       - name: 🐛 Create GitHub issue for failures
         uses: actions/github-script@v8
         env:
-          ARTIFACTS_DIR: logs
+          ARTIFACTS_DIR: reports
           EVENT_NAME: ${{ github.event_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.run_id }}

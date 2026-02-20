@@ -238,49 +238,39 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
             value={mode}
             onValueChange={(v) => setMode(v as CreationMode)}>
             {/* Single mode option */}
-            <div
-              role='button'
-              tabIndex={0}
-              className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}
-              onClick={() => setMode("single")}
-              onKeyDown={(e) => e.key === "Enter" && setMode("single")}>
+            <Label
+              htmlFor='single'
+              className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
                 value='single'
                 id='single'
                 className='mt-0.5'
               />
               <div className={styles["modeOptionContent"]}>
-                <Label
-                  htmlFor='single'
-                  className='flex cursor-pointer items-center gap-2 font-medium'>
+                <span className='flex cursor-pointer items-center gap-2 font-medium'>
                   <TbPhoto className={styles["modePurpleIcon"]} />
                   {t("singleMode.title")}
-                </Label>
+                </span>
                 <p className={styles["modeOptionDescription"]}>{t("singleMode.description", {count: String(selectedScans.length)})}</p>
               </div>
-            </div>
+            </Label>
             {/* Batch mode option */}
-            <div
-              role='button'
-              tabIndex={0}
-              className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}
-              onClick={() => setMode("batch")}
-              onKeyDown={(e) => e.key === "Enter" && setMode("batch")}>
+            <Label
+              htmlFor='batch'
+              className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
                 value='batch'
                 id='batch'
                 className='mt-0.5'
               />
               <div className={styles["modeOptionContent"]}>
-                <Label
-                  htmlFor='batch'
-                  className='flex cursor-pointer items-center gap-2 font-medium'>
+                <span className='flex cursor-pointer items-center gap-2 font-medium'>
                   <TbStack2 className={styles["modeBlueIcon"]} />
                   {t("batchMode.title")}
-                </Label>
+                </span>
                 <p className={styles["modeOptionDescription"]}>{t("batchMode.description", {count: String(selectedScans.length)})}</p>
               </div>
-            </div>
+            </Label>
           </RadioGroup>
         </div>
       ) : (

@@ -1,0 +1,42 @@
+@use '../../../../../styles/abstracts' as abstracts;
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: abstracts.space(4);
+}
+
+.featureIconBox {
+  @include abstracts.flex-center;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  border-radius: abstracts.radius('lg');
+  background-color: abstracts.color('primary');
+  color: abstracts.color('primary-foreground');
+
+  @include abstracts.dark {
+    background-color: abstracts.color-alpha('primary', 0.5);
+    color: abstracts.color('primary');
+  }
+}
+
+.featureTitle {
+  font-weight: abstracts.font-weight('semibold');
+  color: abstracts.color('muted-foreground');
+
+  @include abstracts.dark {
+    color: white;
+  }
+}
+
+.featureDescription {
+  font-size: abstracts.font-size('sm');
+  color: abstracts.color('muted-foreground');
+}
+
+.featureIcon {
+  @include abstracts.icon-size(abstracts.space(5));
+  color: abstracts.color('primary-foreground');
+}
+

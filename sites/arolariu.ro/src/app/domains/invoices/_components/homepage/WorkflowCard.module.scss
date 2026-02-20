@@ -1,0 +1,71 @@
+@use '../../../../../styles/abstracts' as abstracts;
+
+.workflowCard {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border: 2px solid abstracts.color('border');
+  border-radius: abstracts.radius('xl');
+  background-color: abstracts.color('card');
+  @include abstracts.transition((border-color, box-shadow));
+
+  &:hover {
+    border-color: abstracts.color-alpha('primary', 0.3);
+    @include abstracts.shadow('lg');
+  }
+}
+
+.stepBadge {
+  position: absolute;
+  top: -1rem;
+  right: -1rem;
+  @include abstracts.flex-center;
+  height: 4rem;
+  width: 4rem;
+  border-radius: abstracts.radius('full');
+  font-size: abstracts.font-size('2xl');
+  font-weight: abstracts.font-weight('bold');
+  background-color: abstracts.color('primary');
+  color: abstracts.color('primary-foreground');
+  opacity: 0.2;
+  @include abstracts.transition(opacity);
+}
+
+.stepIconBox {
+  @include abstracts.flex-center;
+  margin-bottom: abstracts.space(3);
+  height: 3rem;
+  width: 3rem;
+  border-radius: abstracts.radius('xl');
+  @include abstracts.gradient-bg(to bottom right);
+  color: abstracts.color('primary-foreground');
+  @include abstracts.shadow('md');
+}
+
+.workflowIcon {
+  @include abstracts.icon-size(1.5rem);
+  color: abstracts.color('primary-foreground');
+}
+
+.stepButton {
+  width: 100%;
+  @include abstracts.gradient-bg();
+  color: abstracts.color('primary-foreground');
+  @include abstracts.transition(transform);
+
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+.cardLink {
+  @include abstracts.flex-center;
+  gap: abstracts.space(2);
+}
+
+.cardArrowIcon {
+  @include abstracts.icon-size(abstracts.space(4));
+  color: inherit;
+  @include abstracts.transition(transform);
+}
+

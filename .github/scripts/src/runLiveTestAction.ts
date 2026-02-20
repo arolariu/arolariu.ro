@@ -135,7 +135,7 @@ function generateCompactIssueBody(
   }
 
   body += "## 🔍 Next Steps\n\n";
-  body += "1. Open workflow artifacts and inspect `newman-*.json` / `newman-*-summary.md`\n";
+  body += "1. Open workflow artifacts and inspect `newman-*.xml`, `newman-*-summary.md`, and `e2e-*.log`\n";
   body += "2. Inspect matrix job logs for target-specific stack traces and assertion errors\n";
   body += "3. Reproduce locally with `node scripts/test-e2e.ts <target>`\n";
 
@@ -300,7 +300,7 @@ function generateNextStepsSection(): string {
   let section = "## 🔍 Next Steps\n\n";
   section += "1. Review the per-target failure sections and status table\n";
   section += "2. Check backend health details and artifact summaries\n";
-  section += "3. Inspect Newman JSON reports for failing assertions and status mismatches\n";
+  section += "3. Inspect Newman summary/Xml artifacts and per-target logs for failing assertions and status mismatches\n";
   section += "4. Reproduce the issue locally using the same collection/environment profile\n";
   section += "5. Apply fix and rerun live E2E workflow\n\n";
   section += "---\n\n";

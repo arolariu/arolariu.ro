@@ -1,0 +1,111 @@
+@use '../../../../../styles/abstracts' as abstracts;
+
+.heroSection {
+  position: relative;
+  overflow: hidden;
+  padding: abstracts.space(16) abstracts.space(4);
+
+  @include abstracts.respond-to('sm') {
+    padding-inline: abstracts.space(6);
+  }
+
+  @include abstracts.respond-to('lg') {
+    padding-inline: abstracts.space(8);
+  }
+}
+
+.heroContainer {
+  margin-inline: auto;
+  max-width: 80rem;
+}
+
+.heroFlex {
+  @include abstracts.flex-column-center;
+  gap: abstracts.space(12);
+
+  @include abstracts.respond-to('lg') {
+    flex-direction: row;
+    gap: abstracts.space(16);
+  }
+}
+
+.heroContent {
+  flex: 1;
+  text-align: center;
+
+  @include abstracts.respond-to('lg') {
+    text-align: left;
+  }
+}
+
+.heroTitle {
+  margin-bottom: abstracts.space(6);
+  font-size: abstracts.font-size('4xl');
+  font-weight: abstracts.font-weight('bold');
+  letter-spacing: -0.025em;
+  color: abstracts.color('muted-foreground');
+
+  @include abstracts.respond-to('sm') {
+    font-size: abstracts.font-size('5xl');
+  }
+
+  @include abstracts.respond-to('lg') {
+    font-size: 3.75rem;
+  }
+
+  @include abstracts.dark {
+    color: white;
+  }
+}
+
+.heroHighlight {
+  @include abstracts.gradient-bg();
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.heroDescription {
+  margin-bottom: abstracts.space(8);
+  max-width: 42rem;
+  font-size: abstracts.font-size('lg');
+  color: abstracts.color('muted-foreground');
+
+  @include abstracts.respond-to('lg') {
+    font-size: abstracts.font-size('xl');
+  }
+}
+
+.heroButtons {
+  @include abstracts.flex-column-center;
+  gap: abstracts.space(4);
+
+  @include abstracts.respond-to('sm') {
+    flex-direction: row;
+  }
+
+  @include abstracts.respond-to('lg') {
+    justify-content: flex-start;
+  }
+}
+
+.heroImageWrapper {
+  flex: 1;
+}
+
+.heroImage {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 28rem;
+
+  @include abstracts.respond-to('lg') {
+    max-width: 32rem;
+  }
+}
+
+.heroButtonIcon {
+  @include abstracts.icon-size(abstracts.space(5));
+  margin-right: abstracts.space(2);
+  color: inherit;
+}
+
