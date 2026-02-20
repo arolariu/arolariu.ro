@@ -1,3 +1,5 @@
+"use client";
+
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useRef} from "react";

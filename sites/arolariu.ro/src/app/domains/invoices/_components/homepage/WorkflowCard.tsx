@@ -1,3 +1,5 @@
+"use client";
+
 import {Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {motion} from "motion/react";
 import Link from "next/link";

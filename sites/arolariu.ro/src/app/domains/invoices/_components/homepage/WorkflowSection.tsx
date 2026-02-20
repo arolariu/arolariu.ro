@@ -1,3 +1,5 @@
+"use client";
+
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {TbEye, TbFileInvoice, TbUpload} from "react-icons/tb";

@@ -1,3 +1,5 @@
+"use client";
+
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
@@ -64,7 +66,7 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
               />
             </div>
 
-            {isAuthenticated ? null : (
+            {!isAuthenticated && (
               <div className={styles["signInPrompt"]}>
                 <p className={styles["signInPromptText"]}>
                   <strong>Sign in</strong> {t("features.signInPrompt")}

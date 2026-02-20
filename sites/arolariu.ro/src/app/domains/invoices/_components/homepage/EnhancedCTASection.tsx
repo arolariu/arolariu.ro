@@ -1,3 +1,5 @@
+"use client";
+
 import {Button} from "@arolariu/components";
 import {motion, useInView} from "motion/react";
 import {useTranslations} from "next-intl";
