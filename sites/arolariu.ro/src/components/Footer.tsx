@@ -226,6 +226,7 @@ function FooterComponent(): React.JSX.Element {
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
                 target='_blank'
+                rel='noopener noreferrer'
                 className='footer__source-link'>
                 {t("sourceCodeAnchor")}
               </Link>
@@ -235,6 +236,7 @@ function FooterComponent(): React.JSX.Element {
             <Link
               href='https://github.com/arolariu'
               target='_blank'
+              rel='noopener noreferrer'
               about='GitHub'
               aria-label={t("socialLinks.github")}>
               <TbBrandGithub className='footer__social-icon' />
@@ -242,6 +244,7 @@ function FooterComponent(): React.JSX.Element {
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
               target='_blank'
+              rel='noopener noreferrer'
               about='LinkedIn'
               aria-label={t("socialLinks.linkedin")}>
               <TbBrandLinkedin className='footer__social-icon' />
@@ -265,6 +268,7 @@ function FooterComponent(): React.JSX.Element {
             <Link
               href={`https://github.com/arolariu/arolariu.ro/commit/${COMMIT_SHA}`}
               target='_blank'
+              rel='noopener noreferrer'
               className='footer__commit-link'>
               <code>{COMMIT_SHA.slice(0, 20)}</code>
             </Link>
