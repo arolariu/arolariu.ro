@@ -183,7 +183,10 @@
 .mobile-nav__backdrop {
   position: fixed;
   inset: 0;
+  border: none;
+  padding: 0;
   background-color: color-alpha('foreground', 0.4);
+  cursor: pointer;
 }
 
 .mobile-nav__panel {

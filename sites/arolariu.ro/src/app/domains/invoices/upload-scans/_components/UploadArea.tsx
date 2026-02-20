@@ -105,23 +105,10 @@ export default function UploadArea(): React.JSX.Element {
   }, [isUploading]);
 
   /**
-   * Handle keyboard interaction for accessibility.
-   */
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if ((event.key === "Enter" || event.key === " ") && !isUploading) {
-        event.preventDefault();
-        fileInputRef.current?.click();
-      }
-    },
-    [isUploading],
-  );
-
-  /**
    * Handle drag enter event.
    */
   const handleDragEnter = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
+    (event: React.DragEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
       dragCounterRef.current += 1;
@@ -135,7 +122,7 @@ export default function UploadArea(): React.JSX.Element {
   /**
    * Handle drag leave event.
    */
-  const handleDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = useCallback((event: React.DragEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     dragCounterRef.current -= 1;
@@ -147,7 +134,7 @@ export default function UploadArea(): React.JSX.Element {
   /**
    * Handle drag over event.
    */
-  const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((event: React.DragEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
   }, []);
@@ -156,7 +143,7 @@ export default function UploadArea(): React.JSX.Element {
    * Handle drop event.
    */
   const handleDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
+    (event: React.DragEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
       dragCounterRef.current = 0;
@@ -178,59 +165,7 @@ export default function UploadArea(): React.JSX.Element {
 
   if (pendingUploads.length === 0) {
     return (
-      <div
-        className={`${styles["dropzoneEmpty"]} ${isDragActive ? styles["dropzoneEmptyActive"] : ""}`}
-        role='button'
-        tabIndex={0}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}>
-        <motion.div
-          animate={isDragActive ? {scale: 1.05} : {scale: 1}}
-          transition={{duration: 0.2}}>
-          <motion.div className={styles["iconCircle"]}>
-            <TbUpload className={styles["iconCircleIcon"]} />
-          </motion.div>
-          <h3 className={styles["dropzoneTitle"]}>Upload your scans</h3>
-          <p className={styles["dropzoneSubtitle"]}>
-            {isDragActive ? "Drop your files here..." : "Drag and drop your files here, or click to browse"}
-          </p>
-          <p className={styles["dropzoneFormats"]}>Supports JPG, PNG, PDF files up to 10MB each</p>
-          <p className={styles["dropzoneNote"]}>Scans will be stored for later use. Create invoices from the View Scans page.</p>
-          <input
-            ref={fileInputRef}
-            type='file'
-            accept={ACCEPTED_EXTENSIONS}
-            multiple
-            onChange={handleFileChange}
-            className={styles["hiddenInput"]}
-            aria-label='Upload files'
-          />
-          <Button
-            type='button'
-            className='cursor-pointer bg-linear-to-r from-blue-600 to-cyan-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-cyan-700 hover:shadow-xl'>
-            Choose Files
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles["wrapper"]}>
-      <div
-        className={`${styles["dropzoneCompact"]} ${isDragActive ? styles["dropzoneCompactActive"] : ""} ${isUploading ? styles["dropzoneCompactDisabled"] : ""}`}
-        role='button'
-        tabIndex={isUploading ? -1 : 0}
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}>
+      <>
         <input
           ref={fileInputRef}
           type='file'
@@ -240,6 +175,56 @@ export default function UploadArea(): React.JSX.Element {
           className={styles["hiddenInput"]}
           aria-label='Upload files'
         />
+        <button
+          type='button'
+          className={`${styles["dropzoneEmpty"]} ${isDragActive ? styles["dropzoneEmptyActive"] : ""}`}
+          onClick={handleClick}
+          disabled={isUploading}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}>
+          <motion.div
+            animate={isDragActive ? {scale: 1.05} : {scale: 1}}
+            transition={{duration: 0.2}}>
+            <motion.div className={styles["iconCircle"]}>
+              <TbUpload className={styles["iconCircleIcon"]} />
+            </motion.div>
+            <h3 className={styles["dropzoneTitle"]}>Upload your scans</h3>
+            <p className={styles["dropzoneSubtitle"]}>
+              {isDragActive ? "Drop your files here..." : "Drag and drop your files here, or click to browse"}
+            </p>
+            <p className={styles["dropzoneFormats"]}>Supports JPG, PNG, PDF files up to 10MB each</p>
+            <p className={styles["dropzoneNote"]}>Scans will be stored for later use. Create invoices from the View Scans page.</p>
+            <span className='inline-flex cursor-pointer rounded-md bg-linear-to-r from-blue-600 to-cyan-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-cyan-700 hover:shadow-xl'>
+              Choose Files
+            </span>
+          </motion.div>
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <div className={styles["wrapper"]}>
+      <input
+        ref={fileInputRef}
+        type='file'
+        accept={ACCEPTED_EXTENSIONS}
+        multiple
+        onChange={handleFileChange}
+        className={styles["hiddenInput"]}
+        aria-label='Upload files'
+      />
+      <button
+        type='button'
+        className={`${styles["dropzoneCompact"]} ${isDragActive ? styles["dropzoneCompactActive"] : ""} ${isUploading ? styles["dropzoneCompactDisabled"] : ""}`}
+        onClick={handleClick}
+        disabled={isUploading}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}>
         <div className={styles["compactContent"]}>
           <div className={styles["compactIconCircle"]}>
             <TbUpload className={styles["compactIcon"]} />
@@ -249,7 +234,7 @@ export default function UploadArea(): React.JSX.Element {
             <p className={styles["compactSubtitle"]}>JPG, PNG, PDF up to 10MB</p>
           </div>
         </div>
-      </div>
+      </button>
 
       <div className={styles["actions"]}>
         <TooltipProvider>

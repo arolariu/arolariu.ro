@@ -89,17 +89,6 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
     }
   }, [scan.blobUrl, scan.id, removeScan, t]);
 
-  const handleStopPropagation = useCallback((e: React.MouseEvent | React.KeyboardEvent): void => {
-    e.stopPropagation();
-  }, []);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent): void => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, []);
-
   const handleOpenDeleteDialog = useCallback((): void => {
     setShowDeleteDialog(true);
   }, []);
@@ -107,10 +96,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   return (
     <>
       <Card
-        className={`cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-md ${
-          isSelected ? "ring-2 ring-purple-500 dark:ring-purple-400" : ""
-        }`}
-        onClick={onToggleSelect}>
+        className={`overflow-hidden transition-all duration-200 hover:shadow-md ${isSelected ? "ring-2 ring-purple-500 dark:ring-purple-400" : ""}`}>
         <CardContent className='p-0'>
           {/* Preview */}
           <div className={styles["previewArea"]}>
@@ -129,12 +115,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             )}
 
             {/* Selection checkbox */}
-            <div
-              role='button'
-              tabIndex={0}
-              className={styles["checkboxPosition"]}
-              onClick={handleStopPropagation}
-              onKeyDown={handleKeyDown}>
+            <div className={styles["checkboxPosition"]}>
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={onToggleSelect}
@@ -143,12 +124,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             </div>
 
             {/* Actions menu */}
-            <div
-              role='button'
-              tabIndex={0}
-              className={styles["actionsPosition"]}
-              onClick={handleStopPropagation}
-              onKeyDown={handleKeyDown}>
+            <div className={styles["actionsPosition"]}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

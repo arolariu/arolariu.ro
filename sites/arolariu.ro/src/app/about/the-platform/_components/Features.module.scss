@@ -74,6 +74,15 @@
 }
 
 // Feature card
+.cardButton {
+  display: block;
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  text-align: inherit;
+}
+
 .card {
   position: relative;
   height: 100%;
@@ -193,8 +202,18 @@
   @include abstracts.backdrop-blur;
 }
 
+.modalBackdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .modalContent {
   position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 42rem;
   max-height: 80vh;

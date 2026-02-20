@@ -252,10 +252,11 @@ function MobileNavigationComponent(): React.JSX.Element {
 
       {Boolean(mobileOpen) && (
         <div className='mobile-nav__overlay'>
-          <div
+          <button
+            type='button'
             className='mobile-nav__backdrop'
+            aria-label={t("closeNavigation")}
             onClick={toggleMobile}
-            aria-hidden
           />
           <aside
             id='mobile-navigation'
