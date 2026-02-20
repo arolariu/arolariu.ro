@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@actions/artifact": "6.1.0",
-    "@actions/attest": "2.2.1",
+    "@actions/attest": "3.0.0",
     "@actions/cache": "6.0.0",
     "@actions/core": "3.0.0",
     "@actions/exec": "3.0.0",
@@ -26,7 +26,7 @@
     "pretty-bytes": "7.1.0"
   },
   "devDependencies": {
-    "@types/node": "24.10.12",
+    "@types/node": "24.10.13",
     "@vitest/ui": "4.0.18",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
