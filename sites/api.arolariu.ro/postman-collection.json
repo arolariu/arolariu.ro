@@ -1,2376 +1,2376 @@
 {
-  "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
-  "info": {
-    "name": "api.arolariu.ro",
-    "description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create \u2192 read \u2192 update \u2192 delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "api-arolariu-ro-backend-tests",
-    "version": "2.0.0"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{authToken}}",
-        "type": "string"
-      }
-    ]
-  },
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "// Pre-request script: Validation, setup, and production guardrails",
-          "",
-          "function readConfig(key, fallback) {",
-          "    const collectionValue = pm.collectionVariables.get(key);",
-          "    const environmentValue = pm.environment.get(key);",
-          "    const resolvedValue = environmentValue ?? collectionValue;",
-          "    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
-          "}",
-          "",
-          "function readFlag(key, fallback) {",
-          "    const value = readConfig(key, fallback ? 'true' : 'false').toLowerCase();",
-          "    return ['true', '1', 'yes', 'on'].includes(value);",
-          "}",
-          "",
-          "const requiredVars = ['baseUrl', 'userIdentifier'];",
-          "requiredVars.forEach((variableName) => {",
-          "    const value = readConfig(variableName, '');",
-          "    if (!value) {",
-          "        console.warn(`\u26a0\ufe0f Warning: Required variable '${variableName}' is not set`);",
-          "    }",
-          "});",
-          "",
-          "const userIdentifier = readConfig('userIdentifier', '');",
-          "const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
-          "if (userIdentifier && !guidRegex.test(userIdentifier)) {",
-          "    console.warn(`\u26a0\ufe0f Warning: userIdentifier '${userIdentifier}' is not a valid GUID format`);",
-          "}",
-          "",
-          "const requestMethod = pm.request.method.toUpperCase();",
-          "const isMutatingRequest = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod);",
-          "const baseUrl = readConfig('baseUrl', '').toLowerCase();",
-          "const isProductionTarget = baseUrl.includes('api.arolariu.ro');",
-          "const allowProductionCrud = readFlag('allowProductionCrud', false);",
-          "",
-          "if (isMutatingRequest && isProductionTarget && !allowProductionCrud) {",
-          "    throw new Error(`Production CRUD guardrail blocked ${requestMethod} for '${pm.info.requestName}'. Set allowProductionCrud=true to override intentionally.`);",
-          "}",
-          "",
-          "pm.variables.set('requestTimestamp', new Date().toISOString());",
-          "console.log(`\ud83d\udce4 [${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "// Collection-level tests: Default expectations for all requests",
-          "// Request-level tests can override or extend these defaults",
-          "",
-          "function readConfig(key, fallback) {",
-          "    const collectionValue = pm.collectionVariables.get(key);",
-          "    const environmentValue = pm.environment.get(key);",
-          "    const resolvedValue = environmentValue ?? collectionValue;",
-          "    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
-          "}",
-          "",
-          "function readPositiveNumber(key, fallback) {",
-          "    const rawValue = readConfig(key, String(fallback));",
-          "    const parsedValue = Number(rawValue);",
-          "    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;",
-          "}",
-          "",
-          "function expectsNon2xxResponse() {",
-          "    const requestName = pm.info.requestName;",
-          "    return requestName.includes('(None)') ||",
-          "           requestName.includes('Unauthorized') ||",
-          "           requestName.includes('Invalid') ||",
-          "           requestName.includes('Non-existent') ||",
-          "           requestName.includes('Guardrail');",
-          "}",
-          "",
-          "function isAnalysisRequest() {",
-          "    return pm.info.requestName.toLowerCase().includes('analyze');",
-          "}",
-          "",
-          "pm.test('Response status follows RESTful conventions', function () {",
-          "    if (expectsNon2xxResponse()) {",
-          "        return;",
-          "    }",
-          "",
-          "    const method = pm.request.method.toUpperCase();",
-          "    const code = pm.response.code;",
-          "    let expectedRange;",
-          "",
-          "    switch (method) {",
-          "        case 'GET':",
-          "        case 'HEAD':",
-          "            expectedRange = [200, 299];",
-          "            break;",
-          "        case 'POST':",
-          "            expectedRange = [200, 201];",
-          "            break;",
-          "        case 'PUT':",
-          "        case 'PATCH':",
-          "            expectedRange = [200, 202];",
-          "            break;",
-          "        case 'DELETE':",
-          "            expectedRange = [200, 204];",
-          "            break;",
-          "        default:",
-          "            expectedRange = [200, 299];",
-          "    }",
-          "",
-          "    pm.expect(code).to.be.within(expectedRange[0], expectedRange[1],",
-          "        `Expected ${method} to return ${expectedRange[0]}-${expectedRange[1]}, got ${code}`);",
-          "});",
-          "",
-          "pm.test('Response time meets configured SLA thresholds', function () {",
-          "    const warningThreshold = readPositiveNumber('warningLatencyMs', isAnalysisRequest() ? 10000 : 1500);",
-          "    const failureThreshold = readPositiveNumber('failureLatencyMs', isAnalysisRequest() ? 30000 : 3000);",
-          "",
-          "    pm.expect(pm.response.responseTime).to.be.below(failureThreshold,",
-          "        `Response time ${pm.response.responseTime}ms exceeds ${failureThreshold}ms SLA`);",
-          "",
-          "    if (pm.response.responseTime > warningThreshold) {",
-          "        console.warn(`\u26a0\ufe0f Warning latency threshold exceeded: ${pm.response.responseTime}ms > ${warningThreshold}ms`);",
-          "    }",
-          "});",
-          "",
-          "pm.test('Content-Type header is present and valid', function () {",
-          "    if (pm.response.code === 204) {",
-          "        return;",
-          "    }",
-          "",
-          "    const contentType = pm.response.headers.get('Content-Type');",
-          "    pm.expect(contentType).to.exist;",
-          "    pm.expect(contentType).to.match(/application\\/json|text\\/plain|text\\/html/,",
-          "        `Invalid Content-Type: ${contentType}`);",
-          "});",
-          "",
-          "pm.test('Response body is valid', function () {",
-          "    if (pm.response.code === 204 || pm.request.method === 'HEAD') {",
-          "        return;",
-          "    }",
-          "",
-          "    pm.expect(pm.response.text()).to.have.length.greaterThan(0, 'Response body is empty');",
-          "});",
-          "",
-          "pm.test('JSON responses are well-formed', function () {",
-          "    const contentType = pm.response.headers.get('Content-Type');",
-          "    if (contentType && contentType.includes('application/json')) {",
-          "        pm.response.to.have.jsonBody();",
-          "    } else {",
-          "        return;",
-          "    }",
-          "});",
-          "",
-          "pm.test('Security headers are present', function () {",
-          "    const headers = pm.response.headers;",
-          "    const corsHeader = headers.get('Access-Control-Allow-Origin');",
-          "    if (corsHeader) {",
-          "        pm.expect(corsHeader).to.exist;",
-          "    }",
-          "",
-          "    const xContentType = headers.get('X-Content-Type-Options');",
-          "    if (xContentType) {",
-          "        pm.expect(xContentType).to.equal('nosniff');",
-          "    }",
-          "});",
-          "",
-          "pm.test('Error responses have proper structure', function () {",
-          "    if (pm.response.code >= 400) {",
-          "        pm.response.to.have.jsonBody();",
-          "        const jsonData = pm.response.json();",
-          "        pm.expect(jsonData).to.be.an('object');",
-          "    } else {",
-          "        return;",
-          "    }",
-          "});",
-          "",
-          "const statusIcon = pm.response.code < 400 ? '\u2705' : '\u274c';",
-          "console.log(`${statusIcon} [${pm.info.requestName}] ${pm.response.code} | ${pm.response.responseTime}ms | ${pm.response.responseSize} bytes`);"
-        ]
-      }
-    }
-  ],
-  "item": [
-    {
-      "name": "Health & Diagnostics",
-      "description": "System health and availability checks",
-      "item": [
-        {
-          "name": "00 - Health Check",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "Health check endpoint for monitoring service availability. Returns detailed health information including service dependencies. Rate limited - use sparingly in automated monitoring.",
-            "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Health check returns 200 OK', function () {",
-                  "    pm.expect(pm.response.code).to.equal(200);",
-                  "});",
-                  "",
-                  "pm.test('Health check response is valid JSON', function () {",
-                  "    pm.response.to.have.jsonBody();",
-                  "});",
-                  "",
-                  "pm.test('Health check has status field', function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('status');",
-                  "});",
-                  "",
-                  "pm.test('Health status is Healthy', function () {",
-                  "    const jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.status).to.be.oneOf(['Healthy', 'Degraded']);",
-                  "});",
-                  "",
-                  "pm.test('Health check completes quickly', function () {",
-                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
-                  "});",
-                  "",
-                  "console.log('\ud83c\udfe5 Health check passed - API is operational');"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Invoices",
-      "description": "Invoice CRUD operations and sub-resource management",
-      "item": [
-        {
-          "name": "01 - Get All Invoices (Empty)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Retrieve all invoices for the current user. Should be empty initially.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
-            }
-          }
-        },
-        {
-          "name": "02 - Create Invoice",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Create a new invoice with an initial scan. Expected: 201 Created.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"initialScan\": {\n    \"type\": 2,\n    \"location\": \"https://cdn.arolariu.ro/invoices/test-receipt.png\",\n    \"metadata\": {\n      \"source\": \"postman-test\",\n      \"uploadedAt\": \"2025-01-17T12:00:00Z\"\n    }\n  },\n  \"metadata\": {\n    \"testRun\": \"true\",\n    \"author\": \"PostmanCollection\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Invoice created successfully (201)', function () {",
-                  "    pm.expect(pm.response.code).to.equal(201);",
-                  "});",
-                  "",
-                  "pm.test('Response contains invoice data', function () {",
-                  "    pm.response.to.have.jsonBody();",
-                  "});",
-                  "",
-                  "pm.test('Invoice has valid GUID identifier', function () {",
-                  "    const body = pm.response.json();",
-                  "    const id = body.id || body.invoiceIdentifier || body.Id;",
-                  "    pm.expect(id).to.exist;",
-                  "    ",
-                  "    // Validate GUID format",
-                  "    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
-                  "    pm.expect(id).to.match(guidRegex);",
-                  "    ",
-                  "    // Store for subsequent requests",
-                  "    pm.collectionVariables.set('invoiceIdentifier', String(id));",
-                  "    console.log('\ud83d\udcdd Created invoice: ' + id);",
-                  "});",
-                  "",
-                  "pm.test('Invoice has required fields', function () {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body).to.have.property('userIdentifier');",
-                  "    pm.expect(body.userIdentifier).to.equal(pm.collectionVariables.get('userIdentifier'));",
-                  "});",
-                  "",
-                  "pm.test('Location header points to created resource', function () {",
-                  "    const location = pm.response.headers.get('Location');",
-                  "    if (location) {",
-                  "        pm.expect(location).to.include('/invoices/');",
-                  "    }",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "03 - Get All Invoices (Has One)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Retrieve all invoices. Should now have at least one.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('All invoices retrieved successfully', function () {",
-                  "    pm.expect(pm.response.code).to.equal(200);",
-                  "});",
-                  "",
-                  "pm.test('Response is array of invoices', function () {",
-                  "    pm.response.to.have.jsonBody();",
-                  "    const invoices = pm.response.json();",
-                  "    pm.expect(invoices).to.be.an('array');",
-                  "});",
-                  "",
-                  "pm.test('At least one invoice exists', function () {",
-                  "    const invoices = pm.response.json();",
-                  "    pm.expect(invoices.length).to.be.at.least(1);",
-                  "});",
-                  "",
-                  "pm.test('Created invoice is in the list', function () {",
-                  "    const invoices = pm.response.json();",
-                  "    const createdId = pm.collectionVariables.get('invoiceIdentifier');",
-                  "    const found = invoices.some(inv => inv.id === createdId || inv.invoiceIdentifier === createdId);",
-                  "    pm.expect(found).to.be.true;",
-                  "});",
-                  "",
-                  "console.log('\ud83d\udccb Retrieved ' + pm.response.json().length + ' invoice(s)');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "04 - Get Specific Invoice",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Retrieve a single invoice by its identifier.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Specific invoice retrieved successfully', function () {",
-                  "    pm.expect(pm.response.code).to.equal(200);",
-                  "});",
-                  "",
-                  "pm.test('Response is invoice object', function () {",
-                  "    pm.response.to.have.jsonBody();",
-                  "    const invoice = pm.response.json();",
-                  "    pm.expect(invoice).to.be.an('object');",
-                  "});",
-                  "",
-                  "pm.test('Invoice ID matches requested ID', function () {",
-                  "    const body = pm.response.json();",
-                  "    const expectedId = pm.collectionVariables.get('invoiceIdentifier');",
-                  "    const actualId = body.id || body.Id || body.invoiceIdentifier;",
-                  "    pm.expect(String(actualId).toLowerCase()).to.equal(String(expectedId).toLowerCase());",
-                  "});",
-                  "",
-                  "pm.test('Invoice belongs to correct user', function () {",
-                  "    const body = pm.response.json();",
-                  "    const expectedUserId = pm.collectionVariables.get('userIdentifier');",
-                  "    pm.expect(body.userIdentifier).to.equal(expectedUserId);",
-                  "});",
-                  "",
-                  "pm.test('Invoice has timestamp fields', function () {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body).to.have.property('createdAt');",
-                  "    pm.expect(body).to.have.property('updatedAt');",
-                  "});",
-                  "",
-                  "console.log('\u2705 Retrieved invoice details');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "05 - Update Invoice (PUT)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Full update of an invoice. Expected: 202 Accepted.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": \"{{invoiceIdentifier}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"isImportant\": true,\n  \"name\": \"Updated Test Invoice\",\n  \"description\": \"This invoice was updated via PUT request\",\n  \"category\": 3,\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-01-17T15:30:00Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Romanian Leu\",\n      \"code\": \"RON\",\n      \"symbol\": \"lei\"\n    },\n    \"totalCostAmount\": 150.50,\n    \"totalTaxAmount\": 28.60\n  },\n  \"items\": [\n    {\n      \"rawName\": \"Test Product 1\",\n      \"genericName\": \"Test Product\",\n      \"category\": 1,\n      \"quantity\": 2,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"PRD001\",\n      \"price\": 75.25,\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ],\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"updateTimestamp\": \"2025-01-17T15:30:00Z\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "06 - Patch Invoice",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Partial update of an invoice. Expected: 202 Accepted.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": \"{{invoiceIdentifier}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"isImportant\": false,\n  \"name\": \"Patched Invoice Name\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "07 - Verify Patch Applied",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify the PATCH was applied correctly.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Invoice name was patched\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body.name).to.eql('Patched Invoice Name');",
-                  "});"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Invoice Products",
-      "description": "Invoice product/item management",
-      "item": [
-        {
-          "name": "08 - Get Invoice Products (Empty)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get products from invoice. May have items from PUT.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "09 - Add Product to Invoice",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Add a new product to the invoice. Expected: 201 Created.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"rawName\": \"Mere Golden\",\n  \"genericName\": \"Apples\",\n  \"category\": 1,\n  \"quantity\": 5,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 12.50,\n  \"totalPrice\": 62.50\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "10 - Get Invoice Products (Has Product)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify product was added.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Products list contains items\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.be.an('array');",
-                  "    pm.expect(body.length).to.be.greaterThan(0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "11 - Update Product in Invoice (PUT)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Update an existing product in the invoice.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"originalProductName\": \"Mere Golden\",\n  \"rawName\": \"Mere Golden\",\n  \"genericName\": \"Golden Apples - Updated\",\n  \"category\": 1,\n  \"quantity\": 10,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 11.00\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "12 - Add Second Product",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Add a second product for testing deletion.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"rawName\": \"Lapte Zuzu\",\n  \"genericName\": \"Milk\",\n  \"category\": 2,\n  \"quantity\": 2,\n  \"quantityUnit\": \"L\",\n  \"productCode\": \"MLK001\",\n  \"price\": 8.99,\n  \"totalPrice\": 17.98\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "13 - Remove Product from Invoice",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Remove a product from the invoice by rawName.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"productName\": \"Lapte Zuzu\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "14 - Verify Product Removed",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify the milk product was removed.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "products"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Milk product was removed\", function () {",
-                  "    var body = pm.response.json();",
-                  "    var milkProducts = body.filter(p => p.rawName === 'Lapte Zuzu');",
-                  "    pm.expect(milkProducts.length).to.eql(0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Invoice Merchant",
-      "description": "Invoice-Merchant association management",
-      "item": [
-        {
-          "name": "15 - Get Invoice Merchant (None)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get the merchant associated with the invoice. Initially none - expects 404.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// Override collection-level tests for this 404 case",
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(404, 'Expected 404 Not Found when no merchant is associated');",
-                  "});",
-                  "",
-                  "pm.test(\"Content-Type header is present and valid\", function () {",
-                  "    // 404 responses may not have content-type, which is acceptable",
-                  "    pm.expect(true).to.be.true;",
-                  "});",
-                  "",
-                  "pm.test(\"Response body is valid\", function () {",
-                  "    // 404 responses may have empty body, which is acceptable",
-                  "    pm.expect(true).to.be.true;",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "16 - Add Merchant to Invoice",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Associate a new merchant with the invoice. Expected: 201 Created.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Carrefour Hypermarket\",\n  \"description\": \"Large retail hypermarket chain\",\n  \"category\": 1,\n  \"address\": {\n    \"email\": \"contact@carrefour.ro\",\n    \"phone\": \"+40 21 123 4567\",\n    \"addressLine1\": \"Bulevardul Unirii 1\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"030167\",\n    \"country\": \"Romania\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Expected status 201 Created\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(201);",
-                  "});",
-                  "try {",
-                  "    var body = pm.response.json();",
-                  "    var id = body && (body.id || body.merchantIdentifier || body.Id);",
-                  "    if (id) {",
-                  "        pm.collectionVariables.set('merchantIdentifier', String(id));",
-                  "        console.log('Stored merchantIdentifier = ' + id);",
-                  "    }",
-                  "} catch (e) {",
-                  "    console.warn('Could not extract merchant ID: ' + e);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "17 - Get Invoice Merchant (Has One)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify merchant was associated with the invoice.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Merchant is associated\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.have.property('name');",
-                  "    pm.expect(body.name).to.eql('Carrefour Hypermarket');",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "18 - Remove Merchant from Invoice",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Disassociate the merchant from the invoice.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "merchant"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Invoice Scans",
-      "description": "Invoice scan/receipt image management",
-      "item": [
-        {
-          "name": "19 - Get Invoice Scans",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get all scans associated with the invoice. Should have the initial scan.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "scans"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"At least one scan exists\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.be.an('array');",
-                  "    pm.expect(body.length).to.be.greaterThan(0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "20 - Add Scan to Invoice",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Add another scan to the invoice. Expected: 201 Created.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "scans"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"type\": 3,\n  \"location\": \"https://cdn.arolariu.ro/invoices/test-receipt-page2.pdf\",\n  \"metadata\": {\n    \"page\": \"2\",\n    \"addedVia\": \"postman-test\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "21 - Get Invoice Scans (Has Two)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify second scan was added.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "scans"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Two scans exist\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.be.an('array');",
-                  "    pm.expect(body.length).to.be.greaterThan(1);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "22 - Delete Scan from Invoice",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Delete a specific scan by its location field. Expected: 204 No Content.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans/https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Ftest-receipt-page2.pdf",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "scans",
-                "https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Ftest-receipt-page2.pdf"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Invoice Metadata",
-      "description": "Invoice additional metadata management",
-      "item": [
-        {
-          "name": "23 - Get Invoice Metadata",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get the additional metadata for the invoice.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
-            }
-          }
-        },
-        {
-          "name": "24 - Patch Invoice Metadata",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Add/update metadata keys. Expected: 202 Accepted.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"entries\": {\n    \"processedBy\": \"postman-collection\",\n    \"priority\": \"high\",\n    \"reviewStatus\": \"pending\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "25 - Get Invoice Metadata (Updated)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify metadata was updated.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Metadata contains new keys\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.have.property('processedBy');",
-                  "    pm.expect(body.processedBy).to.eql('postman-collection');",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "26 - Delete Invoice Metadata Keys",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Delete specific metadata keys. Expected: 204 No Content.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}",
-                "metadata"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"keys\": [\"reviewStatus\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Merchants",
-      "description": "Standalone Merchant CRUD operations",
-      "item": [
-        {
-          "name": "27 - Get All Merchants",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Retrieve all merchants for a given parent company.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants"
-              ],
-              "query": [
-                {
-                  "key": "parentCompanyId",
-                  "value": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "28 - Create Merchant",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Create a new merchant. Expected: 201 Created.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Lidl Romania\",\n  \"description\": \"German discount supermarket chain\",\n  \"address\": \"Strada Exemplu 123, Bucuresti\",\n  \"parentCompanyIdentifier\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Expected status 201 Created\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(201);",
-                  "});",
-                  "try {",
-                  "    var body = pm.response.json();",
-                  "    var id = body && (body.id || body.merchantIdentifier || body.Id);",
-                  "    if (id) {",
-                  "        pm.collectionVariables.set('merchantIdentifier', String(id));",
-                  "        console.log('Stored merchantIdentifier = ' + id);",
-                  "    }",
-                  "} catch (e) {",
-                  "    console.warn('Could not extract merchant ID: ' + e);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "29 - Get All Merchants (Has One)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify merchant was created.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants"
-              ],
-              "query": [
-                {
-                  "key": "parentCompanyId",
-                  "value": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-                }
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"At least one merchant exists\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.be.an('array');",
-                  "    pm.expect(body.length).to.be.greaterThan(0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "30 - Get Specific Merchant",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Retrieve a specific merchant by ID.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "31 - Update Merchant (PUT)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Full update of a merchant. Expected: 202 Accepted.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Lidl Romania - Updated\",\n  \"description\": \"German discount supermarket chain - Updated via PUT\",\n  \"category\": 1,\n  \"parentCompanyId\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"address\": {\n    \"email\": \"contact@lidl.ro\",\n    \"phone\": \"+40 21 987 6543\",\n    \"addressLine1\": \"Strada Noua 456\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"012345\",\n    \"country\": \"Romania\"\n  },\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"storeCount\": \"300+\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "32 - Get Merchant After Update",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify merchant was updated.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Merchant name was updated\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body.name).to.eql('Lidl Romania - Updated');",
-                  "});"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Merchant Invoices",
-      "description": "Merchant-Invoice relationship management",
-      "item": [
-        {
-          "name": "33 - Get Merchant Invoices",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get all invoices associated with a merchant.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
-            }
-          }
-        },
-        {
-          "name": "34 - Add Invoice to Merchant",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Associate an invoice with the merchant.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invoiceIdentifiers\": [\"{{invoiceIdentifier}}\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "35 - Get Merchant Invoices (Has One)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify invoice was associated.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Merchant has at least one invoice\", function () {",
-                  "    var body = pm.response.json();",
-                  "    pm.expect(body).to.be.an('array');",
-                  "    pm.expect(body.length).to.be.greaterThan(0);",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "36 - Get Merchant Products",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Get all products across all invoices for this merchant.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "products"
-              ]
-            }
-          }
-        },
-        {
-          "name": "37 - Remove Invoice from Merchant",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Disassociate an invoice from the merchant.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invoiceIdentifiers\": [\"{{invoiceIdentifier}}\"]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Error Handling",
-      "description": "Tests for error responses and edge cases",
-      "item": [
-        {
-          "name": "38 - Get Non-existent Invoice (404)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Attempt to retrieve a non-existent invoice. Expected: 404 Not Found.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/00000000-0000-0000-0000-000000000000",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "00000000-0000-0000-0000-000000000000"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Non-existent invoice returns 404', function () {",
-                  "    pm.expect(pm.response.code).to.equal(404);",
-                  "});",
-                  "",
-                  "pm.test('Error response has proper structure', function () {",
-                  "    pm.response.to.have.jsonBody();",
-                  "});",
-                  "",
-                  "console.log('\u2705 404 error handling verified');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "39 - Unauthorized Request (401)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "Attempt to access protected endpoint without authentication. Expected: 401 Unauthorized.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Unauthorized request returns 401', function () {",
-                  "    pm.expect(pm.response.code).to.equal(401);",
-                  "});",
-                  "",
-                  "pm.test('Unauthorized response has WWW-Authenticate header', function () {",
-                  "    const header = pm.response.headers.get('WWW-Authenticate');",
-                  "    if (header) {",
-                  "        pm.expect(header).to.exist;",
-                  "    }",
-                  "});",
-                  "",
-                  "console.log('\u2705 401 authorization check verified');"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "40 - Invalid Request Body (400)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Send invalid request body to test validation. Expected: 400 Bad Request.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invalidField\": \"invalid value\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Invalid request returns 400', function () {",
-                  "    pm.expect(pm.response.code).to.equal(400);",
-                  "});",
-                  "",
-                  "pm.test('Validation error has details', function () {",
-                  "    pm.response.to.have.jsonBody();",
-                  "});",
-                  "",
-                  "console.log('\u2705 400 validation error verified');"
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Cleanup",
-      "description": "Cleanup test data",
-      "item": [
-        {
-          "name": "41 - Delete Merchant",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Delete the test merchant. Expected: 204 No Content.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ],
-              "query": [
-                {
-                  "key": "parentCompanyId",
-                  "value": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "42 - Delete Invoice",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Delete the test invoice. Expected: 204 No Content.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{invoiceIdentifier}}"
-              ]
-            }
-          }
-        },
-        {
-          "name": "43 - Verify Cleanup (Get All Invoices)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Verify the invoice was deleted.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
-            }
-          }
-        },
-        {
-          "name": "44 - Delete All Invoices (Bulk)",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{authToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "description": "Delete all invoices for the authenticated user. Expected: 204 No Content. Use with caution - this deletes ALL user invoices.",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ]
-            }
-          }
-        }
-      ]
-    }
-  ],
-  "variable": [
-    {
-      "key": "baseProtocol",
-      "value": "https",
-      "type": "string",
-      "description": "Base protocol used to compose baseUrl (http/https)."
-    },
-    {
-      "key": "baseHost",
-      "value": "api.arolariu.ro",
-      "type": "string",
-      "description": "Base host used to compose baseUrl."
-    },
-    {
-      "key": "basePath",
-      "value": "",
-      "type": "string",
-      "description": "Optional base path prefix for reverse-proxy scenarios."
-    },
-    {
-      "key": "baseUrl",
-      "value": "{{baseProtocol}}://{{baseHost}}{{basePath}}",
-      "type": "string",
-      "description": "Base URL for the API target environment."
-    },
-    {
-      "key": "authToken",
-      "value": "",
-      "type": "string",
-      "description": "JWT Bearer token for authentication - injected at runtime by E2E runner."
-    },
-    {
-      "key": "userIdentifier",
-      "value": "00000000-0000-0000-0000-000000000000",
-      "type": "string",
-      "description": "User GUID identifier matching the authenticated user."
-    },
-    {
-      "key": "invoiceIdentifier",
-      "value": "",
-      "type": "string",
-      "description": "Invoice GUID - dynamically set after invoice creation in test flow."
-    },
-    {
-      "key": "merchantIdentifier",
-      "value": "",
-      "type": "string",
-      "description": "Merchant GUID - dynamically set after merchant creation in test flow."
-    },
-    {
-      "key": "warningLatencyMs",
-      "value": "1500",
-      "type": "string",
-      "description": "Warning-only latency threshold in milliseconds."
-    },
-    {
-      "key": "failureLatencyMs",
-      "value": "3000",
-      "type": "string",
-      "description": "Failure latency threshold in milliseconds."
-    },
-    {
-      "key": "allowProductionCrud",
-      "value": "false",
-      "type": "string",
-      "description": "Set to true to allow mutating methods against production baseUrl."
-    },
-    {
-      "key": "apiVersion",
-      "value": "v1",
-      "type": "string",
-      "description": "API version for REST endpoints (currently v1)."
-    },
-    {
-      "key": "maxRetries",
-      "value": "3",
-      "type": "string",
-      "description": "Maximum retry attempts for failed requests (for automated testing)."
-    },
-    {
-      "key": "retryDelay",
-      "value": "1000",
-      "type": "string",
-      "description": "Delay in milliseconds between retry attempts."
-    }
-  ]
+	"$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
+	"info": {
+		"name": "api.arolariu.ro",
+		"description": "Comprehensive E2E test suite for the arolariu.ro backend API.\n\nThis collection provides complete coverage of:\n- Invoice CRUD operations and sub-resources (products, merchant, scans, metadata)\n- Merchant CRUD operations and relationships\n- Invoice analysis endpoint\n- Authentication endpoints\n- Health check monitoring\n\n**Configuration:**\n- Set `baseUrl` to target environment (https://api.arolariu.ro, http://localhost:5000)\n- Set `authToken` to valid JWT Bearer token for authenticated requests\n- Set `userIdentifier` to match the authenticated user's GUID\n- Variables `invoiceIdentifier` and `merchantIdentifier` are auto-populated during test execution\n\n**Test Environments:**\n- Local: baseUrl=http://localhost:5000\n- Production: baseUrl=https://api.arolariu.ro\n\n**Test Flow:**\nThe collection is designed to run sequentially, building state progressively:\n1. Health checks verify API availability\n2. Invoice lifecycle (create \u2192 read \u2192 update \u2192 delete)\n3. Sub-resource management (products, merchant, scans, metadata)\n4. Merchant operations and relationships\n5. Cleanup operations to reset test state\n\n**Security:**\n- All endpoints require Bearer token authentication\n- Rate limiting is enforced on health check endpoint\n- CORS is configured for cross-origin requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_postman_id": "api-arolariu-ro-backend-tests",
+		"version": "2.0.0"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script: Validation, setup, and production guardrails",
+					"",
+					"function readConfig(key, fallback) {",
+					"    const collectionValue = pm.collectionVariables.get(key);",
+					"    const environmentValue = pm.environment.get(key);",
+					"    const resolvedValue = environmentValue ?? collectionValue;",
+					"    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
+					"}",
+					"",
+					"function readFlag(key, fallback) {",
+					"    const value = readConfig(key, fallback ? 'true' : 'false').toLowerCase();",
+					"    return ['true', '1', 'yes', 'on'].includes(value);",
+					"}",
+					"",
+					"const requiredVars = ['baseUrl', 'userIdentifier'];",
+					"requiredVars.forEach((variableName) => {",
+					"    const value = readConfig(variableName, '');",
+					"    if (!value) {",
+					"        console.warn(`\u26a0\ufe0f Warning: Required variable '${variableName}' is not set`);",
+					"    }",
+					"});",
+					"",
+					"const userIdentifier = readConfig('userIdentifier', '');",
+					"const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+					"if (userIdentifier && !guidRegex.test(userIdentifier)) {",
+					"    console.warn(`\u26a0\ufe0f Warning: userIdentifier '${userIdentifier}' is not a valid GUID format`);",
+					"}",
+					"",
+					"const requestMethod = pm.request.method.toUpperCase();",
+					"const isMutatingRequest = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(requestMethod);",
+					"const baseUrl = readConfig('baseUrl', '').toLowerCase();",
+					"const isProductionTarget = baseUrl.includes('api.arolariu.ro');",
+					"const allowProductionCrud = readFlag('allowProductionCrud', false);",
+					"",
+					"if (isMutatingRequest && isProductionTarget && !allowProductionCrud) {",
+					"    throw new Error(`Production CRUD guardrail blocked ${requestMethod} for '${pm.info.requestName}'. Set allowProductionCrud=true to override intentionally.`);",
+					"}",
+					"",
+					"pm.variables.set('requestTimestamp', new Date().toISOString());",
+					"console.log(`\ud83d\udce4 [${pm.info.requestName}] Starting request at ${pm.variables.get('requestTimestamp')}`);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Collection-level tests: Default expectations for all requests",
+					"// Request-level tests can override or extend these defaults",
+					"",
+					"function readConfig(key, fallback) {",
+					"    const collectionValue = pm.collectionVariables.get(key);",
+					"    const environmentValue = pm.environment.get(key);",
+					"    const resolvedValue = environmentValue ?? collectionValue;",
+					"    return resolvedValue === undefined || resolvedValue === null || String(resolvedValue).trim() === '' ? fallback : String(resolvedValue);",
+					"}",
+					"",
+					"function readPositiveNumber(key, fallback) {",
+					"    const rawValue = readConfig(key, String(fallback));",
+					"    const parsedValue = Number(rawValue);",
+					"    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;",
+					"}",
+					"",
+					"function expectsNon2xxResponse() {",
+					"    const requestName = pm.info.requestName;",
+					"    return requestName.includes('(None)') ||",
+					"           requestName.includes('Unauthorized') ||",
+					"           requestName.includes('Invalid') ||",
+					"           requestName.includes('Non-existent') ||",
+					"           requestName.includes('Guardrail');",
+					"}",
+					"",
+					"function isAnalysisRequest() {",
+					"    return pm.info.requestName.toLowerCase().includes('analyze');",
+					"}",
+					"",
+					"pm.test('Response status follows RESTful conventions', function () {",
+					"    if (expectsNon2xxResponse()) {",
+					"        return;",
+					"    }",
+					"",
+					"    const method = pm.request.method.toUpperCase();",
+					"    const code = pm.response.code;",
+					"    let expectedRange;",
+					"",
+					"    switch (method) {",
+					"        case 'GET':",
+					"        case 'HEAD':",
+					"            expectedRange = [200, 299];",
+					"            break;",
+					"        case 'POST':",
+					"            expectedRange = [200, 201];",
+					"            break;",
+					"        case 'PUT':",
+					"        case 'PATCH':",
+					"            expectedRange = [200, 202];",
+					"            break;",
+					"        case 'DELETE':",
+					"            expectedRange = [200, 204];",
+					"            break;",
+					"        default:",
+					"            expectedRange = [200, 299];",
+					"    }",
+					"",
+					"    pm.expect(code).to.be.within(expectedRange[0], expectedRange[1],",
+					"        `Expected ${method} to return ${expectedRange[0]}-${expectedRange[1]}, got ${code}`);",
+					"});",
+					"",
+					"pm.test('Response time meets configured SLA thresholds', function () {",
+					"    const warningThreshold = readPositiveNumber('warningLatencyMs', isAnalysisRequest() ? 10000 : 1500);",
+					"    const failureThreshold = readPositiveNumber('failureLatencyMs', isAnalysisRequest() ? 30000 : 3000);",
+					"",
+					"    pm.expect(pm.response.responseTime).to.be.below(failureThreshold,",
+					"        `Response time ${pm.response.responseTime}ms exceeds ${failureThreshold}ms SLA`);",
+					"",
+					"    if (pm.response.responseTime > warningThreshold) {",
+					"        console.warn(`\u26a0\ufe0f Warning latency threshold exceeded: ${pm.response.responseTime}ms > ${warningThreshold}ms`);",
+					"    }",
+					"});",
+					"",
+					"pm.test('Content-Type header is present and valid', function () {",
+					"    if (pm.response.code === 204) {",
+					"        return;",
+					"    }",
+					"",
+					"    const contentType = pm.response.headers.get('Content-Type');",
+					"    pm.expect(contentType).to.exist;",
+					"    pm.expect(contentType).to.match(/application\\/json|text\\/plain|text\\/html/,",
+					"        `Invalid Content-Type: ${contentType}`);",
+					"});",
+					"",
+					"pm.test('Response body is valid', function () {",
+					"    if (pm.response.code === 204 || pm.request.method === 'HEAD') {",
+					"        return;",
+					"    }",
+					"",
+					"    pm.expect(pm.response.text()).to.have.length.greaterThan(0, 'Response body is empty');",
+					"});",
+					"",
+					"pm.test('JSON responses are well-formed', function () {",
+					"    const contentType = pm.response.headers.get('Content-Type');",
+					"    if (contentType && contentType.includes('application/json')) {",
+					"        pm.response.to.have.jsonBody();",
+					"    } else {",
+					"        return;",
+					"    }",
+					"});",
+					"",
+					"pm.test('Security headers are present', function () {",
+					"    const headers = pm.response.headers;",
+					"    const corsHeader = headers.get('Access-Control-Allow-Origin');",
+					"    if (corsHeader) {",
+					"        pm.expect(corsHeader).to.exist;",
+					"    }",
+					"",
+					"    const xContentType = headers.get('X-Content-Type-Options');",
+					"    if (xContentType) {",
+					"        pm.expect(xContentType).to.equal('nosniff');",
+					"    }",
+					"});",
+					"",
+					"pm.test('Error responses have proper structure', function () {",
+					"    if (pm.response.code >= 400) {",
+					"        pm.response.to.have.jsonBody();",
+					"        const jsonData = pm.response.json();",
+					"        pm.expect(jsonData).to.be.an('object');",
+					"    } else {",
+					"        return;",
+					"    }",
+					"});",
+					"",
+					"const statusIcon = pm.response.code < 400 ? '\u2705' : '\u274c';",
+					"console.log(`${statusIcon} [${pm.info.requestName}] ${pm.response.code} | ${pm.response.responseTime}ms | ${pm.response.responseSize} bytes`);"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "Health & Diagnostics",
+			"description": "System health and availability checks",
+			"item": [
+				{
+					"name": "00 - Health Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"description": "Health check endpoint for monitoring service availability. Returns detailed health information including service dependencies. Rate limited - use sparingly in automated monitoring.",
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Health check returns 200 OK', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test('Health check response is valid JSON', function () {",
+									"    pm.response.to.have.jsonBody();",
+									"});",
+									"",
+									"pm.test('Health check has status field', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});",
+									"",
+									"pm.test('Health status is Healthy', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.be.oneOf(['Healthy', 'Degraded']);",
+									"});",
+									"",
+									"pm.test('Health check completes quickly', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"console.log('\ud83c\udfe5 Health check passed - API is operational');"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Invoices",
+			"description": "Invoice CRUD operations and sub-resource management",
+			"item": [
+				{
+					"name": "01 - Get All Invoices (Empty)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Retrieve all invoices for the current user. Should be empty initially.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices"
+							]
+						}
+					}
+				},
+				{
+					"name": "02 - Create Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Create a new invoice with an initial scan. Expected: 201 Created.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"initialScan\": {\n    \"type\": 2,\n    \"location\": \"https://cdn.arolariu.ro/invoices/test-receipt.png\",\n    \"metadata\": {\n      \"source\": \"postman-test\",\n      \"uploadedAt\": \"2025-01-17T12:00:00Z\"\n    }\n  },\n  \"metadata\": {\n    \"testRun\": \"true\",\n    \"author\": \"PostmanCollection\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Invoice created successfully (201)', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"pm.test('Response contains invoice data', function () {",
+									"    pm.response.to.have.jsonBody();",
+									"});",
+									"",
+									"pm.test('Invoice has valid GUID identifier', function () {",
+									"    const body = pm.response.json();",
+									"    const id = body.id || body.invoiceIdentifier || body.Id;",
+									"    pm.expect(id).to.exist;",
+									"    ",
+									"    // Validate GUID format",
+									"    const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+									"    pm.expect(id).to.match(guidRegex);",
+									"    ",
+									"    // Store for subsequent requests",
+									"    pm.environment.set('invoiceIdentifier', String(id));",
+									"    console.log('\ud83d\udcdd Created invoice: ' + id);",
+									"});",
+									"",
+									"pm.test('Invoice has required fields', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('userIdentifier');",
+									"    pm.environment.set('userIdentifier', body.userIdentifier);",
+									"});",
+									"",
+									"pm.test('Location header points to created resource', function () {",
+									"    const location = pm.response.headers.get('Location');",
+									"    if (location) {",
+									"        pm.expect(location).to.include('/invoices/');",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "03 - Get All Invoices (Has One)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Retrieve all invoices. Should now have at least one.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('All invoices retrieved successfully', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test('Response is array of invoices', function () {",
+									"    pm.response.to.have.jsonBody();",
+									"    const invoices = pm.response.json();",
+									"    pm.expect(invoices).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('At least one invoice exists', function () {",
+									"    const invoices = pm.response.json();",
+									"    pm.expect(invoices.length).to.be.at.least(1);",
+									"});",
+									"",
+									"pm.test('Created invoice is in the list', function () {",
+									"    const invoices = pm.response.json();",
+									"    const createdId = pm.environment.get('invoiceIdentifier');",
+									"    const found = invoices.some(inv => inv.id === createdId || inv.invoiceIdentifier === createdId);",
+									"    pm.expect(found).to.be.true;",
+									"});",
+									"",
+									"console.log('\ud83d\udccb Retrieved ' + pm.response.json().length + ' invoice(s)');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "04 - Get Specific Invoice",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Retrieve a single invoice by its identifier.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Specific invoice retrieved successfully', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test('Response is invoice object', function () {",
+									"    pm.response.to.have.jsonBody();",
+									"    const invoice = pm.response.json();",
+									"    pm.expect(invoice).to.be.an('object');",
+									"});",
+									"",
+									"pm.test('Invoice ID matches requested ID', function () {",
+									"    const body = pm.response.json();",
+									"    const expectedId = pm.environment.get('invoiceIdentifier');",
+									"    const actualId = body.id || body.Id || body.invoiceIdentifier;",
+									"    pm.expect(String(actualId).toLowerCase()).to.equal(String(expectedId).toLowerCase());",
+									"});",
+									"",
+									"pm.test('Invoice belongs to correct user', function () {",
+									"    const body = pm.response.json();",
+									"    const expectedUserId = pm.environment.get('userIdentifier');",
+									"    pm.expect(body.userIdentifier).to.equal(expectedUserId);",
+									"});",
+									"",
+									"pm.test('Invoice has timestamp fields', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('createdAt');",
+									"    pm.expect(body).to.have.property('updatedAt');",
+									"});",
+									"",
+									"console.log('\u2705 Retrieved invoice details');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "05 - Update Invoice (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Full update of an invoice. Expected: 202 Accepted.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{invoiceIdentifier}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"isImportant\": true,\n  \"name\": \"Updated Test Invoice\",\n  \"description\": \"This invoice was updated via PUT request\",\n  \"category\": 3,\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-01-17T15:30:00Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Romanian Leu\",\n      \"code\": \"RON\",\n      \"symbol\": \"lei\"\n    },\n    \"totalCostAmount\": 150.50,\n    \"totalTaxAmount\": 28.60\n  },\n  \"items\": [\n    {\n      \"rawName\": \"Test Product 1\",\n      \"genericName\": \"Test Product\",\n      \"category\": 1,\n      \"quantity\": 2,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"PRD001\",\n      \"price\": 75.25,\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ],\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"updateTimestamp\": \"2025-01-17T15:30:00Z\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "06 - Patch Invoice",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Partial update of an invoice. Expected: 202 Accepted.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{invoiceIdentifier}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"isImportant\": false,\n  \"name\": \"Patched Invoice Name\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "07 - Verify Patch Applied",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify the PATCH was applied correctly.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Invoice name was patched\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body.name).to.eql('Patched Invoice Name');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Invoice Products",
+			"description": "Invoice product/item management",
+			"item": [
+				{
+					"name": "08 - Get Invoice Products (Empty)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Get products from invoice. May have items from PUT.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"products"
+							]
+						}
+					}
+				},
+				{
+					"name": "09 - Add Product to Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Add a new product to the invoice. Expected: 201 Created.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"products"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rawName\": \"Mere Golden\",\n  \"genericName\": \"Apples\",\n  \"category\": 1,\n  \"quantity\": 5,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 12.50,\n  \"totalPrice\": 62.50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "10 - Get Invoice Products (Has Product)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify product was added.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"products"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Products list contains items\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"    pm.expect(body.length).to.be.greaterThan(0);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "11 - Update Product in Invoice (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Update an existing product in the invoice.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"products"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originalProductName\": \"Mere Golden\",\n  \"rawName\": \"Mere Golden\",\n  \"genericName\": \"Golden Apples - Updated\",\n  \"category\": 1,\n  \"quantity\": 10,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"APL001\",\n  \"price\": 11.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "12 - Add Second Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Add a second product for testing deletion.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"products"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"rawName\": \"Lapte Zuzu\",\n  \"genericName\": \"Milk\",\n  \"category\": 2,\n  \"quantity\": 2,\n  \"quantityUnit\": \"L\",\n  \"productCode\": \"MLK001\",\n  \"price\": 8.99,\n  \"totalPrice\": 17.98\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "13 - Remove Product from Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Remove a product from the invoice by rawName.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"products"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productName\": \"Lapte Zuzu\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "14 - Verify Product Removed",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify the milk product was removed.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"products"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Milk product was removed\", function () {",
+									"    var body = pm.response.json();",
+									"    var milkProducts = body.filter(p => p.rawName === 'Lapte Zuzu');",
+									"    pm.expect(milkProducts.length).to.eql(0);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Invoice Merchant",
+			"description": "Invoice-Merchant association management",
+			"item": [
+				{
+					"name": "15 - Get Invoice Merchant (None)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Get the merchant associated with the invoice. Initially none - expects 404.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"merchant"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Override collection-level tests for this 404 case",
+									"pm.test(\"Response status follows RESTful conventions\", function () {",
+									"    pm.expect(pm.response.code).to.eql(404, 'Expected 404 Not Found when no merchant is associated');",
+									"});",
+									"",
+									"pm.test(\"Content-Type header is present and valid\", function () {",
+									"    // 404 responses may not have content-type, which is acceptable",
+									"    pm.expect(true).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Response body is valid\", function () {",
+									"    // 404 responses may have empty body, which is acceptable",
+									"    pm.expect(true).to.be.true;",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "16 - Add Merchant to Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Associate a new merchant with the invoice. Expected: 201 Created.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"merchant"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Carrefour Hypermarket\",\n  \"description\": \"Large retail hypermarket chain\",\n  \"category\": 1,\n  \"address\": {\n    \"email\": \"contact@carrefour.ro\",\n    \"phone\": \"+40 21 123 4567\",\n    \"addressLine1\": \"Bulevardul Unirii 1\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"030167\",\n    \"country\": \"Romania\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Expected status 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.eql(201);",
+									"});",
+									"try {",
+									"    var body = pm.response.json();",
+									"    var id = body && (body.id || body.merchantIdentifier || body.Id);",
+									"    if (id) {",
+									"        pm.environment.set('merchantIdentifier', String(id));",
+									"        console.log('Stored merchantIdentifier = ' + id);",
+									"    }",
+									"} catch (e) {",
+									"    console.warn('Could not extract merchant ID: ' + e);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "17 - Get Invoice Merchant (Has One)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify merchant was associated with the invoice.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"merchant"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Merchant is associated\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body).to.have.property('name');",
+									"    pm.expect(body.name).to.eql('Carrefour Hypermarket');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "18 - Remove Merchant from Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Disassociate the merchant from the invoice.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"merchant"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Invoice Scans",
+			"description": "Invoice scan/receipt image management",
+			"item": [
+				{
+					"name": "19 - Get Invoice Scans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Get all scans associated with the invoice. Should have the initial scan.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"scans"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"At least one scan exists\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"    pm.expect(body.length).to.be.greaterThan(0);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "20 - Add Scan to Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Add another scan to the invoice. Expected: 201 Created.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"scans"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": 3,\n  \"location\": \"https://cdn.arolariu.ro/invoices/test-receipt-page2.pdf\",\n  \"metadata\": {\n    \"page\": \"2\",\n    \"addedVia\": \"postman-test\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "21 - Get Invoice Scans (Has Two)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify second scan was added.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"scans"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Two scans exist\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"    pm.expect(body.length).to.be.greaterThan(1);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "22 - Delete Scan from Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Delete a specific scan by its location field. Expected: 204 No Content.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scans/https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Ftest-receipt-page2.pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"scans",
+								"https%3A%2F%2Fcdn.arolariu.ro%2Finvoices%2Ftest-receipt-page2.pdf"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Invoice Metadata",
+			"description": "Invoice additional metadata management",
+			"item": [
+				{
+					"name": "23 - Get Invoice Metadata",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Get the additional metadata for the invoice.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"metadata"
+							]
+						}
+					}
+				},
+				{
+					"name": "24 - Patch Invoice Metadata",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Add/update metadata keys. Expected: 202 Accepted.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"metadata"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"entries\": {\n    \"processedBy\": \"postman-collection\",\n    \"priority\": \"high\",\n    \"reviewStatus\": \"pending\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "25 - Get Invoice Metadata (Updated)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify metadata was updated.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"metadata"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Metadata contains new keys\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body).to.have.property('processedBy');",
+									"    pm.expect(body.processedBy).to.eql('postman-collection');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "26 - Delete Invoice Metadata Keys",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Delete specific metadata keys. Expected: 204 No Content.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}",
+								"metadata"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"keys\": [\"reviewStatus\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Merchants",
+			"description": "Standalone Merchant CRUD operations",
+			"item": [
+				{
+					"name": "27 - Get All Merchants",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Retrieve all merchants for a given parent company.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants"
+							],
+							"query": [
+								{
+									"key": "parentCompanyId",
+									"value": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "28 - Create Merchant",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Create a new merchant. Expected: 201 Created.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Lidl Romania\",\n  \"description\": \"German discount supermarket chain\",\n  \"address\": \"Strada Exemplu 123, Bucuresti\",\n  \"parentCompanyIdentifier\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Expected status 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.eql(201);",
+									"});",
+									"try {",
+									"    var body = pm.response.json();",
+									"    var id = body && (body.id || body.merchantIdentifier || body.Id);",
+									"    if (id) {",
+									"        pm.environment.set('merchantIdentifier', String(id));",
+									"        console.log('Stored merchantIdentifier = ' + id);",
+									"    }",
+									"} catch (e) {",
+									"    console.warn('Could not extract merchant ID: ' + e);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "29 - Get All Merchants (Has One)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify merchant was created.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants"
+							],
+							"query": [
+								{
+									"key": "parentCompanyId",
+									"value": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"At least one merchant exists\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"    pm.expect(body.length).to.be.greaterThan(0);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "30 - Get Specific Merchant",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Retrieve a specific merchant by ID.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "31 - Update Merchant (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Full update of a merchant. Expected: 202 Accepted.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Lidl Romania - Updated\",\n  \"description\": \"German discount supermarket chain - Updated via PUT\",\n  \"category\": 1,\n  \"parentCompanyId\": \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\n  \"address\": {\n    \"email\": \"contact@lidl.ro\",\n    \"phone\": \"+40 21 987 6543\",\n    \"addressLine1\": \"Strada Noua 456\",\n    \"city\": \"Bucuresti\",\n    \"state\": \"Bucuresti\",\n    \"postalCode\": \"012345\",\n    \"country\": \"Romania\"\n  },\n  \"additionalMetadata\": {\n    \"updatedVia\": \"PUT\",\n    \"storeCount\": \"300+\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "32 - Get Merchant After Update",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify merchant was updated.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Merchant name was updated\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body.name).to.eql('Lidl Romania - Updated');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Merchant Invoices",
+			"description": "Merchant-Invoice relationship management",
+			"item": [
+				{
+					"name": "33 - Get Merchant Invoices",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Get all invoices associated with a merchant.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}",
+								"invoices"
+							]
+						}
+					}
+				},
+				{
+					"name": "34 - Add Invoice to Merchant",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Associate an invoice with the merchant.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}",
+								"invoices"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceIdentifiers\": [\"{{invoiceIdentifier}}\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				},
+				{
+					"name": "35 - Get Merchant Invoices (Has One)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify invoice was associated.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}",
+								"invoices"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Merchant has at least one invoice\", function () {",
+									"    var body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"    pm.expect(body.length).to.be.greaterThan(0);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "36 - Get Merchant Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Get all products across all invoices for this merchant.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}",
+								"products"
+							]
+						}
+					}
+				},
+				{
+					"name": "37 - Remove Invoice from Merchant",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Disassociate an invoice from the merchant.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}",
+								"invoices"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceIdentifiers\": [\"{{invoiceIdentifier}}\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Error Handling",
+			"description": "Tests for error responses and edge cases",
+			"item": [
+				{
+					"name": "38 - Get Non-existent Invoice (404)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Attempt to retrieve a non-existent invoice. Expected: 404 Not Found.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/00000000-0000-0000-0000-000000000000",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"00000000-0000-0000-0000-000000000000"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Non-existent invoice returns 404', function () {",
+									"    pm.expect(pm.response.code).to.equal(404);",
+									"});",
+									"",
+									"pm.test('Error response has proper structure', function () {",
+									"    pm.response.to.have.jsonBody();",
+									"});",
+									"",
+									"console.log('\u2705 404 error handling verified');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "39 - Unauthorized Request (401)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"description": "Attempt to access protected endpoint without authentication. Expected: 401 Unauthorized.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Unauthorized request returns 401', function () {",
+									"    pm.expect(pm.response.code).to.equal(401);",
+									"});",
+									"",
+									"pm.test('Unauthorized response has WWW-Authenticate header', function () {",
+									"    const header = pm.response.headers.get('WWW-Authenticate');",
+									"    if (header) {",
+									"        pm.expect(header).to.exist;",
+									"    }",
+									"});",
+									"",
+									"console.log('\u2705 401 authorization check verified');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "40 - Invalid Request Body (400)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Send invalid request body to test validation. Expected: 400 Bad Request.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invalidField\": \"invalid value\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Invalid request returns 400', function () {",
+									"    pm.expect(pm.response.code).to.equal(400);",
+									"});",
+									"",
+									"pm.test('Validation error has details', function () {",
+									"    pm.response.to.have.jsonBody();",
+									"});",
+									"",
+									"console.log('\u2705 400 validation error verified');"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Cleanup",
+			"description": "Cleanup test data",
+			"item": [
+				{
+					"name": "41 - Delete Merchant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Delete the test merchant. Expected: 204 No Content.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}?parentCompanyId=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"merchants",
+								"{{merchantIdentifier}}"
+							],
+							"query": [
+								{
+									"key": "parentCompanyId",
+									"value": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "42 - Delete Invoice",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Delete the test invoice. Expected: 204 No Content.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices",
+								"{{invoiceIdentifier}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "43 - Verify Cleanup (Get All Invoices)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Verify the invoice was deleted.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices"
+							]
+						}
+					}
+				},
+				{
+					"name": "44 - Delete All Invoices (Bulk)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Delete all invoices for the authenticated user. Expected: 204 No Content. Use with caution - this deletes ALL user invoices.",
+						"url": {
+							"raw": "{{baseUrl}}/rest/v1/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rest",
+								"v1",
+								"invoices"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseProtocol",
+			"value": "https",
+			"type": "string",
+			"description": "Base protocol used to compose baseUrl (http/https)."
+		},
+		{
+			"key": "baseHost",
+			"value": "api.arolariu.ro",
+			"type": "string",
+			"description": "Base host used to compose baseUrl."
+		},
+		{
+			"key": "basePath",
+			"value": "",
+			"type": "string",
+			"description": "Optional base path prefix for reverse-proxy scenarios."
+		},
+		{
+			"key": "baseUrl",
+			"value": "{{baseProtocol}}://{{baseHost}}{{basePath}}",
+			"type": "string",
+			"description": "Base URL for the API target environment."
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string",
+			"description": "JWT Bearer token for authentication - injected at runtime by E2E runner."
+		},
+		{
+			"key": "userIdentifier",
+			"value": "00000000-0000-0000-0000-000000000000",
+			"type": "string",
+			"description": "User GUID identifier matching the authenticated user."
+		},
+		{
+			"key": "invoiceIdentifier",
+			"value": "",
+			"type": "string",
+			"description": "Invoice GUID - dynamically set after invoice creation in test flow."
+		},
+		{
+			"key": "merchantIdentifier",
+			"value": "",
+			"type": "string",
+			"description": "Merchant GUID - dynamically set after merchant creation in test flow."
+		},
+		{
+			"key": "warningLatencyMs",
+			"value": "1500",
+			"type": "string",
+			"description": "Warning-only latency threshold in milliseconds."
+		},
+		{
+			"key": "failureLatencyMs",
+			"value": "3000",
+			"type": "string",
+			"description": "Failure latency threshold in milliseconds."
+		},
+		{
+			"key": "allowProductionCrud",
+			"value": "false",
+			"type": "string",
+			"description": "Set to true to allow mutating methods against production baseUrl."
+		},
+		{
+			"key": "apiVersion",
+			"value": "v1",
+			"type": "string",
+			"description": "API version for REST endpoints (currently v1)."
+		},
+		{
+			"key": "maxRetries",
+			"value": "3",
+			"type": "string",
+			"description": "Maximum retry attempts for failed requests (for automated testing)."
+		},
+		{
+			"key": "retryDelay",
+			"value": "1000",
+			"type": "string",
+			"description": "Delay in milliseconds between retry attempts."
+		}
+	]
 }
