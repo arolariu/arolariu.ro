@@ -23,15 +23,7 @@ interface Props {
  * @param props - Component props.
  * @returns The workflow card.
  */
-export default function WorkflowCard({
-  step,
-  title,
-  description,
-  icon: Icon,
-  href,
-  buttonText,
-  delay,
-}: Readonly<Props>): React.JSX.Element {
+export default function WorkflowCard({step, title, description, icon: Icon, href, buttonText, delay}: Readonly<Props>): React.JSX.Element {
   return (
     <motion.div
       initial={{opacity: 0, y: 20}}
