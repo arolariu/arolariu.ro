@@ -251,7 +251,7 @@ public static partial class InvoiceEndpoints
     "If successful, the product is appended to the invoice's product list.",
     OperationId = nameof(AddProductToInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully added to the invoice.", typeof(ProductResponseDto))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The product was successfully added to the invoice.", typeof(ProductResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided product data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]

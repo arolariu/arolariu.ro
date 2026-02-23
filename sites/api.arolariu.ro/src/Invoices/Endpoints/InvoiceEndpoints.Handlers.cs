@@ -616,7 +616,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product added to invoice");
-      return TypedResults.Accepted(uri: $"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(productEntity));
+      return TypedResults.Created(uri: $"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(productEntity));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
