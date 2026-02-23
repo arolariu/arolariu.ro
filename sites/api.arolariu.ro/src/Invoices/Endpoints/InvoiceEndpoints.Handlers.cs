@@ -34,17 +34,6 @@ public static partial class InvoiceEndpoints
         .SetOperationType("CRUD.Create");
 
       var invoice = invoiceDto.ToInvoice();
-
-      // Override the UserIdentifier with the JWT-authenticated user's identity.
-      // This enforces that invoices are always owned by the authenticated caller,
-      // regardless of what the client sends in the request body.
-      var jwtUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      if (jwtUserIdentifier != EmptyGuid)
-      {
-        invoice.UserIdentifier = jwtUserIdentifier;
-        invoice.PerformUpdate(jwtUserIdentifier);
-      }
-
       activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceProcessingService
@@ -627,7 +616,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Product added to invoice");
-      return TypedResults.Accepted(uri: $"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(productEntity));
+      return TypedResults.Created(uri: $"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(productEntity));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
