@@ -218,6 +218,7 @@ jobs:
           if-no-files-found: warn
           name: e2e-reports-${{ matrix.target }}
           path: |
+            e2e-logs/newman-${{ matrix.target }}.json
             e2e-logs/newman-${{ matrix.target }}.xml
             e2e-logs/newman-${{ matrix.target }}-summary.md
             e2e-${{ matrix.target }}.log
