@@ -9,7 +9,7 @@
  */
 
 import {execSync} from "node:child_process";
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
+import {existsSync, mkdirSync, readFileSync, rmSync, writeFileSync} from "node:fs";
 import pc from "picocolors";
 
 type E2ETestTarget = "frontend" | "backend" | "cv" | "all";
@@ -53,6 +53,16 @@ interface NewmanReport {
     readonly failures?: readonly NewmanFailure[];
   };
 }
+
+interface SanitizeAccumulator {
+  redactionCount: number;
+}
+
+const SENSITIVE_KEY_PATTERN = /(authorization|auth[_-]?token|access[_-]?token|refresh[_-]?token|id[_-]?token|token)/i;
+const JWT_REPLACEMENT_PATTERN = /\beyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g;
+const JWT_DETECTION_PATTERN = /\beyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/;
+const BEARER_JWT_REPLACEMENT_PATTERN = /Bearer\s+eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g;
+const BEARER_JWT_DETECTION_PATTERN = /Bearer\s+eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/;
 
 const targetConfigurationMap: Record<RunnableTarget, TargetConfiguration> = {
   backend: {
@@ -267,6 +277,108 @@ const readBooleanEnv = (key: string, fallback: boolean): boolean => {
 };
 
 /**
+ * Redacts known secret patterns from a string value.
+ *
+ * @param value - The raw value to sanitize.
+ * @param key - The owning object key, when available.
+ * @param accumulator - Mutable counter of performed redactions.
+ * @returns The sanitized string value.
+ */
+const redactSensitiveString = (
+  value: string,
+  key: string | null,
+  accumulator: SanitizeAccumulator,
+): string => {
+  if (key && SENSITIVE_KEY_PATTERN.test(key) && value.trim().length > 0) {
+    accumulator.redactionCount++;
+    return "[REDACTED]";
+  }
+
+  let sanitizedValue = value;
+
+  const redactedBearerValue = sanitizedValue.replace(BEARER_JWT_REPLACEMENT_PATTERN, "Bearer [REDACTED_JWT]");
+  if (redactedBearerValue !== sanitizedValue) {
+    accumulator.redactionCount++;
+    sanitizedValue = redactedBearerValue;
+  }
+
+  const redactedJwtValue = sanitizedValue.replace(JWT_REPLACEMENT_PATTERN, "[REDACTED_JWT]");
+  if (redactedJwtValue !== sanitizedValue) {
+    accumulator.redactionCount++;
+    sanitizedValue = redactedJwtValue;
+  }
+
+  return sanitizedValue;
+};
+
+/**
+ * Recursively sanitizes JSON-compatible values for secure artifact storage.
+ *
+ * @param value - The value to sanitize.
+ * @param accumulator - Mutable counter of performed redactions.
+ * @param key - The owning object key, when available.
+ * @returns The sanitized value.
+ */
+const sanitizeJsonValue = (
+  value: unknown,
+  accumulator: SanitizeAccumulator,
+  key: string | null = null,
+): unknown => {
+  if (typeof value === "string") {
+    return redactSensitiveString(value, key, accumulator);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeJsonValue(item, accumulator));
+  }
+
+  if (typeof value === "object" && value !== null) {
+    const recordValue = value as Record<string, unknown>;
+    const sanitizedRecord: Record<string, unknown> = {};
+
+    for (const [entryKey, entryValue] of Object.entries(recordValue)) {
+      sanitizedRecord[entryKey] = sanitizeJsonValue(entryValue, accumulator, entryKey);
+    }
+
+    return sanitizedRecord;
+  }
+
+  return value;
+};
+
+/**
+ * Sanitizes a Newman JSON report in-place and removes it if redaction safety checks fail.
+ *
+ * @param jsonPath - Path to the Newman JSON report.
+ * @returns Nothing.
+ */
+const sanitizeNewmanJsonReport = (jsonPath: string): void => {
+  if (!existsSync(jsonPath)) {
+    return;
+  }
+
+  try {
+    const parsedReport = JSON.parse(readFileSync(jsonPath, "utf-8")) as unknown;
+    const accumulator: SanitizeAccumulator = {redactionCount: 0};
+    const sanitizedReport = sanitizeJsonValue(parsedReport, accumulator);
+    const serializedReport = JSON.stringify(sanitizedReport, null, 2);
+
+    if (BEARER_JWT_DETECTION_PATTERN.test(serializedReport) || JWT_DETECTION_PATTERN.test(serializedReport)) {
+      rmSync(jsonPath, {force: true});
+      console.warn(pc.yellow(`   ⚠ Removed unsanitized Newman JSON report due to remaining JWT patterns: ${jsonPath}`));
+      return;
+    }
+
+    writeFileSync(jsonPath, serializedReport, "utf-8");
+    console.log(pc.gray(`   🔐 Sanitized Newman JSON report (${accumulator.redactionCount} redactions)`));
+  } catch (error) {
+    rmSync(jsonPath, {force: true});
+    console.warn(pc.yellow(`   ⚠ Failed to sanitize Newman JSON report and removed it: ${jsonPath}`));
+    console.warn(pc.gray(`      Reason: ${error instanceof Error ? error.message : String(error)}`));
+  }
+};
+
+/**
  * Runs a Newman collection and produces JSON/JUnit reports.
  *
  * @remarks
@@ -328,6 +440,12 @@ const runOpenAPITestCollection = async (
       writeAssertionSummary(target, reportDir);
     } catch (e) {
       console.error(pc.red("   ✗ Failed generating assertion summary:"), e);
+    }
+
+    try {
+      sanitizeNewmanJsonReport(jsonPath);
+    } catch (e) {
+      console.error(pc.red("   ✗ Failed sanitizing Newman JSON report:"), e);
     }
   }
 };
