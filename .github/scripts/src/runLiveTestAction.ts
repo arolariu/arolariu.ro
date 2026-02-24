@@ -9,13 +9,12 @@ import {
   AUTOMATED_TEST_FAILURE_LABELS,
   DEFAULT_ARTIFACTS_DIR,
   DEFAULT_GITHUB_SERVER_URL,
-  DEFAULT_LOG_TAIL_LENGTH,
   HEALTH_CHECK_FILENAME,
   STATUS_EMOJI,
   fs,
   newman,
 } from "../helpers/index.ts";
-import type {NewmanExecutionStats, NewmanReport} from "../helpers/newman/index.ts";
+import type {FailureCategories, NewmanExecutionStats, NewmanReport} from "../helpers/newman/index.ts";
 
 export type JobStatus = "success" | "failure" | "cancelled" | "skipped" | "unknown";
 
@@ -60,6 +59,25 @@ const DEFAULT_MAX_LOG_TAIL_CHARS = 2_000;
 const DEFAULT_MAX_ASSERTION_SUMMARY_CHARS = 12_000;
 const DEFAULT_MAX_TARGET_SUMMARY_CHARS = 4_000;
 
+interface SummaryTableMetric {
+  readonly executed: number;
+  readonly failed: number;
+}
+
+interface SummaryTableMetrics {
+  readonly assertions: SummaryTableMetric | null;
+  readonly requests: SummaryTableMetric | null;
+}
+
+interface FallbackTargetMetrics {
+  readonly failureCategories: FailureCategories | null;
+  readonly failedAssertions: number | null;
+  readonly failedRequests: number | null;
+  readonly source: "none" | "summary-table";
+  readonly totalAssertions: number | null;
+  readonly totalRequests: number | null;
+}
+
 function capitalizeTarget(target: string): string {
   if (target.length === 0) {
     return "Unknown";
@@ -76,6 +94,213 @@ function extractTargetFromLogPath(logPath: string): string | null {
   const filename = basename(logPath);
   const match = /^e2e-([a-z0-9-]+)\.log$/i.exec(filename);
   return match ? match[1]!.toLowerCase() : null;
+}
+
+function extractTargetFromSummaryFilename(summaryFilename: string): string | null {
+  const match = /^newman-([a-z0-9-]+)-summary\.md$/i.exec(summaryFilename);
+  return match ? match[1]!.toLowerCase() : null;
+}
+
+function normalizeRequestName(name: string): string {
+  const trimmedName = name.trim();
+  const segments = trimmedName.split(" / ");
+  return (segments.at(-1) ?? trimmedName).trim();
+}
+
+function extractNewmanSummaryTable(logContent: string): string | null {
+  const lines = logContent.split(/\r?\n/);
+
+  for (let index = 0; index < lines.length; index++) {
+    const candidateLine = lines[index] ?? "";
+    if (!candidateLine.includes("┌") || !candidateLine.includes("┬")) {
+      continue;
+    }
+
+    let endIndex = index + 1;
+    while (endIndex < lines.length) {
+      const currentLine = lines[endIndex] ?? "";
+      if (currentLine.includes("└") && currentLine.includes("┘")) {
+        const candidateBlock = lines.slice(index, endIndex + 1).join("\n");
+        if (
+          candidateBlock.includes("executed") &&
+          candidateBlock.includes("failed") &&
+          candidateBlock.includes("requests") &&
+          candidateBlock.includes("assertions")
+        ) {
+          return candidateBlock;
+        }
+
+        break;
+      }
+
+      endIndex++;
+    }
+  }
+
+  return null;
+}
+
+function parseSummaryTableMetric(summaryTable: string, metricName: "requests" | "assertions"): SummaryTableMetric | null {
+  const metricPattern = new RegExp(`[\\|│]\\s*${metricName}\\s*[\\|│]\\s*(\\d+)\\s*[\\|│]\\s*(\\d+)\\s*[\\|│]`, "i");
+  const match = metricPattern.exec(summaryTable);
+
+  if (!match?.[1] || !match[2]) {
+    return null;
+  }
+
+  const executed = Number.parseInt(match[1], 10);
+  const failed = Number.parseInt(match[2], 10);
+
+  if (!Number.isFinite(executed) || !Number.isFinite(failed)) {
+    return null;
+  }
+
+  return {executed, failed};
+}
+
+function parseSummaryTableMetrics(summaryTable: string | null): SummaryTableMetrics {
+  if (!summaryTable) {
+    return {assertions: null, requests: null};
+  }
+
+  return {
+    assertions: parseSummaryTableMetric(summaryTable, "assertions"),
+    requests: parseSummaryTableMetric(summaryTable, "requests"),
+  };
+}
+
+function extractRequestStatusesFromLog(logContent: string): Readonly<Record<string, number>> {
+  const requestStatuses: Record<string, number> = {};
+  const lines = logContent.split(/\r?\n/);
+
+  let currentRequestName: string | null = null;
+
+  for (const line of lines) {
+    const requestMatch = /^\s*↳\s+(.+?)\s*$/.exec(line);
+    if (requestMatch?.[1]) {
+      currentRequestName = normalizeRequestName(requestMatch[1]);
+      continue;
+    }
+
+    if (!currentRequestName) {
+      continue;
+    }
+
+    const statusMatch = /\[(\d{3})\s+[^\]]+\]/.exec(line);
+    if (!statusMatch?.[1]) {
+      continue;
+    }
+
+    requestStatuses[currentRequestName] = Number.parseInt(statusMatch[1], 10);
+    currentRequestName = null;
+  }
+
+  return requestStatuses;
+}
+
+function parseSummaryFailuresByRequest(summaryContent: string): Readonly<Record<string, readonly string[]>> {
+  const failuresByRequest = new Map<string, string[]>();
+  const lines = summaryContent.split(/\r?\n/);
+
+  let currentErrorMessage = "";
+
+  for (const line of lines) {
+    const requestMatch = /^\s*in\s+"([^"]+)"/.exec(line);
+    if (requestMatch?.[1]) {
+      const requestName = normalizeRequestName(requestMatch[1]);
+      const messages = failuresByRequest.get(requestName) ?? [];
+      messages.push(currentErrorMessage);
+      failuresByRequest.set(requestName, messages);
+      currentErrorMessage = "";
+      continue;
+    }
+
+    const messageMatch = /^\s{3}(.+)$/.exec(line);
+    if (!messageMatch?.[1]) {
+      continue;
+    }
+
+    const message = messageMatch[1].trim();
+    if (!message.startsWith("in \"")) {
+      currentErrorMessage = message;
+    }
+  }
+
+  const serializedFailures: Record<string, readonly string[]> = {};
+  for (const [requestName, messages] of failuresByRequest.entries()) {
+    serializedFailures[requestName] = messages;
+  }
+
+  return serializedFailures;
+}
+
+function deriveFallbackFailureCategories(
+  requestStatuses: Readonly<Record<string, number>>,
+  summaryContent: string | null,
+): FailureCategories | null {
+  if (!summaryContent) {
+    return null;
+  }
+
+  const failuresByRequest = parseSummaryFailuresByRequest(summaryContent);
+  const failedRequests = Object.keys(failuresByRequest);
+  if (failedRequests.length === 0) {
+    return null;
+  }
+
+  const categories: FailureCategories = {
+    assertionFailures: 0,
+    clientErrors: 0,
+    other: 0,
+    serverErrors: 0,
+    timeouts: 0,
+  };
+
+  for (const requestName of failedRequests) {
+    const statusCode = requestStatuses[requestName];
+    const failureMessages = failuresByRequest[requestName] ?? [];
+
+    if (typeof statusCode === "number" && statusCode >= 400 && statusCode < 500) {
+      categories.clientErrors++;
+      continue;
+    }
+
+    if (typeof statusCode === "number" && statusCode >= 500) {
+      categories.serverErrors++;
+      continue;
+    }
+
+    if (failureMessages.some((message) => message.toLowerCase().includes("timeout"))) {
+      categories.timeouts++;
+      continue;
+    }
+
+    if (failureMessages.length > 0) {
+      categories.assertionFailures++;
+      continue;
+    }
+
+    categories.other++;
+  }
+
+  return categories;
+}
+
+function generateFallbackSummaryMarkdown(target: string, fallbackMetrics: FallbackTargetMetrics): string {
+  if (fallbackMetrics.source !== "summary-table") {
+    return "No Newman JSON report captured for this target and no parsable Newman CLI summary table was found.";
+  }
+
+  return [
+    "### Derived from Newman CLI summary table",
+    "",
+    "| Metric | Executed | Failed |",
+    "|--------|----------|--------|",
+    `| Requests | ${fallbackMetrics.totalRequests ?? "unknown"} | ${fallbackMetrics.failedRequests ?? "unknown"} |`,
+    `| Assertions | ${fallbackMetrics.totalAssertions ?? "unknown"} | ${fallbackMetrics.failedAssertions ?? "unknown"} |`,
+    "",
+    `_Source: parsed from ${target} log output because Newman JSON report was unavailable._`,
+  ].join("\n");
 }
 
 function fillTemplatePlaceholders(template: string, variables: Readonly<Record<string, string>>): string {
@@ -328,7 +553,7 @@ function generateLogTailSection(logTails: ReadonlyArray<readonly [string, string
     return "";
   }
 
-  let section = `## 📄 Log Tails (Last ${DEFAULT_LOG_TAIL_LENGTH} Lines)\n\n`;
+  let section = "## 📄 Log Tails\n\n";
 
   for (const [filename, content] of logTails) {
     section += `### ${filename}\n\n`;
@@ -434,21 +659,44 @@ async function loadAssertionSummaries(artifacts: TestArtifactPaths): Promise<Arr
   return summaries;
 }
 
-async function loadLogTails(artifacts: TestArtifactPaths, tailLength: number = DEFAULT_LOG_TAIL_LENGTH): Promise<Array<[string, string]>> {
+async function loadLogTails(artifacts: TestArtifactPaths): Promise<Array<[string, string]>> {
   const logTails: Array<[string, string]> = [];
 
   for (const logPath of [...artifacts.logs].sort((left, right) => left.localeCompare(right))) {
     try {
       const content = await fs.readText(logPath);
-      const lines = content.split("\n");
-      const tail = lines.slice(-tailLength).join("\n");
-      logTails.push([basename(logPath), tail]);
+      const summaryTable = extractNewmanSummaryTable(content);
+      const tableOrMessage = summaryTable ?? "No Newman CLI summary table found in this target log.";
+      logTails.push([basename(logPath), tableOrMessage]);
     } catch (error) {
       console.warn(`Failed to read log file ${logPath}:`, error);
     }
   }
 
   return logTails;
+}
+
+async function loadLogInsights(artifacts: TestArtifactPaths): Promise<Readonly<Record<string, {readonly requestStatuses: Readonly<Record<string, number>>; readonly summaryTable: string | null}>>> {
+  const insights: Record<string, {readonly requestStatuses: Readonly<Record<string, number>>; readonly summaryTable: string | null}> = {};
+
+  for (const logPath of [...artifacts.logs].sort((left, right) => left.localeCompare(right))) {
+    try {
+      const target = extractTargetFromLogPath(logPath);
+      if (!target) {
+        continue;
+      }
+
+      const content = await fs.readText(logPath);
+      insights[target] = {
+        requestStatuses: extractRequestStatusesFromLog(content),
+        summaryTable: extractNewmanSummaryTable(content),
+      };
+    } catch (error) {
+      console.warn(`Failed to parse log insights for ${logPath}:`, error);
+    }
+  }
+
+  return insights;
 }
 
 export async function loadNewmanReports(
@@ -511,6 +759,7 @@ async function generateIssueBody(
   const healthCheck = await loadHealthCheckData(artifacts);
   const summaries = await loadAssertionSummaries(artifacts);
   const logTails = await loadLogTails(artifacts);
+  const logInsights = await loadLogInsights(artifacts);
   const maxLogTailChars = readPositiveIntegerEnv("E2E_MAX_LOG_TAIL_CHARS", DEFAULT_MAX_LOG_TAIL_CHARS);
   const maxAssertionSummaryChars = readPositiveIntegerEnv("E2E_MAX_ASSERTION_SUMMARY_CHARS", DEFAULT_MAX_ASSERTION_SUMMARY_CHARS);
   const maxTargetSummaryChars = readPositiveIntegerEnv("E2E_MAX_TARGET_SUMMARY_CHARS", DEFAULT_MAX_TARGET_SUMMARY_CHARS);
@@ -523,6 +772,16 @@ async function generateIssueBody(
       const allTargets = [...new Set([...DEFAULT_TARGETS, ...Object.keys(results), ...Object.keys(newmanReports)])].sort((left, right) =>
         left.localeCompare(right),
       );
+
+      const summaryByTarget: Record<string, string> = {};
+      for (const [filename, content] of summaries) {
+        const target = extractTargetFromSummaryFilename(filename);
+        if (!target) {
+          continue;
+        }
+
+        summaryByTarget[target] = content;
+      }
 
       const logTailByTarget: Record<string, string> = {};
       for (const [filename, content] of logTails) {
@@ -563,26 +822,44 @@ async function generateIssueBody(
         const targetKey = normalizeTargetKey(normalizedTarget);
         const targetResult = results[normalizedTarget] ?? {duration: "N/A", status: "unknown" as JobStatus};
         const targetReport = newmanReports[normalizedTarget];
-        const failureCategories = targetReport ? newman.categorizeFailures(targetReport) : null;
+        const logInsight = logInsights[normalizedTarget];
+        const fallbackSummaryMetrics = parseSummaryTableMetrics(logInsight?.summaryTable ?? null);
+        const fallbackMetrics: FallbackTargetMetrics = {
+          failureCategories: deriveFallbackFailureCategories(logInsight?.requestStatuses ?? {}, summaryByTarget[normalizedTarget] ?? null),
+          failedAssertions: fallbackSummaryMetrics.assertions?.failed ?? null,
+          failedRequests: fallbackSummaryMetrics.requests?.failed ?? null,
+          source: fallbackSummaryMetrics.assertions || fallbackSummaryMetrics.requests ? "summary-table" : "none",
+          totalAssertions: fallbackSummaryMetrics.assertions?.executed ?? null,
+          totalRequests: fallbackSummaryMetrics.requests?.executed ?? null,
+        };
+        const failureCategories = targetReport ? newman.categorizeFailures(targetReport) : fallbackMetrics.failureCategories;
         const targetSummary = targetReport
           ? truncateText(
               newman.generateMarkdownSection(targetReport, capitalizeTarget(normalizedTarget), {includeFailureDetails: false}),
               maxTargetSummaryChars,
               "\n\n...(target summary truncated; see artifacts for full details)",
             )
-          : "No Newman report captured for this target.";
+          : truncateText(
+              generateFallbackSummaryMarkdown(capitalizeTarget(normalizedTarget), fallbackMetrics),
+              maxTargetSummaryChars,
+              "\n\n...(target summary truncated; see artifacts for full details)",
+            );
 
         templateVariables[`${targetKey}_STATUS`] = `${STATUS_EMOJI[targetResult.status]} ${targetResult.status}`;
         templateVariables[`${targetKey}_DURATION`] = targetResult.duration;
-        templateVariables[`${targetKey}_FAILED_ASSERTIONS`] = targetReport ? String(targetReport.failedAssertions) : "N/A";
-        templateVariables[`${targetKey}_FAILED_REQUESTS`] = targetReport ? String(targetReport.failedRequests) : "N/A";
+        templateVariables[`${targetKey}_FAILED_ASSERTIONS`] = targetReport
+          ? String(targetReport.failedAssertions)
+          : (fallbackMetrics.failedAssertions !== null ? String(fallbackMetrics.failedAssertions) : "unknown");
+        templateVariables[`${targetKey}_FAILED_REQUESTS`] = targetReport
+          ? String(targetReport.failedRequests)
+          : (fallbackMetrics.failedRequests !== null ? String(fallbackMetrics.failedRequests) : "unknown");
         templateVariables[`${targetKey}_NEWMAN_SUMMARY`] = targetSummary;
-        templateVariables[`${targetKey}_CLIENT_ERRORS`] = failureCategories ? String(failureCategories.clientErrors) : "N/A";
-        templateVariables[`${targetKey}_SERVER_ERRORS`] = failureCategories ? String(failureCategories.serverErrors) : "N/A";
-        templateVariables[`${targetKey}_TIMEOUTS`] = failureCategories ? String(failureCategories.timeouts) : "N/A";
-        templateVariables[`${targetKey}_ASSERTION_FAILURES`] = failureCategories ? String(failureCategories.assertionFailures) : "N/A";
-        templateVariables[`${targetKey}_OTHER_FAILURES`] = failureCategories ? String(failureCategories.other) : "N/A";
-        templateVariables[`${targetKey}_LOG_TAIL`] = logTailByTarget[normalizedTarget] ?? "No log tail available.";
+        templateVariables[`${targetKey}_CLIENT_ERRORS`] = failureCategories ? String(failureCategories.clientErrors) : "unknown";
+        templateVariables[`${targetKey}_SERVER_ERRORS`] = failureCategories ? String(failureCategories.serverErrors) : "unknown";
+        templateVariables[`${targetKey}_TIMEOUTS`] = failureCategories ? String(failureCategories.timeouts) : "unknown";
+        templateVariables[`${targetKey}_ASSERTION_FAILURES`] = failureCategories ? String(failureCategories.assertionFailures) : "unknown";
+        templateVariables[`${targetKey}_OTHER_FAILURES`] = failureCategories ? String(failureCategories.other) : "unknown";
+        templateVariables[`${targetKey}_LOG_TAIL`] = logTailByTarget[normalizedTarget] ?? "No Newman summary table found in this target log.";
       }
 
       const renderedTemplate = fillTemplatePlaceholders(template, templateVariables);

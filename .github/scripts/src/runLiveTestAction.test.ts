@@ -323,6 +323,84 @@ describe("runLiveTestAction", () => {
       expect(coreMocks.notice).toHaveBeenCalledWith(expect.stringContaining("Created E2E test failure issue"));
     });
 
+    it("derives template metrics from log summaries when Newman JSON artifacts are unavailable", async () => {
+      const root = await createTemporaryDirectory();
+      temporaryDirectories.push(root);
+
+      const nestedDirectory = join(root, "artifacts", "nested");
+      await mkdir(nestedDirectory, {recursive: true});
+
+      const frontendLog = [
+        "↳ 38 - Get Non-existent Invoice (404)",
+        "  GET https://arolariu.ro/rest/v1/invoices/00000000-0000-0000-0000-000000000000 [404 Not Found, 161B, 41ms]",
+        "↳ 39 - Unauthorized Request (401)",
+        "  GET https://arolariu.ro/rest/v1/invoices [401 Unauthorized, 0B, 33ms]",
+        "↳ 40 - Invalid Request Body (400)",
+        "  POST https://arolariu.ro/rest/v1/invoices [500 Internal Server Error, 218B, 55ms]",
+        "  ✓ noisy assertion line that should not be present in log tail section",
+        "",
+        "┌─────────────────────────┬──────────────────────┬─────────────────────┐",
+        "│                         │             executed │              failed │",
+        "├─────────────────────────┼──────────────────────┼─────────────────────┤",
+        "│              iterations │                    1 │                   0 │",
+        "├─────────────────────────┼──────────────────────┼─────────────────────┤",
+        "│                requests │                   40 │                   3 │",
+        "├─────────────────────────┼──────────────────────┼─────────────────────┤",
+        "│            test-scripts │                   80 │                   0 │",
+        "├─────────────────────────┼──────────────────────┼─────────────────────┤",
+        "│      prerequest-scripts │                   40 │                   0 │",
+        "├─────────────────────────┼──────────────────────┼─────────────────────┤",
+        "│              assertions │                  200 │                  10 │",
+        "├─────────────────────────┴──────────────────────┴─────────────────────┤",
+        "│ total run duration: 52.1s                                            │",
+        "├──────────────────────────────────────────────────────────────────────┤",
+        "│ total data received: 2.11MB (approx)                                 │",
+        "├──────────────────────────────────────────────────────────────────────┤",
+        "│ average response time: 602ms [min: 55ms, max: 1800ms, s.d.: 241ms]   │",
+        "└──────────────────────────────────────────────────────────────────────┘",
+      ].join("\n");
+
+      const frontendSummary = [
+        "### Failed Assertions (frontend)",
+        "1. AssertionError  Unknown assertion",
+        "   expected 500 to equal 404",
+        "   in \"38 - Get Non-existent Invoice (404)\"",
+        "",
+        "2. AssertionError  Unknown assertion",
+        "   timeout of 30000ms exceeded",
+        "   in \"39 - Unauthorized Request (401)\"",
+        "",
+        "3. AssertionError  Unknown assertion",
+        "   expected 201 to equal 400",
+        "   in \"40 - Invalid Request Body (400)\"",
+        "",
+      ].join("\n");
+
+      await writeFile(join(nestedDirectory, "e2e-frontend.log"), frontendLog, "utf-8");
+      await writeFile(join(nestedDirectory, "newman-frontend-summary.md"), frontendSummary, "utf-8");
+      await writeFile(join(nestedDirectory, "e2e-status-frontend.json"), '{"target":"frontend","status":"failure","duration":"3.50s"}', "utf-8");
+
+      setWorkflowEnvironment({
+        ARTIFACTS_DIR: root,
+        FRONTEND_DURATION: "3.50s",
+        FRONTEND_STATUS: "failure",
+        TARGETS: '["frontend"]',
+      });
+
+      await runLiveTestAction();
+
+      expect(githubMocks.createIssue).toHaveBeenCalledOnce();
+
+      const issueInput = githubMocks.createIssue.mock.calls[0]?.[0];
+      expect(issueInput).toBeDefined();
+      expect(issueInput?.body).toMatch(/### Frontend\s+### Derived from Newman CLI summary table/s);
+      expect(issueInput?.body).toContain("| Frontend | `❌ failure` | `3.50s` | `10` | `3` |");
+      expect(issueInput?.body).toContain("- Client errors (4xx): `2`");
+      expect(issueInput?.body).toContain("- Server errors (5xx): `1`");
+      expect(issueInput?.body).toContain("┌─────────────────────────┬──────────────────────┬─────────────────────┐");
+      expect(issueInput?.body).not.toContain("noisy assertion line that should not be present in log tail section");
+    });
+
     it("emits a compact issue body when the rendered payload exceeds GitHub size limits", async () => {
       const root = await createTemporaryDirectory();
       temporaryDirectories.push(root);
