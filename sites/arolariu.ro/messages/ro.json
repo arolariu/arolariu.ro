@@ -1303,6 +1303,58 @@
             "errors": {
               "unsupportedType": "Tip de fișier neacceptat: {type}",
               "tooLarge": "Fișier prea mare: {name} (max 10MB)"
+            },
+            "preview": {
+              "title": "Încărcări în așteptare ({count})",
+              "status": {
+                "pending": "În așteptare",
+                "uploading": "Se încarcă",
+                "retrying": "Se reîncearcă",
+                "completed": "Finalizat",
+                "failed": "Eșuat"
+              },
+              "removeTooltip": "Elimină din coadă",
+              "retryAttempt": "Încercare de reîncărcare {attempt}"
+            },
+            "uploadArea": {
+              "aria": {
+                "uploadFiles": "Încarcă fișiere"
+              },
+              "empty": {
+                "title": "Încarcă scanările tale",
+                "dropActive": "Plasează fișierele aici...",
+                "dropInactive": "Trage și plasează fișierele aici sau fă clic pentru a răsfoi",
+                "formats": "Acceptă JPG, PNG, PDF de până la 10MB fiecare",
+                "note": "Scanările vor fi stocate pentru utilizare ulterioară. Creează facturi din pagina Vizualizare Scanări.",
+                "chooseFiles": "Alege fișiere"
+              },
+              "compact": {
+                "dropActive": "Plasează pentru a adăuga...",
+                "dropInactive": "Adaugă mai multe scanări",
+                "subtitle": "JPG, PNG, PDF până la 10MB"
+              },
+              "actions": {
+                "clearAll": "Șterge tot",
+                "uploadScans": "Încarcă scanările",
+                "uploading": "Se încarcă..."
+              },
+              "tooltips": {
+                "clearAll": "Elimină toate încărcările în așteptare din coadă",
+                "uploadScans": "Încarcă toate scanările în așteptare în contul tău"
+              }
+            },
+            "toasts": {
+              "addedToQueue": "Au fost adăugate {count} fișier(e) în coada de încărcare",
+              "allCleared": "Toate fișierele au fost șterse",
+              "noFiles": "Nu există fișiere de încărcat",
+              "genericUploadFailed": "Încărcarea a eșuat",
+              "unknownDirectUploadError": "Eroare necunoscută la încărcarea directă",
+              "retryingWithAttempt": "{error}. Se reîncearcă ({attempt}/{maxAttempts})...",
+              "compatibilityFallback": "Se folosește calea de compatibilitate pentru încărcare...",
+              "compatibilityFailedStatus": "Încărcarea de compatibilitate a eșuat cu status {status}",
+              "unknownCompatibilityUploadError": "Eroare necunoscută la încărcarea de compatibilitate",
+              "uploadSuccess": "S-au încărcat cu succes {count} scanare(i)",
+              "uploadFailed": "Au eșuat {count} scanare(i)"
             }
           },
           "view-scans": {

@@ -7,7 +7,7 @@ targetScope = 'resourceGroup'
 // These roles enable the Next.js frontend to access Azure resources securely.
 //
 // Assigned Roles:
-// - Storage: Blob Reader, Queue Reader, Table Reader, Blob Contributor (for uploads)
+// - Storage: Blob Reader, Queue Reader, Table Reader, Blob Contributor (for uploads), Blob Delegator (for SAS user delegation keys)
 // - Configuration: App Configuration Reader
 // - Container Registry: ACR Pull and Read
 //
@@ -43,6 +43,7 @@ var roleDefinitions = {
   // Contributor Roles - Enable frontend to write user-uploaded content
   // -------------------------------------------------------------------------------------
   storageBlobContributor: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Write blobs (invoice uploads)
+  storageBlobDelegator: 'db58b8e5-c6ad-4a2a-8342-4190687cbf4a' // Generate user delegation keys for SAS
 
   // -------------------------------------------------------------------------------------
   // Container Registry Roles - Enable frontend to pull container images
@@ -115,6 +116,20 @@ resource frontendStorageBlobContributorRoleAssignment 'Microsoft.Authorization/r
     principalId: frontendIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Frontend managed identity access to storage blob data (read, write, delete)'
+  }
+}
+
+// Grants permission to generate user delegation keys for secure SAS token creation
+resource frontendStorageBlobDelegatorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, frontendIdentity.principalId, roleDefinitions.storageBlobDelegator)
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      roleDefinitions.storageBlobDelegator
+    )
+    principalId: frontendIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Frontend managed identity permission to generate blob user delegation keys for SAS'
   }
 }
 

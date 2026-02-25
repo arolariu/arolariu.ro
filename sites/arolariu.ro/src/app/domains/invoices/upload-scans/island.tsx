@@ -68,7 +68,7 @@ function UploadStats(): React.JSX.Element | null {
   const {pendingUploads, sessionStats} = useScanUpload();
 
   // Current batch stats (from pending uploads)
-  const uploading = pendingUploads.filter((u) => u.status === "uploading").length;
+  const uploading = pendingUploads.filter((u) => u.status === "uploading" || u.status === "retrying").length;
   const pending = pendingUploads.filter((u) => u.status === "idle").length;
   const failedInQueue = pendingUploads.filter((u) => u.status === "failed").length;
 

@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {deleteScan, fetchScans, uploadScan} from "./index";
+import {deleteScan, fetchScans, prepareScanUpload, recordBulkUploadTelemetry, uploadScan} from "./index";
 
 describe("scans barrel export", () => {
   it("should export deleteScan function", () => {
@@ -20,5 +20,15 @@ describe("scans barrel export", () => {
   it("should export uploadScan function", () => {
     expect(uploadScan).toBeDefined();
     expect(typeof uploadScan).toBe("function");
+  });
+
+  it("should export prepareScanUpload function", () => {
+    expect(prepareScanUpload).toBeDefined();
+    expect(typeof prepareScanUpload).toBe("function");
+  });
+
+  it("should export recordBulkUploadTelemetry function", () => {
+    expect(recordBulkUploadTelemetry).toBeDefined();
+    expect(typeof recordBulkUploadTelemetry).toBe("function");
   });
 });

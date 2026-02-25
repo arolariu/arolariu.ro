@@ -5,3 +5,4 @@
 
 export {ScanStatus, ScanType} from "./Scan";
 export type {CachedScan, Scan} from "./Scan";
+export type {BulkUploadTelemetryPayload, UploadFailureReasonCategory, UploadFailureReasonCounters} from "./BulkUploadTelemetry";

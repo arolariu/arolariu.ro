@@ -24,10 +24,12 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {convertBase64ToBlob} from "@/lib/utils.server";
-import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanStatus} from "@/types/scans";
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
+import {getScansStorageConfiguration} from "./storageConfig";
+import {createScanBlobName, generateScanId, mimeTypeToScanType} from "./uploadHelpers";
 
 /**
  * Input parameters for uploading a standalone scan.
@@ -52,35 +54,6 @@ type UploadScanOutput = Promise<
     scan: Scan;
   }>
 >;
-
-/**
- * Maps MIME type to ScanType enum.
- */
-function mimeTypeToScanType(mimeType: string): ScanType {
-  switch (mimeType.toLowerCase()) {
-    case "image/jpeg":
-    case "image/jpg":
-      return ScanType.JPEG;
-    case "image/png":
-      return ScanType.PNG;
-    case "application/pdf":
-      return ScanType.PDF;
-    default:
-      return ScanType.OTHER;
-  }
-}
-
-/**
- * Generates a UUIDv7-like identifier using timestamp + random bytes.
- * This ensures chronological ordering while maintaining uniqueness.
- */
-function generateScanId(): string {
-  const timestamp = Date.now().toString(16).padStart(12, "0");
-  const random = Array.from(crypto.getRandomValues(new Uint8Array(10)))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return `${timestamp.slice(0, 8)}-${timestamp.slice(8, 12)}-7${random.slice(0, 3)}-${random.slice(3, 7)}-${random.slice(7, 19)}`;
-}
 
 /**
  * Uploads a standalone scan to Azure Blob Storage.
@@ -139,14 +112,16 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
       addSpanEvent("scan.id.generate");
       const scanId = generateScanId();
       const timestamp = Date.now();
-      const extension = fileName.split(".").pop() ?? "bin";
-      const blobName = `scans/${userIdentifier}/${scanId}_${timestamp}.${extension}`;
+      const blobName = createScanBlobName({
+        userIdentifier,
+        scanId,
+        fileName,
+        timestampMs: timestamp,
+      });
 
       // Step 3. Prepare for blob upload
-      const containerName = "invoices";
+      const {containerName, storageEndpoint} = getScansStorageConfiguration();
       const storageCredentials = new DefaultAzureCredential();
-      // todo: fetch from config service.
-      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
 
       // Step 4. Upload the blob to Azure Storage
       addSpanEvent("azure.blob.upload.start");
