@@ -10,6 +10,11 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 
 ## Core Insights
 
+## BFF Architecture — Owner Knowledge
+- [[nextjs-serves-as-backend-for-frontend-bridging-react-ui-and-dotnet-api]] — Next.js functions as a BFF layer between React UI and .NET API
+- [[server-components-fetch-data-and-server-actions-mutate-keeping-a-slim-bff-barrier]] — RSC for reads, Server Actions for writes, keeping the BFF layer thin
+- [[trace-context-must-propagate-across-the-bff-boundary-for-end-to-end-transaction-visibility]] — W3C trace headers must flow from BFF to API for full transaction tracing
+
 ## Observability — RFC 1001
 
 ### Architecture Decisions
