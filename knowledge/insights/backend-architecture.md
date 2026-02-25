@@ -114,6 +114,43 @@ This is the **core backend architecture RFC**. It defines the five-layer service
 
 - [[all-service-exceptions-currently-map-to-500-status-missing-proper-http-differentiation]] — all catch blocks return 500 InternalServerError regardless of exception category; ValidationException should be 400
 
+## XML Documentation — RFC 2004
+
+The backend enforces a comprehensive XML documentation standard that goes beyond typical C# comments, creating tutorial-level documentation serving IDE IntelliSense, DocFX, and Swagger/OpenAPI simultaneously. Documentation is treated as a first-class development artifact with build-time enforcement.
+
+### Architecture Decisions
+
+- [[xml-documentation-is-treated-as-first-class-code-not-an-afterthought]] -- documentation evolves with code, explaining the "why" for multiple audiences: developers, API consumers, and tooling
+- [[cs1591-warnings-as-errors-enforces-xml-documentation-completeness-at-build-time]] -- the compiler enforces documentation coverage on all public/protected members, making it impossible to ship undocumented APIs
+
+### Dependencies
+
+- [[xml-documentation-feeds-intellisense-docfx-and-swagger-simultaneously]] -- a single XML doc comment serves three consumers: IDE tooltips, static documentation, and OpenAPI specs
+- [[swashbuckle-maps-xml-summary-to-swagger-operation-descriptions-via-includexml-comments]] -- IncludeXmlComments bridges compiled XML to Swagger operation and parameter descriptions
+
+### Patterns
+
+- [[each-standard-layer-requires-distinct-xml-documentation-emphasizing-its-role]] -- documentation varies by layer: brokers document dependency abstraction, Foundation documents CRUD+validation, Orchestration documents coordination
+- [[interface-docs-require-layer-role-responsibilities-list-and-implementation-references]] -- three-part interface template: Layer Role, responsibility bullets, and see cref links to implementations
+- [[see-cref-cross-references-create-a-navigable-code-documentation-graph]] -- liberal <see cref> and <seealso cref> create a clickable navigation graph in IDEs and DocFX
+- [[inheritdoc-propagates-base-documentation-while-allowing-layer-specific-overrides]] -- <inheritdoc/> avoids duplication across the DDD entity hierarchy with layer-specific <remarks> additions
+
+### Conventions
+
+- [[xml-summary-tags-are-capped-at-80-characters-matching-the-jsdoc-convention]] -- concise summaries balanced for IntelliSense, DocFX, and Swagger display widths
+- [[xml-summaries-use-verb-first-phrasing-for-methods-and-descriptive-phrasing-for-types]] -- "Provides"/"Validates" for methods, "Represents"/"Foundation service" for types, "The [noun] to [verb]" for params
+- [[remarks-tags-structure-context-into-labeled-bold-sections-for-scannable-documentation]] -- bold-labeled sections (Purpose, Architecture Context, Thread-safety, Design Rationale) create scannable doc blocks
+- [[xml-remarks-must-reference-ddd-patterns-and-the-standard-layer-roles]] -- every class-level remarks block includes "Layer Role (The Standard)" and DDD pattern references
+- [[method-remarks-must-document-behavior-validation-side-effects-and-idempotency]] -- methods require labeled sections for Behavior, Validation, Side Effects, and Idempotency
+- [[param-tags-document-domain-constraints-not-just-parameter-types]] -- params specify valid/invalid ranges, null behavior, defaults, and cross-parameter dependencies
+- [[enum-documentation-requires-sentinel-values-and-numeric-spacing-conventions]] -- enums document UNKNOWN=0 sentinel meaning, increment spacing, and analytics context
+- [[value-object-documentation-must-specify-mutability-equality-semantics-and-thread-safety]] -- records require three labeled sections: Mutability, Equality, Thread-safety
+
+### Constraints
+
+- [[broker-documentation-must-not-describe-business-logic-only-dependency-abstraction]] -- broker docs must list what they do NOT do: no validation, no orchestration, no authorization
+- [[xml-documentation-anti-patterns-prevent-signature-repetition-and-vague-summaries]] -- five banned anti-patterns: signature repetition, vague summaries, missing exceptions, implementation in summary, stale docs
+
 ## Key Source Documents
 
 - RFC 2001: Domain-Driven Design Architecture
