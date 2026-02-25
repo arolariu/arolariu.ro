@@ -22,6 +22,7 @@ Related Insights:
 - [[endpoints-expose-only-processing-services-following-the-standard-exposer-pattern]] — foundation: what the .NET API exposes to the BFF
 - [[frontend-and-backend-telemetry-converge-at-azure-application-insights]] — enables: unified observability across both layers
 - [[dual-translation-api-maps-to-the-island-pattern]] — extends: i18n is handled in the BFF layer, not the API
+- [[server-components-fetch-data-and-server-actions-mutate-keeping-a-slim-bff-barrier]] — extends: the slim-barrier convention that keeps the BFF layer thin
 
 Domains:
 - [[frontend-patterns]]

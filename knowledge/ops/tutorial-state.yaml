@@ -1,6 +1,6 @@
 track: researcher
 track_label: "Software Engineering"
-current_step: 2
-completed_steps: [1]
+current_step: 3
+completed_steps: [1, 2]
 started: "2026-02-25T17:00:00Z"
-last_activity: "2026-02-25T17:01:00Z"
+last_activity: "2026-02-25T17:02:00Z"
