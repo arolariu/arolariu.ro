@@ -127,7 +127,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
         corsRules: [
           {
             allowedOrigins: ['https://arolariu.ro', 'https://dev.arolariu.ro']
-            allowedMethods: ['GET', 'HEAD', 'OPTIONS']
+            allowedMethods: ['GET', 'HEAD', 'PUT', 'OPTIONS']
             allowedHeaders: ['*']
             exposedHeaders: ['*']
             maxAgeInSeconds: 3600
