@@ -39,6 +39,41 @@ Backend architecture for the arolariu.ro API (sites/api.arolariu.ro/). Built on 
 
 - [[domain-and-application-layers-require-85-percent-test-coverage]] — infrastructure layer exempted, focus on domain and service layers
 
+## Backend Observability -- RFC 2002
+
+The backend uses OpenTelemetry for distributed tracing, structured logging, and metrics collection, exporting to Azure Application Insights.
+
+### Architecture Decisions
+
+- [[activity-sources-align-with-ddd-bounded-contexts-for-domain-scoped-tracing]] -- one ActivitySource per bounded context (Common, Core, Auth, Invoices) enables domain-scoped filtering and sampling
+- [[azure-monitor-otlp-exporter-bridges-opentelemetry-to-application-insights]] -- vendor-neutral OTel APIs with Azure-specific exporter, avoiding Application Insights SDK lock-in
+- [[source-generated-logging-eliminates-allocation-overhead-in-dotnet]] -- LoggerMessage source generators achieve less than 50ns per log call with compile-time validation
+- [[managed-identity-replaces-connection-strings-for-telemetry-authentication]] -- DefaultAzureCredential in dev, Managed Identity in production, no secrets in code
+- [[head-based-sampling-controls-trace-volume-in-production]] -- 1-10% sampling rate balances cost against observability coverage
+
+### Patterns
+
+- [[trycatch-pattern-integrates-activity-tracing-into-every-service-method]] -- The Standard's TryCatch wrapper couples error handling with automatic span lifecycle
+- [[three-extension-methods-partition-telemetry-setup-by-signal-type]] -- AddOTelLogging/Metering/Tracing each configure one signal independently
+- [[backend-auto-instrumentation-covers-aspnetcore-httpclient-and-efcore]] -- 90% of telemetry requires zero code changes via three instrumentation packages
+- [[ioptions-manager-resolves-telemetry-endpoints-from-config-then-keyvault]] -- layered resolution: appsettings.json for dev, Key Vault for production
+- [[activity-listener-with-shouldlistento-validates-traces-in-integration-tests]] -- in-memory trace capture for xUnit tests without external exporters
+
+### Conventions
+
+- [[nameof-convention-for-activity-names-ensures-refactoring-safety]] -- nameof(Method) instead of string literals for IDE rename propagation
+- [[console-exporters-are-conditionally-compiled-for-debug-builds-only]] -- compile-time stripping via conditional compilation, not runtime disabling
+- [[backend-metrics-rely-on-aspnetcore-and-httpclient-automatic-meters]] -- six standard OTel metrics with 60-second batch export
+
+### Constraints and Gotchas
+
+- [[telemetry-data-excludes-pii-through-redaction-and-secret-masking]] -- no PII in traces/logs, secrets referenced only by Key Vault URL
+- [[dual-telemetry-runs-otel-alongside-legacy-application-insights-until-q2-2026]] -- dual SDK overhead until legacy is removed after OTel feature parity
+
+### Cross-Stack
+
+- [[frontend-and-backend-telemetry-converge-at-azure-application-insights]] -- both Next.js and .NET telemetry land in the same Application Insights workspace for full-stack correlation
+
 ## Key Source Documents
 
 - RFC 2001: Domain-Driven Design Architecture
