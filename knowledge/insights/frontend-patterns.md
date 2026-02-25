@@ -130,6 +130,59 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 ### Dependencies
 - [[typedoc-generates-api-reference-from-jsdoc-into-the-docs-site]] — two TypeDoc configs produce Markdown API docs, making JSDoc the single source for IDE and published references
 
+## Metadata & SEO — RFC 1004
+
+### Architecture Decisions
+- [[metadata-system-uses-layered-architecture-for-centralized-seo-management]] — five-layer stack (Route -> createMetadata -> Base Config -> I18n -> Next.js API) so routes only provide overrides
+- [[static-metadata-export-preferred-for-routes-without-localized-content]] — zero-overhead static exports for language-independent routes; generateMetadata reserved for localized content
+- [[satisfies-keyword-enforces-metadata-type-correctness-without-type-widening]] — satisfies + as const preserves narrow literal types while validating against Metadata interface
+- [[sitemap-is-static-xml-requiring-manual-updates-for-new-routes]] — hand-maintained XML sitemap; dynamic generation planned as future enhancement
+
+### Conventions
+- [[metadata-translations-use-double-underscore-metadata-namespace-convention]] — all SEO strings live under __metadata__ keys in translation files, separated from UI strings
+- [[title-template-pattern-prevents-double-site-name-in-page-titles]] — base template "%s | arolariu.ro" means routes provide only the page-specific title segment
+
+### Patterns
+- [[createmetadata-helper-composes-route-metadata-by-merging-base-defaults-with-overrides]] — single composition point that auto-propagates title/description to OpenGraph and Twitter
+- [[generatemetadata-follows-a-fixed-pattern-of-get-translations-then-get-locale-then-compose]] — rigid three-step sequence: getTranslations -> getLocale -> createMetadata for all dynamic routes
+- [[root-layout-re-exports-base-metadata-to-establish-global-defaults]] — one-line re-export wires base config as fallback for any route without its own metadata
+- [[opengraph-locale-mapping-converts-simple-codes-to-regional-format-via-readonlymap]] — maps 'en'->'en_US', 'ro'->'ro_RO'; French locale falls back to en_US (gap)
+
+### Dependencies
+- [[metadata-system-depends-on-next-intl-for-all-localized-seo-content]] — hard runtime coupling: generateMetadata imports getTranslations/getLocale from next-intl/server
+
+### Gotchas
+- [[missing-metadata-keys-in-any-locale-file-breaks-generatemetadata-at-runtime]] — TypeScript types generated from primary locale only; missing keys in fr.json or ro.json fail at runtime
+- [[nextjs-aggressively-caches-metadata-requiring-cache-clear-during-development]] — metadata changes may require deleting .next directory to appear in dev mode
+
+## Advanced Frontend Patterns — RFC 1007
+
+### Architecture Decisions
+- [[server-action-results-use-discriminated-unions-instead-of-exceptions]] — ServerActionResult<T> encodes success/failure as data, preserving type safety across the server-client serialization boundary
+- [[dialog-context-enforces-single-dialog-constraint-to-prevent-stacking]] — openDialog no-ops when a dialog is already open, eliminating modal stacking bugs
+- [[entity-store-state-splits-into-persisted-entities-and-transient-selection]] — entities persist to IndexedDB; selection state and hydration flags are transient
+
+### Conventions
+- [[http-status-codes-map-to-semantic-error-codes-for-ui-consumption]] — mapHttpStatusToErrorCode translates HTTP statuses to seven semantic error codes
+- [[server-actions-wrap-api-calls-in-opentelemetry-spans-for-tracing]] — every server action wrapped in withSpan for full lifecycle tracing
+- [[dialog-types-follow-feature-double-underscore-action-naming-convention]] — FEATURE__ACTION naming (e.g., EDIT_INVOICE__MERCHANT) for dialog type identifiers
+- [[useShallow-selectors-prevent-unnecessary-zustand-store-re-renders]] — mandatory useShallow wrapping for entity store selectors
+- [[dialog-payloads-carry-ids-not-full-objects-to-minimize-context-size]] — pass entity IDs in dialog payloads, not full objects
+
+### Patterns
+- [[generic-entity-store-factory-eliminates-crud-boilerplate-through-zustand-generics]] — createEntityStore<E> generates a complete store from a 3-field config
+- [[hydration-tracking-prevents-flash-of-empty-content-from-indexeddb-restore]] — hasHydrated flag gates rendering until IndexedDB restoration completes
+- [[dialog-context-uses-ref-plus-state-hybrid-for-reads-and-renders]] — dual ref+state storage ensures synchronous correctness and proper React re-renders
+
+### Constraints
+- [[entity-store-factory-awaits-incremental-migration-from-hand-rolled-stores]] — factory is tested but production stores (invoices, merchants, scans) are still hand-rolled
+
+## Component Library Integration — RFC 1006
+
+### Cross-Domain Dependencies
+- [[component-library-provides-client-side-primitives-consumed-by-island-pattern]] -- library components are client-side, consumed in island.tsx not page.tsx
+- [[aschild-prop-enables-polymorphic-rendering-via-radix-slot]] -- enables Button-as-Link composition for client-side navigation in islands
+
 ## Key Source Documents
 
 - RFC 1001: Frontend OpenTelemetry Observability

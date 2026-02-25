@@ -19,6 +19,7 @@ The alternative the RFC explicitly warns against is mixing SEO data with content
 Related Insights:
 - [[translation-namespaces-mirror-component-hierarchy-using-mixed-case-conventions]] -- extends: __metadata__ is a specialized namespace pattern within the broader hierarchy
 - [[auto-generated-types-enforce-translation-key-safety-at-compile-time]] -- enables: type generation includes __metadata__ keys, so generateMetadata() gets compile-time safety
+- [[metadata-translations-use-double-underscore-metadata-namespace-convention]] -- extends: RFC 1004 perspective on the same convention, focusing on the SEO consumption pattern
 
 Domains:
 - [[frontend-patterns]]
