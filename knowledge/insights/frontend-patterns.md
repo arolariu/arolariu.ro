@@ -67,6 +67,29 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 - [[structured-log-export-via-otlp-unifies-all-three-pillars]] — OTLP log export
 - [[business-logic-aware-samplers-enable-intelligent-trace-selection]] — domain-specific sampling
 
+## State Management — RFC 1005
+
+### Architecture Decisions
+- [[zustand-chosen-over-redux-and-jotai-for-minimal-boilerplate-with-persistence]] — Redux rejected for boilerplate, Jotai for poor entity collection fit, Context for no persistence
+
+### Conventions
+- [[store-naming-follows-use-entity-store-convention-with-camelcase]] — use{PluralEntity}Store naming with barrel export from src/stores/
+- [[devtools-middleware-is-conditionally-included-only-in-development-builds]] — NODE_ENV branching: devtools in dev, persist-only in prod
+
+### Patterns
+- [[zustand-stores-split-state-into-persisted-in-memory-and-actions-layers]] — three TypeScript interfaces enforce the persistence boundary at the type level
+- [[indexeddb-entity-level-storage-via-dexie-handles-large-offline-datasets]] — Dexie adapter stores each entity as individual IndexedDB row for efficient updates
+- [[server-data-merges-into-zustand-store-after-hydration-completes]] — RSC fetches data, passes to island, island merges after hasHydrated is true
+- [[selective-zustand-subscriptions-prevent-unnecessary-re-renders]] — selector functions narrow re-render scope to accessed state slices
+- [[upsert-pattern-handles-create-and-update-through-single-store-action]] — single action for API sync prevents duplicate entries in offline-first flows
+- [[preferences-store-uses-flat-key-value-persistence-unlike-entity-stores]] — singleton config uses shared table; entity stores use per-row tables
+
+### Constraints
+- [[zustand-stores-live-exclusively-in-client-island-components]] — hooks require "use client"; Server Components pass data as props to islands
+
+### Gotchas
+- [[indexeddb-hydration-is-async-requiring-explicit-hashydrated-guards]] — every component reading persisted data must check hasHydrated before rendering
+
 ## Key Source Documents
 
 - RFC 1001: Frontend OpenTelemetry Observability
