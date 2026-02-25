@@ -74,6 +74,46 @@ The backend uses OpenTelemetry for distributed tracing, structured logging, and 
 
 - [[frontend-and-backend-telemetry-converge-at-azure-application-insights]] -- both Next.js and .NET telemetry land in the same Application Insights workspace for full-stack correlation
 
+## The Standard Implementation — RFC 2003
+
+This is the **core backend architecture RFC**. It defines the five-layer service hierarchy, dependency management rules, and flow-forward constraints that every backend service must follow.
+
+### Architectural Foundation
+
+- [[tri-nature-theory-grounds-the-standard-in-dependencies-purpose-and-exposure]] — the theoretical basis: Dependencies (Brokers), Purpose (Foundation/Processing/Orchestration), Exposure (Exposers)
+- [[service-layers-flow-strictly-downward-in-the-standard]] — the central invariant: Exposers call Processing, Processing calls Orchestration, Orchestration calls Foundation, Foundation calls Brokers -- never sideways or upward
+- [[the-florance-pattern-limits-each-service-to-two-or-three-dependencies]] — max 2-3 domain dependencies per service (logging/telemetry excluded)
+
+### Layer Responsibilities
+
+- [[brokers-are-thin-wrappers-with-zero-business-logic]] — bottom layer: Cosmos DB, AI services, translation wrapped with no validation or domain rules
+- [[foundation-services-introduce-validation-and-business-language-to-broker-operations]] — broker-neighboring layer: structural/logical validation plus domain verb naming
+- [[processing-services-perform-higher-order-logic-without-direct-broker-access]] — computational layer: enrichment, batch operations, collection manipulation
+- [[orchestration-services-coordinate-multi-entity-workflows-across-processing-services]] — coordination layer: cross-entity flows like create-then-analyze-then-link
+- [[endpoints-expose-only-processing-services-following-the-standard-exposer-pattern]] — protocol layer: HTTP mapping with no business logic
+
+### Conventions
+
+- [[business-language-maps-technical-crud-to-domain-verbs-in-every-service-layer]] — Insert/Select/Update/Delete become Create/Read/Update/Delete (planned migration to Add/Retrieve/Modify/Remove)
+- [[each-layer-validates-its-own-inputs-independently]] — Brokers validate nothing, Foundation validates structure, Processing validates used-data only, Orchestration validates cross-entity, Exposers validate protocol
+- [[partial-classes-split-services-into-implementation-validation-and-exception-files]] — services use 3 partial files (main, .Validations.cs, .Exceptions.cs)
+- [[exposer-endpoints-split-across-four-partial-class-files-by-concern]] — endpoints use 4 partial files (routes, handlers, mappings, metadata)
+- [[exception-naming-follows-entity-layer-category-convention-for-traceability]] — {Entity}{Layer}Service{Category}Exception naming pattern
+
+### Error Handling
+
+- [[three-tier-exception-classification-separates-validation-dependency-and-dependency-validation-failures]] — every layer wraps exceptions into Validation, Dependency, or DependencyValidation categories
+- [[trycatch-pattern-integrates-activity-tracing-into-every-service-method]] — TryCatchAsync combines exception wrapping with OpenTelemetry Activity spans
+
+### Testing
+
+- [[interface-driven-design-enables-mock-based-unit-testing-at-every-layer]] — Pure Contracting: every service implements an interface enabling test doubles via Moq
+- [[each-layer-mocks-only-the-layer-directly-below-for-test-isolation]] — Foundation mocks Brokers, Processing mocks Foundation, Orchestration mocks Processing, Exposers mock Processing
+
+### Gotchas
+
+- [[all-service-exceptions-currently-map-to-500-status-missing-proper-http-differentiation]] — all catch blocks return 500 InternalServerError regardless of exception category; ValidationException should be 400
+
 ## Key Source Documents
 
 - RFC 2001: Domain-Driven Design Architecture
@@ -87,6 +127,7 @@ The backend uses OpenTelemetry for distributed tracing, structured logging, and 
 
 ## Open Questions
 
-- What are the specific Florance Pattern violations to watch for?
 - Should Merchant eventually be promoted to its own bounded context if merchant management complexity grows?
 - When will explicit domain event types (e.g., InvoiceCreatedEvent) become necessary?
+- When will the exception-to-HTTP-status mapping be refined? (see [[all-service-exceptions-currently-map-to-500-status-missing-proper-http-differentiation]])
+- Should business language migration (Create/Read -> Add/Retrieve) be prioritized? (see [[business-language-maps-technical-crud-to-domain-verbs-in-every-service-layer]])
