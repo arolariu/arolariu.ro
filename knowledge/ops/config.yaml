@@ -1,0 +1,51 @@
+# ops/config.yaml -- edit these to adjust your system
+# See ops/derivation.md for WHY each choice was made
+
+dimensions:
+  granularity: moderate
+  organization: flat
+  linking: explicit+implicit
+  processing: heavy
+  navigation: 3-tier
+  maintenance: condition-based
+  schema: moderate
+  automation: full
+
+features:
+  semantic-search: false
+  processing-pipeline: true
+  self-space: true
+  multi-domain: true
+
+processing_tier: auto
+
+processing:
+  depth: standard
+  chaining: suggested
+  extraction:
+    selectivity: moderate
+    categories:
+      - decisions
+      - conventions
+      - patterns
+      - gotchas
+      - constraints
+      - dependencies
+  verification:
+    description_test: true
+    schema_check: true
+    link_check: true
+  reweave:
+    scope: related
+    frequency: after_create
+
+provenance: full
+
+personality:
+  enabled: true
+
+research:
+  primary: web-search
+  fallback: web-search
+  last_resort: web-search
+  default_depth: moderate
