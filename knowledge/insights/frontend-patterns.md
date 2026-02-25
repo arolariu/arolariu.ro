@@ -108,6 +108,28 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 ### Gotchas
 - [[indexeddb-hydration-is-async-requiring-explicit-hashydrated-guards]] — every component reading persisted data must check hasHydrated before rendering
 
+## JSDoc/TSDoc Documentation — RFC 1002
+
+### Architecture Decisions
+- [[typescript-types-express-shape-while-jsdoc-expresses-intent-and-constraints]] — core thesis: types handle structural correctness, JSDoc handles semantic correctness and design rationale
+- [[eslint-plugin-jsdoc-enforces-documentation-completeness-at-lint-time]] — nine ESLint rules with tiered severity enforce JSDoc presence and correctness in CI
+- [[jsdoc-serves-as-training-data-for-ai-code-generation]] — JSDoc is an explicit input channel for GitHub Copilot, making documentation quality an AI productivity lever
+
+### Conventions
+- [[jsdoc-summaries-are-capped-at-80-characters-for-intellisense-readability]] — tooltip-friendly first lines for VS Code quick info panels
+- [[function-summaries-start-with-verbs-and-type-summaries-start-with-nouns]] — verb/noun prefix convention for scannable IntelliSense and TypeDoc output
+- [[every-react-component-jsdoc-must-declare-its-rendering-context]] — Server/Client/Edge must appear in @remarks to make execution model explicit
+- [[server-actions-require-four-documented-sections-in-remarks]] — Execution Context, Authentication, Side Effects, Error Handling required in every server action
+- [[custom-hooks-document-dependencies-side-effects-and-rerender-triggers]] — three-section @remarks template for hooks: Dependencies, Side Effects, Re-render Triggers
+- [[jsdoc-param-tags-document-domain-constraints-beyond-typescript-types]] — @param carries constraint semantics (UUIDs, valid ranges, defaults) that TS types cannot express
+- [[fileoverview-tags-provide-module-level-architectural-context]] — major modules require @fileoverview with purpose, capabilities, @module name, and cross-references
+
+### Patterns
+- [[jsdoc-cross-references-link-code-to-rfcs-and-framework-docs]] — @see and @link create a reference web from source code to RFCs, specs, and framework docs
+
+### Dependencies
+- [[typedoc-generates-api-reference-from-jsdoc-into-the-docs-site]] — two TypeDoc configs produce Markdown API docs, making JSDoc the single source for IDE and published references
+
 ## Key Source Documents
 
 - RFC 1001: Frontend OpenTelemetry Observability
