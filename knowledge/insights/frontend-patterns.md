@@ -67,6 +67,24 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 - [[structured-log-export-via-otlp-unifies-all-three-pillars]] — OTLP log export
 - [[business-logic-aware-samplers-enable-intelligent-trace-selection]] — domain-specific sampling
 
+## Internationalization — RFC 1003
+
+### Architecture Decisions
+- [[cookie-based-locale-routing-avoids-url-path-segments]] — locale resolved from HTTP cookie, not URL path prefixes, trading hreflang SEO for simpler routing
+- [[auto-generated-types-enforce-translation-key-safety-at-compile-time]] — en.d.json.ts provides IntelliSense and compile-time errors for translation keys
+
+### Conventions
+- [[english-locale-file-is-the-single-source-of-truth-for-translation-structure]] — en.json defines canonical structure; all locales must mirror it
+- [[translation-namespaces-mirror-component-hierarchy-using-mixed-case-conventions]] — PascalCase domains, camelCase properties, kebab-case routes
+- [[metadata-namespace-convention-separates-seo-from-content-translations]] — reserved __metadata__ sub-object for page-level SEO strings
+- [[scoped-translators-narrow-namespace-to-prevent-full-path-key-access]] — always pass namespace to useTranslations()/getTranslations(), never use unscoped full paths
+
+### Patterns
+- [[dual-translation-api-maps-to-the-island-pattern]] — getTranslations() for RSC pages, useTranslations() hook for client islands
+- [[server-components-resolve-translations-at-zero-client-bundle-cost]] — RSC translations render server-side, shipping no i18n runtime to the browser
+- [[dynamic-imports-load-only-the-active-locale-messages-per-request]] — one locale's JSON loaded per server request via dynamic import
+- [[locale-switching-flows-through-zustand-store-to-cookie-to-router-refresh]] — five-step chain: Commander -> store -> cookie -> onLocaleSync -> router.refresh()
+
 ## State Management — RFC 1005
 
 ### Architecture Decisions
