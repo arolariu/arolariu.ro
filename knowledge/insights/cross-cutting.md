@@ -14,8 +14,14 @@ Conventions and constraints that apply across all domains in the monorepo. These
 - [[logging-sensitive-data-in-trace-attributes-is-a-security-violation]] — PII must never appear in telemetry data
 - [[attribute-redaction-processor-prevents-sensitive-data-leakage]] — defense-in-depth processor (speculative)
 
+### Security (from RFC 2002)
+- [[telemetry-data-excludes-pii-through-redaction-and-secret-masking]] — backend extends the PII prohibition to all three OTel signals (traces, logs, metrics)
+
 ### Cross-Service Conventions (from RFC 1001)
 - [[how-should-rpc-semantic-conventions-apply-to-internal-api-calls]] — convention alignment between frontend and backend telemetry
+
+### Cross-Stack Observability (from RFC 2002)
+- [[frontend-and-backend-telemetry-converge-at-azure-application-insights]] — both Next.js and .NET telemetry land in the same workspace for full-stack trace correlation
 
 ## Key Source Documents
 

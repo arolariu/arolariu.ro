@@ -42,6 +42,11 @@ Infrastructure and deployment for the arolariu.ro platform. Azure Cloud provider
 - [[seven-backends-support-otlp-validating-vendor-neutral-strategy]] — seven backends accept OTLP natively
 - [[w3c-baggage-propagation-enables-cross-service-context-sharing]] — cross-service context propagation (speculative)
 
+### Backend Observability Infrastructure (from RFC 2002)
+- [[azure-monitor-otlp-exporter-bridges-opentelemetry-to-application-insights]] — .NET exporter translates standard OTel data to Azure Monitor wire format
+- [[managed-identity-replaces-connection-strings-for-telemetry-authentication]] — Managed Identity in production eliminates secrets in telemetry configuration
+- [[frontend-and-backend-telemetry-converge-at-azure-application-insights]] — both stacks deliver to the same Application Insights workspace for cross-stack correlation
+
 ## Key Source Areas
 
 - infra/Azure/Bicep/ — Infrastructure as Code
