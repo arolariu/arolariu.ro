@@ -10,7 +10,12 @@ Infrastructure and deployment for the arolariu.ro platform. Azure Cloud provider
 
 ## Core Insights
 
-(To be populated by distilling from infra/Azure/Bicep/ and .github/workflows/)
+### Observability Infrastructure (from RFC 1001)
+- [[otlp-http-protocol-provides-vendor-neutral-telemetry-export]] — OTLP enables backend flexibility without app code changes
+- [[opentelemetry-collector-serves-as-proxy-between-app-and-backends]] — Collector handles routing, filtering, and batching
+- [[otlp-endpoint-configuration-uses-environment-variables]] — env var configuration for deployment flexibility
+- [[seven-backends-support-otlp-validating-vendor-neutral-strategy]] — seven backends accept OTLP natively
+- [[w3c-baggage-propagation-enables-cross-service-context-sharing]] — cross-service context propagation (speculative)
 
 ## Key Source Areas
 

@@ -10,7 +10,12 @@ Conventions and constraints that apply across all domains in the monorepo. These
 
 ## Core Insights
 
-(To be populated by distilling from CLAUDE.md and .github/copilot-instructions.md)
+### Security (from RFC 1001)
+- [[logging-sensitive-data-in-trace-attributes-is-a-security-violation]] — PII must never appear in telemetry data
+- [[attribute-redaction-processor-prevents-sensitive-data-leakage]] — defense-in-depth processor (speculative)
+
+### Cross-Service Conventions (from RFC 1001)
+- [[how-should-rpc-semantic-conventions-apply-to-internal-api-calls]] — convention alignment between frontend and backend telemetry
 
 ## Key Source Documents
 
