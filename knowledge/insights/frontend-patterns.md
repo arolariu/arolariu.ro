@@ -183,6 +183,32 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 - [[component-library-provides-client-side-primitives-consumed-by-island-pattern]] -- library components are client-side, consumed in island.tsx not page.tsx
 - [[aschild-prop-enables-polymorphic-rendering-via-radix-slot]] -- enables Button-as-Link composition for client-side navigation in islands
 
+## SCSS System — RFC 1008
+
+### Architecture Decisions
+- [[scss-modules-chosen-over-css-in-js-for-zero-runtime-scoped-styling]] — CSS-in-JS rejected for runtime overhead and RSC incompatibility; SCSS Modules provide compile-time scoping with full Sass power
+- [[seven-one-pattern-organizes-scss-into-abstracts-base-themes-animations-components-utilities]] — industry-standard 7-1 file organization adapted for Next.js with pages/ and vendors/ omitted
+- [[component-library-retains-tailwind-while-site-pages-migrate-to-scss-modules]] — clear boundary: @arolariu/components keeps Tailwind permanently, site pages migrate route-by-route
+
+### Conventions
+- [[every-css-module-file-starts-with-use-abstracts-as-star-import]] — mandatory @use abstracts as * header gives each module access to all tokens and mixins
+- [[css-module-classes-use-semantic-camelcase-not-bem-because-scoping-is-automatic]] — camelCase naming (cardTitle, ctaButton) replaces BEM since CSS Modules handle scoping
+- [[bracket-notation-accesses-scss-module-classes-for-typescript-safety]] — styles["className"] over styles.className for explicit optionality handling
+- [[mobile-first-respond-to-mixin-is-the-preferred-responsive-approach]] — base styles target mobile, respond-to() adds progressive min-width enhancements
+- [[dark-mode-styling-prefers-include-dark-mixin-over-global-selector]] — @include dark wraps :global(.dark) & for consistency; most colors auto-adapt via CSS custom properties
+- [[z-index-uses-named-semantic-layers-to-prevent-stacking-conflicts]] — nine named layers from base(0) through toast(1080) accessed via z() function
+- [[shadow-elevation-follows-six-level-material-design-inspired-scale]] — six levels (none through 2xl) with automatic dark mode opacity adjustment
+- [[sassdoc-triple-slash-annotations-document-all-public-scss-apis]] — 17 named @group categories with @param, @return, @throws, @example tags
+
+### Patterns
+- [[css-custom-properties-handle-runtime-theming-while-scss-variables-handle-compile-time-tokens]] — dual-layer variables: CSS vars for runtime themes, SCSS maps for compile-time tokens
+- [[scss-helper-functions-with-error-messages-enforce-valid-token-access]] — space(), breakpoint(), z(), radius() validate keys at compile time with listed alternatives
+- [[scss-spacing-and-breakpoints-mirror-tailwind-for-incremental-migration]] — identical token values enable pixel-perfect migration without visual regressions
+- [[scss-feature-flags-in-config-enable-compile-time-capability-toggling]] — seven boolean flags control fluid type, container queries, print styles via @use with()
+
+### Constraints
+- [[scss-main-loads-after-tailwind-ensuring-higher-cascade-specificity]] — import order in globals.scss places SCSS after Tailwind layers for specificity control
+
 ## Key Source Documents
 
 - RFC 1001: Frontend OpenTelemetry Observability
@@ -192,6 +218,7 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 - RFC 1005: State Management (Zustand)
 - RFC 1006: Component Library Architecture
 - RFC 1007: Advanced Frontend Patterns
+- RFC 1008: SCSS System Architecture
 
 ## Tensions
 
