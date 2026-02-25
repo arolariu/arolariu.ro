@@ -79,9 +79,14 @@ Frontend architecture for the arolariu.ro platform (sites/arolariu.ro/). Built o
 
 ## Tensions
 
-(none yet)
+- [[edge-runtime-has-limited-auto-instrumentation-creating-observability-gap]] — edge functions run without telemetry
+- [[client-side-observability-requires-separate-browser-sdk]] — dual-SDK maintenance burden
+- [[all-traces-exported-without-sampling-creates-cost-pressure-at-scale]] — no sampling at current configuration
+- [[console-based-logging-lacks-structured-export]] — logs not on par with traces and metrics
 
 ## Open Questions
 
+- [[how-should-rpc-semantic-conventions-apply-to-internal-api-calls]] — HTTP vs RPC conventions for frontend-backend calls
+- [[what-sampling-strategy-balances-cost-and-observability-at-scale]] — head-based vs tail-based vs business-aware
 - How do the Island pattern conventions interact with React 19's new features?
 - What are the edge cases in the RSC-first approach?
