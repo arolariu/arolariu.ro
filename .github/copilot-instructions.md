@@ -2,7 +2,9 @@
 
 This document provides comprehensive guidelines for GitHub Copilot when working with the arolariu.ro monorepo codebase.
 
-> **See also**: `AGENTS.md` (root) for agent-level guidance | `.github/instructions/` for domain-specific rules | `.github/agents/` for specialized agents | `.github/prompts/` for task templates | `.github/skills/` for scaffolding capabilities
+> **See also**: `AGENTS.md` (root) for agent-level guidance | `.github/instructions/` for domain-specific rules | `.github/agents/` for specialized agents | `.github/prompts/` for task templates | `.github/skills/` for scaffolding capabilities | `knowledge/` for the architectural knowledge vault
+
+> **Architectural Knowledge Vault**: Before answering architecture questions, check `knowledge/insights/` for existing insights. The vault contains distilled decisions, conventions, patterns, and constraints from RFCs and instruction files. Start at `knowledge/insights/index.md` for navigation. Use `@workspace /distill` to extract new insights from source documents.
 
 ---
 
