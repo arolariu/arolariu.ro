@@ -124,6 +124,8 @@ This is the **core backend architecture RFC**. It defines the five-layer service
 ## Tensions
 
 - Domain events are handled implicitly through service layers, but future requirements (notifications, analytics reactions) may necessitate explicit domain event types — see [[domain-events-are-implicit-through-service-layer-coordination-not-explicit-types]]
+- The three-tier exception classification exists in code but is invisible at the HTTP boundary because all exceptions map to 500 — see [[all-service-exceptions-currently-map-to-500-status-missing-proper-http-differentiation]]
+- The Standard recommends Exposers depend on a single Processing service, but the arolariu.ro endpoints currently inject Processing directly (skipping Orchestration in the call chain from endpoint to service) — this is valid per The Standard but limits what the endpoint layer can coordinate
 
 ## Open Questions
 
