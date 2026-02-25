@@ -5,24 +5,25 @@
  * @module app/domains/invoices/upload-scans/_context/ScanUploadContext
  *
  * @remarks
- * Simplified version of InvoiceCreatorContext that only handles uploading
- * scans to Azure Blob Storage. Does not create invoices.
+ * Supports direct-to-Blob uploads via SAS URLs with bounded concurrency,
+ * retry policy, progress reporting, and a compatibility fallback path.
  */
 
-import {uploadScan} from "@/lib/actions/scans";
+import {prepareScanUpload, recordBulkUploadTelemetry, uploadScan} from "@/lib/actions/scans";
 import {useScansStore} from "@/stores";
-import type {CachedScan} from "@/types/scans";
+import type {BulkUploadTelemetryPayload, CachedScan, UploadFailureReasonCategory, UploadFailureReasonCounters} from "@/types/scans";
 import {toast} from "@arolariu/components";
-import {createContext, use, useCallback, useMemo, useState} from "react";
+import {useTranslations} from "next-intl";
+import {createContext, use, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {v4 as uuidv4} from "uuid";
 
 /**
- * Status of a pending upload
+ * Status of a pending upload.
  */
-type PendingUploadStatus = "idle" | "uploading" | "completed" | "failed";
+type PendingUploadStatus = "idle" | "uploading" | "retrying" | "completed" | "failed";
 
 /**
- * Represents a file pending upload
+ * Represents a file pending upload.
  */
 interface PendingUpload {
   id: string;
@@ -32,11 +33,13 @@ interface PendingUpload {
   size: number;
   preview: string;
   status: PendingUploadStatus;
+  progress: number;
+  attempts: number;
   error?: string;
 }
 
 /**
- * Session statistics for tracking upload progress
+ * Session statistics for tracking upload progress.
  */
 interface SessionStats {
   /** Total files added this session */
@@ -68,6 +71,17 @@ interface ScanUploadContextType {
   resetSessionStats: () => void;
 }
 
+const MAX_RETRY_ATTEMPTS = 3;
+const MAX_CONCURRENT_UPLOADS = 3;
+const BASE_RETRY_DELAY_MS = 750;
+
+type CompatibilityFallbackMode = "on-direct-failure" | "always" | "never";
+
+interface ScanUploadRolloutConfiguration {
+  isDirectUploadEnabled: boolean;
+  compatibilityFallbackMode: CompatibilityFallbackMode;
+}
+
 const ScanUploadContext = createContext<ScanUploadContextType | undefined>(undefined);
 
 /**
@@ -83,9 +97,12 @@ function revokePreview(upload: PendingUpload): void {
  * Removes an upload from the list by ID, revoking its preview first.
  */
 function removeUploadFromList(uploads: PendingUpload[], uploadId: string): PendingUpload[] {
-  const toRemove = uploads.find((u) => u.id === uploadId);
-  if (toRemove) revokePreview(toRemove);
-  return uploads.filter((u) => u.id !== uploadId);
+  const toRemove = uploads.find((upload) => upload.id === uploadId);
+  if (toRemove) {
+    revokePreview(toRemove);
+  }
+
+  return uploads.filter((upload) => upload.id !== uploadId);
 }
 
 /**
@@ -100,6 +117,229 @@ async function fileToBase64(file: File): Promise<string> {
   });
 }
 
+/**
+ * Waits for a given delay.
+ */
+async function waitFor(delayMs: number): Promise<void> {
+  await new Promise((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
+/**
+ * Calculates exponential backoff with jitter.
+ */
+function calculateRetryDelay(attempt: number): number {
+  const exponentialDelay = BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
+  const jitter = Math.floor(Math.random() * 250);
+  return exponentialDelay + jitter;
+}
+
+/**
+ * Parses string-like environment values into booleans.
+ */
+function parseBooleanFlag(value: string | undefined, fallbackValue: boolean): boolean {
+  if (value === undefined) {
+    return fallbackValue;
+  }
+
+  const normalizedValue = value.trim().toLowerCase();
+  if (normalizedValue === "true") {
+    return true;
+  }
+
+  if (normalizedValue === "false") {
+    return false;
+  }
+
+  return fallbackValue;
+}
+
+/**
+ * Resolves the compatibility fallback mode from environment values.
+ */
+function parseCompatibilityFallbackMode(value: string | undefined): CompatibilityFallbackMode {
+  if (value === "always" || value === "never" || value === "on-direct-failure") {
+    return value;
+  }
+
+  return "on-direct-failure";
+}
+
+/**
+ * Returns rollout controls for direct upload and compatibility fallback behavior.
+ */
+function getScanUploadRolloutConfiguration(): ScanUploadRolloutConfiguration {
+  const directUploadRolloutValue = process.env["NEXT_PUBLIC_SCAN_UPLOAD_DIRECT_ENABLED"];
+  const compatibilityFallbackModeValue = process.env["NEXT_PUBLIC_SCAN_UPLOAD_COMPATIBILITY_FALLBACK_MODE"];
+
+  return {
+    isDirectUploadEnabled: parseBooleanFlag(directUploadRolloutValue, true),
+    compatibilityFallbackMode: parseCompatibilityFallbackMode(compatibilityFallbackModeValue),
+  };
+}
+
+/**
+ * Returns true when an upload error should be retried.
+ */
+function isRetryableUploadError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const normalizedMessage = error.message.toLowerCase();
+
+  if (normalizedMessage.includes("network error") || normalizedMessage.includes("timed out") || normalizedMessage.includes("connection")) {
+    return true;
+  }
+
+  const statusMatch = /status\s(?<statusCode>\d{3})/u.exec(normalizedMessage);
+  const statusCodeText = statusMatch?.groups?.["statusCode"];
+
+  if (!statusCodeText) {
+    return false;
+  }
+
+  const statusCode = Number(statusCodeText);
+  return [408, 409, 429, 500, 502, 503, 504].includes(statusCode);
+}
+
+/**
+ * Creates zeroed counters for upload failure reason categories.
+ */
+function createFailureReasonCounters(): UploadFailureReasonCounters {
+  return {
+    network: 0,
+    timeout: 0,
+    throttled: 0,
+    server_error: 0,
+    client_error: 0,
+    auth: 0,
+    compatibility: 0,
+    unknown: 0,
+  };
+}
+
+/**
+ * Extracts an HTTP status code from upload error text when present.
+ */
+function extractStatusCode(errorMessage: string): number | null {
+  const normalizedMessage = errorMessage.toLowerCase();
+  const statusMatch = /status\s(?<statusCode>\d{3})/u.exec(normalizedMessage);
+  const statusCodeText = statusMatch?.groups?.["statusCode"];
+
+  if (!statusCodeText) {
+    return null;
+  }
+
+  return Number(statusCodeText);
+}
+
+/**
+ * Categorizes an upload failure message into an observability-friendly bucket.
+ */
+function categorizeUploadFailureReason(errorMessage: string): UploadFailureReasonCategory {
+  const normalizedMessage = errorMessage.toLowerCase();
+
+  if (normalizedMessage.includes("compatibility")) {
+    return "compatibility";
+  }
+
+  if (
+    normalizedMessage.includes("network error")
+    || normalizedMessage.includes("connection")
+    || normalizedMessage.includes("failed to fetch")
+  ) {
+    return "network";
+  }
+
+  if (normalizedMessage.includes("timed out") || normalizedMessage.includes("timeout")) {
+    return "timeout";
+  }
+
+  const statusCode = extractStatusCode(normalizedMessage);
+  if (statusCode === null) {
+    return "unknown";
+  }
+
+  if (statusCode === 401 || statusCode === 403) {
+    return "auth";
+  }
+
+  if (statusCode === 408) {
+    return "timeout";
+  }
+
+  if (statusCode === 429) {
+    return "throttled";
+  }
+
+  if (statusCode >= 500) {
+    return "server_error";
+  }
+
+  if (statusCode >= 400) {
+    return "client_error";
+  }
+
+  return "unknown";
+}
+
+/**
+ * Uploads a file directly to Azure Blob Storage using a SAS URL.
+ */
+async function uploadFileToBlobWithSas(
+  params: Readonly<{
+    uploadUrl: string;
+    file: File;
+    mimeType: string;
+    metadata: Record<string, string>;
+    onProgress: (progress: number) => void;
+  }>,
+): Promise<void> {
+  const {uploadUrl, file, mimeType, metadata, onProgress} = params;
+
+  await new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open("PUT", uploadUrl, true);
+    request.setRequestHeader("x-ms-blob-type", "BlockBlob");
+    request.setRequestHeader("Content-Type", mimeType);
+
+    for (const [key, value] of Object.entries(metadata)) {
+      request.setRequestHeader(`x-ms-meta-${key}`, value);
+    }
+
+    request.upload.addEventListener("progress", (event) => {
+      if (!event.lengthComputable || event.total === 0) {
+        return;
+      }
+
+      const progress = Math.round((event.loaded / event.total) * 100);
+      onProgress(progress);
+    });
+
+    request.addEventListener("load", () => {
+      if (request.status >= 200 && request.status < 300) {
+        resolve();
+        return;
+      }
+
+      reject(new Error(`Direct upload failed with status ${request.status}`));
+    });
+
+    request.addEventListener("error", () => {
+      reject(new Error("Network error during direct upload"));
+    });
+
+    request.addEventListener("abort", () => {
+      reject(new Error("Direct upload was aborted"));
+    });
+
+    request.send(file);
+  });
+}
+
 const initialSessionStats: SessionStats = {
   totalAdded: 0,
   totalCompleted: 0,
@@ -107,65 +347,91 @@ const initialSessionStats: SessionStats = {
 };
 
 export function ScanUploadProvider({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
+  const t = useTranslations("Domains.services.invoices.service.upload-scans");
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [sessionStats, setSessionStats] = useState<SessionStats>(initialSessionStats);
+
   const addScan = useScansStore((state) => state.addScan);
+  const removalTimeouts = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  /**
+   * Cleanup pending delayed removals on unmount.
+   */
+  useEffect(() => {
+    return () => {
+      for (const timeoutIdentifier of removalTimeouts.current) {
+        clearTimeout(timeoutIdentifier);
+      }
+      removalTimeouts.current.clear();
+    };
+  }, []);
+
+  /**
+   * Update a pending upload by ID.
+   */
+  const updateUpload = useCallback((id: string, patch: Partial<PendingUpload>) => {
+    setPendingUploads((previousUploads) => previousUploads.map((upload) => (upload.id === id ? {...upload, ...patch} : upload)));
+  }, []);
 
   /**
    * Add files to the upload queue.
    */
-  const addFiles = useCallback((files: FileList) => {
-    const newUploads: PendingUpload[] = [];
+  const addFiles = useCallback(
+    (files: FileList) => {
+      const newUploads: PendingUpload[] = [];
 
-    for (const file of files) {
-      const isImage = file.type.startsWith("image/");
-      const isPdf = file.type === "application/pdf";
+      for (const file of files) {
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf";
 
-      if (!isImage && !isPdf) {
-        toast.error(`Unsupported file type: ${file.type}`);
-      } else if (file.size > 10 * 1024 * 1024) {
-        // Check file size (max 10MB)
-        toast.error(`File too large: ${file.name} (max 10MB)`);
-      } else {
-        const id = uuidv4();
-        const preview = URL.createObjectURL(file);
+        if (!isImage && !isPdf) {
+          toast.error(t("errors.unsupportedType", {type: file.type}));
+        } else if (file.size > 10 * 1024 * 1024) {
+          toast.error(t("errors.tooLarge", {name: file.name}));
+        } else {
+          const id = uuidv4();
+          const preview = URL.createObjectURL(file);
 
-        newUploads.push({
-          id,
-          name: file.name,
-          file,
-          mimeType: file.type,
-          size: file.size,
-          preview,
-          status: "idle",
-        });
+          newUploads.push({
+            id,
+            name: file.name,
+            file,
+            mimeType: file.type,
+            size: file.size,
+            preview,
+            status: "idle",
+            progress: 0,
+            attempts: 0,
+          });
+        }
       }
-    }
 
-    if (newUploads.length > 0) {
-      setPendingUploads((prev) => [...prev, ...newUploads]);
-      setSessionStats((prev) => ({
-        ...prev,
-        totalAdded: prev.totalAdded + newUploads.length,
-      }));
-      toast.success(`Added ${newUploads.length} file(s) to upload queue`);
-    }
-  }, []);
+      if (newUploads.length > 0) {
+        setPendingUploads((previousUploads) => [...previousUploads, ...newUploads]);
+        setSessionStats((previousStats) => ({
+          ...previousStats,
+          totalAdded: previousStats.totalAdded + newUploads.length,
+        }));
+        toast.success(t("toasts.addedToQueue", {count: String(newUploads.length)}));
+      }
+    },
+    [t],
+  );
 
   /**
    * Remove files from the upload queue.
    */
   const removeFiles = useCallback((ids: string[]) => {
-    setPendingUploads((prev) => {
-      const idsSet = new Set(ids);
-      const toRemove = prev.filter((u) => idsSet.has(u.id));
+    setPendingUploads((previousUploads) => {
+      const identifiers = new Set(ids);
+      const toRemove = previousUploads.filter((upload) => identifiers.has(upload.id));
 
       for (const upload of toRemove) {
         revokePreview(upload);
       }
 
-      return prev.filter((u) => !idsSet.has(u.id));
+      return previousUploads.filter((upload) => !identifiers.has(upload.id));
     });
   }, []);
 
@@ -173,115 +439,276 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
    * Clear all pending files.
    */
   const clearAll = useCallback(() => {
-    setPendingUploads((prev) => {
-      for (const upload of prev) {
+    setPendingUploads((previousUploads) => {
+      for (const upload of previousUploads) {
         revokePreview(upload);
       }
+
       return [];
     });
-    toast.info("All files cleared");
-  }, []);
+
+    toast.info(t("toasts.allCleared"));
+  }, [t]);
 
   /**
    * Rename a pending file.
    */
-  const renameFile = useCallback((id: string, newName: string) => {
-    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, name: newName} : u)));
-  }, []);
-
-  /**
-   * Update a single upload's status.
-   */
-  const updateUploadStatus = useCallback((id: string, status: PendingUploadStatus, error?: string) => {
-    setPendingUploads((prev) => prev.map((u) => (u.id === id ? {...u, status, error} : u)));
-  }, []);
+  const renameFile = useCallback(
+    (id: string, newName: string) => {
+      updateUpload(id, {name: newName});
+    },
+    [updateUpload],
+  );
 
   /**
    * Remove a completed upload from the pending list after a delay.
    */
   const scheduleUploadRemoval = useCallback((uploadId: string, delayMs: number) => {
-    setTimeout(() => {
-      setPendingUploads((prev) => removeUploadFromList(prev, uploadId));
+    const timeoutIdentifier = setTimeout(() => {
+      setPendingUploads((previousUploads) => removeUploadFromList(previousUploads, uploadId));
+      removalTimeouts.current.delete(timeoutIdentifier);
     }, delayMs);
+
+    removalTimeouts.current.add(timeoutIdentifier);
   }, []);
 
   /**
    * Upload all pending files to Azure.
-   * Authentication is handled by the server action.
+   * Authentication is handled by server actions.
    */
   const uploadAll = useCallback(async (): Promise<void> => {
-    const uploadsToProcess = pendingUploads.filter((u) => u.status === "idle" || u.status === "failed");
+    const uploadsToProcess = pendingUploads.filter((upload) => upload.status === "idle" || upload.status === "failed");
 
     if (uploadsToProcess.length === 0) {
-      toast.info("No files to upload");
+      toast.info(t("toasts.noFiles"));
       return;
     }
 
     setIsUploading(true);
 
-    // Mark all as uploading
-    for (const upload of uploadsToProcess) {
-      updateUploadStatus(upload.id, "uploading");
+    interface UploadOneResult {
+      isSuccessful: boolean;
+      failureReason: UploadFailureReasonCategory | null;
     }
+
+    const uploadStartedAt = performance.now();
+    let totalRetryCount = 0;
+    const failureReasonCounters = createFailureReasonCounters();
+    const rolloutConfiguration = getScanUploadRolloutConfiguration();
+
+    const uploadOne = async (upload: PendingUpload): Promise<UploadOneResult> => {
+      let lastErrorMessage = t("toasts.genericUploadFailed");
+      const shouldAttemptDirectUpload =
+        rolloutConfiguration.isDirectUploadEnabled && rolloutConfiguration.compatibilityFallbackMode !== "always";
+
+      if (shouldAttemptDirectUpload) {
+        for (let attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt += 1) {
+          const isRetry = attempt > 1;
+
+          updateUpload(upload.id, {
+            status: isRetry ? "retrying" : "uploading",
+            attempts: attempt,
+            progress: 0,
+            error: undefined,
+          });
+
+          try {
+            const preparedUpload = await prepareScanUpload({
+              fileName: upload.name,
+              mimeType: upload.mimeType,
+              sizeInBytes: upload.size,
+            });
+
+            updateUpload(upload.id, {status: "uploading", progress: 5, error: undefined});
+
+            await uploadFileToBlobWithSas({
+              uploadUrl: preparedUpload.uploadUrl,
+              file: upload.file,
+              mimeType: upload.mimeType,
+              metadata: preparedUpload.metadata,
+              onProgress: (progress) => {
+                updateUpload(upload.id, {
+                  progress: Math.max(5, Math.min(progress, 99)),
+                });
+              },
+            });
+
+            const cachedScan: CachedScan = {
+              ...preparedUpload.scan,
+              cachedAt: new Date(),
+            };
+
+            addScan(cachedScan);
+            updateUpload(upload.id, {
+              status: "completed",
+              progress: 100,
+              error: undefined,
+            });
+
+            scheduleUploadRemoval(upload.id, 1000);
+            return {
+              isSuccessful: true,
+              failureReason: null,
+            };
+          } catch (error) {
+            lastErrorMessage = error instanceof Error ? error.message : t("toasts.unknownDirectUploadError");
+
+            const hasAttemptsLeft = attempt < MAX_RETRY_ATTEMPTS;
+            if (hasAttemptsLeft && isRetryableUploadError(error)) {
+              totalRetryCount += 1;
+              updateUpload(upload.id, {
+                status: "retrying",
+                error: t("toasts.retryingWithAttempt", {
+                  error: lastErrorMessage,
+                  attempt: String(attempt),
+                  maxAttempts: String(MAX_RETRY_ATTEMPTS),
+                }),
+              });
+
+              await waitFor(calculateRetryDelay(attempt));
+              continue;
+            }
+
+            break;
+          }
+        }
+      }
+
+      const shouldUseCompatibilityFallback = rolloutConfiguration.compatibilityFallbackMode !== "never";
+      if (!shouldUseCompatibilityFallback) {
+        updateUpload(upload.id, {
+          status: "failed",
+          progress: 0,
+          error: lastErrorMessage,
+        });
+
+        return {
+          isSuccessful: false,
+          failureReason: categorizeUploadFailureReason(lastErrorMessage),
+        };
+      }
+
+      // Compatibility fallback for environments where direct upload cannot complete.
+      try {
+        updateUpload(upload.id, {
+          status: "uploading",
+          progress: 10,
+          error: t("toasts.compatibilityFallback"),
+        });
+
+        const base64Data = await fileToBase64(upload.file);
+        const legacyResult = await uploadScan({
+          base64Data,
+          fileName: upload.name,
+          mimeType: upload.mimeType,
+        });
+
+        if (legacyResult.status === 201) {
+          const cachedScan: CachedScan = {
+            ...legacyResult.scan,
+            cachedAt: new Date(),
+          };
+
+          addScan(cachedScan);
+          updateUpload(upload.id, {
+            status: "completed",
+            progress: 100,
+            error: undefined,
+          });
+
+          scheduleUploadRemoval(upload.id, 1000);
+          return {
+            isSuccessful: true,
+            failureReason: null,
+          };
+        }
+
+        lastErrorMessage = t("toasts.compatibilityFailedStatus", {status: String(legacyResult.status)});
+      } catch (error) {
+        lastErrorMessage = error instanceof Error ? error.message : t("toasts.unknownCompatibilityUploadError");
+      }
+
+      updateUpload(upload.id, {
+        status: "failed",
+        progress: 0,
+        error: lastErrorMessage,
+      });
+
+      return {
+        isSuccessful: false,
+        failureReason: categorizeUploadFailureReason(lastErrorMessage),
+      };
+    };
 
     let successCount = 0;
     let failCount = 0;
+    let currentIndex = 0;
+
+    const workerCount = Math.min(MAX_CONCURRENT_UPLOADS, uploadsToProcess.length);
 
     await Promise.all(
-      uploadsToProcess.map(async (upload) => {
-        try {
-          // Convert file to base64
-          const base64Data = await fileToBase64(upload.file);
+      Array.from({length: workerCount}, async () => {
+        while (true) {
+          const itemIndex = currentIndex;
+          currentIndex += 1;
 
-          // Upload to Azure (server action handles authentication)
-          const result = await uploadScan({
-            base64Data,
-            fileName: upload.name,
-            mimeType: upload.mimeType,
-          });
-
-          if (result.status === 201) {
-            // Add to scans store with cache timestamp
-            const cachedScan: CachedScan = {
-              ...result.scan,
-              cachedAt: new Date(),
-            };
-            addScan(cachedScan);
-
-            // Mark as completed and remove from pending
-            updateUploadStatus(upload.id, "completed");
-            successCount++;
-
-            // Remove from pending after short delay (for visual feedback)
-            scheduleUploadRemoval(upload.id, 1000);
-          } else {
-            updateUploadStatus(upload.id, "failed", `Upload failed with status ${result.status}`);
-            failCount++;
+          if (itemIndex >= uploadsToProcess.length) {
+            break;
           }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          updateUploadStatus(upload.id, "failed", errorMessage);
-          failCount++;
+
+          const upload = uploadsToProcess[itemIndex];
+          if (!upload) {
+            break;
+          }
+
+          const uploadResult = await uploadOne(upload);
+          if (uploadResult.isSuccessful) {
+            successCount += 1;
+          } else {
+            failCount += 1;
+            if (uploadResult.failureReason) {
+              failureReasonCounters[uploadResult.failureReason] += 1;
+            }
+          }
         }
       }),
     );
 
+    const durationMs = Math.max(0, Math.round(performance.now() - uploadStartedAt));
+
     setIsUploading(false);
 
-    // Update session stats with completed and failed counts
-    setSessionStats((prev) => ({
-      ...prev,
-      totalCompleted: prev.totalCompleted + successCount,
-      totalFailed: prev.totalFailed + failCount,
+    setSessionStats((previousStats) => ({
+      ...previousStats,
+      totalCompleted: previousStats.totalCompleted + successCount,
+      totalFailed: previousStats.totalFailed + failCount,
     }));
 
     if (successCount > 0) {
-      toast.success(`Successfully uploaded ${successCount} scan(s)`);
+      toast.success(t("toasts.uploadSuccess", {count: String(successCount)}));
     }
+
     if (failCount > 0) {
-      toast.error(`Failed to upload ${failCount} scan(s)`);
+      toast.error(t("toasts.uploadFailed", {count: String(failCount)}));
     }
-  }, [pendingUploads, updateUploadStatus, addScan, scheduleUploadRemoval]);
+
+    const telemetryPayload: BulkUploadTelemetryPayload = {
+      batchSize: uploadsToProcess.length,
+      totalBytes: uploadsToProcess.reduce((totalSize, upload) => totalSize + upload.size, 0),
+      concurrency: workerCount,
+      retryCount: totalRetryCount,
+      durationMs,
+      successCount,
+      failureCount: failCount,
+      failureReasons: failureReasonCounters,
+    };
+
+    try {
+      await recordBulkUploadTelemetry(telemetryPayload);
+    } catch (error) {
+      console.warn("Failed to record bulk upload telemetry", error);
+    }
+  }, [pendingUploads, updateUpload, addScan, scheduleUploadRemoval, t]);
 
   /**
    * Reset session statistics.
@@ -313,5 +740,6 @@ export function useScanUpload(): ScanUploadContextType {
   if (context === undefined) {
     throw new Error("useScanUpload must be used within a ScanUploadProvider");
   }
+
   return context;
 }

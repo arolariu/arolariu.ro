@@ -17,10 +17,12 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {type Scan, ScanStatus, ScanType} from "@/types/scans";
+import {type Scan, ScanStatus} from "@/types/scans";
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
+import {getScansStorageConfiguration} from "./storageConfig";
+import {mimeTypeToScanType} from "./uploadHelpers";
 
 /**
  * Input parameters for fetching scans.
@@ -34,23 +36,6 @@ type FetchScansInput = Readonly<{
  * Response from the fetch scans operation.
  */
 type FetchScansOutput = Promise<ReadonlyArray<Scan>>;
-
-/**
- * Maps MIME type to ScanType enum.
- */
-function mimeTypeToScanType(mimeType: string): ScanType {
-  switch (mimeType.toLowerCase()) {
-    case "image/jpeg":
-    case "image/jpg":
-      return ScanType.JPEG;
-    case "image/png":
-      return ScanType.PNG;
-    case "application/pdf":
-      return ScanType.PDF;
-    default:
-      return ScanType.OTHER;
-  }
-}
 
 /**
  * Fetches all scans belonging to a user from Azure Blob Storage.
@@ -103,10 +88,8 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
 
       // Step 2. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
-      const containerName = "invoices";
+      const {containerName, storageEndpoint} = getScansStorageConfiguration();
       const storageCredentials = new DefaultAzureCredential();
-      // todo: fetch from config service.
-      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
 
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
       const containerClient = storageClient.getContainerClient(containerName);

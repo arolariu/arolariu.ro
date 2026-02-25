@@ -165,7 +165,7 @@ const nextConfig: NextConfig = {
     typedEnv: true,
     optimizePackageImports: ["@arolariu/components"],
     serverActions: {
-      bodySizeLimit: "10mb",
+      bodySizeLimit: "15mb",
     },
   },
 

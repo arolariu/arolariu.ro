@@ -1303,6 +1303,58 @@
             "errors": {
               "unsupportedType": "Unsupported file type: {type}",
               "tooLarge": "File too large: {name} (max 10MB)"
+            },
+            "preview": {
+              "title": "Pending Uploads ({count})",
+              "status": {
+                "pending": "Pending",
+                "uploading": "Uploading",
+                "retrying": "Retrying",
+                "completed": "Done",
+                "failed": "Failed"
+              },
+              "removeTooltip": "Remove from queue",
+              "retryAttempt": "Retry attempt {attempt}"
+            },
+            "uploadArea": {
+              "aria": {
+                "uploadFiles": "Upload files"
+              },
+              "empty": {
+                "title": "Upload your scans",
+                "dropActive": "Drop your files here...",
+                "dropInactive": "Drag and drop your files here, or click to browse",
+                "formats": "Supports JPG, PNG, PDF files up to 10MB each",
+                "note": "Scans will be stored for later use. Create invoices from the View Scans page.",
+                "chooseFiles": "Choose Files"
+              },
+              "compact": {
+                "dropActive": "Drop to add...",
+                "dropInactive": "Add more scans",
+                "subtitle": "JPG, PNG, PDF up to 10MB"
+              },
+              "actions": {
+                "clearAll": "Clear all",
+                "uploadScans": "Upload scans",
+                "uploading": "Uploading..."
+              },
+              "tooltips": {
+                "clearAll": "Remove all pending uploads from the queue",
+                "uploadScans": "Upload all pending scans to your account"
+              }
+            },
+            "toasts": {
+              "addedToQueue": "Added {count} file(s) to upload queue",
+              "allCleared": "All files cleared",
+              "noFiles": "No files to upload",
+              "genericUploadFailed": "Upload failed",
+              "unknownDirectUploadError": "Unknown direct upload error",
+              "retryingWithAttempt": "{error}. Retrying ({attempt}/{maxAttempts})...",
+              "compatibilityFallback": "Using compatibility upload path...",
+              "compatibilityFailedStatus": "Compatibility upload failed with status {status}",
+              "unknownCompatibilityUploadError": "Unknown compatibility upload error",
+              "uploadSuccess": "Successfully uploaded {count} scan(s)",
+              "uploadFailed": "Failed to upload {count} scan(s)"
             }
           },
           "view-scans": {

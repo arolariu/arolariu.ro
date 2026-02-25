@@ -1303,6 +1303,58 @@
             "errors": {
               "unsupportedType": "Type de fichier non pris en charge : {type}",
               "tooLarge": "Fichier trop volumineux : {name} (max 10 Mo)"
+            },
+            "preview": {
+              "title": "Téléversements en attente ({count})",
+              "status": {
+                "pending": "En attente",
+                "uploading": "Téléversement",
+                "retrying": "Nouvelle tentative",
+                "completed": "Terminé",
+                "failed": "Échoué"
+              },
+              "removeTooltip": "Retirer de la file",
+              "retryAttempt": "Tentative {attempt}"
+            },
+            "uploadArea": {
+              "aria": {
+                "uploadFiles": "Téléverser des fichiers"
+              },
+              "empty": {
+                "title": "Téléversez vos scans",
+                "dropActive": "Déposez vos fichiers ici...",
+                "dropInactive": "Glissez-déposez vos fichiers ici, ou cliquez pour parcourir",
+                "formats": "Prend en charge les fichiers JPG, PNG et PDF jusqu'à 10 Mo chacun",
+                "note": "Les scans seront stockés pour une utilisation ultérieure. Créez des factures depuis la page Voir les Scans.",
+                "chooseFiles": "Choisir des fichiers"
+              },
+              "compact": {
+                "dropActive": "Déposez pour ajouter...",
+                "dropInactive": "Ajouter plus de scans",
+                "subtitle": "JPG, PNG, PDF jusqu'à 10 Mo"
+              },
+              "actions": {
+                "clearAll": "Tout effacer",
+                "uploadScans": "Téléverser les scans",
+                "uploading": "Téléversement..."
+              },
+              "tooltips": {
+                "clearAll": "Retirer tous les téléversements en attente de la file",
+                "uploadScans": "Téléverser tous les scans en attente vers votre compte"
+              }
+            },
+            "toasts": {
+              "addedToQueue": "{count} fichier(s) ajouté(s) à la file de téléversement",
+              "allCleared": "Tous les fichiers ont été supprimés",
+              "noFiles": "Aucun fichier à téléverser",
+              "genericUploadFailed": "Le téléversement a échoué",
+              "unknownDirectUploadError": "Erreur inconnue lors du téléversement direct",
+              "retryingWithAttempt": "{error}. Nouvelle tentative ({attempt}/{maxAttempts})...",
+              "compatibilityFallback": "Utilisation du mode de compatibilité pour le téléversement...",
+              "compatibilityFailedStatus": "Le téléversement de compatibilité a échoué avec le statut {status}",
+              "unknownCompatibilityUploadError": "Erreur inconnue lors du téléversement de compatibilité",
+              "uploadSuccess": "{count} scan(s) téléversé(s) avec succès",
+              "uploadFailed": "{count} scan(s) en échec"
             }
           },
           "view-scans": {

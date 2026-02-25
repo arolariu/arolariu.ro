@@ -10,4 +10,6 @@
 
 export {deleteScan} from "./deleteScan";
 export {fetchScans} from "./fetchScans";
+export {prepareScanUpload} from "./prepareScanUpload";
+export {recordBulkUploadTelemetry} from "./recordBulkUploadTelemetry";
 export {uploadScan} from "./uploadScan";

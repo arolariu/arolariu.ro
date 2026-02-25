@@ -16,6 +16,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
+import {getScansStorageConfiguration} from "./storageConfig";
 
 /**
  * Input parameters for deleting a scan.
@@ -109,9 +110,8 @@ export async function deleteScan({blobUrl}: DeleteScanInput): DeleteScanOutput {
 
       // Step 4. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
+      const {storageEndpoint} = getScansStorageConfiguration();
       const storageCredentials = new DefaultAzureCredential();
-      // todo: fetch from config service.
-      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
 
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
       const containerClient = storageClient.getContainerClient(containerName ?? "invoices");
