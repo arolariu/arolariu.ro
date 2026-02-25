@@ -19,7 +19,7 @@ The single-broker dependency rule is critical: if a Foundation service needs dat
 Related Insights:
 - [[brokers-are-thin-wrappers-with-zero-business-logic]] -- foundation: the layer below that Foundation services add intelligence to
 - [[each-layer-validates-its-own-inputs-independently]] -- extends: Foundation performs structural and logical validation specifically
-- [[trycatch-pattern-wraps-every-service-method-with-opentelemetry-activity-tracing]] -- pattern: the implementation pattern used within Foundation methods
+- [[trycatch-pattern-integrates-activity-tracing-into-every-service-method]] -- pattern: the implementation pattern used within Foundation methods
 - [[partial-classes-split-services-into-implementation-validation-and-exception-files]] -- convention: how Foundation service code is organized across files
 
 Domains:

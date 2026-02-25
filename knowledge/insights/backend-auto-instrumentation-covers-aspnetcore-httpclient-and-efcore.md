@@ -22,6 +22,7 @@ Related Insights:
 - [[observability-separates-auto-instrumentation-from-manual-business-spans]] — extends: backend applies the same auto vs manual separation with different instrumentation targets
 - [[trycatch-pattern-integrates-activity-tracing-into-every-service-method]] — enables: manual spans via TryCatch complement the auto-instrumented infrastructure spans
 - [[auto-instrumentation-covers-http-fetch-filesystem-dns-without-manual-spans]] — extends: frontend equivalent covering different runtime instrumentation points
+- [[trace-context-must-propagate-across-the-bff-boundary-for-end-to-end-transaction-visibility]] — enables: ASP.NET Core auto-instrumentation extracts traceparent from BFF requests, completing the distributed trace chain
 
 Domains:
 - [[backend-architecture]]

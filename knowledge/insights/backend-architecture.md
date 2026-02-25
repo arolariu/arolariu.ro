@@ -73,6 +73,7 @@ The backend uses OpenTelemetry for distributed tracing, structured logging, and 
 ### Cross-Stack
 
 - [[frontend-and-backend-telemetry-converge-at-azure-application-insights]] -- both Next.js and .NET telemetry land in the same Application Insights workspace for full-stack correlation
+- [[trace-context-must-propagate-across-the-bff-boundary-for-end-to-end-transaction-visibility]] -- W3C traceparent must flow from Next.js BFF to .NET API for distributed trace continuity
 
 ## The Standard Implementation — RFC 2003
 
