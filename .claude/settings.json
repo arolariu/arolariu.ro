@@ -31,5 +31,8 @@
     ],
     "deny": []
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "arscontexta@agenticnotetaking": true
+  }
 }

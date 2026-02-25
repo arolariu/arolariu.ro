@@ -1,0 +1,53 @@
+{
+  "schema_version": 3,
+  "tasks": [
+    {
+      "id": "init-001",
+      "type": "pipeline",
+      "action": "distill",
+      "target": "docs/rfc/*.md",
+      "status": "pending",
+      "priority": "high",
+      "created": "2026-02-25",
+      "description": "Distill existing RFCs into individual architectural insights"
+    },
+    {
+      "id": "init-002",
+      "type": "pipeline",
+      "action": "distill",
+      "target": ".github/instructions/*.instructions.md",
+      "status": "pending",
+      "priority": "high",
+      "created": "2026-02-25",
+      "description": "Distill Copilot instruction files into individual insights"
+    },
+    {
+      "id": "init-003",
+      "type": "pipeline",
+      "action": "distill",
+      "target": "CLAUDE.md",
+      "status": "pending",
+      "priority": "high",
+      "created": "2026-02-25",
+      "description": "Distill root CLAUDE.md conventions into individual insights"
+    },
+    {
+      "id": "init-004",
+      "type": "pipeline",
+      "action": "connect",
+      "target": "insights/*.md",
+      "status": "pending",
+      "priority": "medium",
+      "created": "2026-02-25",
+      "description": "Connect cross-domain insights after initial distillation"
+    }
+  ],
+  "maintenance_conditions": {
+    "orphan_threshold": 5,
+    "stale_days": 30,
+    "inbox_overflow": 15,
+    "dangling_link_threshold": 3,
+    "observation_review_threshold": 10,
+    "tension_review_threshold": 5
+  }
+}
