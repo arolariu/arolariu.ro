@@ -575,7 +575,22 @@ This system was seeded with a codebase-knowledge configuration derived from conv
 
 Skills created during /setup are listed here until confirmed loaded. After restarting Claude Code, the SessionStart hook verifies each skill is discoverable and removes confirmed entries.
 
-(Skills will be listed here after generation)
+- /arscontexta:distill — Extract insights from source documents (RFCs, instructions, code) (created 2026-02-25)
+- /arscontexta:connect — Find connections between insights across domains (created 2026-02-25)
+- /arscontexta:refresh — Update stale insights when source docs change (created 2026-02-25)
+- /arscontexta:validate — Check insight quality (composability, description, links) (created 2026-02-25)
+- /arscontexta:audit — Check schema compliance across all insights (created 2026-02-25)
+- /arscontexta:seed — Create a new insight from scratch (created 2026-02-25)
+- /arscontexta:ralph — Orchestrated batch processing with fresh context per phase (created 2026-02-25)
+- /arscontexta:pipeline — Run full processing cycle: distill → connect → validate (created 2026-02-25)
+- /arscontexta:tasks — Manage the processing task queue (created 2026-02-25)
+- /arscontexta:stats — Vault metrics and progress visualization (created 2026-02-25)
+- /arscontexta:graph — Interactive graph analysis and queries (created 2026-02-25)
+- /arscontexta:next — Get intelligent next-action recommendations (created 2026-02-25)
+- /arscontexta:learn — Research a topic and grow the knowledge graph (created 2026-02-25)
+- /arscontexta:remember — Capture friction and methodology learnings (created 2026-02-25)
+- /arscontexta:rethink — Review accumulated observations and tensions (created 2026-02-25)
+- /arscontexta:refactor — Restructure insights or domain maps (created 2026-02-25)
 
 ---
 
