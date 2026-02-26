@@ -167,6 +167,14 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
         blobType: ['blockBlob']
       }
     }
+
+    // Invoices blob container (private access)
+    resource invoicesContainer 'containers@2025-06-01' = {
+      name: 'invoices'
+      properties: {
+        publicAccess: 'None'
+      }
+    }
   }
 
   // File service configuration
