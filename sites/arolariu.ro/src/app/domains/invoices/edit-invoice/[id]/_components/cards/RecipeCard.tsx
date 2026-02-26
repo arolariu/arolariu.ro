@@ -200,7 +200,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
-                  <p>{t("timing.prepTooltip", {minutes: String(preparationTime)})}</p>
+                <p>{t("timing.prepTooltip", {minutes: String(preparationTime)})}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -211,7 +211,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
-                  <p>{t("timing.cookTooltip", {minutes: String(cookingTime)})}</p>
+                <p>{t("timing.cookTooltip", {minutes: String(cookingTime)})}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

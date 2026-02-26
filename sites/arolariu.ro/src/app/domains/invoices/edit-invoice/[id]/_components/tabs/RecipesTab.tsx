@@ -169,7 +169,9 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 disabled={currentPage === 1}>
                 {t("pagination.previous")}
               </Button>
-              <div className={styles["pageInfo"]}>{t("pagination.pageOf", {currentPage: String(currentPage), totalPages: String(totalPages)})}</div>
+              <div className={styles["pageInfo"]}>
+                {t("pagination.pageOf", {currentPage: String(currentPage), totalPages: String(totalPages)})}
+              </div>
               <Button
                 variant='ghost'
                 size='sm'

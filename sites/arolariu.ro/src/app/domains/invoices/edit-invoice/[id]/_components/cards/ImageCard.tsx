@@ -128,7 +128,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>
-                  {totalScans > 1 ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("dialogTitle")}
+                  {totalScans > 1
+                    ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)})
+                    : t("dialogTitle")}
                 </DialogTitle>
               </DialogHeader>
               <div className={styles["zoomContainer"]}>

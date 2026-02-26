@@ -184,7 +184,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 onClick={handlePreviousPage}>
                 {t("pagination.previous")}
               </Button>
-              <span className={styles["paginationText"]}>{t("pagination.pageOf", {currentPage: String(currentPage), totalPages: String(totalPages)})}</span>
+              <span className={styles["paginationText"]}>
+                {t("pagination.pageOf", {currentPage: String(currentPage), totalPages: String(totalPages)})}
+              </span>
               <Button
                 variant='outline'
                 className='cursor-pointer'

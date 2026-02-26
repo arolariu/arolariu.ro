@@ -11,9 +11,7 @@ import styles from "./page.module.scss";
  */
 export async function generateMetadata(): Promise<Metadata> {
   // Translation types will be regenerated on next build
-  const t = (await getTranslations(
-    "Invoices.UploadScans.metadata" as "Invoices.ViewInvoices.metadata",
-  )) as (key: string) => string;
+  const t = (await getTranslations("Invoices.UploadScans.metadata" as "Invoices.ViewInvoices.metadata")) as (key: string) => string;
   const locale = await getLocale();
   return createMetadata({
     locale,

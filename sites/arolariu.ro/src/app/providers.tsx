@@ -125,9 +125,7 @@ type Props = {
 export default function ContextProviders({locale, messages, children}: Readonly<Props>): React.JSX.Element {
   const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
   const localization = localizationMap[locale];
-  const [resolvedMessages, setResolvedMessages] = useState<AbstractIntlMessages>(
-    messages ?? ({} satisfies AbstractIntlMessages),
-  );
+  const [resolvedMessages, setResolvedMessages] = useState<AbstractIntlMessages>(messages ?? ({} satisfies AbstractIntlMessages));
 
   // Register router.refresh() as the callback for locale → cookie sync.
   // The store subscription handles setCookie(); this just triggers re-rendering.
@@ -144,11 +142,11 @@ export default function ContextProviders({locale, messages, children}: Readonly<
 
     let isMounted = true;
 
-      const loadMessages = async (): Promise<void> => {
-        const importedMessages = (await import(`../../messages/${locale}.json`)).default as AbstractIntlMessages;
-        if (isMounted) {
-          setResolvedMessages(importedMessages);
-        }
+    const loadMessages = async (): Promise<void> => {
+      const importedMessages = (await import(`../../messages/${locale}.json`)).default as AbstractIntlMessages;
+      if (isMounted) {
+        setResolvedMessages(importedMessages);
+      }
     };
 
     void loadMessages();
