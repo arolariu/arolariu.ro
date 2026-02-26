@@ -166,7 +166,7 @@ function getInsightIconClass(type: Insight["type"]): string {
 
 export function SeasonalInsightsCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.seasonalInsightsCard");
+  const t = useTranslations("Invoices.ViewInvoice.seasonalInsightsCard");
   const {invoice} = useInvoiceContext();
   const insights = detectSeasonalInsights(invoice, t);
   const date = new Date(invoice.paymentInformation.transactionDate);

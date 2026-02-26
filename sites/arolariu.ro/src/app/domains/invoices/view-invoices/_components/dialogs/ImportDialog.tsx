@@ -36,7 +36,7 @@ const ACCEPT_TYPES: Record<ImportFileFormat, Accept> = {
  * @returns The ImportDialog component, CSR'ed.
  */
 export default function ImportDialog(): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.importDialog");
+  const t = useTranslations("Invoices.ViewInvoices.importDialog");
   const [files, setFiles] = useState<File[]>([]);
   const {isOpen, open, close} = useDialog("VIEW_INVOICES__IMPORT");
   const [activeTab, setActiveTab] = useState<ImportFileFormat>("csv");

@@ -33,7 +33,7 @@ const ITEMS_PER_PAGE = 5;
 
 export function InvoiceDetailsCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.invoiceDetailsCard");
+  const t = useTranslations("Invoices.ViewInvoice.invoiceDetailsCard");
   const {invoice, merchant} = useInvoiceContext();
   const [currentPage, setCurrentPage] = useState(1);
 

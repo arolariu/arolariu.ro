@@ -10,7 +10,7 @@ import styles from "./BudgetImpactCard.module.scss";
 
 export function BudgetImpactCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.budgetImpactCard");
+  const t = useTranslations("Invoices.ViewInvoice.budgetImpactCard");
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const {currency} = paymentInformation;

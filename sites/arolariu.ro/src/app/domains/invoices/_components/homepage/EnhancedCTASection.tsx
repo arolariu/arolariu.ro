@@ -22,7 +22,7 @@ type CtaTranslations = Readonly<{
  * @returns The CTA section.
  */
 export default function EnhancedCTASection(): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.homepage");
+  const t = useTranslations("Invoices.Homepage");
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true, margin: "-50px"});
   const translations: CtaTranslations = {

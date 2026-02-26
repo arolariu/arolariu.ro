@@ -29,7 +29,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsNotifications({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile.settings.notifications");
+  const t = useTranslations("Profile.settings.notifications");
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 

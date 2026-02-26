@@ -41,7 +41,7 @@ import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RecipeDialog.module.scss";
 
 const CreateDialog = () => {
-  const t = useTranslations("Domains.services.invoices.ui.recipeDialog");
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
@@ -273,7 +273,7 @@ const CreateDialog = () => {
 };
 
 const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const t = useTranslations("Domains.services.invoices.ui.recipeDialog");
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   return (
@@ -351,7 +351,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const t = useTranslations("Domains.services.invoices.ui.recipeDialog");
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
@@ -574,7 +574,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const t = useTranslations("Domains.services.invoices.ui.recipeDialog");
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const handleDelete = useCallback(() => {}, []);

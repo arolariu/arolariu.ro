@@ -14,7 +14,7 @@ import styles from "./page.module.scss";
  * **Execution Context**: Server-side metadata generation function (Next.js App Router).
  *
  * **Internationalization**: Retrieves localized title and description from the
- * translation key `Domains.services.invoices.service.view-invoices.__metadata__`.
+ * translation key `Invoices.ViewInvoices.metadata`.
  * This ensures consistent terminology for invoice listing and viewing across all locales.
  *
  * **SEO Optimization**: Uses the centralized `createMetadata` utility following RFC 1004
@@ -53,7 +53,7 @@ import styles from "./page.module.scss";
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Domains.services.invoices.service.view-invoices.__metadata__");
+  const t = await getTranslations("Invoices.ViewInvoices.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,
@@ -129,8 +129,8 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see RFC 1003 - Internationalization System (rich text formatting)
  */
 export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/domains/invoices/view-invoices">>): Promise<React.JSX.Element> {
-  const t = await getTranslations("Domains.services.invoices.service.view-invoices");
-  const tCommon = await getTranslations("Domains.services.invoices.ui.viewInvoicesPage");
+  const t = await getTranslations("Invoices.ViewInvoices");
+  const tCommon = await getTranslations("Invoices.ViewInvoices.viewInvoicesPage");
   const {user} = await fetchAaaSUserFromAuthService();
   const username = user?.fullName ?? tCommon("guestName");
 
@@ -140,7 +140,7 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
         <h1 className={styles["title"]}>{t("title", {name: username})}</h1>
         <article className={styles["subtitleArticle"]}>
           <RichText
-            sectionKey='Domains.services.invoices.service.view-invoices'
+            sectionKey='Invoices.ViewInvoices'
             textKey='subtitle'
           />
         </article>

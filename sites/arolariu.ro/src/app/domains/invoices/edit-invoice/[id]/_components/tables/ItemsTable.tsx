@@ -70,7 +70,7 @@ const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.itemsTable");
+  const t = useTranslations("Invoices.EditInvoice.itemsTable");
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
 
   const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);

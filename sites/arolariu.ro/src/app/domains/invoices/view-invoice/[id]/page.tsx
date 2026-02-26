@@ -16,7 +16,7 @@ import styles from "./page.module.scss";
  * **Execution Context**: Server-side metadata generation function (Next.js App Router).
  *
  * **Internationalization**: Retrieves localized title and description from the
- * translation key `Domains.services.invoices.service.view-page.__metadata__`. Falls back
+ * translation key `Invoices.ViewInvoice.metadata`. Falls back
  * to sensible defaults if translation keys are not yet defined.
  *
  * **SEO Optimization**: Uses the centralized `createMetadata` utility following RFC 1004
@@ -55,7 +55,7 @@ import styles from "./page.module.scss";
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Domains.services.invoices.service.view-page.__metadata__");
+  const t = await getTranslations("Invoices.ViewInvoice.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

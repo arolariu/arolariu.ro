@@ -31,7 +31,7 @@ type CustomLegendProps = {
 };
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Domains.services.invoices.ui.spendingByCategoryChart");
+  const t = useTranslations("Invoices.ViewInvoice.spendingByCategoryChart");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -65,7 +65,7 @@ function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
 }
 
 export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.spendingByCategoryChart");
+  const t = useTranslations("Invoices.ViewInvoice.spendingByCategoryChart");
   const chartConfig: Record<string, {label: string; color: string}> = {};
   for (const [index, item] of data.entries()) {
     chartConfig[item.category] = {

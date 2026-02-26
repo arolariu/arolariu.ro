@@ -63,7 +63,7 @@ function formatDate(date: Date): string {
  * Individual scan card with selection checkbox.
  */
 export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<ScanCardProps>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.view-scans.scanCard");
+  const t = useTranslations("Invoices.ViewScans.scanCard");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const removeScan = useScansStore((state) => state.removeScan);

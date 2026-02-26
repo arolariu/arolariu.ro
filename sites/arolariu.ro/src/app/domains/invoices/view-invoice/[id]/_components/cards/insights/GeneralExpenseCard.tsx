@@ -10,7 +10,7 @@ import styles from "./GeneralExpenseCard.module.scss";
 
 export function GeneralExpenseCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.generalExpenseCard");
+  const t = useTranslations("Invoices.ViewInvoice.generalExpenseCard");
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const {currency, totalCostAmount: totalAmount} = paymentInformation;

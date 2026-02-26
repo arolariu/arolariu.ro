@@ -77,7 +77,7 @@ import styles from "./MerchantReceiptsDialog.module.scss";
  */
 export default function MerchantReceiptsDialog(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.merchantReceiptsDialog");
+  const t = useTranslations("Invoices.EditInvoice.merchantReceiptsDialog");
   const {
     currentDialog: {payload},
     isOpen,

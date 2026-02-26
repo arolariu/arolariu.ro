@@ -61,7 +61,7 @@ function UploadCard({
   error,
   onRemove,
 }: Readonly<PendingUploadCardProps>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.upload-scans");
+  const t = useTranslations("Invoices.UploadScans");
   const handleRemove = useCallback(() => {
     onRemove([id]);
   }, [onRemove, id]);
@@ -192,7 +192,7 @@ function UploadCard({
  * Displays a grid of files with status indicators.
  */
 export default function UploadPreview(): React.JSX.Element | null {
-  const t = useTranslations("Domains.services.invoices.service.upload-scans");
+  const t = useTranslations("Invoices.UploadScans");
   const {pendingUploads, removeFiles} = useScanUpload();
 
   if (pendingUploads.length === 0) {

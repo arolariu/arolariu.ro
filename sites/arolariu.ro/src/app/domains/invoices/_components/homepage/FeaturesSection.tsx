@@ -18,7 +18,7 @@ interface Props {
  * @returns The features section.
  */
 export default function FeaturesSection({isAuthenticated}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.homepage");
+  const t = useTranslations("Invoices.Homepage");
 
   return (
     <section className={styles["featuresSection"]}>

@@ -57,7 +57,7 @@ export interface PublicModeProps {
  * @returns The link and QR code tabs UI
  */
 export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}: ShareLinkAndQRTabsProps): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.shareInvoiceDialogPublic");
+  const t = useTranslations("Invoices.Shared.shareInvoiceDialogPublic");
   return (
     <Tabs
       defaultValue='link'
@@ -144,7 +144,7 @@ export function AlreadyPublicMode({
   onRevokeAccess,
   isRevoking,
 }: AlreadyPublicModeProps): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.shareInvoiceDialogPublic");
+  const t = useTranslations("Invoices.Shared.shareInvoiceDialogPublic");
   return (
     <div className={styles["body"]}>
       <Alert
@@ -192,7 +192,7 @@ export function AlreadyPublicMode({
  * @returns The public sharing mode UI
  */
 export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}: PublicModeProps): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.shareInvoiceDialogPublic");
+  const t = useTranslations("Invoices.Shared.shareInvoiceDialogPublic");
   return (
     <div className={styles["body"]}>
       <Button

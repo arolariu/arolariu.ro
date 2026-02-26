@@ -55,7 +55,7 @@ import styles from "./DeleteInvoiceDialog.module.scss";
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
   const router = useRouter();
-  const t = useTranslations("Domains.services.invoices.ui.deleteInvoiceDialog");
+  const t = useTranslations("Invoices.Shared.deleteInvoiceDialog");
   const removeInvoice = useInvoicesStore((state) => state.removeInvoice);
 
   const {

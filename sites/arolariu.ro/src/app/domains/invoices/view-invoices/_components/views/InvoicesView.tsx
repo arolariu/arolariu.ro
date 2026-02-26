@@ -41,7 +41,7 @@ type Props = {
  * @returns The RenderInvoicesView component, CSR'ed.
  */
 export default function RenderInvoicesView({invoices}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.invoicesView");
+  const t = useTranslations("Invoices.ViewInvoices.invoicesView");
   const {isMobile} = useWindowSize();
   const [view, setView] = useState<"table" | "grid">("table");
   const [searchQuery, setSearchQuery] = useState<string>("");

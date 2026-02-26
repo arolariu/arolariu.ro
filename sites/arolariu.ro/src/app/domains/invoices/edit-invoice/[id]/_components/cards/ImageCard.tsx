@@ -55,7 +55,7 @@ type Props = {invoice: Invoice};
  * @see {@link RemoveScanDialog} - Dialog for removing scans
  */
 export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.imageCard");
+  const t = useTranslations("Invoices.EditInvoice.imageCard");
   const [currentScanIndex, setCurrentScanIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);

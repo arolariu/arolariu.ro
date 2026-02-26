@@ -42,7 +42,7 @@ function detectLocale(): Locale {
 }
 
 function GlobalErrorDocumentTitle(): null {
-  const t = useTranslations("errors.globalError");
+  const t = useTranslations("Errors.globalError");
 
   useEffect(() => {
     globalThis.document.title = t("metadata.title");
@@ -53,7 +53,7 @@ function GlobalErrorDocumentTitle(): null {
 
 function GlobalErrorContent({error, reset}: Readonly<GlobalErrorProps>): React.JSX.Element {
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const t = useTranslations("errors.globalError");
+  const t = useTranslations("Errors.globalError");
   const errorContext = JSON.stringify(
     {
       errorId: error.digest ?? "NO_DIGEST",

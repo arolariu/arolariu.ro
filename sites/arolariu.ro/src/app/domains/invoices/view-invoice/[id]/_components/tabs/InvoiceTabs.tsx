@@ -24,7 +24,7 @@ function getComplexityVariant(complexity: RecipeComplexity): "default" | "second
 
 export function InvoiceTabs(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
-  const t = useTranslations("Domains.services.invoices.ui.invoiceTabs");
+  const t = useTranslations("Invoices.ViewInvoice.invoiceTabs");
 
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>

@@ -12,7 +12,7 @@ type Props = {
 };
 
 export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.summaryStatsCard");
+  const t = useTranslations("Invoices.ViewInvoice.summaryStatsCard");
   const stats = [
     {
       label: t("stats.totalItems.label"),

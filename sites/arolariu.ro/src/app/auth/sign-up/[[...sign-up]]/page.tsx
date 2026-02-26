@@ -13,7 +13,7 @@ import styles from "./page.module.scss";
  * Generates localized metadata for the sign-up page.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Authentication.SignUp.__metadata__");
+  const t = await getTranslations("Auth.SignUp.metadata");
   const locale = await getLocale();
 
   return createMetadata({

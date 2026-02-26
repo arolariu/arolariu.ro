@@ -30,7 +30,7 @@ type BentoTranslations = Readonly<{
  * @returns The bento section.
  */
 export default function BentoSection(): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.homepage");
+  const t = useTranslations("Invoices.Homepage");
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true, margin: "-100px"});
   const translations: BentoTranslations = {

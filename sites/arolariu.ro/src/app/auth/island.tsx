@@ -59,7 +59,7 @@ type AuthCard = Readonly<{
  * ```
  */
 export default function RenderAuthScreen(): React.JSX.Element {
-  const t = useTranslations("Authentication.Island");
+  const t = useTranslations("Auth.Island");
 
   const trustBadges: Readonly<[string, string, string]> = [t("trust.oauth"), t("trust.session"), t("trust.privacy")];
 

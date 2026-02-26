@@ -16,7 +16,7 @@ import {DesktopNavigation, MobileNavigation} from "./Navigation";
  */
 function Header(): React.JSX.Element {
   const {isMobile, isDesktop} = useWindowSize();
-  const t = useTranslations("Shared.header");
+  const t = useTranslations("Common.accessibility");
 
   return (
     <header className='header'>

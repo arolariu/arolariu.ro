@@ -80,7 +80,7 @@ type AnalysisEnhancement = {
  * @returns The AnalyzeDialog component, CSR'ed.
  */
 export default function AnalyzeDialog(): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.analyzeDialog");
+  const t = useTranslations("Invoices.EditInvoice.analyzeDialog");
   const {
     isOpen,
     open,

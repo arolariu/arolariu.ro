@@ -60,7 +60,7 @@ import styles from "./FeedbackDialog.module.scss";
  * @see {@link AnalyticsCard} - Parent component that opens this dialog
  */
 export default function FeedbackDialog(): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.feedbackDialog");
+  const t = useTranslations("Invoices.EditInvoice.feedbackDialog");
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
   const [hoveredRating, setHoveredRating] = useState<number>(0);

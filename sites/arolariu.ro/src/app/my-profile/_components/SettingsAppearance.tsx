@@ -42,7 +42,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsAppearance({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile.settings.appearance");
+  const t = useTranslations("Profile.settings.appearance");
   const {theme, setTheme} = useTheme();
   const {fontType, setFont} = useFontContext();
   const {

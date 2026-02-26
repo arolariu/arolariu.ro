@@ -41,7 +41,7 @@ import styles from "./page.module.scss";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("About.Platform.__metadata__");
+  const t = await getTranslations("About.Platform.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

@@ -33,7 +33,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
   const locale = await getLocale();
   const messages = await getMessages();
   const {user} = await fetchAaaSUserFromAuthService();
-  const t = await getTranslations("errors.404");
+  const t = await getTranslations("Errors.notFound");
   const eulaCookie = await getCookie("eula-accepted");
 
   const qrCodeData = JSON.stringify({

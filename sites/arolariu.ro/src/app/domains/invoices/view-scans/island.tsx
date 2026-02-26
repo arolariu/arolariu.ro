@@ -50,7 +50,7 @@ function StatsCard({value, label, colorClass}: Readonly<{value: number; label: s
  * Scan statistics component.
  */
 function ScanStats(): React.JSX.Element | null {
-  const t = useTranslations("Domains.services.invoices.service.view-scans");
+  const t = useTranslations("Invoices.ViewScans");
   const {scans, selectedScans} = useScans();
   const readyScans = scans.filter((s) => s.status === "ready").length;
 
@@ -95,7 +95,7 @@ function ScanStats(): React.JSX.Element | null {
  * Sidebar with tips and guidance.
  */
 function Sidebar(): React.JSX.Element | null {
-  const t = useTranslations("Domains.services.invoices.service.view-scans");
+  const t = useTranslations("Invoices.ViewScans");
   const {scans, selectedScans} = useScans();
 
   // Don't show sidebar if no scans
@@ -181,7 +181,7 @@ function Sidebar(): React.JSX.Element | null {
  * Inner content component that uses the dialog context.
  */
 function ViewScansContent(): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.view-scans");
+  const t = useTranslations("Invoices.ViewScans");
   const {scans, selectedScans} = useScans();
   const {openDialog} = useDialogs();
 

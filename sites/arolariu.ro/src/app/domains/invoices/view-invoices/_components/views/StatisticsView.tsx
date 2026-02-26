@@ -13,7 +13,7 @@ type Props = {
  * @returns This function renders the statistics view for the invoices.
  */
 export default function RenderStatisticsView({invoices}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.statisticsView");
+  const t = useTranslations("Invoices.ViewInvoices.statisticsView");
   // todo: complete this.
   console.log(invoices);
 

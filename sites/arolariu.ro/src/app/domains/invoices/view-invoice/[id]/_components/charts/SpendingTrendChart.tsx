@@ -23,7 +23,7 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
-  const t = useTranslations("Domains.services.invoices.ui.spendingTrendChart");
+  const t = useTranslations("Invoices.ViewInvoice.spendingTrendChart");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -40,7 +40,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 }
 
 export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.spendingTrendChart");
+  const t = useTranslations("Invoices.ViewInvoice.spendingTrendChart");
   const chartConfig = {
     amount: {
       label: t("labels.amount"),

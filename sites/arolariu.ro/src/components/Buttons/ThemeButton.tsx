@@ -87,7 +87,7 @@ const SunIcon = (): React.JSX.Element => (
 export default function ThemeButton(): React.JSX.Element {
   const [mounted, setMounted] = useState<boolean>(false);
   const {theme, setTheme} = useTheme();
-  const t = useTranslations("Shared.themeButton");
+  const t = useTranslations("Common.accessibility");
 
   useEffect(() => {
     setMounted(true);
@@ -106,7 +106,7 @@ export default function ThemeButton(): React.JSX.Element {
     <motion.button
       className={styles["themeButton"]}
       onClick={handleSetTheme}
-      aria-label={t("toggleAriaLabel")}
+      aria-label={t("toggleTheme")}
       whileTap={{scale: 0.95}}>
       {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </motion.button>

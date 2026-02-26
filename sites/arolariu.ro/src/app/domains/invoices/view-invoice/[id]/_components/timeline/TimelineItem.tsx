@@ -41,7 +41,7 @@ type Props = Readonly<{
  * ```
  */
 export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.timelineItem");
+  const t = useTranslations("Invoices.ViewInvoice.timelineItem");
   const locale = useLocale();
   const tooltipContent = getTooltipContent(event, t);
   const eventTitle = getEventTitle(event, t);

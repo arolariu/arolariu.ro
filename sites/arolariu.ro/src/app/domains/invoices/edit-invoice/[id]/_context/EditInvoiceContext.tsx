@@ -101,7 +101,7 @@ interface EditInvoiceContextProviderProps {
  * @returns Provider component wrapping children
  */
 export function EditInvoiceContextProvider({invoice, merchant, children}: Readonly<EditInvoiceContextProviderProps>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.ui.editInvoiceContext");
+  const t = useTranslations("Invoices.EditInvoice.editInvoiceContext");
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>({});
   const [isSaving, setIsSaving] = useState(false);
 

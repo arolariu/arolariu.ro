@@ -10,7 +10,7 @@ import RenderDomainsScreen from "./island";
  * **Execution Context**: Server-side metadata generation function (Next.js App Router).
  *
  * **Internationalization**: Retrieves localized title and description from translation keys
- * under the `Domains.__metadata__` namespace. Supports all configured locales (en, ro, etc.).
+ * under the `Domains.metadata` namespace. Supports all configured locales (en, ro, etc.).
  *
  * **SEO Optimization**: Uses the centralized `createMetadata` utility to generate
  * consistent metadata following RFC 1004 (Metadata & SEO System) standards, including
@@ -48,7 +48,7 @@ import RenderDomainsScreen from "./island";
  * @see RFC 1003 - Internationalization System documentation
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Domains.__metadata__");
+  const t = await getTranslations("Domains.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

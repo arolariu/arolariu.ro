@@ -41,7 +41,7 @@ type Props = Readonly<{
 
 export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.tableView");
+  const t = useTranslations("Invoices.ViewInvoices.tableView");
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);

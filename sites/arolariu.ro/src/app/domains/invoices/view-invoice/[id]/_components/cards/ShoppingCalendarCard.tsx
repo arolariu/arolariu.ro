@@ -149,7 +149,7 @@ function isSameDay(date1: Date, date2: Date): boolean {
 function CustomDayButton(props: DayButtonProps): React.JSX.Element {
   const {day, className, ...rest} = props;
   const {locale, currency, month, transactionDate, spendingByDay, historicalByDay, maxDayAmount} = useCalendarData();
-  const t = useTranslations("Domains.services.invoices.ui.shoppingCalendarCard");
+  const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
   const {date} = day;
   const dayNum = date.getDate();
   const isCurrentMonth = date.getMonth() === month.getMonth() && date.getFullYear() === month.getFullYear();
@@ -194,7 +194,7 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
 
 export function ShoppingCalendarCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("Domains.services.invoices.ui.shoppingCalendarCard");
+  const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
   const {invoice} = useInvoiceContext();
   const transactionDate = useMemo(() => new Date(invoice.paymentInformation.transactionDate), [invoice.paymentInformation.transactionDate]);
   const month = useMemo(() => new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1), [transactionDate]);
