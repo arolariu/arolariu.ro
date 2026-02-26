@@ -59,3 +59,7 @@ module appConfigurationDeployment 'appConfiguration.bicep' = {
     appConfigurationDeploymentDate: resourceDeploymentDate
   }
 }
+
+// Outputs for RBAC scoping
+output keyVaultName string = keyVaultDeployment.outputs.mainKeyVaultName
+output appConfigurationName string = appConfigurationDeployment.outputs.appConfigurationName

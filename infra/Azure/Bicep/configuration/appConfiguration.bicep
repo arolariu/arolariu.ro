@@ -88,3 +88,4 @@ resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStor
 ]
 
 output appConfigurationResourceId string = appConfiguration.id
+output appConfigurationName string = appConfiguration.name
