@@ -1,38 +1,35 @@
 // =====================================================================================
 // Observability Deployment Orchestrator - Monitoring and Telemetry Infrastructure
 // =====================================================================================
-// This orchestrator module deploys the complete observability stack for the
-// arolariu.ro platform. It implements a comprehensive monitoring solution following
-// OpenTelemetry principles (see RFC 1001 and RFC 2002 in docs/rfc/).
+// This orchestrator module deploys the observability stack for the arolariu.ro platform.
+// It implements a monitoring solution following OpenTelemetry principles
+// (see RFC 1001 and RFC 2002 in docs/rfc/).
 //
 // Deployed Resources:
 // - Log Analytics Workspace (central log aggregation and query engine)
 // - Application Insights (APM, distributed tracing, and metrics)
-// - Managed Grafana (visualization dashboards and alerting)
+//
+// Visualization:
+// - Azure Monitor dashboards with Grafana (preview) — free, managed in Azure portal
+// - No standalone Managed Grafana resource (Essential tier retired March 2026)
 //
 // Deployment Order (dependencies):
 // 1. Log Analytics Workspace (base data sink)
 // 2. Application Insights (depends on workspace ID)
-// 3. Managed Grafana (depends on both for data sources)
 //
 // Integration Points:
 // - All App Services emit telemetry to Application Insights
 // - Azure resources send diagnostic logs to Log Analytics
-// - Grafana dashboards query both for unified visualization
-//
-// Security Notes:
-// - Log Analytics uses workspace-based authentication
-// - Connection strings are stored in Key Vault (see configuration/)
-// - Grafana uses managed identity for data source access
+// - Azure Monitor dashboards with Grafana query both for visualization
 //
 // See: RFC 1001 (Frontend OpenTelemetry)
 // See: RFC 2002 (Backend OpenTelemetry)
 // See: sites/*.bicep (App Services consume connection strings)
 // =====================================================================================
 
-metadata description = 'Observability orchestrator deploying Log Analytics, Application Insights, and Grafana'
+metadata description = 'Observability orchestrator deploying Log Analytics and Application Insights'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
-metadata version = '2.0.0'
+metadata version = '3.0.0'
 
 targetScope = 'resourceGroup'
 
@@ -64,18 +61,6 @@ module applicationInsightsDeployment 'application-insights.bicep' = {
     applicationInsightsLocation: resourceLocation
     applicationInsightsDeploymentDate: resourceDeploymentDate
     applicationInsightsWorkspaceId: logAnalyticsWorkspaceDeployment.outputs.logAnalyticsWorkspaceId
-  }
-}
-
-module managedGrafanaDeployment 'grafana.bicep' = {
-  scope: resourceGroup()
-  name: 'managedGrafanaDeployment-${resourceDeploymentDate}'
-  dependsOn: [applicationInsightsDeployment, logAnalyticsWorkspaceDeployment]
-  params: {
-    managedGrafanaName: '${resourceConventionPrefix}-grafana'
-    managedGrafanaLocation: resourceLocation
-    managedGrafanaDeploymentDate: resourceDeploymentDate
-    logAnalyticsWorkspaceId: logAnalyticsWorkspaceDeployment.outputs.logAnalyticsWorkspaceId
   }
 }
 
