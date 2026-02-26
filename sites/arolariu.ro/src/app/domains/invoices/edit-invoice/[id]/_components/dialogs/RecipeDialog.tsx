@@ -34,12 +34,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RecipeDialog.module.scss";
 
 const CreateDialog = () => {
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
@@ -73,14 +75,14 @@ const CreateDialog = () => {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md md:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>Add New Recipe</DialogTitle>
-          <DialogDescription>Fill in the details to create a recipe.</DialogDescription>
+          <DialogTitle>{t("create.title")}</DialogTitle>
+          <DialogDescription>{t("create.description")}</DialogDescription>
         </DialogHeader>
 
         <form className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='name'>Recipe Name</Label>
+              <Label htmlFor='name'>{t("fields.recipeName")}</Label>
               <div>
                 <TooltipProvider>
                   <Tooltip>
@@ -92,13 +94,11 @@ const CreateDialog = () => {
                         onClick={() => {}}
                         className='flex items-center gap-1'>
                         <TbSparkles className='h-3 w-3' />
-                        Generate Name
+                        {t("actions.generateName")}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className={styles["tooltipText"]}>
-                        Generate a recipe name based on your ingredients and difficulty level using AI
-                      </p>
+                      <p className={styles["tooltipText"]}>{t("tooltips.generateName")}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -109,32 +109,32 @@ const CreateDialog = () => {
               name='name'
               value={recipe.name}
               onChange={handleChange}
-              placeholder='Enter recipe name'
+              placeholder={t("placeholders.recipeName")}
             />
           </div>
 
           {/* Add description field */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='description'>Description</Label>
+            <Label htmlFor='description'>{t("fields.description")}</Label>
             <Textarea
               id='description'
               name='description'
               value={recipe.description} // updated from formData to recipe
               onChange={handleChange}
-              placeholder='Enter a brief description of the recipe'
+              placeholder={t("placeholders.description")}
               rows={2}
             />
           </div>
 
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label>Ingredients</Label>
+              <Label>{t("fields.ingredients")}</Label>
               <Button
                 type='button'
                 variant='outline'
                 size='sm'>
                 <TbPlus className='mr-1 h-4 w-4' />
-                Add
+                {t("buttons.add")}
               </Button>
             </div>
 
@@ -165,7 +165,7 @@ const CreateDialog = () => {
 
           {/* Add difficulty selector */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='difficulty'>Difficulty Level</Label>
+            <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
               value={RecipeComplexity[recipe.complexity]}
               onValueChange={(value) => {
@@ -176,12 +176,12 @@ const CreateDialog = () => {
                 }));
               }}>
               <SelectTrigger>
-                <SelectValue placeholder='Select difficulty' />
+                <SelectValue placeholder={t("placeholders.selectDifficulty")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='EASY'>Easy</SelectItem>
-                <SelectItem value='MEDIUM'>Medium</SelectItem>
-                <SelectItem value='HARD'>Hard</SelectItem>
+                <SelectItem value='EASY'>{t("difficulty.easy")}</SelectItem>
+                <SelectItem value='MEDIUM'>{t("difficulty.medium")}</SelectItem>
+                <SelectItem value='HARD'>{t("difficulty.hard")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -189,7 +189,7 @@ const CreateDialog = () => {
           {/* Add instructions field */}
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='instructions'>Instructions</Label>
+              <Label htmlFor='instructions'>{t("fields.instructions")}</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -199,11 +199,11 @@ const CreateDialog = () => {
                       size='sm'
                       onClick={() => {}}>
                       <TbWand className='mr-1 h-4 w-4' />
-                      Enhance Instructions
+                      {t("actions.enhanceInstructions")}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Use AI to enhance your instructions with more details</p>
+                    <p>{t("tooltips.enhanceInstructions")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -213,7 +213,7 @@ const CreateDialog = () => {
               name='instructions'
               value={recipe.instructions}
               onChange={handleChange}
-              placeholder='Enter cooking instructions'
+              placeholder={t("placeholders.instructions")}
               rows={4}
             />
           </div>
@@ -221,7 +221,7 @@ const CreateDialog = () => {
           {/* Add preparation time field */}
           <div className={styles["timeGrid"]}>
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='prepTime'>Prep Time</Label>
+              <Label htmlFor='prepTime'>{t("fields.prepTime")}</Label>
               <div className={styles["timeRow"]}>
                 <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
@@ -229,14 +229,14 @@ const CreateDialog = () => {
                   name='prepTime'
                   value={recipe.preparationTime}
                   onChange={handleChange}
-                  placeholder='e.g. 15 minutes'
+                  placeholder={t("placeholders.prepTime")}
                 />
               </div>
             </div>
 
             {/* Add cooking time field */}
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='cookTime'>Cook Time</Label>
+              <Label htmlFor='cookTime'>{t("fields.cookTime")}</Label>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
@@ -244,7 +244,7 @@ const CreateDialog = () => {
                   name='cookTime'
                   value={recipe.cookingTime}
                   onChange={handleChange}
-                  placeholder='e.g. 30 minutes'
+                  placeholder={t("placeholders.cookTime")}
                 />
               </div>
             </div>
@@ -257,13 +257,13 @@ const CreateDialog = () => {
               type='button'
               variant='outline'
               onClick={close}>
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               type='button'
               onClick={handleCreate}>
               <TbDisc className='mr-2 h-4 w-4' />
-              Save
+              {t("buttons.save")}
             </Button>
           </div>
         </DialogFooter>
@@ -273,6 +273,7 @@ const CreateDialog = () => {
 };
 
 const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   return (
@@ -283,18 +284,18 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       <DialogContent className='sm:max-w-md md:max-w-lg'>
         <DialogHeader>
           <DialogTitle>{recipe.name}</DialogTitle>
-          <DialogDescription>Recipe details and cooking instructions</DialogDescription>
+          <DialogDescription>{t("read.description")}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           {/* Add description field */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='description'>Description</Label>
-            <p className={styles["readText"]}>{recipe?.description || "No description provided."}</p>
+            <Label htmlFor='description'>{t("fields.description")}</Label>
+            <p className={styles["readText"]}>{recipe?.description || t("read.noDescription")}</p>
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label>Ingredients</Label>
+            <Label>{t("fields.ingredients")}</Label>
             <ul className={styles["ingredientReadList"]}>
               {recipe?.ingredients.map((ingredient, idx) => (
                 <li
@@ -307,7 +308,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='complexity'>Complexity Level</Label>
+            <Label htmlFor='complexity'>{t("fields.complexity")}</Label>
             <Badge
               variant={
                 recipe?.complexity === RecipeComplexity.Easy
@@ -316,24 +317,24 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                     ? "secondary"
                     : "outline"
               }>
-              {recipe?.complexity || "MEDIUM"}
+              {recipe?.complexity || t("difficulty.medium").toUpperCase()}
             </Badge>
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='instructions'>Instructions</Label>
+            <Label htmlFor='instructions'>{t("fields.instructions")}</Label>
 
             <div className={styles["timeGrid"]}>
-              <Label htmlFor='preparationTime'>Prep Time</Label>
+              <Label htmlFor='preparationTime'>{t("fields.prepTime")}</Label>
               <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
-              <span>{recipe?.preparationTime || "Not specified"}</span>
+              <span>{recipe?.preparationTime || t("read.notSpecified")}</span>
             </div>
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='cookingTime'>Cook Time</Label>
+            <Label htmlFor='cookingTime'>{t("fields.cookTime")}</Label>
             <TbToolsKitchen3 className='text-muted-foreground mr-2 h-4 w-4' />
-            <span>{recipe?.cookingTime || "Not specified"}</span>
+            <span>{recipe?.cookingTime || t("read.notSpecified")}</span>
           </div>
         </div>
 
@@ -341,7 +342,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           <Button
             type='button'
             onClick={close}>
-            Close
+            {t("buttons.close")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -350,6 +351,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
@@ -373,14 +375,14 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-lg md:max-w-6xl'>
         <DialogHeader>
-          <DialogTitle>Add New Recipe</DialogTitle>
-          <DialogDescription>Fill in the details to create a recipe.</DialogDescription>
+          <DialogTitle>{t("update.title")}</DialogTitle>
+          <DialogDescription>{t("update.description")}</DialogDescription>
         </DialogHeader>
 
         <form className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='name'>Recipe Name</Label>
+              <Label htmlFor='name'>{t("fields.recipeName")}</Label>
               <div>
                 <TooltipProvider>
                   <Tooltip>
@@ -392,13 +394,11 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                         onClick={generateName}
                         className='flex items-center gap-1'>
                         <TbSparkles className='h-3 w-3' />
-                        Generate Name
+                        {t("actions.generateName")}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className={styles["tooltipText"]}>
-                        Generate a recipe name based on your ingredients and difficulty level using AI
-                      </p>
+                      <p className={styles["tooltipText"]}>{t("tooltips.generateName")}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -409,19 +409,19 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               name='name'
               value={recipeDetails.name}
               onChange={handleChange}
-              placeholder='Enter recipe name'
+              placeholder={t("placeholders.recipeName")}
             />
           </div>
 
           {/* Add description field */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='description'>Description</Label>
+            <Label htmlFor='description'>{t("fields.description")}</Label>
             <Textarea
               id='description'
               name='description'
               value={recipeDetails.description} // updated from formData to recipe
               onChange={handleChange}
-              placeholder='Enter a brief description of the recipe'
+              placeholder={t("placeholders.description")}
               rows={2}
             />
           </div>
@@ -429,13 +429,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           {/* Add ingredients field */}
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label>Ingredients</Label>
+              <Label>{t("fields.ingredients")}</Label>
               <Button
                 type='button'
                 variant='outline'
                 size='sm'>
                 <TbPlus className='mr-1 h-4 w-4' />
-                Add
+                {t("buttons.add")}
               </Button>
             </div>
 
@@ -466,7 +466,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
           {/* Add difficulty selector */}
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='difficulty'>Difficulty Level</Label>
+            <Label htmlFor='difficulty'>{t("fields.difficulty")}</Label>
             <Select
               value={RecipeComplexity[recipe.complexity]}
               onValueChange={(value) => {
@@ -477,12 +477,12 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 }));
               }}>
               <SelectTrigger>
-                <SelectValue placeholder='Select difficulty' />
+                <SelectValue placeholder={t("placeholders.selectDifficulty")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='EASY'>Easy</SelectItem>
-                <SelectItem value='MEDIUM'>Medium</SelectItem>
-                <SelectItem value='HARD'>Hard</SelectItem>
+                <SelectItem value='EASY'>{t("difficulty.easy")}</SelectItem>
+                <SelectItem value='MEDIUM'>{t("difficulty.medium")}</SelectItem>
+                <SelectItem value='HARD'>{t("difficulty.hard")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -490,7 +490,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           {/* Add instructions field */}
           <div className={styles["fieldGroup"]}>
             <div className={styles["fieldHeader"]}>
-              <Label htmlFor='instructions'>Instructions</Label>
+              <Label htmlFor='instructions'>{t("fields.instructions")}</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -500,11 +500,11 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                       size='sm'
                       onClick={enhanceInstructions}>
                       <TbWand className='mr-1 h-4 w-4' />
-                      Enhance Instructions
+                      {t("actions.enhanceInstructions")}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Use AI to enhance your instructions with more details</p>
+                    <p>{t("tooltips.enhanceInstructions")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -514,7 +514,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               name='instructions'
               value={recipeDetails.instructions}
               onChange={handleChange}
-              placeholder='Enter cooking instructions'
+              placeholder={t("placeholders.instructions")}
               rows={4}
             />
           </div>
@@ -522,7 +522,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           {/* Add preparation time field */}
           <div className={styles["timeGrid"]}>
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='prepTime'>Prep Time</Label>
+              <Label htmlFor='prepTime'>{t("fields.prepTime")}</Label>
               <div className={styles["timeRow"]}>
                 <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
@@ -530,14 +530,14 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                   name='prepTime'
                   value={recipeDetails.preparationTime}
                   onChange={handleChange}
-                  placeholder='e.g. 15 minutes'
+                  placeholder={t("placeholders.prepTime")}
                 />
               </div>
             </div>
 
             {/* Add cooking time field */}
             <div className={styles["fieldGroup"]}>
-              <Label htmlFor='cookTime'>Cook Time</Label>
+              <Label htmlFor='cookTime'>{t("fields.cookTime")}</Label>
               <div className={styles["timeRow"]}>
                 <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
@@ -545,7 +545,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                   name='cookTime'
                   value={recipeDetails.cookingTime}
                   onChange={handleChange}
-                  placeholder='e.g. 30 minutes'
+                  placeholder={t("placeholders.cookTime")}
                 />
               </div>
             </div>
@@ -558,13 +558,13 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               type='button'
               variant='outline'
               onClick={close}>
-              Cancel
+              {t("buttons.cancel")}
             </Button>
             <Button
               type='button'
               onClick={handleCreate}>
               <TbDisc className='mr-2 h-4 w-4' />
-              Save
+              {t("buttons.save")}
             </Button>
           </div>
         </DialogFooter>
@@ -574,6 +574,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
+  const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const handleDelete = useCallback(() => {}, []);
@@ -585,18 +586,17 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the recipe <strong>{recipe.name}</strong> and all its associated
-            data.
+            {t.rich("delete.description", {name: recipe.name, strong: (chunks) => <strong>{chunks}</strong>})}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("buttons.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className='bg-destructive text-destructive-foreground'>
-            Delete
+            {t("buttons.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

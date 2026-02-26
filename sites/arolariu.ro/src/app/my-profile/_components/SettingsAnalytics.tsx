@@ -29,7 +29,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile.settings.analytics");
+  const t = useTranslations("Profile.settings.analytics");
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 

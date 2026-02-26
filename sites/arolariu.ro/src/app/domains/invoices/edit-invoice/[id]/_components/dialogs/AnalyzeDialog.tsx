@@ -24,6 +24,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {
   TbBolt,
@@ -52,43 +53,6 @@ type AnalysisOptionConfig = {
   recommended?: boolean;
 };
 
-/** Available analysis options with their configurations. */
-const ANALYSIS_OPTIONS: AnalysisOptionConfig[] = [
-  {
-    id: InvoiceAnalysisOptions.CompleteAnalysis,
-    title: "Complete Analysis",
-    description: "Full AI-powered analysis including all invoice data, items, and merchant information.",
-    icon: <TbBrain className='h-6 w-6' />,
-    estimatedTime: "2-3 min",
-    features: ["OCR extraction", "Item categorization", "Merchant identification", "Price analysis", "Receipt validation"],
-    recommended: true,
-  },
-  {
-    id: InvoiceAnalysisOptions.InvoiceOnly,
-    title: "Invoice Data Only",
-    description: "Analyze basic invoice information like totals, dates, and payment details.",
-    icon: <TbReceipt className='h-6 w-6' />,
-    estimatedTime: "30-60 sec",
-    features: ["Total extraction", "Date parsing", "Payment method detection"],
-  },
-  {
-    id: InvoiceAnalysisOptions.InvoiceItemsOnly,
-    title: "Items Analysis",
-    description: "Focus on extracting and categorizing individual line items from the invoice.",
-    icon: <TbShoppingCart className='h-6 w-6' />,
-    estimatedTime: "1-2 min",
-    features: ["Item extraction", "Category assignment", "Price per item", "Quantity detection"],
-  },
-  {
-    id: InvoiceAnalysisOptions.InvoiceMerchantOnly,
-    title: "Merchant Analysis",
-    description: "Identify and analyze merchant information including location and category.",
-    icon: <TbBuildingStore className='h-6 w-6' />,
-    estimatedTime: "30-45 sec",
-    features: ["Merchant identification", "Location extraction", "Business category", "Contact info"],
-  },
-];
-
 /** Additional analysis enhancements. */
 type AnalysisEnhancement = {
   id: string;
@@ -96,27 +60,6 @@ type AnalysisEnhancement = {
   description: string;
   icon: React.ReactNode;
 };
-
-const ANALYSIS_ENHANCEMENTS: AnalysisEnhancement[] = [
-  {
-    id: "priceComparison",
-    label: "Price Comparison",
-    description: "Compare prices with historical data",
-    icon: <TbChartBar className='h-4 w-4' />,
-  },
-  {
-    id: "savingsTips",
-    label: "Savings Suggestions",
-    description: "Get AI-powered saving recommendations",
-    icon: <TbSparkles className='h-4 w-4' />,
-  },
-  {
-    id: "quickExtract",
-    label: "Quick Extract Mode",
-    description: "Prioritize speed over accuracy",
-    icon: <TbBolt className='h-4 w-4' />,
-  },
-];
 
 /**
  * Dialog for configuring and triggering AI-powered invoice analysis.
@@ -137,6 +80,7 @@ const ANALYSIS_ENHANCEMENTS: AnalysisEnhancement[] = [
  * @returns The AnalyzeDialog component, CSR'ed.
  */
 export default function AnalyzeDialog(): React.JSX.Element {
+  const t = useTranslations("Invoices.EditInvoice.analyzeDialog");
   const {
     isOpen,
     open,
@@ -151,6 +95,83 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [currentStep, setCurrentStep] = useState<string>("");
+
+  const analysisOptions: AnalysisOptionConfig[] = [
+    {
+      id: InvoiceAnalysisOptions.CompleteAnalysis,
+      title: t("options.completeAnalysis.title"),
+      description: t("options.completeAnalysis.description"),
+      icon: <TbBrain className='h-6 w-6' />,
+      estimatedTime: t("options.completeAnalysis.estimatedTime"),
+      features: [
+        t("options.completeAnalysis.features.ocrExtraction"),
+        t("options.completeAnalysis.features.itemCategorization"),
+        t("options.completeAnalysis.features.merchantIdentification"),
+        t("options.completeAnalysis.features.priceAnalysis"),
+        t("options.completeAnalysis.features.receiptValidation"),
+      ],
+      recommended: true,
+    },
+    {
+      id: InvoiceAnalysisOptions.InvoiceOnly,
+      title: t("options.invoiceOnly.title"),
+      description: t("options.invoiceOnly.description"),
+      icon: <TbReceipt className='h-6 w-6' />,
+      estimatedTime: t("options.invoiceOnly.estimatedTime"),
+      features: [
+        t("options.invoiceOnly.features.totalExtraction"),
+        t("options.invoiceOnly.features.dateParsing"),
+        t("options.invoiceOnly.features.paymentMethodDetection"),
+      ],
+    },
+    {
+      id: InvoiceAnalysisOptions.InvoiceItemsOnly,
+      title: t("options.itemsOnly.title"),
+      description: t("options.itemsOnly.description"),
+      icon: <TbShoppingCart className='h-6 w-6' />,
+      estimatedTime: t("options.itemsOnly.estimatedTime"),
+      features: [
+        t("options.itemsOnly.features.itemExtraction"),
+        t("options.itemsOnly.features.categoryAssignment"),
+        t("options.itemsOnly.features.pricePerItem"),
+        t("options.itemsOnly.features.quantityDetection"),
+      ],
+    },
+    {
+      id: InvoiceAnalysisOptions.InvoiceMerchantOnly,
+      title: t("options.merchantOnly.title"),
+      description: t("options.merchantOnly.description"),
+      icon: <TbBuildingStore className='h-6 w-6' />,
+      estimatedTime: t("options.merchantOnly.estimatedTime"),
+      features: [
+        t("options.merchantOnly.features.merchantIdentification"),
+        t("options.merchantOnly.features.locationExtraction"),
+        t("options.merchantOnly.features.businessCategory"),
+        t("options.merchantOnly.features.contactInfo"),
+      ],
+    },
+  ];
+
+  const analysisEnhancements: AnalysisEnhancement[] = [
+    {
+      id: "priceComparison",
+      label: t("enhancements.priceComparison.label"),
+      description: t("enhancements.priceComparison.description"),
+      icon: <TbChartBar className='h-4 w-4' />,
+    },
+    {
+      id: "savingsTips",
+      label: t("enhancements.savingsTips.label"),
+      description: t("enhancements.savingsTips.description"),
+      icon: <TbSparkles className='h-4 w-4' />,
+    },
+    {
+      id: "quickExtract",
+      label: t("enhancements.quickExtract.label"),
+      description: t("enhancements.quickExtract.description"),
+      icon: <TbBolt className='h-4 w-4' />,
+    },
+  ];
 
   const handleOptionSelect = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const {optionId} = e.currentTarget.dataset;
@@ -175,11 +196,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
       });
 
     const steps = [
-      "Preparing document...",
-      "Running OCR extraction...",
-      "Analyzing with AI...",
-      "Categorizing items...",
-      "Finalizing results...",
+      t("analysisSteps.preparingDocument"),
+      t("analysisSteps.runningOcrExtraction"),
+      t("analysisSteps.analyzingWithAi"),
+      t("analysisSteps.categorizingItems"),
+      t("analysisSteps.finalizingResults"),
     ];
 
     try {
@@ -205,7 +226,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
           const settled = await Promise.race([analysisSettledPromise, delay(0).then(() => false)]);
           if (settled) return;
 
-          setCurrentStep(steps[i] ?? "Processing...");
+          setCurrentStep(steps[i] ?? t("analysisSteps.processing"));
           setProgress(((i + 1) / steps.length) * 95);
 
           // Wait briefly before advancing steps, but don't block completion.
@@ -226,27 +247,27 @@ export default function AnalyzeDialog(): React.JSX.Element {
         enhancements: selectedEnhancements,
       });
 
-      setCurrentStep("Finalizing results...");
+      setCurrentStep(t("analysisSteps.finalizingResults"));
       setProgress(100);
 
-      toast("Analysis Complete", {
-        description: "Your invoice has been analyzed successfully.",
+      toast(t("toasts.analysisComplete.title"), {
+        description: t("toasts.analysisComplete.description"),
       });
 
       close();
     } catch (error) {
       console.error("Error analyzing invoice:", error);
-      toast("Analysis Failed", {
-        description: "We couldn't analyze your invoice. Please try again.",
+      toast(t("toasts.analysisFailed.title"), {
+        description: t("toasts.analysisFailed.description"),
       });
     } finally {
       setIsAnalyzing(false);
       setProgress(0);
       setCurrentStep("");
     }
-  }, [invoice.id, selectedOption, selectedEnhancements, close]);
+  }, [invoice.id, selectedOption, selectedEnhancements, close, t]);
 
-  const selectedConfig = ANALYSIS_OPTIONS.find((opt) => opt.id === selectedOption);
+  const selectedConfig = analysisOptions.find((opt) => opt.id === selectedOption);
 
   return (
     <Dialog
@@ -257,10 +278,10 @@ export default function AnalyzeDialog(): React.JSX.Element {
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <TbScanEye className='h-6 w-6 text-purple-500' />
-            Analyze Invoice
+            {t("header.title")}
           </DialogTitle>
           <DialogDescription>
-            Configure AI-powered analysis for invoice <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
+            {t("header.description")} <span className={styles["invoiceIdSnippet"]}>{invoice.id.slice(0, 8)}...</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -279,7 +300,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   className={styles["spinnerIcon"]}>
                   <TbLoader2 className='h-12 w-12 text-purple-500' />
                 </motion.div>
-                <h3 className={styles["analyzingTitle"]}>Analyzing Invoice</h3>
+                <h3 className={styles["analyzingTitle"]}>{t("analyzing.title")}</h3>
                 <p className={styles["analyzingStep"]}>{currentStep}</p>
               </div>
               <div className={styles["progressWrapper"]}>
@@ -287,7 +308,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   value={progress}
                   className='h-2'
                 />
-                <p className={styles["progressText"]}>{Math.round(progress)}% complete</p>
+                <p className={styles["progressText"]}>{t("analyzing.progressComplete", {progress: String(Math.round(progress))})}</p>
               </div>
             </motion.div>
           ) : (
@@ -299,9 +320,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
               className={styles["optionsSection"]}>
               {/* Analysis Type Selection */}
               <div className={styles["sectionLabel"]}>
-                <Label className='text-base font-medium'>Analysis Type</Label>
+                <Label className='text-base font-medium'>{t("sections.analysisType")}</Label>
                 <div className={styles["optionsGrid"]}>
-                  {ANALYSIS_OPTIONS.map((option) => (
+                  {analysisOptions.map((option) => (
                     <Card
                       key={option.id}
                       data-option-id={option.id}
@@ -319,7 +340,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                               <Badge
                                 variant='secondary'
                                 className='bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'>
-                                Recommended
+                                {t("badges.recommended")}
                               </Badge>
                             ) : null}
                             {selectedOption === option.id && <TbCheck className='h-5 w-5 text-purple-500' />}
@@ -345,7 +366,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   initial={{opacity: 0, height: 0}}
                   animate={{opacity: 1, height: "auto"}}
                   className={styles["featuresSection"]}>
-                  <Label className='text-sm font-medium'>Included Features</Label>
+                  <Label className='text-sm font-medium'>{t("sections.includedFeatures")}</Label>
                   <div className={styles["featuresList"]}>
                     {selectedConfig.features.map((feature) => (
                       <Badge
@@ -364,9 +385,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
               {/* Analysis Enhancements */}
               <div className={styles["enhancementsSection"]}>
-                <Label className='text-base font-medium'>Enhancements (Optional)</Label>
+                <Label className='text-base font-medium'>{t("sections.enhancementsOptional")}</Label>
                 <div className={styles["enhancementsSection"]}>
-                  {ANALYSIS_ENHANCEMENTS.map((enhancement) => (
+                  {analysisEnhancements.map((enhancement) => (
                     <div
                       key={enhancement.id}
                       className={styles["enhancementItem"]}>
@@ -400,12 +421,14 @@ export default function AnalyzeDialog(): React.JSX.Element {
                     <div>
                       <p className={styles["summaryTitle"]}>{selectedConfig?.title}</p>
                       <p className={styles["summarySubtext"]}>
-                        {selectedEnhancements.length > 0 ? `+ ${selectedEnhancements.length} enhancement(s)` : "No enhancements selected"}
+                        {selectedEnhancements.length > 0
+                          ? t("summary.enhancementsSelected", {count: String(selectedEnhancements.length)})
+                          : t("summary.noEnhancementsSelected")}
                       </p>
                     </div>
                   </div>
                   <div className={styles["summaryRight"]}>
-                    <p className={styles["summaryTimeLabel"]}>Estimated time</p>
+                    <p className={styles["summaryTimeLabel"]}>{t("summary.estimatedTime")}</p>
                     <p className={styles["summaryTimeValue"]}>{selectedConfig?.estimatedTime}</p>
                   </div>
                 </CardContent>
@@ -420,7 +443,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
             variant='outline'
             onClick={close}
             disabled={isAnalyzing}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
@@ -430,12 +453,12 @@ export default function AnalyzeDialog(): React.JSX.Element {
             {isAnalyzing ? (
               <>
                 <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
-                Analyzing...
+                {t("buttons.analyzing")}
               </>
             ) : (
               <>
                 <TbScanEye className='mr-2 h-4 w-4' />
-                Start Analysis
+                {t("buttons.startAnalysis")}
               </>
             )}
           </Button>

@@ -11,9 +11,10 @@ import {COMPONENT_TAGS, PRIORITY_TAGS, tagged, TEST_TYPE_TAGS} from "../../tests
 test.describe("Header Component Tests @header", () => {
   let header: HeaderComponent;
 
-  test.beforeEach(async ({page}) => {
+  test.beforeEach(async ({page, safeNavigate}) => {
     header = new HeaderComponent(page);
-    await page.goto("/");
+    const navigationResult = await safeNavigate("/");
+    expect(navigationResult.success, `Homepage navigation should succeed (status: ${navigationResult.status})`).toBe(true);
   });
 
   // Note: Screenshots are automatically captured by the autoScreenshot fixture

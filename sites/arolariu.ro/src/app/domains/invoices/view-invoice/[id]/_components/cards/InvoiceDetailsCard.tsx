@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbCalendar, TbChevronLeft, TbChevronRight, TbCreditCard, TbHeart} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -33,6 +33,7 @@ const ITEMS_PER_PAGE = 5;
 
 export function InvoiceDetailsCard(): React.JSX.Element {
   const locale = useLocale();
+  const t = useTranslations("Invoices.ViewInvoice.invoiceDetailsCard");
   const {invoice, merchant} = useInvoiceContext();
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -54,7 +55,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
         <div className={styles["headerRow"]}>
           <div className={styles["headerInfo"]}>
             <CardTitle className='flex items-center gap-2'>
-              Invoice Details
+              {t("title")}
               {Boolean(invoice.isImportant) && <TbHeart className='h-4 w-4 fill-red-500 text-red-500' />}
             </CardTitle>
             <CardDescription>
@@ -69,7 +70,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           <div className={styles["infoItem"]}>
             <div className={styles["infoLabel"]}>
               <TbCalendar className='h-4 w-4' />
-              <span>Date (UTC)</span>
+              <span>{t("labels.dateUtc")}</span>
             </div>
             <p className={styles["infoValue"]}>
               {formatDate(invoice.paymentInformation.transactionDate, {
@@ -81,18 +82,18 @@ export function InvoiceDetailsCard(): React.JSX.Element {
             </p>
           </div>
           <div className={styles["infoItem"]}>
-            <p className={styles["infoLabelPlain"]}>Category</p>
+            <p className={styles["infoLabelPlain"]}>{t("labels.category")}</p>
             <Badge variant='outline'>{formatEnum(ProductCategory, invoice.category)}</Badge>
           </div>
           <div className={styles["infoItem"]}>
             <div className={styles["infoLabel"]}>
               <TbCreditCard className='h-4 w-4' />
-              <span>Payment</span>
+              <span>{t("labels.payment")}</span>
             </div>
             <p className={styles["infoValue"]}>{formatEnum(PaymentType, invoice.paymentInformation.paymentType)}</p>
           </div>
           <div className={styles["infoItem"]}>
-            <p className={styles["infoLabelPlain"]}>Total Amount</p>
+            <p className={styles["infoLabelPlain"]}>{t("labels.totalAmount")}</p>
             <p className={styles["totalAmount"]}>
               {formatCurrency(invoice.paymentInformation.totalCostAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
             </p>
@@ -103,16 +104,16 @@ export function InvoiceDetailsCard(): React.JSX.Element {
 
         {/* Items Table */}
         <div className={styles["itemsSection"]}>
-          <h3 className={styles["itemsTitle"]}>Items ({invoice.items.length})</h3>
+          <h3 className={styles["itemsTitle"]}>{t("itemsTitle", {count: String(invoice.items.length)})}</h3>
           <div className={styles["tableContainer"]}>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className='w-[40%]'>Item</TableHead>
-                  <TableHead className='text-right'>Qty</TableHead>
-                  <TableHead className='text-right'>Unit</TableHead>
-                  <TableHead className='text-right'>Price</TableHead>
-                  <TableHead className='text-right'>Total</TableHead>
+                  <TableHead className='w-[40%]'>{t("table.item")}</TableHead>
+                  <TableHead className='text-right'>{t("table.qty")}</TableHead>
+                  <TableHead className='text-right'>{t("table.unit")}</TableHead>
+                  <TableHead className='text-right'>{t("table.price")}</TableHead>
+                  <TableHead className='text-right'>{t("table.total")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -156,7 +157,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={4}>Grand Total</TableCell>
+                  <TableCell colSpan={4}>{t("table.grandTotal")}</TableCell>
                   <TableCell className='text-right font-semibold'>
                     {formatCurrency(invoice.paymentInformation.totalCostAmount, {
                       currencyCode: invoice.paymentInformation.currency.code,
@@ -172,7 +173,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           {totalPages > 1 && (
             <div className={styles["pagination"]}>
               <p className={styles["paginationText"]}>
-                Page {currentPage} of {totalPages}
+                {t("pagination.pageOf", {current: String(currentPage), total: String(totalPages)})}
               </p>
               <div className={styles["paginationButtons"]}>
                 <Button
@@ -181,14 +182,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}>
                   <TbChevronLeft className='h-4 w-4' />
-                  Previous
+                  {t("pagination.previous")}
                 </Button>
                 <Button
                   variant='outline'
                   size='sm'
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}>
-                  Next
+                  {t("pagination.next")}
                   <TbChevronRight className='h-4 w-4' />
                 </Button>
               </div>

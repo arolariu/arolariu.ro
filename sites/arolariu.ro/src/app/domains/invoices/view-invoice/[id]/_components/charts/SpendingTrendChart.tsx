@@ -1,6 +1,7 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {Area, AreaChart, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {SpendingTrendData} from "../../_utils/analytics";
@@ -22,6 +23,7 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+  const t = useTranslations("Invoices.ViewInvoice.spendingTrendChart");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -32,15 +34,16 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
-      {data.isCurrent ? <p className={styles["tooltipCurrent"]}>Current Invoice</p> : null}
+      {data.isCurrent ? <p className={styles["tooltipCurrent"]}>{t("tooltip.currentInvoice")}</p> : null}
     </div>
   );
 }
 
 export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoice.spendingTrendChart");
   const chartConfig = {
     amount: {
-      label: "Amount",
+      label: t("labels.amount"),
       color: "hsl(var(--chart-1))",
     },
   };
@@ -51,8 +54,8 @@ export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>Spending Over Time</CardTitle>
-        <CardDescription className='text-xs'>Your invoice history trend</CardDescription>
+        <CardTitle className='text-base'>{t("title")}</CardTitle>
+        <CardDescription className='text-xs'>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent className='pb-4'>
         <ChartContainer

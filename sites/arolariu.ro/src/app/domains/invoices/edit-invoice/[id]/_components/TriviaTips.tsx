@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {TbAlertCircle, TbArrowRight, TbBulb, TbPercentage, TbPigMoney, TbSparkles, TbThumbUp} from "react-icons/tb";
 import styles from "./TriviaTips.module.scss";
 
@@ -62,30 +63,32 @@ type Props = {
  * @see {@link Invoice} - Invoice type for savings calculations
  */
 export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
+  const t = useTranslations("Invoices.EditInvoice.triviaTips");
+
   // Mock savings tips
   const savingsTips = [
     {
       id: 1,
-      title: "Join Loyalty Program",
-      description: `Sign up for ${merchant.name}'s loyalty program to earn points on every purchase.`,
+      title: t("tips.loyaltyProgram.title"),
+      description: t("tips.loyaltyProgram.description", {merchantName: merchant.name}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.05,
-      difficulty: "EASY",
+      difficulty: "easy",
       icon: <TbPigMoney className='h-5 w-5' />,
     },
     {
       id: 2,
-      title: "Buy in Bulk",
-      description: "Purchase non-perishable items in bulk to save on per-unit costs.",
+      title: t("tips.bulkPurchase.title"),
+      description: t("tips.bulkPurchase.description"),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.1,
-      difficulty: "MEDIUM",
+      difficulty: "medium",
       icon: <TbPercentage className='h-5 w-5' />,
     },
     {
       id: 3,
-      title: "Use Digital Coupons",
-      description: `Check ${merchant.name}'s app for digital coupons before shopping.`,
+      title: t("tips.digitalCoupons.title"),
+      description: t("tips.digitalCoupons.description", {merchantName: merchant.name}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.08,
-      difficulty: "EASY",
+      difficulty: "easy",
       icon: <TbBulb className='h-5 w-5' />,
     },
   ];
@@ -98,7 +101,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       <CardHeader className='pb-2'>
         <CardTitle className='flex items-center text-lg'>
           <TbSparkles className='text-primary mr-2 h-5 w-5' />
-          <span>Savings Tips</span>
+          <span>{t("title")}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
@@ -107,12 +110,12 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           whileHover={{scale: 1.02}}
           transition={{type: "spring", stiffness: 400, damping: 10}}>
           <div className={styles["savingsBannerInner"]}>
-            <p className={styles["savingsLabel"]}>Potential Savings</p>
+            <p className={styles["savingsLabel"]}>{t("banner.potentialSavingsLabel")}</p>
             <p className={styles["savingsAmount"]}>
               {formatCurrency(totalPotentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
             </p>
           </div>
-          <p className={styles["savingsHint"]}>Apply these tips to save on your next visit to {merchant.name}</p>
+          <p className={styles["savingsHint"]}>{t("banner.hint", {merchantName: merchant.name})}</p>
         </motion.div>
 
         <Separator />
@@ -133,9 +136,9 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                     <div>
                       <h3 className={styles["tipTitle"]}>{tip.title}</h3>
                       <Badge
-                        variant={tip.difficulty === "EASY" ? "default" : "secondary"}
+                        variant={tip.difficulty === "easy" ? "default" : "secondary"}
                         className='mt-1 text-xs'>
-                        {tip.difficulty}
+                        {tip.difficulty === "easy" ? t("difficulty.easy") : t("difficulty.medium")}
                       </Badge>
                     </div>
                     <TooltipProvider>
@@ -149,7 +152,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Estimated savings with this tip</p>
+                          <p>{t("tooltips.estimatedSavings")}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -165,14 +168,14 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           <Button
             variant='outline'
             className='group w-full'>
-            <span>View More Savings Tips</span>
+            <span>{t("buttons.viewMoreSavingsTips")}</span>
             <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
           </Button>
         </div>
 
         <div className={styles["disclaimer"]}>
           <TbAlertCircle className='h-3.5 w-3.5' />
-          <span>Savings are estimates based on average prices and promotions</span>
+          <span>{t("disclaimer")}</span>
         </div>
       </CardContent>
     </Card>

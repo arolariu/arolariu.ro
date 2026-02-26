@@ -31,7 +31,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile.settings.ai");
+  const t = useTranslations("Profile.settings.ai");
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 

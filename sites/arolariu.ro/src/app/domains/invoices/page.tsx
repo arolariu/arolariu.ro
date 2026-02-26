@@ -20,7 +20,7 @@ import RenderInvoiceDomainScreen from "./island";
  * @remarks
  * **Rendering Context**: Server Component metadata generator.
  *
- * **i18n**: Uses `next-intl` translations from Invoices.__metadata__.
+ * **i18n**: Uses `next-intl` translations from Invoices.metadata.
  *
  * **SEO**: Delegates to `createMetadata` for consistent Open Graph defaults.
  *
@@ -34,7 +34,7 @@ import RenderInvoiceDomainScreen from "./island";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Invoices.__metadata__");
+  const t = await getTranslations("Invoices.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

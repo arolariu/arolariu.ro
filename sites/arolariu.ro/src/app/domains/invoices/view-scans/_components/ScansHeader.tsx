@@ -32,7 +32,7 @@ function formatRelativeTime(date: Date): string {
  * Header component showing scan count and sync button.
  */
 export default function ScansHeader(): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.view-scans.header");
+  const t = useTranslations("Invoices.ViewScans.header");
   const {scans, isSyncing, lastSyncTimestamp, syncScans} = useScans();
 
   return (

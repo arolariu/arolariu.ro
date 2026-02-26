@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
   useWindowSize,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbCards, TbCategory, TbClock, TbFilter, TbMoon, TbSearch, TbSun, TbTable} from "react-icons/tb";
 import {GridView} from "../tables/GridView";
@@ -40,6 +41,7 @@ type Props = {
  * @returns The RenderInvoicesView component, CSR'ed.
  */
 export default function RenderInvoicesView({invoices}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoices.invoicesView");
   const {isMobile} = useWindowSize();
   const [view, setView] = useState<"table" | "grid">("table");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -130,7 +132,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
         <div className={styles["searchWrapper"]}>
           <TbSearch className={styles["searchIcon"]} />
           <Input
-            placeholder='Search invoices...'
+            placeholder={t("searchPlaceholder")}
             className='pl-8'
             value={searchQuery}
             onChange={handleSearch}
@@ -143,44 +145,44 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             <SelectTrigger className='w-[150px] cursor-pointer'>
               <div className={styles["filterTriggerContent"]}>
                 <TbCategory className={styles["filterIcon"]} />
-                <span>Category</span>
+                <span>{t("filters.category")}</span>
               </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem
                 className='cursor-pointer'
                 value='all'>
-                All Categories
+                {t("categories.all")}
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='groceries'>
-                Groceries
+                {t("categories.groceries")}
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='dining'>
-                Dining
+                {t("categories.dining")}
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='utilities'>
-                Utilities
+                {t("categories.utilities")}
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='entertainment'>
-                Entertainment
+                {t("categories.entertainment")}
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='travel'>
-                Travel
+                {t("categories.travel")}
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='other'>
-                Other
+                {t("categories.other")}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -191,21 +193,21 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             <SelectTrigger className='w-[150px] cursor-pointer'>
               <div className={styles["filterTriggerContent"]}>
                 <TbClock className={styles["filterIcon"]} />
-                <span>Time of Day</span>
+                <span>{t("filters.timeOfDay")}</span>
               </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem
                 className='cursor-pointer'
                 value='all'>
-                All Times
+                {t("times.all")}
               </SelectItem>
               <SelectItem
                 className='cursor-pointer'
                 value='day'>
                 <div className={styles["filterTriggerContent"]}>
                   <TbSun className={styles["sunIcon"]} />
-                  <span>Daytime (6am-6pm)</span>
+                  <span>{t("times.day")}</span>
                 </div>
               </SelectItem>
               <SelectItem
@@ -213,7 +215,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                 value='night'>
                 <div className={styles["filterTriggerContent"]}>
                   <TbMoon className={styles["moonIcon"]} />
-                  <span>Nighttime (6pm-6am)</span>
+                  <span>{t("times.night")}</span>
                 </div>
               </SelectItem>
             </SelectContent>
@@ -229,7 +231,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                   <TbFilter className={styles["filterIcon"]} />
                 </Button>
               </SheetTrigger>
-              <SheetContent>HELLO WORLD!</SheetContent>
+              <SheetContent>{t("placeholderPanel")}</SheetContent>
             </Sheet>
           ) : (
             <Popover>
@@ -241,7 +243,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                   <TbFilter className={styles["filterIcon"]} />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent>HELLO WORLD!</PopoverContent>
+              <PopoverContent>{t("placeholderPanel")}</PopoverContent>
             </Popover>
           )}
 
@@ -260,7 +262,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                     <TbTable className={styles["filterIcon"]} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Table View</TooltipContent>
+                <TooltipContent>{t("viewModes.table")}</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -275,7 +277,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                     <TbCards className={styles["filterIcon"]} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Grid View</TooltipContent>
+                <TooltipContent>{t("viewModes.grid")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

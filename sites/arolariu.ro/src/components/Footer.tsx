@@ -117,12 +117,12 @@ function FooterComponent(): React.JSX.Element {
           <div className='footer__brand-section'>
             <Link
               href='/'
-              aria-label='Go home'
-              title='AROLARIU.RO'
+              aria-label={t("accessibility.goHome")}
+              title={t("accessibility.brandTitle")}
               className='footer__brand-link'>
               <Image
                 src={logo}
-                alt='The `arolariu.ro` logo.'
+                alt={t("accessibility.logoAlt")}
                 className='footer__logo'
                 width={40}
                 height={40}

@@ -3,6 +3,7 @@
 import {useInvoices} from "@/hooks";
 import {Skeleton, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import DialogContainer from "../_contexts/DialogContainer";
 import {DialogProvider} from "../_contexts/DialogContext";
 import InvoicesHeader from "./_components/InvoicesHeader";
@@ -17,6 +18,7 @@ import styles from "./island.module.scss";
  */
 export default function RenderViewInvoicesScreen(): React.JSX.Element {
   const {invoices, isLoading} = useInvoices();
+  const t = useTranslations("Invoices.ViewInvoices.viewInvoicesIsland");
 
   if (isLoading) {
     return (
@@ -48,17 +50,17 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
               <TabsTrigger
                 value='invoices'
                 className='cursor-pointer'>
-                Invoices
+                {t("tabs.invoices")}
               </TabsTrigger>
               <TabsTrigger
                 value='statistics'
                 className='cursor-pointer'>
-                Statistics
+                {t("tabs.statistics")}
               </TabsTrigger>
               <TabsTrigger
                 value='liveAnalysis'
                 className='cursor-pointer'>
-                Live Analysis
+                {t("tabs.liveAnalysis")}
               </TabsTrigger>
             </TabsList>
             <TabsContent

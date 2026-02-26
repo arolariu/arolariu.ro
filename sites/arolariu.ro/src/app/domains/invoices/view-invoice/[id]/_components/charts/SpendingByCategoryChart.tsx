@@ -1,6 +1,7 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategorySpending} from "../../_utils/analytics";
 import styles from "./SpendingByCategoryChart.module.scss";
@@ -30,6 +31,7 @@ type CustomLegendProps = {
 };
 
 function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+  const t = useTranslations("Invoices.ViewInvoice.spendingByCategoryChart");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -39,9 +41,7 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipAmount"]}>
         {data.amount.toFixed(2)} {currency}
       </p>
-      <p className={styles["tooltipCount"]}>
-        {data.count} item{data.count === 1 ? "" : "s"}
-      </p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: data.count})}</p>
     </div>
   );
 }
@@ -65,6 +65,7 @@ function CustomLegend({payload}: CustomLegendProps): React.JSX.Element {
 }
 
 export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoice.spendingByCategoryChart");
   const chartConfig: Record<string, {label: string; color: string}> = {};
   for (const [index, item] of data.entries()) {
     chartConfig[item.category] = {
@@ -81,8 +82,8 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>Spending by Category</CardTitle>
-        <CardDescription className='text-xs'>Distribution of expenses</CardDescription>
+        <CardTitle className='text-base'>{t("title")}</CardTitle>
+        <CardDescription className='text-xs'>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent className='pb-4'>
         <ChartContainer
@@ -126,7 +127,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
           <p className={styles["totalAmount"]}>
             {total.toFixed(2)} {currency}
           </p>
-          <p className={styles["totalLabel"]}>Total Spending</p>
+          <p className={styles["totalLabel"]}>{t("totalLabel")}</p>
         </div>
       </CardContent>
     </Card>

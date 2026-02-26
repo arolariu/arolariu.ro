@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -68,6 +69,7 @@ import styles from "./ItemsDialog.module.scss";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ItemsDialog(): React.JSX.Element {
+  const t = useTranslations("Invoices.EditInvoice.itemsDialog");
   const {
     currentDialog: {payload},
     isOpen,
@@ -167,8 +169,8 @@ export default function ItemsDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-2xl md:max-w-6xl'>
         <DialogHeader>
-          <DialogTitle>Edit Invoice Items</DialogTitle>
-          <DialogDescription>Update quantities, prices, or add new items to this invoice</DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>
@@ -176,12 +178,12 @@ export default function ItemsDialog(): React.JSX.Element {
             <Table className='divide-border min-w-full divide-y'>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className={styles["tableHeader"]}>Item</TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>Quantity</TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>Unit</TableHead>
-                  <TableHead className={styles["tableHeaderRight"]}>Price</TableHead>
-                  <TableHead className={styles["tableHeaderRight"]}>Total</TableHead>
-                  <TableHead className={styles["tableHeaderCenter"]}>Actions</TableHead>
+                  <TableHead className={styles["tableHeader"]}>{t("table.item")}</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>{t("table.quantity")}</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>{t("table.unit")}</TableHead>
+                  <TableHead className={styles["tableHeaderRight"]}>{t("table.price")}</TableHead>
+                  <TableHead className={styles["tableHeaderRight"]}>{t("table.total")}</TableHead>
+                  <TableHead className={styles["tableHeaderCenter"]}>{t("table.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className='divide-border bg-popover divide-y'>
@@ -236,7 +238,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
-                        aria-label={`Delete item: ${item.rawName || "unnamed item"}`}
+                        aria-label={t("aria.deleteItem", {name: item.rawName || t("aria.unnamedItem")})}
                         onClick={handleDeleteItem(item)}>
                         <TbTrash className='h-4 w-4 text-red-500' />
                       </Button>
@@ -253,7 +255,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       role='status'
                       aria-live='polite'
                       aria-atomic='true'>
-                      {editableItems.length} items found (showing {paginatedItems.length})
+                      {t("footer.itemsFound", {total: String(editableItems.length), shown: String(paginatedItems.length)})}
                     </span>
                   </TableHead>
                   <TableHead
@@ -263,7 +265,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       role='status'
                       aria-live='polite'
                       aria-atomic='true'>
-                      Page {currentPage} of {totalPages}
+                      {t("footer.page", {current: String(currentPage), total: String(totalPages)})}
                     </span>
                   </TableHead>
                   <TableHead
@@ -272,20 +274,20 @@ export default function ItemsDialog(): React.JSX.Element {
                     <Button
                       variant='ghost'
                       size='sm'
-                      aria-label={`Go to previous page (page ${currentPage - 1})`}
+                      aria-label={t("aria.previousPage", {page: String(currentPage - 1)})}
                       // eslint-disable-next-line -- inputs always change - ok usage.
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}>
-                      Previous
+                      {t("buttons.previous")}
                     </Button>
                     <Button
                       variant='ghost'
                       size='sm'
-                      aria-label={`Go to next page (page ${currentPage + 1})`}
+                      aria-label={t("aria.nextPage", {page: String(currentPage + 1)})}
                       // eslint-disable-next-line -- inputs always change - ok usage.
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}>
-                      Next
+                      {t("buttons.next")}
                     </Button>
                   </TableHead>
                 </TableRow>
@@ -298,16 +300,16 @@ export default function ItemsDialog(): React.JSX.Element {
             <Button
               type='button'
               variant='outline'
-              aria-label='Add a new item to the invoice'
+              aria-label={t("aria.addItem")}
               onClick={handleAddNewItem}>
               <TbPlus className='mr-2 h-4 w-4' />
-              Add Item
+              {t("buttons.addItem")}
             </Button>
             <div
               className={styles["itemCount"]}
               role='status'
               aria-live='polite'>
-              {items.length} {items.length === 1 ? "item" : "items"} in total
+              {t("footer.itemsTotal", {count: items.length})}
             </div>
           </div>
         </div>
@@ -315,15 +317,15 @@ export default function ItemsDialog(): React.JSX.Element {
         <DialogFooter>
           <Button
             variant='outline'
-            aria-label='Cancel editing and close dialog'
+            aria-label={t("aria.cancel")}
             onClick={close}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
-            aria-label='Save changes to invoice items'
+            aria-label={t("aria.save")}
             onClick={handleSaveChanges}>
             <TbDisc className='mr-2 h-4 w-4' />
-            Save Changes
+            {t("buttons.saveChanges")}
           </Button>
         </DialogFooter>
       </DialogContent>

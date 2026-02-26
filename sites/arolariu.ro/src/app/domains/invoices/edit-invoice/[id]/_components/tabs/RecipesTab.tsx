@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -63,6 +64,7 @@ type Props = {
  * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Invoices.EditInvoice.recipesTab");
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
@@ -81,10 +83,10 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-    toast("AI recipe generation coming soon", {
-      description: "This feature is currently under development.",
+    toast(t("toasts.aiGenerationComingSoon.title"), {
+      description: t("toasts.aiGenerationComingSoon.description"),
     });
-  }, []);
+  }, [t]);
 
   const handleCreateFirstRecipe = useCallback(() => {
     openAddDialog();
@@ -99,8 +101,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
       <Card className='group transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between pb-2'>
           <div>
-            <CardTitle>Recipes You Can Make</CardTitle>
-            <CardDescription>Based on items in this invoice</CardDescription>
+            <CardTitle>{t("header.title")}</CardTitle>
+            <CardDescription>{t("header.description")}</CardDescription>
           </div>
           <TooltipProvider>
             <div className={styles["headerActions"]}>
@@ -112,11 +114,11 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                     onClick={handleGenerateRecipe}
                     size='sm'>
                     <TbConfetti className='mr-2 h-4 w-4' />
-                    Generate
+                    {t("buttons.generate")}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side='bottom'>
-                  <p>Generate a recipe using AI!</p>
+                  <p>{t("tooltips.generateRecipeUsingAi")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -126,11 +128,11 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                     onClick={openAddDialog}
                     size='sm'>
                     <TbPlus className='mr-2 h-4 w-4' />
-                    Add Recipe
+                    {t("buttons.addRecipe")}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Create a new recipe with these ingredients</p>
+                  <p>{t("tooltips.createRecipeWithIngredients")}</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -148,13 +150,13 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
             </div>
           ) : (
             <div className={styles["emptyState"]}>
-              <p className={styles["emptyText"]}>No recipes available yet</p>
+              <p className={styles["emptyText"]}>{t("emptyState.noRecipesAvailable")}</p>
               <Button
                 onClick={handleCreateFirstRecipe}
                 variant='outline'
                 className='cursor-pointer'>
                 <TbPlus className='mr-2 h-4 w-4' />
-                Create Your First Recipe
+                {t("buttons.createFirstRecipe")}
               </Button>
             </div>
           )}
@@ -165,17 +167,17 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 size='sm'
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}>
-                Previous
+                {t("pagination.previous")}
               </Button>
               <div className={styles["pageInfo"]}>
-                Page {currentPage} of {totalPages}
+                {t("pagination.pageOf", {currentPage: String(currentPage), totalPages: String(totalPages)})}
               </div>
               <Button
                 variant='ghost'
                 size='sm'
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}>
-                Next
+                {t("pagination.next")}
               </Button>
             </div>
           )}

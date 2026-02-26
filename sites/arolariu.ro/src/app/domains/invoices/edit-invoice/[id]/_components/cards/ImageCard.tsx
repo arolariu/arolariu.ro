@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useState} from "react";
 import {TbChevronLeft, TbChevronRight, TbPlus, TbTrash, TbZoomIn} from "react-icons/tb";
@@ -54,6 +55,7 @@ type Props = {invoice: Invoice};
  * @see {@link RemoveScanDialog} - Dialog for removing scans
  */
 export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Invoices.EditInvoice.imageCard");
   const [currentScanIndex, setCurrentScanIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
@@ -99,7 +101,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
     <TooltipProvider>
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between'>
-          <CardTitle className='text-lg'>Receipt Scan {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</CardTitle>
+          <CardTitle className='text-lg'>
+            {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
+          </CardTitle>
         </CardHeader>
         <CardContent className='flex justify-center'>
           <Dialog
@@ -109,10 +113,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               variant='ghost'
               className='group/image relative h-auto w-full cursor-pointer overflow-hidden rounded-md border p-0'
               onClick={handleOpenZoom}
-              aria-label='Click to expand image'>
+              aria-label={t("aria.expandImage")}>
               <Image
                 src={currentScanSrc}
-                alt={`Receipt scan ${currentScanIndex + 1}`}
+                alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
                 width={400}
                 height={600}
                 className={isTransitioning ? styles["receiptImageTransitioning"] : styles["receiptImageNormal"]}
@@ -123,12 +127,16 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
             </Button>
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
-                <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
+                <DialogTitle>
+                  {totalScans > 1
+                    ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)})
+                    : t("dialogTitle")}
+                </DialogTitle>
               </DialogHeader>
               <div className={styles["zoomContainer"]}>
                 <Image
                   src={currentScanSrc}
-                  alt={`Receipt scan ${currentScanIndex + 1} - full size`}
+                  alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
                   width={800}
                   height={1200}
                   className={styles["zoomDialogImage"]}
@@ -146,11 +154,11 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 className='w-full cursor-pointer'
                 onClick={handleOpenZoom}>
                 <TbZoomIn className='mr-2 h-4 w-4' />
-                Expand Image
+                {t("buttons.expand")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>View the receipt image in full size</p>
+              <p>{t("tooltips.expand")}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -165,11 +173,11 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                       className='flex-1 cursor-pointer'
                       onClick={handlePreviousScan}>
                       <TbChevronLeft className='mr-1 h-4 w-4' />
-                      Previous
+                      {t("buttons.previous")}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>View the previous receipt scan</p>
+                    <p>{t("tooltips.previous")}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -180,12 +188,12 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                       variant='secondary'
                       className='flex-1 cursor-pointer'
                       onClick={handleNextScan}>
-                      Next
+                      {t("buttons.next")}
                       <TbChevronRight className='ml-1 h-4 w-4' />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>View the next receipt scan</p>
+                    <p>{t("tooltips.next")}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -201,11 +209,11 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   className='flex-1 cursor-pointer'
                   onClick={openAddScan}>
                   <TbPlus className='mr-1 h-4 w-4' />
-                  Add Scan
+                  {t("buttons.addScan")}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Upload and attach a new receipt scan</p>
+                <p>{t("tooltips.addScan")}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -216,11 +224,11 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                   onClick={openRemoveScan}
                   disabled={totalScans === 0}>
                   <TbTrash className='mr-1 h-4 w-4' />
-                  Remove
+                  {t("buttons.remove")}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Remove the current receipt scan</p>
+                <p>{t("tooltips.remove")}</p>
               </TooltipContent>
             </Tooltip>
           </div>

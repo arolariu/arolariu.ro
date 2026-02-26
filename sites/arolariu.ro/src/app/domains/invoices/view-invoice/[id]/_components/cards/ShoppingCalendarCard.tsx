@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {createContext, useContext, useMemo} from "react";
 import {TbArrowDown, TbArrowUp, TbCalendar, TbInfoCircle, TbShoppingCart, TbTrendingUp} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
@@ -71,10 +71,11 @@ interface DayTooltipContentProps {
   readonly data: DayData | undefined;
   readonly historicalData: DayHistoricalComparison | undefined;
   readonly isCurrentInvoiceDate: boolean;
+  readonly t: ReturnType<typeof useTranslations>;
 }
 
 /** Renders the invoice names list in the tooltip */
-function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element | null {
+function InvoiceNamesList({data, t}: Readonly<{data: DayData; t: ReturnType<typeof useTranslations>}>): React.JSX.Element | null {
   if (data.invoiceNames.length === 0) return null;
 
   return (
@@ -86,13 +87,18 @@ function InvoiceNamesList({data}: Readonly<{data: DayData}>): React.JSX.Element 
           • {name}
         </p>
       ))}
-      {data.invoiceNames.length > 3 && <p className={styles["moreText"]}>+{data.invoiceNames.length - 3} more</p>}
+      {data.invoiceNames.length > 3 && (
+        <p className={styles["moreText"]}>{t("tooltip.more", {count: String(data.invoiceNames.length - 3)})}</p>
+      )}
     </div>
   );
 }
 
 /** Renders the historical comparison section in the tooltip */
-function HistoricalComparisonSection({historicalData}: Readonly<{historicalData: DayHistoricalComparison}>): React.JSX.Element {
+function HistoricalComparisonSection({
+  historicalData,
+  t,
+}: Readonly<{historicalData: DayHistoricalComparison; t: ReturnType<typeof useTranslations>}>): React.JSX.Element {
   const ArrowIcon = historicalData.isAboveAverage ? TbArrowUp : TbArrowDown;
   const colorClass = historicalData.isAboveAverage ? styles["colorRed"] : styles["colorGreen"];
 
@@ -100,14 +106,14 @@ function HistoricalComparisonSection({historicalData}: Readonly<{historicalData:
     <div className={styles["historicalRow"]}>
       <ArrowIcon className={`h-3 w-3 ${colorClass}`} />
       <span className={colorClass}>{Math.abs(historicalData.percentageDiff).toFixed(0)}%</span>
-      <span className={styles["moreText"]}>vs avg ({historicalData.yearsWithData}y data)</span>
+      <span className={styles["moreText"]}>{t("tooltip.vsAverage", {years: String(historicalData.yearsWithData)})}</span>
     </div>
   );
 }
 
 /** Renders the tooltip content for a day with spending data */
 function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
-  const {amount, count, locale, currency, data, historicalData, isCurrentInvoiceDate} = props;
+  const {amount, count, locale, currency, data, historicalData, isCurrentInvoiceDate, t} = props;
 
   return (
     <TooltipContent
@@ -115,13 +121,21 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
       className='max-w-xs space-y-2 text-xs'>
       <div>
         <p className={styles["tooltipLabel"]}>{formatCurrency(amount, {currencyCode: currency.code, locale})}</p>
-        <p className={styles["tooltipCount"]}>
-          {count} {count === 1 ? "invoice" : "invoices"}
-        </p>
+        <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(count)})}</p>
       </div>
-      {data ? <InvoiceNamesList data={data} /> : null}
-      {historicalData ? <HistoricalComparisonSection historicalData={historicalData} /> : null}
-      {isCurrentInvoiceDate ? <Badge className='mt-1'>Current invoice</Badge> : null}
+      {data ? (
+        <InvoiceNamesList
+          data={data}
+          t={t}
+        />
+      ) : null}
+      {historicalData ? (
+        <HistoricalComparisonSection
+          historicalData={historicalData}
+          t={t}
+        />
+      ) : null}
+      {isCurrentInvoiceDate ? <Badge className='mt-1'>{t("tooltip.currentInvoice")}</Badge> : null}
     </TooltipContent>
   );
 }
@@ -135,6 +149,7 @@ function isSameDay(date1: Date, date2: Date): boolean {
 function CustomDayButton(props: DayButtonProps): React.JSX.Element {
   const {day, className, ...rest} = props;
   const {locale, currency, month, transactionDate, spendingByDay, historicalByDay, maxDayAmount} = useCalendarData();
+  const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
   const {date} = day;
   const dayNum = date.getDate();
   const isCurrentMonth = date.getMonth() === month.getMonth() && date.getFullYear() === month.getFullYear();
@@ -171,6 +186,7 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
         data={data}
         historicalData={historicalData}
         isCurrentInvoiceDate={isCurrentInvoiceDate}
+        t={t}
       />
     </Tooltip>
   );
@@ -178,6 +194,7 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
 
 export function ShoppingCalendarCard(): React.JSX.Element {
   const locale = useLocale();
+  const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
   const {invoice} = useInvoiceContext();
   const transactionDate = useMemo(() => new Date(invoice.paymentInformation.transactionDate), [invoice.paymentInformation.transactionDate]);
   const month = useMemo(() => new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1), [transactionDate]);
@@ -227,7 +244,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
           <CardHeader className='pb-3'>
             <CardTitle className='flex items-center gap-2 text-lg'>
               <TbCalendar className='text-muted-foreground h-4 w-4' />
-              Shopping Calendar
+              {t("title")}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <TbInfoCircle className='text-muted-foreground h-4 w-4 cursor-help' />
@@ -235,7 +252,9 @@ export function ShoppingCalendarCard(): React.JSX.Element {
                 <TooltipContent
                   side='top'
                   className='text-xs'>
-                  {hasHydrated && invoices.length > 1 ? `Based on ${invoices.length} cached invoices` : "Showing current invoice only"}
+                  {hasHydrated && invoices.length > 1
+                    ? t("tooltip.basedOnCachedInvoices", {count: String(invoices.length)})
+                    : t("tooltip.currentInvoiceOnly")}
                 </TooltipContent>
               </Tooltip>
             </CardTitle>
@@ -255,7 +274,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
 
             {/* Legend */}
             <div className={styles["legend"]}>
-              <span>Less</span>
+              <span>{t("legend.less")}</span>
               <div className={styles["legendBlocks"]}>
                 <div className={`${styles["legendBlock"]} ${styles["legendBlock1"]}`} />
                 <div className={`${styles["legendBlock"]} ${styles["legendBlock2"]}`} />
@@ -263,7 +282,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
                 <div className={`${styles["legendBlock"]} ${styles["legendBlock4"]}`} />
                 <div className={`${styles["legendBlock"]} ${styles["legendBlock5"]}`} />
               </div>
-              <span>More</span>
+              <span>{t("legend.more")}</span>
             </div>
 
             <Separator />
@@ -273,14 +292,14 @@ export function ShoppingCalendarCard(): React.JSX.Element {
               <div className={styles["statBox"]}>
                 <TbShoppingCart className='text-muted-foreground h-4 w-4 shrink-0' />
                 <div>
-                  <p className={styles["statLabel"]}>Month Total</p>
+                  <p className={styles["statLabel"]}>{t("stats.monthTotal")}</p>
                   <p className={styles["statValue"]}>{formatCurrency(patterns.monthTotal, {currencyCode: currency.code, locale})}</p>
                 </div>
               </div>
               <div className={styles["statBox"]}>
                 <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
                 <div>
-                  <p className={styles["statLabel"]}>Shopping Days</p>
+                  <p className={styles["statLabel"]}>{t("stats.shoppingDays")}</p>
                   <p className={styles["statValue"]}>{patterns.shoppingDaysCount}</p>
                 </div>
               </div>
@@ -291,14 +310,16 @@ export function ShoppingCalendarCard(): React.JSX.Element {
               <div className={styles["insightBox"]}>
                 <TbTrendingUp className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className={styles["insightText"]}>
-                  You shop every <span className={styles["insightHighlight"]}>{patterns.avgDaysBetween.toFixed(0)} days</span> on average
+                  {t("insights.shopEveryPrefix")}{" "}
+                  <span className={styles["insightHighlight"]}>{t("insights.days", {count: patterns.avgDaysBetween.toFixed(0)})}</span>{" "}
+                  {t("insights.onAverage")}
                   {patterns.avgPerTrip > 0 ? (
                     <>
-                      , spending{" "}
+                      {t("insights.spendingPrefix")}{" "}
                       <span className={styles["insightHighlight"]}>
                         {formatCurrency(patterns.avgPerTrip, {currencyCode: currency.code, locale})}
-                      </span>{" "}
-                      per trip
+                      </span>
+                      {t("insights.perTrip")}
                     </>
                   ) : null}
                 </p>
@@ -310,7 +331,10 @@ export function ShoppingCalendarCard(): React.JSX.Element {
               <div className={styles["insightBox"]}>
                 <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className={styles["insightText"]}>
-                  Most active on <span className={styles["insightHighlight"]}>{getWeekdayName(patterns.mostActiveWeekday, locale)}s</span>
+                  {t("insights.mostActiveOn")}{" "}
+                  <span className={styles["insightHighlight"]}>
+                    {t("insights.weekdayLabel", {weekday: getWeekdayName(patterns.mostActiveWeekday, locale)})}
+                  </span>
                 </p>
               </div>
             ) : null}

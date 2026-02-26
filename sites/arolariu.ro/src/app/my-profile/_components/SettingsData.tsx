@@ -30,7 +30,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile.settings.data");
+  const t = useTranslations("Profile.settings.data");
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 

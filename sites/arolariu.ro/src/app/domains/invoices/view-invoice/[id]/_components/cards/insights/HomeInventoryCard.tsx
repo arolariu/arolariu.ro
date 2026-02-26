@@ -3,7 +3,7 @@
 import {formatCurrency} from "@/lib/utils.generic";
 import {ProductCategory} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbDroplets, TbHome, TbLeaf, TbPackage, TbSparkles, TbSpray, TbStar, TbToiletPaper} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./HomeInventoryCard.module.scss";
@@ -27,6 +27,7 @@ function getSupplyProgressColor(percentage: number, moduleStyles: Record<string,
 
 export function HomeInventoryCard(): React.JSX.Element {
   const locale = useLocale();
+  const t = useTranslations("Invoices.ViewInvoice.homeInventoryCard");
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
   const {currency} = paymentInformation;
@@ -54,7 +55,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           className='h-4 w-4 text-blue-500'
         />
       );
-      supplies.push({id: `laundry-${item.productCode}`, name: "Laundry Detergent", icon, daysRemaining, maxDays: 60});
+      supplies.push({id: `laundry-${item.productCode}`, name: t("supplyNames.laundryDetergent"), icon, daysRemaining, maxDays: 60});
     } else if (name.includes("dish") || name.includes("soap")) {
       daysRemaining = 18;
       icon = (
@@ -63,7 +64,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           className='h-4 w-4 text-cyan-500'
         />
       );
-      supplies.push({id: `dish-${item.productCode}`, name: "Dish Soap", icon, daysRemaining, maxDays: 30});
+      supplies.push({id: `dish-${item.productCode}`, name: t("supplyNames.dishSoap"), icon, daysRemaining, maxDays: 30});
     } else if (name.includes("paper") || name.includes("towel") || name.includes("tissue")) {
       // daysRemaining stays at default 30
       icon = (
@@ -72,7 +73,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           className='h-4 w-4 text-gray-500'
         />
       );
-      supplies.push({id: `paper-${item.productCode}`, name: "Paper Products", icon, daysRemaining, maxDays: 45});
+      supplies.push({id: `paper-${item.productCode}`, name: t("supplyNames.paperProducts"), icon, daysRemaining, maxDays: 45});
     } else if (name.includes("floor") || name.includes("cleaner")) {
       daysRemaining = 60;
       icon = (
@@ -81,7 +82,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           className='h-4 w-4 text-green-500'
         />
       );
-      supplies.push({id: `floor-${item.productCode}`, name: "Floor Cleaner", icon, daysRemaining, maxDays: 90});
+      supplies.push({id: `floor-${item.productCode}`, name: t("supplyNames.floorCleaner"), icon, daysRemaining, maxDays: 90});
     } else {
       supplies.push({id: `generic-${item.productCode}`, name: item.genericName, icon, daysRemaining, maxDays: 45});
     }
@@ -92,7 +93,7 @@ export function HomeInventoryCard(): React.JSX.Element {
     supplies.push(
       {
         id: "default-laundry",
-        name: "Laundry Detergent",
+        name: t("supplyNames.laundryDetergent"),
         icon: (
           <TbDroplets
             key='default-droplets'
@@ -104,7 +105,7 @@ export function HomeInventoryCard(): React.JSX.Element {
       },
       {
         id: "default-dish",
-        name: "Dish Soap",
+        name: t("supplyNames.dishSoap"),
         icon: (
           <TbSparkles
             key='default-sparkles'
@@ -130,13 +131,13 @@ export function HomeInventoryCard(): React.JSX.Element {
       <CardHeader className='pb-3'>
         <CardTitle className='flex items-center gap-2 text-lg'>
           <TbHome className='h-5 w-5 text-emerald-600' />
-          Home Inventory & Supplies
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Supply Stock Levels */}
         <div>
-          <h4 className={styles["sectionTitle"]}>Supply Stock Levels (estimated)</h4>
+          <h4 className={styles["sectionTitle"]}>{t("stockLevels.title")}</h4>
           <div className={styles["suppliesList"]}>
             {supplies.map((supply) => {
               const pct = (supply.daysRemaining / supply.maxDays) * 100;
@@ -150,7 +151,7 @@ export function HomeInventoryCard(): React.JSX.Element {
                       {supply.icon}
                       <span>{supply.name}</span>
                     </div>
-                    <span className={styles["supplyDays"]}>~{supply.daysRemaining} days</span>
+                    <span className={styles["supplyDays"]}>{t("stockLevels.daysRemaining", {count: String(supply.daysRemaining)})}</span>
                   </div>
                   <div className={styles["progressTrack"]}>
                     <div
@@ -169,7 +170,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           <div className={styles["ecoHeader"]}>
             <div className={styles["ecoLabel"]}>
               <TbLeaf className='h-4 w-4 text-green-500' />
-              <span className={styles["ecoLabelText"]}>Eco-Friendliness Score</span>
+              <span className={styles["ecoLabelText"]}>{t("eco.title")}</span>
             </div>
             <div className={styles["ecoStars"]}>
               {[1, 2, 3, 4, 5].map((star) => (
@@ -183,15 +184,15 @@ export function HomeInventoryCard(): React.JSX.Element {
           <ul className={styles["ecoList"]}>
             <li className={styles["ecoItem"]}>
               <span className={styles["ecoBullet"]}>•</span>
-              {ecoProducts} products with eco-labels
+              {t("eco.productsWithEcoLabels", {count: String(ecoProducts)})}
             </li>
             <li className={styles["ecoItem"]}>
               <span className={styles["ecoBullet"]}>•</span>
-              {recyclablePackaging} product with recyclable packaging
+              {t("eco.recyclablePackaging", {count: String(recyclablePackaging)})}
             </li>
             <li className={styles["ecoItem"]}>
               <span className={styles["ecoTipBullet"]}>•</span>
-              <span className={styles["ecoTipText"]}>Tip: Eco alternatives save 2kg plastic/year</span>
+              <span className={styles["ecoTipText"]}>{t("eco.tip")}</span>
             </li>
           </ul>
         </div>
@@ -200,9 +201,11 @@ export function HomeInventoryCard(): React.JSX.Element {
         <div className={styles["bulkBox"]}>
           <TbPackage className='mt-0.5 h-4 w-4 shrink-0 text-blue-500' />
           <div>
-            <p className={styles["bulkTitle"]}>Bulk Buying Savings</p>
+            <p className={styles["bulkTitle"]}>{t("bulk.title")}</p>
             <p className={styles["bulkDescription"]}>
-              5L detergent vs 2L saves 18% ({formatCurrency(potentialSavings, {currencyCode: currency.code, locale})}/year)
+              {t("bulk.description", {
+                amount: formatCurrency(potentialSavings, {currencyCode: currency.code, locale}),
+              })}
             </p>
           </div>
         </div>

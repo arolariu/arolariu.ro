@@ -13,6 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {TbEdit, TbMenu3, TbShare, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
@@ -26,6 +27,7 @@ type Props = {invoice: Invoice};
  * @returns The rendered invoice table actions.
  */
 export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoices.tableViewActions");
   const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
 
@@ -54,11 +56,11 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                   href={`/domains/invoices/edit-invoice/${invoice.id}`}
                   className={styles["editLink"]}>
                   <TbEdit className={styles["menuItemIcon"]} />
-                  Edit
+                  {t("actions.edit")}
                 </Link>
               </DropdownMenuItem>
             </TooltipTrigger>
-            <TooltipContent side='left'>Edit invoice details</TooltipContent>
+            <TooltipContent side='left'>{t("tooltips.edit")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -66,10 +68,10 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                 onClick={openShareDialog}
                 className='cursor-pointer'>
                 <TbShare className={styles["menuItemIcon"]} />
-                Share
+                {t("actions.share")}
               </DropdownMenuItem>
             </TooltipTrigger>
-            <TooltipContent side='left'>Share invoice via link or email</TooltipContent>
+            <TooltipContent side='left'>{t("tooltips.share")}</TooltipContent>
           </Tooltip>
           <DropdownMenuSeparator />
           <Tooltip>
@@ -78,10 +80,10 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
                 className='text-destructive cursor-pointer'
                 onClick={openDeleteDialog}>
                 <TbTrash className={styles["menuItemIcon"]} />
-                Delete
+                {t("actions.delete")}
               </DropdownMenuItem>
             </TooltipTrigger>
-            <TooltipContent side='left'>Permanently delete this invoice</TooltipContent>
+            <TooltipContent side='left'>{t("tooltips.delete")}</TooltipContent>
           </Tooltip>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -10,10 +10,7 @@ import styles from "./page.module.scss";
  * Generates SEO metadata for the view scans page.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  // Translation types will be regenerated on next build
-  const t = (await getTranslations(
-    "Domains.services.invoices.service.view-scans.__metadata__" as "Domains.services.invoices.service.view-invoices.__metadata__",
-  )) as (key: string) => string;
+  const t = await getTranslations("Invoices.ViewScans.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

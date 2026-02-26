@@ -48,7 +48,7 @@ import Loading from "./loading";
  * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl Server Components}
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Acknowledgements.__metadata__");
+  const t = await getTranslations("Acknowledgements.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

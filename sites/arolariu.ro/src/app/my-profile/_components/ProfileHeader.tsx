@@ -29,7 +29,7 @@ type Props = Readonly<{
 }>;
 
 export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile");
+  const t = useTranslations("Profile");
   const profileCompletion = calculateProfileCompletion(user);
   const accountAgeDays = calculateAccountAge(user?.createdAt);
 

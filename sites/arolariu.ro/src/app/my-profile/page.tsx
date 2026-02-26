@@ -33,7 +33,7 @@ import RenderMyProfileScreen from "./island";
  * ```
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("MyProfile.meta");
+  const t = await getTranslations("Profile.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

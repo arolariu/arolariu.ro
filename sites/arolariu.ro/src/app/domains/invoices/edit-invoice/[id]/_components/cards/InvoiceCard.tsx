@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useCallback, useMemo} from "react";
 import {TbCalendar, TbCreditCard, TbHeart, TbTag} from "react-icons/tb";
 import {useEditInvoiceContext} from "../../_context/EditInvoiceContext";
@@ -75,6 +75,7 @@ import styles from "./InvoiceCard.module.scss";
  */
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
+  const t = useTranslations("Invoices.EditInvoice.invoiceCard");
   const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setCategory, setDescription, setTransactionDate} =
     useEditInvoiceContext();
   const {paymentInformation, category, isImportant, description} = invoice;
@@ -162,7 +163,7 @@ export default function InvoiceCard(): React.JSX.Element {
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='pb-3'>
           <div className={styles["headerRow"]}>
-            <CardTitle>Invoice Details</CardTitle>
+            <CardTitle>{t("title")}</CardTitle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -171,22 +172,22 @@ export default function InvoiceCard(): React.JSX.Element {
                     className='cursor-pointer transition-transform hover:scale-105'
                     onClick={handleImportantToggle}>
                     <TbHeart className={cn("text-red-500 hover:text-red-700", currentIsImportant && "fill-red-500")} />
-                    {currentIsImportant ? "IMPORTANT" : "Mark as Important"}
+                    {currentIsImportant ? t("importantBadge") : t("markImportant")}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <span>Click to {currentIsImportant ? "unmark" : "mark"} as favorite</span>
+                  <span>{currentIsImportant ? t("tooltips.unmarkFavorite") : t("tooltips.markFavorite")}</span>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <CardDescription>
-            From {merchant.name}
+            {t("fromMerchant", {merchant: merchant.name})}
             <Separator className='my-2' />
             <Textarea
               value={currentDescription}
               onChange={handleDescriptionChange}
-              placeholder='Enter invoice description...'
+              placeholder={t("descriptionPlaceholder")}
               className='min-h-20 resize-none'
               rows={3}
             />
@@ -197,7 +198,7 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>Date (UTC)</h3>
+              <h3 className={styles["detailLabel"]}>{t("labels.dateUtc")}</h3>
               <div className={styles["dateRow"]}>
                 <TbCalendar className='text-muted-foreground mr-2 h-4 w-4' />
                 <Popover>
@@ -227,7 +228,7 @@ export default function InvoiceCard(): React.JSX.Element {
                         <Label
                           htmlFor='hours'
                           className={styles["timeLabel"]}>
-                          Hours
+                          {t("labels.hours")}
                         </Label>
                         <Input
                           id='hours'
@@ -244,7 +245,7 @@ export default function InvoiceCard(): React.JSX.Element {
                         <Label
                           htmlFor='minutes'
                           className={styles["timeLabel"]}>
-                          Minutes
+                          {t("labels.minutes")}
                         </Label>
                         <Input
                           id='minutes'
@@ -256,7 +257,7 @@ export default function InvoiceCard(): React.JSX.Element {
                           className='h-9 w-16 text-center'
                         />
                       </div>
-                      <span className={styles["timeUtc"]}>UTC</span>
+                      <span className={styles["timeUtc"]}>{t("labels.utc")}</span>
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -265,14 +266,14 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>Category</h3>
+              <h3 className={styles["detailLabel"]}>{t("labels.category")}</h3>
               <div className={styles["categoryRow"]}>
                 <TbTag className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentCategory)}
                   onValueChange={handleCategoryChange}>
                   <SelectTrigger className='w-40'>
-                    <SelectValue placeholder='Select category' />
+                    <SelectValue placeholder={t("placeholders.selectCategory")} />
                   </SelectTrigger>
                   <SelectContent>
                     {categoryOptions.map((option) => (
@@ -289,14 +290,14 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>Payment Method</h3>
+              <h3 className={styles["detailLabel"]}>{t("labels.paymentMethod")}</h3>
               <div className={styles["paymentRow"]}>
                 <TbCreditCard className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentPaymentType)}
                   onValueChange={handlePaymentTypeChange}>
                   <SelectTrigger className='w-45'>
-                    <SelectValue placeholder='Select payment type' />
+                    <SelectValue placeholder={t("placeholders.selectPaymentType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentTypeOptions.map((option) => (
@@ -313,7 +314,7 @@ export default function InvoiceCard(): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className={styles["detailLabel"]}>Total Amount</h3>
+              <h3 className={styles["detailLabel"]}>{t("labels.totalAmount")}</h3>
               <p className={styles["totalAmount"]}>
                 {formatCurrency(paymentInformation.totalCostAmount, {currencyCode: paymentInformation.currency.code, locale})}
               </p>

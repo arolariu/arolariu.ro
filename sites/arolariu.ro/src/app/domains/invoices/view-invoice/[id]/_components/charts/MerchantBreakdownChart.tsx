@@ -1,6 +1,7 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {MerchantBreakdown} from "../../_utils/analytics";
 import styles from "./MerchantBreakdownChart.module.scss";
@@ -19,9 +20,19 @@ type CustomTooltipProps = {
   readonly active: boolean;
   readonly payload: TooltipPayloadItem[];
   readonly currency: string;
+  readonly totalLabel: string;
+  readonly visitsLabel: string;
+  readonly averagePerVisitLabel: string;
 };
 
-function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({
+  active,
+  payload,
+  currency,
+  totalLabel,
+  visitsLabel,
+  averagePerVisitLabel,
+}: CustomTooltipProps): React.JSX.Element | null {
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -30,17 +41,17 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipName"]}>{data.name}</p>
       <div className={styles["tooltipDetails"]}>
         <p>
-          <span className={styles["tooltipLabel"]}>Total: </span>
+          <span className={styles["tooltipLabel"]}>{totalLabel}: </span>
           <span className={styles["tooltipValue"]}>
             {data.total.toFixed(2)} {currency}
           </span>
         </p>
         <p>
-          <span className={styles["tooltipLabel"]}>Visits: </span>
+          <span className={styles["tooltipLabel"]}>{visitsLabel}: </span>
           <span className={styles["tooltipValue"]}>{data.count}</span>
         </p>
         <p>
-          <span className={styles["tooltipLabel"]}>Avg/visit: </span>
+          <span className={styles["tooltipLabel"]}>{averagePerVisitLabel}: </span>
           <span className={styles["tooltipValue"]}>
             {data.average.toFixed(2)} {currency}
           </span>
@@ -51,9 +62,10 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 }
 
 export function MerchantBreakdownChart({data, currency, currentMerchant}: Props): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoice.merchantBreakdownChart");
   const chartConfig = {
     total: {
-      label: "Total Spent",
+      label: t("labels.totalSpent"),
       color: "hsl(var(--chart-2))",
     },
   };
@@ -61,8 +73,8 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>Spending by Store</CardTitle>
-        <CardDescription className='text-xs'>All-time totals across merchants</CardDescription>
+        <CardTitle className='text-base'>{t("title")}</CardTitle>
+        <CardDescription className='text-xs'>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent className='pb-4'>
         <ChartContainer
@@ -96,6 +108,9 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
                     active={false}
                     payload={[]}
                     currency={currency}
+                    totalLabel={t("labels.total")}
+                    visitsLabel={t("labels.visits")}
+                    averagePerVisitLabel={t("labels.averagePerVisit")}
                   />
                 }
               />

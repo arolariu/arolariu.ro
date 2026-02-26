@@ -104,7 +104,7 @@ test.describe("About Section @about", () => {
       // Try to find and click on author link if present
       const authorLink = page.getByRole("link", {name: /author/i}).first();
       if (await authorLink.isVisible({timeout: 3000})) {
-        await authorLink.click();
+        await authorLink.click({noWaitAfter: true});
         await expect(page).toHaveURL(/the-author/);
       }
     });

@@ -6,7 +6,7 @@ import styles from "./page.module.scss";
 
 /** Generates localized SEO metadata for the About hub page. */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("About.__metadata__");
+  const t = await getTranslations("About.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

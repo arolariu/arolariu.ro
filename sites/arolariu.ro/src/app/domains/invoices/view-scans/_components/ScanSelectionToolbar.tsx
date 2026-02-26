@@ -20,7 +20,7 @@ type ScanSelectionToolbarProps = {
  * Provides bulk actions like create invoice, deselect all.
  */
 export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSelectionToolbarProps>): React.JSX.Element | null {
-  const t = useTranslations("Domains.services.invoices.service.view-scans.toolbar");
+  const t = useTranslations("Invoices.ViewScans.toolbar");
   const {selectedScans, clearSelection} = useScans();
 
   if (selectedScans.length === 0) {
