@@ -82,7 +82,17 @@ resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicat
       rules: []
     }
     managedRules: {
-      managedRuleSets: []
+      managedRuleSets: [
+        {
+          ruleSetType: 'Microsoft_DefaultRuleSet'
+          ruleSetVersion: '2.1'
+          ruleSetAction: 'Block'
+        }
+        {
+          ruleSetType: 'Microsoft_BotManagerRuleSet'
+          ruleSetVersion: '1.1'
+        }
+      ]
     }
   }
 
@@ -176,7 +186,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
         probePath: '/'
         probeRequestType: 'HEAD'
         probeProtocol: 'Https'
-        probeIntervalInSeconds: 100
+        probeIntervalInSeconds: 30
       }
     }
 
@@ -191,7 +201,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
         priority: 1
         weight: 1000
         enabledState: 'Enabled'
-        enforceCertificateNameCheck: false
+        enforceCertificateNameCheck: true
       }
     }
   }

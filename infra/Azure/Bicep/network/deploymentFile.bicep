@@ -5,7 +5,7 @@
 // platform. It provides global content delivery, DDoS protection, and DNS management.
 //
 // Deployed Resources:
-// - Azure Front Door Premium (global CDN + WAF + load balancing)
+// - Azure Front Door Standard (global CDN + WAF + load balancing)
 // - Azure DNS Zone (authoritative DNS for arolariu.ro domain)
 //
 // Architecture Pattern:
