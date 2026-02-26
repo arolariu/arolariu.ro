@@ -80,7 +80,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' 
     databaseAccountOfferType: 'Standard'
     defaultIdentity: 'FirstPartyIdentity'
     networkAclBypass: 'None'
-    disableLocalAuth: false
+    disableLocalAuth: true
     enablePartitionMerge: false
     enableBurstCapacity: false
     minimalTlsVersion: 'Tls12'
@@ -169,3 +169,4 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' 
 }
 
 output noSqlServerName string = noSqlServer.name
+output noSqlServerId string = noSqlServer.id
