@@ -42,7 +42,7 @@ param infrastructurePrincipalId string
 // Existing Resource Reference
 // -------------------------------------------------------------------------------------
 
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-04-01' existing = {
   name: containerRegistryName
 }
 

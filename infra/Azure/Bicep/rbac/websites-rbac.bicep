@@ -36,7 +36,7 @@ param infrastructurePrincipalId string
 // Existing Resource References
 // -------------------------------------------------------------------------------------
 
-resource webApps 'Microsoft.Web/sites@2023-12-01' existing = [
+resource webApps 'Microsoft.Web/sites@2024-04-01' existing = [
   for name in webAppNames: {
     name: name
   }

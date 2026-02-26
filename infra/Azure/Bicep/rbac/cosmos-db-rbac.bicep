@@ -37,7 +37,7 @@ param backendPrincipalId string
 // Existing Resource Reference
 // -------------------------------------------------------------------------------------
 
-resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' existing = {
+resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2025-04-15' existing = {
   name: cosmosAccountName
 }
 

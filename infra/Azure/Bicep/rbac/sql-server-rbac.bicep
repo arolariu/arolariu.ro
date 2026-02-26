@@ -36,7 +36,7 @@ param backendPrincipalId string
 // Existing Resource Reference
 // -------------------------------------------------------------------------------------
 
-resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' existing = {
+resource sqlServer 'Microsoft.Sql/servers@2023-08-01' existing = {
   name: sqlServerName
 }
 
