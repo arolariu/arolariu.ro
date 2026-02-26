@@ -9,7 +9,7 @@
 // - Prompt flow for building AI applications
 //
 // AI Project:
-// - Default project: arolariu.ro
+// - Default project: arolariu-ro
 // - Projects organize resources and permissions
 // - Each project can have its own model deployments and endpoints
 //
@@ -60,7 +60,7 @@ var commonTags resourceTags = {
   deploymentAuthor: 'Alexandru-Razvan Olariu'
   module: 'ai'
   costCenter: 'infrastructure'
-  project: 'arolariu.ro'
+  project: 'arolariu-ro'
   version: '2.0.0'
 }
 
@@ -80,20 +80,20 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
     }
     allowProjectManagement: true
     publicNetworkAccess: 'Enabled'
-    defaultProject: 'arolariu.ro'
-    associatedProjects: ['arolariu.ro']
+    defaultProject: 'arolariu-ro'
+    associatedProjects: ['arolariu-ro']
   }
   tags: union(commonTags, {
     sku: 'Standard'
   })
 
   resource aiProject 'projects@2025-10-01-preview' = {
-    name: 'arolariu.ro'
+    name: 'arolariu-ro'
     location: aiFoundryLocation
     identity: { type: 'SystemAssigned' }
     properties: {
-      description: 'AI project for arolariu.ro'
-      displayName: 'arolariu.ro AI Project'
+      description: 'AI project for arolariu-ro'
+      displayName: 'arolariu-ro AI Project'
     }
   }
 }
