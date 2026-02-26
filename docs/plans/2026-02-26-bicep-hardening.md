@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Harden the entire Bicep IaC architecture — fix security vulnerabilities across all modules, migrate RBAC to resource-level scoping with least privilege, harden Front Door/WAF, tighten storage and database security, enforce stricter linting, and eliminate all placeholder values.
+**Goal:** Harden the entire Bicep IaC architecture — fix security vulnerabilities across all modules, migrate RBAC to resource-level scoping with least privilege, harden Front Door/WAF, tighten storage and database security, enforce stricter linting, and clean up outputs.
 
-**Architecture:** The current architecture assigns all 28 RBAC role assignments at resource-group scope and creates them before target resources exist. This plan restructures RBAC to be co-located after each resource is deployed (AVM pattern), scoped to the individual resource. It also fixes security gaps found in every module during a full audit.
+**Architecture:** The current architecture assigns all 28 RBAC role assignments at resource-group scope and creates them before target resources exist. This plan restructures RBAC to be co-located after each resource is deployed (AVM pattern), scoped to the individual resource. It also fixes security gaps found across modules during a full audit.
 
 **Tech Stack:** Azure Bicep, Azure RBAC, Azure CLI
 
@@ -16,48 +16,40 @@
 
 | # | Issue | Severity | Location |
 |---|-------|----------|----------|
-| 1 | Hardcoded SQL credentials in plain text | Critical | `storage/deploymentFile.bicep:76-77` |
-| 2 | WAF has zero managed rule sets (prevention mode with no rules) | Critical | `network/azureFrontDoor.bicep:84-86` |
-| 3 | `allowBlobPublicAccess: true` on storage account | Critical | `storage/storageAccount.bicep:75` |
-| 4 | `allowSharedKeyAccess: true` despite managed identity auth | Critical | `storage/storageAccount.bicep:76` |
-| 5 | `adminUserEnabled: true` on container registry | Critical | `storage/containerRegistry.bicep:72` |
-| 6 | API has no IP restrictions (Allow All) | Critical | `sites/api-arolariu-ro.bicep:95-104` |
-| 7 | OpenAI module outputs entire resource object (may leak secrets) | Critical | `ai/openai.bicep:77` |
+| 1 | WAF has zero managed rule sets (prevention mode with no rules) | Critical | `network/azureFrontDoor.bicep:84-86` |
+| 2 | `allowBlobPublicAccess: true` on storage account | Critical | `storage/storageAccount.bicep:75` |
+| 3 | `allowSharedKeyAccess: true` despite managed identity auth | Critical | `storage/storageAccount.bicep:76` |
+| 4 | `adminUserEnabled: true` on container registry | Critical | `storage/containerRegistry.bicep:72` |
+| 5 | OpenAI module outputs entire resource object (may leak secrets) | Critical | `ai/openai.bicep:77` |
 
 ### High Issues
 
 | # | Issue | Severity | Location |
 |---|-------|----------|----------|
-| 8 | All 28 RBAC assignments at resource-group scope | High | `rbac/*.bicep` |
-| 9 | Front Door `enforceCertificateNameCheck: false` (disables TLS hostname verification on origin) | High | `network/azureFrontDoor.bicep:194` |
-| 10 | Production route compression disabled | High | `network/azureFrontDoor.bicep:216` |
-| 11 | Health probe interval 100 seconds (too slow for failure detection) | High | `network/azureFrontDoor.bicep:179` |
-| 12 | Dev site has no IP restrictions and default action is Allow | High | `sites/dev-arolariu-ro.bicep:112-119` |
-| 13 | Cosmos DB `disableLocalAuth: false` | High | `storage/noSqlServer.bicep:83` |
-| 14 | Storage network ACLs `defaultAction: 'Allow'` | High | `storage/storageAccount.bicep:79` |
-| 15 | Missing critical linter rules | High | `bicepconfig.json` |
+| 6 | All 28 RBAC assignments at resource-group scope | High | `rbac/*.bicep` |
+| 7 | Front Door `enforceCertificateNameCheck: false` (disables TLS hostname verification on origin) | High | `network/azureFrontDoor.bicep:194` |
+| 8 | Health probe interval 100 seconds (too slow for failure detection) | High | `network/azureFrontDoor.bicep:179` |
+| 9 | Cosmos DB `disableLocalAuth: false` | High | `storage/noSqlServer.bicep:83` |
+| 10 | Storage network ACLs `defaultAction: 'Allow'` | High | `storage/storageAccount.bicep:79` |
+| 11 | Missing critical linter rules | High | `bicepconfig.json` |
 
 ### Medium Issues
 
 | # | Issue | Severity | Location |
 |---|-------|----------|----------|
-| 16 | Backend has redundant Blob Contributor + Blob Data Owner | Medium | `rbac/backend-uami-rbac.bicep` |
-| 17 | Backend has OpenAI Contributor (only needs User) | Medium | `rbac/backend-uami-rbac.bicep` |
-| 18 | Backend has Key Vault Contributor (only needs Secrets User) | Medium | `rbac/backend-uami-rbac.bicep` |
-| 19 | Infrastructure has redundant ACR Read/Pull/Push/Contributor | Medium | `rbac/infrastructure-uami-rbac.bicep` |
-| 20 | DNS zone has placeholder CNAME values (`<your-clerk-mail...>`) | Medium | `network/dnsZone.bicep:188-211` |
-| 21 | DMARC policy is `p=none` (not enforcing) | Medium | `network/dnsZone.bicep:263` |
-| 22 | Grafana `azureMonitorWorkspaceIntegrations: []` (not connected) | Medium | `observability/grafana.bicep:78` |
-| 23 | App Insights outputs deprecated `InstrumentationKey` | Medium | `observability/application-insights.bicep:88` |
-| 24 | Session affinity enabled on Front Door origin group | Medium | `network/azureFrontDoor.bicep:169` |
-| 25 | Hardcoded Azure AD admin SID in SQL Server | Medium | `storage/sqlServer.bicep:92` |
-| 26 | Network deploymentFile comment says "Premium" but SKU is Standard | Medium | `network/deploymentFile.bicep:8` |
-| 27 | Container registry has duplicate outputs (`containerRegistryId` and `containerRegistryResourceId`) | Low | `storage/containerRegistry.bicep:96-97` |
-| 28 | Dev site has `functionAppScaleLimit: 0` (Function App property, not App Service) | Low | `sites/dev-arolariu-ro.bicep:92` |
-| 29 | Using JSON param files instead of `.bicepparam` | Low | `main.parameters.json` |
-| 30 | Role definition GUIDs duplicated across 3 RBAC files | Low | `rbac/*.bicep` |
-| 31 | Cosmos DB missing resource ID output | Low | `storage/noSqlServer.bicep` |
-| 32 | App Configuration missing name output | Low | `configuration/appConfiguration.bicep` |
+| 12 | Backend has redundant Blob Contributor + Blob Data Owner | Medium | `rbac/backend-uami-rbac.bicep` |
+| 13 | Backend has OpenAI Contributor (only needs User) | Medium | `rbac/backend-uami-rbac.bicep` |
+| 14 | Backend has Key Vault Contributor (only needs Secrets User) | Medium | `rbac/backend-uami-rbac.bicep` |
+| 15 | Infrastructure has redundant ACR Read/Pull/Push/Contributor | Medium | `rbac/infrastructure-uami-rbac.bicep` |
+| 16 | Grafana `azureMonitorWorkspaceIntegrations: []` (not connected) | Medium | `observability/grafana.bicep:78` |
+| 17 | App Insights outputs deprecated `InstrumentationKey` | Medium | `observability/application-insights.bicep:88` |
+| 18 | Network deploymentFile comment says "Premium" but SKU is Standard | Medium | `network/deploymentFile.bicep:8` |
+| 19 | Container registry has duplicate outputs (`containerRegistryId` and `containerRegistryResourceId`) | Low | `storage/containerRegistry.bicep:96-97` |
+| 20 | Dev site has `functionAppScaleLimit: 0` (Function App property, not App Service) | Low | `sites/dev-arolariu-ro.bicep:92` |
+| 21 | Using JSON param files instead of `.bicepparam` | Low | `main.parameters.json` |
+| 22 | Role definition GUIDs duplicated across 3 RBAC files | Low | `rbac/*.bicep` |
+| 23 | Cosmos DB missing resource ID output | Low | `storage/noSqlServer.bicep` |
+| 24 | App Configuration missing name output | Low | `configuration/appConfiguration.bicep` |
 
 ---
 
@@ -142,7 +134,7 @@ git commit -m "chore(infra): harden bicep linter — all security rules at error
 
 ---
 
-## Task 2: Fix Azure Front Door Security and Performance
+## Task 2: Fix Azure Front Door Security
 
 **Files:**
 - Modify: `infra/Azure/Bicep/network/azureFrontDoor.bicep`
@@ -170,31 +162,7 @@ managedRules: {
 }
 ```
 
-**Step 3: Enable compression on production route**
-
-Replace `isCompressionEnabled: false` with:
-
-```bicep
-cacheConfiguration: {
-  compressionSettings: {
-    isCompressionEnabled: true
-    contentTypesToCompress: [
-      'application/javascript'
-      'application/json'
-      'application/xml'
-      'text/css'
-      'text/html'
-      'text/javascript'
-      'text/plain'
-      'text/xml'
-      'image/svg+xml'
-    ]
-  }
-  queryStringCachingBehavior: 'UseQueryString'
-}
-```
-
-**Step 4: Fix origin security settings**
+**Step 3: Fix origin security and health probe settings**
 
 ```bicep
 // Fix enforceCertificateNameCheck — enable TLS hostname verification
@@ -207,20 +175,17 @@ healthProbeSettings: {
   probeProtocol: 'Https'
   probeIntervalInSeconds: 30
 }
-
-// Disable session affinity — stateless apps don't need it
-sessionAffinityState: 'Disabled'
 ```
 
-**Step 5: Fix the "Premium" comment in `network/deploymentFile.bicep:8`**
+**Step 4: Fix the "Premium" comment in `network/deploymentFile.bicep:8`**
 
 Change `Azure Front Door Premium` to `Azure Front Door Standard`.
 
-**Step 6: Commit**
+**Step 5: Commit**
 
 ```bash
 git add infra/Azure/Bicep/network/
-git commit -m "fix(infra): harden Front Door — add WAF rules, enable compression, fix origin TLS"
+git commit -m "fix(infra): harden Front Door — add WAF rules, fix origin TLS, faster health probes"
 ```
 
 ---
@@ -276,83 +241,22 @@ git commit -m "fix(infra): disable ACR admin user, remove duplicate output"
 
 ---
 
-## Task 5: Fix API and Dev Site IP Restrictions
+## Task 5: Fix Dev Site Misconfiguration
 
 **Files:**
-- Modify: `infra/Azure/Bicep/sites/api-arolariu-ro.bicep`
 - Modify: `infra/Azure/Bicep/sites/dev-arolariu-ro.bicep`
 
-**Step 1: Read both site files**
+**Step 1: Read `dev-arolariu-ro.bicep`**
 
-**Step 2: Add Front Door IP restrictions to API**
+**Step 2: Remove `functionAppScaleLimit: 0`**
 
-Replace the `Allow All` rule on `api-arolariu-ro.bicep` with Front Door + Azure service restrictions matching the production site pattern:
+This property is for Function Apps, not App Services. Remove it entirely.
 
-```bicep
-ipSecurityRestrictions: [
-  {
-    ipAddress: 'AzureFrontDoor.Backend'
-    action: 'Allow'
-    tag: 'ServiceTag'
-    priority: 100
-    name: 'AzureFrontDoor'
-  }
-  {
-    ipAddress: 'AzureCloud'
-    action: 'Allow'
-    tag: 'ServiceTag'
-    priority: 200
-    name: 'AzureCloud'
-  }
-  {
-    ipAddress: 'Any'
-    action: 'Deny'
-    priority: 2147483647
-    name: 'Deny all'
-    description: 'Deny all direct access — traffic must go through Front Door'
-  }
-]
-ipSecurityRestrictionsDefaultAction: 'Deny'
-```
-
-**Step 3: Fix dev site — same pattern but also allowing direct access for dev purposes**
-
-For `dev-arolariu-ro.bicep`, set a reasonable restriction (at minimum change default to Deny) and add Front Door + Azure services:
-
-```bicep
-ipSecurityRestrictions: [
-  {
-    ipAddress: 'AzureFrontDoor.Backend'
-    action: 'Allow'
-    tag: 'ServiceTag'
-    priority: 100
-    name: 'AzureFrontDoor'
-  }
-  {
-    ipAddress: 'AzureCloud'
-    action: 'Allow'
-    tag: 'ServiceTag'
-    priority: 200
-    name: 'AzureCloud'
-  }
-  {
-    ipAddress: 'Any'
-    action: 'Deny'
-    priority: 2147483647
-    name: 'Deny all'
-    description: 'Deny all direct access'
-  }
-]
-ipSecurityRestrictionsDefaultAction: 'Deny'
-```
-
-**Step 4: Remove `functionAppScaleLimit: 0` from dev site** (not an App Service property)
-
-**Step 5: Commit**
+**Step 3: Commit**
 
 ```bash
-git add infra/Azure/Bicep/sites/
-git commit -m "fix(infra): add Front Door IP restrictions to API and dev sites"
+git add infra/Azure/Bicep/sites/dev-arolariu-ro.bicep
+git commit -m "fix(infra): remove invalid functionAppScaleLimit from dev site"
 ```
 
 ---
@@ -361,15 +265,11 @@ git commit -m "fix(infra): add Front Door IP restrictions to API and dev sites"
 
 **Files:**
 - Modify: `infra/Azure/Bicep/storage/noSqlServer.bicep`
-- Modify: `infra/Azure/Bicep/storage/sqlServer.bicep`
-- Modify: `infra/Azure/Bicep/storage/deploymentFile.bicep`
-- Modify: `infra/Azure/Bicep/facade.bicep`
 
-**Step 1: Read all database-related files**
+**Step 1: Read `noSqlServer.bicep`**
 
 **Step 2: Disable Cosmos DB local auth**
 
-In `noSqlServer.bicep`:
 ```bicep
 disableLocalAuth: true
 ```
@@ -379,56 +279,11 @@ Add the missing resource ID output:
 output noSqlServerId string = noSqlServer.id
 ```
 
-**Step 3: Parameterize SQL Server AD admin SID**
-
-In `sqlServer.bicep`, replace the hardcoded SID with a parameter:
-```bicep
-@description('The Azure AD Object ID of the SQL Server administrator.')
-param sqlServerAzureAdAdminSid string
-```
-
-**Step 4: Fix hardcoded SQL credentials in `storage/deploymentFile.bicep`**
-
-Remove the hardcoded password. Accept `@secure()` params from the facade:
-
-```bicep
-@secure()
-@description('SQL Server administrator password from Key Vault.')
-param sqlServerAdministratorPassword string
-
-@description('SQL Server administrator username.')
-param sqlServerAdministratorUserName string
-
-@description('Azure AD admin SID for SQL Server.')
-param sqlServerAzureAdAdminSid string
-```
-
-**Step 5: Wire Key Vault reference in `facade.bicep`**
-
-After configuration is deployed, reference Key Vault for SQL credentials:
-
-```bicep
-resource existingKeyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: '${replace(resourceConventionPrefix, '-', '')}kv'
-}
-
-module storageDeployment 'storage/deploymentFile.bicep' = {
-  // ...
-  dependsOn: [identitiesDeployment, configurationDeployment]
-  params: {
-    // ...
-    sqlServerAdministratorPassword: existingKeyVault.getSecret('sql-admin-password')
-    sqlServerAdministratorUserName: 'sqladmin'
-    sqlServerAzureAdAdminSid: 'ee9acc3d-8a79-489d-b4bf-aaae428b29db'
-  }
-}
-```
-
-**Step 6: Commit**
+**Step 3: Commit**
 
 ```bash
-git add infra/Azure/Bicep/storage/ infra/Azure/Bicep/facade.bicep
-git commit -m "fix(infra): harden databases — disable local auth, parameterize credentials"
+git add infra/Azure/Bicep/storage/noSqlServer.bicep
+git commit -m "fix(infra): disable Cosmos DB local auth, add missing ID output"
 ```
 
 ---
@@ -461,8 +316,6 @@ output openAiName string = openAi.name
 output openAiName string = openAiDeployment.outputs.openAiName
 ```
 
-Keep the existing `aiResources` output but remove the `openAiId` from it if it's now exposed separately, OR restructure to output individual values instead of a single object.
-
 **Step 4: Remove deprecated InstrumentationKey output from Application Insights**
 
 In `application-insights.bicep`, remove:
@@ -487,8 +340,6 @@ In `sites/arolariu-ro.bicep` and `sites/api-arolariu-ro.bicep`:
 - Keep only `APPLICATIONINSIGHTS_CONNECTION_STRING`
 
 **Step 6: Connect Grafana to the monitoring workspace**
-
-In `grafana.bicep`, the integrations array is empty. Pass the Log Analytics workspace resource ID and connect it:
 
 Update `observability/deploymentFile.bicep` to pass workspace ID to Grafana:
 ```bicep
@@ -517,65 +368,12 @@ grafanaIntegrations: {
 
 ```bash
 git add infra/Azure/Bicep/ai/ infra/Azure/Bicep/observability/ infra/Azure/Bicep/sites/
-git commit -m "fix(infra): remove unsafe outputs, deprecate InstrumentationKey, connect Grafana"
+git commit -m "fix(infra): remove unsafe outputs, drop InstrumentationKey, connect Grafana"
 ```
 
 ---
 
-## Task 8: Fix DNS Zone Placeholders
-
-**Files:**
-- Modify: `infra/Azure/Bicep/network/dnsZone.bicep`
-
-**Step 1: Read `dnsZone.bicep`**
-
-**Step 2: Replace placeholders with parameters**
-
-The file has three `<your-...>` placeholder strings that will cause deployment failures. Convert them to parameters:
-
-```bicep
-@description('Clerk mail service CNAME target.')
-param clerkMailServiceCname string = ''
-
-@description('Amazon SES endpoint for Resend.')
-param amazonSesEndpoint string = ''
-
-@description('DKIM public key for Resend.')
-param dkimPublicKey string = ''
-```
-
-Use conditions to only deploy these records when values are provided:
-
-```bicep
-resource clerkMailCnameRecord 'CNAME@2023-07-01-preview' = if (!empty(clerkMailServiceCname)) {
-  name: 'clkmail'
-  properties: {
-    TTL: 3600
-    CNAMERecord: { cname: clerkMailServiceCname }
-  }
-}
-```
-
-Apply the same pattern for the DKIM and MX records.
-
-**Step 3: Upgrade DMARC from `p=none` to `p=quarantine`**
-
-```bicep
-'v=DMARC1; p=quarantine; rua=mailto:admin@arolariu.ro'
-```
-
-**Step 4: Update `network/deploymentFile.bicep` to pass DNS params from facade if needed**
-
-**Step 5: Commit**
-
-```bash
-git add infra/Azure/Bicep/network/
-git commit -m "fix(infra): parameterize DNS placeholders, upgrade DMARC to quarantine"
-```
-
----
-
-## Task 9: Create Shared Role Definitions Type
+## Task 8: Create Shared Role Definitions Type
 
 **Files:**
 - Create: `infra/Azure/Bicep/types/roles.type.bicep`
@@ -627,17 +425,14 @@ git commit -m "feat(infra): add shared role definition GUIDs for DRY RBAC"
 
 ---
 
-## Task 10: Add Resource Name Outputs to All Modules
+## Task 9: Add Resource Name Outputs to All Modules
 
 Before RBAC can be scoped to individual resources, each module must output the resource names needed for `existing` references.
 
 **Files:**
 - Modify: `infra/Azure/Bicep/storage/deploymentFile.bicep` — add `containerRegistryName` output
-- Modify: `infra/Azure/Bicep/storage/noSqlServer.bicep` — add `noSqlServerId` output
 - Modify: `infra/Azure/Bicep/configuration/deploymentFile.bicep` — add `keyVaultName`, `appConfigurationName` outputs
-- Modify: `infra/Azure/Bicep/configuration/keyVault.bicep` — verify `mainKeyVaultName` output exists (it does)
 - Modify: `infra/Azure/Bicep/configuration/appConfiguration.bicep` — add `appConfigurationName` output
-- Modify: `infra/Azure/Bicep/ai/deploymentFile.bicep` — add `openAiName` output (done in Task 7)
 
 **Step 1: Read each module to verify existing outputs**
 
@@ -665,25 +460,25 @@ output appConfigurationName string = appConfiguration.name
 **Step 3: Commit**
 
 ```bash
-git add infra/Azure/Bicep/storage/ infra/Azure/Bicep/configuration/ infra/Azure/Bicep/ai/
+git add infra/Azure/Bicep/storage/ infra/Azure/Bicep/configuration/
 git commit -m "feat(infra): add resource name outputs to all modules for RBAC scoping"
 ```
 
 ---
 
-## Task 11: Create Resource-Scoped RBAC Modules
+## Task 10: Create Resource-Scoped RBAC Modules
 
-This is the core architectural change. Create one RBAC module per resource type, each scoping assignments to the specific resource.
+This is the core architectural change. Create one RBAC module per resource type, each scoping assignments to the specific resource. All files go directly into `rbac/`.
 
 **Files:**
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/storage-rbac.bicep`
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/container-registry-rbac.bicep`
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/key-vault-rbac.bicep`
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/app-configuration-rbac.bicep`
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/sql-server-rbac.bicep`
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/cosmos-db-rbac.bicep`
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/openai-rbac.bicep`
-- Create: `infra/Azure/Bicep/rbac/resource-scoped/websites-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/storage-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/container-registry-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/key-vault-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/app-configuration-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/sql-server-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/cosmos-db-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/openai-rbac.bicep`
+- Create: `infra/Azure/Bicep/rbac/websites-rbac.bicep`
 
 **Design Pattern (all modules follow this):**
 1. Takes the resource name as a parameter
@@ -743,15 +538,15 @@ Assigns per web app (uses loop over app names):
 **Step 9: Commit**
 
 ```bash
-git add infra/Azure/Bicep/rbac/resource-scoped/
+git add infra/Azure/Bicep/rbac/
 git commit -m "feat(infra): create resource-scoped RBAC modules for all Azure resources"
 ```
 
 ---
 
-## Task 12: Rewire Facade and Delete Old RBAC Files
+## Task 11: Rewire Facade and Delete Old RBAC Files
 
-Replace the old standalone RBAC module with resource-scoped RBAC calls. No deprecation — delete old files directly.
+Replace the old standalone RBAC module with resource-scoped RBAC calls. Delete old files directly.
 
 **Files:**
 - Modify: `infra/Azure/Bicep/facade.bicep`
@@ -764,11 +559,11 @@ Replace the old standalone RBAC module with resource-scoped RBAC calls. No depre
 
 **Step 2: Remove the `rbacDeployment` module call**
 
-**Step 3: Add resource-scoped RBAC calls after each resource group is created**
+**Step 3: Add resource-scoped RBAC calls after each resource is created**
 
 ```bicep
 // Storage RBAC (after storage is deployed)
-module storageRbac 'rbac/resource-scoped/storage-rbac.bicep' = {
+module storageRbac 'rbac/storage-rbac.bicep' = {
   name: 'storageRbac-${resourceDeploymentDate}'
   params: {
     storageAccountName: storageDeployment.outputs.storageAccountName
@@ -778,7 +573,7 @@ module storageRbac 'rbac/resource-scoped/storage-rbac.bicep' = {
   }
 }
 
-module containerRegistryRbac 'rbac/resource-scoped/container-registry-rbac.bicep' = {
+module containerRegistryRbac 'rbac/container-registry-rbac.bicep' = {
   name: 'containerRegistryRbac-${resourceDeploymentDate}'
   params: {
     containerRegistryName: storageDeployment.outputs.containerRegistryName
@@ -788,7 +583,7 @@ module containerRegistryRbac 'rbac/resource-scoped/container-registry-rbac.bicep
   }
 }
 
-module sqlServerRbac 'rbac/resource-scoped/sql-server-rbac.bicep' = {
+module sqlServerRbac 'rbac/sql-server-rbac.bicep' = {
   name: 'sqlServerRbac-${resourceDeploymentDate}'
   params: {
     sqlServerName: storageDeployment.outputs.sqlServerName
@@ -796,7 +591,7 @@ module sqlServerRbac 'rbac/resource-scoped/sql-server-rbac.bicep' = {
   }
 }
 
-module cosmosDbRbac 'rbac/resource-scoped/cosmos-db-rbac.bicep' = {
+module cosmosDbRbac 'rbac/cosmos-db-rbac.bicep' = {
   name: 'cosmosDbRbac-${resourceDeploymentDate}'
   params: {
     cosmosAccountName: storageDeployment.outputs.cosmosAccountName
@@ -804,7 +599,7 @@ module cosmosDbRbac 'rbac/resource-scoped/cosmos-db-rbac.bicep' = {
   }
 }
 
-module keyVaultRbac 'rbac/resource-scoped/key-vault-rbac.bicep' = {
+module keyVaultRbac 'rbac/key-vault-rbac.bicep' = {
   name: 'keyVaultRbac-${resourceDeploymentDate}'
   params: {
     keyVaultName: configurationDeployment.outputs.keyVaultName
@@ -813,7 +608,7 @@ module keyVaultRbac 'rbac/resource-scoped/key-vault-rbac.bicep' = {
   }
 }
 
-module appConfigRbac 'rbac/resource-scoped/app-configuration-rbac.bicep' = {
+module appConfigRbac 'rbac/app-configuration-rbac.bicep' = {
   name: 'appConfigRbac-${resourceDeploymentDate}'
   params: {
     appConfigurationName: configurationDeployment.outputs.appConfigurationName
@@ -823,7 +618,7 @@ module appConfigRbac 'rbac/resource-scoped/app-configuration-rbac.bicep' = {
   }
 }
 
-module openAiRbac 'rbac/resource-scoped/openai-rbac.bicep' = {
+module openAiRbac 'rbac/openai-rbac.bicep' = {
   name: 'openAiRbac-${resourceDeploymentDate}'
   params: {
     openAiAccountName: aiDeployment.outputs.openAiName
@@ -831,7 +626,7 @@ module openAiRbac 'rbac/resource-scoped/openai-rbac.bicep' = {
   }
 }
 
-module websitesRbac 'rbac/resource-scoped/websites-rbac.bicep' = {
+module websitesRbac 'rbac/websites-rbac.bicep' = {
   name: 'websitesRbac-${resourceDeploymentDate}'
   params: {
     webAppNames: [
@@ -853,17 +648,13 @@ The storage module no longer waits for RG-level RBAC. Instead, RBAC modules depe
 **Step 6: Delete old RBAC files directly**
 
 ```bash
-rm infra/Azure/Bicep/rbac/frontend-uami-rbac.bicep
-rm infra/Azure/Bicep/rbac/backend-uami-rbac.bicep
-rm infra/Azure/Bicep/rbac/infrastructure-uami-rbac.bicep
-rm infra/Azure/Bicep/rbac/deploymentFile.bicep
+git rm infra/Azure/Bicep/rbac/frontend-uami-rbac.bicep infra/Azure/Bicep/rbac/backend-uami-rbac.bicep infra/Azure/Bicep/rbac/infrastructure-uami-rbac.bicep infra/Azure/Bicep/rbac/deploymentFile.bicep
 ```
 
 **Step 7: Commit**
 
 ```bash
 git add infra/Azure/Bicep/facade.bicep
-git rm infra/Azure/Bicep/rbac/frontend-uami-rbac.bicep infra/Azure/Bicep/rbac/backend-uami-rbac.bicep infra/Azure/Bicep/rbac/infrastructure-uami-rbac.bicep infra/Azure/Bicep/rbac/deploymentFile.bicep
 git commit -m "refactor(infra): migrate to resource-scoped RBAC, delete old RG-scoped files"
 ```
 
@@ -907,11 +698,10 @@ git commit -m "refactor(infra): migrate to resource-scoped RBAC, delete old RG-s
 
 ---
 
-## Task 13: Migrate to .bicepparam Files
+## Task 12: Migrate to .bicepparam Files
 
 **Files:**
 - Create: `infra/Azure/Bicep/main.bicepparam`
-- Delete: `infra/Azure/Bicep/main.parameters.json`
 
 **Step 1: Read `main.parameters.json`**
 
@@ -925,22 +715,16 @@ param resourceGroupLocation = 'swedencentral'
 param resourceGroupAuthor = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 ```
 
-**Step 3: Delete the old JSON parameter file and update `main.bicep` header comment**
+**Step 3: Commit**
 
 ```bash
-git rm infra/Azure/Bicep/main.parameters.json
-```
-
-**Step 4: Commit**
-
-```bash
-git add infra/Azure/Bicep/main.bicepparam infra/Azure/Bicep/main.bicep
-git commit -m "refactor(infra): migrate from JSON params to .bicepparam format"
+git add infra/Azure/Bicep/main.bicepparam
+git commit -m "feat(infra): add .bicepparam file for typed parameter declarations"
 ```
 
 ---
 
-## Task 14: Update Documentation
+## Task 13: Update Documentation
 
 **Files:**
 - Modify: `infra/Azure/Bicep/README.md`
@@ -973,7 +757,7 @@ git commit -m "docs(infra): update documentation for resource-scoped RBAC archit
 
 ---
 
-## Task 15: Final Verification
+## Task 14: Final Verification
 
 **Step 1: Run full Bicep build**
 
@@ -1003,20 +787,15 @@ Run: `git diff main --stat`
 | Redundant roles | 5 | 0 |
 | Overly broad roles | 3 (KV Contributor, OpenAI Contributor, ACR Contributor) | 0 |
 | WAF managed rules | 0 (empty — WAF is a no-op) | DRS 2.1 + Bot Manager 1.1 |
-| Front Door compression | Disabled on production | Enabled |
 | Origin TLS verification | Disabled | Enabled |
 | Health probe interval | 100s | 30s |
 | Storage public blob access | Enabled | Disabled |
 | Storage shared key access | Enabled | Disabled |
 | ACR admin user | Enabled | Disabled |
-| API IP restrictions | Allow All | Front Door only |
 | Cosmos DB local auth | Enabled | Disabled |
-| SQL credentials | Hardcoded plain text | Key Vault reference |
 | OpenAI output | Leaks entire resource object | Safe individual outputs |
 | App Insights InstrumentationKey | Exposed (deprecated) | Removed |
 | Grafana integration | Empty (disconnected) | Connected to workspace |
-| DMARC policy | `p=none` | `p=quarantine` |
-| DNS placeholders | Will fail deployment | Conditional (parameterized) |
 | Linter rules | 12 rules | 28 rules (security=error) |
 | Parameter format | JSON | .bicepparam |
 | Role GUID duplication | 3 files | 1 shared type file |
@@ -1030,4 +809,3 @@ Run: `git diff main --stat`
 | `adminUserEnabled: false` on ACR breaks Docker CLI login | Use `az acr login` with Azure AD (already supported). CI/CD uses managed identity. |
 | `disableLocalAuth: true` on Cosmos DB breaks connection string auth | Backend already uses managed identity via RBAC. No code changes needed. |
 | WAF DRS 2.1 may block legitimate requests | Monitor WAF logs after deployment. Add custom exclusion rules for known false positives. |
-| Key Vault reference timing | `configurationDeployment` runs before `storageDeployment` due to `dependsOn`. Secret must be pre-seeded in Key Vault. |
