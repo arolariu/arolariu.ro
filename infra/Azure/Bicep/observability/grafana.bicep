@@ -69,7 +69,7 @@ var commonTags resourceTags = {
 resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2025-09-01-preview' = {
   name: managedGrafanaName
   location: managedGrafanaLocation
-  sku: { name: 'Essential' }
+  sku: { name: 'Standard' }
   properties: {
     grafanaMajorVersion: '11'
     zoneRedundancy: 'Disabled'
