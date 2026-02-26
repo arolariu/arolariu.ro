@@ -217,7 +217,7 @@ export default function ImportDialog(): React.JSX.Element {
           <Button
             onClick={handleImport}
             disabled={files.length === 0 || uploadStatus !== "idle"}>
-            {t("buttons.import")} {files.length > 0 && `(${files.length})`}
+            {files.length > 0 ? t("buttons.importWithCount", {count: String(files.length)}) : t("buttons.import")}
           </Button>
         </DialogFooter>
       </DialogContent>

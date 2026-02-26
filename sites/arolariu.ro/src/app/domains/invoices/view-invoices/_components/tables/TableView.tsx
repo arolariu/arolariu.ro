@@ -133,7 +133,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                   checked={selectedInvoices.some((s) => s.id === invoice.id)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                   onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                  aria-label={t("aria.selectInvoice", {id: invoice.id})}
+                  aria-label={t("aria.selectInvoice", {name: invoice.name || invoice.id})}
                 />
               </TableCell>
               <TableCell>

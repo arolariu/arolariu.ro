@@ -1633,7 +1633,7 @@
         },
         "aria": {
           "selectAllInvoices": "Selectează toate facturile",
-          "selectInvoice": "Selectează factură {id}",
+          "selectInvoice": "Selectează factură {name}",
           "rowsPerPage": "Rânduri pe pagină"
         },
         "viewInvoice": "Vede Factură",
@@ -1714,7 +1714,8 @@
         },
         "buttons": {
           "cancel": "Anulează",
-          "import": "Importă"
+          "import": "Importă",
+          "importWithCount": "Importă ({count})"
         }
       }
     },
@@ -1890,7 +1891,9 @@
           "expand": "Vezi imaginea bonului la dimensiune completă",
           "previousScan": "Vezi scanarea anterioară a bonului",
           "nextScan": "Vezi următoarea scanare a bonului"
-        }
+        },
+        "titleWithIndex": "Scanare bon ({current}/{total})",
+        "dialogTitleWithIndex": "Imagine bon ({current}/{total})"
       },
       "seasonalInsightsCard": {
         "title": "Insight sezonier",
@@ -2350,7 +2353,9 @@
         },
         "aria": {
           "expandImage": "Apasă pentru a extinde imaginea"
-        }
+        },
+        "titleWithIndex": "Scanare bon ({current}/{total})",
+        "dialogTitleWithIndex": "Imagine bon ({current}/{total})"
       },
       "recipeCard": {
         "complexity": {

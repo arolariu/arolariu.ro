@@ -102,7 +102,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
       <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between'>
           <CardTitle className='text-lg'>
-            {t("title")} {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}
+            {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent className='flex justify-center'>
@@ -128,7 +128,7 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>
-                  {t("dialogTitle")} {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}
+                  {totalScans > 1 ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("dialogTitle")}
                 </DialogTitle>
               </DialogHeader>
               <div className={styles["zoomContainer"]}>

@@ -1633,7 +1633,7 @@
         },
         "aria": {
           "selectAllInvoices": "Select all invoices",
-          "selectInvoice": "Select invoice {id}",
+          "selectInvoice": "Select invoice {name}",
           "rowsPerPage": "Rows per page"
         },
         "viewInvoice": "View Invoice",
@@ -1714,7 +1714,8 @@
         },
         "buttons": {
           "cancel": "Cancel",
-          "import": "Import"
+          "import": "Import",
+          "importWithCount": "Import ({count})"
         }
       }
     },
@@ -1890,7 +1891,9 @@
           "expand": "View the receipt image in full size",
           "previousScan": "View the previous receipt scan",
           "nextScan": "View the next receipt scan"
-        }
+        },
+        "titleWithIndex": "Receipt Scan ({current}/{total})",
+        "dialogTitleWithIndex": "Receipt Image ({current}/{total})"
       },
       "seasonalInsightsCard": {
         "title": "Seasonal Insight",
@@ -2350,7 +2353,9 @@
         },
         "aria": {
           "expandImage": "Click to expand image"
-        }
+        },
+        "titleWithIndex": "Receipt scan ({current}/{total})",
+        "dialogTitleWithIndex": "Receipt image ({current}/{total})"
       },
       "recipeCard": {
         "complexity": {

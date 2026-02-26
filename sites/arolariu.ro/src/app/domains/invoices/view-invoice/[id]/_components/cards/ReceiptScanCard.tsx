@@ -65,7 +65,7 @@ export function ReceiptScanCard(): React.JSX.Element {
       <Card className='transition-shadow duration-300 hover:shadow-md'>
         <CardHeader>
           <CardTitle className='text-lg'>
-            {t("title")} {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}
+            {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -86,7 +86,7 @@ export function ReceiptScanCard(): React.JSX.Element {
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>
-                  {t("dialogTitle")} {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}
+                  {totalScans > 1 ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("dialogTitle")}
                 </DialogTitle>
               </DialogHeader>
               <div className={styles["dialogImageContainer"]}>
