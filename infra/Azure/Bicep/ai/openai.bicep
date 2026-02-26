@@ -9,9 +9,8 @@
 // - Content generation and summarization
 //
 // Model Deployments:
-// - Models are deployed separately after the account is created
-// - Configure via Azure Portal or separate Bicep module
-// - Consider GPT-4o for production (best balance of cost/capability)
+// - model-router (GlobalStandard, capacity 100) — intelligent model routing
+// - o4-mini (Standard, capacity 200) — cost-effective inference
 //
 // Authentication:
 // - Backend UAMI receives "Cognitive Services User" role via rbac/backend-uami-rbac.bicep
@@ -70,6 +69,47 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   tags: union(commonTags, {
     sku: 'Free Tier'
   })
+}
+
+// -------------------------------------------------------------------------------------
+// Model Deployments
+// -------------------------------------------------------------------------------------
+
+resource modelRouter 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
+  parent: openAi
+  name: 'model-router'
+  sku: {
+    name: 'GlobalStandard'
+    capacity: 100
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'model-router'
+      version: '2025-11-18'
+    }
+    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
+    raiPolicyName: 'Microsoft.DefaultV2'
+  }
+}
+
+resource o4Mini 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
+  parent: openAi
+  name: 'o4-mini'
+  dependsOn: [modelRouter]
+  sku: {
+    name: 'Standard'
+    capacity: 200
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'o4-mini'
+      version: '2025-04-16'
+    }
+    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
+    raiPolicyName: 'Microsoft.DefaultV2'
+  }
 }
 
 output openAiId string = openAi.id
