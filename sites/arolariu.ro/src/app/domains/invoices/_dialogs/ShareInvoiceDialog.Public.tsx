@@ -4,6 +4,7 @@
  */
 
 import {Alert, AlertDescription, AlertTitle, Button, Input, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import React from "react";
 import {TbAlertTriangle, TbArrowLeft, TbCheck, TbCopy, TbGlobe, TbQrcode, TbShieldOff} from "react-icons/tb";
 import QRCode from "react-qr-code";
@@ -56,6 +57,7 @@ export interface PublicModeProps {
  * @returns The link and QR code tabs UI
  */
 export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}: ShareLinkAndQRTabsProps): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ShareInvoiceDialogPublic");
   return (
     <Tabs
       defaultValue='link'
@@ -65,13 +67,13 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
           value='link'
           className='cursor-pointer'>
           <TbCopy className={styles["tabIcon"]} />
-          Direct Link
+          {t("tabs.directLink")}
         </TabsTrigger>
         <TabsTrigger
           value='qr'
           className='cursor-pointer'>
           <TbQrcode className={styles["tabIcon"]} />
-          QR Code
+          {t("tabs.qrCode")}
         </TabsTrigger>
       </TabsList>
 
@@ -91,7 +93,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
             {copied ? <TbCheck className={styles["actionIcon"]} /> : <TbCopy className={styles["actionIcon"]} />}
           </Button>
         </div>
-        <p className={styles["linkHint"]}>Copy this link and share it. Anyone who receives it will be able to view the invoice.</p>
+        <p className={styles["linkHint"]}>{t("hints.link")}</p>
       </TabsContent>
 
       <TabsContent
@@ -108,13 +110,13 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
               level='L'
             />
           </div>
-          <p className={styles["qrHint"]}>Anyone who scans this QR code will be directed to view the invoice.</p>
+          <p className={styles["qrHint"]}>{t("hints.qr")}</p>
           <Button
             variant='outline'
             onClick={onCopyQRCode}
             className='w-full'>
             <TbCopy className={styles["tabIcon"]} />
-            Copy QR Code as Image
+            {t("copyQrImage")}
           </Button>
         </div>
       </TabsContent>
@@ -142,16 +144,16 @@ export function AlreadyPublicMode({
   onRevokeAccess,
   isRevoking,
 }: AlreadyPublicModeProps): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ShareInvoiceDialogPublic");
   return (
     <div className={styles["body"]}>
       <Alert
         variant='destructive'
         className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
         <TbGlobe className={styles["globeAlertIcon"]} />
-        <AlertTitle className='text-orange-800 dark:text-orange-300'>This Invoice is Currently Public</AlertTitle>
+        <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("alreadyPublic.title")}</AlertTitle>
         <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
-          This invoice is publicly accessible. <strong>Anyone with the link can view it</strong>, including all invoice details, items, and
-          amounts. You can revoke public access at any time to make it private again.
+          {t.rich("alreadyPublic.description", {strong: (chunks) => <strong>{chunks}</strong>})}
         </AlertDescription>
       </Alert>
 
@@ -169,9 +171,9 @@ export function AlreadyPublicMode({
           disabled={isRevoking}
           className='w-full'>
           <TbShieldOff className={styles["tabIcon"]} />
-          {isRevoking ? "Revoking Access..." : "Revoke Public Access"}
+          {isRevoking ? t("alreadyPublic.revoking") : t("alreadyPublic.revoke")}
         </Button>
-        <p className={styles["revokeHint"]}>This will make the invoice private. Existing links will stop working.</p>
+        <p className={styles["revokeHint"]}>{t("alreadyPublic.revokeHint")}</p>
       </div>
     </div>
   );
@@ -190,6 +192,7 @@ export function AlreadyPublicMode({
  * @returns The public sharing mode UI
  */
 export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}: PublicModeProps): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ShareInvoiceDialogPublic");
   return (
     <div className={styles["body"]}>
       <Button
@@ -198,17 +201,16 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         onClick={onBack}
         className='mb-2 -ml-2'>
         <TbArrowLeft className={styles["backIcon"]} />
-        Back to options
+        {t("backToOptions")}
       </Button>
 
       <Alert
         variant='destructive'
         className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
-        <AlertTitle className='text-orange-800 dark:text-orange-300'>Public Access Warning</AlertTitle>
+        <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("warning.title")}</AlertTitle>
         <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
-          By sharing this invoice publicly, <strong>anyone with the link will be able to view it</strong>. This includes all invoice
-          details, items, and amounts. Only proceed if you intend to make this invoice accessible to the public.
+          {t.rich("warning.description", {strong: (chunks) => <strong>{chunks}</strong>})}
         </AlertDescription>
       </Alert>
 

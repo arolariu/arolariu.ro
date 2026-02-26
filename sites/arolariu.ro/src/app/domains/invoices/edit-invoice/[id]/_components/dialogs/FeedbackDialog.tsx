@@ -13,6 +13,7 @@ import {
   Textarea,
   toast,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbStar} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -59,6 +60,7 @@ import styles from "./FeedbackDialog.module.scss";
  * @see {@link AnalyticsCard} - Parent component that opens this dialog
  */
 export default function FeedbackDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.FeedbackDialog");
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
   const [hoveredRating, setHoveredRating] = useState<number>(0);
@@ -71,8 +73,14 @@ export default function FeedbackDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__FEEDBACK");
 
   const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
-  console.log(">>> FeedbackDialog", {invoice, merchant});
-  const features = ["Spending Trends", "Price Comparisons", "Savings Tips", "Merchant Analysis", "Visual Charts", "Category Breakdown"];
+  const features = [
+    t("features.spendingTrends"),
+    t("features.priceComparisons"),
+    t("features.savingsTips"),
+    t("features.merchantAnalysis"),
+    t("features.visualCharts"),
+    t("features.categoryBreakdown"),
+  ];
 
   // Stable handlers to avoid inline arrow functions in JSX
   const handleStarEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
@@ -98,15 +106,15 @@ export default function FeedbackDialog(): React.JSX.Element {
       e.preventDefault();
 
       // Show loading toast
-      const loadingToast = toast("Sending invitation...", {
-        description: "Please wait while we send the invitation.",
+      const loadingToast = toast(t("toasts.sending.title"), {
+        description: t("toasts.sending.description"),
         className: "z-100",
       });
 
       if (rating === 0) {
         toast.dismiss(loadingToast);
-        toast("Rating required", {
-          description: "Please provide a star rating before submitting",
+        toast(t("toasts.ratingRequired.title"), {
+          description: t("toasts.ratingRequired.description"),
         });
         return;
       }
@@ -131,8 +139,8 @@ export default function FeedbackDialog(): React.JSX.Element {
         }
 
         toast.dismiss(loadingToast);
-        toast("Feedback sent!", {
-          description: `Feedback sent successfully`,
+        toast(t("toasts.success.title"), {
+          description: t("toasts.success.description"),
           className: "z-100",
         });
         setRating(0);
@@ -142,14 +150,14 @@ export default function FeedbackDialog(): React.JSX.Element {
       } catch (error: unknown) {
         console.error(">>> Failed to send feedback:", error);
         toast.dismiss(loadingToast);
-        toast("An error occurred while submitting feedback", {
-          description: "Please try again later.",
+        toast(t("toasts.error.title"), {
+          description: t("toasts.error.description"),
         });
       } finally {
         close();
       }
     },
-    [feedback, invoice.id, rating, selectedFeatures, close],
+    [feedback, invoice.id, rating, selectedFeatures, close, t],
   );
 
   const handleToggleFeature = useCallback((e: React.MouseEvent<HTMLElement>) => {
@@ -171,14 +179,14 @@ export default function FeedbackDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>Provide Feedback</DialogTitle>
-          <DialogDescription>Help us improve our analytics by sharing your thoughts</DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description", {merchant: merchant.name})}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>
           {/* Star Rating */}
           <div className={styles["section"]}>
-            <h4 className={styles["sectionHeading"]}>How would you rate the analytics?</h4>
+            <h4 className={styles["sectionHeading"]}>{t("sections.rating")}</h4>
             <div className={styles["starRow"]}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Button
@@ -197,7 +205,7 @@ export default function FeedbackDialog(): React.JSX.Element {
 
           {/* Feature Selection */}
           <div className={styles["section"]}>
-            <h4 className={styles["sectionHeading"]}>Which features were most helpful? (Select all that apply)</h4>
+            <h4 className={styles["sectionHeading"]}>{t("sections.features")}</h4>
             <div className={styles["featuresWrap"]}>
               {features.map((feature) => (
                 <Badge
@@ -214,9 +222,9 @@ export default function FeedbackDialog(): React.JSX.Element {
 
           {/* Written Feedback */}
           <div className={styles["section"]}>
-            <h4 className={styles["sectionHeading"]}>Additional comments (optional)</h4>
+            <h4 className={styles["sectionHeading"]}>{t("sections.comments")}</h4>
             <Textarea
-              placeholder='Share your thoughts about the analytics...'
+              placeholder={t("commentsPlaceholder")}
               value={feedback}
               onChange={handleFeedbackChange}
               rows={4}
@@ -231,9 +239,9 @@ export default function FeedbackDialog(): React.JSX.Element {
             <Button
               variant='outline'
               onClick={close}>
-              Cancel
+              {t("buttons.cancel")}
             </Button>
-            <Button type='submit'>Submit Feedback</Button>
+            <Button type='submit'>{t("buttons.submit")}</Button>
           </form>
         </DialogFooter>
       </DialogContent>

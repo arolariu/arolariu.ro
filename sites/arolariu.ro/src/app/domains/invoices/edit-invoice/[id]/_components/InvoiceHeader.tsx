@@ -2,6 +2,7 @@
 
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbDeviceFloppy, TbPrinter, TbScanEye, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
@@ -45,6 +46,7 @@ import styles from "./InvoiceHeader.module.scss";
  * @see {@link useEditInvoiceContext} - Context for tracking pending changes
  */
 export default function InvoiceHeader(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.InvoiceHeader");
   const {invoice, pendingChanges, hasChanges, isSaving, setName, saveChanges, discardChanges} = useEditInvoiceContext();
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
   const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});
@@ -102,11 +104,11 @@ export default function InvoiceHeader(): React.JSX.Element {
                     onClick={handleSave}
                     disabled={isSaving}>
                     <TbDeviceFloppy className='mr-2 h-4 w-4' />
-                    {isSaving ? "Saving..." : "Save"}
+                    {isSaving ? t("buttons.saving") : t("buttons.save")}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Save all pending changes</p>
+                  <p>{t("tooltips.saveAllPendingChanges")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -117,11 +119,11 @@ export default function InvoiceHeader(): React.JSX.Element {
                     onClick={handleDiscard}
                     disabled={isSaving}>
                     <TbX className='mr-2 h-4 w-4' />
-                    Discard
+                    {t("buttons.discard")}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Discard all pending changes</p>
+                  <p>{t("tooltips.discardAllPendingChanges")}</p>
                 </TooltipContent>
               </Tooltip>
             </>
@@ -133,11 +135,11 @@ export default function InvoiceHeader(): React.JSX.Element {
                 size='sm'
                 onClick={handleInvoicePrint}>
                 <TbPrinter className='mr-2 h-4 w-4' />
-                Print
+                {t("buttons.print")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Print this invoice with all details</p>
+              <p>{t("tooltips.printInvoiceWithAllDetails")}</p>
             </TooltipContent>
           </Tooltip>
           {Boolean(canAnalyze) && (
@@ -148,11 +150,11 @@ export default function InvoiceHeader(): React.JSX.Element {
                   variant='outline'
                   size='sm'>
                   <TbScanEye className='mr-2 h-4 w-4' />
-                  Analyze with AI
+                  {t("buttons.analyzeWithAi")}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Analyze spending patterns for this invoice</p>
+                <p>{t("tooltips.analyzeSpendingPatterns")}</p>
               </TooltipContent>
             </Tooltip>
           )}
@@ -163,11 +165,11 @@ export default function InvoiceHeader(): React.JSX.Element {
                 variant='destructive'
                 size='sm'>
                 <TbTrash className='mr-2 h-4 w-4' />
-                Delete
+                {t("buttons.delete")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Delete this invoice permanently</p>
+              <p>{t("tooltips.deleteInvoicePermanently")}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

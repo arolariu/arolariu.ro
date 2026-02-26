@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback} from "react";
 import {TbCalendar, TbEye} from "react-icons/tb";
@@ -29,6 +29,8 @@ type Props = Readonly<{
 
 export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
   const locale = useLocale();
+  const tTableView = useTranslations("I18nConsolidation.Invoices.TableView");
+  const t = useTranslations("I18nConsolidation.Invoices.GridView");
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
@@ -47,7 +49,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
   if (invoices.length === 0) {
     return (
       <div className={styles["emptyState"]}>
-        <div className={styles["emptyMessage"]}>No invoices found</div>
+        <div className={styles["emptyMessage"]}>{tTableView("empty")}</div>
       </div>
     );
   }
@@ -68,7 +70,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               checked={selectedInvoices.includes(invoice)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
               onCheckedChange={() => handleSelectInvoice(invoice.id)}
-              aria-label={`Select invoice ${invoice.name}`}
+              aria-label={tTableView("aria.selectInvoice", {id: invoice.name})}
               className='bg-background/80 backdrop-blur-sm'
             />
           </div>
@@ -94,7 +96,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                         <TbEye className={styles["viewIcon"]} />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>View Details</TooltipContent>
+                    <TooltipContent>{t("tooltips.viewDetails")}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <TableViewActions invoice={invoice} />
@@ -119,7 +121,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               </div>
             </CardContent>
             <CardFooter className='flex justify-between pt-2'>
-              <div className={styles["itemCount"]}>{invoice.items?.length || 0} items</div>
+              <div className={styles["itemCount"]}>{t("itemCount", {count: invoice.items?.length ?? 0})}</div>
             </CardFooter>
           </Card>
         </div>

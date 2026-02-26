@@ -31,7 +31,7 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
             transition={{duration: 0.6}}>
             <Image
               src='/images/domains/invoices/invoice-bottom.svg'
-              alt='Invoice features illustration'
+              alt={t("features.imageAlt")}
               width={500}
               height={500}
               className={styles["featuresImage"]}
@@ -69,7 +69,7 @@ export default function FeaturesSection({isAuthenticated}: Readonly<Props>): Rea
             {!isAuthenticated && (
               <div className={styles["signInPrompt"]}>
                 <p className={styles["signInPromptText"]}>
-                  <strong>Sign in</strong> {t("features.signInPrompt")}
+                  <strong>{t("features.signIn")}</strong> {t("features.signInPrompt")}
                 </p>
               </div>
             )}

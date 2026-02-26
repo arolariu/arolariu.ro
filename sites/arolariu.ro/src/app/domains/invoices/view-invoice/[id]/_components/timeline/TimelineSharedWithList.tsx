@@ -21,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useMemo} from "react";
 import {TbExternalLink, TbGlobe, TbMail, TbUsers} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -39,6 +40,7 @@ import styles from "./TimelineSharedWithList.module.scss";
  * ```
  */
 export function TimelineSharedWithList(): React.JSX.Element | null {
+  const t = useTranslations("I18nConsolidation.Invoices.TimelineSharedWithList");
   const {invoice} = useInvoiceContext();
   const {userInformation} = useUserInformation();
   const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
@@ -66,12 +68,12 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
     <div className={styles["container"]}>
       <div className={styles["header"]}>
         <TbUsers className='text-muted-foreground h-4 w-4' />
-        <p className={styles["headerLabel"]}>Shared With</p>
+        <p className={styles["headerLabel"]}>{t("header.title")}</p>
         {Boolean(sharedUsers.length > 0 || isPublic) && (
           <Badge
             variant='secondary'
             className='h-5 px-1.5 text-xs'>
-            {isPublic ? "Public" : sharedUsers.length}
+            {isPublic ? t("header.publicBadge") : sharedUsers.length}
           </Badge>
         )}
       </div>
@@ -82,10 +84,8 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
           variant='default'
           className='border-orange-500/50 bg-orange-500/10'>
           <TbGlobe className='h-4 w-4 text-orange-500' />
-          <AlertTitle className='text-orange-600 dark:text-orange-400'>Public Access Enabled</AlertTitle>
-          <AlertDescription className='text-muted-foreground text-xs'>
-            This invoice is publicly accessible. Anyone with the link can view it, including guests without an account.
-          </AlertDescription>
+          <AlertTitle className='text-orange-600 dark:text-orange-400'>{t("publicAccess.title")}</AlertTitle>
+          <AlertDescription className='text-muted-foreground text-xs'>{t("publicAccess.description")}</AlertDescription>
         </Alert>
       )}
 
@@ -112,14 +112,14 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
                       variant='ghost'
                       size='icon'
                       className='h-7 w-7 shrink-0'
-                      aria-label={`Send email to ${user}`}>
+                      aria-label={t("aria.sendEmail", {user})}>
                       <TbMail className='h-3.5 w-3.5' />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
                     side='left'
                     className='text-xs'>
-                    Send email
+                    {t("actions.sendEmail")}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -134,7 +134,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
         onClick={openShareDialog}
         className='w-full gap-2 bg-transparent'>
         <TbExternalLink className='h-3.5 w-3.5' />
-        Manage Sharing
+        {t("actions.manageSharing")}
       </Button>
     </div>
   );

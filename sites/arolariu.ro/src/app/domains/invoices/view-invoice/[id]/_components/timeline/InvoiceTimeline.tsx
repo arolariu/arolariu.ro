@@ -6,7 +6,7 @@
 "use client";
 
 import {Badge, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbCalendar} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import {generateTimelineFromInvoice, getEventIcon, groupEventsByDate} from "../../_utils/timeline";
@@ -27,6 +27,7 @@ import {TimelineSharedWithList} from "./TimelineSharedWithList";
  * \`\`\`
  */
 export function InvoiceTimeline(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.InvoiceTimeline");
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const events = generateTimelineFromInvoice(invoice);
@@ -39,15 +40,15 @@ export function InvoiceTimeline(): React.JSX.Element {
         <div className={styles["headerRow"]}>
           <CardTitle className='flex items-center gap-2 text-lg'>
             <TbCalendar className='text-muted-foreground h-4 w-4' />
-            Invoice Timeline
+            {t("title")}
           </CardTitle>
           <Badge
             variant='secondary'
             className='text-xs'>
-            {totalEvents} {totalEvents === 1 ? "event" : "events"}
+            {t("eventCount", {count: totalEvents})}
           </Badge>
         </div>
-        <p className={styles["subtitle"]}>Complete history of actions and changes</p>
+        <p className={styles["subtitle"]}>{t("subtitle")}</p>
       </CardHeader>
 
       <CardContent className='space-y-6'>

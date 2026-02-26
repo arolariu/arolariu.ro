@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbAlertTriangle, TbApple, TbBulb, TbLeaf, TbMeat, TbMilk, TbWheat} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 import styles from "./NutritionCard.module.scss";
@@ -28,11 +28,11 @@ type FoodGroup = {
 };
 
 /** Get the label for a balance score */
-function getScoreLabel(score: number): string {
-  if (score >= 80) return "Excellent";
-  if (score >= 60) return "Good";
-  if (score >= 40) return "Fair";
-  return "Needs Work";
+function getScoreLabel(score: number, t: ReturnType<typeof useTranslations>): string {
+  if (score >= 80) return t("score.excellent");
+  if (score >= 60) return t("score.good");
+  if (score >= 40) return t("score.fair");
+  return t("score.needsWork");
 }
 
 /** Get the color class for a balance score */
@@ -54,24 +54,25 @@ function calculateBalanceScore(hasVeggies: boolean, hasFruits: boolean, hasProte
 }
 
 /** Generate a nutrition suggestion based on basket composition */
-function generateSuggestion(hasVeggies: boolean, hasFruits: boolean, processedPct: number): string {
+function generateSuggestion(hasVeggies: boolean, hasFruits: boolean, processedPct: number, t: ReturnType<typeof useTranslations>): string {
   if (!hasVeggies && !hasFruits) {
-    return "Add more fruits and vegetables to balance your basket";
+    return t("suggestions.addFruitsAndVegetables");
   }
   if (!hasVeggies) {
-    return "Consider adding vegetables for a more balanced diet";
+    return t("suggestions.addVegetables");
   }
   if (!hasFruits) {
-    return "Adding some fruits would improve nutritional balance";
+    return t("suggestions.addFruits");
   }
   if (processedPct > 40) {
-    return "Try swapping some processed items for whole foods";
+    return t("suggestions.swapProcessed");
   }
-  return "Great balanced shopping!";
+  return t("suggestions.greatBalance");
 }
 
 export function NutritionCard(): React.JSX.Element {
   const locale = useLocale();
+  const t = useTranslations("I18nConsolidation.Invoices.NutritionCard");
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
   const {currency} = paymentInformation;
@@ -79,28 +80,28 @@ export function NutritionCard(): React.JSX.Element {
   // Define food groups
   const foodGroups: FoodGroup[] = [
     {
-      name: "Fruits",
+      name: t("foodGroups.fruits"),
       icon: <TbApple className='h-5 w-5 text-red-500' />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.FRUITS],
     },
     {
-      name: "Vegetables",
+      name: t("foodGroups.vegetables"),
       icon: <TbLeaf className='h-5 w-5 text-green-500' />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.VEGETABLES],
     },
     {
-      name: "Protein",
+      name: t("foodGroups.protein"),
       icon: <TbMeat className='h-5 w-5 text-amber-700' />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.MEAT, ProductCategory.FISH, ProductCategory.DAIRY],
     },
     {
-      name: "Grains",
+      name: t("foodGroups.grains"),
       icon: <TbWheat className='h-5 w-5 text-amber-500' />,
       items: 0,
       amount: 0,
@@ -133,11 +134,11 @@ export function NutritionCard(): React.JSX.Element {
   const dairySnackPct = totalFoodItems > 0 ? 100 - wholeFoodPct - processedPct : 0;
 
   // Food balance score (simple heuristic)
-  const hasVeggies = foodGroups.find((g) => g.name === "Vegetables")!.items > 0;
-  const hasFruits = foodGroups.find((g) => g.name === "Fruits")!.items > 0;
-  const hasProtein = foodGroups.find((g) => g.name === "Protein")!.items > 0;
+  const hasVeggies = foodGroups.find((g) => g.name === t("foodGroups.vegetables"))!.items > 0;
+  const hasFruits = foodGroups.find((g) => g.name === t("foodGroups.fruits"))!.items > 0;
+  const hasProtein = foodGroups.find((g) => g.name === t("foodGroups.protein"))!.items > 0;
   const balanceScore = calculateBalanceScore(hasVeggies, hasFruits, hasProtein, wholeFoodPct);
-  const scoreLabel = getScoreLabel(balanceScore);
+  const scoreLabel = getScoreLabel(balanceScore, t);
   const scoreColor = getScoreColorClass(balanceScore, styles);
 
   // Collect allergens
@@ -150,21 +151,21 @@ export function NutritionCard(): React.JSX.Element {
   const allergens = Array.from(allergenMap.entries());
 
   // Generate suggestion
-  const suggestion = generateSuggestion(hasVeggies, hasFruits, processedPct);
+  const suggestion = generateSuggestion(hasVeggies, hasFruits, processedPct, t);
 
   return (
     <Card>
       <CardHeader className='pb-3'>
         <CardTitle className='flex items-center gap-2 text-lg'>
           <TbLeaf className='h-5 w-5 text-green-600' />
-          Nutrition Overview
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className='space-y-6'>
         {/* Food Balance Score */}
         <div className={styles["scoreSection"]}>
           <div className={styles["scoreRow"]}>
-            <span className={styles["scoreLabel"]}>Food Balance Score</span>
+            <span className={styles["scoreLabel"]}>{t("score.title")}</span>
             <span className={`${styles["scoreLabel"]} ${scoreColor}`}>
               {balanceScore}/100 - {scoreLabel}
             </span>
@@ -177,11 +178,11 @@ export function NutritionCard(): React.JSX.Element {
 
         {/* Basket Composition */}
         <div className={styles["compositionSection"]}>
-          <h4 className={styles["compositionTitle"]}>Your Basket Composition</h4>
+          <h4 className={styles["compositionTitle"]}>{t("composition.title")}</h4>
           <div className={styles["compositionList"]}>
             <div className={styles["compositionRow"]}>
               <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
-              <span className={styles["compositionLabel"]}>Whole Foods</span>
+              <span className={styles["compositionLabel"]}>{t("composition.wholeFoods")}</span>
               <div className={styles["progressTrack"]}>
                 <div
                   className={`${styles["progressBar"]} ${styles["progressGreen"]}`}
@@ -192,7 +193,7 @@ export function NutritionCard(): React.JSX.Element {
             </div>
             <div className={styles["compositionRow"]}>
               <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
-              <span className={styles["compositionLabel"]}>Processed</span>
+              <span className={styles["compositionLabel"]}>{t("composition.processed")}</span>
               <div className={styles["progressTrack"]}>
                 <div
                   className={`${styles["progressBar"]} ${styles["progressAmber"]}`}
@@ -203,7 +204,7 @@ export function NutritionCard(): React.JSX.Element {
             </div>
             <div className={styles["compositionRow"]}>
               <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
-              <span className={styles["compositionLabel"]}>Dairy/Other</span>
+              <span className={styles["compositionLabel"]}>{t("composition.dairyOther")}</span>
               <div className={styles["progressTrack"]}>
                 <div
                   className={`${styles["progressBar"]} ${styles["progressBlue"]}`}
@@ -223,9 +224,7 @@ export function NutritionCard(): React.JSX.Element {
               className={styles["foodGroupCard"]}>
               <div className={styles["foodGroupIconRow"]}>{group.icon}</div>
               <p className={styles["foodGroupName"]}>{group.name}</p>
-              <p className={styles["foodGroupCount"]}>
-                {group.items} item{group.items === 1 ? "" : "s"}
-              </p>
+              <p className={styles["foodGroupCount"]}>{t("foodGroups.itemsCount", {count: String(group.items)})}</p>
               <p className={styles["foodGroupAmount"]}>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
             </div>
           ))}
@@ -236,7 +235,7 @@ export function NutritionCard(): React.JSX.Element {
           <div className={styles["allergensSection"]}>
             <div className={styles["allergensHeader"]}>
               <TbAlertTriangle className='h-4 w-4 text-amber-500' />
-              <h4 className={styles["allergensTitle"]}>Allergens Detected</h4>
+              <h4 className={styles["allergensTitle"]}>{t("allergens.title")}</h4>
             </div>
             <div className={styles["allergensList"]}>
               <TooltipProvider>
@@ -252,9 +251,7 @@ export function NutritionCard(): React.JSX.Element {
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>
-                        Found in {count} item{count === 1 ? "" : "s"}
-                      </p>
+                      <p>{t("allergens.foundInItems", {count: String(count)})}</p>
                     </TooltipContent>
                   </Tooltip>
                 ))}

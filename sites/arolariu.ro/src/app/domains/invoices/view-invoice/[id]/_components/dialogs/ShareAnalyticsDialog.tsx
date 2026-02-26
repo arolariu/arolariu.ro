@@ -18,6 +18,7 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
 import styles from "./ShareAnalyticsDialog.module.scss";
@@ -62,6 +63,7 @@ import styles from "./ShareAnalyticsDialog.module.scss";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareAnalyticsDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ShareAnalyticsDialog");
   const [email, setEmail] = useState<string>("");
   const {
     currentDialog: {payload},
@@ -84,28 +86,28 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     const item = new ClipboardItem({[blob.type]: blob});
     await navigator.clipboard.write([item]);
 
-    toast("Image copied!", {
-      description: "The analytics image has been copied to your clipboard",
+    toast(t("toasts.imageCopied.title"), {
+      description: t("toasts.imageCopied.description"),
     });
-  }, [merchant, invoice]);
+  }, [merchant, invoice, t]);
 
   const handleSendEmail = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      toast("Email sent!", {
-        description: `Analytics report sent to ${email}`,
+      toast(t("toasts.emailSent.title"), {
+        description: t("toasts.emailSent.description", {email}),
       });
       setEmail("");
     },
-    [email],
+    [email, t],
   );
 
   const handleDownloadImage = useCallback(() => {
     // In a real app, this would generate and download an image
-    toast("Image saved!", {
-      description: `Spending analytics for ${merchant.name} has been downloaded as PNG`,
+    toast(t("toasts.imageSaved.title"), {
+      description: t("toasts.imageSaved.description", {merchant: merchant.name}),
     });
-  }, [merchant.name]);
+  }, [merchant.name, t]);
 
   return (
     <Dialog
@@ -114,26 +116,26 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Share Analytics</DialogTitle>
-          <DialogDescription>Share your spending analytics for {merchant.name} with others.</DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description", {merchant: merchant.name})}</DialogDescription>
         </DialogHeader>
 
         <Tabs
           defaultValue='image'
           className='mt-4'>
           <TabsList className='grid w-full grid-cols-2'>
-            <TabsTrigger value='image'>Image</TabsTrigger>
-            <TabsTrigger value='email'>Email</TabsTrigger>
+            <TabsTrigger value='image'>{t("tabs.image")}</TabsTrigger>
+            <TabsTrigger value='email'>{t("tabs.email")}</TabsTrigger>
           </TabsList>
 
           <TabsContent
             value='image'
             className='py-4'>
             <div className={styles["contentSection"]}>
-              <p className={styles["description"]}>Download or copy the analytics graph as a PNG image that you can share or save.</p>
+              <p className={styles["description"]}>{t("image.description")}</p>
               <div className={styles["previewContainer"]}>
                 <div className={styles["previewBox"]}>
-                  <div className={styles["previewPlaceholder"]}>Analytics Preview</div>
+                  <div className={styles["previewPlaceholder"]}>{t("image.previewPlaceholder")}</div>
                 </div>
               </div>
             </div>
@@ -143,14 +145,14 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                   onClick={handleDownloadImage}
                   className='w-full'>
                   <TbDownload className='mr-2 h-4 w-4' />
-                  Download graph
+                  {t("image.download")}
                 </Button>
                 <Button
                   variant='outline'
                   onClick={handleCopyImage}
                   className='w-full'>
                   <TbCopy className='mr-2 h-4 w-4' />
-                  Copy graph to clipboard
+                  {t("image.copyToClipboard")}
                 </Button>
               </div>
             </DialogFooter>
@@ -160,13 +162,13 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
             value='email'
             className='py-4'>
             <div className={styles["contentSection"]}>
-              <p className={styles["description"]}>Send the analytics to an email address.</p>
+              <p className={styles["description"]}>{t("email.description")}</p>
               <div className={styles["emailSection"]}>
-                <Label htmlFor='email'>Email address</Label>
+                <Label htmlFor='email'>{t("email.label")}</Label>
                 <Input
                   id='email'
                   type='email'
-                  placeholder='name@example.com'
+                  placeholder={t("email.placeholder")}
                   value={email}
                   // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
                   onChange={(e) => setEmail(e.target.value)}
@@ -178,7 +180,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                 onClick={handleSendEmail}
                 className='w-full'>
                 <TbMail className='mr-2 h-4 w-4' />
-                Send Email
+                {t("email.send")}
               </Button>
             </DialogFooter>
           </TabsContent>

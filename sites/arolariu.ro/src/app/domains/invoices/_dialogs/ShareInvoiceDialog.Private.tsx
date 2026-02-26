@@ -4,6 +4,7 @@
  */
 
 import {Alert, AlertDescription, AlertTitle, Button, Input, Label} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import React from "react";
 import {TbArrowLeft, TbLock, TbMail} from "react-icons/tb";
 import styles from "./ShareInvoiceDialog.Private.module.scss";
@@ -40,6 +41,7 @@ export interface PrivateModeProps {
  * @returns The private sharing mode UI
  */
 export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: PrivateModeProps): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ShareInvoiceDialogPrivate");
   return (
     <div className={styles["body"]}>
       <Button
@@ -48,35 +50,32 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
         onClick={onBack}
         className='mb-2 -ml-2'>
         <TbArrowLeft className={styles["backIcon"]} />
-        Back to options
+        {t("backToOptions")}
       </Button>
 
       <Alert
         variant='default'
         className='border-green-500/50 bg-green-50 text-green-900 dark:bg-green-950/30 dark:text-green-200'>
         <TbLock className={styles["lockIcon"]} />
-        <AlertTitle className='text-green-800 dark:text-green-300'>Private Sharing</AlertTitle>
-        <AlertDescription className='text-xs text-green-700 dark:text-green-400'>
-          The invitation will be sent directly to the email address you specify. Only this recipient will receive access to view the
-          invoice.
-        </AlertDescription>
+        <AlertTitle className='text-green-800 dark:text-green-300'>{t("title")}</AlertTitle>
+        <AlertDescription className='text-xs text-green-700 dark:text-green-400'>{t("description")}</AlertDescription>
       </Alert>
 
       <form
         onSubmit={onSendEmail}
         className={styles["formBody"]}>
         <div className={styles["fieldGroup"]}>
-          <Label htmlFor='email'>Recipient&apos;s Email Address</Label>
+          <Label htmlFor='email'>{t("emailLabel")}</Label>
           <Input
             id='email'
             type='email'
-            placeholder='name@example.com'
+            placeholder={t("emailPlaceholder")}
             value={email}
             // eslint-disable-next-line react/jsx-no-bind -- input always changes.
             onChange={(e) => onEmailChange(e.target.value)}
             required
           />
-          <p className={styles["emailHint"]}>An email invitation will be sent to this address with a private link to view the invoice.</p>
+          <p className={styles["emailHint"]}>{t("emailHint")}</p>
         </div>
         <Button
           type='submit'
@@ -84,7 +83,7 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
           disabled={!email || !/\S+@\S+\.\S+/u.test(email)}
           className='w-full'>
           <TbMail className={styles["mailIcon"]} />
-          Send Private Invitation
+          {t("sendInvitation")}
         </Button>
       </form>
     </div>

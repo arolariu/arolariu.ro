@@ -2,6 +2,7 @@
 
 import {useUserInformation} from "@/hooks";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
 import * as React from "react";
 import {TbHeart, TbPencil, TbPrinter, TbTrash} from "react-icons/tb";
@@ -10,6 +11,7 @@ import {useInvoiceContext} from "../_context/InvoiceContext";
 import styles from "./InvoiceHeader.module.scss";
 
 export function InvoiceHeader(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.InvoiceHeader");
   const {invoice} = useInvoiceContext();
   const {
     userInformation: {userIdentifier},
@@ -29,12 +31,12 @@ export function InvoiceHeader(): React.JSX.Element {
                   <TbHeart className='h-5 w-5 fill-red-500 text-red-500' />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Important Invoice</p>
+                  <p>{t("tooltips.importantInvoice")}</p>
                 </TooltipContent>
               </Tooltip>
             )}
           </div>
-          <p className={styles["invoiceId"]}>ID: {invoice.id}</p>
+          <p className={styles["invoiceId"]}>{t("id", {id: invoice.id})}</p>
         </div>
         <div className={styles["actions"]}>
           {Boolean(isOwner) && (
@@ -46,12 +48,12 @@ export function InvoiceHeader(): React.JSX.Element {
                     className={styles["editLink"]}>
                     <Button>
                       <TbPencil className='mr-2 h-4 w-4' />
-                      Edit
+                      {t("buttons.edit")}
                     </Button>
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Edit this invoice</p>
+                  <p>{t("tooltips.edit")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -60,11 +62,11 @@ export function InvoiceHeader(): React.JSX.Element {
                     variant='destructive'
                     onClick={openDeleteDialog}>
                     <TbTrash className='mr-2 h-4 w-4' />
-                    Delete
+                    {t("buttons.delete")}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Delete this invoice permanently</p>
+                  <p>{t("tooltips.delete")}</p>
                 </TooltipContent>
               </Tooltip>
             </>
@@ -73,11 +75,11 @@ export function InvoiceHeader(): React.JSX.Element {
             <TooltipTrigger asChild>
               <Button variant='outline'>
                 <TbPrinter className='mr-2 h-4 w-4' />
-                Print
+                {t("buttons.print")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Print this invoice</p>
+              <p>{t("tooltips.print")}</p>
             </TooltipContent>
           </Tooltip>
         </div>

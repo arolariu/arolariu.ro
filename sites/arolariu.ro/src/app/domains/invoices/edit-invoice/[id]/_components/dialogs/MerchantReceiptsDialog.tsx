@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -77,6 +77,7 @@ import styles from "./MerchantReceiptsDialog.module.scss";
  */
 export default function MerchantReceiptsDialog(): React.JSX.Element {
   const locale = useLocale();
+  const t = useTranslations("I18nConsolidation.Invoices.MerchantReceiptsDialog");
   const {
     currentDialog: {payload},
     isOpen,
@@ -119,8 +120,8 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-4xl lg:max-w-7xl'>
         <DialogHeader>
-          <DialogTitle>All receipts from {merchant.name}</DialogTitle>
-          <DialogDescription>View and filter all your receipts from this merchant</DialogDescription>
+          <DialogTitle>{t("title", {merchant: merchant.name})}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["body"]}>
@@ -128,7 +129,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
             <div className={styles["searchWrapper"]}>
               <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
               <Input
-                placeholder='Search receipts...'
+                placeholder={t("searchPlaceholder")}
                 className='pl-8'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -139,13 +140,13 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 <Select onValueChange={handleDateFilterChange}>
                   <SelectTrigger>
                     <TbCalendar className='mr-2 h-4 w-4' />
-                    <SelectValue placeholder='Date' />
+                    <SelectValue placeholder={t("filters.date")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>All Time</SelectItem>
-                    <SelectItem value='30days'>Last 30 Days</SelectItem>
-                    <SelectItem value='90days'>Last 90 Days</SelectItem>
-                    <SelectItem value='thisYear'>This Year</SelectItem>
+                    <SelectItem value='all'>{t("dateOptions.allTime")}</SelectItem>
+                    <SelectItem value='30days'>{t("dateOptions.last30Days")}</SelectItem>
+                    <SelectItem value='90days'>{t("dateOptions.last90Days")}</SelectItem>
+                    <SelectItem value='thisYear'>{t("dateOptions.thisYear")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -153,11 +154,11 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 <Select onValueChange={handleSortChange}>
                   <SelectTrigger>
                     <TbArrowsUpDown className='mr-2 h-4 w-4' />
-                    <SelectValue placeholder='Sort' />
+                    <SelectValue placeholder={t("filters.sort")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='date-desc'>Newest First</SelectItem>
-                    <SelectItem value='date-asc'>Oldest First</SelectItem>
+                    <SelectItem value='date-desc'>{t("sortOptions.newest")}</SelectItem>
+                    <SelectItem value='date-asc'>{t("sortOptions.oldest")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -169,10 +170,10 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
               <Table>
                 <TableHeader>
                   <TableRow className='bg-muted/50'>
-                    <TableHead className={styles["tableHeader"]}>Receipt</TableHead>
-                    <TableHead className={styles["tableHeader"]}>Date</TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>Items #</TableHead>
-                    <TableHead className={styles["tableHeaderRight"]}>Actions</TableHead>
+                    <TableHead className={styles["tableHeader"]}>{t("table.receipt")}</TableHead>
+                    <TableHead className={styles["tableHeader"]}>{t("table.date")}</TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>{t("table.itemsCount")}</TableHead>
+                    <TableHead className={styles["tableHeaderRight"]}>{t("table.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className='divide-border bg-popover divide-y'>
@@ -190,7 +191,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                             variant='ghost'
                             size='sm'>
                             <TbDownload className='mr-1 h-4 w-4' />
-                            View
+                            {t("table.view")}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -200,12 +201,12 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 <TableFooter>
                   <TableRow>
                     <TableHead className={styles["tableHeader"]}>
-                      {receipts.length} receipts found (showing {paginatedItems.length})
+                      {t("footer.receiptsFound", {count: String(receipts.length), showing: String(paginatedItems.length)})}
                     </TableHead>
                     <TableCell
                       className={styles["tableHeaderRight"]}
                       colSpan={2}>
-                      Page {currentPage} of {totalPages}
+                      {t("footer.page", {current: String(currentPage), total: String(totalPages)})}
                     </TableCell>
                     <TableCell
                       className={styles["tableHeaderRight"]}
@@ -215,14 +216,14 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                         size='sm'
                         onClick={() => setCurrentPage(currentPage - 1)}
                         disabled={currentPage === 1}>
-                        Previous
+                        {t("buttons.previous")}
                       </Button>
                       <Button
                         variant='ghost'
                         size='sm'
                         onClick={() => setCurrentPage(currentPage + 1)}
                         disabled={currentPage === totalPages}>
-                        Next
+                        {t("buttons.next")}
                       </Button>
                     </TableCell>
                   </TableRow>

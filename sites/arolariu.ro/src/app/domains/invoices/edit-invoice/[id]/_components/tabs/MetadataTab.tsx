@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {TbEdit, TbPencil, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MetadataTab.module.scss";
@@ -62,6 +63,7 @@ type Props = {
  * @see {@link VALID_METADATA_KEYS} - Predefined metadata key definitions
  */
 export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.MetadataTab");
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__METADATA", "add");
   const {open: openEditDialog} = useDialog("EDIT_INVOICE__METADATA", "edit", metadata);
   const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__METADATA", "delete", metadata);
@@ -75,8 +77,8 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
       <Card className='group transition-shadow duration-300 hover:shadow-md'>
         <CardHeader className='flex flex-row items-center justify-between pb-2'>
           <div>
-            <CardTitle>Additional Information</CardTitle>
-            <CardDescription>Metadata associated with this invoice</CardDescription>
+            <CardTitle>{t("header.title")}</CardTitle>
+            <CardDescription>{t("header.description")}</CardDescription>
           </div>
           <TooltipProvider>
             <Tooltip>
@@ -86,11 +88,11 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                   onClick={openAddDialog}
                   size='sm'>
                   <TbPlus className='mr-2 h-4 w-4' />
-                  Add Field
+                  {t("buttons.addField")}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Add custom metadata to this invoice</p>
+                <p>{t("tooltips.addCustomMetadata")}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -110,7 +112,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                     <Badge
                       variant='outline'
                       className='ml-2 text-xs'>
-                      Readonly
+                      {t("badges.readonly")}
                     </Badge>
                   </span>
                   <span>{value}</span>
@@ -130,14 +132,14 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                           onClick={openEditDialog}
                           disabled>
                           <TbEdit className='mr-2 h-4 w-4' />
-                          Edit
+                          {t("dropdown.edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={openDeleteDialog}
                           className='text-destructive focus:text-destructive'
                           disabled>
                           <TbTrash className='mr-2 h-4 w-4' />
-                          Delete
+                          {t("dropdown.delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -147,12 +149,12 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
             </div>
           ) : (
             <div className={styles["emptyState"]}>
-              <p className={styles["emptyText"]}>No metadata fields added yet</p>
+              <p className={styles["emptyText"]}>{t("emptyState.noMetadataFields")}</p>
               <Button
                 onClick={openAddDialog}
                 variant='outline'>
                 <TbPlus className='mr-2 h-4 w-4' />
-                Add Your First Metadata Field
+                {t("buttons.addFirstMetadataField")}
               </Button>
             </div>
           )}

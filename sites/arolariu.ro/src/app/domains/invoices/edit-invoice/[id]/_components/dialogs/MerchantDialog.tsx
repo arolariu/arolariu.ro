@@ -12,6 +12,7 @@ import {
   TableCell,
   TableRow,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantDialog.module.scss";
@@ -56,6 +57,7 @@ import styles from "./MerchantDialog.module.scss";
  * @see {@link MerchantCategory} - Category enum for badge display
  */
 export default function MerchantDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.MerchantDialog");
   const {
     currentDialog: {payload},
     isOpen,
@@ -75,8 +77,8 @@ export default function MerchantDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md md:max-w-xl'>
         <DialogHeader className='items-start justify-start justify-items-start'>
-          <DialogTitle>Merchant Details</DialogTitle>
-          <DialogDescription>Information about {merchant.name}</DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description", {merchantName: merchant.name})}</DialogDescription>
         </DialogHeader>
         <div className={styles["body"]}>
           <div className={styles["merchantProfile"]}>
@@ -99,7 +101,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className='py-2 pl-0'>
                   <div className={styles["detailRow"]}>
                     <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className={styles["detailLabel"]}>Address</span>
+                    <span className={styles["detailLabel"]}>{t("fields.address")}</span>
                   </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.address}</TableCell>
@@ -108,7 +110,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className='py-2 pl-0'>
                   <div className={styles["detailRow"]}>
                     <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className={styles["detailLabel"]}>Phone</span>
+                    <span className={styles["detailLabel"]}>{t("fields.phone")}</span>
                   </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.address.phoneNumber}</TableCell>
@@ -117,7 +119,7 @@ export default function MerchantDialog(): React.JSX.Element {
                 <TableCell className='py-2 pl-0'>
                   <div className={styles["detailRow"]}>
                     <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
-                    <span className={styles["detailLabel"]}>Parent Company</span>
+                    <span className={styles["detailLabel"]}>{t("fields.parentCompany")}</span>
                   </div>
                 </TableCell>
                 <TableCell className='py-2'>{merchant.parentCompanyId}</TableCell>
@@ -130,7 +132,7 @@ export default function MerchantDialog(): React.JSX.Element {
           <Button
             type='button'
             className='w-full'>
-            Open in Maps
+            {t("buttons.openInMaps")}
           </Button>
         </div>
       </DialogContent>

@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
@@ -70,6 +71,7 @@ type Props = {
  * @see {@link Invoice} - Invoice type with sharedWith array
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.SharingCard");
   const {open} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
   const {userInformation} = useUserInformation();
   const router = useRouter();
@@ -86,10 +88,10 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
   const handleRemoveAccess = useCallback(() => {
     // TODO: Implement remove access functionality for specific user
-    toast("Remove access feature coming soon", {
-      description: "This feature is currently under development.",
+    toast(t("toasts.removeAccessComingSoon.title"), {
+      description: t("toasts.removeAccessComingSoon.description"),
     });
-  }, []);
+  }, [t]);
 
   /**
    * Revokes public access from the invoice by removing LAST_GUID from sharedWith.
@@ -118,17 +120,17 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
     toast.promise(
       markPrivateAction().finally(() => setIsMarkingPrivate(false)),
       {
-        loading: "Revoking public access...",
-        success: "Invoice is now private. Existing links will no longer work.",
-        error: (err: Error) => `Failed to mark private: ${err.message}`,
+        loading: t("toasts.revoke.loading"),
+        success: t("toasts.revoke.success"),
+        error: (err: Error) => t("toasts.revoke.error", {message: err.message}),
       },
     );
-  }, [invoice.id, invoice.sharedWith, router]);
+  }, [invoice.id, invoice.sharedWith, router, t]);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
-        <CardTitle>Sharing</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className={styles["ownerRow"]}>
@@ -136,7 +138,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             {userInformation?.user?.imageUrl ? (
               <Image
                 src={userInformation?.user?.imageUrl!}
-                alt='User'
+                alt={t("ownerAvatarAlt")}
                 width={40}
                 height={40}
                 className={styles["ownerImage"]}
@@ -147,7 +149,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             )}
           </div>
           <div>
-            <p className={styles["ownerName"]}>Owner</p>
+            <p className={styles["ownerName"]}>{t("owner")}</p>
             <p className={styles["ownerUsername"]}>{userInformation?.user?.username}</p>
           </div>
           <div className={styles["manageArea"]}>
@@ -159,11 +161,11 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                     className='group ml-auto cursor-pointer'
                     onClick={handleManageSharing}>
                     <TbLockCog className='mr-2 h-4 w-4' />
-                    <span>Manage Sharing</span>
+                    <span>{t("buttons.manageSharing")}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Manage sharing settings for this invoice</p>
+                  <p>{t("tooltips.manageSharing")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -177,15 +179,13 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             variant='destructive'
             className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
             <TbGlobe className='size-4 text-orange-600 dark:text-orange-400' />
-            <AlertTitle className='text-orange-800 dark:text-orange-300'>Public Invoice</AlertTitle>
-            <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
-              This invoice is publicly accessible. Anyone with the link can view it.
-            </AlertDescription>
+            <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("publicInvoice.title")}</AlertTitle>
+            <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>{t("publicInvoice.description")}</AlertDescription>
           </Alert>
         )}
 
         <div>
-          <h3 className={styles["sharedTitle"]}>Shared With</h3>
+          <h3 className={styles["sharedTitle"]}>{t("sharedWith")}</h3>
           {sharedUsers.length > 0 ? (
             <div className={styles["sharedList"]}>
               {sharedUsers.map((userId, index) => (
@@ -199,7 +199,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   <div className={styles["sharedUserAvatar"]}>
                     <TbUser className='h-4 w-4' />
                   </div>
-                  <span className={styles["sharedUserName"]}>User {userId}</span>
+                  <span className={styles["sharedUserName"]}>{t("userWithId", {id: userId})}</span>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -211,7 +211,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Remove access</p>
+                        <p>{t("tooltips.removeAccess")}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -219,7 +219,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
               ))}
             </div>
           ) : (
-            <p className={styles["emptyShared"]}>{isInvoicePublic ? "No additional users have direct access" : "Not shared with anyone"}</p>
+            <p className={styles["emptyShared"]}>{isInvoicePublic ? t("emptyShared.public") : t("emptyShared.private")}</p>
           )}
         </div>
       </CardContent>
@@ -232,12 +232,12 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                 className='w-full cursor-pointer'
                 onClick={open}>
                 <TbShare2 className='mr-2 h-4 w-4' />
-                <span>Share Invoice</span>
+                <span>{t("buttons.shareInvoice")}</span>
                 <TbArrowRight className='ml-2 h-4 w-4 transition-transform' />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Share this invoice with other users</p>
+              <p>{t("tooltips.shareInvoice")}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -249,12 +249,12 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   className='w-full cursor-pointer'
                   disabled={isMarkingPrivate}
                   onClick={handleMarkPrivate}>
-                  <span>{isMarkingPrivate ? "Revoking Access..." : "Mark as Private"}</span>
+                  <span>{isMarkingPrivate ? t("buttons.revokingAccess") : t("buttons.markAsPrivate")}</span>
                   <TbLock className='ml-2 h-4 w-4 transition-transform' />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
-                <p>Mark the invoice as private</p>
+                <p>{t("tooltips.markAsPrivate")}</p>
               </TooltipContent>
             </Tooltip>
           )}

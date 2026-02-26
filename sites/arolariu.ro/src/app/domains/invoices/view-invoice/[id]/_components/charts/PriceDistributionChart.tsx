@@ -1,6 +1,7 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {PriceRange} from "../../_utils/analytics";
 import styles from "./PriceDistributionChart.module.scss";
@@ -20,6 +21,7 @@ type CustomTooltipProps = {
 };
 
 function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element | null {
+  const t = useTranslations("I18nConsolidation.Invoices.PriceDistributionChart");
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -28,17 +30,16 @@ function CustomTooltip({active, payload}: CustomTooltipProps): React.JSX.Element
       <p className={styles["tooltipRange"]}>
         {data.range} {data.currency}
       </p>
-      <p className={styles["tooltipCount"]}>
-        {data.count} item{data.count === 1 ? "" : "s"}
-      </p>
+      <p className={styles["tooltipCount"]}>{t("tooltip.itemCount", {count: data.count})}</p>
     </div>
   );
 }
 
 export function PriceDistributionChart({data, currency}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.PriceDistributionChart");
   const chartConfig = {
     count: {
-      label: "Items",
+      label: t("labels.items"),
       color: "hsl(var(--chart-1))",
     },
   };
@@ -48,8 +49,8 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>Price Distribution</CardTitle>
-        <CardDescription className='text-xs'>Items by price range ({currency})</CardDescription>
+        <CardTitle className='text-base'>{t("title")}</CardTitle>
+        <CardDescription className='text-xs'>{t("description", {currency})}</CardDescription>
       </CardHeader>
       <CardContent className='pb-4'>
         <ChartContainer

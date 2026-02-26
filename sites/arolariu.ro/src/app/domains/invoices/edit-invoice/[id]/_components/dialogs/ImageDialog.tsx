@@ -1,4 +1,5 @@
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./ImageDialog.module.scss";
@@ -37,6 +38,7 @@ import styles from "./ImageDialog.module.scss";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ImageDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ImageDialog");
   const {
     currentDialog: {payload},
     isOpen,
@@ -53,12 +55,12 @@ export default function ImageDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='h-full min-w-11/12'>
         <DialogHeader>
-          <DialogTitle>Image ({image})</DialogTitle>
+          <DialogTitle>{t("title", {image})}</DialogTitle>
           <div className={styles["imageContainer"]}>
             <Image
               src={image}
               fill
-              alt='Photo of receipt'
+              alt={t("imageAlt")}
               className={styles["receiptImage"]}
             />
           </div>

@@ -43,6 +43,7 @@ const PANEL_VARIANTS = {
 
 export default function RenderMyProfileScreen({user}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.sidebar.nav");
+  const tStats = useTranslations("I18nConsolidation.MyProfileIsland");
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [settings, setSettings] = useState<UserSettings>(getDefaultSettings);
   const statistics = getMockStatistics();
@@ -193,10 +194,10 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
         <div className={styles["bentoStatsCard"]}>
           <div className={styles["statsCardInner"]}>
             <div className={styles["statsNumber"]}>{statistics.totalInvoices}</div>
-            <p className={styles["statsLabel"]}>Total Invoices</p>
+            <p className={styles["statsLabel"]}>{tStats("totalInvoices")}</p>
             <div className={styles["statsMeta"]}>
-              <span>{statistics.totalMerchants} merchants</span>
-              <span>{statistics.totalScans} scans</span>
+              <span>{tStats("merchants", {count: String(statistics.totalMerchants)})}</span>
+              <span>{tStats("scans", {count: String(statistics.totalScans)})}</span>
             </div>
           </div>
         </div>
@@ -207,7 +208,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
         {/* Desktop Sidebar */}
         <nav
           className={styles["sidebar"]}
-          aria-label='Settings navigation'>
+          aria-label={tStats("settingsNavigationAriaLabel")}>
           {TAB_CONFIG.map(({id, icon: Icon, key}) => (
             <button
               key={id}
@@ -243,7 +244,7 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
       {/* Bottom Nav (mobile/tablet) */}
       <nav
         className={styles["bottomNav"]}
-        aria-label='Settings navigation'>
+        aria-label={tStats("settingsNavigationAriaLabel")}>
         {TAB_CONFIG.map(({id, icon: Icon, key}) => (
           <button
             key={id}

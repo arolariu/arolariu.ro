@@ -1,4 +1,5 @@
 import type {Invoice} from "@/types/invoices";
+import {useTranslations} from "next-intl";
 import styles from "./StatisticsView.module.scss";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
  * @returns This function renders the statistics view for the invoices.
  */
 export default function RenderStatisticsView({invoices}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.StatisticsView");
   // todo: complete this.
   console.log(invoices);
 
@@ -19,8 +21,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
     <div className={styles["container"]}>
       <div className={styles["header"]}>
         <div className={styles["headerContent"]}>
-          <h1 className={styles["title"]}>Invoice Statistics</h1>
-          <p className={styles["subtitle"]}>Manage your receipts and track your spending habits</p>
+          <h1 className={styles["title"]}>{t("title")}</h1>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </div>
       </div>
     </div>

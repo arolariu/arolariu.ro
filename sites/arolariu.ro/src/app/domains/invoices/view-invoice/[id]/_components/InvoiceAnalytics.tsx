@@ -2,6 +2,7 @@
 
 import {useUserInformation} from "@/hooks";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {TbChartBar, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../_context/InvoiceContext";
 import {
@@ -25,6 +26,7 @@ import {SpendingTrendChart} from "./charts/SpendingTrendChart";
 import styles from "./InvoiceAnalytics.module.scss";
 
 export function InvoiceAnalytics(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.InvoiceAnalytics");
   const {invoice, merchant} = useInvoiceContext();
   const {
     userInformation: {userIdentifier},
@@ -49,21 +51,21 @@ export function InvoiceAnalytics(): React.JSX.Element {
         <div className={styles["tabHeader"]}>
           <div className={styles["sectionTitle"]}>
             <TbChartBar className='text-muted-foreground h-5 w-5' />
-            <h2 className={styles["sectionTitleText"]}>Analytics & Insights</h2>
+            <h2 className={styles["sectionTitleText"]}>{t("title")}</h2>
           </div>
           <TabsList className='grid w-full grid-cols-2 sm:w-auto'>
             <TabsTrigger
               value='current'
               className='text-xs sm:text-sm'>
               <TbChartBar className='mr-1.5 h-3.5 w-3.5' />
-              This Invoice
+              {t("tabs.current")}
             </TabsTrigger>
             {Boolean(isOwner) && (
               <TabsTrigger
                 value='compare'
                 className='text-xs sm:text-sm'>
                 <TbTrendingUp className='mr-1.5 h-3.5 w-3.5' />
-                Comparison
+                {t("tabs.compare")}
               </TabsTrigger>
             )}
           </TabsList>

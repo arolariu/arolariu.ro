@@ -21,6 +21,7 @@
 import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import type {Invoice, InvoiceCategory, Merchant, PaymentType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {createContext, use, useCallback, useMemo, useState} from "react";
 
 /**
@@ -100,6 +101,7 @@ interface EditInvoiceContextProviderProps {
  * @returns Provider component wrapping children
  */
 export function EditInvoiceContextProvider({invoice, merchant, children}: Readonly<EditInvoiceContextProviderProps>): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.EditInvoiceContext");
   const [pendingChanges, setPendingChanges] = useState<PendingChanges>({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -156,7 +158,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
 
   const saveChanges = useCallback(async (): Promise<boolean> => {
     if (!hasChanges) {
-      toast.info("No changes to save");
+      toast.info(t("toasts.noChanges"));
       return true;
     }
 
@@ -164,8 +166,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
 
     try {
       // Build the patch payload
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload: Record<string, any> = {};
+      const payload: Record<string, unknown> = {};
 
       if (pendingChanges.name !== undefined) {
         payload["name"] = pendingChanges.name;
@@ -200,7 +201,7 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       });
 
       if (result.success) {
-        toast.success("Invoice updated successfully");
+        toast.success(t("toasts.updated"));
         setPendingChanges({});
         // Trigger a page refresh to get the updated data
         globalThis.window.location.reload();
@@ -210,13 +211,13 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
         return false;
       }
     } catch (error) {
-      console.error("Failed to save invoice:", error);
-      toast.error("Failed to save changes");
+      console.error(t("console.saveFailed"), error);
+      toast.error(t("toasts.saveFailed"));
       return false;
     } finally {
       setIsSaving(false);
     }
-  }, [hasChanges, pendingChanges, invoice]);
+  }, [hasChanges, pendingChanges, invoice, t]);
 
   const value = useMemo(
     () => ({

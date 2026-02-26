@@ -18,6 +18,7 @@ import {
   DialogTitle,
   toast,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
@@ -42,6 +43,7 @@ type SharingMode = "selection" | "public" | "private";
 interface SelectionModeProps {
   readonly onSelectPublic: () => void;
   readonly onSelectPrivate: () => void;
+  readonly t: ReturnType<typeof useTranslations>;
 }
 
 /**
@@ -57,10 +59,10 @@ interface SelectionModeProps {
  * @param props - Component props
  * @returns The sharing method selection UI
  */
-function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): React.JSX.Element {
+function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionModeProps>): React.JSX.Element {
   return (
     <div className={styles["selectionBody"]}>
-      <p className={styles["selectionDescription"]}>Choose how you want to share this invoice. Your choice affects who can access it.</p>
+      <p className={styles["selectionDescription"]}>{t("selection.description")}</p>
 
       <div className={styles["selectionGrid"]}>
         <Card
@@ -71,9 +73,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
               <TbGlobe className={styles["globeIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className='text-base'>Public Sharing</CardTitle>
+              <CardTitle className='text-base'>{t("selection.publicTitle")}</CardTitle>
               <CardDescription className='text-sm'>
-                Generate a link or QR code that <strong>anyone</strong> can use to view this invoice.
+                {t.rich("selection.publicDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
               </CardDescription>
             </div>
           </CardHeader>
@@ -87,9 +89,9 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
               <TbLock className={styles["lockIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className='text-base'>Private Sharing</CardTitle>
+              <CardTitle className='text-base'>{t("selection.privateTitle")}</CardTitle>
               <CardDescription className='text-sm'>
-                Send an email invitation to a <strong>specific person</strong>. Only they will have access.
+                {t.rich("selection.privateDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
               </CardDescription>
             </div>
           </CardHeader>
@@ -100,10 +102,8 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
         variant='default'
         className='mt-4'>
         <TbAlertTriangle className={styles["alertIcon"]} />
-        <AlertTitle>Privacy Notice</AlertTitle>
-        <AlertDescription className='text-xs'>
-          Public links can be accessed by anyone who has the URL. Private sharing restricts access to the specific recipient.
-        </AlertDescription>
+        <AlertTitle>{t("selection.privacyNoticeTitle")}</AlertTitle>
+        <AlertDescription className='text-xs'>{t("selection.privacyNoticeDescription")}</AlertDescription>
       </Alert>
     </div>
   );
@@ -137,6 +137,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate}: SelectionModeProps): R
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareInvoiceDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ShareInvoiceDialog");
   const [sharingMode, setSharingMode] = useState<SharingMode>("selection");
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
@@ -210,11 +211,11 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     };
 
     toast.promise(copyLinkAction(), {
-      loading: isInvoicePublic ? "Copying link..." : "Making invoice public...",
-      success: isInvoicePublic ? "Link copied to clipboard!" : "Invoice is now public! Link copied to clipboard.",
-      error: (err: Error) => `Failed: ${err.message}`,
+      loading: isInvoicePublic ? t("toasts.copyLink.loadingPublic") : t("toasts.copyLink.loadingMakePublic"),
+      success: isInvoicePublic ? t("toasts.copyLink.successPublic") : t("toasts.copyLink.successMadePublic"),
+      error: (err: Error) => t("toasts.copyLink.error", {message: err.message}),
     });
-  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl]);
+  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl, t]);
 
   /**
    * Makes the invoice public and copies the QR code image to clipboard.
@@ -230,7 +231,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
 
       const qrCodeElement = document.querySelector("#invoice-qr-code");
       if (!qrCodeElement) {
-        throw new Error("QR code element not found");
+        throw new Error(t("errors.qrNotFound"));
       }
 
       await copySvgToClipboard(qrCodeElement);
@@ -242,11 +243,11 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     };
 
     toast.promise(copyQRCodeAction(), {
-      loading: isInvoicePublic ? "Copying QR code..." : "Making invoice public...",
-      success: isInvoicePublic ? "QR code copied to clipboard!" : "Invoice is now public! QR code copied to clipboard.",
-      error: (err: Error) => `Failed: ${err.message}`,
+      loading: isInvoicePublic ? t("toasts.copyQr.loadingPublic") : t("toasts.copyQr.loadingMakePublic"),
+      success: isInvoicePublic ? t("toasts.copyQr.successPublic") : t("toasts.copyQr.successMadePublic"),
+      error: (err: Error) => t("toasts.copyQr.error", {message: err.message}),
     });
-  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode]);
+  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
   /**
    * Sends an email invitation to share the invoice privately.
@@ -274,12 +275,12 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       };
 
       toast.promise(sendEmailAction(), {
-        loading: `Sending invitation to ${email}...`,
-        success: `Invitation sent to ${email}!`,
-        error: (err: Error) => `Failed: ${err.message}`,
+        loading: t("toasts.sendEmail.loading", {email}),
+        success: t("toasts.sendEmail.success", {email}),
+        error: (err: Error) => t("toasts.sendEmail.error", {message: err.message}),
       });
     },
-    [email, invoice.id],
+    [email, invoice.id, t],
   );
 
   /**
@@ -310,12 +311,12 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     toast.promise(
       revokeAction().finally(() => setIsRevoking(false)),
       {
-        loading: "Sending revoke request to backend...",
-        success: "Invoice is now private. Existing links will no longer work.",
-        error: (err: Error) => `Failed to revoke access: ${err.message}`,
+        loading: t("toasts.revoke.loading"),
+        success: t("toasts.revoke.success"),
+        error: (err: Error) => t("toasts.revoke.error", {message: err.message}),
       },
     );
-  }, [invoice.id, invoice.sharedWith, router, handleClose]);
+  }, [invoice.id, invoice.sharedWith, router, handleClose, t]);
 
   /** Navigate to public sharing mode */
   const handleSelectPublic = useCallback(() => {
@@ -344,15 +345,15 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   /** Get the dialog description based on current state */
   const getDialogDescription = (): string => {
     if (isInvoicePublic) {
-      return `"${invoice.name}" is currently public`;
+      return t("dialogDescription.currentlyPublic", {invoiceName: invoice.name});
     }
     switch (sharingMode) {
       case "selection":
-        return `Choose how to share "${invoice.name}"`;
+        return t("dialogDescription.selection", {invoiceName: invoice.name});
       case "public":
-        return `Share "${invoice.name}" publicly`;
+        return t("dialogDescription.public", {invoiceName: invoice.name});
       case "private":
-        return `Send "${invoice.name}" privately`;
+        return t("dialogDescription.private", {invoiceName: invoice.name});
       default:
         return "";
     }
@@ -364,7 +365,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       onOpenChange={handleOpenChange}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Share Invoice</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{getDialogDescription()}</DialogDescription>
         </DialogHeader>
 
@@ -383,6 +384,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
               <SelectionMode
                 onSelectPublic={handleSelectPublic}
                 onSelectPrivate={handleSelectPrivate}
+                t={t}
               />
             )}
             {sharingMode === "public" && (

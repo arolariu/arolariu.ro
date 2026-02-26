@@ -1,6 +1,7 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {QuantityData} from "../../_utils/analytics";
@@ -19,9 +20,10 @@ type CustomTooltipProps = {
   readonly active: boolean;
   readonly payload: TooltipPayloadItem[];
   readonly currency: string;
+  readonly quantityLabel: string;
 };
 
-function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active, payload, currency, quantityLabel}: CustomTooltipProps): React.JSX.Element | null {
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -32,16 +34,17 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
         {data.price.toFixed(2)} {currency}
       </p>
       <p className={styles["tooltipQty"]}>
-        Qty: {data.quantity} {data.unit}
+        {quantityLabel}: {data.quantity} {data.unit}
       </p>
     </div>
   );
 }
 
 export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ItemsBreakdownChart");
   const chartConfig = {
     price: {
-      label: "Price",
+      label: t("labels.price"),
       color: "hsl(var(--chart-2))",
     },
   };
@@ -51,8 +54,8 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>Top Items by Cost</CardTitle>
-        <CardDescription className='text-xs'>Highest spending items</CardDescription>
+        <CardTitle className='text-base'>{t("title")}</CardTitle>
+        <CardDescription className='text-xs'>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent className='pb-4'>
         <ChartContainer
@@ -86,6 +89,7 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
                     active={false}
                     payload={[]}
                     currency={currency}
+                    quantityLabel={t("labels.quantity")}
                   />
                 }
               />

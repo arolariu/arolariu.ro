@@ -19,6 +19,7 @@ import {
   SelectValue,
   toast,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {useDropzone} from "react-dropzone";
@@ -46,6 +47,7 @@ import styles from "./AddScanDialog.module.scss";
  * @see {@link attachInvoiceScan} - Attaches scan URL to invoice
  */
 export default function AddScanDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.AddScanDialog");
   const router = useRouter();
   const {
     currentDialog: {payload},
@@ -79,8 +81,8 @@ export default function AddScanDialog(): React.JSX.Element {
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024;
       if (selectedFile.size > maxSize) {
-        toast.error("File too large", {
-          description: "Maximum file size is 10MB",
+        toast.error(t("toasts.fileTooLargeTitle"), {
+          description: t("toasts.fileTooLargeDescription"),
         });
         return;
       }
@@ -134,7 +136,7 @@ export default function AddScanDialog(): React.JSX.Element {
       });
 
       if (status !== 201) {
-        throw new Error("Failed to upload scan to storage");
+        throw new Error(t("errors.uploadStorageFailed"));
       }
 
       // Step 4: Attach scan to invoice
@@ -150,8 +152,8 @@ export default function AddScanDialog(): React.JSX.Element {
         },
       });
 
-      toast.success("Scan added successfully", {
-        description: "The scan has been attached to the invoice",
+      toast.success(t("toasts.scanAddedTitle"), {
+        description: t("toasts.scanAddedDescription"),
       });
 
       // Reset state and close dialog
@@ -161,9 +163,9 @@ export default function AddScanDialog(): React.JSX.Element {
       // Refresh the page to show new scan
       router.refresh();
     } catch (error) {
-      console.error("Error uploading scan:", error);
-      toast.error("Failed to add scan", {
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+      console.error(t("console.uploadError"), error);
+      toast.error(t("toasts.scanFailedTitle"), {
+        description: error instanceof Error ? error.message : t("errors.unknown"),
       });
     } finally {
       setIsUploading(false);
@@ -186,8 +188,8 @@ export default function AddScanDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Add New Scan</DialogTitle>
-          <DialogDescription>Upload a new receipt image or document to attach to this invoice.</DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         {/* eslint-disable react/jsx-props-no-spreading, react/jsx-handler-names -- react-dropzone library requires spread props */}
@@ -209,14 +211,14 @@ export default function AddScanDialog(): React.JSX.Element {
             <input {...getInputProps()} />
             <TbCloudUpload className={styles["uploadIcon"]} />
             {isDragActive ? (
-              <p className={styles["dropText"]}>Drop the file here...</p>
+              <p className={styles["dropText"]}>{t("dropzone.dropHere")}</p>
             ) : (
               <>
-                <p className={styles["dropText"]}>Drag & drop a file here</p>
-                <p className={styles["dropSubtext"]}>or click to browse</p>
+                <p className={styles["dropText"]}>{t("dropzone.dragAndDrop")}</p>
+                <p className={styles["dropSubtext"]}>{t("dropzone.orClickBrowse")}</p>
               </>
             )}
-            <p className={styles["dropFormats"]}>JPEG, PNG, PDF (max 10MB)</p>
+            <p className={styles["dropFormats"]}>{t("dropzone.formats")}</p>
           </div>
 
           {/* Selected file preview */}
@@ -244,19 +246,19 @@ export default function AddScanDialog(): React.JSX.Element {
           {/* Scan type selector */}
           {file ? (
             <div className={styles["scanTypeGrid"]}>
-              <Label htmlFor='scan-type'>Scan Type</Label>
+              <Label htmlFor='scan-type'>{t("scanType.label")}</Label>
               <Select
                 value={String(scanType)}
                 onValueChange={handleScanTypeChange}
                 disabled={isUploading}>
                 <SelectTrigger id='scan-type'>
-                  <SelectValue placeholder='Select scan type' />
+                  <SelectValue placeholder={t("scanType.placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={String(InvoiceScanType.JPEG)}>JPEG Image</SelectItem>
-                  <SelectItem value={String(InvoiceScanType.PNG)}>PNG Image</SelectItem>
-                  <SelectItem value={String(InvoiceScanType.PDF)}>PDF Document</SelectItem>
-                  <SelectItem value={String(InvoiceScanType.OTHER)}>Other</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.JPEG)}>{t("scanType.jpeg")}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.PNG)}>{t("scanType.png")}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.PDF)}>{t("scanType.pdf")}</SelectItem>
+                  <SelectItem value={String(InvoiceScanType.OTHER)}>{t("scanType.other")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -270,7 +272,7 @@ export default function AddScanDialog(): React.JSX.Element {
             variant='outline'
             onClick={handleClose}
             disabled={isUploading}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
@@ -279,12 +281,12 @@ export default function AddScanDialog(): React.JSX.Element {
             {isUploading ? (
               <>
                 <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
-                Uploading...
+                {t("buttons.uploading")}
               </>
             ) : (
               <>
                 <TbUpload className='mr-2 h-4 w-4' />
-                Upload Scan
+                {t("buttons.upload")}
               </>
             )}
           </Button>

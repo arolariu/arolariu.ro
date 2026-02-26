@@ -12,6 +12,7 @@
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useCallback, useRef, useState} from "react";
 import {TbUpload} from "react-icons/tb";
 import {useScanUpload} from "../_context/ScanUploadContext";
@@ -75,6 +76,7 @@ function filterValidFilesFromDataTransfer(items: DataTransferItemList): File[] {
  * Uses native HTML5 drag-and-drop APIs for file handling.
  */
 export default function UploadArea(): React.JSX.Element {
+  const t = useTranslations("Domains.services.invoices.service.upload-scans");
   const {pendingUploads, isUploading, addFiles, clearAll, uploadAll} = useScanUpload();
   const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -173,7 +175,7 @@ export default function UploadArea(): React.JSX.Element {
           multiple
           onChange={handleFileChange}
           className={styles["hiddenInput"]}
-          aria-label='Upload files'
+          aria-label={t("uploadArea.aria.uploadFiles")}
         />
         <button
           type='button'
@@ -190,14 +192,14 @@ export default function UploadArea(): React.JSX.Element {
             <motion.div className={styles["iconCircle"]}>
               <TbUpload className={styles["iconCircleIcon"]} />
             </motion.div>
-            <h3 className={styles["dropzoneTitle"]}>Upload your scans</h3>
+            <h3 className={styles["dropzoneTitle"]}>{t("uploadArea.empty.title")}</h3>
             <p className={styles["dropzoneSubtitle"]}>
-              {isDragActive ? "Drop your files here..." : "Drag and drop your files here, or click to browse"}
+              {isDragActive ? t("uploadArea.empty.dropActive") : t("uploadArea.empty.dropInactive")}
             </p>
-            <p className={styles["dropzoneFormats"]}>Supports JPG, PNG, PDF files up to 10MB each</p>
-            <p className={styles["dropzoneNote"]}>Scans will be stored for later use. Create invoices from the View Scans page.</p>
+            <p className={styles["dropzoneFormats"]}>{t("uploadArea.empty.formats")}</p>
+            <p className={styles["dropzoneNote"]}>{t("uploadArea.empty.note")}</p>
             <span className='inline-flex cursor-pointer rounded-md bg-linear-to-r from-blue-600 to-cyan-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-cyan-700 hover:shadow-xl'>
-              Choose Files
+              {t("uploadArea.empty.chooseFiles")}
             </span>
           </motion.div>
         </button>
@@ -214,7 +216,7 @@ export default function UploadArea(): React.JSX.Element {
         multiple
         onChange={handleFileChange}
         className={styles["hiddenInput"]}
-        aria-label='Upload files'
+        aria-label={t("uploadArea.aria.uploadFiles")}
       />
       <button
         type='button'
@@ -230,8 +232,10 @@ export default function UploadArea(): React.JSX.Element {
             <TbUpload className={styles["compactIcon"]} />
           </div>
           <div className={styles["compactTextBlock"]}>
-            <p className={styles["compactTitle"]}>{isDragActive ? "Drop to add..." : "Add more scans"}</p>
-            <p className={styles["compactSubtitle"]}>JPG, PNG, PDF up to 10MB</p>
+            <p className={styles["compactTitle"]}>
+              {isDragActive ? t("uploadArea.compact.dropActive") : t("uploadArea.compact.dropInactive")}
+            </p>
+            <p className={styles["compactSubtitle"]}>{t("uploadArea.compact.subtitle")}</p>
           </div>
         </div>
       </button>
@@ -246,10 +250,10 @@ export default function UploadArea(): React.JSX.Element {
                 className='cursor-pointer'
                 type='button'
                 disabled={isUploading}>
-                Clear all
+                {t("uploadArea.actions.clearAll")}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Remove all pending uploads from the queue</TooltipContent>
+            <TooltipContent>{t("uploadArea.tooltips.clearAll")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider>
@@ -260,10 +264,10 @@ export default function UploadArea(): React.JSX.Element {
                 className='cursor-pointer bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'
                 type='button'
                 disabled={isUploading}>
-                {isUploading ? "Uploading..." : "Upload scans"}
+                {isUploading ? t("uploadArea.actions.uploading") : t("uploadArea.actions.uploadScans")}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Upload all pending scans to your account</TooltipContent>
+            <TooltipContent>{t("uploadArea.tooltips.uploadScans")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

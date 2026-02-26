@@ -2,6 +2,7 @@
 
 import logo from "@/app/logo.svg";
 import {useWindowSize} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import {memo} from "react";
@@ -15,6 +16,7 @@ import {DesktopNavigation, MobileNavigation} from "./Navigation";
  */
 function Header(): React.JSX.Element {
   const {isMobile, isDesktop} = useWindowSize();
+  const t = useTranslations("I18nConsolidation.Header");
 
   return (
     <header className='header'>
@@ -27,7 +29,7 @@ function Header(): React.JSX.Element {
             className='header__brand'>
             <Image
               src={logo}
-              alt='arolariu.ro logo'
+              alt={t("logoAlt")}
               className='header__logo'
               width={40}
               height={40}

@@ -3,6 +3,7 @@
 import {deleteInvoiceScan} from "@/lib/actions/invoices/deleteInvoiceScan";
 import type {Invoice, InvoiceScan} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
@@ -37,6 +38,7 @@ type RemoveScanPayload = {
  * @see {@link deleteInvoiceScan} - Server action for scan removal
  */
 export default function RemoveScanDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.RemoveScanDialog");
   const router = useRouter();
   const {
     currentDialog: {payload},
@@ -59,8 +61,8 @@ export default function RemoveScanDialog(): React.JSX.Element {
     if (!invoice || !scan) return;
 
     if (isLastScan) {
-      toast.error("Cannot delete last scan", {
-        description: "An invoice must have at least one scan attached",
+      toast.error(t("toasts.cannotDeleteLastTitle"), {
+        description: t("toasts.cannotDeleteLastDescription"),
       });
       return;
     }
@@ -72,8 +74,8 @@ export default function RemoveScanDialog(): React.JSX.Element {
         scanLocation: scan.location,
       });
 
-      toast.success("Scan removed successfully", {
-        description: "The scan has been removed from the invoice",
+      toast.success(t("toasts.removedTitle"), {
+        description: t("toasts.removedDescription"),
       });
 
       close();
@@ -81,9 +83,9 @@ export default function RemoveScanDialog(): React.JSX.Element {
       // Refresh the page to reflect the change
       router.refresh();
     } catch (error) {
-      console.error("Error deleting scan:", error);
-      toast.error("Failed to remove scan", {
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+      console.error(t("console.deleteError"), error);
+      toast.error(t("toasts.removeFailedTitle"), {
+        description: error instanceof Error ? error.message : t("errors.unknown"),
       });
     } finally {
       setIsDeleting(false);
@@ -99,12 +101,10 @@ export default function RemoveScanDialog(): React.JSX.Element {
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <TbAlertTriangle className='text-destructive h-5 w-5' />
-            Remove Scan
+            {t("title")}
           </DialogTitle>
           <DialogDescription>
-            {isLastScan
-              ? "This is the only scan attached to this invoice. You cannot remove it."
-              : `Are you sure you want to remove scan ${scanIndex + 1} of ${totalScans}?`}
+            {isLastScan ? t("descriptionLastScan") : t("description", {current: String(scanIndex + 1), total: String(totalScans)})}
           </DialogDescription>
         </DialogHeader>
 
@@ -113,22 +113,20 @@ export default function RemoveScanDialog(): React.JSX.Element {
             <div className={styles["previewImage"]}>
               <Image
                 src={scan.location}
-                alt={`Scan ${scanIndex + 1}`}
+                alt={t("scanAlt", {index: String(scanIndex + 1)})}
                 width={400}
                 height={300}
                 className={styles["scanPreviewImage"]}
               />
             </div>
-            <p className={styles["previewCaption"]}>Scan {scanIndex + 1}</p>
+            <p className={styles["previewCaption"]}>{t("scanCaption", {index: String(scanIndex + 1)})}</p>
           </div>
         ) : null}
 
         {isLastScan ? (
           <div className={styles["warningBox"]}>
-            <p className={styles["warningTitle"]}>Cannot remove last scan</p>
-            <p className={styles["warningText"]}>
-              Every invoice must have at least one scan attached. Add another scan before removing this one.
-            </p>
+            <p className={styles["warningTitle"]}>{t("warning.title")}</p>
+            <p className={styles["warningText"]}>{t("warning.description")}</p>
           </div>
         ) : null}
 
@@ -138,7 +136,7 @@ export default function RemoveScanDialog(): React.JSX.Element {
             variant='outline'
             onClick={close}
             disabled={isDeleting}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
@@ -148,12 +146,12 @@ export default function RemoveScanDialog(): React.JSX.Element {
             {isDeleting ? (
               <>
                 <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
-                Removing...
+                {t("buttons.removing")}
               </>
             ) : (
               <>
                 <TbTrash className='mr-2 h-4 w-4' />
-                Remove Scan
+                {t("buttons.remove")}
               </>
             )}
           </Button>

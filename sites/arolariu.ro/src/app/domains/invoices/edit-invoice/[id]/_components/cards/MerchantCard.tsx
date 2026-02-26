@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./MerchantCard.module.scss";
@@ -54,13 +55,14 @@ type Props = {
  * @see {@link Merchant} - Merchant type definition
  */
 export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.MerchantCard");
   const {open: openMerchantInfoDialog} = useDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
   const {open: openMerchantReceiptsDialog} = useDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
-        <CardTitle>Merchant</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className={styles["merchantInfo"]}>
@@ -69,7 +71,7 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
           </div>
           <div>
             <p className={styles["merchantName"]}>{merchant.name}</p>
-            <p className={styles["merchantAddress"]}>Address: {merchant.address.address}</p>
+            <p className={styles["merchantAddress"]}>{t("addressLabel", {address: merchant.address.address})}</p>
           </div>
         </div>
         <div className={styles["actions"]}>
@@ -80,12 +82,12 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                   variant='outline'
                   className='group w-full cursor-pointer'
                   onClick={openMerchantInfoDialog}>
-                  <span>View Merchant Details</span>
+                  <span>{t("buttons.viewMerchantDetails")}</span>
                   <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>See detailed information about this merchant</p>
+                <p>{t("tooltips.viewMerchantDetails")}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -98,12 +100,12 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                   className='group w-full cursor-pointer'
                   onClick={openMerchantReceiptsDialog}>
                   <TbShoppingBag className='mr-2 h-4 w-4' />
-                  <span>View All Receipts</span>
+                  <span>{t("buttons.viewAllReceipts")}</span>
                   <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
-                <p>View all receipts from this merchant</p>
+                <p>{t("tooltips.viewAllReceipts")}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

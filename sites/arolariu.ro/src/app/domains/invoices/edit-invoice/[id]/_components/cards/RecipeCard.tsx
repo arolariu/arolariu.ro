@@ -20,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {
   TbClock,
   TbEdit,
@@ -79,10 +80,15 @@ type Props = {
  * @see {@link RecipeComplexity} - Complexity enum for badge styling
  */
 export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.RecipeCard");
   const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;
 
-  const complexityKey = Object.keys(RecipeComplexity).at(complexity);
-  const complexityAsString = RecipeComplexity[complexityKey as keyof typeof RecipeComplexity];
+  const complexityLabelMap: Readonly<Record<RecipeComplexity, string>> = {
+    [RecipeComplexity.Unknown]: t("complexity.unknown"),
+    [RecipeComplexity.Easy]: t("complexity.easy"),
+    [RecipeComplexity.Normal]: t("complexity.normal"),
+    [RecipeComplexity.Hard]: t("complexity.hard"),
+  };
 
   const getBadgeVariant = () => {
     switch (complexity) {
@@ -108,7 +114,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
           <Badge
             variant={getBadgeVariant()}
             className='mt-1'>
-            {complexityAsString}
+            {complexityLabelMap[complexity]}
           </Badge>
         </CardTitle>
         <CardAction className='mb-2 flex items-start justify-between'>
@@ -125,30 +131,30 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                 className='cursor-pointer'
                 onClick={openViewDialog}>
                 <TbEdit className='mr-2 h-4 w-4' />
-                View
+                {t("dropdown.view")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className='cursor-pointer'
                 onClick={openEditDialog}>
                 <TbEdit className='mr-2 h-4 w-4' />
-                Edit
+                {t("dropdown.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className='cursor-pointer text-red-500'
                 onClick={openDeleteDialog}>
                 <TbTrash className='mr-2 h-4 w-4' />
-                Delete
+                {t("dropdown.delete")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className='text-accent-primary cursor-pointer'
                 onClick={openShareDialog}>
                 <TbShare className='mr-2 h-4 w-4' />
-                Share
+                {t("dropdown.share")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className='text-muted-foreground cursor-pointer'>
                 <TbHeart className='mr-2 h-4 w-4' />
-                Mark as Favorite
+                {t("dropdown.markAsFavorite")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -158,7 +164,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <p className={styles["description"]}>{description}</p>
 
         <div className={styles["ingredientsSection"]}>
-          <h4 className={styles["ingredientsLabel"]}>Ingredients:</h4>
+          <h4 className={styles["ingredientsLabel"]}>{t("ingredients.label")}</h4>
           <ul className={styles["ingredientsList"]}>
             {ingredients.slice(0, 3).map((ingredient) => (
               <li key={ingredient.rawName}>{ingredient.rawName}</li>
@@ -167,10 +173,10 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <li className={styles["moreIngredients"]}>+{ingredients.length - 3} more</li>
+                    <li className={styles["moreIngredients"]}>{t("ingredients.more", {count: String(ingredients.length - 3)})}</li>
                   </TooltipTrigger>
                   <TooltipContent className='max-w-xs'>
-                    <p className={styles["tooltipTitle"]}>Additional ingredients:</p>
+                    <p className={styles["tooltipTitle"]}>{t("ingredients.additionalLabel")}</p>
                     <ul className={styles["tooltipIngredientsList"]}>
                       {ingredients.slice(3).map((ingredient) => (
                         <li key={ingredient.rawName}>{ingredient.rawName}</li>
@@ -190,22 +196,22 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipTrigger asChild>
                 <div className={styles["timeItem"]}>
                   <TbClock className='mr-1 h-3 w-3' />
-                  Prep: {preparationTime}&lsquo;
+                  {t("timing.prepLabel", {minutes: String(preparationTime)})}
                 </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
-                <p>Preparation time is {preparationTime} minutes.</p>
+                  <p>{t("timing.prepTooltip", {minutes: String(preparationTime)})}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className={styles["timeItem"]}>
                   <TbToolsKitchen className='mr-1 h-3 w-3' />
-                  Cook: {cookingTime}&lsquo;
+                  {t("timing.cookLabel", {minutes: String(cookingTime)})}
                 </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
-                <p>Cooking time is {cookingTime} minutes.</p>
+                  <p>{t("timing.cookTooltip", {minutes: String(cookingTime)})}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -216,14 +222,14 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <Button
           variant='ghost'
           size='sm'>
-          Visit Reference
+          {t("buttons.visitReference")}
           <TbExternalLink className='ml-2 h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
         </Button>
         <Button
           variant='default'
           size='sm'
           onClick={openViewDialog}>
-          View Recipe
+          {t("buttons.viewRecipe")}
           <TbLayoutBottombarExpand />
         </Button>
       </CardFooter>

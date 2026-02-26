@@ -3,6 +3,7 @@
 import {formatEnum} from "@/lib/utils.generic";
 import {RecipeComplexity} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./InvoiceTabs.module.scss";
@@ -23,6 +24,7 @@ function getComplexityVariant(complexity: RecipeComplexity): "default" | "second
 
 export function InvoiceTabs(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
+  const t = useTranslations("I18nConsolidation.Invoices.InvoiceTabs");
 
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
@@ -35,13 +37,13 @@ export function InvoiceTabs(): React.JSX.Element {
               value='recipes'
               className='gap-2'>
               <TbChefHat className='h-4 w-4' />
-              Possible Recipes
+              {t("tabs.possibleRecipes")}
             </TabsTrigger>
             <TabsTrigger
               value='info'
               className='gap-2'>
               <TbInfoCircle className='h-4 w-4' />
-              Additional Info
+              {t("tabs.additionalInfo")}
             </TabsTrigger>
           </TabsList>
         </CardHeader>
@@ -66,10 +68,10 @@ export function InvoiceTabs(): React.JSX.Element {
                       <div className={styles["recipeDetails"]}>
                         <div className={styles["recipeDetailItem"]}>
                           <TbClock className='h-4 w-4' />
-                          <span>{recipe.duration} min</span>
+                          <span>{t("recipe.duration", {minutes: String(recipe.duration)})}</span>
                         </div>
                         <div className={styles["recipeDetailMuted"]}>
-                          Prep: {recipe.preparationTime}m • Cook: {recipe.cookingTime}m
+                          {t("recipe.prepCook", {prep: String(recipe.preparationTime), cook: String(recipe.cookingTime)})}
                         </div>
                       </div>
                       {Boolean(recipe.referenceForMoreDetails) && (
@@ -81,7 +83,7 @@ export function InvoiceTabs(): React.JSX.Element {
                             href={recipe.referenceForMoreDetails}
                             target='_blank'
                             rel='noopener noreferrer'>
-                            View Recipe
+                            {t("recipe.viewRecipe")}
                             <TbExternalLink className='ml-1 h-3 w-3' />
                           </a>
                         </Button>
@@ -93,7 +95,7 @@ export function InvoiceTabs(): React.JSX.Element {
             ) : (
               <div className={styles["emptyState"]}>
                 <TbChefHat className='text-muted-foreground/50 h-12 w-12' />
-                <p className={styles["emptyStateText"]}>No recipe suggestions available</p>
+                <p className={styles["emptyStateText"]}>{t("empty.recipes")}</p>
               </div>
             )}
           </TabsContent>
@@ -114,7 +116,7 @@ export function InvoiceTabs(): React.JSX.Element {
             ) : (
               <div className={styles["emptyState"]}>
                 <TbInfoCircle className='text-muted-foreground/50 h-12 w-12' />
-                <p className={styles["emptyStateText"]}>No additional information available</p>
+                <p className={styles["emptyStateText"]}>{t("empty.additionalInfo")}</p>
               </div>
             )}
           </TabsContent>

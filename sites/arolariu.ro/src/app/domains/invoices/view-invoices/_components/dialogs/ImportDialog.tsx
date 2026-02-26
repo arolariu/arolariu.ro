@@ -13,6 +13,7 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useCallback, useMemo, useState} from "react";
 import {useDropzone, type Accept} from "react-dropzone";
 import {TbAlertCircle, TbCheck, TbFile, TbFileSpreadsheet, TbFileText, TbFileTypePdf, TbUpload} from "react-icons/tb";
@@ -35,6 +36,7 @@ const ACCEPT_TYPES: Record<ImportFileFormat, Accept> = {
  * @returns The ImportDialog component, CSR'ed.
  */
 export default function ImportDialog(): React.JSX.Element {
+  const t = useTranslations("I18nConsolidation.Invoices.ImportDialog");
   const [files, setFiles] = useState<File[]>([]);
   const {isOpen, open, close} = useDialog("VIEW_INVOICES__IMPORT");
   const [activeTab, setActiveTab] = useState<ImportFileFormat>("csv");
@@ -117,8 +119,8 @@ export default function ImportDialog(): React.JSX.Element {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-[525px]'>
         <DialogHeader>
-          <DialogTitle>Import Invoices</DialogTitle>
-          <DialogDescription>Upload your invoice files to import them into the system.</DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -126,9 +128,9 @@ export default function ImportDialog(): React.JSX.Element {
           onValueChange={handleTabChange}
           className='w-full'>
           <TabsList className='grid w-full grid-cols-3'>
-            <TabsTrigger value='csv'>CSV</TabsTrigger>
-            <TabsTrigger value='pdf'>PDF</TabsTrigger>
-            <TabsTrigger value='xlsx'>Excel</TabsTrigger>
+            <TabsTrigger value='csv'>{t("tabs.csv")}</TabsTrigger>
+            <TabsTrigger value='pdf'>{t("tabs.pdf")}</TabsTrigger>
+            <TabsTrigger value='xlsx'>{t("tabs.xlsx")}</TabsTrigger>
           </TabsList>
 
           <div
@@ -146,19 +148,19 @@ export default function ImportDialog(): React.JSX.Element {
                 transition={{duration: 0.2}}>
                 <TbUpload className={styles["uploadIcon"]} />
               </motion.div>
-              <h3 className={styles["dropzoneTitle"]}>{isDragActive ? "Drop files here..." : "Drag & drop files here"}</h3>
-              <p className={styles["dropzoneSubtitle"]}>or click to browse files</p>
+              <h3 className={styles["dropzoneTitle"]}>{isDragActive ? t("dropzone.dropHere") : t("dropzone.dragAndDrop")}</h3>
+              <p className={styles["dropzoneSubtitle"]}>{t("dropzone.orClickBrowse")}</p>
               <p className={styles["dropzoneHint"]}>
-                {activeTab === "csv" && "Accepts .csv files (max 10MB)"}
-                {activeTab === "pdf" && "Accepts .pdf files (max 10MB)"}
-                {activeTab === "xlsx" && "Accepts .xlsx and .xls files (max 10MB)"}
+                {activeTab === "csv" && t("dropzone.acceptsCsv")}
+                {activeTab === "pdf" && t("dropzone.acceptsPdf")}
+                {activeTab === "xlsx" && t("dropzone.acceptsXlsx")}
               </p>
             </div>
           </div>
 
           {files.length > 0 && (
             <div className={styles["fileListWrapper"]}>
-              <h4 className={styles["fileListTitle"]}>Selected Files</h4>
+              <h4 className={styles["fileListTitle"]}>{t("selectedFiles")}</h4>
               <div className={styles["fileList"]}>
                 {files.map((file, index) => (
                   <div
@@ -173,7 +175,7 @@ export default function ImportDialog(): React.JSX.Element {
                       size='sm'
                       data-index={index}
                       onClick={handleRemoveClick}>
-                      Remove
+                      {t("remove")}
                     </Button>
                   </div>
                 ))}
@@ -190,7 +192,7 @@ export default function ImportDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["statusSuccess"]}>
               <TbCheck className={styles["statusIcon"]} />
-              <span>Files imported successfully!</span>
+              <span>{t("status.success")}</span>
             </motion.div>
           )}
 
@@ -201,7 +203,7 @@ export default function ImportDialog(): React.JSX.Element {
               exit={{opacity: 0}}
               className={styles["statusError"]}>
               <TbAlertCircle className={styles["statusIcon"]} />
-              <span>Error importing files. Please try again.</span>
+              <span>{t("status.error")}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -210,12 +212,12 @@ export default function ImportDialog(): React.JSX.Element {
           <Button
             variant='outline'
             onClick={close}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             onClick={handleImport}
             disabled={files.length === 0 || uploadStatus !== "idle"}>
-            Import {files.length > 0 && `(${files.length})`}
+            {t("buttons.import")} {files.length > 0 && `(${files.length})`}
           </Button>
         </DialogFooter>
       </DialogContent>
