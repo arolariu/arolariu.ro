@@ -1181,7 +1181,14 @@
     "title": "Services de l'Espace de Domaine",
     "subtitle": "La plateforme <code>arolariu.ro</code> offre une large gamme de services sous son parapluie. <br></br> La plupart des services nécessitent que vous ayez un compte créé sur cette plateforme, afin que vos données puissent être synchronisées en toute sécurité entre tous les services du domaine. <br></br> <br></br> Ici vous pouvez voir une vitrine de tous les services de domaine disponibles pour l'exploration.",
     "services": {
-      "callToAction": "Visiter ce service de domaine"
+      "callToAction": "Visiter ce service de domaine",
+      "invoices": {
+        "card": {
+          "description": "Ce service de l'espace de domaine aide à la transformation numérique des reçus physiques. Il permet aux utilisateurs de télécharger des reçus et d'obtenir des informations soigneusement élaborées sur leurs habitudes de dépenses.",
+          "title": "Système de Gestion des Factures",
+          "imageAlt": "Illustration du système de gestion des factures montrant la numérisation des reçus"
+        }
+      }
     }
   },
   "Invoices": {

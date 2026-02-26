@@ -1181,7 +1181,14 @@
     "title": "Servicii disponibile",
     "subtitle": "Platforma <code>arolariu.ro</code> oferă o gamă largă de servicii sub umbrela sa. <br></br> Majoritatea serviciilor necesită să aveți un cont creat pe această platformă, astfel încât datele dumneavoastră să poată fi sincronizate în siguranță între toate serviciile domeniului. <br></br> <br></br> Aici puteți vedea o prezentare a tuturor serviciilor de domeniu disponibile pentru explorare.",
     "services": {
-      "callToAction": "Vizitați acest serviciu de domeniu"
+      "callToAction": "Vizitați acest serviciu de domeniu",
+      "invoices": {
+        "card": {
+          "description": "Acest serviciu de domeniu ajută la transformarea digitală a chitanțelor fizice. \nPermite utilizatorilor să încarce chitanțe și să obțină informații bine elaborate despre obiceiurile lor de cheltuieli.",
+          "title": "Sistem de management al bonurilor fiscale",
+          "imageAlt": "Ilustrație a Sistemului de Management al Facturilor care prezintă digitalizarea chitanțelor"
+        }
+      }
     }
   },
   "Invoices": {

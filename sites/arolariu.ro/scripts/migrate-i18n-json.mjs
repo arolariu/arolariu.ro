@@ -95,13 +95,17 @@ function migrateMessages(src) {
 
   // ─── 10. Domains (hub only — invoice subtree moved to Invoices) ───
   const domainServices = clone(src.Domains?.services ?? {});
-  // Remove invoices from the services — they're promoted to top-level
+  // Keep invoice SERVICE CARD data for hub page, but remove deep service/ui content
+  const invoiceCard = clone(src.Domains?.services?.invoices?.card ?? {});
   delete domainServices.invoices;
   target.Domains = {
     metadata: clone(src.Domains?.__metadata__ ?? {}),
     title: src.Domains?.title,
     subtitle: src.Domains?.subtitle,
-    services: domainServices,
+    services: {
+      ...domainServices,
+      invoices: { card: invoiceCard },
+    },
   };
 
   // ─── 11. Invoices (promoted from Domains.services.invoices) ───

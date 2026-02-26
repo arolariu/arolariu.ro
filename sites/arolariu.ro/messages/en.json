@@ -1181,7 +1181,14 @@
     "title": "Domain Space Services",
     "subtitle": "The <code>arolariu.ro</code> platform offers a wide range of services under it&apos;s umbrella. <br></br> Most of the services require that you have an account created on this platform, so that your data can be safely synchronized between all of the domain services. <br></br> <br></br> Here you can see a showcase of all domain services that are available for exploration.",
     "services": {
-      "callToAction": "Visit this domain service"
+      "callToAction": "Visit this domain service",
+      "invoices": {
+        "card": {
+          "description": "This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits.",
+          "title": "Invoice Management System",
+          "imageAlt": "Illustration of the Invoice Management System showing receipt digitization"
+        }
+      }
     }
   },
   "Invoices": {
