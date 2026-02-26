@@ -57,7 +57,7 @@ import styles from "./MerchantDialog.module.scss";
  * @see {@link MerchantCategory} - Category enum for badge display
  */
 export default function MerchantDialog(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.MerchantDialog");
+  const t = useTranslations("Domains.services.invoices.ui.merchantDialog");
   const {
     currentDialog: {payload},
     isOpen,

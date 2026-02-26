@@ -40,7 +40,7 @@ import styles from "./TimelineSharedWithList.module.scss";
  * ```
  */
 export function TimelineSharedWithList(): React.JSX.Element | null {
-  const t = useTranslations("I18nConsolidation.Invoices.TimelineSharedWithList");
+  const t = useTranslations("Domains.services.invoices.ui.timelineSharedWithList");
   const {invoice} = useInvoiceContext();
   const {userInformation} = useUserInformation();
   const {open: openShareDialog} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});

@@ -44,7 +44,7 @@ type Props = Readonly<{
  * @returns This function renders the generative view for invoice analysis.
  */
 export default function RenderGenerativeView({invoices}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.GenerativeView");
+  const t = useTranslations("Domains.services.invoices.ui.generativeView");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",

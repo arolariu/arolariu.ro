@@ -19,7 +19,7 @@ import {v4 as uuidv4} from "uuid";
 /**
  * Status of a pending upload
  */
-type PendingUploadStatus = "idle" | "uploading" | "completed" | "failed";
+type PendingUploadStatus = "idle" | "uploading" | "retrying" | "completed" | "failed";
 
 /**
  * Represents a file pending upload
@@ -32,6 +32,8 @@ interface PendingUpload {
   size: number;
   preview: string;
   status: PendingUploadStatus;
+  progress: number;
+  attempts: number;
   error?: string;
 }
 
@@ -139,6 +141,8 @@ export function ScanUploadProvider({children}: Readonly<{children: React.ReactNo
           size: file.size,
           preview,
           status: "idle",
+          progress: 0,
+          attempts: 0,
         });
       }
     }

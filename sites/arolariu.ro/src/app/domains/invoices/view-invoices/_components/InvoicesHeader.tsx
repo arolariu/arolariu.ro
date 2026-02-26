@@ -15,7 +15,7 @@ import styles from "./InvoicesHeader.module.scss";
  * @returns The rendered invoices header.
  */
 export default function InvoicesHeader(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.InvoicesHeader");
+  const t = useTranslations("Domains.services.invoices.ui.invoicesHeader");
   const {open: openImportDialog} = useDialog("VIEW_INVOICES__IMPORT");
   const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
 

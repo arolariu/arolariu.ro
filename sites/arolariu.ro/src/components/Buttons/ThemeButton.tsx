@@ -87,7 +87,7 @@ const SunIcon = (): React.JSX.Element => (
 export default function ThemeButton(): React.JSX.Element {
   const [mounted, setMounted] = useState<boolean>(false);
   const {theme, setTheme} = useTheme();
-  const t = useTranslations("I18nConsolidation.ThemeButton");
+  const t = useTranslations("Shared.themeButton");
 
   useEffect(() => {
     setMounted(true);

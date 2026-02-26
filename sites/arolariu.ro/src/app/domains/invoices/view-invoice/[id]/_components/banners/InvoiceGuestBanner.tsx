@@ -5,7 +5,7 @@ import {useTranslations} from "next-intl";
 import {TbInfoCircle} from "react-icons/tb";
 
 export function InvoiceGuestBanner(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.InvoiceGuestBanner");
+  const t = useTranslations("Domains.services.invoices.ui.invoiceGuestBanner");
   return (
     <Alert
       variant='default'

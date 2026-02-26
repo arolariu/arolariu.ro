@@ -71,7 +71,7 @@ type Props = {
  * @see {@link Invoice} - Invoice type with sharedWith array
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.SharingCard");
+  const t = useTranslations("Domains.services.invoices.ui.sharingCard");
   const {open} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
   const {userInformation} = useUserInformation();
   const router = useRouter();

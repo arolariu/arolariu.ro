@@ -63,7 +63,7 @@ type Props = {
  * @see {@link VALID_METADATA_KEYS} - Predefined metadata key definitions
  */
 export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.MetadataTab");
+  const t = useTranslations("Domains.services.invoices.ui.metadataTab");
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__METADATA", "add");
   const {open: openEditDialog} = useDialog("EDIT_INVOICE__METADATA", "edit", metadata);
   const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__METADATA", "delete", metadata);

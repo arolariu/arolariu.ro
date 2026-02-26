@@ -63,7 +63,7 @@ type Props = {
  * @see {@link Invoice} - Invoice type for savings calculations
  */
 export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
-  const t = useTranslations("I18nConsolidation.Invoices.TriviaTips");
+  const t = useTranslations("Domains.services.invoices.ui.triviaTips");
 
   // Mock savings tips
   const savingsTips = [

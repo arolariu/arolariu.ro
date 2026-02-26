@@ -24,7 +24,7 @@ function getTrendColor(value: number): string {
 }
 
 export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.ComparisonStatsCard");
+  const t = useTranslations("Domains.services.invoices.ui.comparisonStatsCard");
   const percentageProgress = Math.min(((stats.currentAmount - stats.minAmount) / (stats.maxAmount - stats.minAmount)) * 100, 100);
 
   return (

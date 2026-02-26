@@ -41,7 +41,7 @@ function CustomTooltip({active, payload, currency, quantityLabel}: CustomTooltip
 }
 
 export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.ItemsBreakdownChart");
+  const t = useTranslations("Domains.services.invoices.ui.itemsBreakdownChart");
   const chartConfig = {
     price: {
       label: t("labels.price"),

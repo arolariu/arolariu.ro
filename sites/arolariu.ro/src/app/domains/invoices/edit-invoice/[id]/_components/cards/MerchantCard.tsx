@@ -55,7 +55,7 @@ type Props = {
  * @see {@link Merchant} - Merchant type definition
  */
 export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.MerchantCard");
+  const t = useTranslations("Domains.services.invoices.ui.merchantCard");
   const {open: openMerchantInfoDialog} = useDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
   const {open: openMerchantReceiptsDialog} = useDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);
 

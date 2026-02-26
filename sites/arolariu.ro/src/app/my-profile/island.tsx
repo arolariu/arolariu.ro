@@ -43,7 +43,7 @@ const PANEL_VARIANTS = {
 
 export default function RenderMyProfileScreen({user}: Props): React.JSX.Element {
   const t = useTranslations("MyProfile.sidebar.nav");
-  const tStats = useTranslations("I18nConsolidation.MyProfileIsland");
+  const tStats = useTranslations("MyProfile.island");
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const [settings, setSettings] = useState<UserSettings>(getDefaultSettings);
   const statistics = getMockStatistics();

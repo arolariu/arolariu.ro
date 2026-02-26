@@ -137,7 +137,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareInvoiceDialog(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.ShareInvoiceDialog");
+  const t = useTranslations("Domains.services.invoices.ui.shareInvoiceDialog");
   const [sharingMode, setSharingMode] = useState<SharingMode>("selection");
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");

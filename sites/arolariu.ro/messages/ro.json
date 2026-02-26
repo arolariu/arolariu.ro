@@ -930,7 +930,7 @@
       "mitDescription": "Licență permisivă care permite utilizare largă",
       "apacheDescription": "Licență open-source prietenoasă pentru întreprinderi"
     },
-    "lastUpdate": "Ultima actualizare pe:",
+    "lastUpdate": "Ultima actualizare pe: {date}",
     "packages": {
       "subtitle": "Acest site web nu ar fi putut fi posibil fără următoarele pachete terțe. \nAș dori să le mulțumesc autorilor acestor pachete pentru munca grea și dăruirea lor pentru comunitatea open-source.",
       "title": "Pachete terțe"
@@ -1310,6 +1310,45 @@
             "errors": {
               "unsupportedType": "Tip de fișier neacceptat: {type}",
               "tooLarge": "Fișier prea mare: {name} (max 10MB)"
+            },
+            "uploadArea": {
+              "aria": {
+                "uploadFiles": "Încarcă fișiere"
+              },
+              "empty": {
+                "title": "Trage și plasează fișierele aici",
+                "dropActive": "Plasează fișierele pentru încărcare",
+                "dropInactive": "Fă clic sau trage fișiere pentru încărcare",
+                "formats": "Formate acceptate: JPG, PNG, PDF (maxim 10MB fiecare)",
+                "note": "Poți selecta mai multe fișiere.",
+                "chooseFiles": "Alege fișiere"
+              },
+              "compact": {
+                "dropActive": "Plasează fișierele pentru a le adăuga",
+                "dropInactive": "Trage fișiere aici sau fă clic pentru a naviga",
+                "subtitle": "JPG, PNG, PDF până la 10MB"
+              },
+              "actions": {
+                "clearAll": "Șterge tot",
+                "uploading": "Se încarcă...",
+                "uploadScans": "Încarcă scanările"
+              },
+              "tooltips": {
+                "clearAll": "Elimină toate încărcările în așteptare",
+                "uploadScans": "Pornește încărcarea tuturor scanărilor în așteptare"
+              }
+            },
+            "preview": {
+              "title": "Încărcări în așteptare ({count})",
+              "status": {
+                "pending": "În așteptare",
+                "uploading": "Se încarcă",
+                "retrying": "Reîncercare",
+                "completed": "Finalizat",
+                "failed": "Eșuat"
+              },
+              "removeTooltip": "Elimină acest fișier",
+              "retryAttempt": "Reîncercarea {attempt}"
             }
           },
           "view-scans": {
@@ -1488,6 +1527,1479 @@
             "subtitle": "Acesta este inventarul dvs. de bonuri digitale. <br></br> Aici puteți găsi bonurile pe care le-ați încărcat până acum. <br></br> Făcând clic pe o chitanță, veți fi redirecționat către pagina chitanței specifice.",
             "title": "Bine ați venit, {name}!"
           }
+        },
+        "ui": {
+          "viewInvoicesIsland": {
+            "tabs": {
+              "invoices": "Facturi",
+              "statistics": "Statistici",
+              "liveAnalysis": "Analiză live"
+            }
+          },
+          "invoicesHeader": {
+            "title": "Gestionare facturi",
+            "description": "Gestionează-ți bonurile și urmărește-ți obiceiurile de cheltuieli",
+            "actions": {
+              "import": "Importă",
+              "export": "Exportă",
+              "print": "Printează",
+              "newInvoice": "Factură nouă"
+            },
+            "tooltips": {
+              "import": "Importă facturi din fișiere",
+              "export": "Exportă toate facturile",
+              "print": "Printează facturile",
+              "newInvoice": "Creează o factură nouă"
+            }
+          },
+          "invoicesView": {
+            "searchPlaceholder": "Caută facturi...",
+            "filters": {
+              "category": "Categorie",
+              "timeOfDay": "Momentul zilei"
+            },
+            "categories": {
+              "all": "Toate categoriile",
+              "groceries": "Alimente",
+              "dining": "Mese în oraș",
+              "utilities": "Utilități",
+              "entertainment": "Divertisment",
+              "travel": "Călătorii",
+              "other": "Altele"
+            },
+            "times": {
+              "all": "Toate intervalele",
+              "day": "Zi (6-18)",
+              "night": "Noapte (18-6)"
+            },
+            "placeholderPanel": "Vor fi adăugate în curând mai multe controale de filtrare.",
+            "viewModes": {
+              "table": "Table vede",
+              "grid": "Grid vede"
+            }
+          },
+          "generativeView": {
+            "welcomeMessage": "Salut! Sunt asistentul tău de analiză a facturilor. Cu ce te pot ajuta astăzi? Încearcă comenzi precum /find pentru a căuta facturi.",
+            "title": "Analiză live",
+            "subtitle": "Discută cu AI pentru a-ți analiza facturile și pentru a primi analize utile",
+            "help": "Ajutor",
+            "tabs": {
+              "chat": "Conversație",
+              "settings": "Setări"
+            },
+            "chatDescription": "Discută cu AI pentru a-ți analiza facturile și pentru a primi analize utile. Încearcă comenzi precum /find pentru a căuta facturi.",
+            "settings": {
+              "title": "Chat setări",
+              "description": "Configurează preferințele asistentului tău AI",
+              "historyLabel": "Chat istoric",
+              "retentionPlaceholder": "Selectează perioada de păstrare",
+              "retention": {
+                "30": "Păstrează 30 de zile",
+                "60": "Păstrează 60 de zile",
+                "90": "Păstrează 90 de zile",
+                "none": "Don't salvează istoric"
+              },
+              "dataAccessTitle": "Acces la date",
+              "allowInvoiceData": "Permite accesul la datele facturii",
+              "allowMerchantData": "Permite accesul la datele comerciantului",
+              "notificationPreferences": "Preferințe de notificare",
+              "notifyInsights": "Notifică-mă despre analize noi",
+              "save": "Salvează setări"
+            }
+          },
+          "deleteInvoiceDialog": {
+            "title": "Șterge factură",
+            "description": "Această acțiune nu poate fi anulată. Te rugăm să verifici atent înainte de a continua.",
+            "deleting": {
+              "title": "Ștergere factură...",
+              "description": "Te rugăm să aștepți cât timp ștergem toate datele asociate."
+            },
+            "impact": {
+              "title": "Ștergere permanentă",
+              "intro": "Următoarele date vor fi șterse definitiv:",
+              "invoiceRecord": "Înregistrarea facturii și metadatele",
+              "uploadedScans": "{count} scanare(i) încărcată(e)",
+              "lineItems": "{count} line articol(s)",
+              "sharedAccess": "Acces partajat pentru {count} utilizator(i)"
+            },
+            "confirmation": {
+              "typeToConfirm": "Tastează <highlight>{name}</highlight> pentru confirmare:",
+              "understoodLabel": "Înțeleg că această acțiune este permanentă",
+              "understoodDescription": "Această factură și toate datele ei vor fi șterse definitiv și nu vor putea fi recuperate."
+            },
+            "buttons": {
+              "cancel": "Anulează",
+              "deleting": "Se șterge...",
+              "deletePermanently": "Șterge permanent"
+            },
+            "toasts": {
+              "deletedTitle": "Factură ștearsă",
+              "deletedDescription": "Factura a fost ștearsă cu succes.",
+              "deleteFailedTitle": "Șterge eșuat",
+              "deleteFailedDescription": "Nu am putut șterge această factură. Te rugăm să încerci din nou."
+            },
+            "console": {
+              "deleteError": "Eroare ștergere factură:"
+            }
+          },
+          "shareInvoiceDialog": {
+            "title": "Partajează factură",
+            "selection": {
+              "description": "Alege cum vrei să partajezi această factură. Opțiunea aleasă influențează cine poate avea acces.",
+              "publicTitle": "Partajare publică",
+              "publicDescription": "Generează un link sau un cod QR pe care <strong>oricine</strong> îl poate folosi pentru a vedea această factură.",
+              "privateTitle": "Privat sharing",
+              "privateDescription": "Trimite o invitație pe email unei <strong>persoane specifice</strong>. Doar acea persoană va avea acces.",
+              "privacyNoticeTitle": "Notă de confidențialitate",
+              "privacyNoticeDescription": "Linkurile publice pot fi accesate de oricine are URL-ul. Partajarea privată limitează accesul la destinatarul specificat."
+            },
+            "dialogDescription": {
+              "currentlyPublic": "\"{invoiceName}\" este publică în acest moment",
+              "selection": "Alege cum să partajezi „{invoiceName}”",
+              "public": "Partajează \"{invoiceName}\" public",
+              "private": "Trimite \"{invoiceName}\" în privat"
+            },
+            "toasts": {
+              "copyLink": {
+                "loadingPublic": "Se copiază linkul...",
+                "loadingMakePublic": "Factura devine publică...",
+                "successPublic": "Link copiat în clipboard!",
+                "successMadePublic": "Factura este acum publică! Link copiat în clipboard.",
+                "error": "Eșuat: {message}"
+              },
+              "copyQr": {
+                "loadingPublic": "Se copiază codul QR...",
+                "loadingMakePublic": "Factura devine publică...",
+                "successPublic": "Cod QR copiat în clipboard!",
+                "successMadePublic": "Factura este acum publică! Cod QR copiat în clipboard.",
+                "error": "Eșuat: {message}"
+              },
+              "sendEmail": {
+                "loading": "Se trimite invitația către {email}...",
+                "success": "Invitație trimisă către {email}!",
+                "error": "Eșuat: {message}"
+              },
+              "revoke": {
+                "loading": "Se trimite cererea de revocare către server...",
+                "success": "Factura este acum privată. Linkurile existente nu vor mai funcționa.",
+                "error": "Revocarea accesului a eșuat: {message}"
+              }
+            },
+            "errors": {
+              "qrNotFound": "Elementul codului QR nu a fost găsit"
+            }
+          },
+          "shareInvoiceDialogPublic": {
+            "tabs": {
+              "directLink": "Link direct",
+              "qrCode": "Cod QR"
+            },
+            "hints": {
+              "link": "Copiază acest link și partajează-l. Oricine îl primește va putea vedea factura.",
+              "qr": "Oricine scanează acest cod QR va fi redirecționat pentru a vedea factura."
+            },
+            "copyQrImage": "Copiază codul QR ca imagine",
+            "alreadyPublic": {
+              "title": "Această factură este publică în acest moment",
+              "description": "Această factură este accesibilă public. <strong>Oricine are linkul o poate vedea</strong>, inclusiv toate detaliile facturii, articolele și sumele. Poți revoca accesul public oricând pentru a o face din nou privată.",
+              "revoke": "Revocă accesul public",
+              "revoking": "Se revocă accesul...",
+              "revokeHint": "Factura va deveni privată. Linkurile existente nu vor mai funcționa."
+            },
+            "backToOptions": "Înapoi la opțiuni",
+            "warning": {
+              "title": "Avertisment privind accesul public",
+              "description": "Prin partajarea publică a acestei facturi, <strong>oricine are linkul o va putea vedea</strong>. Asta include toate detaliile facturii, articolele și sumele. Continuă doar dacă vrei ca această factură să fie accesibilă publicului."
+            }
+          },
+          "shareInvoiceDialogPrivate": {
+            "backToOptions": "Înapoi la opțiuni",
+            "title": "Privat sharing",
+            "description": "Invitația va fi trimisă direct la adresa de email pe care o specifici. Doar acest destinatar va primi acces pentru a vedea factura.",
+            "emailLabel": "Adresa de email a destinatarului",
+            "emailPlaceholder": "name@example.com",
+            "emailHint": "O invitație pe email va fi trimisă la această adresă cu un link privat pentru a vedea factura.",
+            "sendInvitation": "Trimite invitație privată"
+          },
+          "editInvoiceContext": {
+            "toasts": {
+              "noChanges": "Nu există modificări de salvat",
+              "updated": "Factura a fost actualizată cu succes",
+              "saveFailed": "Salvarea modificărilor a eșuat"
+            },
+            "console": {
+              "saveFailed": "Salvarea facturii a eșuat:"
+            }
+          },
+          "addScanDialog": {
+            "title": "Adaugă o scanare nouă",
+            "description": "Încarcă o imagine nouă a bonului sau un document nou pentru a-l atașa la această factură.",
+            "dropzone": {
+              "dropHere": "Plasează fișierul aici...",
+              "dragAndDrop": "Trage și plasează un fișier aici",
+              "orClickBrowse": "sau apasă pentru a răsfoi",
+              "formats": "JPEG, PNG, PDF (max 10MB)"
+            },
+            "scanType": {
+              "label": "Tip scanare",
+              "placeholder": "Selectează tipul de scanare",
+              "jpeg": "Imagine JPEG",
+              "png": "Imagine PNG",
+              "pdf": "Document PDF",
+              "other": "Altele"
+            },
+            "buttons": {
+              "cancel": "Anulează",
+              "uploading": "Se încarcă...",
+              "upload": "Încarcă scan"
+            },
+            "errors": {
+              "uploadStorageFailed": "Încărcarea scanării în spațiul de stocare a eșuat",
+              "unknown": "A apărut o eroare necunoscută"
+            },
+            "toasts": {
+              "fileTooLargeTitle": "Fișier prea mare",
+              "fileTooLargeDescription": "Dimensiunea maximă a fișierului este 10MB",
+              "scanAddedTitle": "Scan adăugat cu succes",
+              "scanAddedDescription": "Scanarea a fost atașată la factură",
+              "scanFailedTitle": "Adăugarea scanării a eșuat"
+            },
+            "console": {
+              "uploadError": "Eroare la încărcarea scanării:"
+            }
+          },
+          "removeScanDialog": {
+            "title": "Elimină scan",
+            "description": "Sigur vrei să elimini scanarea {current} din {total}?",
+            "descriptionLastScan": "Aceasta este singura scanare atașată la această factură. Nu o poți elimina.",
+            "scanAlt": "Scanare {index}",
+            "scanCaption": "Scanare {index}",
+            "warning": {
+              "title": "Nu poți elimina ultima scanare",
+              "description": "Fiecare factură trebuie să aibă cel puțin o scanare atașată. Adaugă o altă scanare înainte să o elimini pe aceasta."
+            },
+            "buttons": {
+              "cancel": "Anulează",
+              "removing": "Se elimină...",
+              "remove": "Elimină scan"
+            },
+            "toasts": {
+              "cannotDeleteLastTitle": "Nu poți șterge ultima scanare",
+              "cannotDeleteLastDescription": "O factură trebuie să aibă cel puțin o scanare atașată",
+              "removedTitle": "Scan eliminat cu succes",
+              "removedDescription": "Scanarea a fost eliminată din factură",
+              "removeFailedTitle": "Eliminarea scanării a eșuat"
+            },
+            "errors": {
+              "unknown": "A apărut o eroare necunoscută"
+            },
+            "console": {
+              "deleteError": "Eroare ștergere scan:"
+            }
+          },
+          "metadataDialog": {
+            "add": {
+              "title": "Adaugă metadate",
+              "description": "Adaugă informații suplimentare la această factură"
+            },
+            "edit": {
+              "title": "Editează metadatele",
+              "description": "Actualizează valoarea acestui câmp de metadate",
+              "fieldLabel": "Câmp metadate"
+            },
+            "delete": {
+              "title": "Șterge metadatele",
+              "description": "Sigur vrei să ștergi aceste metadate?"
+            },
+            "fields": {
+              "keyLabel": "Cheie metadate",
+              "valueLabel": "Valoare metadate",
+              "keyPlaceholder": "Introdu cheia",
+              "valuePlaceholder": "Introdu valoarea"
+            },
+            "buttons": {
+              "cancel": "Anulează",
+              "save": "Salvează",
+              "delete": "Șterge"
+            }
+          },
+          "itemsDialog": {
+            "title": "Editează articolele facturii",
+            "description": "Actualizează cantitățile, prețurile sau adaugă articole noi în această factură",
+            "table": {
+              "item": "Articol",
+              "quantity": "Cantitate",
+              "unit": "Unitate",
+              "price": "Preț",
+              "total": "Total general",
+              "actions": "Acțiuni"
+            },
+            "footer": {
+              "itemsFound": "{total} articole găsite (se afișează {shown})",
+              "page": "Pagina {current} din {total}",
+              "itemsTotal": "{count, plural, one {# articol în total} few {# articole în total} other {# de articole în total}}"
+            },
+            "buttons": {
+              "previous": "Anterior",
+              "next": "Următor",
+              "addItem": "Adaugă articol",
+              "cancel": "Anulează",
+              "saveChanges": "Salvează changes"
+            },
+            "aria": {
+              "deleteItem": "Șterge articol: {name}",
+              "unnamedItem": "unnamed articol",
+              "previousPage": "Mergi la pagina anterioară (pagina {page})",
+              "nextPage": "Mergi la pagina următoare (pagina {page})",
+              "addItem": "Adaugă un articol nou în factură",
+              "cancel": "Anulează editarea și închide dialogul",
+              "save": "Salvează modificările articolelor facturii"
+            }
+          },
+          "invoiceCard": {
+            "title": "Detalii factură",
+            "importantBadge": "IMPORTANT",
+            "markImportant": "Marchează ca important",
+            "tooltips": {
+              "unmarkFavorite": "Apasă pentru a scoate din favorite",
+              "markFavorite": "Apasă pentru a marca drept favorit"
+            },
+            "fromMerchant": "De la {merchant}",
+            "descriptionPlaceholder": "Introdu descrierea facturii...",
+            "labels": {
+              "dateUtc": "Dată (UTC)",
+              "hours": "Ore",
+              "minutes": "Minute",
+              "utc": "UTC",
+              "category": "Categorie",
+              "paymentMethod": "Metodă de plată",
+              "totalAmount": "Sumă totală"
+            },
+            "placeholders": {
+              "selectCategory": "Selectează categorie",
+              "selectPaymentType": "Selectează tipul de plată"
+            }
+          },
+          "imageCard": {
+            "title": "Scanare bon",
+            "dialogTitle": "Imagine bon",
+            "scanAlt": "Scanare bon {index}",
+            "scanAltFullSize": "Scanare bon {index} - dimensiune completă",
+            "buttons": {
+              "expand": "Extinde imaginea",
+              "previous": "Anterior",
+              "next": "Următor",
+              "addScan": "Adaugă scan",
+              "remove": "Elimină"
+            },
+            "tooltips": {
+              "expand": "Vezi imaginea bonului la dimensiune completă",
+              "previous": "Vezi scanarea anterioară a bonului",
+              "next": "Vezi următoarea scanare a bonului",
+              "addScan": "Încarcă și atașează o scanare nouă a bonului",
+              "remove": "Elimină scanarea curentă a bonului"
+            },
+            "aria": {
+              "expandImage": "Apasă pentru a extinde imaginea"
+            }
+          },
+          "generalExpenseCard": {
+            "title": "Analiză cheltuieli",
+            "detectedCategory": "Electronice / Tehnologie",
+            "confidence": "Încredere: {value}%",
+            "sections": {
+              "autoDetectedCategory": "Auto-detected categorie",
+              "budgetImpact": "Impact bugetar",
+              "taxBusiness": "Opțiuni fiscale și de business",
+              "similarPurchases": "Achiziții similare anterioare"
+            },
+            "buttons": {
+              "correct": "Corect",
+              "change": "Schimbă",
+              "organize": "Organizează",
+              "export": "Exportă"
+            },
+            "aria": {
+              "confirmCategory": "Confirmă că categoria detectată este corectă",
+              "changeCategory": "Change detected categorie",
+              "organize": "Organizează această cheltuială în categorii",
+              "export": "Exportă datele cheltuielii"
+            },
+            "nearLimitAlert": "{name}: {percent}% utilizat (10 zile rămase în lună)",
+            "options": {
+              "businessExpense": "Marchează drept cheltuială de business",
+              "trackWarranty": "Urmărește garanția (standard 24 luni)",
+              "insuranceInventory": "Adaugă în inventarul de asigurare"
+            },
+            "vatReclaimable": "TVA recuperabil",
+            "budgetCategories": {
+              "electronics": "Electronice",
+              "entertainment": "Divertisment",
+              "shopping": "Cumpărături"
+            }
+          },
+          "invoicesNotFound": {
+            "title": "Lipsește ceva aici...",
+            "description": "Se pare că nu ai nicio factură asociată contului tău. Te rugăm să încarci câteva facturi și să revii mai târziu.",
+            "cta": "Încarcă aici o factură."
+          },
+          "loadingInvoices": {
+            "title": "Se încarcă facturi",
+            "description": "Se încarcă facturi..."
+          },
+          "viewInvoicesPage": {
+            "guestName": "dragă oaspete"
+          },
+          "merchantReceiptsDialog": {
+            "title": "Toate bonurile de la {merchant}",
+            "description": "Vezi și filtrează toate bonurile tale de la acest comerciant",
+            "searchPlaceholder": "Caută receipts...",
+            "filters": {
+              "date": "Dată",
+              "sort": "Sortare"
+            },
+            "dateOptions": {
+              "allTime": "Toată perioada",
+              "last30Days": "Ultimele 30 de zile",
+              "last90Days": "Ultimele 90 de zile",
+              "thisYear": "Anul acesta"
+            },
+            "sortOptions": {
+              "newest": "Cele mai noi primele",
+              "oldest": "Cele mai vechi primele"
+            },
+            "table": {
+              "receipt": "Bon",
+              "date": "Dată",
+              "itemsCount": "Articole #",
+              "actions": "Acțiuni",
+              "view": "Vede"
+            },
+            "footer": {
+              "receiptsFound": "{count} bonuri găsite (afișate {showing})",
+              "page": "Pagina {current} din {total}"
+            },
+            "buttons": {
+              "previous": "Anterior",
+              "next": "Următor"
+            }
+          },
+          "recipeDialog": {
+            "create": {
+              "title": "Adaugă o rețetă nouă",
+              "description": "Completează detaliile pentru a crea o rețetă."
+            },
+            "read": {
+              "description": "Detalii despre rețetă și instrucțiuni de preparare",
+              "noDescription": "Nu a fost furnizată nicio descriere.",
+              "notSpecified": "Nespecificat"
+            },
+            "update": {
+              "title": "Actualizează rețeta",
+              "description": "Actualizează detaliile rețetei."
+            },
+            "delete": {
+              "title": "Ești sigur?",
+              "description": "Această acțiune nu poate fi anulată. Va șterge definitiv rețeta <strong>{name}</strong> și toate datele asociate."
+            },
+            "fields": {
+              "recipeName": "Nume rețetă",
+              "description": "Descriere",
+              "ingredients": "Ingrediente",
+              "difficulty": "Nivel de dificultate",
+              "complexity": "Nivel de complexitate",
+              "instructions": "Instrucțiuni",
+              "prepTime": "Timp de pregătire",
+              "cookTime": "Timp de gătire"
+            },
+            "actions": {
+              "generateName": "Generează nume",
+              "enhanceInstructions": "Îmbunătățește instrucțiunile"
+            },
+            "tooltips": {
+              "generateName": "Generează un nume de rețetă pe baza ingredientelor și a nivelului de dificultate folosind AI",
+              "enhanceInstructions": "Folosește AI pentru a-ți îmbunătăți instrucțiunile cu mai multe detalii"
+            },
+            "placeholders": {
+              "recipeName": "Introdu numele rețetei",
+              "description": "Introdu o descriere scurtă a rețetei",
+              "selectDifficulty": "Selectează dificultatea",
+              "instructions": "Introdu instrucțiunile de gătire",
+              "prepTime": "ex. 15 minute",
+              "cookTime": "ex. 30 minute"
+            },
+            "difficulty": {
+              "easy": "Ușor",
+              "medium": "Mediu",
+              "hard": "Greu"
+            },
+            "buttons": {
+              "add": "Adaugă",
+              "cancel": "Anulează",
+              "save": "Salvează",
+              "close": "Închide",
+              "delete": "Șterge"
+            }
+          },
+          "vehicleCard": {
+            "title": "Analiza cheltuielilor vehiculului",
+            "expenseType": "Tip cheltuială: Combustibil",
+            "details": {
+              "liters": "Litri",
+              "pricePerLiter": "Preț/L",
+              "station": "Stație",
+              "vehicle": "Vehicul",
+              "notSet": "Nesetat"
+            },
+            "chart": {
+              "title": "Cheltuieli lunare cu combustibilul",
+              "amount": "Sumă"
+            },
+            "stats": {
+              "thisMonth": "Luna aceasta",
+              "fillUps": "{count} alimentări",
+              "costPerKm": "Cost pe km",
+              "estimated": "estimat",
+              "fuelPrice": "Fuel Preț",
+              "thisMonthSuffix": "luna aceasta"
+            },
+            "maintenance": {
+              "title": "Mementouri întreținere"
+            },
+            "tip": {
+              "title": "Cel mai ieftin în apropiere",
+              "perLiter": "L"
+            },
+            "buttons": {
+              "addVehicle": "Adaugă Vehicul",
+              "fullReport": "Raport complet"
+            },
+            "months": {
+              "sep": "sept.",
+              "oct": "oct.",
+              "nov": "nov.",
+              "dec": "dec."
+            },
+            "reminders": {
+              "oilChange": "Schimb de ulei în ~1.200 km",
+              "tireRotation": "Se recomandă rotația anvelopelor"
+            }
+          },
+          "diningCard": {
+            "title": "Informații despre mese",
+            "sodium": {
+              "high": "Ridicat",
+              "medium": "Mediu",
+              "low": "Scăzut"
+            },
+            "estimatedNutrition": {
+              "title": "Nutriție estimată",
+              "calories": "Calorii",
+              "caloriesValue": "~{value} kcal",
+              "protein": "Proteine",
+              "proteinValue": "~{value}g",
+              "sodium": "Sodiu",
+              "carbs": "Carbohidrați",
+              "carbsValue": "~{value}g"
+            },
+            "habits": {
+              "title": "Obiceiurile tale de fast-food",
+              "frequency": "Frecvență",
+              "frequencyValue": "{count}x/lună",
+              "frequencyDiff": "+1 vs medie",
+              "avgSpend": "Cheltuială medie",
+              "favorite": "Favorit",
+              "visits": "{count} vizite"
+            },
+            "swaps": {
+              "title": "Alternative mai sănătoase",
+              "grilled": "La grătar în loc de prăjit",
+              "water": "Apă în loc de suc",
+              "salad": "Salată garnitură în loc de cartofi prăjiți",
+              "caloriesSaved": "-{count} kcal",
+              "moneySaved": ", economisești {amount}"
+            },
+            "challenge": {
+              "title": "Provocare săptămânală",
+              "descriptionPrefix": "Evită fast-food-ul timp de 7 zile și salvează",
+              "descriptionSuffix": ""
+            }
+          },
+          "nutritionCard": {
+            "title": "Privire generală nutriție",
+            "score": {
+              "title": "Scor echilibru alimentar",
+              "excellent": "Excelent",
+              "good": "Bun",
+              "fair": "Acceptabil",
+              "needsWork": "Necesită îmbunătățiri"
+            },
+            "composition": {
+              "title": "Compoziția coșului tău",
+              "wholeFoods": "Alimente integrale",
+              "processed": "Procesate",
+              "dairyOther": "Lactate/Altele"
+            },
+            "foodGroups": {
+              "fruits": "Fructe",
+              "vegetables": "Legume",
+              "protein": "Proteine",
+              "grains": "Cereale",
+              "itemsCount": "{count} articol(s)"
+            },
+            "allergens": {
+              "title": "Alergeni detectați",
+              "foundInItems": "Găsit în {count} articol(e)"
+            },
+            "suggestions": {
+              "addFruitsAndVegetables": "Adaugă mai multe fructe și legume pentru a-ți echilibra coșul",
+              "addVegetables": "Ia în calcul adăugarea de legume pentru o alimentație mai echilibrată",
+              "addFruits": "Adăugarea unor fructe ar îmbunătăți echilibrul nutrițional",
+              "swapProcessed": "Încearcă să înlocuiești unele produse procesate cu alimente integrale",
+              "greatBalance": "Cumpărături foarte bine echilibrate!"
+            }
+          },
+          "homeInventoryCard": {
+            "title": "Inventar casă și consumabile",
+            "supplyNames": {
+              "laundryDetergent": "Detergent rufe",
+              "dishSoap": "Detergent vase",
+              "paperProducts": "Produse din hârtie",
+              "floorCleaner": "Soluție pentru podea"
+            },
+            "stockLevels": {
+              "title": "Niveluri stoc consumabile (estimate)",
+              "daysRemaining": "~{count} zile"
+            },
+            "eco": {
+              "title": "Scor ecologic",
+              "productsWithEcoLabels": "{count} produse cu etichete ecologice",
+              "recyclablePackaging": "{count} produs cu ambalaj reciclabil",
+              "tip": "Tip: Eco alternatives salvează 2kg plastic/year"
+            },
+            "bulk": {
+              "title": "Economii la cumpărături în vrac",
+              "description": "Detergent 5L față de 2L economisește 18% ({amount}/an)"
+            }
+          },
+          "categorySuggestionCard": {
+            "title": "Ajută-ne să categorisim această factură",
+            "description": "Nu am putut categoriza automat această factură. Selectează categoria corectă pentru a debloca analize:",
+            "moreCategories": "Mai multe categorii:",
+            "gamification": "Categorisește {goal} facturi pentru a debloca analize detaliate!"
+          },
+          "budgetImpactCard": {
+            "title": "Impact bugetar {month}",
+            "monthlyBudget": "Buget lunar",
+            "spent": "{amount} cheltuiți",
+            "invoiceUsed": "Această factură a folosit",
+            "ofMonthlyBudget": "din bugetul tău lunar",
+            "remaining": "Rămas",
+            "overBudget": "Peste buget",
+            "daysLeft": "Zile rămase",
+            "inMonth": "în {month}",
+            "dailyAllowance": "Alocație zilnică",
+            "dailyAllowanceValue": "{amount} / zi"
+          },
+          "comparisonStatsCard": {
+            "title": "Cum te compari",
+            "subtitle": "Comparativ cu ultimele tale {count} facturi",
+            "vsAverage": "vs medie",
+            "avgValue": "Medie: {amount} {currency}",
+            "thisValue": "Aceasta: {amount} {currency}",
+            "minValue": "Minim: {amount}",
+            "maxValue": "Maxim: {amount}",
+            "positionInRange": "Poziția ta în intervalul de cheltuieli",
+            "itemCount": "Articol Count",
+            "itemCountComparison": "{current} vs medie {average}",
+            "sameStore": "Același magazin",
+            "sameStoreComparison": "vs medie {average} {currency}"
+          },
+          "invoiceDetailsCard": {
+            "title": "Detalii factură",
+            "labels": {
+              "dateUtc": "Dată (UTC)",
+              "category": "Categorie",
+              "payment": "Plată",
+              "totalAmount": "Suma totală"
+            },
+            "itemsTitle": "Articole ({count})",
+            "table": {
+              "item": "Articol",
+              "qty": "Cant.",
+              "unit": "Unitate",
+              "price": "Preț",
+              "total": "Total general",
+              "grandTotal": "Total general"
+            },
+            "pagination": {
+              "pageOf": "Pagina {current} din {total}",
+              "previous": "Anterior",
+              "next": "Următor"
+            }
+          },
+          "receiptScanCard": {
+            "title": "Scanare bon",
+            "dialogTitle": "Imagine bon",
+            "scanAlt": "Scanare bon {index}",
+            "scanAltFullSize": "Scanare bon {index} - dimensiune completă",
+            "buttons": {
+              "expand": "Extinde imaginea",
+              "previousScan": "Scanarea anterioară",
+              "nextScan": "Scanarea următoare"
+            },
+            "tooltips": {
+              "expand": "Vezi imaginea bonului la dimensiune completă",
+              "previousScan": "Vezi scanarea anterioară a bonului",
+              "nextScan": "Vezi următoarea scanare a bonului"
+            }
+          },
+          "shoppingCalendarCard": {
+            "title": "Calendar cumpărături",
+            "tooltip": {
+              "basedOnCachedInvoices": "Bazat pe {count} facturi din cache",
+              "currentInvoiceOnly": "Se afișează doar factura curentă",
+              "more": "+{count} în plus",
+              "vsAverage": "vs medie ({years} ani de date)",
+              "invoiceCount": "{count} factură(s)",
+              "currentInvoice": "Factura curentă"
+            },
+            "legend": {
+              "less": "Mai puțin",
+              "more": "Mai mult"
+            },
+            "stats": {
+              "monthTotal": "Total lună",
+              "shoppingDays": "Zile de cumpărături"
+            },
+            "insights": {
+              "shopEveryPrefix": "Faci cumpărături la fiecare",
+              "days": "{count} zile",
+              "onAverage": "în medie",
+              "spendingPrefix": ", cheltuind",
+              "perTrip": " per cumpărătură",
+              "mostActiveOn": "Cel mai activ în",
+              "weekdayLabel": "{weekday}"
+            }
+          },
+          "invoiceTabs": {
+            "tabs": {
+              "possibleRecipes": "Rețete posibile",
+              "additionalInfo": "Informații suplimentare"
+            },
+            "recipe": {
+              "duration": "{minutes} min",
+              "prepCook": "Pregătire: {prep}m • Gătire: {cook}m",
+              "viewRecipe": "Vede Recipe"
+            },
+            "empty": {
+              "recipes": "Nu există sugestii de rețete",
+              "additionalInfo": "Nu există informații suplimentare"
+            }
+          },
+          "invoiceHeader": {
+            "tooltips": {
+              "importantInvoice": "Factură importantă",
+              "edit": "Editează această factură",
+              "delete": "Șterge definitiv această factură",
+              "print": "Printează această factură",
+              "saveAllPendingChanges": "Salvează toate modificările în așteptare",
+              "discardAllPendingChanges": "Renunță la toate modificările în așteptare",
+              "printInvoiceWithAllDetails": "Tipărește această factură cu toate detaliile",
+              "analyzeSpendingPatterns": "Analizează tiparele de cheltuieli pentru această factură",
+              "deleteInvoicePermanently": "Șterge permanent această factură"
+            },
+            "id": "Identificator: {id}",
+            "buttons": {
+              "edit": "Editează",
+              "delete": "Șterge",
+              "print": "Printează",
+              "save": "Salvează",
+              "saving": "Se salvează...",
+              "discard": "Renunță",
+              "analyzeWithAi": "Analizează cu IA"
+            }
+          },
+          "shareAnalyticsDialog": {
+            "title": "Partajează Analytics",
+            "description": "Partajează analizele tale de cheltuieli pentru {merchant} cu alte persoane.",
+            "tabs": {
+              "image": "Imagine",
+              "email": "email"
+            },
+            "image": {
+              "description": "Descarcă sau copiază graficul de analiză ca imagine PNG, pe care o poți partaja sau salva.",
+              "previewPlaceholder": "Previzualizare analize",
+              "download": "Descarcă graficul",
+              "copyToClipboard": "Copiază graficul în clipboard"
+            },
+            "email": {
+              "description": "Trimite analizele la o adresă de email.",
+              "label": "Adresă email",
+              "placeholder": "name@example.com",
+              "send": "Trimite email"
+            },
+            "toasts": {
+              "imageCopied": {
+                "title": "Imagine copiată!",
+                "description": "Imaginea analizelor a fost copiată în clipboard"
+              },
+              "emailSent": {
+                "title": "Email trimis!",
+                "description": "Raportul de analiză a fost trimis la {email}"
+              },
+              "imageSaved": {
+                "title": "Imagine salvată!",
+                "description": "Analizele de cheltuieli pentru {merchant} au fost descărcate ca PNG"
+              }
+            }
+          },
+          "invoiceAnalytics": {
+            "title": "Analize și insight-uri",
+            "tabs": {
+              "current": "Factura curentă",
+              "compare": "Comparație"
+            }
+          },
+          "summaryStatsCard": {
+            "title": "Rezumat factură",
+            "description": "Statistici cheie dintr-o privire",
+            "stats": {
+              "totalItems": {
+                "label": "Total articole",
+                "description": "Produse cumpărate"
+              },
+              "categories": {
+                "label": "Categorii",
+                "description": "Categorii unice"
+              },
+              "averagePrice": {
+                "label": "Preț mediu",
+                "description": "{currency} per articol"
+              },
+              "taxRate": {
+                "label": "Rată taxă",
+                "description": "{amount} {currency}"
+              }
+            },
+            "extremes": {
+              "highest": "Cel mai mare",
+              "lowest": "Cel mai mic"
+            }
+          },
+          "seasonalInsightsCard": {
+            "title": "Insight sezonier",
+            "month": {
+              "spendingSoFar": "{month} până acum",
+              "vsAverage": "vs media pe {month}: {amount}"
+            },
+            "insights": {
+              "spike": {
+                "title": "Creștere {category}",
+                "description": "+{percent}% vs media ta"
+              },
+              "holidaySeason": {
+                "title": "Sezonul sărbătorilor",
+                "description": "Cheltuielile din decembrie sunt de obicei cu 35% mai mari"
+              },
+              "stockUpTip": {
+                "title": "Sfat de aprovizionare",
+                "description": "Prețurile cresc cu ~15% după 15 decembrie"
+              },
+              "normalPattern": {
+                "title": "Model normal de cumpărături",
+                "description": "Cheltuielile tale sunt în intervalul obișnuit"
+              }
+            }
+          },
+          "categoryComparisonChart": {
+            "title": "Comparație pe categorii",
+            "description": "Factura aceasta vs media ta",
+            "labels": {
+              "current": "Curent",
+              "average": "Medie"
+            }
+          },
+          "itemsBreakdownChart": {
+            "title": "Top articole după cost",
+            "description": "Articole cu cele mai mari cheltuieli",
+            "labels": {
+              "price": "Preț",
+              "quantity": "Cant."
+            }
+          },
+          "merchantBreakdownChart": {
+            "title": "Cheltuieli pe magazin",
+            "description": "Totaluri cumulative pe toți comercianții",
+            "labels": {
+              "totalSpent": "Total cheltuit",
+              "total": "Total",
+              "visits": "Vizite",
+              "averagePerVisit": "Medie/vizită"
+            }
+          },
+          "priceDistributionChart": {
+            "title": "Distribuția prețurilor",
+            "description": "Articole pe intervale de preț ({currency})",
+            "labels": {
+              "items": "Articole"
+            },
+            "tooltip": {
+              "itemCount": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
+            }
+          },
+          "spendingByCategoryChart": {
+            "title": "Cheltuieli pe categorie",
+            "description": "Distribuția cheltuielilor",
+            "totalLabel": "Total cheltuieli",
+            "tooltip": {
+              "itemCount": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
+            }
+          },
+          "spendingTrendChart": {
+            "title": "Evoluția cheltuielilor",
+            "description": "Trendul istoricului tău de facturi",
+            "labels": {
+              "amount": "Sumă"
+            },
+            "tooltip": {
+              "currentInvoice": "Factura curentă"
+            }
+          },
+          "invoiceTimeline": {
+            "title": "Cronologia facturii",
+            "subtitle": "Istoric complet al acțiunilor și modificărilor",
+            "eventCount": "{count, plural, one {# eveniment} few {# evenimente} other {# de evenimente}}"
+          },
+          "timelineItem": {
+            "aria": {
+              "moreInfo": "Mai multe informații despre {title}"
+            },
+            "confidence": "Încredere: {value}%",
+            "events": {
+              "created": {
+                "title": "Factură creată",
+                "description": "Scanată și digitalizată din bon"
+              },
+              "aiAnalysis": {
+                "title": "Analiză AI finalizată",
+                "description": "{count, plural, one {# articol detectat și categorisit} few {# articole detectate și categorisite} other {# de articole detectate și categorisite}}"
+              },
+              "recipesGenerated": {
+                "title": "Rețete generate",
+                "description": "{count, plural, one {# rețetă sugerată} few {# rețete sugerate} other {# de rețete sugerate}}"
+              },
+              "shared": {
+                "title": "Partajată cu alții",
+                "description": "Partajată cu {count, plural, one {# persoană} few {# persoane} other {# de persoane}}"
+              },
+              "edited": {
+                "title": "Factură actualizată"
+              },
+              "exported": {
+                "title": "Factură exportată"
+              },
+              "markedImportant": {
+                "title": "Marcată ca importantă",
+                "description": "Marcată pentru urmărire prioritară"
+              },
+              "categorized": {
+                "title": "Categorie atribuită",
+                "description": "Categorizare automată pe baza articolelor"
+              }
+            },
+            "tooltips": {
+              "created": "Factura a fost scanată și digitalizată folosind {method}.",
+              "aiAnalysis": "AI a procesat această factură în {duration} și a analizat {count, plural, one {# articol} few {# articole} other {# de articole}}.",
+              "recipesGenerated": "Pe baza ingredientelor cumpărate, {count, plural, one {a fost generată # rețetă} few {au fost generate # rețete} other {au fost generate # de rețete}}.",
+              "shared": "Factura a fost partajată cu {count, plural, one {# utilizator} few {# utilizatori} other {# de utilizatori}}.",
+              "edited": "Au fost făcute modificări manuale facturii.",
+              "exported": "Factura a fost exportată în format {format}.",
+              "markedImportant": "Factura a fost marcată ca importantă pentru acces rapid.",
+              "categorized": "Facturii i-a fost atribuită o categorie pentru o organizare mai bună.",
+              "unavailable": "Detaliile evenimentului nu sunt disponibile"
+            },
+            "relativeTime": {
+              "now": "Chiar acum"
+            },
+            "fallbacks": {
+              "ocr": "OCR",
+              "pdf": "PDF"
+            }
+          },
+          "timelineSharedWithList": {
+            "header": {
+              "title": "Partajată cu",
+              "publicBadge": "Public"
+            },
+            "publicAccess": {
+              "title": "Acces public activat",
+              "description": "Această factură este accesibilă public. Oricine are linkul o poate vedea, inclusiv invitații fără cont."
+            },
+            "aria": {
+              "sendEmail": "Trimite email către {user}"
+            },
+            "actions": {
+              "sendEmail": "Trimite email",
+              "manageSharing": "Gestionează partajarea"
+            }
+          },
+          "invoiceGuestBanner": {
+            "title": "Vizualizare invitat",
+            "description": "În prezent nu ești proprietarul acestei facturi. Vizualizarea este limitată la ce a configurat proprietarul în setările de partajare."
+          },
+          "merchantInfoCard": {
+            "viewAllReceipts": "Vezi toate bonurile"
+          },
+          "exportDialog": {
+            "title": "Exportă facturi",
+            "description": "Exportă {count} facturi în formatul preferat.",
+            "format": {
+              "title": "Format de export",
+              "labels": {
+                "csv": "CSV",
+                "json": "JSON",
+                "pdf": "PDF"
+              }
+            },
+            "options": {
+              "title": "Opțiuni",
+              "includeMetadata": "Include metadatele",
+              "includeProducts": "Include produsele",
+              "includeMerchant": "Include comerciantul",
+              "csv": {
+                "includeHeaders": "Include antetele CSV",
+                "delimiterLabel": "Suprascriere delimitator CSV (opțional):",
+                "delimiterPlaceholder": ","
+              },
+              "json": {
+                "prettyPrint": "Afișare formatată (2 spații)"
+              }
+            },
+            "buttons": {
+              "cancel": "Anulează",
+              "export": "Exportă"
+            }
+          },
+          "importDialog": {
+            "title": "Importă facturi",
+            "description": "Încarcă fișierele de facturi pentru a le importa în sistem.",
+            "tabs": {
+              "csv": "CSV",
+              "pdf": "PDF",
+              "xlsx": "Excel"
+            },
+            "dropzone": {
+              "dropHere": "Plasează fișierele aici...",
+              "dragAndDrop": "Trage și plasează fișierele aici",
+              "orClickBrowse": "sau apasă pentru a răsfoi fișierele",
+              "acceptsCsv": "Acceptă fișiere .csv (max 10MB)",
+              "acceptsPdf": "Acceptă fișiere .pdf (max 10MB)",
+              "acceptsXlsx": "Acceptă fișiere .xlsx și .xls (max. 10MB)"
+            },
+            "selectedFiles": "Fișiere selectate",
+            "remove": "Elimină",
+            "status": {
+              "success": "Fișiere importate cu succes!",
+              "error": "A apărut o eroare la importul fișierelor. Te rugăm să încerci din nou."
+            },
+            "buttons": {
+              "cancel": "Anulează",
+              "import": "Importă"
+            }
+          },
+          "tableView": {
+            "empty": "Nu au fost găsite facturi",
+            "columns": {
+              "invoice": "Factură",
+              "category": "Categorie",
+              "date": "Dată",
+              "amount": "Sumă",
+              "actions": "Acțiuni"
+            },
+            "aria": {
+              "selectAllInvoices": "Selectează toate facturile",
+              "selectInvoice": "Selectează factură {id}",
+              "rowsPerPage": "Rânduri pe pagină"
+            },
+            "viewInvoice": "Vede Factură",
+            "rowsPerPage": "Rânduri pe pagină:",
+            "pageOf": "Pagina {current} din {total}",
+            "previousPage": "Pagina anterioară",
+            "nextPage": "Pagina următoare"
+          },
+          "tableViewActions": {
+            "actions": {
+              "edit": "Editează",
+              "share": "Partajează",
+              "delete": "Șterge"
+            },
+            "tooltips": {
+              "edit": "Editează detaliile facturii",
+              "share": "Partajează factura prin link sau e-mail",
+              "delete": "Șterge definitiv această factură"
+            }
+          },
+          "feedbackDialog": {
+            "title": "Oferă feedback",
+            "description": "Ajută-ne să îmbunătățim analizele pentru {merchant} împărtășindu-ne opinia ta",
+            "sections": {
+              "rating": "Cum ai evalua analizele?",
+              "features": "Care funcționalități au fost cele mai utile? (Selectează toate opțiunile aplicabile)",
+              "comments": "Comentarii suplimentare (opțional)"
+            },
+            "features": {
+              "spendingTrends": "Tendințe de cheltuieli",
+              "priceComparisons": "Preț Comparisons",
+              "savingsTips": "Sfaturi de economisire",
+              "merchantAnalysis": "Merchant Analiză",
+              "visualCharts": "Grafice vizuale",
+              "categoryBreakdown": "Categorie Breakdown"
+            },
+            "commentsPlaceholder": "Împărtășește-ne părerea ta despre analize...",
+            "buttons": {
+              "cancel": "Anulează",
+              "submit": "Trimite feedback"
+            },
+            "toasts": {
+              "sending": {
+                "title": "Se trimite feedback-ul...",
+                "description": "Te rugăm să aștepți cât timp trimitem feedback-ul."
+              },
+              "ratingRequired": {
+                "title": "Evaluare necesară",
+                "description": "Te rugăm să oferi un calificativ cu stele înainte de trimitere"
+              },
+              "success": {
+                "title": "Feedback trimis!",
+                "description": "Feedback trimis cu succes"
+              },
+              "error": {
+                "title": "A apărut o eroare la trimiterea feedback-ului",
+                "description": "Te rugăm să încerci din nou mai târziu."
+              }
+            }
+          },
+          "sharingCard": {
+            "title": "Partajare",
+            "ownerAvatarAlt": "Utilizator",
+            "owner": "Proprietar",
+            "sharedWith": "Partajată cu",
+            "userWithId": "Utilizator {id}",
+            "publicInvoice": {
+              "title": "Factură publică",
+              "description": "Această factură este accesibilă public. Oricine are linkul o poate vedea."
+            },
+            "emptyShared": {
+              "public": "Niciun utilizator suplimentar nu are acces direct",
+              "private": "Nu este partajată"
+            },
+            "buttons": {
+              "manageSharing": "Gestionează Partajare",
+              "shareInvoice": "Partajează Factură",
+              "revokingAccess": "Se revocă accesul...",
+              "markAsPrivate": "Marchează ca privată"
+            },
+            "tooltips": {
+              "manageSharing": "Gestionează setările de partajare pentru această factură",
+              "removeAccess": "Elimină accesul",
+              "shareInvoice": "Partajează această factură cu alți utilizatori",
+              "markAsPrivate": "Marchează factura ca privată"
+            },
+            "toasts": {
+              "removeAccessComingSoon": {
+                "title": "Funcția de eliminare a accesului va fi disponibilă în curând",
+                "description": "Această funcționalitate este în curs de dezvoltare."
+              },
+              "revoke": {
+                "loading": "Se revocă accesul public...",
+                "success": "Factura este acum privată. Linkurile existente nu vor mai funcționa.",
+                "error": "Marcarea ca privată a eșuat: {message}"
+              }
+            }
+          },
+          "imageDialog": {
+            "title": "Imagine ({image})",
+            "imageAlt": "Fotografie a bonului"
+          },
+          "itemsTable": {
+            "title": "Articole",
+            "buttons": {
+              "editItems": "Editează articolele"
+            },
+            "tooltips": {
+              "editInvoiceItemsAndQuantities": "Editează articolele și cantitățile facturii"
+            },
+            "tableHeaders": {
+              "item": "Articol",
+              "quantity": "Cant.",
+              "price": "Preț",
+              "total": "Total"
+            },
+            "footer": {
+              "total": "Total"
+            },
+            "pagination": {
+              "totalItems": "{count, plural, one {# articol în total} few {# articole în total} other {# de articole în total}}",
+              "previous": "Anterior",
+              "next": "Următor",
+              "pageOf": "Pagina {currentPage} din {totalPages}"
+            }
+          },
+          "triviaTips": {
+            "title": "Sfaturi de economisire",
+            "difficulty": {
+              "easy": "Ușor",
+              "medium": "Mediu"
+            },
+            "banner": {
+              "potentialSavingsLabel": "Economii potențiale",
+              "hint": "Aplică aceste sfaturi pentru a economisi la următoarea vizită la {merchantName}"
+            },
+            "tips": {
+              "loyaltyProgram": {
+                "title": "Înscrie-te în programul de loialitate",
+                "description": "Înscrie-te în programul de loialitate {merchantName} pentru a câștiga puncte la fiecare achiziție."
+              },
+              "bulkPurchase": {
+                "title": "Cumpără la vrac",
+                "description": "Cumpără produse neperisabile la vrac pentru a reduce costul per unitate."
+              },
+              "digitalCoupons": {
+                "title": "Folosește cupoane digitale",
+                "description": "Verifică aplicația {merchantName} pentru cupoane digitale înainte de cumpărături."
+              }
+            },
+            "tooltips": {
+              "estimatedSavings": "Economii estimate cu acest sfat"
+            },
+            "buttons": {
+              "viewMoreSavingsTips": "Vezi mai multe sfaturi de economisire"
+            },
+            "disclaimer": "Economiile sunt estimări bazate pe prețuri și promoții medii"
+          },
+          "recipesTab": {
+            "header": {
+              "title": "Rețete pe care le poți prepara",
+              "description": "Pe baza articolelor din această factură"
+            },
+            "buttons": {
+              "generate": "Generează",
+              "addRecipe": "Adaugă rețetă",
+              "createFirstRecipe": "Creează prima ta rețetă"
+            },
+            "tooltips": {
+              "generateRecipeUsingAi": "Generează o rețetă cu IA!",
+              "createRecipeWithIngredients": "Creează o rețetă nouă cu aceste ingrediente"
+            },
+            "emptyState": {
+              "noRecipesAvailable": "Nu există încă rețete disponibile"
+            },
+            "pagination": {
+              "previous": "Anterior",
+              "next": "Următor",
+              "pageOf": "Pagina {currentPage} din {totalPages}"
+            },
+            "toasts": {
+              "aiGenerationComingSoon": {
+                "title": "Generarea rețetelor cu IA vine în curând",
+                "description": "Această funcționalitate este în curs de dezvoltare."
+              }
+            }
+          },
+          "statisticsView": {
+            "title": "Statistici facturi",
+            "subtitle": "Gestionează bonurile și urmărește obiceiurile tale de cheltuieli"
+          },
+          "analyzeDialog": {
+            "header": {
+              "title": "Analizează factura",
+              "description": "Configurează o analiză cu IA pentru factura"
+            },
+            "options": {
+              "completeAnalysis": {
+                "title": "Analiză completă",
+                "description": "Analiză completă cu IA ce include toate datele facturii, articolele și informațiile comerciantului.",
+                "estimatedTime": "2-3 min",
+                "features": {
+                  "ocrExtraction": "Extracție OCR",
+                  "itemCategorization": "Categorisirea articolelor",
+                  "merchantIdentification": "Identificarea comerciantului",
+                  "priceAnalysis": "Analiza prețurilor",
+                  "receiptValidation": "Validarea bonului"
+                }
+              },
+              "invoiceOnly": {
+                "title": "Doar datele facturii",
+                "description": "Analizează informațiile de bază ale facturii precum totaluri, date și detalii de plată.",
+                "estimatedTime": "30-60 sec",
+                "features": {
+                  "totalExtraction": "Extracția totalului",
+                  "dateParsing": "Interpretarea datelor",
+                  "paymentMethodDetection": "Detectarea metodei de plată"
+                }
+              },
+              "itemsOnly": {
+                "title": "Analiza articolelor",
+                "description": "Se concentrează pe extragerea și categorisirea articolelor individuale din factură.",
+                "estimatedTime": "1-2 min",
+                "features": {
+                  "itemExtraction": "Extracția articolelor",
+                  "categoryAssignment": "Atribuirea categoriilor",
+                  "pricePerItem": "Preț per articol",
+                  "quantityDetection": "Detectarea cantității"
+                }
+              },
+              "merchantOnly": {
+                "title": "Analiza comerciantului",
+                "description": "Identifică și analizează informațiile comerciantului, inclusiv locația și categoria.",
+                "estimatedTime": "30-45 sec",
+                "features": {
+                  "merchantIdentification": "Identificarea comerciantului",
+                  "locationExtraction": "Extracția locației",
+                  "businessCategory": "Categoria afacerii",
+                  "contactInfo": "Informații de contact"
+                }
+              }
+            },
+            "analysisSteps": {
+              "preparingDocument": "Se pregătește documentul...",
+              "runningOcrExtraction": "Se rulează extracția OCR...",
+              "analyzingWithAi": "Se analizează cu IA...",
+              "categorizingItems": "Se categorisesc articolele...",
+              "finalizingResults": "Se finalizează rezultatele...",
+              "processing": "Se procesează..."
+            },
+            "analyzing": {
+              "title": "Se analizează factura",
+              "progressComplete": "{progress}% complet"
+            },
+            "sections": {
+              "analysisType": "Tip analiză",
+              "includedFeatures": "Funcționalități incluse",
+              "enhancementsOptional": "Îmbunătățiri (opțional)"
+            },
+            "enhancements": {
+              "priceComparison": {
+                "label": "Comparare prețuri",
+                "description": "Compară prețurile cu date istorice"
+              },
+              "savingsTips": {
+                "label": "Sugestii de economisire",
+                "description": "Primește recomandări de economisire cu IA"
+              },
+              "quickExtract": {
+                "label": "Mod de extragere rapidă",
+                "description": "Prioritizează viteza în locul acurateței"
+              }
+            },
+            "badges": {
+              "recommended": "Recomandat"
+            },
+            "summary": {
+              "enhancementsSelected": "+ {count} îmbunătățire(i)",
+              "noEnhancementsSelected": "Nicio îmbunătățire selectată",
+              "estimatedTime": "Durată estimată"
+            },
+            "buttons": {
+              "cancel": "Anulează",
+              "analyzing": "Se analizează...",
+              "startAnalysis": "Pornește analiza"
+            },
+            "toasts": {
+              "analysisComplete": {
+                "title": "Analiză finalizată",
+                "description": "Factura ta a fost analizată cu succes."
+              },
+              "analysisFailed": {
+                "title": "Analiza a eșuat",
+                "description": "Nu am putut analiza factura ta. Te rugăm să încerci din nou."
+              }
+            }
+          },
+          "metadataTab": {
+            "header": {
+              "title": "Informații suplimentare",
+              "description": "Metadate asociate acestei facturi"
+            },
+            "buttons": {
+              "addField": "Adaugă câmp",
+              "addFirstMetadataField": "Adaugă primul tău câmp de metadate"
+            },
+            "tooltips": {
+              "addCustomMetadata": "Adaugă metadate personalizate la această factură"
+            },
+            "badges": {
+              "readonly": "Doar citire"
+            },
+            "dropdown": {
+              "edit": "Editează",
+              "delete": "Șterge"
+            },
+            "emptyState": {
+              "noMetadataFields": "Nu au fost adăugate câmpuri de metadate"
+            }
+          },
+          "merchantDialog": {
+            "title": "Detalii comerciant",
+            "description": "Informații despre {merchantName}",
+            "fields": {
+              "address": "Adresă",
+              "phone": "Telefon",
+              "parentCompany": "Companie mamă"
+            },
+            "buttons": {
+              "openInMaps": "Deschide în Maps"
+            }
+          },
+          "merchantCard": {
+            "title": "Comerciant",
+            "addressLabel": "Adresă: {address}",
+            "buttons": {
+              "viewMerchantDetails": "Vezi detalii comerciant",
+              "viewAllReceipts": "Vezi toate bonurile"
+            },
+            "tooltips": {
+              "viewMerchantDetails": "Vezi informații detaliate despre acest comerciant",
+              "viewAllReceipts": "Vezi toate bonurile de la acest comerciant"
+            }
+          },
+          "recipeCard": {
+            "complexity": {
+              "unknown": "Necunoscut",
+              "easy": "Ușor",
+              "normal": "Normal",
+              "hard": "Greu"
+            },
+            "dropdown": {
+              "view": "Vezi",
+              "edit": "Editează",
+              "delete": "Șterge",
+              "share": "Distribuie",
+              "markAsFavorite": "Marchează ca favorit"
+            },
+            "ingredients": {
+              "label": "Ingrediente:",
+              "more": "+{count} în plus",
+              "additionalLabel": "Ingrediente suplimentare:"
+            },
+            "timing": {
+              "prepLabel": "Prep: {minutes}′",
+              "prepTooltip": "Timpul de pregătire este de {minutes} minute.",
+              "cookLabel": "Gătire: {minutes}′",
+              "cookTooltip": "Timpul de gătire este de {minutes} minute."
+            },
+            "buttons": {
+              "visitReference": "Vizitează referința",
+              "viewRecipe": "Vezi rețeta"
+            }
+          },
+          "gridView": {
+            "tooltips": {
+              "viewDetails": "Vezi detalii"
+            },
+            "itemCount": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
+          }
         }
       }
     },
@@ -1504,6 +3016,46 @@
       "falsePositive": "Dacă credeți că această pagină ar trebui să existe și vă confruntați cu o eroare, vă rugăm să raportați acest lucru administratorului site-ului.",
       "subtitle": "Se pare că pagina pe care ați ajuns nu este prezentă pe site. Dacă această pagină ar trebui să existe, vă rugăm să raportați acest lucru administratorului site-ului.",
       "title": "404 - Pagina nu a fost găsită."
+    },
+    "globalError": {
+      "copyErrorConsoleMessage": "Copierea ID-ului erorii a eșuat:",
+      "hero": {
+        "title": "Ceva nu a mers bine",
+        "subtitle": "A apărut o eroare neașteptată. Echipa noastră a fost notificată automat."
+      },
+      "details": {
+        "title": "Detalii eroare",
+        "errorIdLabel": "ID eroare:",
+        "genericDescription": "A apărut o eroare în timpul procesării cererii tale.",
+        "whatHappenedTitle": "Ce s-a întâmplat?",
+        "unknownError": "A apărut o eroare necunoscută."
+      },
+      "actions": {
+        "whatCanYouDoTitle": "Ce puteți face?",
+        "step1": "Încearcă să reîmprospătezi pagina folosind butonul de mai jos.",
+        "step2": "Revino la pagina principală și începe din nou.",
+        "step3": "Contactează suportul dacă problema persistă."
+      },
+      "diagnostics": {
+        "scanLabel": "Scanați pentru informații de diagnostic:",
+        "technicalSummary": "Informații tehnice (pentru dezvoltatori)",
+        "loading": "Se încarcă informațiile de diagnostic...",
+        "stackTraceLabel": "Trasă de stivă:"
+      },
+      "buttons": {
+        "tryAgain": "Încearcă din nou",
+        "returnHome": "Înapoi la pagina principală",
+        "copyErrorIdTitle": "Copiază ID-ul erorii",
+        "copyErrorId": "Copiază ID-ul erorii",
+        "copied": "Copiat!"
+      },
+      "support": {
+        "contactPrefix": "Dacă această problemă continuă, contactează-ne la",
+        "includeErrorId": "și include ID-ul erorii:"
+      },
+      "metadata": {
+        "title": "Eroare aplicație - AROLARIU.RO"
+      }
     }
   },
   "EULA": {
@@ -2306,6 +3858,12 @@
           "manageAccount": "Gestionează pe Clerk"
         }
       }
+    },
+    "island": {
+      "totalInvoices": "Total facturi",
+      "merchants": "{count} comercianți",
+      "scans": "{count} scanări",
+      "settingsNavigationAriaLabel": "Navigare setări"
     }
   },
   "I18nConsolidation": {
@@ -2670,7 +4228,7 @@
         "footer": {
           "itemsFound": "{total} articole găsite (se afișează {shown})",
           "page": "Pagina {current} din {total}",
-          "itemsTotal": "{count, plural, one {# articol în total} other {# articole în total}}"
+          "itemsTotal": "{count, plural, one {# articol în total} few {# articole în total} other {# de articole în total}}"
         },
         "buttons": {
           "previous": "Anterior",
@@ -3345,7 +4903,7 @@
           "created": "Factura a fost scanată și digitalizată folosind {method}.",
           "aiAnalysis": "AI a procesat această factură în {duration} și a analizat {count, plural, one {# articol} few {# articole} other {# de articole}}.",
           "recipesGenerated": "Pe baza ingredientelor cumpărate, {count, plural, one {a fost generată # rețetă} few {au fost generate # rețete} other {au fost generate # de rețete}}.",
-          "shared": "Factura a fost partajată cu {users, plural, one {# utilizator} few {# utilizatori} other {# de utilizatori}}.",
+          "shared": "Factura a fost partajată cu {count, plural, one {# utilizator} few {# utilizatori} other {# de utilizatori}}.",
           "edited": "Au fost făcute modificări manuale facturii.",
           "exported": "Factura a fost exportată în format {format}.",
           "markedImportant": "Factura a fost marcată ca importantă pentru acces rapid.",
@@ -3833,6 +5391,14 @@
         },
         "itemCount": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
       }
+    }
+  },
+  "Shared": {
+    "header": {
+      "logoAlt": "logo arolariu.ro"
+    },
+    "themeButton": {
+      "toggleAriaLabel": "Comută tema"
     }
   }
 }

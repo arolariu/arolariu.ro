@@ -62,7 +62,7 @@ function CustomTooltip({
 }
 
 export function MerchantBreakdownChart({data, currency, currentMerchant}: Props): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.MerchantBreakdownChart");
+  const t = useTranslations("Domains.services.invoices.ui.merchantBreakdownChart");
   const chartConfig = {
     total: {
       label: t("labels.totalSpent"),

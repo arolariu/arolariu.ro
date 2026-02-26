@@ -26,7 +26,7 @@ import {SpendingTrendChart} from "./charts/SpendingTrendChart";
 import styles from "./InvoiceAnalytics.module.scss";
 
 export function InvoiceAnalytics(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.InvoiceAnalytics");
+  const t = useTranslations("Domains.services.invoices.ui.invoiceAnalytics");
   const {invoice, merchant} = useInvoiceContext();
   const {
     userInformation: {userIdentifier},

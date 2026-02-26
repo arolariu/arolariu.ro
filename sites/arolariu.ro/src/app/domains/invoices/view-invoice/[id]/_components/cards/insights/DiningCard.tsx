@@ -20,7 +20,7 @@ import styles from "./DiningCard.module.scss";
 
 export function DiningCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("I18nConsolidation.Invoices.DiningCard");
+  const t = useTranslations("Domains.services.invoices.ui.diningCard");
   const {invoice} = useInvoiceContext();
   const {paymentInformation, items} = invoice;
   const {currency, totalCostAmount: totalAmount} = paymentInformation;

@@ -130,7 +130,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/domains/invoices/view-invoices">>): Promise<React.JSX.Element> {
   const t = await getTranslations("Domains.services.invoices.service.view-invoices");
-  const tCommon = await getTranslations("I18nConsolidation.Invoices.ViewInvoicesPage");
+  const tCommon = await getTranslations("Domains.services.invoices.ui.viewInvoicesPage");
   const {user} = await fetchAaaSUserFromAuthService();
   const username = user?.fullName ?? tCommon("guestName");
 

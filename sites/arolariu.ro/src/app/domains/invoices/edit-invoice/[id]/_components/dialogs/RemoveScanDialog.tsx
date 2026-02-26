@@ -38,7 +38,7 @@ type RemoveScanPayload = {
  * @see {@link deleteInvoiceScan} - Server action for scan removal
  */
 export default function RemoveScanDialog(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.RemoveScanDialog");
+  const t = useTranslations("Domains.services.invoices.ui.removeScanDialog");
   const router = useRouter();
   const {
     currentDialog: {payload},

@@ -69,7 +69,7 @@ import styles from "./ItemsDialog.module.scss";
  * @see {@link useDialog} - Dialog state management hook
  */
 export default function ItemsDialog(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.ItemsDialog");
+  const t = useTranslations("Domains.services.invoices.ui.itemsDialog");
   const {
     currentDialog: {payload},
     isOpen,

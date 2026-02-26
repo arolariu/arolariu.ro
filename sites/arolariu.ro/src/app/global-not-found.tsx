@@ -4,7 +4,8 @@ import {getCookie} from "@/lib/actions/cookies";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {Button} from "@arolariu/components";
 import type {Metadata} from "next";
-import {getLocale, getTranslations} from "next-intl/server";
+import type {AbstractIntlMessages} from "next-intl";
+import {getLocale, getMessages, getTranslations} from "next-intl/server";
 import {headers} from "next/headers";
 import Link from "next/link";
 import QRCode from "react-qr-code";
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
 export default async function NotFound(): Promise<React.JSX.Element> {
   const headersList = await headers();
   const locale = await getLocale();
+  const messages = await getMessages();
   const {user} = await fetchAaaSUserFromAuthService();
   const t = await getTranslations("errors.404");
   const eulaCookie = await getCookie("eula-accepted");
@@ -46,7 +48,9 @@ export default async function NotFound(): Promise<React.JSX.Element> {
       lang={locale}
       dir='ltr'>
       <body className={styles["body"]}>
-        <ContextProviders locale={locale}>
+        <ContextProviders
+          locale={locale}
+          messages={messages as unknown as AbstractIntlMessages}>
           <Header />
           <div className={styles["pageContainer"]}>
             <section className={styles["heroContent"]}>

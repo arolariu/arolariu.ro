@@ -25,7 +25,7 @@ import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ReceiptScanCard.module.scss";
 
 export function ReceiptScanCard(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.ReceiptScanCard");
+  const t = useTranslations("Domains.services.invoices.ui.receiptScanCard");
   const {invoice} = useInvoiceContext();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currentScanIndex, setCurrentScanIndex] = useState(0);

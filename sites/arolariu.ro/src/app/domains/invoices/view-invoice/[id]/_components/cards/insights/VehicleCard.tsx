@@ -11,7 +11,7 @@ import styles from "./VehicleCard.module.scss";
 
 export function VehicleCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("I18nConsolidation.Invoices.VehicleCard");
+  const t = useTranslations("Domains.services.invoices.ui.vehicleCard");
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const {currency, totalCostAmount: totalAmount} = paymentInformation;

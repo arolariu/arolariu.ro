@@ -47,7 +47,7 @@ import styles from "./AddScanDialog.module.scss";
  * @see {@link attachInvoiceScan} - Attaches scan URL to invoice
  */
 export default function AddScanDialog(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.AddScanDialog");
+  const t = useTranslations("Domains.services.invoices.ui.addScanDialog");
   const router = useRouter();
   const {
     currentDialog: {payload},

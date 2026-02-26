@@ -75,7 +75,7 @@ import styles from "./InvoiceCard.module.scss";
  */
 export default function InvoiceCard(): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("I18nConsolidation.Invoices.InvoiceCard");
+  const t = useTranslations("Domains.services.invoices.ui.invoiceCard");
   const {invoice, merchant, pendingChanges, setPaymentType, setIsImportant, setCategory, setDescription, setTransactionDate} =
     useEditInvoiceContext();
   const {paymentInformation, category, isImportant, description} = invoice;

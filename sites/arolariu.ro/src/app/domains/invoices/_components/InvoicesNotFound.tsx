@@ -7,7 +7,7 @@ import styles from "./InvoicesNotFound.module.scss";
  * @returns The JSX for the invoices not found view.
  */
 export default async function InvoicesNotFound(): Promise<React.JSX.Element> {
-  const t = await getTranslations("I18nConsolidation.Invoices.InvoicesNotFound");
+  const t = await getTranslations("Domains.services.invoices.ui.invoicesNotFound");
   return (
     <div className={styles["container"]}>
       <h1 className={styles["title"]}>{t("title")}</h1>

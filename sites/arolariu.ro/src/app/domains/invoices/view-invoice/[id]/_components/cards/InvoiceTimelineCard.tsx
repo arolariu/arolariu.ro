@@ -14,7 +14,7 @@ type Props = Readonly<{
 
 export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Element {
   const locale = useLocale();
-  const t = useTranslations("I18nConsolidation.Invoices.InvoiceTimeline");
+  const t = useTranslations("Domains.services.invoices.ui.invoiceTimeline");
   const events = generateTimelineFromInvoice(invoice);
   const groupedEvents = groupEventsByDate(events, locale);
 

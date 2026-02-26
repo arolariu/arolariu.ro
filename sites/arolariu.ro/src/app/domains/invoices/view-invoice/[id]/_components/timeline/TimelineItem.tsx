@@ -41,7 +41,7 @@ type Props = Readonly<{
  * ```
  */
 export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.TimelineItem");
+  const t = useTranslations("Domains.services.invoices.ui.timelineItem");
   const locale = useLocale();
   const tooltipContent = getTooltipContent(event, t);
   const eventTitle = getEventTitle(event, t);
@@ -149,7 +149,7 @@ function getTooltipContent(event: TimelineEvent, t: ReturnType<typeof useTransla
     case TimelineEventType.RECIPES_GENERATED:
       return t("tooltips.recipesGenerated", {count: event.metadata?.itemCount ?? 0});
     case TimelineEventType.SHARED:
-      return t("tooltips.shared", {users: event.metadata?.users?.length ?? 0});
+      return t("tooltips.shared", {count: event.metadata?.users?.length ?? 0});
     case TimelineEventType.CATEGORIZED:
       return t("tooltips.categorized");
     case TimelineEventType.MARKED_IMPORTANT:

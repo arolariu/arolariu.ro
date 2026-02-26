@@ -46,7 +46,7 @@ import styles from "./InvoiceHeader.module.scss";
  * @see {@link useEditInvoiceContext} - Context for tracking pending changes
  */
 export default function InvoiceHeader(): React.JSX.Element {
-  const t = useTranslations("I18nConsolidation.Invoices.InvoiceHeader");
+  const t = useTranslations("Domains.services.invoices.ui.invoiceHeader");
   const {invoice, pendingChanges, hasChanges, isSaving, setName, saveChanges, discardChanges} = useEditInvoiceContext();
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
   const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});

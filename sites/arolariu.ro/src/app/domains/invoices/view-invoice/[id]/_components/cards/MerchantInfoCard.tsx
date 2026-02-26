@@ -10,7 +10,7 @@ import styles from "./MerchantInfoCard.module.scss";
 
 export function MerchantInfoCard(): React.JSX.Element {
   const {merchant} = useInvoiceContext();
-  const t = useTranslations("I18nConsolidation.Invoices.MerchantInfoCard");
+  const t = useTranslations("Domains.services.invoices.ui.merchantInfoCard");
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
