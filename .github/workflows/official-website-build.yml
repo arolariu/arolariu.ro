@@ -37,7 +37,7 @@
 #   3. GitHub Secrets configured:
 #      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
 #      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
-#      - AZURE_CONTAINER_REGISTRY_USERNAME/PASSWORD/ADDRESS
+#      - AZURE_CONTAINER_REGISTRY_ADDRESS
 #      - CODECOV_TOKEN (for coverage reporting)
 #
 # Related Workflows:
@@ -277,11 +277,7 @@ jobs:
           cache-key-prefix: 'website'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        uses: Azure/docker-login@v2
-        with:
-          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
-          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
-          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+        run: az acr login --name ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 📋 Verify generated .env file exists
         run: |
