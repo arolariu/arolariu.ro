@@ -21,7 +21,7 @@ metadata version = '1.0.0'
 
 import {
   cognitiveServicesOpenAiUser
-} from '../types/roles.type.bicep'
+} from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
 // Parameters

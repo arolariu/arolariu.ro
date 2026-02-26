@@ -20,7 +20,7 @@ metadata version = '1.0.0'
 
 import {
   websiteContributor
-} from '../types/roles.type.bicep'
+} from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
 // Parameters

@@ -20,7 +20,7 @@ metadata version = '1.0.0'
 import {
   appConfigurationDataReader
   appConfigurationDataOwner
-} from '../types/roles.type.bicep'
+} from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
 // Parameters

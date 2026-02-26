@@ -4,7 +4,7 @@ This module manages Role-Based Access Control (RBAC) assignments for managed ide
 
 ## Architecture
 
-RBAC assignments are co-located with the resources they protect. Each file assigns roles scoped to a single Azure resource type using the `existing` keyword and `scope:` property. Role definition GUIDs are imported from `types/roles.type.bicep` (single source of truth).
+RBAC assignments are co-located with the resources they protect. Each file assigns roles scoped to a single Azure resource type using the `existing` keyword and `scope:` property. Role definition GUIDs are imported from `constants/roles.bicep` (single source of truth).
 
 ```
 facade.bicep
@@ -73,12 +73,12 @@ facade.bicep
 ## How to Add a New Role Assignment
 
 1. Identify the target resource and which identity needs access
-2. Add the role GUID to `types/roles.type.bicep` if not already present
+2. Add the role GUID to `constants/roles.bicep` if not already present
 3. Add the assignment to the appropriate `rbac/<resource>-rbac.bicep` file
 4. Use this pattern:
 
 ```bicep
-import { myNewRole } from '../types/roles.type.bicep'
+import { myNewRole } from '../constants/roles.bicep'
 
 resource myAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: targetResource  // ALWAYS scope to the specific resource

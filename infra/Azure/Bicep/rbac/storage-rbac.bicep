@@ -25,7 +25,7 @@ import {
   storageQueueDataContributor
   storageTableDataReader
   storageTableDataContributor
-} from '../types/roles.type.bicep'
+} from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
 // Parameters

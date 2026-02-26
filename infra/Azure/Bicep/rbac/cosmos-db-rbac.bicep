@@ -21,7 +21,7 @@ metadata version = '1.0.0'
 
 import {
   cosmosDbDataOperator
-} from '../types/roles.type.bicep'
+} from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
 // Parameters

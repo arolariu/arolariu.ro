@@ -19,7 +19,7 @@ metadata version = '1.0.0'
 import {
   keyVaultSecretsUser
   keyVaultReader
-} from '../types/roles.type.bicep'
+} from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
 // Parameters

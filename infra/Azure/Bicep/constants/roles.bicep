@@ -5,7 +5,7 @@
 // Reference: https://learn.microsoft.com/azure/role-based-access-control/built-in-roles
 //
 // Usage:
-//   import { storageBlobDataReader } from '../types/roles.type.bicep'
+//   import { storageBlobDataReader } from '../constants/roles.bicep'
 // =====================================================================================
 
 metadata description = 'Shared Azure built-in role definition GUIDs for RBAC assignments'
