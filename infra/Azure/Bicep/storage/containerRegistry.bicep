@@ -69,7 +69,7 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-11-01' =
   location: containerRegistryLocation
   sku: { name: 'Basic' }
   properties: {
-    adminUserEnabled: true
+    adminUserEnabled: false
     policies: {
       quarantinePolicy: { status: 'Disabled' }
       trustPolicy: { status: 'Disabled' }
@@ -94,4 +94,3 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-11-01' =
 output containerRegistryName string = containerRegistry.name
 output containerRegistryId string = containerRegistry.id
 output containerRegistryLoginServer string = containerRegistry.properties.loginServer
-output containerRegistryResourceId string = containerRegistry.id
