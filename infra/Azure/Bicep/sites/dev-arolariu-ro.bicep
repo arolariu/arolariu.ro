@@ -88,7 +88,6 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
       acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
-      functionAppScaleLimit: 0
       linuxFxVersion: 'NODE|24-lts' // Node.js version 24 is used.
       alwaysOn: true // The app is (should be!) always on.
       cors: {
