@@ -58,7 +58,7 @@ test.describe("Legal Pages @legal", () => {
         // Wait for main content to be fully rendered before checking length
         const main = page.locator("main");
         await expect(main).toBeVisible();
-        await page.waitForLoadState("networkidle");
+        await page.waitForLoadState("domcontentloaded");
         const content = await main.textContent();
         expect(content).toBeTruthy();
         expect(content!.length).toBeGreaterThan(50);
