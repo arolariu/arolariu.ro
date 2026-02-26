@@ -47,7 +47,7 @@ param infrastructurePrincipalId string
 // Existing Resource Reference
 // -------------------------------------------------------------------------------------
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' existing = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' existing = {
   name: storageAccountName
 }
 
