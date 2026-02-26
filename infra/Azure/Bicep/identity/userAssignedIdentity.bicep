@@ -87,5 +87,6 @@ output userAssignedManagedIdentities identity[] = [
     displayName: identities[identity].displayName
     resourceId: userAssignedManagedIdentities[identity].id
     principalId: userAssignedManagedIdentities[identity].properties.principalId
+    clientId: userAssignedManagedIdentities[identity].properties.clientId
   }
 ]

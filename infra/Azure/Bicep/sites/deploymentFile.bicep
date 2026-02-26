@@ -55,6 +55,8 @@ param appInsightsConnectionString string
 
 param managedIdentityBackendId string
 param managedIdentityFrontendId string
+param managedIdentityFrontendClientId string
+param managedIdentityBackendClientId string
 
 module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
   scope: resourceGroup()
@@ -64,6 +66,7 @@ module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
     apiWebsiteLocation: resourceLocation
     apiWebsitePlanId: productionAppPlanId
     apiWebsiteIdentityId: managedIdentityBackendId
+    apiWebsiteIdentityClientId: managedIdentityBackendClientId
     apiWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
@@ -76,6 +79,7 @@ module mainWebsiteDeployment 'arolariu-ro.bicep' = {
     productionWebsiteLocation: resourceLocation
     productionWebsiteAppPlanId: productionAppPlanId
     productionWebsiteIdentityId: managedIdentityFrontendId
+    productionWebsiteIdentityClientId: managedIdentityFrontendClientId
     productionWebsiteDeploymentDate: resourceDeploymentDate
   }
 }

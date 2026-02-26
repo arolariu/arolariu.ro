@@ -45,6 +45,7 @@ metadata version = '2.0.0'
 param apiWebsitePlanId string
 param apiWebsiteLocation string
 param apiWebsiteIdentityId string
+param apiWebsiteIdentityClientId string
 param apiWebsiteDeploymentDate string
 param appInsightsConnectionString string
 
@@ -105,7 +106,11 @@ resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
       appSettings: [
         {
           name: 'ASPNETCORE_ENVIRONMENT'
-          value: 'Production' // Environment setting for ASP.NET Core
+          value: 'Production'
+        }
+        {
+          name: 'AZURE_CLIENT_ID'
+          value: apiWebsiteIdentityClientId
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

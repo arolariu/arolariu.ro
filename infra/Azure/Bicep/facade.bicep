@@ -129,6 +129,8 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
     managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
     managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
+    managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
+    managedIdentityBackendClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
   }
 }
 

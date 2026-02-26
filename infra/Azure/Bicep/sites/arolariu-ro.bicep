@@ -51,6 +51,7 @@ metadata version = '2.0.0'
 param productionWebsiteLocation string
 param productionWebsiteAppPlanId string
 param productionWebsiteIdentityId string
+param productionWebsiteIdentityClientId string
 param productionWebsiteDeploymentDate string
 param appInsightsConnectionString string
 
@@ -153,7 +154,11 @@ resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
       appSettings: [
         {
           name: 'NODE_ENV'
-          value: 'Production' // Environment setting for Node.js
+          value: 'Production'
+        }
+        {
+          name: 'AZURE_CLIENT_ID'
+          value: productionWebsiteIdentityClientId
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
