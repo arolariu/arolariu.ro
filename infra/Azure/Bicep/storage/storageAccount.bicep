@@ -72,8 +72,8 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
     publicNetworkAccess: 'Enabled'
     allowCrossTenantReplication: false
     minimumTlsVersion: 'TLS1_2'
-    allowBlobPublicAccess: true
-    allowSharedKeyAccess: true
+    allowBlobPublicAccess: false
+    allowSharedKeyAccess: false
     networkAcls: {
       bypass: 'AzureServices, Logging, Metrics'
       defaultAction: 'Allow'
