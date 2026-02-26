@@ -91,6 +91,7 @@ resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicat
         {
           ruleSetType: 'Microsoft_BotManagerRuleSet'
           ruleSetVersion: '1.1'
+          ruleSetAction: 'Block'
         }
       ]
     }
