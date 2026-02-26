@@ -70,7 +70,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               checked={selectedInvoices.includes(invoice)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
               onCheckedChange={() => handleSelectInvoice(invoice.id)}
-              aria-label={tTableView("aria.selectInvoice", {id: invoice.name})}
+              aria-label={tTableView("aria.selectInvoice", {name: invoice.name})}
               className='bg-background/80 backdrop-blur-sm'
             />
           </div>
