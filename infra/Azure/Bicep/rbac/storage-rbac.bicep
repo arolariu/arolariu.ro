@@ -8,7 +8,7 @@ targetScope = 'resourceGroup'
 // privilege. Role GUIDs are imported from the shared roles type file.
 //
 // Assigned Roles:
-// - Frontend: Blob Data Reader, Blob Data Contributor, Queue Data Reader, Table Data Reader
+// - Frontend: Blob Data Contributor, Queue Data Reader, Table Data Reader
 // - Backend: Blob Data Owner, Queue Data Contributor, Table Data Contributor
 // - Infrastructure: Blob Data Reader, Queue Data Reader, Table Data Reader
 // =====================================================================================
@@ -55,19 +55,8 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' existing 
 // Frontend Role Assignments
 // =====================================================================================
 
-// Grants the frontend read access to blob data (CDN assets, static files)
-resource frontendBlobReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: storageAccount
-  name: guid(storageAccount.id, frontendPrincipalId, storageBlobDataReader)
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataReader)
-    principalId: frontendPrincipalId
-    principalType: 'ServicePrincipal'
-    description: 'Frontend: read blob data from storage account'
-  }
-}
-
 // Grants the frontend read/write access to blob data (user-uploaded invoice images)
+// Note: Blob Data Contributor already includes read permissions, so no separate Reader needed.
 resource frontendBlobContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: storageAccount
   name: guid(storageAccount.id, frontendPrincipalId, storageBlobDataContributor)

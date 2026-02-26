@@ -18,7 +18,7 @@ facade.bicep
 
 | File | Target Resource | Assignments |
 |------|----------------|-------------|
-| `storage-rbac.bicep` | Storage Account | 10 (frontend/backend/infra) |
+| `storage-rbac.bicep` | Storage Account | 9 (frontend/backend/infra) |
 | `container-registry-rbac.bicep` | Container Registry | 4 (frontend/backend/infra) |
 | `key-vault-rbac.bicep` | Key Vault | 3 (backend/infra) |
 | `app-configuration-rbac.bicep` | App Configuration | 3 (frontend/backend/infra) |
@@ -27,7 +27,7 @@ facade.bicep
 | `openai-rbac.bicep` | Azure OpenAI | 1 (backend) |
 | `websites-rbac.bicep` | App Services (looped) | 1 per web app (infra) |
 | `sql-rbac-uami.sql` | SQL database-level roles | N/A |
-| **Total** | | **23 resource-scoped assignments** |
+| **Total** | | **22 fixed + 1 per web app (Website Contributor)** |
 
 ## Identity Roles Summary
 
@@ -35,8 +35,7 @@ facade.bicep
 
 | Resource | Role | Purpose |
 |----------|------|---------|
-| Storage Account | Blob Data Reader | Read CDN assets, static files |
-| Storage Account | Blob Data Contributor | Write user-uploaded invoices |
+| Storage Account | Blob Data Contributor | Read + write user-uploaded invoices |
 | Storage Account | Queue Data Reader | Status polling |
 | Storage Account | Table Data Reader | Feature flags, metadata |
 | App Configuration | Data Reader | Read settings |
