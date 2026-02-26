@@ -1108,7 +1108,11 @@
       "fontDyslexic": "Dyslexic-Friendly Font",
       "rainbow": "Rainbow Mode",
       "disco": "Disco Mode",
-      "matrix": "Matrix Mode"
+      "matrix": "Matrix Mode",
+      "english": "English",
+      "romanian": "Română",
+      "french": "Français",
+      "github": "GitHub"
     }
   },
   "Invoices": {
@@ -1152,7 +1156,8 @@
               "titleSuffix": "with Ease",
               "description": "Upload your receipts and bills, organize them into invoices, and gain insights into your spending habits. Our AI-powered system extracts data automatically.",
               "getStarted": "Get Started",
-              "viewMyInvoices": "View My Invoices"
+              "viewMyInvoices": "View My Invoices",
+              "imageAlt": "Invoice management illustration"
             },
             "workflow": {
               "title": "How It Works",
@@ -1188,7 +1193,9 @@
                 "title": "Batch Processing",
                 "description": "Process multiple scans at once - create individual invoices or combine them into one."
               },
-              "signInPrompt": "Sign in to save your invoices permanently and access them from any device."
+              "signInPrompt": "Sign in to save your invoices permanently and access them from any device.",
+              "imageAlt": "Invoice features illustration",
+              "signIn": "Sign in"
             },
             "bento": {
               "title": "Everything You Need",
@@ -1551,7 +1558,12 @@
     },
     "sourceCode": "Source code is available ",
     "sourceCodeAnchor": "here (GitHub repo)",
-    "subtitle": "The platform is built using the latest stable, state-of-the-art technologies and with enterprise-grade experience. <br></br> <br></br> We hope that you have a great experience when exploring this platform."
+    "subtitle": "The platform is built using the latest stable, state-of-the-art technologies and with enterprise-grade experience. <br></br> <br></br> We hope that you have a great experience when exploring this platform.",
+    "accessibility": {
+      "goHome": "Go home",
+      "brandTitle": "AROLARIU.RO",
+      "logoAlt": "The arolariu.ro logo."
+    }
   },
   "Navigation": {
     "domains": "Domains",
@@ -2293,6 +2305,1533 @@
           "deleteAccountHint": "Permanently delete your account",
           "manageAccount": "Manage on Clerk"
         }
+      }
+    }
+  },
+  "I18nConsolidation": {
+    "Header": {
+      "logoAlt": "arolariu.ro logo"
+    },
+    "ThemeButton": {
+      "toggleAriaLabel": "Toggle theme"
+    },
+    "GlobalError": {
+      "copyErrorConsoleMessage": "Failed to copy error ID:",
+      "hero": {
+        "title": "Something went wrong",
+        "subtitle": "An unexpected error occurred. Our team has been automatically notified."
+      },
+      "details": {
+        "title": "Error details",
+        "errorIdLabel": "Error ID:",
+        "genericDescription": "An error occurred while processing your request.",
+        "whatHappenedTitle": "What happened?",
+        "unknownError": "An unknown error occurred."
+      },
+      "actions": {
+        "whatCanYouDoTitle": "What can you do?",
+        "step1": "Try refreshing the page using the button below.",
+        "step2": "Go back to the home page and start over.",
+        "step3": "Contact support if the problem persists."
+      },
+      "diagnostics": {
+        "scanLabel": "Scan for diagnostic information:",
+        "technicalSummary": "Technical information (for developers)",
+        "loading": "Loading diagnostic information...",
+        "stackTraceLabel": "Stack trace:"
+      },
+      "buttons": {
+        "tryAgain": "Try again",
+        "returnHome": "Return to home",
+        "copyErrorIdTitle": "Copy error ID",
+        "copyErrorId": "Copy error ID",
+        "copied": "Copied!"
+      },
+      "support": {
+        "contactPrefix": "If this problem continues, please contact us at",
+        "includeErrorId": "and include the error ID:"
+      },
+      "metadata": {
+        "title": "Application Error - AROLARIU.RO"
+      }
+    },
+    "MyProfileIsland": {
+      "totalInvoices": "Total invoices",
+      "merchants": "{count} merchants",
+      "scans": "{count} scans",
+      "settingsNavigationAriaLabel": "Settings navigation"
+    },
+    "Invoices": {
+      "ViewInvoicesIsland": {
+        "tabs": {
+          "invoices": "Invoices",
+          "statistics": "Statistics",
+          "liveAnalysis": "Live analysis"
+        }
+      },
+      "InvoicesHeader": {
+        "title": "Invoice management",
+        "description": "Manage your receipts and track your spending habits",
+        "actions": {
+          "import": "Import",
+          "export": "Export",
+          "print": "Print",
+          "newInvoice": "New invoice"
+        },
+        "tooltips": {
+          "import": "Import invoices from files",
+          "export": "Export all invoices",
+          "print": "Print invoices",
+          "newInvoice": "Create a new invoice"
+        }
+      },
+      "InvoicesView": {
+        "searchPlaceholder": "Search invoices...",
+        "filters": {
+          "category": "Category",
+          "timeOfDay": "Time of day"
+        },
+        "categories": {
+          "all": "All categories",
+          "groceries": "Groceries",
+          "dining": "Dining",
+          "utilities": "Utilities",
+          "entertainment": "Entertainment",
+          "travel": "Travel",
+          "other": "Other"
+        },
+        "times": {
+          "all": "All times",
+          "day": "Daytime (6am-6pm)",
+          "night": "Nighttime (6pm-6am)"
+        },
+        "placeholderPanel": "More filter controls coming soon.",
+        "viewModes": {
+          "table": "Table view",
+          "grid": "Grid view"
+        }
+      },
+      "GenerativeView": {
+        "welcomeMessage": "Hello! I'm your invoice analysis assistant. How can I help you today? Try commands like /find to search invoices.",
+        "title": "Live analysis",
+        "subtitle": "Chat with AI to analyze your invoices and get insights",
+        "help": "Help",
+        "tabs": {
+          "chat": "Chat",
+          "settings": "Settings"
+        },
+        "chatDescription": "Chat with AI to analyze your invoices and get insights. Try commands like /find to search invoices.",
+        "settings": {
+          "title": "Chat settings",
+          "description": "Configure your AI assistant preferences",
+          "historyLabel": "Chat history",
+          "retentionPlaceholder": "Select retention period",
+          "retention": {
+            "30": "Keep for 30 days",
+            "60": "Keep for 60 days",
+            "90": "Keep for 90 days",
+            "none": "Don't save history"
+          },
+          "dataAccessTitle": "Data access",
+          "allowInvoiceData": "Allow access to invoice data",
+          "allowMerchantData": "Allow access to merchant data",
+          "notificationPreferences": "Notification preferences",
+          "notifyInsights": "Notify me about new insights",
+          "save": "Save settings"
+        }
+      },
+      "DeleteInvoiceDialog": {
+        "title": "Delete invoice",
+        "description": "This action cannot be undone. Please review carefully before proceeding.",
+        "deleting": {
+          "title": "Deleting invoice...",
+          "description": "Please wait while we remove all associated data."
+        },
+        "impact": {
+          "title": "Permanent deletion",
+          "intro": "The following data will be permanently deleted:",
+          "invoiceRecord": "Invoice record and metadata",
+          "uploadedScans": "{count} uploaded scan(s)",
+          "lineItems": "{count} line item(s)",
+          "sharedAccess": "Shared access for {count} user(s)"
+        },
+        "confirmation": {
+          "typeToConfirm": "Type <highlight>{name}</highlight> to confirm:",
+          "understoodLabel": "I understand this action is permanent",
+          "understoodDescription": "This invoice and all its data will be permanently deleted and cannot be recovered."
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "deleting": "Deleting...",
+          "deletePermanently": "Delete permanently"
+        },
+        "toasts": {
+          "deletedTitle": "Invoice deleted",
+          "deletedDescription": "The invoice was deleted successfully.",
+          "deleteFailedTitle": "Delete failed",
+          "deleteFailedDescription": "We couldn't delete this invoice. Please try again."
+        },
+        "console": {
+          "deleteError": "Error deleting invoice:"
+        }
+      },
+      "ShareInvoiceDialog": {
+        "title": "Share invoice",
+        "selection": {
+          "description": "Choose how you want to share this invoice. Your choice affects who can access it.",
+          "publicTitle": "Public sharing",
+          "publicDescription": "Generate a link or QR code that <strong>anyone</strong> can use to view this invoice.",
+          "privateTitle": "Private sharing",
+          "privateDescription": "Send an email invitation to a <strong>specific person</strong>. Only they will have access.",
+          "privacyNoticeTitle": "Privacy notice",
+          "privacyNoticeDescription": "Public links can be accessed by anyone who has the URL. Private sharing restricts access to the specific recipient."
+        },
+        "dialogDescription": {
+          "currentlyPublic": "\"{invoiceName}\" is currently public",
+          "selection": "Choose how to share \"{invoiceName}\"",
+          "public": "Share \"{invoiceName}\" publicly",
+          "private": "Send \"{invoiceName}\" privately"
+        },
+        "toasts": {
+          "copyLink": {
+            "loadingPublic": "Copying link...",
+            "loadingMakePublic": "Making invoice public...",
+            "successPublic": "Link copied to clipboard!",
+            "successMadePublic": "Invoice is now public! Link copied to clipboard.",
+            "error": "Failed: {message}"
+          },
+          "copyQr": {
+            "loadingPublic": "Copying QR code...",
+            "loadingMakePublic": "Making invoice public...",
+            "successPublic": "QR code copied to clipboard!",
+            "successMadePublic": "Invoice is now public! QR code copied to clipboard.",
+            "error": "Failed: {message}"
+          },
+          "sendEmail": {
+            "loading": "Sending invitation to {email}...",
+            "success": "Invitation sent to {email}!",
+            "error": "Failed: {message}"
+          },
+          "revoke": {
+            "loading": "Sending revoke request to backend...",
+            "success": "Invoice is now private. Existing links will no longer work.",
+            "error": "Failed to revoke access: {message}"
+          }
+        },
+        "errors": {
+          "qrNotFound": "QR code element not found"
+        }
+      },
+      "ShareInvoiceDialogPublic": {
+        "tabs": {
+          "directLink": "Direct link",
+          "qrCode": "QR code"
+        },
+        "hints": {
+          "link": "Copy this link and share it. Anyone who receives it will be able to view the invoice.",
+          "qr": "Anyone who scans this QR code will be directed to view the invoice."
+        },
+        "copyQrImage": "Copy QR code as image",
+        "alreadyPublic": {
+          "title": "This invoice is currently public",
+          "description": "This invoice is publicly accessible. <strong>Anyone with the link can view it</strong>, including all invoice details, items, and amounts. You can revoke public access at any time to make it private again.",
+          "revoke": "Revoke public access",
+          "revoking": "Revoking access...",
+          "revokeHint": "This will make the invoice private. Existing links will stop working."
+        },
+        "backToOptions": "Back to options",
+        "warning": {
+          "title": "Public access warning",
+          "description": "By sharing this invoice publicly, <strong>anyone with the link will be able to view it</strong>. This includes all invoice details, items, and amounts. Only proceed if you intend to make this invoice accessible to the public."
+        }
+      },
+      "ShareInvoiceDialogPrivate": {
+        "backToOptions": "Back to options",
+        "title": "Private sharing",
+        "description": "The invitation will be sent directly to the email address you specify. Only this recipient will receive access to view the invoice.",
+        "emailLabel": "Recipient's email address",
+        "emailPlaceholder": "name@example.com",
+        "emailHint": "An email invitation will be sent to this address with a private link to view the invoice.",
+        "sendInvitation": "Send private invitation"
+      },
+      "EditInvoiceContext": {
+        "toasts": {
+          "noChanges": "No changes to save",
+          "updated": "Invoice updated successfully",
+          "saveFailed": "Failed to save changes"
+        },
+        "console": {
+          "saveFailed": "Failed to save invoice:"
+        }
+      },
+      "AddScanDialog": {
+        "title": "Add new scan",
+        "description": "Upload a new receipt image or document to attach to this invoice.",
+        "dropzone": {
+          "dropHere": "Drop the file here...",
+          "dragAndDrop": "Drag & drop a file here",
+          "orClickBrowse": "or click to browse",
+          "formats": "JPEG, PNG, PDF (max 10MB)"
+        },
+        "scanType": {
+          "label": "Scan type",
+          "placeholder": "Select scan type",
+          "jpeg": "JPEG image",
+          "png": "PNG image",
+          "pdf": "PDF document",
+          "other": "Other"
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "uploading": "Uploading...",
+          "upload": "Upload scan"
+        },
+        "errors": {
+          "uploadStorageFailed": "Failed to upload scan to storage",
+          "unknown": "Unknown error occurred"
+        },
+        "toasts": {
+          "fileTooLargeTitle": "File too large",
+          "fileTooLargeDescription": "Maximum file size is 10MB",
+          "scanAddedTitle": "Scan added successfully",
+          "scanAddedDescription": "The scan has been attached to the invoice",
+          "scanFailedTitle": "Failed to add scan"
+        },
+        "console": {
+          "uploadError": "Error uploading scan:"
+        }
+      },
+      "RemoveScanDialog": {
+        "title": "Remove scan",
+        "description": "Are you sure you want to remove scan {current} of {total}?",
+        "descriptionLastScan": "This is the only scan attached to this invoice. You cannot remove it.",
+        "scanAlt": "Scan {index}",
+        "scanCaption": "Scan {index}",
+        "warning": {
+          "title": "Cannot remove last scan",
+          "description": "Every invoice must have at least one scan attached. Add another scan before removing this one."
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "removing": "Removing...",
+          "remove": "Remove scan"
+        },
+        "toasts": {
+          "cannotDeleteLastTitle": "Cannot delete last scan",
+          "cannotDeleteLastDescription": "An invoice must have at least one scan attached",
+          "removedTitle": "Scan removed successfully",
+          "removedDescription": "The scan has been removed from the invoice",
+          "removeFailedTitle": "Failed to remove scan"
+        },
+        "errors": {
+          "unknown": "Unknown error occurred"
+        },
+        "console": {
+          "deleteError": "Error deleting scan:"
+        }
+      },
+      "MetadataDialog": {
+        "add": {
+          "title": "Add metadata",
+          "description": "Add additional information to this invoice"
+        },
+        "edit": {
+          "title": "Edit metadata",
+          "description": "Update the value of this metadata field",
+          "fieldLabel": "Metadata field"
+        },
+        "delete": {
+          "title": "Delete metadata",
+          "description": "Are you sure you want to delete this metadata?"
+        },
+        "fields": {
+          "keyLabel": "Metadata key",
+          "valueLabel": "Metadata value",
+          "keyPlaceholder": "Enter key",
+          "valuePlaceholder": "Enter value"
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "save": "Save",
+          "delete": "Delete"
+        }
+      },
+      "ItemsDialog": {
+        "title": "Edit invoice items",
+        "description": "Update quantities, prices, or add new items to this invoice",
+        "table": {
+          "item": "Item",
+          "quantity": "Quantity",
+          "unit": "Unit",
+          "price": "Price",
+          "total": "Total",
+          "actions": "Actions"
+        },
+        "footer": {
+          "itemsFound": "{total} items found (showing {shown})",
+          "page": "Page {current} of {total}",
+          "itemsTotal": "{count, plural, one {# item in total} other {# items in total}}"
+        },
+        "buttons": {
+          "previous": "Previous",
+          "next": "Next",
+          "addItem": "Add item",
+          "cancel": "Cancel",
+          "saveChanges": "Save changes"
+        },
+        "aria": {
+          "deleteItem": "Delete item: {name}",
+          "unnamedItem": "unnamed item",
+          "previousPage": "Go to previous page (page {page})",
+          "nextPage": "Go to next page (page {page})",
+          "addItem": "Add a new item to the invoice",
+          "cancel": "Cancel editing and close dialog",
+          "save": "Save changes to invoice items"
+        }
+      },
+      "InvoiceCard": {
+        "title": "Invoice details",
+        "importantBadge": "IMPORTANT",
+        "markImportant": "Mark as important",
+        "tooltips": {
+          "unmarkFavorite": "Click to unmark as favorite",
+          "markFavorite": "Click to mark as favorite"
+        },
+        "fromMerchant": "From {merchant}",
+        "descriptionPlaceholder": "Enter invoice description...",
+        "labels": {
+          "dateUtc": "Date (UTC)",
+          "hours": "Hours",
+          "minutes": "Minutes",
+          "utc": "UTC",
+          "category": "Category",
+          "paymentMethod": "Payment method",
+          "totalAmount": "Total amount"
+        },
+        "placeholders": {
+          "selectCategory": "Select category",
+          "selectPaymentType": "Select payment type"
+        }
+      },
+      "ImageCard": {
+        "title": "Receipt scan",
+        "dialogTitle": "Receipt image",
+        "scanAlt": "Receipt scan {index}",
+        "scanAltFullSize": "Receipt scan {index} - full size",
+        "buttons": {
+          "expand": "Expand image",
+          "previous": "Previous",
+          "next": "Next",
+          "addScan": "Add scan",
+          "remove": "Remove"
+        },
+        "tooltips": {
+          "expand": "View the receipt image in full size",
+          "previous": "View the previous receipt scan",
+          "next": "View the next receipt scan",
+          "addScan": "Upload and attach a new receipt scan",
+          "remove": "Remove the current receipt scan"
+        },
+        "aria": {
+          "expandImage": "Click to expand image"
+        }
+      },
+      "GeneralExpenseCard": {
+        "title": "Expense intelligence",
+        "detectedCategory": "Electronics / Technology",
+        "confidence": "Confidence: {value}%",
+        "sections": {
+          "autoDetectedCategory": "Auto-detected category",
+          "budgetImpact": "Budget impact",
+          "taxBusiness": "Tax & Business options",
+          "similarPurchases": "Similar past purchases"
+        },
+        "buttons": {
+          "correct": "Correct",
+          "change": "Change",
+          "organize": "Organize",
+          "export": "Export"
+        },
+        "aria": {
+          "confirmCategory": "Confirm category detection is correct",
+          "changeCategory": "Change detected category",
+          "organize": "Organize this expense into categories",
+          "export": "Export expense data"
+        },
+        "nearLimitAlert": "{name}: {percent}% used (10 days left in month)",
+        "options": {
+          "businessExpense": "Mark as business expense",
+          "trackWarranty": "Track warranty (24 months standard)",
+          "insuranceInventory": "Add to insurance inventory"
+        },
+        "vatReclaimable": "VAT reclaimable",
+        "budgetCategories": {
+          "electronics": "Electronics",
+          "entertainment": "Entertainment",
+          "shopping": "Shopping"
+        }
+      },
+      "InvoicesNotFound": {
+        "title": "Something is missing here...",
+        "description": "It seems that you do not have any invoices associated with your account. Please upload some invoices and come back later.",
+        "cta": "Upload an invoice here."
+      },
+      "LoadingInvoices": {
+        "title": "Loading invoices",
+        "description": "Loading invoices..."
+      },
+      "ViewInvoicesPage": {
+        "guestName": "dear guest"
+      },
+      "MerchantReceiptsDialog": {
+        "title": "All receipts from {merchant}",
+        "description": "View and filter all your receipts from this merchant",
+        "searchPlaceholder": "Search receipts...",
+        "filters": {
+          "date": "Date",
+          "sort": "Sort"
+        },
+        "dateOptions": {
+          "allTime": "All time",
+          "last30Days": "Last 30 days",
+          "last90Days": "Last 90 days",
+          "thisYear": "This year"
+        },
+        "sortOptions": {
+          "newest": "Newest first",
+          "oldest": "Oldest first"
+        },
+        "table": {
+          "receipt": "Receipt",
+          "date": "Date",
+          "itemsCount": "Items #",
+          "actions": "Actions",
+          "view": "View"
+        },
+        "footer": {
+          "receiptsFound": "{count} receipts found (showing {showing})",
+          "page": "Page {current} of {total}"
+        },
+        "buttons": {
+          "previous": "Previous",
+          "next": "Next"
+        }
+      },
+      "RecipeDialog": {
+        "create": {
+          "title": "Add new recipe",
+          "description": "Fill in the details to create a recipe."
+        },
+        "read": {
+          "description": "Recipe details and cooking instructions",
+          "noDescription": "No description provided.",
+          "notSpecified": "Not specified"
+        },
+        "update": {
+          "title": "Update recipe",
+          "description": "Update recipe details."
+        },
+        "delete": {
+          "title": "Are you sure?",
+          "description": "This action cannot be undone. This will permanently delete the recipe <strong>{name}</strong> and all its associated data."
+        },
+        "fields": {
+          "recipeName": "Recipe name",
+          "description": "Description",
+          "ingredients": "Ingredients",
+          "difficulty": "Difficulty level",
+          "complexity": "Complexity level",
+          "instructions": "Instructions",
+          "prepTime": "Prep time",
+          "cookTime": "Cook time"
+        },
+        "actions": {
+          "generateName": "Generate name",
+          "enhanceInstructions": "Enhance instructions"
+        },
+        "tooltips": {
+          "generateName": "Generate a recipe name based on your ingredients and difficulty level using AI",
+          "enhanceInstructions": "Use AI to enhance your instructions with more details"
+        },
+        "placeholders": {
+          "recipeName": "Enter recipe name",
+          "description": "Enter a brief description of the recipe",
+          "selectDifficulty": "Select difficulty",
+          "instructions": "Enter cooking instructions",
+          "prepTime": "e.g. 15 minutes",
+          "cookTime": "e.g. 30 minutes"
+        },
+        "difficulty": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
+        "buttons": {
+          "add": "Add",
+          "cancel": "Cancel",
+          "save": "Save",
+          "close": "Close",
+          "delete": "Delete"
+        }
+      },
+      "VehicleCard": {
+        "title": "Vehicle Expense Analysis",
+        "expenseType": "Expense Type: Fuel",
+        "details": {
+          "liters": "Liters",
+          "pricePerLiter": "Price/L",
+          "station": "Station",
+          "vehicle": "Vehicle",
+          "notSet": "Not set"
+        },
+        "chart": {
+          "title": "Monthly Fuel Spending",
+          "amount": "Amount"
+        },
+        "stats": {
+          "thisMonth": "This Month",
+          "fillUps": "{count} fill-ups",
+          "costPerKm": "Cost/km",
+          "estimated": "estimated",
+          "fuelPrice": "Fuel Price",
+          "thisMonthSuffix": "this month"
+        },
+        "maintenance": {
+          "title": "Maintenance Reminders"
+        },
+        "tip": {
+          "title": "Cheapest Nearby",
+          "perLiter": "L"
+        },
+        "buttons": {
+          "addVehicle": "Add Vehicle",
+          "fullReport": "Full Report"
+        },
+        "months": {
+          "sep": "Sep",
+          "oct": "Oct",
+          "nov": "Nov",
+          "dec": "Dec"
+        },
+        "reminders": {
+          "oilChange": "Oil change due in ~1,200 km",
+          "tireRotation": "Tire rotation recommended"
+        }
+      },
+      "DiningCard": {
+        "title": "Dining Insights",
+        "sodium": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        },
+        "estimatedNutrition": {
+          "title": "Estimated Nutrition",
+          "calories": "Calories",
+          "caloriesValue": "~{value} kcal",
+          "protein": "Protein",
+          "proteinValue": "~{value}g",
+          "sodium": "Sodium",
+          "carbs": "Carbs",
+          "carbsValue": "~{value}g"
+        },
+        "habits": {
+          "title": "Your Fast Food Habits",
+          "frequency": "Frequency",
+          "frequencyValue": "{count}x/month",
+          "frequencyDiff": "+1 vs avg",
+          "avgSpend": "Avg Spend",
+          "favorite": "Favorite",
+          "visits": "{count} visits"
+        },
+        "swaps": {
+          "title": "Healthier Swaps",
+          "grilled": "Grilled instead of fried",
+          "water": "Water instead of soda",
+          "salad": "Side salad instead of fries",
+          "caloriesSaved": "-{count} cal",
+          "moneySaved": ", saves {amount}"
+        },
+        "challenge": {
+          "title": "Weekly Challenge",
+          "descriptionPrefix": "Skip fast food for 7 days and save",
+          "descriptionSuffix": ""
+        }
+      },
+      "NutritionCard": {
+        "title": "Nutrition Overview",
+        "score": {
+          "title": "Food Balance Score",
+          "excellent": "Excellent",
+          "good": "Good",
+          "fair": "Fair",
+          "needsWork": "Needs Work"
+        },
+        "composition": {
+          "title": "Your Basket Composition",
+          "wholeFoods": "Whole Foods",
+          "processed": "Processed",
+          "dairyOther": "Dairy/Other"
+        },
+        "foodGroups": {
+          "fruits": "Fruits",
+          "vegetables": "Vegetables",
+          "protein": "Protein",
+          "grains": "Grains",
+          "itemsCount": "{count} item(s)"
+        },
+        "allergens": {
+          "title": "Allergens Detected",
+          "foundInItems": "Found in {count} item(s)"
+        },
+        "suggestions": {
+          "addFruitsAndVegetables": "Add more fruits and vegetables to balance your basket",
+          "addVegetables": "Consider adding vegetables for a more balanced diet",
+          "addFruits": "Adding some fruits would improve nutritional balance",
+          "swapProcessed": "Try swapping some processed items for whole foods",
+          "greatBalance": "Great balanced shopping!"
+        }
+      },
+      "HomeInventoryCard": {
+        "title": "Home Inventory & Supplies",
+        "supplyNames": {
+          "laundryDetergent": "Laundry Detergent",
+          "dishSoap": "Dish Soap",
+          "paperProducts": "Paper Products",
+          "floorCleaner": "Floor Cleaner"
+        },
+        "stockLevels": {
+          "title": "Supply Stock Levels (estimated)",
+          "daysRemaining": "~{count} days"
+        },
+        "eco": {
+          "title": "Eco-Friendliness Score",
+          "productsWithEcoLabels": "{count} products with eco-labels",
+          "recyclablePackaging": "{count} product with recyclable packaging",
+          "tip": "Tip: Eco alternatives save 2kg plastic/year"
+        },
+        "bulk": {
+          "title": "Bulk Buying Savings",
+          "description": "5L detergent vs 2L saves 18% ({amount}/year)"
+        }
+      },
+      "CategorySuggestionCard": {
+        "title": "Help Us Categorize This Invoice",
+        "description": "We couldn't automatically categorize this invoice. Select the right category to unlock insights:",
+        "moreCategories": "More categories:",
+        "gamification": "Categorize {goal} invoices to unlock detailed insights!"
+      },
+      "BudgetImpactCard": {
+        "title": "{month} Budget Impact",
+        "monthlyBudget": "Monthly Budget",
+        "spent": "{amount} spent",
+        "invoiceUsed": "This invoice used",
+        "ofMonthlyBudget": "of your monthly budget",
+        "remaining": "Remaining",
+        "overBudget": "Over budget",
+        "daysLeft": "Days Left",
+        "inMonth": "in {month}",
+        "dailyAllowance": "Daily Allowance",
+        "dailyAllowanceValue": "{amount}/day"
+      },
+      "ComparisonStatsCard": {
+        "title": "How You Compare",
+        "subtitle": "Against your last {count} invoices",
+        "vsAverage": "vs Average",
+        "avgValue": "Avg: {amount} {currency}",
+        "thisValue": "This: {amount} {currency}",
+        "minValue": "Min: {amount}",
+        "maxValue": "Max: {amount}",
+        "positionInRange": "Your position in spending range",
+        "itemCount": "Item Count",
+        "itemCountComparison": "{current} vs avg {average}",
+        "sameStore": "Same Store",
+        "sameStoreComparison": "vs avg {average} {currency}"
+      },
+      "InvoiceDetailsCard": {
+        "title": "Invoice Details",
+        "labels": {
+          "dateUtc": "Date (UTC)",
+          "category": "Category",
+          "payment": "Payment",
+          "totalAmount": "Total Amount"
+        },
+        "itemsTitle": "Items ({count})",
+        "table": {
+          "item": "Item",
+          "qty": "Qty",
+          "unit": "Unit",
+          "price": "Price",
+          "total": "Total",
+          "grandTotal": "Grand Total"
+        },
+        "pagination": {
+          "pageOf": "Page {current} of {total}",
+          "previous": "Previous",
+          "next": "Next"
+        }
+      },
+      "ReceiptScanCard": {
+        "title": "Receipt Scan",
+        "dialogTitle": "Receipt Image",
+        "scanAlt": "Receipt scan {index}",
+        "scanAltFullSize": "Receipt scan {index} - full size",
+        "buttons": {
+          "expand": "Expand Image",
+          "previousScan": "Previous Scan",
+          "nextScan": "Next Scan"
+        },
+        "tooltips": {
+          "expand": "View the receipt image in full size",
+          "previousScan": "View the previous receipt scan",
+          "nextScan": "View the next receipt scan"
+        }
+      },
+      "ShoppingCalendarCard": {
+        "title": "Shopping Calendar",
+        "tooltip": {
+          "basedOnCachedInvoices": "Based on {count} cached invoices",
+          "currentInvoiceOnly": "Showing current invoice only",
+          "more": "+{count} more",
+          "vsAverage": "vs avg ({years}y data)",
+          "invoiceCount": "{count} invoice(s)",
+          "currentInvoice": "Current invoice"
+        },
+        "legend": {
+          "less": "Less",
+          "more": "More"
+        },
+        "stats": {
+          "monthTotal": "Month Total",
+          "shoppingDays": "Shopping Days"
+        },
+        "insights": {
+          "shopEveryPrefix": "You shop every",
+          "days": "{count} days",
+          "onAverage": "on average",
+          "spendingPrefix": ", spending",
+          "perTrip": " per trip",
+          "mostActiveOn": "Most active on",
+          "weekdayLabel": "{weekday}s"
+        }
+      },
+      "InvoiceTabs": {
+        "tabs": {
+          "possibleRecipes": "Possible Recipes",
+          "additionalInfo": "Additional Info"
+        },
+        "recipe": {
+          "duration": "{minutes} min",
+          "prepCook": "Prep: {prep}m • Cook: {cook}m",
+          "viewRecipe": "View Recipe"
+        },
+        "empty": {
+          "recipes": "No recipe suggestions available",
+          "additionalInfo": "No additional information available"
+        }
+      },
+      "InvoiceHeader": {
+        "tooltips": {
+          "importantInvoice": "Important Invoice",
+          "edit": "Edit this invoice",
+          "delete": "Delete this invoice permanently",
+          "print": "Print this invoice",
+          "saveAllPendingChanges": "Save all pending changes",
+          "discardAllPendingChanges": "Discard all pending changes",
+          "printInvoiceWithAllDetails": "Print this invoice with all details",
+          "analyzeSpendingPatterns": "Analyze spending patterns for this invoice",
+          "deleteInvoicePermanently": "Delete this invoice permanently"
+        },
+        "id": "ID: {id}",
+        "buttons": {
+          "edit": "Edit",
+          "delete": "Delete",
+          "print": "Print",
+          "save": "Save",
+          "saving": "Saving...",
+          "discard": "Discard",
+          "analyzeWithAi": "Analyze with AI"
+        }
+      },
+      "ShareAnalyticsDialog": {
+        "title": "Share Analytics",
+        "description": "Share your spending analytics for {merchant} with others.",
+        "tabs": {
+          "image": "Image",
+          "email": "Email"
+        },
+        "image": {
+          "description": "Download or copy the analytics graph as a PNG image that you can share or save.",
+          "previewPlaceholder": "Analytics Preview",
+          "download": "Download graph",
+          "copyToClipboard": "Copy graph to clipboard"
+        },
+        "email": {
+          "description": "Send the analytics to an email address.",
+          "label": "Email address",
+          "placeholder": "name@example.com",
+          "send": "Send Email"
+        },
+        "toasts": {
+          "imageCopied": {
+            "title": "Image copied!",
+            "description": "The analytics image has been copied to your clipboard"
+          },
+          "emailSent": {
+            "title": "Email sent!",
+            "description": "Analytics report sent to {email}"
+          },
+          "imageSaved": {
+            "title": "Image saved!",
+            "description": "Spending analytics for {merchant} has been downloaded as PNG"
+          }
+        }
+      },
+      "InvoiceAnalytics": {
+        "title": "Analytics & Insights",
+        "tabs": {
+          "current": "This Invoice",
+          "compare": "Comparison"
+        }
+      },
+      "SummaryStatsCard": {
+        "title": "Invoice Summary",
+        "description": "Key statistics at a glance",
+        "stats": {
+          "totalItems": {
+            "label": "Total Items",
+            "description": "Products purchased"
+          },
+          "categories": {
+            "label": "Categories",
+            "description": "Unique categories"
+          },
+          "averagePrice": {
+            "label": "Avg. Price",
+            "description": "{currency} per item"
+          },
+          "taxRate": {
+            "label": "Tax Rate",
+            "description": "{amount} {currency}"
+          }
+        },
+        "extremes": {
+          "highest": "Highest",
+          "lowest": "Lowest"
+        }
+      },
+      "SeasonalInsightsCard": {
+        "title": "Seasonal Insight",
+        "month": {
+          "spendingSoFar": "{month} so far",
+          "vsAverage": "vs {month} avg: {amount}"
+        },
+        "insights": {
+          "spike": {
+            "title": "{category} Spike",
+            "description": "+{percent}% vs your average"
+          },
+          "holidaySeason": {
+            "title": "Holiday Season",
+            "description": "December spending is typically 35% higher"
+          },
+          "stockUpTip": {
+            "title": "Stock Up Tip",
+            "description": "Prices increase ~15% after Dec 15th"
+          },
+          "normalPattern": {
+            "title": "Normal Shopping Pattern",
+            "description": "Your spending is within typical range"
+          }
+        }
+      },
+      "CategoryComparisonChart": {
+        "title": "Category Comparison",
+        "description": "This invoice vs your average",
+        "labels": {
+          "current": "Current",
+          "average": "Average"
+        }
+      },
+      "ItemsBreakdownChart": {
+        "title": "Top Items by Cost",
+        "description": "Highest spending items",
+        "labels": {
+          "price": "Price",
+          "quantity": "Qty"
+        }
+      },
+      "MerchantBreakdownChart": {
+        "title": "Spending by Store",
+        "description": "All-time totals across merchants",
+        "labels": {
+          "totalSpent": "Total Spent",
+          "total": "Total",
+          "visits": "Visits",
+          "averagePerVisit": "Avg/visit"
+        }
+      },
+      "PriceDistributionChart": {
+        "title": "Price Distribution",
+        "description": "Items by price range ({currency})",
+        "labels": {
+          "items": "Items"
+        },
+        "tooltip": {
+          "itemCount": "{count, plural, one {# item} other {# items}}"
+        }
+      },
+      "SpendingByCategoryChart": {
+        "title": "Spending by Category",
+        "description": "Distribution of expenses",
+        "totalLabel": "Total Spending",
+        "tooltip": {
+          "itemCount": "{count, plural, one {# item} other {# items}}"
+        }
+      },
+      "SpendingTrendChart": {
+        "title": "Spending Over Time",
+        "description": "Your invoice history trend",
+        "labels": {
+          "amount": "Amount"
+        },
+        "tooltip": {
+          "currentInvoice": "Current Invoice"
+        }
+      },
+      "InvoiceTimeline": {
+        "title": "Invoice Timeline",
+        "subtitle": "Complete history of actions and changes",
+        "eventCount": "{count, plural, one {# event} other {# events}}"
+      },
+      "TimelineItem": {
+        "aria": {
+          "moreInfo": "More info about {title}"
+        },
+        "confidence": "Confidence: {value}%",
+        "events": {
+          "created": {
+            "title": "Invoice Created",
+            "description": "Scanned and digitized from receipt"
+          },
+          "aiAnalysis": {
+            "title": "AI Analysis Complete",
+            "description": "{count, plural, one {# item detected and categorized} other {# items detected and categorized}}"
+          },
+          "recipesGenerated": {
+            "title": "Recipes Generated",
+            "description": "{count, plural, one {# recipe suggested} other {# recipes suggested}}"
+          },
+          "shared": {
+            "title": "Shared with Others",
+            "description": "Shared with {count, plural, one {# person} other {# people}}"
+          },
+          "edited": {
+            "title": "Invoice Updated"
+          },
+          "exported": {
+            "title": "Invoice Exported"
+          },
+          "markedImportant": {
+            "title": "Marked as Important",
+            "description": "Flagged for priority tracking"
+          },
+          "categorized": {
+            "title": "Category Assigned",
+            "description": "Auto-categorized based on items"
+          }
+        },
+        "tooltips": {
+          "created": "Invoice was scanned and digitized using {method}.",
+          "aiAnalysis": "AI processed this invoice in {duration} and analyzed {count, plural, one {# item} other {# items}}.",
+          "recipesGenerated": "Based on purchased ingredients, {count, plural, one {# recipe was generated} other {# recipes were generated}}.",
+          "shared": "Invoice was shared with {users, plural, one {# user} other {# users}}.",
+          "edited": "Manual changes were made to the invoice.",
+          "exported": "Invoice was exported in {format} format.",
+          "markedImportant": "Invoice was flagged as important for quick access.",
+          "categorized": "Invoice was assigned a category for better organization.",
+          "unavailable": "Event details unavailable"
+        },
+        "relativeTime": {
+          "now": "Just now"
+        },
+        "fallbacks": {
+          "ocr": "OCR",
+          "pdf": "PDF"
+        }
+      },
+      "TimelineSharedWithList": {
+        "header": {
+          "title": "Shared With",
+          "publicBadge": "Public"
+        },
+        "publicAccess": {
+          "title": "Public Access Enabled",
+          "description": "This invoice is publicly accessible. Anyone with the link can view it, including guests without an account."
+        },
+        "aria": {
+          "sendEmail": "Send email to {user}"
+        },
+        "actions": {
+          "sendEmail": "Send email",
+          "manageSharing": "Manage Sharing"
+        }
+      },
+      "InvoiceGuestBanner": {
+        "title": "Guest View",
+        "description": "You are not currently the owner of this invoice. The view is limited to what the owner has specified in the share settings."
+      },
+      "MerchantInfoCard": {
+        "viewAllReceipts": "View All Receipts"
+      },
+      "ExportDialog": {
+        "title": "Export Invoices",
+        "description": "Export {count} invoices in your preferred format.",
+        "format": {
+          "title": "Export Format",
+          "labels": {
+            "csv": "CSV",
+            "json": "JSON",
+            "pdf": "PDF"
+          }
+        },
+        "options": {
+          "title": "Options",
+          "includeMetadata": "Include metadata",
+          "includeProducts": "Include products",
+          "includeMerchant": "Include merchant",
+          "csv": {
+            "includeHeaders": "Include CSV Headers",
+            "delimiterLabel": "CSV Delimiter Override (optional):",
+            "delimiterPlaceholder": ","
+          },
+          "json": {
+            "prettyPrint": "Pretty Print (2 spaces)"
+          }
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "export": "Export"
+        }
+      },
+      "ImportDialog": {
+        "title": "Import Invoices",
+        "description": "Upload your invoice files to import them into the system.",
+        "tabs": {
+          "csv": "CSV",
+          "pdf": "PDF",
+          "xlsx": "Excel"
+        },
+        "dropzone": {
+          "dropHere": "Drop files here...",
+          "dragAndDrop": "Drag & drop files here",
+          "orClickBrowse": "or click to browse files",
+          "acceptsCsv": "Accepts .csv files (max 10MB)",
+          "acceptsPdf": "Accepts .pdf files (max 10MB)",
+          "acceptsXlsx": "Accepts .xlsx and .xls files (max 10MB)"
+        },
+        "selectedFiles": "Selected Files",
+        "remove": "Remove",
+        "status": {
+          "success": "Files imported successfully!",
+          "error": "Error importing files. Please try again."
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "import": "Import"
+        }
+      },
+      "TableView": {
+        "empty": "No invoices found",
+        "columns": {
+          "invoice": "Invoice",
+          "category": "Category",
+          "date": "Date",
+          "amount": "Amount",
+          "actions": "Actions"
+        },
+        "aria": {
+          "selectAllInvoices": "Select all invoices",
+          "selectInvoice": "Select invoice {id}",
+          "rowsPerPage": "Rows per page"
+        },
+        "viewInvoice": "View Invoice",
+        "rowsPerPage": "Rows per page:",
+        "pageOf": "Page {current} of {total}",
+        "previousPage": "Previous Page",
+        "nextPage": "Next Page"
+      },
+      "TableViewActions": {
+        "actions": {
+          "edit": "Edit",
+          "share": "Share",
+          "delete": "Delete"
+        },
+        "tooltips": {
+          "edit": "Edit invoice details",
+          "share": "Share invoice via link or email",
+          "delete": "Permanently delete this invoice"
+        }
+      },
+      "FeedbackDialog": {
+        "title": "Provide Feedback",
+        "description": "Help us improve analytics for {merchant} by sharing your thoughts",
+        "sections": {
+          "rating": "How would you rate the analytics?",
+          "features": "Which features were most helpful? (Select all that apply)",
+          "comments": "Additional comments (optional)"
+        },
+        "features": {
+          "spendingTrends": "Spending Trends",
+          "priceComparisons": "Price Comparisons",
+          "savingsTips": "Savings Tips",
+          "merchantAnalysis": "Merchant Analysis",
+          "visualCharts": "Visual Charts",
+          "categoryBreakdown": "Category Breakdown"
+        },
+        "commentsPlaceholder": "Share your thoughts about the analytics...",
+        "buttons": {
+          "cancel": "Cancel",
+          "submit": "Submit Feedback"
+        },
+        "toasts": {
+          "sending": {
+            "title": "Sending feedback...",
+            "description": "Please wait while we submit your feedback."
+          },
+          "ratingRequired": {
+            "title": "Rating required",
+            "description": "Please provide a star rating before submitting"
+          },
+          "success": {
+            "title": "Feedback sent!",
+            "description": "Feedback sent successfully"
+          },
+          "error": {
+            "title": "An error occurred while submitting feedback",
+            "description": "Please try again later."
+          }
+        }
+      },
+      "SharingCard": {
+        "title": "Sharing",
+        "ownerAvatarAlt": "User",
+        "owner": "Owner",
+        "sharedWith": "Shared With",
+        "userWithId": "User {id}",
+        "publicInvoice": {
+          "title": "Public Invoice",
+          "description": "This invoice is publicly accessible. Anyone with the link can view it."
+        },
+        "emptyShared": {
+          "public": "No additional users have direct access",
+          "private": "Not shared with anyone"
+        },
+        "buttons": {
+          "manageSharing": "Manage Sharing",
+          "shareInvoice": "Share Invoice",
+          "revokingAccess": "Revoking Access...",
+          "markAsPrivate": "Mark as Private"
+        },
+        "tooltips": {
+          "manageSharing": "Manage sharing settings for this invoice",
+          "removeAccess": "Remove access",
+          "shareInvoice": "Share this invoice with other users",
+          "markAsPrivate": "Mark the invoice as private"
+        },
+        "toasts": {
+          "removeAccessComingSoon": {
+            "title": "Remove access feature coming soon",
+            "description": "This feature is currently under development."
+          },
+          "revoke": {
+            "loading": "Revoking public access...",
+            "success": "Invoice is now private. Existing links will no longer work.",
+            "error": "Failed to mark private: {message}"
+          }
+        }
+      },
+      "ImageDialog": {
+        "title": "Image ({image})",
+        "imageAlt": "Photo of receipt"
+      },
+      "ItemsTable": {
+        "title": "Items",
+        "buttons": {
+          "editItems": "Edit Items"
+        },
+        "tooltips": {
+          "editInvoiceItemsAndQuantities": "Edit invoice items and quantities"
+        },
+        "tableHeaders": {
+          "item": "Item",
+          "quantity": "Qty",
+          "price": "Price",
+          "total": "Total"
+        },
+        "footer": {
+          "total": "Total"
+        },
+        "pagination": {
+          "totalItems": "{count, plural, one {# item in total} other {# items in total}}",
+          "previous": "Previous",
+          "next": "Next",
+          "pageOf": "Page {currentPage} of {totalPages}"
+        }
+      },
+      "TriviaTips": {
+        "title": "Savings Tips",
+        "difficulty": {
+          "easy": "Easy",
+          "medium": "Medium"
+        },
+        "banner": {
+          "potentialSavingsLabel": "Potential Savings",
+          "hint": "Apply these tips to save on your next visit to {merchantName}"
+        },
+        "tips": {
+          "loyaltyProgram": {
+            "title": "Join Loyalty Program",
+            "description": "Sign up for {merchantName}'s loyalty program to earn points on every purchase."
+          },
+          "bulkPurchase": {
+            "title": "Buy in Bulk",
+            "description": "Purchase non-perishable items in bulk to save on per-unit costs."
+          },
+          "digitalCoupons": {
+            "title": "Use Digital Coupons",
+            "description": "Check {merchantName}'s app for digital coupons before shopping."
+          }
+        },
+        "tooltips": {
+          "estimatedSavings": "Estimated savings with this tip"
+        },
+        "buttons": {
+          "viewMoreSavingsTips": "View More Savings Tips"
+        },
+        "disclaimer": "Savings are estimates based on average prices and promotions"
+      },
+      "RecipesTab": {
+        "header": {
+          "title": "Recipes You Can Make",
+          "description": "Based on items in this invoice"
+        },
+        "buttons": {
+          "generate": "Generate",
+          "addRecipe": "Add Recipe",
+          "createFirstRecipe": "Create Your First Recipe"
+        },
+        "tooltips": {
+          "generateRecipeUsingAi": "Generate a recipe using AI!",
+          "createRecipeWithIngredients": "Create a new recipe with these ingredients"
+        },
+        "emptyState": {
+          "noRecipesAvailable": "No recipes available yet"
+        },
+        "pagination": {
+          "previous": "Previous",
+          "next": "Next",
+          "pageOf": "Page {currentPage} of {totalPages}"
+        },
+        "toasts": {
+          "aiGenerationComingSoon": {
+            "title": "AI recipe generation coming soon",
+            "description": "This feature is currently under development."
+          }
+        }
+      },
+      "StatisticsView": {
+        "title": "Invoice Statistics",
+        "subtitle": "Manage your receipts and track your spending habits"
+      },
+      "AnalyzeDialog": {
+        "header": {
+          "title": "Analyze Invoice",
+          "description": "Configure AI-powered analysis for invoice"
+        },
+        "options": {
+          "completeAnalysis": {
+            "title": "Complete Analysis",
+            "description": "Full AI-powered analysis including all invoice data, items, and merchant information.",
+            "estimatedTime": "2-3 min",
+            "features": {
+              "ocrExtraction": "OCR extraction",
+              "itemCategorization": "Item categorization",
+              "merchantIdentification": "Merchant identification",
+              "priceAnalysis": "Price analysis",
+              "receiptValidation": "Receipt validation"
+            }
+          },
+          "invoiceOnly": {
+            "title": "Invoice Data Only",
+            "description": "Analyze basic invoice information like totals, dates, and payment details.",
+            "estimatedTime": "30-60 sec",
+            "features": {
+              "totalExtraction": "Total extraction",
+              "dateParsing": "Date parsing",
+              "paymentMethodDetection": "Payment method detection"
+            }
+          },
+          "itemsOnly": {
+            "title": "Items Analysis",
+            "description": "Focus on extracting and categorizing individual line items from the invoice.",
+            "estimatedTime": "1-2 min",
+            "features": {
+              "itemExtraction": "Item extraction",
+              "categoryAssignment": "Category assignment",
+              "pricePerItem": "Price per item",
+              "quantityDetection": "Quantity detection"
+            }
+          },
+          "merchantOnly": {
+            "title": "Merchant Analysis",
+            "description": "Identify and analyze merchant information including location and category.",
+            "estimatedTime": "30-45 sec",
+            "features": {
+              "merchantIdentification": "Merchant identification",
+              "locationExtraction": "Location extraction",
+              "businessCategory": "Business category",
+              "contactInfo": "Contact info"
+            }
+          }
+        },
+        "analysisSteps": {
+          "preparingDocument": "Preparing document...",
+          "runningOcrExtraction": "Running OCR extraction...",
+          "analyzingWithAi": "Analyzing with AI...",
+          "categorizingItems": "Categorizing items...",
+          "finalizingResults": "Finalizing results...",
+          "processing": "Processing..."
+        },
+        "analyzing": {
+          "title": "Analyzing Invoice",
+          "progressComplete": "{progress}% complete"
+        },
+        "sections": {
+          "analysisType": "Analysis Type",
+          "includedFeatures": "Included Features",
+          "enhancementsOptional": "Enhancements (Optional)"
+        },
+        "enhancements": {
+          "priceComparison": {
+            "label": "Price Comparison",
+            "description": "Compare prices with historical data"
+          },
+          "savingsTips": {
+            "label": "Savings Suggestions",
+            "description": "Get AI-powered saving recommendations"
+          },
+          "quickExtract": {
+            "label": "Quick Extract Mode",
+            "description": "Prioritize speed over accuracy"
+          }
+        },
+        "badges": {
+          "recommended": "Recommended"
+        },
+        "summary": {
+          "enhancementsSelected": "+ {count} enhancement(s)",
+          "noEnhancementsSelected": "No enhancements selected",
+          "estimatedTime": "Estimated time"
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "analyzing": "Analyzing...",
+          "startAnalysis": "Start Analysis"
+        },
+        "toasts": {
+          "analysisComplete": {
+            "title": "Analysis Complete",
+            "description": "Your invoice has been analyzed successfully."
+          },
+          "analysisFailed": {
+            "title": "Analysis Failed",
+            "description": "We couldn't analyze your invoice. Please try again."
+          }
+        }
+      },
+      "MetadataTab": {
+        "header": {
+          "title": "Additional Information",
+          "description": "Metadata associated with this invoice"
+        },
+        "buttons": {
+          "addField": "Add Field",
+          "addFirstMetadataField": "Add Your First Metadata Field"
+        },
+        "tooltips": {
+          "addCustomMetadata": "Add custom metadata to this invoice"
+        },
+        "badges": {
+          "readonly": "Readonly"
+        },
+        "dropdown": {
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "emptyState": {
+          "noMetadataFields": "No metadata fields added yet"
+        }
+      },
+      "MerchantDialog": {
+        "title": "Merchant Details",
+        "description": "Information about {merchantName}",
+        "fields": {
+          "address": "Address",
+          "phone": "Phone",
+          "parentCompany": "Parent Company"
+        },
+        "buttons": {
+          "openInMaps": "Open in Maps"
+        }
+      },
+      "MerchantCard": {
+        "title": "Merchant",
+        "addressLabel": "Address: {address}",
+        "buttons": {
+          "viewMerchantDetails": "View Merchant Details",
+          "viewAllReceipts": "View All Receipts"
+        },
+        "tooltips": {
+          "viewMerchantDetails": "See detailed information about this merchant",
+          "viewAllReceipts": "View all receipts from this merchant"
+        }
+      },
+      "RecipeCard": {
+        "complexity": {
+          "unknown": "Unknown",
+          "easy": "Easy",
+          "normal": "Normal",
+          "hard": "Hard"
+        },
+        "dropdown": {
+          "view": "View",
+          "edit": "Edit",
+          "delete": "Delete",
+          "share": "Share",
+          "markAsFavorite": "Mark as Favorite"
+        },
+        "ingredients": {
+          "label": "Ingredients:",
+          "more": "+{count} more",
+          "additionalLabel": "Additional ingredients:"
+        },
+        "timing": {
+          "prepLabel": "Prep: {minutes}′",
+          "prepTooltip": "Preparation time is {minutes} minutes.",
+          "cookLabel": "Cook: {minutes}′",
+          "cookTooltip": "Cooking time is {minutes} minutes."
+        },
+        "buttons": {
+          "visitReference": "Visit Reference",
+          "viewRecipe": "View Recipe"
+        }
+      },
+      "GridView": {
+        "tooltips": {
+          "viewDetails": "View Details"
+        },
+        "itemCount": "{count, plural, one {# item} other {# items}}"
       }
     }
   }

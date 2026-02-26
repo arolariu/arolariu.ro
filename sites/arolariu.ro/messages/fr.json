@@ -1108,7 +1108,11 @@
       "fontDyslexic": "Police adaptée à la dyslexie",
       "rainbow": "Mode arc-en-ciel",
       "disco": "Mode disco",
-      "matrix": "Mode Matrix"
+      "matrix": "Mode Matrix",
+      "english": "English",
+      "romanian": "Română",
+      "french": "Français",
+      "github": "GitHub"
     }
   },
   "Invoices": {
@@ -1152,7 +1156,8 @@
               "titleSuffix": "Facilement",
               "description": "Téléchargez vos reçus et factures, organisez-les et obtenez des informations sur vos habitudes de dépenses. Notre système alimenté par l'IA extrait les données automatiquement.",
               "getStarted": "Commencer",
-              "viewMyInvoices": "Voir Mes Factures"
+              "viewMyInvoices": "Voir Mes Factures",
+              "imageAlt": "Illustration de gestion des factures"
             },
             "workflow": {
               "title": "Comment Ça Marche",
@@ -1188,7 +1193,9 @@
                 "title": "Traitement par Lots",
                 "description": "Traitez plusieurs scans à la fois - créez des factures individuelles ou combinez-les en une seule."
               },
-              "signInPrompt": "Connectez-vous pour sauvegarder vos factures de façon permanente et y accéder depuis n'importe quel appareil."
+              "signInPrompt": "Connectez-vous pour sauvegarder vos factures de façon permanente et y accéder depuis n'importe quel appareil.",
+              "imageAlt": "Illustration des fonctionnalités des factures",
+              "signIn": "Connectez-vous"
             },
             "bento": {
               "title": "Tout Ce Dont Vous Avez Besoin",
@@ -1551,7 +1558,12 @@
     },
     "sourceCode": "Le code source est disponible ",
     "sourceCodeAnchor": "ici (dépôt GitHub)",
-    "subtitle": "La plateforme est construite en utilisant les dernières technologies stables et de pointe avec une expérience de niveau entreprise. <br></br> <br></br> Nous espérons que vous aurez une excellente expérience en explorant cette plateforme."
+    "subtitle": "La plateforme est construite en utilisant les dernières technologies stables et de pointe avec une expérience de niveau entreprise. <br></br> <br></br> Nous espérons que vous aurez une excellente expérience en explorant cette plateforme.",
+    "accessibility": {
+      "goHome": "Go home",
+      "brandTitle": "AROLARIU.RO",
+      "logoAlt": "The arolariu.ro logo."
+    }
   },
   "Navigation": {
     "domains": "Domaines",
@@ -2293,6 +2305,1533 @@
           "deleteAccountHint": "Supprimez définitivement votre compte",
           "manageAccount": "Gérer sur Clerk"
         }
+      }
+    }
+  },
+  "I18nConsolidation": {
+    "Header": {
+      "logoAlt": "logo arolariu.ro"
+    },
+    "ThemeButton": {
+      "toggleAriaLabel": "Basculer le thème"
+    },
+    "GlobalError": {
+      "copyErrorConsoleMessage": "Échec de la copie de l’ID d’erreur :",
+      "hero": {
+        "title": "Un problème est survenu",
+        "subtitle": "Une erreur inattendue est survenue. Notre équipe a été automatiquement informée."
+      },
+      "details": {
+        "title": "Détails de l’erreur",
+        "errorIdLabel": "ID d’erreur :",
+        "genericDescription": "Une erreur est survenue lors du traitement de votre demande.",
+        "whatHappenedTitle": "Que s’est-il passé ?",
+        "unknownError": "Une erreur inconnue est survenue."
+      },
+      "actions": {
+        "whatCanYouDoTitle": "Que pouvez-vous faire ?",
+        "step1": "Essayez de rafraîchir la page en utilisant le bouton ci-dessous.",
+        "step2": "Retournez à la page d'accueil et recommencez.",
+        "step3": "Contactez le support si le problème persiste."
+      },
+      "diagnostics": {
+        "scanLabel": "Analyser pour obtenir des informations de diagnostic :",
+        "technicalSummary": "Informations techniques (pour les développeurs)",
+        "loading": "Chargement des informations de diagnostic...",
+        "stackTraceLabel": "Trace de pile :"
+      },
+      "buttons": {
+        "tryAgain": "Réessayer",
+        "returnHome": "Retour à l’accueil",
+        "copyErrorIdTitle": "Copier l’ID d’erreur",
+        "copyErrorId": "Copier l’ID d’erreur",
+        "copied": "Copié !"
+      },
+      "support": {
+        "contactPrefix": "Si ce problème persiste, veuillez nous contacter à",
+        "includeErrorId": "et incluez l’ID d’erreur :"
+      },
+      "metadata": {
+        "title": "Erreur d'application - AROLARIU.RO"
+      }
+    },
+    "MyProfileIsland": {
+      "totalInvoices": "Total factures",
+      "merchants": "{count} commerçants",
+      "scans": "{count} numérisations",
+      "settingsNavigationAriaLabel": "Navigation des paramètres"
+    },
+    "Invoices": {
+      "ViewInvoicesIsland": {
+        "tabs": {
+          "invoices": "Factures",
+          "statistics": "Statistiques",
+          "liveAnalysis": "Analyse en direct"
+        }
+      },
+      "InvoicesHeader": {
+        "title": "Gestion des factures",
+        "description": "Gérez vos reçus et suivez vos habitudes de dépenses",
+        "actions": {
+          "import": "Importer",
+          "export": "Exporter",
+          "print": "Imprimer",
+          "newInvoice": "Nouvelle facture"
+        },
+        "tooltips": {
+          "import": "Importer des factures depuis des fichiers",
+          "export": "Exporter toutes les factures",
+          "print": "Imprimer les factures",
+          "newInvoice": "Créer une nouvelle facture"
+        }
+      },
+      "InvoicesView": {
+        "searchPlaceholder": "Rechercher des factures...",
+        "filters": {
+          "category": "Catégorie",
+          "timeOfDay": "Moment de la journée"
+        },
+        "categories": {
+          "all": "Toutes les catégories",
+          "groceries": "Épicerie",
+          "dining": "Restauration",
+          "utilities": "Services",
+          "entertainment": "Divertissement",
+          "travel": "Voyage",
+          "other": "Autre"
+        },
+        "times": {
+          "all": "Tous les horaires",
+          "day": "Journée (6h-18h)",
+          "night": "Nuit (18h-6h)"
+        },
+        "placeholderPanel": "D’autres filtres seront bientôt disponibles.",
+        "viewModes": {
+          "table": "Table voir",
+          "grid": "Grid voir"
+        }
+      },
+      "GenerativeView": {
+        "welcomeMessage": "Bonjour ! Je suis votre assistant d’analyse de factures. Comment puis-je vous aider aujourd’hui ? Essayez des commandes comme /find pour rechercher des factures.",
+        "title": "Analyse en direct",
+        "subtitle": "Discutez avec l’AI pour analyser vos factures et obtenir des analyses utiles",
+        "help": "Aide",
+        "tabs": {
+          "chat": "Discussion",
+          "settings": "Paramètres"
+        },
+        "chatDescription": "Discutez avec l’AI pour analyser vos factures et obtenir des analyses utiles. Essayez des commandes comme /find pour rechercher des factures.",
+        "settings": {
+          "title": "Chat paramètres",
+          "description": "Configurez les préférences de votre assistant AI",
+          "historyLabel": "Chat historique",
+          "retentionPlaceholder": "Sélectionnez la durée de conservation",
+          "retention": {
+            "30": "Conserver pendant 30 jours",
+            "60": "Conserver pendant 60 jours",
+            "90": "Conserver pendant 90 jours",
+            "none": "Don't enregistrer historique"
+          },
+          "dataAccessTitle": "Accès aux données",
+          "allowInvoiceData": "Autoriser l’accès aux données de la facture",
+          "allowMerchantData": "Autoriser l’accès aux données du commerçant",
+          "notificationPreferences": "Préférences de notification",
+          "notifyInsights": "Me notifier des nouvelles analyses",
+          "save": "Enregistrer paramètres"
+        }
+      },
+      "DeleteInvoiceDialog": {
+        "title": "Supprimer facture",
+        "description": "Cette action est irréversible. Veuillez vérifier attentivement avant de continuer.",
+        "deleting": {
+          "title": "Suppression de facture...",
+          "description": "Veuillez patienter pendant que nous supprimons toutes les données associées."
+        },
+        "impact": {
+          "title": "Suppression définitive",
+          "intro": "Les données suivantes seront supprimées définitivement :",
+          "invoiceRecord": "Enregistrement de facture et métadonnées",
+          "uploadedScans": "{count} scan(s) téléversé(s)",
+          "lineItems": "{count} line article(s)",
+          "sharedAccess": "Accès partagé pour {count} utilisateur(s)"
+        },
+        "confirmation": {
+          "typeToConfirm": "Tapez <highlight>{name}</highlight> pour confirmer :",
+          "understoodLabel": "Je comprends que cette action est définitive",
+          "understoodDescription": "Cette facture et toutes ses données seront définitivement supprimées et ne pourront pas être récupérées."
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "deleting": "Suppression...",
+          "deletePermanently": "Supprimer définitivement"
+        },
+        "toasts": {
+          "deletedTitle": "Facture supprimée",
+          "deletedDescription": "La facture a été supprimée avec succès.",
+          "deleteFailedTitle": "Supprimer échoué",
+          "deleteFailedDescription": "Nous n’avons pas pu supprimer cette facture. Veuillez réessayer."
+        },
+        "console": {
+          "deleteError": "Erreur suppression de facture:"
+        }
+      },
+      "ShareInvoiceDialog": {
+        "title": "Partager facture",
+        "selection": {
+          "description": "Choisissez comment vous souhaitez partager cette facture. Votre choix détermine qui peut y accéder.",
+          "publicTitle": "Partage publique",
+          "publicDescription": "Générez un lien ou un code QR que <strong>n’importe qui</strong> peut utiliser pour voir cette facture.",
+          "privateTitle": "Privé sharing",
+          "privateDescription": "Envoyez une invitation par e-mail à une <strong>personne spécifique</strong>. Seule cette personne aura accès.",
+          "privacyNoticeTitle": "Avis de confidentialité",
+          "privacyNoticeDescription": "Les liens publics sont accessibles à toute personne disposant de l’URL. Le partage privé limite l’accès au destinataire spécifié."
+        },
+        "dialogDescription": {
+          "currentlyPublic": "\"{invoiceName}\" est actuellement publique",
+          "selection": "Choisissez comment partager « {invoiceName} »",
+          "public": "Partager \"{invoiceName}\" publiquement",
+          "private": "Envoyer \"{invoiceName}\" en privé"
+        },
+        "toasts": {
+          "copyLink": {
+            "loadingPublic": "Copie du lien...",
+            "loadingMakePublic": "La facture devient publique...",
+            "successPublic": "Lien copié dans le presse-papiers !",
+            "successMadePublic": "La facture est maintenant publique ! Lien copié dans le presse-papiers.",
+            "error": "Échoué: {message}"
+          },
+          "copyQr": {
+            "loadingPublic": "Copie du code QR...",
+            "loadingMakePublic": "La facture devient publique...",
+            "successPublic": "Code QR copié dans le presse-papiers !",
+            "successMadePublic": "La facture est maintenant publique ! Code QR copié dans le presse-papiers.",
+            "error": "Échoué: {message}"
+          },
+          "sendEmail": {
+            "loading": "Envoi de l’invitation à {email}...",
+            "success": "Invitation envoyée à {email} !",
+            "error": "Échoué: {message}"
+          },
+          "revoke": {
+            "loading": "Envoi de la demande de révocation au serveur...",
+            "success": "La facture est maintenant privée. Les liens existants ne fonctionneront plus.",
+            "error": "Échec de la révocation de l’accès : {message}"
+          }
+        },
+        "errors": {
+          "qrNotFound": "Élément de code QR introuvable"
+        }
+      },
+      "ShareInvoiceDialogPublic": {
+        "tabs": {
+          "directLink": "Lien direct",
+          "qrCode": "Code QR"
+        },
+        "hints": {
+          "link": "Copiez ce lien et partagez-le. Toute personne qui le reçoit pourra consulter la facture.",
+          "qr": "Toute personne qui scanne ce QR code sera redirigée pour consulter la facture."
+        },
+        "copyQrImage": "Copier le code QR en tant qu’image",
+        "alreadyPublic": {
+          "title": "Cette facture est actuellement publique",
+          "description": "Cette facture est accessible publiquement. <strong>Toute personne disposant du lien peut la consulter</strong>, y compris tous les détails de la facture, les articles et les montants. Vous pouvez révoquer l’accès public à tout moment pour la rendre privée à nouveau.",
+          "revoke": "Révoquer l’accès public",
+          "revoking": "Révocation de l’accès...",
+          "revokeHint": "Cela rendra la facture privée. Les liens existants cesseront de fonctionner."
+        },
+        "backToOptions": "Retour aux options",
+        "warning": {
+          "title": "Avertissement d’accès public",
+          "description": "En partageant cette facture publiquement, <strong>toute personne disposant du lien pourra la consulter</strong>. Cela inclut tous les détails de la facture, les articles et les montants. Continuez uniquement si vous souhaitez rendre cette facture accessible au publique."
+        }
+      },
+      "ShareInvoiceDialogPrivate": {
+        "backToOptions": "Retour aux options",
+        "title": "Privé sharing",
+        "description": "L’invitation sera envoyée directement à l’adresse e-mail que vous indiquez. Seul ce destinataire recevra l’accès pour consulter la facture.",
+        "emailLabel": "Recipient's e-mail address",
+        "emailPlaceholder": "name@example.com",
+        "emailHint": "Une invitation par e-mail sera envoyée à cette adresse avec un lien privé pour consulter la facture.",
+        "sendInvitation": "Envoyer une invitation privée"
+      },
+      "EditInvoiceContext": {
+        "toasts": {
+          "noChanges": "Aucune modification à enregistrer",
+          "updated": "Facture mise à jour avec succès",
+          "saveFailed": "Échec de l’enregistrement des modifications"
+        },
+        "console": {
+          "saveFailed": "Échec de l’enregistrement de la facture :"
+        }
+      },
+      "AddScanDialog": {
+        "title": "Ajouter un nouveau scan",
+        "description": "Téléversez une nouvelle image ou un nouveau document de reçu à joindre à cette facture.",
+        "dropzone": {
+          "dropHere": "Déposez le fichier ici...",
+          "dragAndDrop": "Glissez-déposez un fichier ici",
+          "orClickBrowse": "ou cliquez pour parcourir",
+          "formats": "JPEG, PNG, PDF (max 10MB)"
+        },
+        "scanType": {
+          "label": "Type de scan",
+          "placeholder": "Sélectionnez le type de scan",
+          "jpeg": "Image JPEG",
+          "png": "Image PNG",
+          "pdf": "Document PDF",
+          "other": "Autre"
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "uploading": "Téléversement...",
+          "upload": "Téléverser le scan"
+        },
+        "errors": {
+          "uploadStorageFailed": "Échec du téléversement du scan dans le stockage",
+          "unknown": "Une erreur inconnue est survenue"
+        },
+        "toasts": {
+          "fileTooLargeTitle": "Fichier trop volumineux",
+          "fileTooLargeDescription": "La taille maximale du fichier est de 10 Mo",
+          "scanAddedTitle": "Scan ajouté avec succès",
+          "scanAddedDescription": "Le scan a été joint à la facture",
+          "scanFailedTitle": "Échec de l’ajout du scan"
+        },
+        "console": {
+          "uploadError": "Erreur lors du téléversement du scan :"
+        }
+      },
+      "RemoveScanDialog": {
+        "title": "Supprimer scan",
+        "description": "Êtes-vous sûr de vouloir supprimer le scan {current} sur {total} ?",
+        "descriptionLastScan": "C’est le seul scan joint à cette facture. Vous ne pouvez pas le supprimer.",
+        "scanAlt": "Numérisation {index}",
+        "scanCaption": "Numérisation {index}",
+        "warning": {
+          "title": "Impossible de supprimer le dernier scan",
+          "description": "Chaque facture doit avoir au moins un scan joint. Ajoutez un autre scan avant de supprimer celui-ci."
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "removing": "Suppression...",
+          "remove": "Supprimer le scan"
+        },
+        "toasts": {
+          "cannotDeleteLastTitle": "Impossible de supprimer le dernier scan",
+          "cannotDeleteLastDescription": "Une facture doit avoir au moins un scan joint",
+          "removedTitle": "Scan supprimé avec succès",
+          "removedDescription": "Le scan a été retiré de la facture",
+          "removeFailedTitle": "Échec de la suppression du scan"
+        },
+        "errors": {
+          "unknown": "Une erreur inconnue est survenue"
+        },
+        "console": {
+          "deleteError": "Erreur suppression de scan:"
+        }
+      },
+      "MetadataDialog": {
+        "add": {
+          "title": "Ajouter des métadonnées",
+          "description": "Ajouter des informations supplémentaires à cette facture"
+        },
+        "edit": {
+          "title": "Modifier les métadonnées",
+          "description": "Mettre à jour la valeur de ce champ de métadonnées",
+          "fieldLabel": "Champ de métadonnées"
+        },
+        "delete": {
+          "title": "Supprimer les métadonnées",
+          "description": "Êtes-vous sûr de vouloir supprimer ces métadonnées ?"
+        },
+        "fields": {
+          "keyLabel": "Clé de métadonnées",
+          "valueLabel": "Valeur de métadonnées",
+          "keyPlaceholder": "Saisir la clé",
+          "valuePlaceholder": "Saisir la valeur"
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "save": "Enregistrer",
+          "delete": "Supprimer"
+        }
+      },
+      "ItemsDialog": {
+        "title": "Modifier facture articles",
+        "description": "Mettez à jour les quantités, les prix ou ajoutez de nouveaux articles à cette facture",
+        "table": {
+          "item": "Article",
+          "quantity": "Quantité",
+          "unit": "Unité",
+          "price": "Prix",
+          "total": "Somme",
+          "actions": "Opérations"
+        },
+        "footer": {
+          "itemsFound": "{total} articles trouvés (affichage de {shown})",
+          "page": "Page {current} sur {total}",
+          "itemsTotal": "{count, plural, one {# article au total} other {# articles au total}}"
+        },
+        "buttons": {
+          "previous": "Précédent",
+          "next": "Suivant",
+          "addItem": "Ajouter article",
+          "cancel": "Annuler",
+          "saveChanges": "Enregistrer changes"
+        },
+        "aria": {
+          "deleteItem": "Supprimer article: {name}",
+          "unnamedItem": "unnamed article",
+          "previousPage": "Aller à la page précédente (page {page})",
+          "nextPage": "Aller à la page suivante (page {page})",
+          "addItem": "Ajouter un nouvel article à la facture",
+          "cancel": "Annuler la modification et fermer la boîte de dialogue",
+          "save": "Enregistrer les modifications des articles de la facture"
+        }
+      },
+      "InvoiceCard": {
+        "title": "Détails de la facture",
+        "importantBadge": "IMPORTANT",
+        "markImportant": "Marquer comme important",
+        "tooltips": {
+          "unmarkFavorite": "Cliquer pour retirer des favoris",
+          "markFavorite": "Cliquer pour ajouter aux favoris"
+        },
+        "fromMerchant": "De {merchant}",
+        "descriptionPlaceholder": "Saisissez la description de la facture...",
+        "labels": {
+          "dateUtc": "Date et heure (UTC)",
+          "hours": "Heures",
+          "minutes": "Min",
+          "utc": "UTC",
+          "category": "Catégorie",
+          "paymentMethod": "Mode de paiement",
+          "totalAmount": "Montant total"
+        },
+        "placeholders": {
+          "selectCategory": "Sélectionner catégorie",
+          "selectPaymentType": "Sélectionner le type de paiement"
+        }
+      },
+      "ImageCard": {
+        "title": "Scan du reçu",
+        "dialogTitle": "Image du reçu",
+        "scanAlt": "Scan du reçu {index}",
+        "scanAltFullSize": "Scan du reçu {index} - taille réelle",
+        "buttons": {
+          "expand": "Agrandir l’image",
+          "previous": "Précédent",
+          "next": "Suivant",
+          "addScan": "Ajouter un scan",
+          "remove": "Supprimer"
+        },
+        "tooltips": {
+          "expand": "Voir l’image du reçu en taille réelle",
+          "previous": "Voir le scan précédent du reçu",
+          "next": "Voir le scan suivant du reçu",
+          "addScan": "Téléverser et joindre un nouveau scan du reçu",
+          "remove": "Supprimer le scan actuel du reçu"
+        },
+        "aria": {
+          "expandImage": "Cliquer pour agrandir l’image"
+        }
+      },
+      "GeneralExpenseCard": {
+        "title": "Analyse des dépenses",
+        "detectedCategory": "Électronique / Technologie",
+        "confidence": "Confiance : {value}%",
+        "sections": {
+          "autoDetectedCategory": "Auto-detected catégorie",
+          "budgetImpact": "Impact sur le budget",
+          "taxBusiness": "Options fiscales et professionnelles",
+          "similarPurchases": "Achats similaires passés"
+        },
+        "buttons": {
+          "correct": "Valider",
+          "change": "Modifier",
+          "organize": "Organiser",
+          "export": "Exporter"
+        },
+        "aria": {
+          "confirmCategory": "Confirmer que la catégorie détectée est correcte",
+          "changeCategory": "Change detected catégorie",
+          "organize": "Organiser cette dépense en catégories",
+          "export": "Exporter les données de dépense"
+        },
+        "nearLimitAlert": "{name} : {percent}% utilisé (10 jours restants ce mois)",
+        "options": {
+          "businessExpense": "Marquer comme dépense professionnelle",
+          "trackWarranty": "Suivre la garantie (24 mois standard)",
+          "insuranceInventory": "Ajouter à l’inventaire d’assurance"
+        },
+        "vatReclaimable": "TVA récupérable",
+        "budgetCategories": {
+          "electronics": "Électronique",
+          "entertainment": "Divertissement",
+          "shopping": "Achats"
+        }
+      },
+      "InvoicesNotFound": {
+        "title": "Il manque quelque chose ici...",
+        "description": "Il semble que vous n’ayez aucune facture associée à votre compte. Veuillez téléverser des factures puis revenir plus tard.",
+        "cta": "Téléverser une facture ici."
+      },
+      "LoadingInvoices": {
+        "title": "Chargement factures",
+        "description": "Chargement factures..."
+      },
+      "ViewInvoicesPage": {
+        "guestName": "cher invité"
+      },
+      "MerchantReceiptsDialog": {
+        "title": "Tous les reçus de {merchant}",
+        "description": "Voir et filtrer tous vos reçus de ce commerçant",
+        "searchPlaceholder": "Rechercher receipts...",
+        "filters": {
+          "date": "Date",
+          "sort": "Tri"
+        },
+        "dateOptions": {
+          "allTime": "Toute la période",
+          "last30Days": "30 derniers jours",
+          "last90Days": "90 derniers jours",
+          "thisYear": "Cette année"
+        },
+        "sortOptions": {
+          "newest": "Plus récents d’abord",
+          "oldest": "Plus anciens d’abord"
+        },
+        "table": {
+          "receipt": "Reçu",
+          "date": "Date",
+          "itemsCount": "Articles #",
+          "actions": "Opérations",
+          "view": "Voir"
+        },
+        "footer": {
+          "receiptsFound": "{count} reçus trouvés (affichage de {showing})",
+          "page": "Page {current} sur {total}"
+        },
+        "buttons": {
+          "previous": "Précédent",
+          "next": "Suivant"
+        }
+      },
+      "RecipeDialog": {
+        "create": {
+          "title": "Ajouter une nouvelle recette",
+          "description": "Remplissez les détails pour créer une recette."
+        },
+        "read": {
+          "description": "Détails de la recette et instructions de préparation",
+          "noDescription": "Aucune description fournie.",
+          "notSpecified": "Non spécifié"
+        },
+        "update": {
+          "title": "Mettre à jour la recette",
+          "description": "Mettre à jour les détails de la recette."
+        },
+        "delete": {
+          "title": "Êtes-vous sûr ?",
+          "description": "Cette action est irréversible. Cela supprimera définitivement la recette <strong>{name}</strong> et toutes ses données associées."
+        },
+        "fields": {
+          "recipeName": "Nom de la recette",
+          "description": "Présentation",
+          "ingredients": "Ingrédients",
+          "difficulty": "Niveau de difficulté",
+          "complexity": "Niveau de complexité",
+          "instructions": "Étapes",
+          "prepTime": "Temps de préparation",
+          "cookTime": "Temps de cuisson"
+        },
+        "actions": {
+          "generateName": "Générer un nom",
+          "enhanceInstructions": "Améliorer les instructions"
+        },
+        "tooltips": {
+          "generateName": "Générer un nom de recette selon vos ingrédients et votre niveau de difficulté avec l’AI",
+          "enhanceInstructions": "Utiliser l’AI pour enrichir vos instructions avec davantage de détails"
+        },
+        "placeholders": {
+          "recipeName": "Saisir le nom de la recette",
+          "description": "Saisissez une brève description de la recette",
+          "selectDifficulty": "Sélectionner la difficulté",
+          "instructions": "Saisir les instructions de cuisson",
+          "prepTime": "ex. 15 minutes",
+          "cookTime": "ex. 30 minutes"
+        },
+        "difficulty": {
+          "easy": "Facile",
+          "medium": "Moyen",
+          "hard": "Difficile"
+        },
+        "buttons": {
+          "add": "Ajouter",
+          "cancel": "Annuler",
+          "save": "Enregistrer",
+          "close": "Fermer",
+          "delete": "Supprimer"
+        }
+      },
+      "VehicleCard": {
+        "title": "Analyse des dépenses du véhicule",
+        "expenseType": "Type de dépense : Carburant",
+        "details": {
+          "liters": "Litres",
+          "pricePerLiter": "Prix/L",
+          "station": "Station-service",
+          "vehicle": "Véhicule",
+          "notSet": "Non défini"
+        },
+        "chart": {
+          "title": "Dépenses mensuelles en carburant",
+          "amount": "Montant"
+        },
+        "stats": {
+          "thisMonth": "Ce mois-ci",
+          "fillUps": "{count} pleins",
+          "costPerKm": "Coût/km",
+          "estimated": "estimé",
+          "fuelPrice": "Fuel Prix",
+          "thisMonthSuffix": "ce mois-ci"
+        },
+        "maintenance": {
+          "title": "Rappels d’entretien"
+        },
+        "tip": {
+          "title": "Le moins cher à proximité",
+          "perLiter": "L"
+        },
+        "buttons": {
+          "addVehicle": "Ajouter Véhicule",
+          "fullReport": "Rapport complet"
+        },
+        "months": {
+          "sep": "sept.",
+          "oct": "oct.",
+          "nov": "nov.",
+          "dec": "déc."
+        },
+        "reminders": {
+          "oilChange": "Vidange à prévoir dans ~1 200 km",
+          "tireRotation": "Rotation des pneus recommandée"
+        }
+      },
+      "DiningCard": {
+        "title": "Informations restauration",
+        "sodium": {
+          "high": "Élevé",
+          "medium": "Moyen",
+          "low": "Faible"
+        },
+        "estimatedNutrition": {
+          "title": "Valeurs nutritionnelles estimées",
+          "calories": "Énergie",
+          "caloriesValue": "~{value} kcal",
+          "protein": "Protéines",
+          "proteinValue": "~{value}g",
+          "sodium": "Sel (sodium)",
+          "carbs": "Glucides",
+          "carbsValue": "~{value}g"
+        },
+        "habits": {
+          "title": "Vos habitudes de restauration rapide",
+          "frequency": "Fréquence",
+          "frequencyValue": "{count}x/mois",
+          "frequencyDiff": "+1 vs moyenne",
+          "avgSpend": "Dépense moyenne",
+          "favorite": "Préféré",
+          "visits": "{count} visites"
+        },
+        "swaps": {
+          "title": "Alternatives plus saines",
+          "grilled": "Grillé au lieu de frit",
+          "water": "Eau au lieu de soda",
+          "salad": "Salade d’accompagnement au lieu de frites",
+          "caloriesSaved": "-{count} kcal",
+          "moneySaved": ", économise {amount}"
+        },
+        "challenge": {
+          "title": "Défi hebdomadaire",
+          "descriptionPrefix": "Évitez la restauration rapide pendant 7 jours et enregistrez",
+          "descriptionSuffix": ""
+        }
+      },
+      "NutritionCard": {
+        "title": "Vue d’ensemble nutritionnelle",
+        "score": {
+          "title": "Score d’équilibre alimentaire",
+          "excellent": "Très bon",
+          "good": "Bon",
+          "fair": "Moyen",
+          "needsWork": "À améliorer"
+        },
+        "composition": {
+          "title": "Composition de votre panier",
+          "wholeFoods": "Aliments complets",
+          "processed": "Transformés",
+          "dairyOther": "Produits laitiers/Autre"
+        },
+        "foodGroups": {
+          "fruits": "Fruits frais",
+          "vegetables": "Légumes",
+          "protein": "Protéines",
+          "grains": "Céréales",
+          "itemsCount": "{count} article(s)"
+        },
+        "allergens": {
+          "title": "Allergènes détectés",
+          "foundInItems": "Trouvé dans {count} article(s)"
+        },
+        "suggestions": {
+          "addFruitsAndVegetables": "Ajoutez davantage de fruits et légumes pour équilibrer votre panier",
+          "addVegetables": "Pensez à ajouter des légumes pour une alimentation plus équilibrée",
+          "addFruits": "Ajouter des fruits améliorerait l’équilibre nutritionnel",
+          "swapProcessed": "Essayez de remplacer certains produits transformés par des aliments complets",
+          "greatBalance": "Excellent équilibre d’achats !"
+        }
+      },
+      "HomeInventoryCard": {
+        "title": "Inventaire du domicile et fournitures",
+        "supplyNames": {
+          "laundryDetergent": "Lessive",
+          "dishSoap": "Liquide vaisselle",
+          "paperProducts": "Produits en papier",
+          "floorCleaner": "Nettoyant pour sols"
+        },
+        "stockLevels": {
+          "title": "Niveaux de stock des fournitures (estimés)",
+          "daysRemaining": "~{count} jours"
+        },
+        "eco": {
+          "title": "Score écoresponsable",
+          "productsWithEcoLabels": "{count} produits avec des écolabels",
+          "recyclablePackaging": "{count} produit avec emballage recyclable",
+          "tip": "Tip: Eco alternatives enregistrer 2kg plastic/year"
+        },
+        "bulk": {
+          "title": "Économies sur achats en gros",
+          "description": "Un bidon de 5L vs 2L permet d’économiser 18% ({amount}/an)"
+        }
+      },
+      "CategorySuggestionCard": {
+        "title": "Aidez-nous à catégoriser cette facture",
+        "description": "Nous n’avons pas pu catégoriser automatiquement cette facture. Sélectionnez la bonne catégorie pour débloquer des analyses :",
+        "moreCategories": "Plus de catégories :",
+        "gamification": "Catégorisez {goal} factures pour débloquer des analyses détaillées !"
+      },
+      "BudgetImpactCard": {
+        "title": "Impact budgétaire de {month}",
+        "monthlyBudget": "Budget mensuel",
+        "spent": "{amount} dépensés",
+        "invoiceUsed": "Cette facture a utilisé",
+        "ofMonthlyBudget": "de votre budget mensuel",
+        "remaining": "Restant",
+        "overBudget": "Dépassement de budget",
+        "daysLeft": "Jours restants",
+        "inMonth": "en {month}",
+        "dailyAllowance": "Budget quotidien",
+        "dailyAllowanceValue": "{amount} / jour"
+      },
+      "ComparisonStatsCard": {
+        "title": "Comment vous vous situez",
+        "subtitle": "Par rapport à vos {count} dernières factures",
+        "vsAverage": "vs moyenne",
+        "avgValue": "Moy. : {amount} {currency}",
+        "thisValue": "Cette facture : {amount} {currency}",
+        "minValue": "Min. : {amount}",
+        "maxValue": "Max. : {amount}",
+        "positionInRange": "Votre position dans la plage de dépenses",
+        "itemCount": "Article Count",
+        "itemCountComparison": "{current} vs moy {average}",
+        "sameStore": "Même magasin",
+        "sameStoreComparison": "vs moy {average} {currency}"
+      },
+      "InvoiceDetailsCard": {
+        "title": "Détails de la facture",
+        "labels": {
+          "dateUtc": "Date et heure (UTC)",
+          "category": "Catégorie",
+          "payment": "Paiement",
+          "totalAmount": "Montant total"
+        },
+        "itemsTitle": "Articles ({count})",
+        "table": {
+          "item": "Article",
+          "qty": "Qté",
+          "unit": "Unité",
+          "price": "Prix",
+          "total": "Somme",
+          "grandTotal": "Total général"
+        },
+        "pagination": {
+          "pageOf": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant"
+        }
+      },
+      "ReceiptScanCard": {
+        "title": "Scan du reçu",
+        "dialogTitle": "Image du reçu",
+        "scanAlt": "Scan du reçu {index}",
+        "scanAltFullSize": "Scan du reçu {index} - taille réelle",
+        "buttons": {
+          "expand": "Agrandir l’image",
+          "previousScan": "Scan précédent",
+          "nextScan": "Scan suivant"
+        },
+        "tooltips": {
+          "expand": "Voir l’image du reçu en taille réelle",
+          "previousScan": "Voir le scan précédent du reçu",
+          "nextScan": "Voir le scan suivant du reçu"
+        }
+      },
+      "ShoppingCalendarCard": {
+        "title": "Calendrier d’achats",
+        "tooltip": {
+          "basedOnCachedInvoices": "Basé sur {count} factures en cache",
+          "currentInvoiceOnly": "Affichage de la facture actuelle uniquement",
+          "more": "+{count} de plus",
+          "vsAverage": "vs moy ({years} ans de données)",
+          "invoiceCount": "{count} facture(s)",
+          "currentInvoice": "Facture actuelle"
+        },
+        "legend": {
+          "less": "Moins",
+          "more": "Plus"
+        },
+        "stats": {
+          "monthTotal": "Total du mois",
+          "shoppingDays": "Jours d’achats"
+        },
+        "insights": {
+          "shopEveryPrefix": "Vous faites vos achats tous les",
+          "days": "{count} jours",
+          "onAverage": "en moyenne",
+          "spendingPrefix": ", dépensant",
+          "perTrip": " par achat",
+          "mostActiveOn": "Plus actif le",
+          "weekdayLabel": "{weekday}"
+        }
+      },
+      "InvoiceTabs": {
+        "tabs": {
+          "possibleRecipes": "Recettes possibles",
+          "additionalInfo": "Infos supplémentaires"
+        },
+        "recipe": {
+          "duration": "{minutes} min",
+          "prepCook": "Prépa : {prep}m • Cuisson : {cook}m",
+          "viewRecipe": "Voir Recipe"
+        },
+        "empty": {
+          "recipes": "Aucune suggestion de recette disponible",
+          "additionalInfo": "Aucune information supplémentaire disponible"
+        }
+      },
+      "InvoiceHeader": {
+        "tooltips": {
+          "importantInvoice": "Facture importante",
+          "edit": "Modifier cette facture",
+          "delete": "Supprimer définitivement cette facture",
+          "print": "Imprimer cette facture",
+          "saveAllPendingChanges": "Enregistrer toutes les modifications en attente",
+          "discardAllPendingChanges": "Annuler toutes les modifications en attente",
+          "printInvoiceWithAllDetails": "Imprimer cette facture avec tous les détails",
+          "analyzeSpendingPatterns": "Analyser les habitudes de dépenses de cette facture",
+          "deleteInvoicePermanently": "Supprimer cette facture définitivement"
+        },
+        "id": "ID : {id}",
+        "buttons": {
+          "edit": "Modifier",
+          "delete": "Supprimer",
+          "print": "Imprimer",
+          "save": "Enregistrer",
+          "saving": "Enregistrement...",
+          "discard": "Annuler",
+          "analyzeWithAi": "Analyser avec l'IA"
+        }
+      },
+      "ShareAnalyticsDialog": {
+        "title": "Partager Analytics",
+        "description": "Partagez vos analyses de dépenses pour {merchant} avec d’autres personnes.",
+        "tabs": {
+          "image": "Aperçu image",
+          "email": "E-mail"
+        },
+        "image": {
+          "description": "Téléchargez ou copiez le graphique d’analyses en image PNG afin de le partager ou de l’enregistrer.",
+          "previewPlaceholder": "Aperçu des analyses",
+          "download": "Télécharger le graphique",
+          "copyToClipboard": "Copier le graphique dans le presse-papiers"
+        },
+        "email": {
+          "description": "Envoyez les analyses à une adresse e-mail.",
+          "label": "E-mail address",
+          "placeholder": "name@example.com",
+          "send": "Envoyer E-mail"
+        },
+        "toasts": {
+          "imageCopied": {
+            "title": "Image copiée !",
+            "description": "L’image des analyses a été copiée dans votre presse-papiers"
+          },
+          "emailSent": {
+            "title": "E-mail envoyé !",
+            "description": "Rapport d’analyses envoyé à {email}"
+          },
+          "imageSaved": {
+            "title": "Image enregistrée !",
+            "description": "Les analyses de dépenses pour {merchant} ont été téléchargées au format PNG"
+          }
+        }
+      },
+      "InvoiceAnalytics": {
+        "title": "Analyses et insights",
+        "tabs": {
+          "current": "Cette facture",
+          "compare": "Comparaison"
+        }
+      },
+      "SummaryStatsCard": {
+        "title": "Résumé de la facture",
+        "description": "Statistiques clés en un coup d’œil",
+        "stats": {
+          "totalItems": {
+            "label": "Articles totaux",
+            "description": "Produits achetés"
+          },
+          "categories": {
+            "label": "Catégories",
+            "description": "Catégories uniques"
+          },
+          "averagePrice": {
+            "label": "Prix moyen",
+            "description": "{currency} par article"
+          },
+          "taxRate": {
+            "label": "Taux de taxe",
+            "description": "{amount} {currency}"
+          }
+        },
+        "extremes": {
+          "highest": "Le plus élevé",
+          "lowest": "Le plus bas"
+        }
+      },
+      "SeasonalInsightsCard": {
+        "title": "Insight saisonnier",
+        "month": {
+          "spendingSoFar": "{month} jusqu’à présent",
+          "vsAverage": "vs moyenne de {month} : {amount}"
+        },
+        "insights": {
+          "spike": {
+            "title": "Pic de {category}",
+            "description": "+{percent}% vs votre moyenne"
+          },
+          "holidaySeason": {
+            "title": "Saison des fêtes",
+            "description": "Les dépenses de décembre sont généralement 35% plus élevées"
+          },
+          "stockUpTip": {
+            "title": "Conseil de stock",
+            "description": "Les prix augmentent d’environ 15% après le 15 décembre"
+          },
+          "normalPattern": {
+            "title": "Habitude d’achat normale",
+            "description": "Vos dépenses sont dans la plage habituelle"
+          }
+        }
+      },
+      "CategoryComparisonChart": {
+        "title": "Comparaison des catégories",
+        "description": "Cette facture vs votre moyenne",
+        "labels": {
+          "current": "Actuel",
+          "average": "Moyenne"
+        }
+      },
+      "ItemsBreakdownChart": {
+        "title": "Articles les plus coûteux",
+        "description": "Articles avec les plus fortes dépenses",
+        "labels": {
+          "price": "Prix",
+          "quantity": "Qté"
+        }
+      },
+      "MerchantBreakdownChart": {
+        "title": "Dépenses par magasin",
+        "description": "Totaux cumulés sur tous les commerçants",
+        "labels": {
+          "totalSpent": "Total dépensé",
+          "total": "Total",
+          "visits": "Visites",
+          "averagePerVisit": "Moy./visite"
+        }
+      },
+      "PriceDistributionChart": {
+        "title": "Répartition des prix",
+        "description": "Articles par tranche de prix ({currency})",
+        "labels": {
+          "items": "Articles"
+        },
+        "tooltip": {
+          "itemCount": "{count, plural, one {# article} other {# articles}}"
+        }
+      },
+      "SpendingByCategoryChart": {
+        "title": "Dépenses par catégorie",
+        "description": "Répartition des dépenses",
+        "totalLabel": "Total des dépenses",
+        "tooltip": {
+          "itemCount": "{count, plural, one {# article} other {# articles}}"
+        }
+      },
+      "SpendingTrendChart": {
+        "title": "Évolution des dépenses",
+        "description": "Tendance de votre historique de factures",
+        "labels": {
+          "amount": "Montant"
+        },
+        "tooltip": {
+          "currentInvoice": "Facture actuelle"
+        }
+      },
+      "InvoiceTimeline": {
+        "title": "Chronologie de la facture",
+        "subtitle": "Historique complet des actions et modifications",
+        "eventCount": "{count, plural, one {# événement} other {# événements}}"
+      },
+      "TimelineItem": {
+        "aria": {
+          "moreInfo": "Plus d’infos sur {title}"
+        },
+        "confidence": "Confiance : {value}%",
+        "events": {
+          "created": {
+            "title": "Facture créée",
+            "description": "Scannée et numérisée depuis le reçu"
+          },
+          "aiAnalysis": {
+            "title": "Analyse IA terminée",
+            "description": "{count, plural, one {# article détecté et catégorisé} other {# articles détectés et catégorisés}}"
+          },
+          "recipesGenerated": {
+            "title": "Recettes générées",
+            "description": "{count, plural, one {# recette suggérée} other {# recettes suggérées}}"
+          },
+          "shared": {
+            "title": "Partagée avec d’autres",
+            "description": "Partagée avec {count, plural, one {# personne} other {# personnes}}"
+          },
+          "edited": {
+            "title": "Facture mise à jour"
+          },
+          "exported": {
+            "title": "Facture exportée"
+          },
+          "markedImportant": {
+            "title": "Marquée importante",
+            "description": "Signalée pour un suivi prioritaire"
+          },
+          "categorized": {
+            "title": "Catégorie attribuée",
+            "description": "Catégorisation automatique selon les articles"
+          }
+        },
+        "tooltips": {
+          "created": "La facture a été scannée et numérisée avec {method}.",
+          "aiAnalysis": "L’IA a traité cette facture en {duration} et analysé {count, plural, one {# article} other {# articles}}.",
+          "recipesGenerated": "D’après les ingrédients achetés, {count, plural, one {# recette a été générée} other {# recettes ont été générées}}.",
+          "shared": "La facture a été partagée avec {users, plural, one {# utilisateur} other {# utilisateurs}}.",
+          "edited": "Des modifications manuelles ont été apportées à la facture.",
+          "exported": "La facture a été exportée au format {format}.",
+          "markedImportant": "La facture a été marquée importante pour un accès rapide.",
+          "categorized": "La facture a reçu une catégorie pour une meilleure organisation.",
+          "unavailable": "Détails de l’événement indisponibles"
+        },
+        "relativeTime": {
+          "now": "À l’instant"
+        },
+        "fallbacks": {
+          "ocr": "OCR",
+          "pdf": "PDF"
+        }
+      },
+      "TimelineSharedWithList": {
+        "header": {
+          "title": "Partagée avec",
+          "publicBadge": "Public"
+        },
+        "publicAccess": {
+          "title": "Accès public activé",
+          "description": "Cette facture est accessible publiquement. Toute personne disposant du lien peut la voir, y compris les invités sans compte."
+        },
+        "aria": {
+          "sendEmail": "Envoyer un e-mail à {user}"
+        },
+        "actions": {
+          "sendEmail": "Envoyer un e-mail",
+          "manageSharing": "Gérer le partage"
+        }
+      },
+      "InvoiceGuestBanner": {
+        "title": "Vue invité",
+        "description": "Vous n’êtes actuellement pas le propriétaire de cette facture. L’affichage est limité à ce que le propriétaire a défini dans les paramètres de partage."
+      },
+      "MerchantInfoCard": {
+        "viewAllReceipts": "Voir tous les reçus"
+      },
+      "ExportDialog": {
+        "title": "Exporter des factures",
+        "description": "Exporter {count} factures dans le format de votre choix.",
+        "format": {
+          "title": "Format d’export",
+          "labels": {
+            "csv": "CSV",
+            "json": "JSON",
+            "pdf": "PDF"
+          }
+        },
+        "options": {
+          "title": "Paramètres",
+          "includeMetadata": "Inclure les métadonnées",
+          "includeProducts": "Inclure les produits",
+          "includeMerchant": "Inclure le commerçant",
+          "csv": {
+            "includeHeaders": "Inclure les en-têtes CSV",
+            "delimiterLabel": "Séparateur CSV personnalisé (facultatif) :",
+            "delimiterPlaceholder": ","
+          },
+          "json": {
+            "prettyPrint": "Formatage lisible (2 espaces)"
+          }
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "export": "Exporter"
+        }
+      },
+      "ImportDialog": {
+        "title": "Importer des factures",
+        "description": "Téléversez vos fichiers de factures pour les importer dans le système.",
+        "tabs": {
+          "csv": "CSV",
+          "pdf": "PDF",
+          "xlsx": "Excel"
+        },
+        "dropzone": {
+          "dropHere": "Déposez les fichiers ici...",
+          "dragAndDrop": "Glissez-déposez les fichiers ici",
+          "orClickBrowse": "ou cliquez pour parcourir les fichiers",
+          "acceptsCsv": "Accepte les fichiers .csv (max 10 Mo)",
+          "acceptsPdf": "Accepte les fichiers .pdf (max 10 Mo)",
+          "acceptsXlsx": "Accepte les fichiers .xlsx et .xls (max. 10 Mo)"
+        },
+        "selectedFiles": "Fichiers sélectionnés",
+        "remove": "Supprimer",
+        "status": {
+          "success": "Fichiers importés avec succès !",
+          "error": "Erreur lors de l’import des fichiers. Veuillez réessayer."
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "import": "Importer"
+        }
+      },
+      "TableView": {
+        "empty": "Aucune facture trouvée",
+        "columns": {
+          "invoice": "Facture",
+          "category": "Catégorie",
+          "date": "Date",
+          "amount": "Montant",
+          "actions": "Opérations"
+        },
+        "aria": {
+          "selectAllInvoices": "Sélectionner toutes les factures",
+          "selectInvoice": "Sélectionner facture {id}",
+          "rowsPerPage": "Lignes par page"
+        },
+        "viewInvoice": "Voir Facture",
+        "rowsPerPage": "Lignes par page:",
+        "pageOf": "Page {current} sur {total}",
+        "previousPage": "Page précédente",
+        "nextPage": "Page suivante"
+      },
+      "TableViewActions": {
+        "actions": {
+          "edit": "Modifier",
+          "share": "Partager",
+          "delete": "Supprimer"
+        },
+        "tooltips": {
+          "edit": "Modifier les détails de la facture",
+          "share": "Partager facture via lien or e-mail",
+          "delete": "Supprimer définitivement cette facture"
+        }
+      },
+      "FeedbackDialog": {
+        "title": "Donner un retour",
+        "description": "Aidez-nous à améliorer les analyses pour {merchant} en partageant votre avis",
+        "sections": {
+          "rating": "Comment évalueriez-vous les analyses ?",
+          "features": "Quelles fonctionnalités ont été les plus utiles ? (Sélectionnez toutes les réponses pertinentes)",
+          "comments": "Commentaires supplémentaires (facultatifs)"
+        },
+        "features": {
+          "spendingTrends": "Tendances de dépenses",
+          "priceComparisons": "Prix Comparisons",
+          "savingsTips": "Conseils d’économie",
+          "merchantAnalysis": "Merchant Analyse",
+          "visualCharts": "Graphiques visuels",
+          "categoryBreakdown": "Catégorie Breakdown"
+        },
+        "commentsPlaceholder": "Partagez vos impressions sur les analyses...",
+        "buttons": {
+          "cancel": "Annuler",
+          "submit": "Envoyer le retour"
+        },
+        "toasts": {
+          "sending": {
+            "title": "Envoi du retour...",
+            "description": "Veuillez patienter pendant l’envoi de votre retour."
+          },
+          "ratingRequired": {
+            "title": "Note requise",
+            "description": "Veuillez attribuer une note en étoiles avant l’envoi"
+          },
+          "success": {
+            "title": "Retour envoyé !",
+            "description": "Retour envoyé avec succès"
+          },
+          "error": {
+            "title": "Une erreur est survenue lors de l’envoi du retour",
+            "description": "Veuillez réessayer plus tard."
+          }
+        }
+      },
+      "SharingCard": {
+        "title": "Partage",
+        "ownerAvatarAlt": "Utilisateur",
+        "owner": "Propriétaire",
+        "sharedWith": "Partagée avec",
+        "userWithId": "Utilisateur {id}",
+        "publicInvoice": {
+          "title": "Facture publique",
+          "description": "Cette facture est accessible publiquement. Toute personne disposant du lien peut la consulter."
+        },
+        "emptyShared": {
+          "public": "Aucun utilisateur supplémentaire n’a d’accès direct",
+          "private": "Non partagée"
+        },
+        "buttons": {
+          "manageSharing": "Gérer Partage",
+          "shareInvoice": "Partager Facture",
+          "revokingAccess": "Révocation de l’accès...",
+          "markAsPrivate": "Marquer comme privée"
+        },
+        "tooltips": {
+          "manageSharing": "Gérer les paramètres de partage de cette facture",
+          "removeAccess": "Supprimer l’accès",
+          "shareInvoice": "Partager cette facture avec d’autres utilisateurs",
+          "markAsPrivate": "Marquer la facture comme privée"
+        },
+        "toasts": {
+          "removeAccessComingSoon": {
+            "title": "La suppression d’accès sera bientôt disponible",
+            "description": "Cette fonctionnalité est en cours de développement."
+          },
+          "revoke": {
+            "loading": "Révocation de l’accès public...",
+            "success": "La facture est maintenant privée. Les liens existants ne fonctionneront plus.",
+            "error": "Échec du passage en privé : {message}"
+          }
+        }
+      },
+      "ImageDialog": {
+        "title": "Aperçu ({image})",
+        "imageAlt": "Photo du reçu"
+      },
+      "ItemsTable": {
+        "title": "Articles",
+        "buttons": {
+          "editItems": "Modifier les articles"
+        },
+        "tooltips": {
+          "editInvoiceItemsAndQuantities": "Modifier les articles et les quantités de la facture"
+        },
+        "tableHeaders": {
+          "item": "Article",
+          "quantity": "Qté",
+          "price": "Prix",
+          "total": "Total"
+        },
+        "footer": {
+          "total": "Total"
+        },
+        "pagination": {
+          "totalItems": "{count, plural, one {# article au total} other {# articles au total}}",
+          "previous": "Précédent",
+          "next": "Suivant",
+          "pageOf": "Page {currentPage} sur {totalPages}"
+        }
+      },
+      "TriviaTips": {
+        "title": "Astuces économies",
+        "difficulty": {
+          "easy": "Facile",
+          "medium": "Moyen"
+        },
+        "banner": {
+          "potentialSavingsLabel": "Économies potentielles",
+          "hint": "Appliquez ces astuces pour économiser lors de votre prochaine visite chez {merchantName}"
+        },
+        "tips": {
+          "loyaltyProgram": {
+            "title": "Rejoindre le programme fidélité",
+            "description": "Inscrivez-vous au programme fidélité de {merchantName} pour gagner des points à chaque achat."
+          },
+          "bulkPurchase": {
+            "title": "Acheter en gros",
+            "description": "Achetez les produits non périssables en gros pour réduire le coût unitaire."
+          },
+          "digitalCoupons": {
+            "title": "Utiliser des coupons numériques",
+            "description": "Consultez l'application de {merchantName} pour des coupons numériques avant vos achats."
+          }
+        },
+        "tooltips": {
+          "estimatedSavings": "Économies estimées avec cette astuce"
+        },
+        "buttons": {
+          "viewMoreSavingsTips": "Voir plus d'astuces économies"
+        },
+        "disclaimer": "Les économies sont des estimations basées sur les prix et promotions moyens"
+      },
+      "RecipesTab": {
+        "header": {
+          "title": "Recettes que vous pouvez préparer",
+          "description": "Basé sur les articles de cette facture"
+        },
+        "buttons": {
+          "generate": "Générer",
+          "addRecipe": "Ajouter une recette",
+          "createFirstRecipe": "Créer votre première recette"
+        },
+        "tooltips": {
+          "generateRecipeUsingAi": "Générer une recette avec l'IA !",
+          "createRecipeWithIngredients": "Créer une nouvelle recette avec ces ingrédients"
+        },
+        "emptyState": {
+          "noRecipesAvailable": "Aucune recette disponible pour le moment"
+        },
+        "pagination": {
+          "previous": "Précédent",
+          "next": "Suivant",
+          "pageOf": "Page {currentPage} sur {totalPages}"
+        },
+        "toasts": {
+          "aiGenerationComingSoon": {
+            "title": "La génération de recettes par IA arrive bientôt",
+            "description": "Cette fonctionnalité est en cours de développement."
+          }
+        }
+      },
+      "StatisticsView": {
+        "title": "Statistiques des factures",
+        "subtitle": "Gérez vos reçus et suivez vos habitudes de dépenses"
+      },
+      "AnalyzeDialog": {
+        "header": {
+          "title": "Analyser la facture",
+          "description": "Configurer une analyse alimentée par IA pour la facture"
+        },
+        "options": {
+          "completeAnalysis": {
+            "title": "Analyse complète",
+            "description": "Analyse IA complète incluant toutes les données de la facture, les articles et les informations du commerçant.",
+            "estimatedTime": "2-3 min",
+            "features": {
+              "ocrExtraction": "Extraction OCR",
+              "itemCategorization": "Catégorisation des articles",
+              "merchantIdentification": "Identification du commerçant",
+              "priceAnalysis": "Analyse des prix",
+              "receiptValidation": "Validation du reçu"
+            }
+          },
+          "invoiceOnly": {
+            "title": "Données de facture uniquement",
+            "description": "Analyser les informations de base de la facture comme les totaux, dates et détails de paiement.",
+            "estimatedTime": "30-60 s",
+            "features": {
+              "totalExtraction": "Extraction du total",
+              "dateParsing": "Analyse des dates",
+              "paymentMethodDetection": "Détection du mode de paiement"
+            }
+          },
+          "itemsOnly": {
+            "title": "Analyse des articles",
+            "description": "Se concentrer sur l'extraction et la catégorisation des lignes d'articles de la facture.",
+            "estimatedTime": "1-2 min",
+            "features": {
+              "itemExtraction": "Extraction des articles",
+              "categoryAssignment": "Attribution des catégories",
+              "pricePerItem": "Prix par article",
+              "quantityDetection": "Détection des quantités"
+            }
+          },
+          "merchantOnly": {
+            "title": "Analyse du commerçant",
+            "description": "Identifier et analyser les informations du commerçant, y compris localisation et catégorie.",
+            "estimatedTime": "30-45 s",
+            "features": {
+              "merchantIdentification": "Identification du commerçant",
+              "locationExtraction": "Extraction de la localisation",
+              "businessCategory": "Catégorie commerciale",
+              "contactInfo": "Coordonnées"
+            }
+          }
+        },
+        "analysisSteps": {
+          "preparingDocument": "Préparation du document...",
+          "runningOcrExtraction": "Exécution de l'extraction OCR...",
+          "analyzingWithAi": "Analyse avec l'IA...",
+          "categorizingItems": "Catégorisation des articles...",
+          "finalizingResults": "Finalisation des résultats...",
+          "processing": "Traitement..."
+        },
+        "analyzing": {
+          "title": "Analyse de la facture",
+          "progressComplete": "{progress}% terminé"
+        },
+        "sections": {
+          "analysisType": "Type d'analyse",
+          "includedFeatures": "Fonctionnalités incluses",
+          "enhancementsOptional": "Améliorations (optionnel)"
+        },
+        "enhancements": {
+          "priceComparison": {
+            "label": "Comparaison des prix",
+            "description": "Comparer les prix avec les données historiques"
+          },
+          "savingsTips": {
+            "label": "Suggestions d'économies",
+            "description": "Obtenir des recommandations d'économies par IA"
+          },
+          "quickExtract": {
+            "label": "Mode extraction rapide",
+            "description": "Prioriser la vitesse plutôt que la précision"
+          }
+        },
+        "badges": {
+          "recommended": "Recommandé"
+        },
+        "summary": {
+          "enhancementsSelected": "+ {count} amélioration(s)",
+          "noEnhancementsSelected": "Aucune amélioration sélectionnée",
+          "estimatedTime": "Durée estimée"
+        },
+        "buttons": {
+          "cancel": "Annuler",
+          "analyzing": "Analyse en cours...",
+          "startAnalysis": "Démarrer l'analyse"
+        },
+        "toasts": {
+          "analysisComplete": {
+            "title": "Analyse terminée",
+            "description": "Votre facture a été analysée avec succès."
+          },
+          "analysisFailed": {
+            "title": "Échec de l'analyse",
+            "description": "Nous n'avons pas pu analyser votre facture. Veuillez réessayer."
+          }
+        }
+      },
+      "MetadataTab": {
+        "header": {
+          "title": "Informations supplémentaires",
+          "description": "Métadonnées associées à cette facture"
+        },
+        "buttons": {
+          "addField": "Ajouter un champ",
+          "addFirstMetadataField": "Ajouter votre premier champ de métadonnées"
+        },
+        "tooltips": {
+          "addCustomMetadata": "Ajouter des métadonnées personnalisées à cette facture"
+        },
+        "badges": {
+          "readonly": "Lecture seule"
+        },
+        "dropdown": {
+          "edit": "Modifier",
+          "delete": "Supprimer"
+        },
+        "emptyState": {
+          "noMetadataFields": "Aucun champ de métadonnées ajouté"
+        }
+      },
+      "MerchantDialog": {
+        "title": "Détails du commerçant",
+        "description": "Informations sur {merchantName}",
+        "fields": {
+          "address": "Adresse",
+          "phone": "Téléphone",
+          "parentCompany": "Société mère"
+        },
+        "buttons": {
+          "openInMaps": "Ouvrir dans Maps"
+        }
+      },
+      "MerchantCard": {
+        "title": "Commerçant",
+        "addressLabel": "Adresse : {address}",
+        "buttons": {
+          "viewMerchantDetails": "Voir les détails du commerçant",
+          "viewAllReceipts": "Voir tous les reçus"
+        },
+        "tooltips": {
+          "viewMerchantDetails": "Voir des informations détaillées sur ce commerçant",
+          "viewAllReceipts": "Voir tous les reçus de ce commerçant"
+        }
+      },
+      "RecipeCard": {
+        "complexity": {
+          "unknown": "Inconnu",
+          "easy": "Facile",
+          "normal": "Normal",
+          "hard": "Difficile"
+        },
+        "dropdown": {
+          "view": "Voir",
+          "edit": "Modifier",
+          "delete": "Supprimer",
+          "share": "Partager",
+          "markAsFavorite": "Marquer comme favori"
+        },
+        "ingredients": {
+          "label": "Ingrédients :",
+          "more": "+{count} de plus",
+          "additionalLabel": "Ingrédients supplémentaires :"
+        },
+        "timing": {
+          "prepLabel": "Prépa : {minutes}′",
+          "prepTooltip": "Le temps de préparation est de {minutes} minutes.",
+          "cookLabel": "Cuisson : {minutes}′",
+          "cookTooltip": "Le temps de cuisson est de {minutes} minutes."
+        },
+        "buttons": {
+          "visitReference": "Visiter la référence",
+          "viewRecipe": "Voir la recette"
+        }
+      },
+      "GridView": {
+        "tooltips": {
+          "viewDetails": "Voir les détails"
+        },
+        "itemCount": "{count, plural, one {# article} other {# articles}}"
       }
     }
   }
