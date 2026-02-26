@@ -53,9 +53,6 @@ param developmentAppPlanId string
 @description('The app insights connection string')
 param appInsightsConnectionString string
 
-@description('The app insights instrumentation key')
-param appInsightsInstrumentationKey string
-
 param managedIdentityBackendId string
 param managedIdentityFrontendId string
 
@@ -64,7 +61,6 @@ module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
   name: 'apiWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     appInsightsConnectionString: appInsightsConnectionString
-    appInsightsInstrumentationKey: appInsightsInstrumentationKey
     apiWebsiteLocation: resourceLocation
     apiWebsitePlanId: productionAppPlanId
     apiWebsiteIdentityId: managedIdentityBackendId
@@ -77,7 +73,6 @@ module mainWebsiteDeployment 'arolariu-ro.bicep' = {
   name: 'mainWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     appInsightsConnectionString: appInsightsConnectionString
-    appInsightsInstrumentationKey: appInsightsInstrumentationKey
     productionWebsiteLocation: resourceLocation
     productionWebsiteAppPlanId: productionAppPlanId
     productionWebsiteIdentityId: managedIdentityFrontendId

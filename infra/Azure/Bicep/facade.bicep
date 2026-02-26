@@ -107,7 +107,6 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
     appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
-    appInsightsInstrumentationKey: observabilityDeployment.outputs.appInsightsInstrumentationKey
     productionAppPlanId: computeDeployment.outputs.productionAppPlanId
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
     managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId

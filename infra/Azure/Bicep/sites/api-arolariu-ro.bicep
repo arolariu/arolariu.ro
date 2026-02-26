@@ -46,7 +46,6 @@ param apiWebsitePlanId string
 param apiWebsiteLocation string
 param apiWebsiteIdentityId string
 param apiWebsiteDeploymentDate string
-param appInsightsInstrumentationKey string
 param appInsightsConnectionString string
 
 // Import common tags
@@ -107,10 +106,6 @@ resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
         {
           name: 'ASPNETCORE_ENVIRONMENT'
           value: 'Production' // Environment setting for ASP.NET Core
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

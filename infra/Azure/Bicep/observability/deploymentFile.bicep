@@ -75,10 +75,10 @@ module managedGrafanaDeployment 'grafana.bicep' = {
     managedGrafanaName: '${resourceConventionPrefix}-grafana'
     managedGrafanaLocation: resourceLocation
     managedGrafanaDeploymentDate: resourceDeploymentDate
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceDeployment.outputs.logAnalyticsWorkspaceId
   }
 }
 
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspaceDeployment.outputs.logAnalyticsWorkspaceId
 
 output appInsightsConnectionString string = applicationInsightsDeployment.outputs.applicationInsightsConnectionString
-output appInsightsInstrumentationKey string = applicationInsightsDeployment.outputs.applicationInsightsInstrumentationKey

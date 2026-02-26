@@ -52,7 +52,6 @@ param productionWebsiteLocation string
 param productionWebsiteAppPlanId string
 param productionWebsiteIdentityId string
 param productionWebsiteDeploymentDate string
-param appInsightsInstrumentationKey string
 param appInsightsConnectionString string
 
 // Common tags for all resources
@@ -155,10 +154,6 @@ resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
         {
           name: 'NODE_ENV'
           value: 'Production' // Environment setting for Node.js
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
