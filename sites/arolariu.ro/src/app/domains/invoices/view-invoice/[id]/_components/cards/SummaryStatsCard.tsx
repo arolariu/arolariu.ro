@@ -1,6 +1,7 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {TbGrid3X3, TbPackage, TbPercentage, TbReceipt, TbTrendingDown, TbTrendingUp} from "react-icons/tb";
 import {InvoiceSummary} from "../../_utils/analytics";
 import styles from "./SummaryStatsCard.module.scss";
@@ -11,38 +12,39 @@ type Props = {
 };
 
 export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoice.summaryStatsCard");
   const stats = [
     {
-      label: "Total Items",
+      label: t("stats.totalItems.label"),
       value: summary.totalItems.toString(),
       icon: TbPackage,
-      description: "Products purchased",
+      description: t("stats.totalItems.description"),
     },
     {
-      label: "Categories",
+      label: t("stats.categories.label"),
       value: summary.uniqueCategories.toString(),
       icon: TbGrid3X3,
-      description: "Unique categories",
+      description: t("stats.categories.description"),
     },
     {
-      label: "Avg. Price",
+      label: t("stats.averagePrice.label"),
       value: `${summary.averageItemPrice.toFixed(2)}`,
       icon: TbReceipt,
-      description: `${currency} per item`,
+      description: t("stats.averagePrice.description", {currency}),
     },
     {
-      label: "Tax Rate",
+      label: t("stats.taxRate.label"),
       value: `${summary.taxPercentage.toFixed(1)}%`,
       icon: TbPercentage,
-      description: `${summary.taxAmount.toFixed(2)} ${currency}`,
+      description: t("stats.taxRate.description", {amount: summary.taxAmount.toFixed(2), currency}),
     },
   ];
 
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>Invoice Summary</CardTitle>
-        <CardDescription className='text-xs'>Key statistics at a glance</CardDescription>
+        <CardTitle className='text-base'>{t("title")}</CardTitle>
+        <CardDescription className='text-xs'>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className={styles["statsGrid"]}>
@@ -64,7 +66,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
           <div className={styles["extremeRow"]}>
             <div className={styles["extremeLabel"]}>
               <TbTrendingUp className='h-3.5 w-3.5 text-emerald-500' />
-              <span className={styles["extremeLabelText"]}>Highest</span>
+              <span className={styles["extremeLabelText"]}>{t("extremes.highest")}</span>
             </div>
             <div className={styles["extremeRight"]}>
               <p className={styles["extremePrice"]}>
@@ -77,7 +79,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
           <div className={styles["extremeRow"]}>
             <div className={styles["extremeLabel"]}>
               <TbTrendingDown className='h-3.5 w-3.5 text-blue-500' />
-              <span className={styles["extremeLabelText"]}>Lowest</span>
+              <span className={styles["extremeLabelText"]}>{t("extremes.lowest")}</span>
             </div>
             <div className={styles["extremeRight"]}>
               <p className={styles["extremePrice"]}>

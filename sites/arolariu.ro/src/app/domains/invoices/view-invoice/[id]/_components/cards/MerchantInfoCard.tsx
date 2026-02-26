@@ -3,12 +3,14 @@
 import {formatEnum} from "@/lib/utils.generic";
 import {MerchantCategory} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {TbGlobe, TbMapPin, TbPhone} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./MerchantInfoCard.module.scss";
 
 export function MerchantInfoCard(): React.JSX.Element {
   const {merchant} = useInvoiceContext();
+  const t = useTranslations("Invoices.ViewInvoice.merchantInfoCard");
   return (
     <Card className='transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
@@ -43,7 +45,7 @@ export function MerchantInfoCard(): React.JSX.Element {
         <Button
           variant='outline'
           className='w-full bg-transparent'>
-          View All Receipts
+          {t("viewAllReceipts")}
         </Button>
       </CardFooter>
     </Card>

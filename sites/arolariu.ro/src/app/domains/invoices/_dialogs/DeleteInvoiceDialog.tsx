@@ -21,6 +21,7 @@ import {
   toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
@@ -54,6 +55,7 @@ import styles from "./DeleteInvoiceDialog.module.scss";
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
   const router = useRouter();
+  const t = useTranslations("Invoices.Shared.deleteInvoiceDialog");
   const removeInvoice = useInvoicesStore((state) => state.removeInvoice);
 
   const {
@@ -99,15 +101,15 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
       // This ensures the cached invoice list is immediately updated
       removeInvoice(invoice.id);
 
-      toast("Invoice Deleted", {
-        description: "The invoice was deleted successfully.",
+      toast(t("toasts.deletedTitle"), {
+        description: t("toasts.deletedDescription"),
       });
       handleClose();
       router.push("/domains/invoices/view-invoices");
     } catch (error) {
-      console.error("Error deleting invoice:", error);
-      toast("Delete Failed", {
-        description: "We couldn't delete this invoice. Please try again.",
+      console.error(t("console.deleteError"), error);
+      toast(t("toasts.deleteFailedTitle"), {
+        description: t("toasts.deleteFailedDescription"),
       });
     } finally {
       setIsDeleting(false);
@@ -128,9 +130,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 text-red-600 dark:text-red-400'>
             <TbTrash className={styles["titleIcon"]} />
-            Delete Invoice
+            {t("title")}
           </DialogTitle>
-          <DialogDescription>This action cannot be undone. Please review carefully before proceeding.</DialogDescription>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <AnimatePresence mode='wait'>
@@ -147,8 +149,8 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 className={styles["spinnerWrapper"]}>
                 <TbLoader2 className={styles["spinnerIcon"]} />
               </motion.div>
-              <p className={styles["deletingTitle"]}>Deleting invoice...</p>
-              <p className={styles["deletingDescription"]}>Please wait while we remove all associated data.</p>
+              <p className={styles["deletingTitle"]}>{t("deleting.title")}</p>
+              <p className={styles["deletingDescription"]}>{t("deleting.description")}</p>
             </motion.div>
           ) : (
             <motion.div
@@ -176,30 +178,30 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                 variant='destructive'
                 className='border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50'>
                 <TbAlertTriangle className={styles["impactIcon"]} />
-                <AlertTitle>Permanent Deletion</AlertTitle>
+                <AlertTitle>{t("impact.title")}</AlertTitle>
                 <AlertDescription>
-                  <p className={styles["impactIntro"]}>The following data will be permanently deleted:</p>
+                  <p className={styles["impactIntro"]}>{t("impact.intro")}</p>
                   <ul className={styles["impactList"]}>
                     <li className={styles["impactItem"]}>
                       <TbFileX className={styles["impactIcon"]} />
-                      Invoice record and metadata
+                      {t("impact.invoiceRecord")}
                     </li>
                     {scanCount > 0 && (
                       <li className={styles["impactItem"]}>
                         <TbPhoto className={styles["impactIcon"]} />
-                        {scanCount} uploaded scan(s)
+                        {t("impact.uploadedScans", {count: String(scanCount)})}
                       </li>
                     )}
                     {itemCount > 0 && (
                       <li className={styles["impactItem"]}>
                         <TbShoppingCart className={styles["impactIcon"]} />
-                        {itemCount} line item(s)
+                        {t("impact.lineItems", {count: String(itemCount)})}
                       </li>
                     )}
                     {sharedCount > 0 && (
                       <li className={styles["impactItem"]}>
                         <TbX className={styles["impactIcon"]} />
-                        Shared access for {sharedCount} user(s)
+                        {t("impact.sharedAccess", {count: String(sharedCount)})}
                       </li>
                     )}
                   </ul>
@@ -212,7 +214,10 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               <div className={styles["confirmSection"]}>
                 <div className={styles["confirmField"]}>
                   <Label htmlFor='confirm-name'>
-                    Type <span className={styles["confirmHighlight"]}>{invoiceName}</span> to confirm:
+                    {t.rich("confirmation.typeToConfirm", {
+                      name: invoiceName,
+                      highlight: (chunks) => <span className={styles["confirmHighlight"]}>{chunks}</span>,
+                    })}
                   </Label>
                   <Input
                     id='confirm-name'
@@ -235,11 +240,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                     <Label
                       htmlFor='understand-deletion'
                       className='cursor-pointer text-sm leading-none font-medium'>
-                      I understand this action is permanent
+                      {t("confirmation.understoodLabel")}
                     </Label>
-                    <p className={styles["checkboxDescription"]}>
-                      This invoice and all its data will be permanently deleted and cannot be recovered.
-                    </p>
+                    <p className={styles["checkboxDescription"]}>{t("confirmation.understoodDescription")}</p>
                   </div>
                 </div>
               </div>
@@ -253,7 +256,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
             variant='outline'
             onClick={handleClose}
             disabled={isDeleting}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
@@ -263,12 +266,12 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
             {isDeleting ? (
               <>
                 <TbLoader2 className={styles["buttonSpinnerIcon"]} />
-                Deleting...
+                {t("buttons.deleting")}
               </>
             ) : (
               <>
                 <TbTrash className={styles["buttonIcon"]} />
-                Delete Permanently
+                {t("buttons.deletePermanently")}
               </>
             )}
           </Button>

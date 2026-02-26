@@ -19,7 +19,7 @@ interface Props {
  * @returns The hero section.
  */
 export default function HeroSection({isAuthenticated}: Readonly<Props>): React.JSX.Element {
-  const t = useTranslations("Domains.services.invoices.service.homepage");
+  const t = useTranslations("Invoices.Homepage");
 
   return (
     <section className={styles["heroSection"]}>
@@ -67,7 +67,7 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
             transition={{duration: 0.6, delay: 0.2}}>
             <Image
               src='/images/domains/invoices/invoice-top.svg'
-              alt='Invoice management illustration'
+              alt={t("hero.imageAlt")}
               width={500}
               height={500}
               className={styles["heroImage"]}

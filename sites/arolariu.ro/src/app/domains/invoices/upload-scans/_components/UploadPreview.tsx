@@ -9,6 +9,7 @@
  */
 
 import {Badge, Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback} from "react";
 import {TbCheck, TbFileTypePdf, TbLoader2, TbTrash, TbX} from "react-icons/tb";
@@ -27,7 +28,7 @@ function formatFileSize(bytes: number): string {
 /**
  * Status of a pending upload
  */
-type PendingUploadStatus = "idle" | "uploading" | "completed" | "failed";
+type PendingUploadStatus = "idle" | "uploading" | "retrying" | "completed" | "failed";
 
 /**
  * Represents a file pending upload for the card component
@@ -39,6 +40,8 @@ interface PendingUploadCardProps {
   size: number;
   preview: string;
   status: PendingUploadStatus;
+  progress: number;
+  attempts: number;
   error?: string;
   onRemove: (ids: string[]) => void;
 }
@@ -46,7 +49,19 @@ interface PendingUploadCardProps {
 /**
  * Individual upload card component to avoid inline function binding.
  */
-function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}: Readonly<PendingUploadCardProps>): React.JSX.Element {
+function UploadCard({
+  id,
+  name,
+  mimeType,
+  size,
+  preview,
+  status,
+  progress,
+  attempts,
+  error,
+  onRemove,
+}: Readonly<PendingUploadCardProps>): React.JSX.Element {
+  const t = useTranslations("Invoices.UploadScans");
   const handleRemove = useCallback(() => {
     onRemove([id]);
   }, [onRemove, id]);
@@ -71,7 +86,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
           )}
 
           {/* Status overlay */}
-          {status === "uploading" && (
+          {(status === "uploading" || status === "retrying") && (
             <div className={`${styles["statusOverlay"]} ${styles["overlayUploading"]}`}>
               <TbLoader2 className={`${styles["statusIcon"]} ${styles["spinIcon"]}`} />
             </div>
@@ -93,28 +108,35 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
               <Badge
                 variant='secondary'
                 className='bg-gray-500/80 text-white'>
-                Pending
+                {t("preview.status.pending")}
               </Badge>
             )}
             {status === "uploading" && (
               <Badge
                 variant='secondary'
                 className='bg-blue-500/80 text-white'>
-                Uploading
+                {t("preview.status.uploading")}
+              </Badge>
+            )}
+            {status === "retrying" && (
+              <Badge
+                variant='secondary'
+                className='bg-amber-500/80 text-white'>
+                {t("preview.status.retrying")}
               </Badge>
             )}
             {status === "completed" && (
               <Badge
                 variant='secondary'
                 className='bg-green-500/80 text-white'>
-                Done
+                {t("preview.status.completed")}
               </Badge>
             )}
             {status === "failed" && (
               <Badge
                 variant='secondary'
                 className='bg-red-500/80 text-white'>
-                Failed
+                {t("preview.status.failed")}
               </Badge>
             )}
           </div>
@@ -132,7 +154,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
                     <TbTrash className={styles["removeIcon"]} />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side='right'>Remove from queue</TooltipContent>
+                <TooltipContent side='right'>{t("preview.removeTooltip")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
@@ -146,6 +168,18 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
             {name}
           </p>
           <p className={styles["fileSize"]}>{formatFileSize(size)}</p>
+          {(status === "uploading" || status === "retrying") && (
+            <>
+              <div className='mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-200 dark:bg-gray-700'>
+                <div
+                  className='h-full bg-blue-500 transition-all duration-200'
+                  style={{width: `${Math.max(0, Math.min(progress, 100))}%`}}
+                />
+              </div>
+              <p className={styles["fileSize"]}>{progress}%</p>
+            </>
+          )}
+          {status === "retrying" ? <p className={styles["fileError"]}>{t("preview.retryAttempt", {attempt: String(attempts)})}</p> : null}
           {error ? <p className={styles["fileError"]}>{error}</p> : null}
         </div>
       </CardContent>
@@ -158,6 +192,7 @@ function UploadCard({id, name, mimeType, size, preview, status, error, onRemove}
  * Displays a grid of files with status indicators.
  */
 export default function UploadPreview(): React.JSX.Element | null {
+  const t = useTranslations("Invoices.UploadScans");
   const {pendingUploads, removeFiles} = useScanUpload();
 
   if (pendingUploads.length === 0) {
@@ -167,7 +202,7 @@ export default function UploadPreview(): React.JSX.Element | null {
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <h2 className={styles["title"]}>Pending Uploads ({pendingUploads.length})</h2>
+        <h2 className={styles["title"]}>{t("preview.title", {count: String(pendingUploads.length)})}</h2>
       </div>
 
       <div className={styles["grid"]}>
@@ -180,6 +215,8 @@ export default function UploadPreview(): React.JSX.Element | null {
             size={upload.size}
             preview={upload.preview}
             status={upload.status}
+            progress={upload.progress}
+            attempts={upload.attempts}
             error={upload.error}
             onRemove={removeFiles}
           />

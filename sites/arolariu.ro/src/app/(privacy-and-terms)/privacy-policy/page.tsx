@@ -19,7 +19,7 @@ import styles from "./page.module.scss";
  * - SEO metadata ensures search engines index this critical legal document
  *
  * **Async Operations**:
- * - Fetches translations from `privacyPolicy.__metadata__` namespace
+ * - Fetches translations from `Legal.PrivacyPolicy.metadata` namespace
  * - Retrieves current locale for language-specific legal content
  *
  * **Metadata Generation**:
@@ -53,7 +53,7 @@ import styles from "./page.module.scss";
  * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl Server Components}
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("privacyPolicy.__metadata__");
+  const t = await getTranslations("Legal.PrivacyPolicy.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,
@@ -127,7 +127,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link https://oag.ca.gov/privacy/ccpa | CCPA Privacy Policy Requirements}
  */
 export default async function PrivacyPolicyHomepage(_props: Readonly<PageProps<"/privacy-policy">>): Promise<React.JSX.Element> {
-  const t = await getTranslations("privacyPolicy");
+  const t = await getTranslations("Legal.PrivacyPolicy");
 
   return (
     <div className={styles["privacyPolicyMain"]}>

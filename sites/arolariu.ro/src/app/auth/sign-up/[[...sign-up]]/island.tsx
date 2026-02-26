@@ -71,8 +71,8 @@ const containerVariants: Variants = {
  * @returns The sign up component with Clerk authentication
  */
 export default function RenderAuthSignUpPage(): React.JSX.Element {
-  const t = useTranslations("Authentication.SignUp");
-  const trust = useTranslations("Authentication.Island.trust");
+  const t = useTranslations("Auth.SignUp");
+  const trust = useTranslations("Auth.Island.trust");
 
   return (
     <div className={styles["grid"]}>

@@ -22,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import Link from "next/link";
 import {useCallback} from "react";
 import {TbArrowsUpDown, TbEye} from "react-icons/tb";
@@ -41,6 +41,7 @@ type Props = Readonly<{
 
 export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const locale = useLocale();
+  const t = useTranslations("Invoices.ViewInvoices.tableView");
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
@@ -80,7 +81,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   if (invoices.length === 0) {
     return (
       <div className={styles["emptyState"]}>
-        <div className={styles["emptyMessage"]}>No invoices found</div>
+        <div className={styles["emptyMessage"]}>{t("empty")}</div>
       </div>
     );
   }
@@ -98,16 +99,16 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               className='bg-background/80 backdrop-blur-sm'
               checked={isAllSelected || (isIndeterminate && "indeterminate")}
               onCheckedChange={handleSelectAllInvoices}
-              aria-label='Select all invoices'
+              aria-label={t("aria.selectAllInvoices")}
             />
           </TableHead>
-          <TableHead>Invoice</TableHead>
-          <TableHead>Category</TableHead>
+          <TableHead>{t("columns.invoice")}</TableHead>
+          <TableHead>{t("columns.category")}</TableHead>
           <TableHead>
             <Button
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
-              Date
+              {t("columns.date")}
               <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
           </TableHead>
@@ -115,11 +116,11 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             <Button
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
-              Amount
+              {t("columns.amount")}
               <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
           </TableHead>
-          <TableHead className='text-end'>Actions</TableHead>
+          <TableHead className='text-end'>{t("columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -132,7 +133,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                   checked={selectedInvoices.some((s) => s.id === invoice.id)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                   onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                  aria-label={`Select invoice ${invoice.id}`}
+                  aria-label={t("aria.selectInvoice", {name: invoice.name || invoice.id})}
                 />
               </TableCell>
               <TableCell>
@@ -173,7 +174,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                           <TbEye className={styles["viewIcon"]} />
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent>View Invoice</TooltipContent>
+                      <TooltipContent>{t("viewInvoice")}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                   <TableViewActions invoice={invoice} />
@@ -187,14 +188,14 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           <TableRow>
             <TableCell colSpan={4}>
               <div className={styles["footerContent"]}>
-                <span className={styles["footerLabel"]}>Rows per page:</span>
+                <span className={styles["footerLabel"]}>{t("rowsPerPage")}</span>
                 <Select
                   value={String(pageSize)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                   onValueChange={(value) => handlePageSizeChange(Number(value))}>
                   <SelectTrigger
                     className='h-8 w-20 cursor-pointer'
-                    aria-label='Rows per page'>
+                    aria-label={t("aria.rowsPerPage")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -207,9 +208,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                     ))}
                   </SelectContent>
                 </Select>
-                <span className={styles["footerLabel"]}>
-                  Page {currentPage} of {totalPages}
-                </span>
+                <span className={styles["footerLabel"]}>{t("pageOf", {current: String(currentPage), total: String(totalPages)})}</span>
               </div>
             </TableCell>
             <TableCell
@@ -221,7 +220,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 size='sm'
                 onClick={handlePrevPage}
                 disabled={invoices.length === 0}>
-                Previous Page
+                {t("previousPage")}
               </Button>
             </TableCell>
             <TableCell>
@@ -231,7 +230,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                 size='sm'
                 onClick={handleNextPage}
                 disabled={invoices.length === 0}>
-                Next Page
+                {t("nextPage")}
               </Button>
             </TableCell>
           </TableRow>

@@ -2,6 +2,7 @@
 
 import type {InvoiceCategory} from "@/types/invoices";
 import {Button, Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbGift, TbHelpCircle} from "react-icons/tb";
 import {extendedCategories, mainCategories} from "../../../_utils/categories";
@@ -48,6 +49,7 @@ function CategoryButton({category, isSelected, onSelect, variant}: Readonly<Cate
 
 export function CategorySuggestionCard(): React.JSX.Element {
   const [selected, setSelected] = useState<InvoiceCategory | string | null>(null);
+  const t = useTranslations("Invoices.ViewInvoice.categorySuggestionCard");
 
   // Gamification progress (mock)
   const categorizedCount = 8;
@@ -62,14 +64,12 @@ export function CategorySuggestionCard(): React.JSX.Element {
       <CardHeader className='pb-3'>
         <CardTitle className='flex items-center gap-2 text-lg'>
           <TbHelpCircle className='h-5 w-5 text-amber-500' />
-          Help Us Categorize This Invoice
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className='space-y-5'>
         {/* Explanation */}
-        <p className={styles["description"]}>
-          We couldn&apos;t automatically categorize this invoice. Select the right category to unlock insights:
-        </p>
+        <p className={styles["description"]}>{t("description")}</p>
 
         {/* Main Categories Grid */}
         <div className={styles["mainGrid"]}>
@@ -86,7 +86,7 @@ export function CategorySuggestionCard(): React.JSX.Element {
 
         {/* More Categories Grid */}
         <div className={styles["moreSection"]}>
-          <p className={styles["moreLabel"]}>More categories:</p>
+          <p className={styles["moreLabel"]}>{t("moreCategories")}</p>
           <div className={styles["moreGrid"]}>
             {extendedCategories.map((category) => (
               <CategoryButton
@@ -104,7 +104,7 @@ export function CategorySuggestionCard(): React.JSX.Element {
         <div className={styles["gamificationBox"]}>
           <div className={styles["gamificationHeader"]}>
             <TbGift className='h-4 w-4 text-amber-600' />
-            <span className={styles["gamificationLabel"]}>Categorize {goal} invoices to unlock detailed insights!</span>
+            <span className={styles["gamificationLabel"]}>{t("gamification", {goal: String(goal)})}</span>
           </div>
           <div className={styles["gamificationProgress"]}>
             <Progress

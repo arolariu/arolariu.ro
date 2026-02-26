@@ -352,7 +352,7 @@ function Commander(): React.JSX.Element {
             className='flex items-center justify-between'>
             <div className={styles["commandItemContent"]}>
               <TbLanguage className={styles["commandIcon"]} />
-              <span>English</span>
+              <span>{t("items.english")}</span>
             </div>
             <CommandShortcut>EN</CommandShortcut>
           </CommandItem>
@@ -361,7 +361,7 @@ function Commander(): React.JSX.Element {
             className='flex items-center justify-between'>
             <div className={styles["commandItemContent"]}>
               <TbLanguage className={styles["commandIcon"]} />
-              <span>Română</span>
+              <span>{t("items.romanian")}</span>
             </div>
             <CommandShortcut>RO</CommandShortcut>
           </CommandItem>
@@ -370,7 +370,7 @@ function Commander(): React.JSX.Element {
             className='flex items-center justify-between'>
             <div className={styles["commandItemContent"]}>
               <TbLanguage className={styles["commandIcon"]} />
-              <span>Français</span>
+              <span>{t("items.french")}</span>
             </div>
             <CommandShortcut>FR</CommandShortcut>
           </CommandItem>
@@ -434,7 +434,7 @@ function Commander(): React.JSX.Element {
             className='flex items-center justify-between'>
             <div className={styles["commandItemContent"]}>
               <TbBrandGithub className={styles["commandIcon"]} />
-              <span>GitHub</span>
+              <span>{t("items.github")}</span>
             </div>
             <CommandShortcut>G</CommandShortcut>
           </CommandItem>

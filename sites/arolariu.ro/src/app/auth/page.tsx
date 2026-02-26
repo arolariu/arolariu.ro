@@ -14,7 +14,7 @@ import styles from "./page.module.scss";
  * **Execution Context**: Server-side metadata generation function (Next.js App Router).
  *
  * **Internationalization**: Retrieves localized title and description from translation keys
- * under the `Authentication.__metadata__` namespace. Supports all configured locales.
+ * under the `Auth.metadata` namespace. Supports all configured locales.
  *
  * **SEO Optimization**: Uses the centralized `createMetadata` utility to generate
  * consistent metadata following RFC 1004 (Metadata & SEO System) standards.
@@ -40,7 +40,7 @@ import styles from "./page.module.scss";
  * @see RFC 1004 - Metadata & SEO System documentation
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Authentication.__metadata__");
+  const t = await getTranslations("Auth.metadata");
   const locale = await getLocale();
   return createMetadata({
     locale,

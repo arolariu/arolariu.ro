@@ -6,14 +6,11 @@ import {onLocaleSync} from "@/stores/preferencesStore";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
-import {Locale, NextIntlClientProvider as TranslationProvider} from "next-intl";
+import {AbstractIntlMessages, Locale, NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import {useRouter} from "next/navigation";
-import React, {useEffect} from "react";
-import enMessages from "../../messages/en.json";
-import frMessages from "../../messages/fr.json";
-import roMessages from "../../messages/ro.json";
+import React, {useEffect, useState} from "react";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
 
@@ -29,6 +26,7 @@ const WebVitals = dynamic(() => import("./web-vitals"));
  */
 type Props = {
   locale: Locale;
+  messages?: AbstractIntlMessages;
   children: React.ReactNode;
 };
 
@@ -45,11 +43,8 @@ type Props = {
  * 3. **ThemeProvider (next-themes)**: Light/dark/system theme management
  * 4. **TranslationProvider (next-intl)**: Internationalization and localization
  *
- * **Locale Handling**: Dynamically requires locale-specific message files based on
- * the locale prop. Uses synchronous `require()` to load translations at render time:
- * - `en`: English translations from `messages/en.json`
- * - `ro`: Romanian translations from `messages/ro.json`
- * - `fr`: French translations from `messages/fr.json`
+ * **Locale Handling**: Accepts locale messages from Server Components to avoid
+ * coupling the client bundle to all locale dictionaries.
  *
  * **Performance Optimization**: Uses `dynamic()` import for WebVitals component to
  * defer loading of performance monitoring code until after initial page render,
@@ -77,6 +72,7 @@ type Props = {
  * @param props - Component properties
  * @param props.locale - The application locale ("en", "ro", or "fr"). Determines which
  * translation messages to load and which Clerk localization to use.
+ * @param props.messages - Locale messages provided by the server for next-intl.
  * @param props.children - React children to render within the provider tree,
  * typically the root layout content including page components.
  *
@@ -126,21 +122,44 @@ type Props = {
  * @see {@link WebVitals} - Performance monitoring component
  * @see RFC 1003 - Internationalization System documentation
  */
-export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
-  const messageMap = {en: enMessages, ro: roMessages, fr: frMessages};
+export default function ContextProviders({locale, messages, children}: Readonly<Props>): React.JSX.Element {
   const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
-  const messages = messageMap[locale] as typeof enMessages;
   const localization = localizationMap[locale];
+  const [resolvedMessages, setResolvedMessages] = useState<AbstractIntlMessages>(messages ?? ({} satisfies AbstractIntlMessages));
 
   // Register router.refresh() as the callback for locale → cookie sync.
   // The store subscription handles setCookie(); this just triggers re-rendering.
   const router = useRouter();
   useEffect(() => onLocaleSync(() => router.refresh()), [router]);
+  useEffect(() => {
+    setResolvedMessages(messages ?? ({} satisfies AbstractIntlMessages));
+  }, [messages]);
+
+  useEffect(() => {
+    if (messages) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadMessages = async (): Promise<void> => {
+      const importedMessages = (await import(`../../messages/${locale}.json`)).default as AbstractIntlMessages;
+      if (isMounted) {
+        setResolvedMessages(importedMessages);
+      }
+    };
+
+    void loadMessages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [locale, messages]);
 
   return (
     <TranslationProvider
       locale={locale}
-      messages={messages}>
+      messages={resolvedMessages}>
       <AuthProvider localization={localization}>
         <FontProvider>
           <ThemeProvider

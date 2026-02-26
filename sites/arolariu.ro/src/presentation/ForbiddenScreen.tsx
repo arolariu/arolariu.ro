@@ -13,7 +13,7 @@ import styles from "./ForbiddenScreen.module.scss";
  * This is a UI-only screen used when a user is authenticated but not authorized
  * to access a resource.
  *
- * **Internationalization**: Uses `next-intl` via `useTranslations("Forbidden.Screen")`.
+ * **Internationalization**: Uses `next-intl` via `useTranslations("Common.states.forbidden")`.
  *
  * **Rendering context**: Intended for client-side rendering because it uses a React
  * hook (`useTranslations`). Ensure it is rendered under a Client Component boundary.
@@ -38,7 +38,7 @@ import styles from "./ForbiddenScreen.module.scss";
  * ```
  */
 export default function RenderForbiddenScreen(): React.JSX.Element {
-  const t = useTranslations("Forbidden.Screen");
+  const t = useTranslations("Common.states.forbidden");
 
   return (
     <section className={styles["container"]}>

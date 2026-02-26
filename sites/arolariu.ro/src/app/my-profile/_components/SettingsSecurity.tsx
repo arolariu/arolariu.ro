@@ -30,7 +30,7 @@ type Props = Readonly<{
 }>;
 
 export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile.settings.security");
+  const t = useTranslations("Profile.settings.security");
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, {once: true});
 

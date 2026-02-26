@@ -1,7 +1,8 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {getCookie} from "@/lib/actions/cookies";
-import {getLocale} from "next-intl/server";
+import type {AbstractIntlMessages} from "next-intl";
+import {getLocale, getMessages} from "next-intl/server";
 import {Suspense} from "react";
 import Eula from "./EULA";
 import Loading from "./loading";
@@ -23,6 +24,7 @@ export {metadata} from "@/metadata";
  */
 export default async function RootLayout(props: Readonly<LayoutProps<"/">>): Promise<React.JSX.Element> {
   const locale = await getLocale();
+  const messages = await getMessages();
   const eulaCookie = await getCookie("eula-accepted");
 
   return (
@@ -31,7 +33,9 @@ export default async function RootLayout(props: Readonly<LayoutProps<"/">>): Pro
       lang={locale}
       dir='ltr'>
       <body>
-        <ContextProviders locale={locale}>
+        <ContextProviders
+          locale={locale}
+          messages={messages as unknown as AbstractIntlMessages}>
           <Header />
           <main>
             <Suspense fallback={<Loading />}>{eulaCookie ? props.children : <Eula locale={locale} />}</Suspense>

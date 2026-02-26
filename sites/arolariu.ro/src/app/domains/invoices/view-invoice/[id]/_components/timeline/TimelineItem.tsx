@@ -7,10 +7,9 @@
 
 import {formatDate} from "@/lib/utils.generic";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {TbInfoCircle} from "react-icons/tb";
-import {TimelineEvent} from "../../_types/timeline";
-import {getEventTooltipContent, getRelativeTime} from "../../_utils/timeline";
+import {TimelineEvent, TimelineEventType} from "../../_types/timeline";
 import styles from "./TimelineItem.module.scss";
 
 /**
@@ -42,8 +41,12 @@ type Props = Readonly<{
  * ```
  */
 export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoice.timelineItem");
   const locale = useLocale();
-  const tooltipContent = getEventTooltipContent(event.type, event.metadata);
+  const tooltipContent = getTooltipContent(event, t);
+  const eventTitle = getEventTitle(event, t);
+  const eventDescription = getEventDescription(event, t);
+  const relativeTime = getRelativeTimeLabel(event.date, locale, t);
 
   return (
     <div className={`${styles["item"]} ${isLast ? styles["isLast"] : ""}`}>
@@ -58,7 +61,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
         <div className={styles["contentBody"]}>
           <div className={styles["titleRow"]}>
             <div className={styles["titleContent"]}>
-              <p className={styles["eventTitle"]}>{event.title}</p>
+              <p className={styles["eventTitle"]}>{eventTitle}</p>
               {/* Info icon with tooltip */}
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
@@ -66,7 +69,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                     <Button
                       type='button'
                       className='text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-help transition-colors'
-                      aria-label={`More info about ${event.title}`}>
+                      aria-label={t("aria.moreInfo", {title: eventTitle})}>
                       <TbInfoCircle className='h-3.5 w-3.5' />
                     </Button>
                   </TooltipTrigger>
@@ -76,7 +79,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
                     {Boolean(event.metadata?.confidence) && (
-                      <p className={styles["confidenceText"]}>Confidence: {event.metadata!.confidence}%</p>
+                      <p className={styles["confidenceText"]}>{t("confidence", {value: String(event.metadata!.confidence)})}</p>
                     )}
                   </TooltipContent>
                 </Tooltip>
@@ -84,10 +87,101 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
             </div>
             <span className={styles["dateLabel"]}>{formatDate(event.date, {locale})}</span>
           </div>
-          <p className={styles["description"]}>{event.description}</p>
-          <p className={styles["relativeTime"]}>{getRelativeTime(event.date)}</p>
+          <p className={styles["description"]}>{eventDescription}</p>
+          <p className={styles["relativeTime"]}>{relativeTime}</p>
         </div>
       </div>
     </div>
   );
+}
+
+function getEventTitle(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+  switch (event.type) {
+    case TimelineEventType.CREATED:
+      return t("events.created.title");
+    case TimelineEventType.AI_ANALYSIS:
+      return t("events.aiAnalysis.title");
+    case TimelineEventType.RECIPES_GENERATED:
+      return t("events.recipesGenerated.title");
+    case TimelineEventType.SHARED:
+      return t("events.shared.title");
+    case TimelineEventType.EDITED:
+      return t("events.edited.title");
+    case TimelineEventType.EXPORTED:
+      return t("events.exported.title");
+    case TimelineEventType.MARKED_IMPORTANT:
+      return t("events.markedImportant.title");
+    case TimelineEventType.CATEGORIZED:
+      return t("events.categorized.title");
+    default:
+      return event.title;
+  }
+}
+
+function getEventDescription(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+  switch (event.type) {
+    case TimelineEventType.CREATED:
+      return t("events.created.description");
+    case TimelineEventType.AI_ANALYSIS:
+      return t("events.aiAnalysis.description", {count: event.metadata?.itemCount ?? 0});
+    case TimelineEventType.RECIPES_GENERATED:
+      return t("events.recipesGenerated.description", {count: event.metadata?.itemCount ?? 0});
+    case TimelineEventType.SHARED:
+      return t("events.shared.description", {count: event.metadata?.users?.length ?? 0});
+    case TimelineEventType.MARKED_IMPORTANT:
+      return t("events.markedImportant.description");
+    case TimelineEventType.CATEGORIZED:
+      return t("events.categorized.description");
+    default:
+      return event.description;
+  }
+}
+
+function getTooltipContent(event: TimelineEvent, t: ReturnType<typeof useTranslations>): string {
+  switch (event.type) {
+    case TimelineEventType.CREATED:
+      return t("tooltips.created", {method: event.metadata?.method ?? t("fallbacks.ocr")});
+    case TimelineEventType.AI_ANALYSIS:
+      return t("tooltips.aiAnalysis", {
+        duration: event.metadata?.duration ?? "-",
+        count: event.metadata?.itemCount ?? 0,
+      });
+    case TimelineEventType.RECIPES_GENERATED:
+      return t("tooltips.recipesGenerated", {count: event.metadata?.itemCount ?? 0});
+    case TimelineEventType.SHARED:
+      return t("tooltips.shared", {count: event.metadata?.users?.length ?? 0});
+    case TimelineEventType.CATEGORIZED:
+      return t("tooltips.categorized");
+    case TimelineEventType.MARKED_IMPORTANT:
+      return t("tooltips.markedImportant");
+    case TimelineEventType.EXPORTED:
+      return t("tooltips.exported", {format: event.metadata?.method ?? t("fallbacks.pdf")});
+    case TimelineEventType.EDITED:
+      return t("tooltips.edited");
+    default:
+      return t("tooltips.unavailable");
+  }
+}
+
+function getRelativeTimeLabel(date: Date, locale: string, t: ReturnType<typeof useTranslations>): string {
+  const now = new Date();
+  const diffMs = date.getTime() - now.getTime();
+  const diffMinutes = Math.round(diffMs / (1000 * 60));
+
+  if (Math.abs(diffMinutes) < 1) {
+    return t("relativeTime.now");
+  }
+
+  const formatter = new Intl.RelativeTimeFormat(locale, {numeric: "auto"});
+  if (Math.abs(diffMinutes) < 60) {
+    return formatter.format(diffMinutes, "minute");
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (Math.abs(diffHours) < 24) {
+    return formatter.format(diffHours, "hour");
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+  return formatter.format(diffDays, "day");
 }

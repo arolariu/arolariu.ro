@@ -1,6 +1,7 @@
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {CategoryTrendData} from "../../_utils/analytics";
 import styles from "./CategoryComparisonChart.module.scss";
@@ -18,9 +19,11 @@ type CustomTooltipProps = {
   readonly active: boolean;
   readonly payload: TooltipPayloadItem[];
   readonly currency: string;
+  readonly currentLabel: string;
+  readonly averageLabel: string;
 };
 
-function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.JSX.Element | null {
+function CustomTooltip({active, payload, currency, currentLabel, averageLabel}: CustomTooltipProps): React.JSX.Element | null {
   const [firstItem] = payload;
   if (!active || payload.length === 0 || !firstItem) return null;
   const data = firstItem.payload;
@@ -29,13 +32,13 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
       <p className={styles["tooltipName"]}>{data.category}</p>
       <div className={styles["tooltipDetails"]}>
         <p className={styles["tooltipRow"]}>
-          <span className={styles["tooltipLabel"]}>Current: </span>
+          <span className={styles["tooltipLabel"]}>{currentLabel}: </span>
           <span className={styles["tooltipValue"]}>
             {data.current.toFixed(2)} {currency}
           </span>
         </p>
         <p className={styles["tooltipRow"]}>
-          <span className={styles["tooltipLabel"]}>Average: </span>
+          <span className={styles["tooltipLabel"]}>{averageLabel}: </span>
           <span className={styles["tooltipValue"]}>
             {data.average.toFixed(2)} {currency}
           </span>
@@ -46,13 +49,14 @@ function CustomTooltip({active, payload, currency}: CustomTooltipProps): React.J
 }
 
 export function CategoryComparisonChart({data, currency}: Props): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoice.categoryComparisonChart");
   const chartConfig = {
     current: {
-      label: "Current",
+      label: t("labels.current"),
       color: "hsl(var(--chart-1))",
     },
     average: {
-      label: "Average",
+      label: t("labels.average"),
       color: "hsl(var(--chart-3))",
     },
   };
@@ -60,8 +64,8 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>Category Comparison</CardTitle>
-        <CardDescription className='text-xs'>This invoice vs your average</CardDescription>
+        <CardTitle className='text-base'>{t("title")}</CardTitle>
+        <CardDescription className='text-xs'>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent className='pb-4'>
         <ChartContainer
@@ -94,6 +98,8 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                     active={false}
                     payload={[]}
                     currency={currency}
+                    currentLabel={t("labels.current")}
+                    averageLabel={t("labels.average")}
                   />
                 }
               />
@@ -106,14 +112,14 @@ export function CategoryComparisonChart({data, currency}: Props): React.JSX.Elem
                 fill='hsl(var(--chart-1))'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
-                name='Current'
+                name={t("labels.current")}
               />
               <Bar
                 dataKey='average'
                 fill='hsl(var(--chart-3))'
                 radius={[0, 4, 4, 0]}
                 maxBarSize={16}
-                name='Average'
+                name={t("labels.average")}
               />
             </BarChart>
           </ResponsiveContainer>

@@ -21,6 +21,7 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useTranslations} from "next-intl";
 import {useRef, useState} from "react";
 import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
 import {MessageList} from "../MessageList";
@@ -43,10 +44,11 @@ type Props = Readonly<{
  * @returns This function renders the generative view for invoice analysis.
  */
 export default function RenderGenerativeView({invoices}: Readonly<Props>): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoices.generativeView");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "Hello! I'm your invoice analysis assistant. How can I help you today? Try commands like /find to search invoices.",
+      content: t("welcomeMessage"),
       role: "assistant",
       timestamp: new Date().toISOString(),
     },
@@ -65,15 +67,15 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
       className={styles["container"]}>
       <div className={styles["header"]}>
         <div>
-          <h2 className={styles["title"]}>Live Analysis</h2>
-          <p className={styles["subtitle"]}>Chat with AI to analyze your invoices and get insights</p>
+          <h2 className={styles["title"]}>{t("title")}</h2>
+          <p className={styles["subtitle"]}>{t("subtitle")}</p>
         </div>
         <Button
           variant='outline'
           size='sm'
           className='cursor-help gap-1'>
           <TbHelpCircle className={styles["actionIcon"]} />
-          <span>Help</span>
+          <span>{t("help")}</span>
         </Button>
       </div>
 
@@ -85,13 +87,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
             value='chat'
             className='flex cursor-pointer items-center gap-2'>
             <TbMessage className={styles["actionIcon"]} />
-            <span>Chat</span>
+            <span>{t("tabs.chat")}</span>
           </TabsTrigger>
           <TabsTrigger
             value='settings'
             className='flex cursor-pointer items-center gap-2'>
             <TbSettings className={styles["actionIcon"]} />
-            <span>Settings</span>
+            <span>{t("tabs.settings")}</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent
@@ -99,10 +101,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           className='mt-4'>
           <Card className='w-full'>
             <CardHeader>
-              <CardTitle>Live Analysis</CardTitle>
-              <CardDescription>
-                Chat with AI to analyze your invoices and get insights. Try commands like /find to search invoices.
-              </CardDescription>
+              <CardTitle>{t("title")}</CardTitle>
+              <CardDescription>{t("chatDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["chatContainer"]}>
@@ -120,28 +120,28 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
           className='mt-4'>
           <Card className='w-full'>
             <CardHeader>
-              <CardTitle>Chat Settings</CardTitle>
-              <CardDescription>Configure your AI assistant preferences</CardDescription>
+              <CardTitle>{t("settings.title")}</CardTitle>
+              <CardDescription>{t("settings.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className={styles["settingsContainer"]}>
                 <div className={styles["settingsField"]}>
-                  <Label htmlFor='history'>Chat History</Label>
+                  <Label htmlFor='history'>{t("settings.historyLabel")}</Label>
                   <Select defaultValue='30'>
                     <SelectTrigger id='history'>
-                      <SelectValue placeholder='Select retention period' />
+                      <SelectValue placeholder={t("settings.retentionPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='30'>Keep for 30 days</SelectItem>
-                      <SelectItem value='60'>Keep for 60 days</SelectItem>
-                      <SelectItem value='90'>Keep for 90 days</SelectItem>
-                      <SelectItem value='0'>Don&apos;t save history</SelectItem>
+                      <SelectItem value='30'>{t("settings.retention.30")}</SelectItem>
+                      <SelectItem value='60'>{t("settings.retention.60")}</SelectItem>
+                      <SelectItem value='90'>{t("settings.retention.90")}</SelectItem>
+                      <SelectItem value='0'>{t("settings.retention.none")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className={styles["settingsField"]}>
-                  <span className={styles["settingsLabel"]}>Data Access</span>
+                  <span className={styles["settingsLabel"]}>{t("settings.dataAccessTitle")}</span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='access-invoices'
@@ -150,7 +150,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     <Label
                       htmlFor='access-invoices'
                       className='text-sm font-normal'>
-                      Allow access to invoice data
+                      {t("settings.allowInvoiceData")}
                     </Label>
                   </div>
                   <div className={styles["checkboxRow"]}>
@@ -161,13 +161,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     <Label
                       htmlFor='access-merchants'
                       className='text-sm font-normal'>
-                      Allow access to merchant data
+                      {t("settings.allowMerchantData")}
                     </Label>
                   </div>
                 </div>
 
                 <div className={styles["settingsField"]}>
-                  <span className={styles["settingsLabel"]}>Notification Preferences</span>
+                  <span className={styles["settingsLabel"]}>{t("settings.notificationPreferences")}</span>
                   <div className={styles["checkboxRow"]}>
                     <Checkbox
                       id='notify-insights'
@@ -176,12 +176,12 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     <Label
                       htmlFor='notify-insights'
                       className='text-sm font-normal'>
-                      Notify me about new insights
+                      {t("settings.notifyInsights")}
                     </Label>
                   </div>
                 </div>
 
-                <Button className='w-full'>Save Settings</Button>
+                <Button className='w-full'>{t("settings.save")}</Button>
               </div>
             </CardContent>
           </Card>

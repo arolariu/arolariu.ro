@@ -199,19 +199,40 @@ async function runA11yCheck(page: Page, options: A11yCheckOptions = {}): Promise
     level: options.level,
   });
 
-  // Inject axe-core from CDN if not already present
-  const axeInjected = await page.evaluate(() => {
-    return typeof (globalThis as unknown as {axe?: unknown}).axe !== "undefined";
-  });
+  await page.waitForLoadState("domcontentloaded");
+
+  let axeInjected = false;
+  let lastInjectionError: Error | null = null;
+  const maxInjectionAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxInjectionAttempts; attempt++) {
+    try {
+      axeInjected = await page.evaluate(() => {
+        return typeof (globalThis as unknown as {axe?: unknown}).axe !== "undefined";
+      });
+
+      if (axeInjected) {
+        break;
+      }
+
+      log.debug("Injecting axe-core from CDN", {attempt, maxInjectionAttempts});
+      await page.addScriptTag({
+        url: "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.4/axe.min.js",
+      });
+      await page.waitForFunction(() => typeof (globalThis as unknown as {axe?: unknown}).axe !== "undefined", {timeout: 10000});
+      axeInjected = true;
+      log.debug("axe-core injected successfully");
+      break;
+    } catch (error) {
+      lastInjectionError = error as Error;
+      if (attempt < maxInjectionAttempts) {
+        await page.waitForTimeout(250 * attempt);
+      }
+    }
+  }
 
   if (!axeInjected) {
-    log.debug("Injecting axe-core from CDN");
-    await page.addScriptTag({
-      url: "https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.4/axe.min.js",
-    });
-    // Wait for axe to be available
-    await page.waitForFunction(() => typeof (globalThis as unknown as {axe?: unknown}).axe !== "undefined", {timeout: 10000});
-    log.debug("axe-core injected successfully");
+    throw new Error(`Failed to inject axe-core for ${url}: ${lastInjectionError?.message ?? "Unknown error"}`);
   }
 
   // Build axe configuration

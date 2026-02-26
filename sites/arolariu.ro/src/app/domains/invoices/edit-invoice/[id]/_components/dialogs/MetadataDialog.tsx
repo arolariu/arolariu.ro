@@ -11,6 +11,7 @@ import {
   Input,
   Label,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";
 import {TbDiscFilled} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -30,6 +31,7 @@ export const VALID_METADATA_KEYS = [
 ];
 
 const AddDialog = () => {
+  const t = useTranslations("Invoices.EditInvoice.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [addedMetadata, setAddedMetadata] = useState<{key: string; value: string}>({
     key: "",
@@ -57,30 +59,30 @@ const AddDialog = () => {
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Add Metadata</DialogTitle>
-          <DialogDescription>Add additional information to this invoice</DialogDescription>
+          <DialogTitle>{t("add.title")}</DialogTitle>
+          <DialogDescription>{t("add.description")}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='key'>Metadata Key</Label>
+            <Label htmlFor='key'>{t("fields.keyLabel")}</Label>
             <Input
               id='key'
               name='key'
               value={addedMetadata.key}
               onChange={handleChange}
-              placeholder='Enter key'
+              placeholder={t("fields.keyPlaceholder")}
             />
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='value'>Metadata Value</Label>
+            <Label htmlFor='value'>{t("fields.valueLabel")}</Label>
             <Input
               id='value'
               name='value'
               value={addedMetadata.value}
               onChange={handleChange}
-              placeholder='Enter value'
+              placeholder={t("fields.valuePlaceholder")}
             />
           </div>
         </div>
@@ -90,13 +92,13 @@ const AddDialog = () => {
             type='button'
             variant='outline'
             onClick={close}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
             onClick={handleSave}>
             <TbDiscFilled className='mr-2 h-4 w-4' />
-            Save
+            {t("buttons.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -105,6 +107,7 @@ const AddDialog = () => {
 };
 
 const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
+  const t = useTranslations("Invoices.EditInvoice.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
@@ -125,13 +128,13 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Edit Metadata</DialogTitle>
-          <DialogDescription>Update the value of this metadata field</DialogDescription>
+          <DialogTitle>{t("edit.title")}</DialogTitle>
+          <DialogDescription>{t("edit.description")}</DialogDescription>
         </DialogHeader>
 
         <div className={styles["formBody"]}>
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='key'>Metadata Field</Label>
+            <Label htmlFor='key'>{t("edit.fieldLabel")}</Label>
             <Input
               id='key'
               value={editedMetadata["key"]}
@@ -140,12 +143,12 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           </div>
 
           <div className={styles["fieldGroup"]}>
-            <Label htmlFor='value'>Value</Label>
+            <Label htmlFor='value'>{t("fields.valueLabel")}</Label>
             <Input
               id='value'
               value={editedMetadata["value"]}
               onChange={handleChange}
-              placeholder='Enter value'
+              placeholder={t("fields.valuePlaceholder")}
             />
           </div>
         </div>
@@ -155,13 +158,13 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
             type='button'
             variant='outline'
             onClick={close}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
             onClick={handleSave}>
             <TbDiscFilled className='mr-2 h-4 w-4' />
-            Save
+            {t("buttons.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -170,6 +173,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 };
 
 const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
+  const t = useTranslations("Invoices.EditInvoice.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
 
   const handleDelete = useCallback(() => {
@@ -185,8 +189,8 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Delete Metadata</DialogTitle>
-          <DialogDescription>Are you sure you want to delete this metadata?</DialogDescription>
+          <DialogTitle>{t("delete.title")}</DialogTitle>
+          <DialogDescription>{t("delete.description")}</DialogDescription>
         </DialogHeader>
 
         <DialogFooter>
@@ -194,13 +198,13 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
             type='button'
             variant='outline'
             onClick={close}>
-            Cancel
+            {t("buttons.cancel")}
           </Button>
           <Button
             type='button'
             onClick={handleDelete}
             className={styles["deleteButton"]}>
-            Delete
+            {t("buttons.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

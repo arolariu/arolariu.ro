@@ -17,6 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback, useState} from "react";
 import {TbZoomIn} from "react-icons/tb";
@@ -24,6 +25,7 @@ import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./ReceiptScanCard.module.scss";
 
 export function ReceiptScanCard(): React.JSX.Element {
+  const t = useTranslations("Invoices.ViewInvoice.receiptScanCard");
   const {invoice} = useInvoiceContext();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currentScanIndex, setCurrentScanIndex] = useState(0);
@@ -62,7 +64,9 @@ export function ReceiptScanCard(): React.JSX.Element {
     <TooltipProvider>
       <Card className='transition-shadow duration-300 hover:shadow-md'>
         <CardHeader>
-          <CardTitle className='text-lg'>Receipt Scan {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</CardTitle>
+          <CardTitle className='text-lg'>
+            {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Dialog
@@ -72,7 +76,7 @@ export function ReceiptScanCard(): React.JSX.Element {
               <div className={styles["imageContainer"]}>
                 <Image
                   src={currentScanSrc}
-                  alt={`Receipt scan ${currentScanIndex + 1}`}
+                  alt={t("scanAlt", {index: String(currentScanIndex + 1)})}
                   width={400}
                   height={600}
                   className={`${styles["scanImage"]} ${isTransitioning ? styles["scanImageTransitioning"] : ""}`}
@@ -81,12 +85,16 @@ export function ReceiptScanCard(): React.JSX.Element {
             </DialogTrigger>
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
-                <DialogTitle>Receipt Image {totalScans > 1 ? `(${currentScanIndex + 1}/${totalScans})` : ""}</DialogTitle>
+                <DialogTitle>
+                  {totalScans > 1
+                    ? t("dialogTitleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)})
+                    : t("dialogTitle")}
+                </DialogTitle>
               </DialogHeader>
               <div className={styles["dialogImageContainer"]}>
                 <Image
                   src={currentScanSrc}
-                  alt={`Receipt scan ${currentScanIndex + 1} - full size`}
+                  alt={t("scanAltFullSize", {index: String(currentScanIndex + 1)})}
                   width={800}
                   height={1200}
                   className={styles["dialogImage"]}
@@ -103,11 +111,11 @@ export function ReceiptScanCard(): React.JSX.Element {
                 className='w-full bg-transparent'
                 onClick={handleOpenImage}>
                 <TbZoomIn className='mr-2 h-4 w-4' />
-                Expand Image
+                {t("buttons.expand")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>View the receipt image in full size</p>
+              <p>{t("tooltips.expand")}</p>
             </TooltipContent>
           </Tooltip>
           {totalScans > 1 && (
@@ -119,11 +127,11 @@ export function ReceiptScanCard(): React.JSX.Element {
                       variant='secondary'
                       className='flex-1'
                       onClick={handlePreviousScan}>
-                      Previous Scan
+                      {t("buttons.previousScan")}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>View the previous receipt scan</p>
+                    <p>{t("tooltips.previousScan")}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -134,11 +142,11 @@ export function ReceiptScanCard(): React.JSX.Element {
                       variant='secondary'
                       className='flex-1'
                       onClick={handleNextScan}>
-                      Next Scan
+                      {t("buttons.nextScan")}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>View the next receipt scan</p>
+                    <p>{t("tooltips.nextScan")}</p>
                   </TooltipContent>
                 </Tooltip>
               )}

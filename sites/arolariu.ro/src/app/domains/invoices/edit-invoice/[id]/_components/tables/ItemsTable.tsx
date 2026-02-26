@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useLocale} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 import {useCallback} from "react";
 import {TbEdit} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -70,6 +70,7 @@ const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
+  const t = useTranslations("Invoices.EditInvoice.itemsTable");
   const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
 
   const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -94,7 +95,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   return (
     <div>
       <div className={styles["headerRow"]}>
-        <h3 className={styles["itemsLabel"]}>Items</h3>
+        <h3 className={styles["itemsLabel"]}>{t("title")}</h3>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -104,11 +105,11 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 onClick={open}
                 className='h-8 cursor-pointer'>
                 <TbEdit className='mr-1 h-3.5 w-3.5' />
-                Edit Items
+                {t("buttons.editItems")}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Edit invoice items and quantities</p>
+              <p>{t("tooltips.editInvoiceItemsAndQuantities")}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -117,10 +118,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         <Table className='divide-border min-w-full divide-y'>
           <TableHeader>
             <TableRow className='bg-muted/50'>
-              <TableHead className={styles["tableHeader"]}>Item</TableHead>
-              <TableHead className={styles["tableHeaderRight"]}>Qty</TableHead>
-              <TableHead className={styles["tableHeaderRight"]}>Price</TableHead>
-              <TableHead className={styles["tableHeaderRight"]}>Total</TableHead>
+              <TableHead className={styles["tableHeader"]}>{t("tableHeaders.item")}</TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>{t("tableHeaders.quantity")}</TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>{t("tableHeaders.price")}</TableHead>
+              <TableHead className={styles["tableHeaderRight"]}>{t("tableHeaders.total")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className='divide-border bg-popover divide-y'>
@@ -162,7 +163,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               <TableHead
                 colSpan={3}
                 className={styles["footerLabel"]}>
-                Total
+                {t("footer.total")}
               </TableHead>
               <TableHead className={styles["footerLabel"]}>
                 {formatCurrency(totalAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
@@ -174,26 +175,24 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         {/* Pagination controls - only show when more than one page */}
         {totalPages > 1 && (
           <div className={styles["paginationBar"]}>
-            <div className={styles["paginationInfo"]}>
-              {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
-            </div>
+            <div className={styles["paginationInfo"]}>{t("pagination.totalItems", {count: invoice.items.length})}</div>
             <div className={styles["paginationControls"]}>
               <Button
                 variant='outline'
                 className='cursor-pointer'
                 size='sm'
                 onClick={handlePreviousPage}>
-                Previous
+                {t("pagination.previous")}
               </Button>
               <span className={styles["paginationText"]}>
-                Page {currentPage} of {totalPages}
+                {t("pagination.pageOf", {currentPage: String(currentPage), totalPages: String(totalPages)})}
               </span>
               <Button
                 variant='outline'
                 className='cursor-pointer'
                 size='sm'
                 onClick={handleNextPage}>
-                Next
+                {t("pagination.next")}
               </Button>
             </div>
           </div>

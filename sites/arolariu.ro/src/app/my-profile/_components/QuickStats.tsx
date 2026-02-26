@@ -22,7 +22,7 @@ const STAT_CARDS = [
 ] as const;
 
 export function QuickStats({statistics}: Props): React.JSX.Element {
-  const t = useTranslations("MyProfile.stats");
+  const t = useTranslations("Profile.stats");
 
   const storagePercentage = (statistics.storageUsed / statistics.storageLimit) * 100;
 
