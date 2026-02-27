@@ -95,4 +95,4 @@ export const APP_CONFIGURATION_MAPPING: Record<string, AllEnvironmentVariablesKe
  * The Azure App Configuration server URL.
  * This is the endpoint for accessing the Azure App Configuration service.
  */
-export const APP_CONFIGURATION_SERVER: string = "https://qtcy47appconfig.azconfig.io";
+export const APP_CONFIGURATION_SERVER: string = "https://qpfnu3appconfig.azconfig.io";
