@@ -42,9 +42,16 @@ metadata description = 'Development staging environment dev.arolariu.ro'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
+@description('The location for the development website.')
 param developmentWebsiteLocation string
+
+@description('The ID of the development App Service Plan.')
 param developmentWebsiteAppPlanId string
+
+@description('The resource ID of the frontend managed identity.')
 param developmentWebsiteIdentityId string
+
+@description('The deployment timestamp.')
 param developmentWebsiteDeploymentDate string
 
 // Import common tags

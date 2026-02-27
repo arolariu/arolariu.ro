@@ -53,9 +53,16 @@ param developmentAppPlanId string
 @description('The app insights connection string')
 param appInsightsConnectionString string
 
+@description('Resource ID of the backend managed identity.')
 param managedIdentityBackendId string
+
+@description('Resource ID of the frontend managed identity.')
 param managedIdentityFrontendId string
+
+@description('Client ID of the frontend managed identity for AZURE_CLIENT_ID.')
 param managedIdentityFrontendClientId string
+
+@description('Client ID of the backend managed identity for AZURE_CLIENT_ID.')
 param managedIdentityBackendClientId string
 
 module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
