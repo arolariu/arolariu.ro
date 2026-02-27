@@ -47,7 +47,6 @@ var aiConventionPrefix = '${resourceConventionPrefix}-ai'
 module openAiDeployment 'openai.bicep' = {
   name: 'openAiDeployment-${resourceDeploymentDate}'
   params: {
-    openAiLocation: resourceLocation
     openAiConventionPrefix: aiConventionPrefix
     openAiDeploymentDate: resourceDeploymentDate
   }

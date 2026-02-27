@@ -9,7 +9,7 @@
 // - Content generation and summarization
 //
 // Model Deployments:
-// - model-router (Standard, capacity 50) — intelligent model routing
+// - model-router (GlobalStandard, capacity 50) — intelligent model routing
 //
 // Authentication:
 // - Backend UAMI receives "Cognitive Services User" role via rbac/backend-uami-rbac.bicep
@@ -34,9 +34,10 @@ metadata description = 'Azure OpenAI Service with managed identity authenticatio
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
-@description('The location for the OpenAI service.')
-@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
-param openAiLocation string
+// OpenAI defaults to swedencentral because model-router (GlobalStandard)
+// is only available in East US 2 and Sweden Central.
+@description('The location for the OpenAI service. Defaults to swedencentral for model-router GlobalStandard support.')
+param openAiLocation string = 'swedencentral'
 
 @description('The date when the deployment is executed.')
 param openAiDeploymentDate string
@@ -69,7 +70,7 @@ resource modelRouter 'Microsoft.CognitiveServices/accounts/deployments@2025-06-0
   parent: openAi
   name: 'model-router'
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 50
   }
   properties: {
