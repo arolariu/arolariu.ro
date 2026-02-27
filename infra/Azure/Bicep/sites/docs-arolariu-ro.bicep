@@ -45,17 +45,8 @@ param staticWebAppLocation string = 'westeurope' // Static Web Apps are only ava
 param staticWebAppDeploymentDate string
 
 // Import the common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: staticWebAppDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('sites', staticWebAppDeploymentDate)
 
 resource docsStaticWebApp 'Microsoft.Web/staticSites@2025-03-01' = {
   name: 'docs-arolariu-ro'

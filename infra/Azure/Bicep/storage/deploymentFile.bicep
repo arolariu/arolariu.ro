@@ -33,7 +33,7 @@ param resourceDeploymentDate string
 param resourceConventionPrefix string
 
 @description('The location for the resources.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 // Generate names using the existing convention
@@ -44,7 +44,6 @@ var noSqlServerName = '${resourceConventionPrefix}-nosqlserver'
 
 // Deploy primary storage account with enhanced security
 module storageAccountDeployment 'storageAccount.bicep' = {
-  scope: resourceGroup()
   name: 'storageAccountDeployment-${resourceDeploymentDate}'
   params: {
     storageAccountName: storageAccountName
@@ -55,7 +54,6 @@ module storageAccountDeployment 'storageAccount.bicep' = {
 
 // Deploy container registry with enhanced security
 module containerRegistryDeployment 'containerRegistry.bicep' = {
-  scope: resourceGroup()
   name: 'containerRegistryDeployment-${resourceDeploymentDate}'
   params: {
     containerRegistryLocation: resourceLocation
@@ -66,7 +64,6 @@ module containerRegistryDeployment 'containerRegistry.bicep' = {
 
 // Deploy SQL Server with secure configuration
 module sqlServerDeployment 'sqlServer.bicep' = {
-  scope: resourceGroup()
   name: 'sqlServerDeployment-${resourceDeploymentDate}'
   params: {
     sqlServerName: sqlServerName
@@ -82,7 +79,6 @@ module sqlServerDeployment 'sqlServer.bicep' = {
 
 // Deploy Cosmos DB (NoSQL) with secure configuration
 module noSqlServerDeployment 'noSqlServer.bicep' = {
-  scope: resourceGroup()
   name: 'noSqlServerDeployment-${resourceDeploymentDate}'
   params: {
     noSqlServerName: noSqlServerName
@@ -95,5 +91,6 @@ module noSqlServerDeployment 'noSqlServer.bicep' = {
 output storageAccountName string = storageAccountDeployment.outputs.storageAccountName
 output storageAccountId string = storageAccountDeployment.outputs.storageAccountId
 output storageAccountBlobEndpoint string = storageAccountDeployment.outputs.storageAccountBlobEndpoint
+output containerRegistryName string = containerRegistryDeployment.outputs.containerRegistryName
 output sqlServerName string = sqlServerDeployment.outputs.sqlServerName
 output cosmosAccountName string = noSqlServerDeployment.outputs.noSqlServerName

@@ -31,7 +31,7 @@ metadata version = '2.0.0'
 param resourceConventionPrefix string
 
 @description('The location for the App Configuration resource.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 @description('The date when the deployment is executed.')
@@ -41,7 +41,6 @@ var keyVaultName = '${replace(resourceConventionPrefix, '-', '')}kv'
 var appConfigurationName = '${replace(resourceConventionPrefix, '-', '')}appconfig'
 
 module keyVaultDeployment 'keyVault.bicep' = {
-  scope: resourceGroup()
   name: 'keyVaultDeployment-${resourceDeploymentDate}'
   params: {
     keyVaultName: keyVaultName
@@ -51,7 +50,6 @@ module keyVaultDeployment 'keyVault.bicep' = {
 }
 
 module appConfigurationDeployment 'appConfiguration.bicep' = {
-  scope: resourceGroup()
   name: 'appConfigurationDeployment-${resourceDeploymentDate}'
   params: {
     appConfigurationName: appConfigurationName
@@ -59,3 +57,7 @@ module appConfigurationDeployment 'appConfiguration.bicep' = {
     appConfigurationDeploymentDate: resourceDeploymentDate
   }
 }
+
+// Outputs for RBAC scoping
+output keyVaultName string = keyVaultDeployment.outputs.mainKeyVaultName
+output appConfigurationName string = appConfigurationDeployment.outputs.appConfigurationName

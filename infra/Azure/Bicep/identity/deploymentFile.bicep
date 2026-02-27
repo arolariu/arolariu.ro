@@ -28,7 +28,7 @@ metadata version = '2.0.0'
 param resourceDeploymentDate string
 
 @description('The location for the resources.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 @description('The prefix to use for the names of the resources.')
@@ -37,7 +37,6 @@ param resourceConventionPrefix string
 var managedIdentitiesNamePrefix = '${resourceConventionPrefix}-uami'
 
 module managedIdentities 'userAssignedIdentity.bicep' = {
-  scope: resourceGroup()
   name: 'managedIdentitiesDeployment-${resourceDeploymentDate}'
   params: {
     userAssignedManagedIdentityNamePrefix: managedIdentitiesNamePrefix
@@ -47,13 +46,11 @@ module managedIdentities 'userAssignedIdentity.bicep' = {
 }
 
 module federatedCredentials 'federatedCredentials.bicep' = {
-  scope: resourceGroup()
   name: 'federatedCredentialsDeployment-${resourceDeploymentDate}'
   params: { infrastructureManagedIdentity: managedIdentities.outputs.userAssignedManagedIdentities[2] }
 }
 
 module securityGroups 'securityGroups.bicep' = {
-  scope: resourceGroup()
   name: 'securityGroupsDeployment-${resourceDeploymentDate}'
 }
 

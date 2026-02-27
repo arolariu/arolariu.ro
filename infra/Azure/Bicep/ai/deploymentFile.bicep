@@ -36,7 +36,7 @@ metadata version = '2.0.0'
 param resourceDeploymentDate string
 
 @description('The location for the resources.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 @description('The prefix to use for the names of the resources.')
@@ -45,24 +45,22 @@ param resourceConventionPrefix string
 var aiConventionPrefix = '${resourceConventionPrefix}-ai'
 
 module openAiDeployment 'openai.bicep' = {
-  scope: resourceGroup()
   name: 'openAiDeployment-${resourceDeploymentDate}'
   params: {
-    openAiLocation: resourceLocation
     openAiConventionPrefix: aiConventionPrefix
     openAiDeploymentDate: resourceDeploymentDate
   }
 }
 
 module aiFoundryDeployment 'aiFoundry.bicep' = {
-  scope: resourceGroup()
   name: 'aiFoundryDeployment-${resourceDeploymentDate}'
   params: {
-    aiFoundryLocation: resourceLocation
     aiFoundryName: '${aiConventionPrefix}-foundry'
     aiFoundryDeploymentDate: resourceDeploymentDate
   }
 }
+
+output openAiName string = openAiDeployment.outputs.openAiName
 
 output aiResources object = {
   openAiId: openAiDeployment.outputs.openAiId

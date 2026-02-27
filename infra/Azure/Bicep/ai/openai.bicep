@@ -9,9 +9,7 @@
 // - Content generation and summarization
 //
 // Model Deployments:
-// - Models are deployed separately after the account is created
-// - Configure via Azure Portal or separate Bicep module
-// - Consider GPT-4o for production (best balance of cost/capability)
+// - model-router (GlobalStandard, capacity 50) — intelligent model routing
 //
 // Authentication:
 // - Backend UAMI receives "Cognitive Services User" role via rbac/backend-uami-rbac.bicep
@@ -36,9 +34,10 @@ metadata description = 'Azure OpenAI Service with managed identity authenticatio
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
-@description('The location for the OpenAI service.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
-param openAiLocation string
+// OpenAI defaults to swedencentral because model-router (GlobalStandard)
+// is only available in East US 2 and Sweden Central.
+@description('The location for the OpenAI service. Defaults to swedencentral for model-router GlobalStandard support.')
+param openAiLocation string = 'swedencentral'
 
 @description('The date when the deployment is executed.')
 param openAiDeploymentDate string
@@ -46,17 +45,8 @@ param openAiDeploymentDate string
 @description('The prefix to use for the names of the resources.')
 param openAiConventionPrefix string
 
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: openAiDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'ai'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('ai', openAiDeploymentDate)
 
 resource openAi 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   name: '${openAiConventionPrefix}-openai'
@@ -72,6 +62,28 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   })
 }
 
+// -------------------------------------------------------------------------------------
+// Model Deployments
+// -------------------------------------------------------------------------------------
+
+resource modelRouter 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
+  parent: openAi
+  name: 'model-router'
+  sku: {
+    name: 'GlobalStandard'
+    capacity: 50
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'model-router'
+      version: '2025-11-18'
+    }
+    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
+    raiPolicyName: 'Microsoft.DefaultV2'
+  }
+}
+
 output openAiId string = openAi.id
 output openAiEndpoint string = openAi.properties.endpoint
-output resource object = openAi
+output openAiName string = openAi.name

@@ -51,17 +51,8 @@ param keyVaultLocation string
 param keyVaultDeploymentDate string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: keyVaultDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'configuration-keyvault'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('configuration', keyVaultDeploymentDate)
 
 resource keyVault 'Microsoft.KeyVault/vaults@2025-05-01' = {
   name: keyVaultName

@@ -5,7 +5,7 @@
 // platform. It provides global content delivery, DDoS protection, and DNS management.
 //
 // Deployed Resources:
-// - Azure Front Door Premium (global CDN + WAF + load balancing)
+// - Azure Front Door Standard (global CDN + WAF + load balancing)
 // - Azure DNS Zone (authoritative DNS for arolariu.ro domain)
 //
 // Architecture Pattern:
@@ -44,7 +44,7 @@ targetScope = 'resourceGroup'
 param resourceDeploymentDate string
 
 @description('The location for the resources.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 @description('The prefix to use for the names of the resources.')
@@ -63,7 +63,6 @@ var azureFrontDoorName = '${resourceConventionPrefix}-afd'
 var dnsZoneName = 'arolariu.ro'
 
 module azureFrontDoorDeployment 'azureFrontDoor.bicep' = {
-  scope: resourceGroup()
   name: 'azureFrontDoorDeployment-${resourceDeploymentDate}'
   params: {
     frontDoorName: azureFrontDoorName
@@ -73,7 +72,6 @@ module azureFrontDoorDeployment 'azureFrontDoor.bicep' = {
 }
 
 module dnsZoneDeployment 'dnsZone.bicep' = {
-  scope: resourceGroup()
   name: 'dnsZoneDeployment-${resourceDeploymentDate}'
   params: {
     dnsZoneName: dnsZoneName
