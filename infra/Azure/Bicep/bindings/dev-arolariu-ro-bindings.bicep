@@ -128,7 +128,6 @@ resource devManagedCertificate 'Microsoft.Web/certificates@2025-03-01' = {
 }
 
 module certificateBindings 'dev-arolariu-ro-certificate-bindings.bicep' = {
-  scope: resourceGroup()
   name: 'dev-arolariu-ro-certificate-bindings'
   params: {
     devWebsiteHostname: devWebsiteHostname

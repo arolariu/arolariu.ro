@@ -72,7 +72,6 @@ param cvWebsiteHostname string
 param prodWebsiteHostname string
 
 module devWebsiteBindings 'dev-arolariu-ro-bindings.bicep' = {
-  scope: resourceGroup()
   name: 'devWebsiteBindings-${resourceDeploymentDate}'
   params: {
     dnsZoneName: dnsZoneName
@@ -84,7 +83,6 @@ module devWebsiteBindings 'dev-arolariu-ro-bindings.bicep' = {
 }
 
 module apiWebsiteBindings 'api-arolariu-ro-bindings.bicep' = {
-  scope: resourceGroup()
   name: 'apiWebsiteBindings-${resourceDeploymentDate}'
   params: {
     dnsZoneName: dnsZoneName
@@ -96,7 +94,6 @@ module apiWebsiteBindings 'api-arolariu-ro-bindings.bicep' = {
 }
 
 module docsWebsiteBindings 'docs-arolariu-ro-bindings.bicep' = {
-  scope: resourceGroup()
   name: 'docsWebsiteBindings-${resourceDeploymentDate}'
   params: {
     dnsZoneName: dnsZoneName
@@ -105,7 +102,6 @@ module docsWebsiteBindings 'docs-arolariu-ro-bindings.bicep' = {
 }
 
 module cvWebsiteBindings 'cv-arolariu-ro-bindings.bicep' = {
-  scope: resourceGroup()
   name: 'cvWebsiteBindings-${resourceDeploymentDate}'
   params: {
     dnsZoneName: dnsZoneName

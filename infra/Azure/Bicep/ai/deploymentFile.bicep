@@ -45,7 +45,6 @@ param resourceConventionPrefix string
 var aiConventionPrefix = '${resourceConventionPrefix}-ai'
 
 module openAiDeployment 'openai.bicep' = {
-  scope: resourceGroup()
   name: 'openAiDeployment-${resourceDeploymentDate}'
   params: {
     openAiLocation: resourceLocation
@@ -55,7 +54,6 @@ module openAiDeployment 'openai.bicep' = {
 }
 
 module aiFoundryDeployment 'aiFoundry.bicep' = {
-  scope: resourceGroup()
   name: 'aiFoundryDeployment-${resourceDeploymentDate}'
   params: {
     aiFoundryLocation: resourceLocation

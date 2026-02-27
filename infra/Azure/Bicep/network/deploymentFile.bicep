@@ -63,7 +63,6 @@ var azureFrontDoorName = '${resourceConventionPrefix}-afd'
 var dnsZoneName = 'arolariu.ro'
 
 module azureFrontDoorDeployment 'azureFrontDoor.bicep' = {
-  scope: resourceGroup()
   name: 'azureFrontDoorDeployment-${resourceDeploymentDate}'
   params: {
     frontDoorName: azureFrontDoorName
@@ -73,7 +72,6 @@ module azureFrontDoorDeployment 'azureFrontDoor.bicep' = {
 }
 
 module dnsZoneDeployment 'dnsZone.bicep' = {
-  scope: resourceGroup()
   name: 'dnsZoneDeployment-${resourceDeploymentDate}'
   params: {
     dnsZoneName: dnsZoneName

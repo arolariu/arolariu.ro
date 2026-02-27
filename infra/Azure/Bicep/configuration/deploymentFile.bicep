@@ -41,7 +41,6 @@ var keyVaultName = '${replace(resourceConventionPrefix, '-', '')}kv'
 var appConfigurationName = '${replace(resourceConventionPrefix, '-', '')}appconfig'
 
 module keyVaultDeployment 'keyVault.bicep' = {
-  scope: resourceGroup()
   name: 'keyVaultDeployment-${resourceDeploymentDate}'
   params: {
     keyVaultName: keyVaultName
@@ -51,7 +50,6 @@ module keyVaultDeployment 'keyVault.bicep' = {
 }
 
 module appConfigurationDeployment 'appConfiguration.bicep' = {
-  scope: resourceGroup()
   name: 'appConfigurationDeployment-${resourceDeploymentDate}'
   params: {
     appConfigurationName: appConfigurationName

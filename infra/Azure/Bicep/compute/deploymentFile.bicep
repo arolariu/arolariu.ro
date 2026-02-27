@@ -42,7 +42,6 @@ param resourceConventionPrefix string
 param resourceLocation string
 
 module appServicePlansDeployment 'appServicePlans.bicep' = {
-  scope: resourceGroup()
   name: 'appServicePlansDeployment-${resourceDeploymentDate}'
   params: {
     appServicePlanLocation: resourceLocation

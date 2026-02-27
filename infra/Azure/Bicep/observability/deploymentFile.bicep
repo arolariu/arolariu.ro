@@ -44,7 +44,6 @@ param resourceConventionPrefix string
 param resourceLocation string
 
 module logAnalyticsWorkspaceDeployment 'log-analytics.bicep' = {
-  scope: resourceGroup()
   name: 'logAnalyticsWorkspaceDeployment-${resourceDeploymentDate}'
   params: {
     logAnalyticsWorkspaceLocation: resourceLocation
@@ -54,7 +53,6 @@ module logAnalyticsWorkspaceDeployment 'log-analytics.bicep' = {
 }
 
 module applicationInsightsDeployment 'application-insights.bicep' = {
-  scope: resourceGroup()
   name: 'applicationInsightsDeployment-${resourceDeploymentDate}'
   params: {
     applicationInsightsName: '${resourceConventionPrefix}-insights'

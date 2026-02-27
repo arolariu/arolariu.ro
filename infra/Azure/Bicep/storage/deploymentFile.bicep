@@ -44,7 +44,6 @@ var noSqlServerName = '${resourceConventionPrefix}-nosqlserver'
 
 // Deploy primary storage account with enhanced security
 module storageAccountDeployment 'storageAccount.bicep' = {
-  scope: resourceGroup()
   name: 'storageAccountDeployment-${resourceDeploymentDate}'
   params: {
     storageAccountName: storageAccountName
@@ -55,7 +54,6 @@ module storageAccountDeployment 'storageAccount.bicep' = {
 
 // Deploy container registry with enhanced security
 module containerRegistryDeployment 'containerRegistry.bicep' = {
-  scope: resourceGroup()
   name: 'containerRegistryDeployment-${resourceDeploymentDate}'
   params: {
     containerRegistryLocation: resourceLocation
@@ -66,7 +64,6 @@ module containerRegistryDeployment 'containerRegistry.bicep' = {
 
 // Deploy SQL Server with secure configuration
 module sqlServerDeployment 'sqlServer.bicep' = {
-  scope: resourceGroup()
   name: 'sqlServerDeployment-${resourceDeploymentDate}'
   params: {
     sqlServerName: sqlServerName
@@ -82,7 +79,6 @@ module sqlServerDeployment 'sqlServer.bicep' = {
 
 // Deploy Cosmos DB (NoSQL) with secure configuration
 module noSqlServerDeployment 'noSqlServer.bicep' = {
-  scope: resourceGroup()
   name: 'noSqlServerDeployment-${resourceDeploymentDate}'
   params: {
     noSqlServerName: noSqlServerName

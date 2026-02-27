@@ -37,7 +37,6 @@ param resourceConventionPrefix string
 var managedIdentitiesNamePrefix = '${resourceConventionPrefix}-uami'
 
 module managedIdentities 'userAssignedIdentity.bicep' = {
-  scope: resourceGroup()
   name: 'managedIdentitiesDeployment-${resourceDeploymentDate}'
   params: {
     userAssignedManagedIdentityNamePrefix: managedIdentitiesNamePrefix
@@ -47,13 +46,11 @@ module managedIdentities 'userAssignedIdentity.bicep' = {
 }
 
 module federatedCredentials 'federatedCredentials.bicep' = {
-  scope: resourceGroup()
   name: 'federatedCredentialsDeployment-${resourceDeploymentDate}'
   params: { infrastructureManagedIdentity: managedIdentities.outputs.userAssignedManagedIdentities[2] }
 }
 
 module securityGroups 'securityGroups.bicep' = {
-  scope: resourceGroup()
   name: 'securityGroupsDeployment-${resourceDeploymentDate}'
 }
 

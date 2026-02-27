@@ -42,7 +42,6 @@ var resourceConventionPrefix = 'q${substring(uniqueString(resourceDeploymentDate
 // =====================================================================================
 
 module identitiesDeployment 'identity/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'identitiesDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -56,7 +55,6 @@ module identitiesDeployment 'identity/deploymentFile.bicep' = {
 // =====================================================================================
 
 module configurationDeployment 'configuration/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'configurationDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -70,7 +68,6 @@ module configurationDeployment 'configuration/deploymentFile.bicep' = {
 // =====================================================================================
 
 module observabilityDeployment 'observability/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'observabilityDeployment-${resourceDeploymentDate}'
   dependsOn: [identitiesDeployment, configurationDeployment]
   params: {
@@ -85,7 +82,6 @@ module observabilityDeployment 'observability/deploymentFile.bicep' = {
 // =====================================================================================
 
 module storageDeployment 'storage/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'storageDeployment-${resourceDeploymentDate}'
   dependsOn: [identitiesDeployment]
   params: {
@@ -100,7 +96,6 @@ module storageDeployment 'storage/deploymentFile.bicep' = {
 // =====================================================================================
 
 module computeDeployment 'compute/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'computeDeployment-${resourceDeploymentDate}'
   dependsOn: [identitiesDeployment]
   params: {
@@ -115,7 +110,6 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
 // =====================================================================================
 
 module websiteDeployment 'sites/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'websiteDeployment-${resourceDeploymentDate}'
   dependsOn: [
     storageDeployment
@@ -139,7 +133,6 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
 // =====================================================================================
 
 module networkDeployment 'network/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'networkDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -154,7 +147,6 @@ module networkDeployment 'network/deploymentFile.bicep' = {
 // =====================================================================================
 
 module bindingsDeployment 'bindings/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'bindingsDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -176,7 +168,6 @@ module bindingsDeployment 'bindings/deploymentFile.bicep' = {
 // =====================================================================================
 
 module aiDeployment 'ai/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'aiDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
