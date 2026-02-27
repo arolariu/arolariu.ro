@@ -109,6 +109,7 @@ var appPlans = [
   }
 ]
 
+@batchSize(1)
 resource appPlanFarm 'Microsoft.Web/serverfarms@2025-03-01' = [
   for appPlan in appPlans: {
     name: appPlan.name

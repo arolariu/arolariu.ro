@@ -128,6 +128,13 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-11-01-preview'
   parent: sqlServer
   name: sqlDatabasePrimaryName
   location: sqlServerLocation
+  dependsOn: [
+    sqlServer::sqlServerAdvancedThreatProtection
+    sqlServer::sqlServerAuditPolicy
+    sqlServer::sqlServerAuditSettings
+    sqlServer::sqlServerConnectionPolicies
+    sqlServer::sqlServerAzureAdOnlyAuth
+  ]
   sku: {
     name: 'Standard'
     tier: 'Standard'
