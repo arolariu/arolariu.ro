@@ -32,7 +32,7 @@ metadata version = '2.0.0'
 param userAssignedManagedIdentityNamePrefix string
 
 @description('The location of the user assigned managed identities')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param userAssignedManagedIdentityLocation string
 
 @description('The date when the deployment is executed.')
@@ -87,5 +87,6 @@ output userAssignedManagedIdentities identity[] = [
     displayName: identities[identity].displayName
     resourceId: userAssignedManagedIdentities[identity].id
     principalId: userAssignedManagedIdentities[identity].properties.principalId
+    clientId: userAssignedManagedIdentities[identity].properties.clientId
   }
 ]

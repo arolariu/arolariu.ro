@@ -45,22 +45,13 @@ metadata version = '2.0.0'
 param apiWebsitePlanId string
 param apiWebsiteLocation string
 param apiWebsiteIdentityId string
+param apiWebsiteIdentityClientId string
 param apiWebsiteDeploymentDate string
-param appInsightsInstrumentationKey string
 param appInsightsConnectionString string
 
 // Import common tags
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: apiWebsiteDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('sites', apiWebsiteDeploymentDate)
 
 resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'api-arolariu-ro'
@@ -106,11 +97,11 @@ resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
       appSettings: [
         {
           name: 'ASPNETCORE_ENVIRONMENT'
-          value: 'Production' // Environment setting for ASP.NET Core
+          value: 'Production'
         }
         {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
+          name: 'AZURE_CLIENT_ID'
+          value: apiWebsiteIdentityClientId
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

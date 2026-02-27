@@ -42,23 +42,21 @@ metadata description = 'Development staging environment dev.arolariu.ro'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
+@description('The location for the development website.')
 param developmentWebsiteLocation string
+
+@description('The ID of the development App Service Plan.')
 param developmentWebsiteAppPlanId string
+
+@description('The resource ID of the frontend managed identity.')
 param developmentWebsiteIdentityId string
+
+@description('The deployment timestamp.')
 param developmentWebsiteDeploymentDate string
 
 // Import common tags
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'DEVELOPMENT'
-  deploymentType: 'Bicep'
-  deploymentDate: developmentWebsiteDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = union(createTags('sites', developmentWebsiteDeploymentDate), { environment: 'DEVELOPMENT' })
 
 resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'dev-arolariu-ro'
@@ -88,7 +86,6 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
       acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
-      functionAppScaleLimit: 0
       linuxFxVersion: 'NODE|24-lts' // Node.js version 24 is used.
       alwaysOn: true // The app is (should be!) always on.
       cors: {

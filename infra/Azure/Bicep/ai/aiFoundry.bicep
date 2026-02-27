@@ -9,7 +9,7 @@
 // - Prompt flow for building AI applications
 //
 // AI Project:
-// - Default project: arolariu.ro
+// - Default project: arolariu-ro
 // - Projects organize resources and permissions
 // - Each project can have its own model deployments and endpoints
 //
@@ -42,9 +42,9 @@ metadata description = 'Azure AI Foundry (AIServices) with project management'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
-@description('The location for the AI Foundry instance.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
-param aiFoundryLocation string
+// AI Foundry defaults to swedencentral to co-locate with OpenAI resources.
+@description('The location for the AI Foundry instance. Defaults to swedencentral.')
+param aiFoundryLocation string = 'swedencentral'
 
 @description('The date when the deployment is executed.')
 param aiFoundryDeploymentDate string
@@ -52,17 +52,8 @@ param aiFoundryDeploymentDate string
 @description('The name of the AI Foundry instance.')
 param aiFoundryName string
 
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: aiFoundryDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'ai'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('ai', aiFoundryDeploymentDate)
 
 resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   name: aiFoundryName
@@ -80,20 +71,20 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
     }
     allowProjectManagement: true
     publicNetworkAccess: 'Enabled'
-    defaultProject: 'arolariu.ro'
-    associatedProjects: ['arolariu.ro']
+    defaultProject: 'arolariu-ro'
+    associatedProjects: ['arolariu-ro']
   }
   tags: union(commonTags, {
     sku: 'Standard'
   })
 
   resource aiProject 'projects@2025-10-01-preview' = {
-    name: 'arolariu.ro'
+    name: 'arolariu-ro'
     location: aiFoundryLocation
     identity: { type: 'SystemAssigned' }
     properties: {
-      description: 'AI project for arolariu.ro'
-      displayName: 'arolariu.ro AI Project'
+      description: 'AI project for arolariu-ro'
+      displayName: 'arolariu-ro AI Project'
     }
   }
 }

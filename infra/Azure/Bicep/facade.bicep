@@ -8,15 +8,15 @@ targetScope = 'resourceGroup'
 //
 // Deployment Order (with dependencies):
 // 1. Identity      → Creates managed identities (no dependencies)
-// 2. RBAC          → Assigns roles to identities (depends on: Identity)
-// 3. Configuration → Creates Key Vault, App Config (no dependencies)
-// 4. Observability → Creates monitoring resources (depends on: Identity, Configuration)
-// 5. Storage       → Creates storage, databases, ACR (depends on: Identity, RBAC)
-// 6. Compute       → Creates App Service Plans (depends on: Identity)
-// 7. Sites         → Deploys web applications (depends on: Storage, Configuration)
-// 8. Network       → Creates Front Door, DNS (depends on: Sites)
-// 9. Bindings      → Configures custom domains (depends on: Sites, Network)
-// 10. AI           → Deploys Azure OpenAI (depends on: Configuration)
+// 2. Configuration → Creates Key Vault, App Config (no dependencies)
+// 3. Observability → Creates monitoring resources (depends on: Identity, Configuration)
+// 4. Storage       → Creates storage, databases, ACR (depends on: Identity)
+// 5. Compute       → Creates App Service Plans (depends on: Identity)
+// 6. Sites         → Deploys web applications (depends on: Storage, Configuration)
+// 7. Network       → Creates Front Door, DNS (depends on: Sites)
+// 8. Bindings      → Configures custom domains (depends on: Sites, Network)
+// 9. AI            → Deploys Azure OpenAI (depends on: Configuration)
+// 10. RBAC         → Resource-scoped role assignments (depends on: respective resources)
 //
 // Identity Array Convention:
 // [0] = Frontend identity (arolariu.ro website)
@@ -26,19 +26,22 @@ targetScope = 'resourceGroup'
 
 metadata description = 'Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
-metadata version = '2.0.0'
+metadata version = '3.0.0'
 
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()
 
 @description('The location for the resources.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 var resourceConventionPrefix = 'q${substring(uniqueString(resourceDeploymentDate), 0, 5)}'
 
+// =====================================================================================
+// 1. Identity — Creates managed identities (no dependencies)
+// =====================================================================================
+
 module identitiesDeployment 'identity/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'identitiesDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -47,14 +50,11 @@ module identitiesDeployment 'identity/deploymentFile.bicep' = {
   }
 }
 
-module rbacDeployment 'rbac/deploymentFile.bicep' = {
-  scope: resourceGroup()
-  name: 'rbacDeployment-${resourceDeploymentDate}'
-  params: { managedIdentities: identitiesDeployment.outputs.managedIdentitiesList }
-}
+// =====================================================================================
+// 2. Configuration — Creates Key Vault, App Config (no dependencies)
+// =====================================================================================
 
 module configurationDeployment 'configuration/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'configurationDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -63,8 +63,11 @@ module configurationDeployment 'configuration/deploymentFile.bicep' = {
   }
 }
 
+// =====================================================================================
+// 3. Observability — Creates monitoring resources (depends on: Identity, Configuration)
+// =====================================================================================
+
 module observabilityDeployment 'observability/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'observabilityDeployment-${resourceDeploymentDate}'
   dependsOn: [identitiesDeployment, configurationDeployment]
   params: {
@@ -74,10 +77,13 @@ module observabilityDeployment 'observability/deploymentFile.bicep' = {
   }
 }
 
+// =====================================================================================
+// 4. Storage — Creates storage, databases, ACR (depends on: Identity)
+// =====================================================================================
+
 module storageDeployment 'storage/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'storageDeployment-${resourceDeploymentDate}'
-  dependsOn: [identitiesDeployment, rbacDeployment]
+  dependsOn: [identitiesDeployment]
   params: {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
@@ -85,8 +91,11 @@ module storageDeployment 'storage/deploymentFile.bicep' = {
   }
 }
 
+// =====================================================================================
+// 5. Compute — Creates App Service Plans (depends on: Identity)
+// =====================================================================================
+
 module computeDeployment 'compute/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'computeDeployment-${resourceDeploymentDate}'
   dependsOn: [identitiesDeployment]
   params: {
@@ -96,27 +105,34 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
   }
 }
 
+// =====================================================================================
+// 6. Sites — Deploys web applications (depends on: Storage, Configuration)
+// =====================================================================================
+
 module websiteDeployment 'sites/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'websiteDeployment-${resourceDeploymentDate}'
   dependsOn: [
-    storageDeployment // Websites need storage
-    configurationDeployment // Websites need configuration
+    storageDeployment
+    configurationDeployment
   ]
   params: {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
     appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
-    appInsightsInstrumentationKey: observabilityDeployment.outputs.appInsightsInstrumentationKey
     productionAppPlanId: computeDeployment.outputs.productionAppPlanId
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
     managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
     managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
+    managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
+    managedIdentityBackendClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
   }
 }
 
+// =====================================================================================
+// 7. Network — Creates Front Door, DNS (depends on: Sites)
+// =====================================================================================
+
 module networkDeployment 'network/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'networkDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -126,18 +142,11 @@ module networkDeployment 'network/deploymentFile.bicep' = {
   }
 }
 
-module aiDeployment 'ai/deploymentFile.bicep' = {
-  scope: resourceGroup()
-  name: 'aiDeployment-${resourceDeploymentDate}'
-  params: {
-    resourceLocation: resourceLocation
-    resourceDeploymentDate: resourceDeploymentDate
-    resourceConventionPrefix: resourceConventionPrefix
-  }
-}
+// =====================================================================================
+// 8. Bindings — Configures custom domains (depends on: Sites, Network)
+// =====================================================================================
 
 module bindingsDeployment 'bindings/deploymentFile.bicep' = {
-  scope: resourceGroup()
   name: 'bindingsDeployment-${resourceDeploymentDate}'
   params: {
     resourceLocation: resourceLocation
@@ -151,5 +160,97 @@ module bindingsDeployment 'bindings/deploymentFile.bicep' = {
     devWebsiteHostname: websiteDeployment.outputs.devWebsiteName
     docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteName
     prodWebsiteHostname: websiteDeployment.outputs.mainWebsiteName
+  }
+}
+
+// =====================================================================================
+// 9. AI — Deploys Azure OpenAI (depends on: Configuration)
+// =====================================================================================
+
+module aiDeployment 'ai/deploymentFile.bicep' = {
+  name: 'aiDeployment-${resourceDeploymentDate}'
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+  }
+}
+
+// =====================================================================================
+// 10. RBAC — Resource-scoped role assignments (depends on: respective resources)
+// =====================================================================================
+
+module storageRbac 'rbac/storage-rbac.bicep' = {
+  name: 'storageRbac-${resourceDeploymentDate}'
+  params: {
+    storageAccountName: storageDeployment.outputs.storageAccountName
+    frontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
+  }
+}
+
+module containerRegistryRbac 'rbac/container-registry-rbac.bicep' = {
+  name: 'containerRegistryRbac-${resourceDeploymentDate}'
+  params: {
+    containerRegistryName: storageDeployment.outputs.containerRegistryName
+    frontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
+  }
+}
+
+module sqlServerRbac 'rbac/sql-server-rbac.bicep' = {
+  name: 'sqlServerRbac-${resourceDeploymentDate}'
+  params: {
+    sqlServerName: storageDeployment.outputs.sqlServerName
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+  }
+}
+
+module cosmosDbRbac 'rbac/cosmos-db-rbac.bicep' = {
+  name: 'cosmosDbRbac-${resourceDeploymentDate}'
+  params: {
+    cosmosAccountName: storageDeployment.outputs.cosmosAccountName
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+  }
+}
+
+module keyVaultRbac 'rbac/key-vault-rbac.bicep' = {
+  name: 'keyVaultRbac-${resourceDeploymentDate}'
+  params: {
+    keyVaultName: configurationDeployment.outputs.keyVaultName
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
+  }
+}
+
+module appConfigRbac 'rbac/app-configuration-rbac.bicep' = {
+  name: 'appConfigRbac-${resourceDeploymentDate}'
+  params: {
+    appConfigurationName: configurationDeployment.outputs.appConfigurationName
+    frontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
+  }
+}
+
+module openAiRbac 'rbac/openai-rbac.bicep' = {
+  name: 'openAiRbac-${resourceDeploymentDate}'
+  params: {
+    openAiAccountName: aiDeployment.outputs.openAiName
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+  }
+}
+
+module websitesRbac 'rbac/websites-rbac.bicep' = {
+  name: 'websitesRbac-${resourceDeploymentDate}'
+  params: {
+    webAppNames: [
+      websiteDeployment.outputs.mainWebsiteName
+      websiteDeployment.outputs.apiWebsiteName
+      websiteDeployment.outputs.devWebsiteName
+    ]
+    infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
   }
 }

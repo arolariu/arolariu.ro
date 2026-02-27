@@ -39,7 +39,7 @@ metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
 @description('The location for the app service plans.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param appServicePlanLocation string
 
 @description('The prefix for the app service plans.')
@@ -50,17 +50,8 @@ param appServicePlanConventionPrefix string
 @description('The date when the deployment is executed.')
 param appServicePlanDeploymentDate string
 
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: appServicePlanDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'compute'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('compute', appServicePlanDeploymentDate)
 
 var appPlans = [
   {
@@ -109,6 +100,7 @@ var appPlans = [
   }
 ]
 
+@batchSize(1)
 resource appPlanFarm 'Microsoft.Web/serverfarms@2025-03-01' = [
   for appPlan in appPlans: {
     name: appPlan.name

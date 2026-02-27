@@ -55,11 +55,6 @@
             "type": "command",
             "command": "bash .claude/hooks/validate-note.sh",
             "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/auto-commit.sh",
-            "timeout": 10
           }
         ]
       }

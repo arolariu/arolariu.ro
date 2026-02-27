@@ -54,17 +54,8 @@ param frontDoorDeploymentDate string
 param mainWebsiteHostname string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: frontDoorDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'network'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('network', frontDoorDeploymentDate)
 
 resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2025-10-01' = {
   name: 'productionWAF'
@@ -81,6 +72,8 @@ resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicat
     customRules: {
       rules: []
     }
+    // Managed rule sets (DRS, Bot Manager) require Premium SKU.
+    // Standard_AzureFrontDoor only supports custom rules.
     managedRules: {
       managedRuleSets: []
     }
@@ -176,7 +169,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
         probePath: '/'
         probeRequestType: 'HEAD'
         probeProtocol: 'Https'
-        probeIntervalInSeconds: 100
+        probeIntervalInSeconds: 30
       }
     }
 
@@ -191,7 +184,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
         priority: 1
         weight: 1000
         enabledState: 'Enabled'
-        enforceCertificateNameCheck: false
+        enforceCertificateNameCheck: true
       }
     }
   }

@@ -38,11 +38,10 @@ param resourceDeploymentDate string = utcNow()
 param resourceConventionPrefix string
 
 @description('The location for the app service plans.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 module appServicePlansDeployment 'appServicePlans.bicep' = {
-  scope: resourceGroup()
   name: 'appServicePlansDeployment-${resourceDeploymentDate}'
   params: {
     appServicePlanLocation: resourceLocation
