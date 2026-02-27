@@ -1,7 +1,9 @@
 {
   "experimentalFeaturesEnabled": {
     "symbolicNameCodegen": true,
-    "compileTimeImports": true
+    "compileTimeImports": true,
+    "sourceMapping": true,
+    "userDefinedConstraints": true
   },
   "analyzers": {
     "core": {
