@@ -38,7 +38,7 @@ param resourceDeploymentDate string = utcNow()
 param resourceConventionPrefix string
 
 @description('The location for the app service plans.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
 param resourceLocation string
 
 module appServicePlansDeployment 'appServicePlans.bicep' = {

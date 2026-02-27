@@ -40,7 +40,7 @@ param resourceDeploymentDate string
 param resourceConventionPrefix string
 
 @description('The location for the resources.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
 param resourceLocation string
 
 module logAnalyticsWorkspaceDeployment 'log-analytics.bicep' = {

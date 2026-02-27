@@ -35,7 +35,7 @@ metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
 @description('The location for the OpenAI service.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
 param openAiLocation string
 
 @description('The date when the deployment is executed.')

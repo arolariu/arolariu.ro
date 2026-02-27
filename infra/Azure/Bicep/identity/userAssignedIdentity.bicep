@@ -32,7 +32,7 @@ metadata version = '2.0.0'
 param userAssignedManagedIdentityNamePrefix string
 
 @description('The location of the user assigned managed identities')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
 param userAssignedManagedIdentityLocation string
 
 @description('The date when the deployment is executed.')

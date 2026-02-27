@@ -43,7 +43,7 @@ metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
 @description('The location for the AI Foundry instance.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
 param aiFoundryLocation string
 
 @description('The date when the deployment is executed.')

@@ -31,7 +31,7 @@ metadata version = '2.0.0'
 param resourceConventionPrefix string
 
 @description('The location for the App Configuration resource.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
 param resourceLocation string
 
 @description('The date when the deployment is executed.')
