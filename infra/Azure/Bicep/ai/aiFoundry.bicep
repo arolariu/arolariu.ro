@@ -42,9 +42,9 @@ metadata description = 'Azure AI Foundry (AIServices) with project management'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
-@description('The location for the AI Foundry instance.')
-@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
-param aiFoundryLocation string
+// AI Foundry defaults to swedencentral to co-locate with OpenAI resources.
+@description('The location for the AI Foundry instance. Defaults to swedencentral.')
+param aiFoundryLocation string = 'swedencentral'
 
 @description('The date when the deployment is executed.')
 param aiFoundryDeploymentDate string

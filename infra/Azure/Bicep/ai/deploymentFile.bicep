@@ -55,7 +55,6 @@ module openAiDeployment 'openai.bicep' = {
 module aiFoundryDeployment 'aiFoundry.bicep' = {
   name: 'aiFoundryDeployment-${resourceDeploymentDate}'
   params: {
-    aiFoundryLocation: resourceLocation
     aiFoundryName: '${aiConventionPrefix}-foundry'
     aiFoundryDeploymentDate: resourceDeploymentDate
   }
