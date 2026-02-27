@@ -44,7 +44,7 @@ metadata version = '2.0.0'
 param sqlServerName string
 
 @description('The location for the SQL Server resource.')
-@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
+@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
 param sqlServerLocation string
 
 @description('The username for the local SQL Server administrator.')

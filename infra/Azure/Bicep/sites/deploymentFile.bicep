@@ -41,7 +41,7 @@ targetScope = 'resourceGroup'
 param resourceDeploymentDate string = utcNow()
 
 @description('The location for the resources.')
-@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
+@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
 param resourceLocation string
 
 @description('The ID of the production app service plan.')

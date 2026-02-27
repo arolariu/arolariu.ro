@@ -39,7 +39,7 @@ metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
 @description('The location for the app service plans.')
-@allowed(['westeurope', 'swedencentral', 'norwayeast', 'northeurope'])
+@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
 param appServicePlanLocation string
 
 @description('The prefix for the app service plans.')
