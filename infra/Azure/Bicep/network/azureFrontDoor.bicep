@@ -72,19 +72,10 @@ resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicat
     customRules: {
       rules: []
     }
+    // Managed rule sets (DRS, Bot Manager) require Premium SKU.
+    // Standard_AzureFrontDoor only supports custom rules.
     managedRules: {
-      managedRuleSets: [
-        {
-          ruleSetType: 'Microsoft_DefaultRuleSet'
-          ruleSetVersion: '2.1'
-          ruleSetAction: 'Block'
-        }
-        {
-          ruleSetType: 'Microsoft_BotManagerRuleSet'
-          ruleSetVersion: '1.1'
-          ruleSetAction: 'Block'
-        }
-      ]
+      managedRuleSets: []
     }
   }
 
