@@ -67,6 +67,17 @@ resource frontendConfigReader 'Microsoft.Authorization/roleAssignments@2022-04-0
 // =====================================================================================
 
 // Grants the backend full read/write access to configuration key-values and feature flags
+resource backendConfigReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: appConfiguration
+  name: guid(appConfiguration.id, backendPrincipalId, appConfigurationDataReader)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', appConfigurationDataReader)
+    principalId: backendPrincipalId
+    principalType: 'ServicePrincipal'
+    description: 'Backend: read configuration data from app configuration store'
+  }
+}
+
 resource backendConfigOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: appConfiguration
   name: guid(appConfiguration.id, backendPrincipalId, appConfigurationDataOwner)
