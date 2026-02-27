@@ -56,17 +56,8 @@ param productionWebsiteDeploymentDate string
 param appInsightsConnectionString string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: productionWebsiteDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('sites', productionWebsiteDeploymentDate)
 
 resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'www-arolariu-ro'

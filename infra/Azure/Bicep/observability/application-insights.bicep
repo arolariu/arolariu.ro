@@ -49,17 +49,8 @@ param applicationInsightsWorkspaceId string
 param applicationInsightsDeploymentDate string
 
 // Import common tags
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: applicationInsightsDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'observability'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('observability', applicationInsightsDeploymentDate)
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: applicationInsightsName

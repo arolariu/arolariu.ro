@@ -52,17 +52,8 @@ param aiFoundryDeploymentDate string
 @description('The name of the AI Foundry instance.')
 param aiFoundryName string
 
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: aiFoundryDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'ai'
-  costCenter: 'infrastructure'
-  project: 'arolariu-ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('ai', aiFoundryDeploymentDate)
 
 resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   name: aiFoundryName

@@ -55,17 +55,8 @@ param developmentWebsiteIdentityId string
 param developmentWebsiteDeploymentDate string
 
 // Import common tags
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'DEVELOPMENT'
-  deploymentType: 'Bicep'
-  deploymentDate: developmentWebsiteDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = union(createTags('sites', developmentWebsiteDeploymentDate), { environment: 'DEVELOPMENT' })
 
 resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'dev-arolariu-ro'

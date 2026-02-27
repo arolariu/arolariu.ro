@@ -44,17 +44,8 @@ param openAiDeploymentDate string
 @description('The prefix to use for the names of the resources.')
 param openAiConventionPrefix string
 
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: openAiDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'ai'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('ai', openAiDeploymentDate)
 
 resource openAi 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   name: '${openAiConventionPrefix}-openai'

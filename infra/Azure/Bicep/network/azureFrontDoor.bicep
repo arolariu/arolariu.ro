@@ -54,17 +54,8 @@ param frontDoorDeploymentDate string
 param mainWebsiteHostname string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: frontDoorDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'network'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('network', frontDoorDeploymentDate)
 
 resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2025-10-01' = {
   name: 'productionWAF'

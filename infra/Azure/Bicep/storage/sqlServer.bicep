@@ -65,17 +65,8 @@ var sqlDatabasePrimaryName = '${sqlDatabaseNamePrefix}-primary'
 var sqlDatabaseSecondaryName = '${sqlDatabaseNamePrefix}-secondary'
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: sqlServerDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'storage'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('storage', sqlServerDeploymentDate)
 
 resource sqlServer 'Microsoft.Sql/servers@2024-11-01-preview' = {
   name: sqlServerName

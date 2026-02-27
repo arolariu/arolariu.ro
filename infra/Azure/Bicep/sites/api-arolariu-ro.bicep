@@ -50,17 +50,8 @@ param apiWebsiteDeploymentDate string
 param appInsightsConnectionString string
 
 // Import common tags
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: apiWebsiteDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('sites', apiWebsiteDeploymentDate)
 
 resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'api-arolariu-ro'
