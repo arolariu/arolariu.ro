@@ -63,17 +63,8 @@ param frontDoorWwwCustomDomainValidationToken string
 @description('The Azure Front Door CDN custom domain validation token.')
 param frontDoorCdnCustomDomainValidationToken string
 
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: dnsZoneDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'network'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('network', dnsZoneDeploymentDate)
 
 resource frontDoor 'Microsoft.Cdn/profiles@2025-09-01-preview' existing = { name: frontDoorName }
 resource frontDoorProductionEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2025-09-01-preview' existing = {

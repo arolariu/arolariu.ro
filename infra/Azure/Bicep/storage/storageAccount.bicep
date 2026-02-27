@@ -49,17 +49,8 @@ param storageAccountLocation string
 param storageAccountDeploymentDate string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: storageAccountDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'storage'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('storage', storageAccountDeploymentDate)
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   name: storageAccountName
@@ -72,8 +63,8 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
     publicNetworkAccess: 'Enabled'
     allowCrossTenantReplication: false
     minimumTlsVersion: 'TLS1_2'
-    allowBlobPublicAccess: true
-    allowSharedKeyAccess: true
+    allowBlobPublicAccess: false
+    allowSharedKeyAccess: false
     networkAcls: {
       bypass: 'AzureServices, Logging, Metrics'
       defaultAction: 'Allow'
@@ -165,6 +156,14 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
         name: 'AccessTimeTracking'
         trackingGranularityInDays: 1
         blobType: ['blockBlob']
+      }
+    }
+
+    // Invoices blob container (private access)
+    resource invoicesContainer 'containers@2025-06-01' = {
+      name: 'invoices'
+      properties: {
+        publicAccess: 'None'
       }
     }
   }

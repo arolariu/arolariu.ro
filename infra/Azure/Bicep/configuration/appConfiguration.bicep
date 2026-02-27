@@ -48,17 +48,8 @@ param appConfigurationLocation string
 param appConfigurationDeploymentDate string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: appConfigurationDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'configuration-keyvault'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('configuration', appConfigurationDeploymentDate)
 
 resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-06-01-preview' = {
   name: appConfigurationName
@@ -88,3 +79,4 @@ resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStor
 ]
 
 output appConfigurationResourceId string = appConfiguration.id
+output appConfigurationName string = appConfiguration.name

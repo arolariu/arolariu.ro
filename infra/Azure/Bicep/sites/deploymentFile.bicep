@@ -41,7 +41,7 @@ targetScope = 'resourceGroup'
 param resourceDeploymentDate string = utcNow()
 
 @description('The location for the resources.')
-@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 @description('The ID of the production app service plan.')
@@ -53,40 +53,43 @@ param developmentAppPlanId string
 @description('The app insights connection string')
 param appInsightsConnectionString string
 
-@description('The app insights instrumentation key')
-param appInsightsInstrumentationKey string
-
+@description('Resource ID of the backend managed identity.')
 param managedIdentityBackendId string
+
+@description('Resource ID of the frontend managed identity.')
 param managedIdentityFrontendId string
 
+@description('Client ID of the frontend managed identity for AZURE_CLIENT_ID.')
+param managedIdentityFrontendClientId string
+
+@description('Client ID of the backend managed identity for AZURE_CLIENT_ID.')
+param managedIdentityBackendClientId string
+
 module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
-  scope: resourceGroup()
   name: 'apiWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     appInsightsConnectionString: appInsightsConnectionString
-    appInsightsInstrumentationKey: appInsightsInstrumentationKey
     apiWebsiteLocation: resourceLocation
     apiWebsitePlanId: productionAppPlanId
     apiWebsiteIdentityId: managedIdentityBackendId
+    apiWebsiteIdentityClientId: managedIdentityBackendClientId
     apiWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
 
 module mainWebsiteDeployment 'arolariu-ro.bicep' = {
-  scope: resourceGroup()
   name: 'mainWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     appInsightsConnectionString: appInsightsConnectionString
-    appInsightsInstrumentationKey: appInsightsInstrumentationKey
     productionWebsiteLocation: resourceLocation
     productionWebsiteAppPlanId: productionAppPlanId
     productionWebsiteIdentityId: managedIdentityFrontendId
+    productionWebsiteIdentityClientId: managedIdentityFrontendClientId
     productionWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
 
 module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
-  scope: resourceGroup()
   name: 'devWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     developmentWebsiteLocation: resourceLocation
@@ -97,13 +100,11 @@ module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
 }
 
 module docsWebsiteDeployment 'docs-arolariu-ro.bicep' = {
-  scope: resourceGroup()
   name: 'docsWebsiteDeployment-${resourceDeploymentDate}'
   params: { staticWebAppDeploymentDate: resourceDeploymentDate }
 }
 
 module cvWebsiteDeployment 'cv-arolariu-ro.bicep' = {
-  scope: resourceGroup()
   name: 'cvWebsiteDeployment-${resourceDeploymentDate}'
   params: { staticWebAppDeploymentDate: resourceDeploymentDate }
 }

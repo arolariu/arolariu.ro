@@ -129,7 +129,6 @@ resource apiManagedCertificate 'Microsoft.Web/certificates@2025-03-01' = {
 }
 
 module certificateBindings 'api-arolariu-ro-certificate-bindings.bicep' = {
-  scope: resourceGroup()
   name: 'api-arolariu-ro-certificate-bindings'
   params: {
     apiWebsiteHostname: apiWebsiteHostname

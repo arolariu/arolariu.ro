@@ -38,4 +38,5 @@ type identity = {
   displayName: string
   resourceId: string // Azure Resource ID
   principalId: string // Azure Principal ID (GUID)
+  clientId: string // Azure Client ID (GUID) — used for DefaultAzureCredential
 }

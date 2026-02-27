@@ -51,22 +51,13 @@ metadata version = '2.0.0'
 param productionWebsiteLocation string
 param productionWebsiteAppPlanId string
 param productionWebsiteIdentityId string
+param productionWebsiteIdentityClientId string
 param productionWebsiteDeploymentDate string
-param appInsightsInstrumentationKey string
 param appInsightsConnectionString string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: productionWebsiteDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('sites', productionWebsiteDeploymentDate)
 
 resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'www-arolariu-ro'
@@ -154,11 +145,11 @@ resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
       appSettings: [
         {
           name: 'NODE_ENV'
-          value: 'Production' // Environment setting for Node.js
+          value: 'Production'
         }
         {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
+          name: 'AZURE_CLIENT_ID'
+          value: productionWebsiteIdentityClientId
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

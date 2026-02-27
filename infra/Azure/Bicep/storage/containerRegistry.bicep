@@ -52,24 +52,15 @@ param containerRegistryLocation string
 param containerRegistryDeploymentDate string
 
 // Common tags for all resources
-import { resourceTags } from '../types/common.type.bicep'
-var commonTags resourceTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: containerRegistryDeploymentDate
-  deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'storage'
-  costCenter: 'infrastructure'
-  project: 'arolariu.ro'
-  version: '2.0.0'
-}
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('storage', containerRegistryDeploymentDate)
 
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
   name: containerRegistryName
   location: containerRegistryLocation
   sku: { name: 'Basic' }
   properties: {
-    adminUserEnabled: true
+    adminUserEnabled: false
     policies: {
       quarantinePolicy: { status: 'Disabled' }
       trustPolicy: { status: 'Disabled' }
@@ -94,4 +85,3 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-11-01' =
 output containerRegistryName string = containerRegistry.name
 output containerRegistryId string = containerRegistry.id
 output containerRegistryLoginServer string = containerRegistry.properties.loginServer
-output containerRegistryResourceId string = containerRegistry.id
