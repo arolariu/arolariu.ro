@@ -44,7 +44,7 @@ targetScope = 'resourceGroup'
 param resourceDeploymentDate string
 
 @description('The location for the resources.')
-@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 @description('The prefix to use for the names of the resources.')

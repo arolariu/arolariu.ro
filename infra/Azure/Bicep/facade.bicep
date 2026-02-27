@@ -32,7 +32,7 @@ metadata version = '3.0.0'
 param resourceDeploymentDate string = utcNow()
 
 @description('The location for the resources.')
-@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 var resourceConventionPrefix = 'q${substring(uniqueString(resourceDeploymentDate), 0, 5)}'

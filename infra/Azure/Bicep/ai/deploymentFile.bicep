@@ -36,7 +36,7 @@ metadata version = '2.0.0'
 param resourceDeploymentDate string
 
 @description('The location for the resources.')
-@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
 @description('The prefix to use for the names of the resources.')

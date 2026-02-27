@@ -7,7 +7,7 @@ targetScope = 'subscription'
 // It creates the resource group and delegates all resource provisioning to facade.bicep.
 //
 // Deployment Command:
-// az deployment sub create --location northeurope --template-file main.bicep \
+// az deployment sub create --location francecentral --template-file main.bicep \
 //   --parameters main.bicepparam
 //
 // Architecture:
@@ -38,7 +38,7 @@ param resourceGroupName string
 param resourceGroupAuthor string
 
 @description('The location of the resource group that will contain all the resources.')
-@allowed(['northeurope', 'westeurope', 'swedencentral', 'norwayeast'])
+@allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceGroupLocation string
 
 @description('The date when the deployment is executed.')
