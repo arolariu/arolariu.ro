@@ -111,7 +111,7 @@ export async function deleteScan({blobUrl}: DeleteScanInput): DeleteScanOutput {
       addSpanEvent("azure.storage.connect.start");
       const storageCredentials = new DefaultAzureCredential();
       // todo: fetch from config service.
-      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
+      const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
 
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
       const containerClient = storageClient.getContainerClient(containerName ?? "invoices");

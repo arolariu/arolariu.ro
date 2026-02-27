@@ -20,6 +20,7 @@ metadata version = '1.0.0'
 import {
   acrPull
   acrPush
+  acrRepositoryReader
 } from '../constants/roles.bicep'
 
 // -------------------------------------------------------------------------------------
@@ -62,6 +63,18 @@ resource frontendAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
   }
 }
 
+// Grants the frontend repository list access to enumerate available images/tags for deployment
+resource frontendAcrReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: containerRegistry
+  name: guid(containerRegistry.id, frontendPrincipalId, acrRepositoryReader)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrRepositoryReader)
+    principalId: frontendPrincipalId
+    principalType: 'ServicePrincipal'
+    description: 'Frontend: list container repositories and tags in registry'
+  }
+}
+
 // =====================================================================================
 // Backend Role Assignments
 // =====================================================================================
@@ -75,6 +88,18 @@ resource backendAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalId: backendPrincipalId
     principalType: 'ServicePrincipal'
     description: 'Backend: pull container images from registry'
+  }
+}
+
+// Grants the backend repository list access to enumerate available images/tags for deployment
+resource backendAcrReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: containerRegistry
+  name: guid(containerRegistry.id, backendPrincipalId, acrRepositoryReader)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrRepositoryReader)
+    principalId: backendPrincipalId
+    principalType: 'ServicePrincipal'
+    description: 'Backend: list container repositories and tags in registry'
   }
 }
 
@@ -103,5 +128,17 @@ resource infrastructureAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-
     principalId: infrastructurePrincipalId
     principalType: 'ServicePrincipal'
     description: 'Infrastructure: pull container images from registry'
+  }
+}
+
+// Grants infrastructure repository list access to enumerate available images/tags during CI/CD builds
+resource infrastructureAcrReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: containerRegistry
+  name: guid(containerRegistry.id, infrastructurePrincipalId, acrRepositoryReader)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrRepositoryReader)
+    principalId: infrastructurePrincipalId
+    principalType: 'ServicePrincipal'
+    description: 'Infrastructure: list container repositories and tags in registry'
   }
 }

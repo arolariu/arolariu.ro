@@ -146,7 +146,7 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
       const containerName = "invoices";
       const storageCredentials = new DefaultAzureCredential();
       // todo: fetch from config service.
-      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
+      const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
 
       // Step 4. Upload the blob to Azure Storage
       addSpanEvent("azure.blob.upload.start");
