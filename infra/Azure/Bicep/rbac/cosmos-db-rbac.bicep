@@ -5,7 +5,7 @@ targetScope = 'resourceGroup'
 // =====================================================================================
 // This module assigns Azure RBAC roles scoped directly to a Cosmos DB account resource.
 // Assignments are scoped to the Cosmos DB account (not the resource group) for least
-// privilege. Role GUIDs are imported from the shared roles type file.
+// privilege. Role GUIDs are imported from the shared constants file (constants/roles.bicep).
 //
 // Assigned Roles:
 // - Backend: Cosmos DB Data Operator

@@ -5,7 +5,7 @@ targetScope = 'resourceGroup'
 // =====================================================================================
 // This module assigns Azure RBAC roles scoped directly to an App Configuration store.
 // Assignments are scoped to the configuration store (not the resource group) for least
-// privilege. Role GUIDs are imported from the shared roles type file.
+// privilege. Role GUIDs are imported from the shared constants file (constants/roles.bicep).
 //
 // Assigned Roles:
 // - Frontend: App Configuration Data Reader

@@ -5,7 +5,7 @@ targetScope = 'resourceGroup'
 // =====================================================================================
 // This module assigns Azure RBAC roles scoped directly to an Azure Key Vault resource.
 // Assignments are scoped to the vault (not the resource group) for least privilege.
-// Role GUIDs are imported from the shared roles type file.
+// Role GUIDs are imported from the shared constants file (constants/roles.bicep).
 //
 // Assigned Roles:
 // - Backend: Key Vault Secrets User

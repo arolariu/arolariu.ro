@@ -277,7 +277,9 @@ jobs:
           cache-key-prefix: 'website'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        run: az acr login --name ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+        run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 📋 Verify generated .env file exists
         run: |

@@ -5,7 +5,7 @@ targetScope = 'resourceGroup'
 // =====================================================================================
 // This module assigns Azure RBAC roles scoped directly to a Storage Account resource.
 // Assignments are scoped to the storage account (not the resource group) for least
-// privilege. Role GUIDs are imported from the shared roles type file.
+// privilege. Role GUIDs are imported from the shared constants file (constants/roles.bicep).
 //
 // Assigned Roles:
 // - Frontend: Blob Data Contributor, Queue Data Reader, Table Data Reader

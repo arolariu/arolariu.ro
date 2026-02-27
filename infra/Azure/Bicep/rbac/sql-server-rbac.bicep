@@ -5,7 +5,7 @@ targetScope = 'resourceGroup'
 // =====================================================================================
 // This module assigns Azure RBAC roles scoped directly to an Azure SQL Server resource.
 // Assignments are scoped to the SQL server (not the resource group) for least privilege.
-// Role GUIDs are imported from the shared roles type file.
+// Role GUIDs are imported from the shared constants file (constants/roles.bicep).
 //
 // Assigned Roles:
 // - Backend: SQL DB Contributor

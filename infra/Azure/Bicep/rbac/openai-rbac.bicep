@@ -5,7 +5,7 @@ targetScope = 'resourceGroup'
 // =====================================================================================
 // This module assigns Azure RBAC roles scoped directly to an Azure OpenAI (Cognitive
 // Services) account resource. Assignments are scoped to the account (not the resource
-// group) for least privilege. Role GUIDs are imported from the shared roles type file.
+// group) for least privilege. Role GUIDs are imported from the shared constants file (constants/roles.bicep).
 //
 // Assigned Roles:
 // - Backend: Cognitive Services OpenAI User

@@ -9,7 +9,7 @@
 // - Content generation and summarization
 //
 // Model Deployments:
-// - model-router (GlobalStandard, capacity 100) — intelligent model routing
+// - model-router (GlobalStandard, capacity 50) — intelligent model routing
 //
 // Authentication:
 // - Backend UAMI receives "Cognitive Services User" role via rbac/backend-uami-rbac.bicep

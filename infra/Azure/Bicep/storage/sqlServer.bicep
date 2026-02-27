@@ -119,6 +119,9 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-11-01-preview'
   parent: sqlServer
   name: sqlDatabasePrimaryName
   location: sqlServerLocation
+  // Explicit dependsOn required: all server-level child resources (threat protection,
+  // auditing, connection policies, AD auth) contend for the same SQL Server lock.
+  // Without this, parallel deployment causes ConflictingServerOperation errors.
   dependsOn: [
     sqlServer::sqlServerAdvancedThreatProtection
     sqlServer::sqlServerAuditPolicy

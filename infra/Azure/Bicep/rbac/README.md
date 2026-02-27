@@ -91,6 +91,20 @@ resource myAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 ```
 
+## Cleanup: Remove Old RG-Scoped Assignments
+
+After deploying the new resource-scoped RBAC, remove the orphaned resource-group-level assignments:
+
+```bash
+# List all RG-scoped role assignments for managed identities
+az role assignment list --resource-group arolariu-rg --query "[?principalType=='ServicePrincipal']" --output table
+
+# Delete a specific old assignment by ID
+az role assignment delete --ids <assignment-id>
+```
+
+The old assignments use `guid(resourceGroup().id, ...)` as their name seed; the new ones use `guid(resource.id, ...)`. Both may coexist temporarily — the old ones are redundant but not harmful.
+
 ## References
 
 - [Azure RBAC Best Practices](https://learn.microsoft.com/azure/role-based-access-control/best-practices)

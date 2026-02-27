@@ -201,7 +201,9 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        run: az acr login --name ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+        run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 🏗️ Building the docker container...
         env:
@@ -283,7 +285,9 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        run: az acr login --name ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+        run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
+        env:
+          ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: ⚓ Deploying docker container to Azure App Service...
         id: deploy-to-webapp

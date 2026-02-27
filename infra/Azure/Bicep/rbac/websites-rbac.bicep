@@ -5,7 +5,7 @@ targetScope = 'resourceGroup'
 // =====================================================================================
 // This module assigns Azure RBAC roles scoped directly to Azure Web App resources.
 // Assignments are scoped to each individual web app (not the resource group) for least
-// privilege. Role GUIDs are imported from the shared roles type file.
+// privilege. Role GUIDs are imported from the shared constants file (constants/roles.bicep).
 //
 // This module loops over an array of web app names, referencing each as an existing
 // resource and creating a Website Contributor assignment per app.
