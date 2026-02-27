@@ -106,7 +106,7 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
       const containerName = "invoices";
       const storageCredentials = new DefaultAzureCredential();
       // todo: fetch from config service.
-      const storageEndpoint = "https://qtcy47sacc.blob.core.windows.net/";
+      const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
 
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
       const containerClient = storageClient.getContainerClient(containerName);

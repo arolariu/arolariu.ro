@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [50, 75, 100],
     remotePatterns: [
-      {protocol: "https", hostname: "qtcy47sacc.blob.core.windows.net"}, // Azure Blob Storage for user uploads.
+      {protocol: "https", hostname: "qpfnu3sacc.blob.core.windows.net"}, // Azure Blob Storage for user uploads.
       {protocol: "https", hostname: "cdn.arolariu.ro"}, // CDN assets.
       {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.

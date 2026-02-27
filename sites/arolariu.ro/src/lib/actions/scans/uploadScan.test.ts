@@ -83,7 +83,7 @@ describe("uploadScan", () => {
 
     mockGetBlockBlobClient.mockReturnValue({
       uploadData: mockUploadData,
-      url: "https://qtcy47sacc.blob.core.windows.net/invoices/scans/test-user-guid/scan-001.jpg",
+      url: "https://qpfnu3sacc.blob.core.windows.net/invoices/scans/test-user-guid/scan-001.jpg",
     });
 
     mockGetContainerClient.mockReturnValue({

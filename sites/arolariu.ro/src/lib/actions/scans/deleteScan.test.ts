@@ -42,7 +42,7 @@ vi.mock("@azure/storage-blob", () => ({
 import {deleteScan} from "./deleteScan";
 
 describe("deleteScan", () => {
-  const validBlobUrl = "https://qtcy47sacc.blob.core.windows.net/invoices/scans/test-user-guid/scan-001.jpg";
+  const validBlobUrl = "https://qpfnu3sacc.blob.core.windows.net/invoices/scans/test-user-guid/scan-001.jpg";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -97,7 +97,7 @@ describe("deleteScan", () => {
 
   describe("authorization", () => {
     it("should return error when user does not own the scan", async () => {
-      const otherUserBlobUrl = "https://qtcy47sacc.blob.core.windows.net/invoices/scans/other-user/scan-001.jpg";
+      const otherUserBlobUrl = "https://qpfnu3sacc.blob.core.windows.net/invoices/scans/other-user/scan-001.jpg";
 
       const result = await deleteScan({blobUrl: otherUserBlobUrl});
 
@@ -167,7 +167,7 @@ describe("deleteScan", () => {
     });
 
     it("should handle URLs with multiple path segments", async () => {
-      const complexUrl = "https://qtcy47sacc.blob.core.windows.net/invoices/scans/test-user-guid/subfolder/scan-001.jpg";
+      const complexUrl = "https://qpfnu3sacc.blob.core.windows.net/invoices/scans/test-user-guid/subfolder/scan-001.jpg";
 
       await deleteScan({blobUrl: complexUrl});
 
