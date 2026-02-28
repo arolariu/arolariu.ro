@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup Label="Azure SDK Packages">
-    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Microsoft.Extensions.Azure" />

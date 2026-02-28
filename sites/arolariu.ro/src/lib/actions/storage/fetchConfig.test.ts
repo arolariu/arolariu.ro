@@ -1,16 +1,16 @@
 /**
- * @fileoverview Unit tests for fetching Azure App Configuration values.
+ * @fileoverview Unit tests for fetching configuration values via the config proxy.
  * @module sites/arolariu.ro/src/lib/actions/storage/fetchConfig/tests
  */
 
-import {AppConfigurationClient} from "@azure/app-configuration";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import fetchConfigurationValue from "./fetchConfig";
 
-vi.mock("@azure/app-configuration");
-vi.mock("@/lib/utils.server", () => ({
-  CONFIG_STORE: "test-connection-string",
+vi.mock("@/lib/config/configProxy", () => ({
+  fetchConfigValue: vi.fn(),
 }));
+
+import {fetchConfigValue} from "@/lib/config/configProxy";
 
 describe("fetchConfigurationValue", () => {
   beforeEach(() => {
@@ -18,27 +18,16 @@ describe("fetchConfigurationValue", () => {
   });
 
   it("should return the configuration value when it exists", async () => {
-    const mockGetConfigurationSetting = vi.fn().mockResolvedValue({value: "test-value"});
-    (AppConfigurationClient as any).mockImplementation(function () {
-      return {
-        getConfigurationSetting: mockGetConfigurationSetting,
-      };
-    });
+    vi.mocked(fetchConfigValue).mockResolvedValue("test-value");
 
     const result = await fetchConfigurationValue("test-key");
 
-    expect(AppConfigurationClient).toHaveBeenCalledWith("test-connection-string");
-    expect(mockGetConfigurationSetting).toHaveBeenCalledWith({key: "test-key"});
+    expect(fetchConfigValue).toHaveBeenCalledWith("test-key");
     expect(result).toBe("test-value");
   });
 
-  it("should return an empty string when the value is undefined", async () => {
-    const mockGetConfigurationSetting = vi.fn().mockResolvedValue({value: undefined});
-    (AppConfigurationClient as any).mockImplementation(function () {
-      return {
-        getConfigurationSetting: mockGetConfigurationSetting,
-      };
-    });
+  it("should return an empty string when the proxy returns empty", async () => {
+    vi.mocked(fetchConfigValue).mockResolvedValue("");
 
     const result = await fetchConfigurationValue("test-key");
 

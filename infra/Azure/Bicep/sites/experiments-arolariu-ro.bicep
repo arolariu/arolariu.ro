@@ -1,0 +1,190 @@
+// =====================================================================================
+// Experiments Service - experiments.arolariu.ro Configuration Proxy
+// =====================================================================================
+// This module provisions the App Service that hosts the experiments.arolariu.ro
+// configuration proxy service. The service acts as a centralized configuration
+// gateway, reading from Azure App Configuration + Key Vault and exposing
+// values via REST API to the frontend and backend services.
+//
+// Runtime Configuration:
+// - Platform: Linux container (app,linux,container)
+// - Runtime: .NET Core 10.0 (linuxFxVersion)
+// - Container source: Azure Container Registry (via managed identity)
+// - Always On: Disabled (cost optimization — wakes on request)
+//
+// Identity:
+// - User-Assigned Managed Identity (Backend UAMI)
+// - Used for: App Configuration read, Key Vault read, ACR pull
+// - Shares backend identity for access to configuration stores
+//
+// Security:
+// - Entra ID Easy Auth v2 restricts access to frontend + backend UAMIs only
+// - No public access to configuration endpoints
+// - HTTPS Only: Enforced
+// - FTPS: Disabled
+// - Minimum TLS 1.2 enforced
+//
+// Observability:
+// - Application Insights instrumentation enabled
+// - HTTP logging enabled
+// - Health check path: /
+//
+// See: compute/appServicePlans.bicep (hosting plan)
+// See: identity/userAssignedIdentity.bicep (Backend UAMI)
+// See: configuration/deploymentFile.bicep (App Configuration + Key Vault)
+// =====================================================================================
+
+targetScope = 'resourceGroup'
+
+metadata description = 'Experiments configuration proxy experiments.arolariu.ro with Entra ID Easy Auth'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
+
+@description('The location for the experiments website.')
+param experimentsWebsiteLocation string
+
+@description('The ID of the App Service Plan to deploy on.')
+param experimentsWebsitePlanId string
+
+@description('The resource ID of the backend managed identity.')
+param experimentsWebsiteIdentityId string
+
+@description('The client ID of the backend managed identity for AZURE_CLIENT_ID.')
+param experimentsWebsiteIdentityClientId string
+
+@description('The deployment timestamp.')
+param experimentsWebsiteDeploymentDate string
+
+@description('The Application Insights connection string.')
+param appInsightsConnectionString string
+
+@description('The frontend managed identity principal (object) ID - allowed caller.')
+param frontendIdentityPrincipalId string
+
+@description('The backend managed identity principal (object) ID - allowed caller.')
+param backendIdentityPrincipalId string
+
+@description('The Entra ID App Registration client ID for the experiments service.')
+param entraAppClientId string
+
+// Import common tags
+import { createTags } from '../constants/tags.bicep'
+var commonTags = createTags('sites', experimentsWebsiteDeploymentDate)
+
+resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
+  name: 'experiments-arolariu-ro'
+  location: experimentsWebsiteLocation
+  kind: 'app,linux,container'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${experimentsWebsiteIdentityId}': {}
+    }
+  }
+  properties: {
+    enabled: true
+    serverFarmId: experimentsWebsitePlanId
+    reserved: true // reserved == linux plan
+    hyperV: false
+    siteConfig: {
+      healthCheckPath: '/'
+      acrUseManagedIdentityCreds: true
+      alwaysOn: false // cost optimization — wakes on request
+      numberOfWorkers: 1
+      http20Enabled: true
+      linuxFxVersion: 'DOTNETCORE|10.0'
+      requestTracingEnabled: true
+      httpLoggingEnabled: true
+      logsDirectorySizeLimit: 50 // 50 MB
+      detailedErrorLoggingEnabled: false
+      webSocketsEnabled: false // not needed for config proxy
+      loadBalancing: 'LeastRequests'
+      ftpsState: 'Disabled'
+      minTlsVersion: '1.2'
+      ipSecurityRestrictions: [
+        {
+          ipAddress: 'AzureCloud'
+          action: 'Allow'
+          tag: 'ServiceTag'
+          priority: 100
+          name: 'AzureCloud'
+          description: 'Allow Azure services only.'
+        }
+        {
+          ipAddress: 'Any'
+          action: 'Deny'
+          priority: 2147483647
+          name: 'Deny all'
+          description: 'Deny all public access.'
+        }
+      ]
+      ipSecurityRestrictionsDefaultAction: 'Deny'
+      appSettings: [
+        {
+          name: 'ASPNETCORE_ENVIRONMENT'
+          value: 'Production'
+        }
+        {
+          name: 'AZURE_CLIENT_ID'
+          value: experimentsWebsiteIdentityClientId
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsightsConnectionString
+        }
+        {
+          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+          value: '~3'
+        }
+        {
+          name: 'INFRA'
+          value: 'azure'
+        }
+      ]
+    }
+    scmSiteAlsoStopped: true
+    clientAffinityEnabled: false
+    hostNamesDisabled: false
+    containerSize: 0
+    httpsOnly: true
+    redundancyMode: 'None'
+    publicNetworkAccess: 'Enabled'
+  }
+  tags: union(commonTags, {
+    displayName: 'Experiments Configuration Proxy'
+  })
+}
+
+// Easy Auth v2 — restrict to frontend + backend UAMIs only
+resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
+  parent: experimentsWebsite
+  name: 'authsettingsV2'
+  properties: {
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'Return401'
+    }
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        registration: {
+          clientId: entraAppClientId
+          openIdIssuer: 'https://login.microsoftonline.com/${tenant().tenantId}/v2.0'
+        }
+        validation: {
+          defaultAuthorizationPolicy: {
+            allowedPrincipals: {
+              identities: [
+                frontendIdentityPrincipalId
+                backendIdentityPrincipalId
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+output experimentsWebsiteUrl string = experimentsWebsite.properties.defaultHostName
+output experimentsWebsiteName string = experimentsWebsite.name

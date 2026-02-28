@@ -35,6 +35,9 @@ param resourceDeploymentDate string = utcNow()
 @allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
+@description('Entra ID App Registration client ID for the experiments service Easy Auth.')
+param experimentsEntraAppClientId string
+
 var resourceConventionPrefix = 'q${substring(uniqueString(resourceDeploymentDate), 0, 5)}'
 
 // =====================================================================================
@@ -125,6 +128,9 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
     managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
     managedIdentityBackendClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
+    managedIdentityFrontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
+    managedIdentityBackendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    experimentsEntraAppClientId: experimentsEntraAppClientId
   }
 }
 
@@ -250,6 +256,7 @@ module websitesRbac 'rbac/websites-rbac.bicep' = {
       websiteDeployment.outputs.mainWebsiteName
       websiteDeployment.outputs.apiWebsiteName
       websiteDeployment.outputs.devWebsiteName
+      websiteDeployment.outputs.experimentsWebsiteName
     ]
     infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
   }
