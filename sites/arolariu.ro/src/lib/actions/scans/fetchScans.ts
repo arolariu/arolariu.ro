@@ -18,7 +18,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
-import {DefaultAzureCredential} from "@azure/identity";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
@@ -104,7 +104,7 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
       // Step 2. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
       const containerName = "invoices";
-      const storageCredentials = new DefaultAzureCredential();
+      const storageCredentials = getAzureCredential();
       // todo: fetch from config service.
       const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
 

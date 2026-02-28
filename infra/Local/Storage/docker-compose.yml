@@ -125,3 +125,16 @@ services:
       - "traefik.http.services.redis.loadbalancer.server.port=6379"
       - "traefik.http.routers.redis.entrypoints=websecure"
       - "traefik.http.routers.redis.tls.certresolver=myresolver" # Added for Let's Encrypt
+
+  experiments:
+    build:
+      context: ../../../sites/experiments.arolariu.ro
+      dockerfile: Dockerfile
+    container_name: experiments-arolariu-ro
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - INFRA=local
+    networks:
+      - arolariu-network

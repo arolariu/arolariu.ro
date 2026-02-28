@@ -10,7 +10,7 @@
  *
  * **Storage Configuration**:
  * - Container: `invoices`
- * - Authentication: Azure DefaultAzureCredential (Managed Identity in prod)
+ * - Authentication: Centralized Azure credential singleton (Managed Identity in prod)
  * - Blob naming: Caller provides unique blob name (typically UUID + extension)
  *
  * **Supported Formats**:
@@ -23,7 +23,7 @@
 
 import {withSpan} from "@/instrumentation.server";
 import {convertBase64ToBlob} from "@/lib/utils.server";
-import {DefaultAzureCredential} from "@azure/identity";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {BlobServiceClient} from "@azure/storage-blob";
 
 /**
@@ -60,7 +60,7 @@ type ServerActionOutputType = Promise<
  * @remarks
  * **Execution Context**: Server-side only (Next.js server action).
  *
- * **Authentication**: Uses Azure DefaultAzureCredential which supports:
+ * **Authentication**: Uses centralized Azure credential singleton which supports:
  * - Managed Identity (production on Azure)
  * - Azure CLI credentials (local development)
  * - Environment variables (CI/CD)
@@ -111,7 +111,7 @@ export async function createInvoiceScan({base64Data, metadata, blobName}: Server
     try {
       // Step 1. Prepare for blob upload
       const containerName = "invoices";
-      const storageCredentials = new DefaultAzureCredential();
+      const storageCredentials = getAzureCredential();
       // todo: fetch from config service.
       const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
 

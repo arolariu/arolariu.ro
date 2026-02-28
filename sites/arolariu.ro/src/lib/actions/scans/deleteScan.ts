@@ -13,7 +13,7 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {DefaultAzureCredential} from "@azure/identity";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
@@ -109,7 +109,7 @@ export async function deleteScan({blobUrl}: DeleteScanInput): DeleteScanOutput {
 
       // Step 4. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
-      const storageCredentials = new DefaultAzureCredential();
+      const storageCredentials = getAzureCredential();
       // todo: fetch from config service.
       const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
 

@@ -11,7 +11,7 @@
  * **Storage Configuration**:
  * - Container: `invoices` (shared with invoice scans)
  * - Path prefix: `scans/{userIdentifier}/`
- * - Authentication: Azure DefaultAzureCredential (Managed Identity in prod)
+ * - Authentication: Centralized Azure credential singleton (Managed Identity in prod)
  *
  * **Workflow**:
  * 1. User uploads scan via `/upload-scans` route
@@ -25,7 +25,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {convertBase64ToBlob} from "@/lib/utils.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
-import {DefaultAzureCredential} from "@azure/identity";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
@@ -144,7 +144,7 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
 
       // Step 3. Prepare for blob upload
       const containerName = "invoices";
-      const storageCredentials = new DefaultAzureCredential();
+      const storageCredentials = getAzureCredential();
       // todo: fetch from config service.
       const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
 

@@ -5,7 +5,7 @@
 
 "use server";
 
-import {DefaultAzureCredential} from "@azure/identity";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {BlobServiceClient} from "@azure/storage-blob";
 import fetchConfigurationValue from "./fetchConfig";
 
@@ -34,7 +34,7 @@ type ServerActionOutputType = Promise<
 export default async function fetchBlob({containerName, blobName}: ServerActionInputType): ServerActionOutputType {
   try {
     const storageEndpoint = await fetchConfigurationValue("AzureOptions:StorageAccountEndpoint");
-    const storageCredentials = new DefaultAzureCredential();
+    const storageCredentials = getAzureCredential();
     const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
 
     const containerClient = storageClient.getContainerClient(containerName);
