@@ -1,31 +1,33 @@
-# Centralized Configuration Service Implementation Plan
+# Centralized Configuration Service Implementation Plan (v2)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Decouple configuration from running apps by building `experiments.arolariu.ro` as a centralized config proxy service, centralizing Azure credential management, eliminating hardcoded values, and adding config refresh to the frontend.
+**Goal:** Decouple configuration from running apps by building `experiments.arolariu.ro` as a Entra-ID-secured config proxy service, centralizing Azure credential management, removing direct App Config/Key Vault dependencies from API and website, and adding config refresh to the frontend.
 
-**Architecture:** A new .NET 10 Minimal API (`experiments.arolariu.ro`) acts as a configuration proxy. It reads from Azure App Configuration + Key Vault (in Azure) or local config files (in local mode), caches values in-memory with configurable TTL, and exposes a REST API. Both the API and website fetch config through this service instead of directly from Azure. This enables config refresh without redeployment, true environment decoupling, and a single place to manage credentials.
+**Architecture:** A new .NET 10 Minimal API (`experiments.arolariu.ro`) is the single service that reads from Azure App Configuration + Key Vault. It authenticates callers via Microsoft Entra ID, allowing only the frontend and backend UAMIs. Both API and website fetch config via HTTP from this service. The config URL is hardcoded: `https://experiments.arolariu.ro` in production, `http://localhost:5002` when `INFRA=proxy` (local dev). After migration, Azure App Configuration and Key Vault SDK libraries are removed from the API and website.
 
-**Tech Stack:** .NET 10 Minimal API, Azure App Configuration, Azure Key Vault, Azure Identity (DefaultAzureCredential), Next.js Server Actions, Docker, Bicep IaC
+**Tech Stack:** .NET 10 Minimal API, Microsoft Entra ID (Easy Auth v2), Azure App Configuration, Azure Key Vault, Azure Identity (DefaultAzureCredential), Next.js Server Actions (server-only), Docker, Bicep IaC
 
 ---
 
-## Current State Analysis
+## Feedback Addressed (Changes from v1)
 
-### Problems Identified
+| # | Feedback | Resolution |
+|---|----------|------------|
+| 1 | Keep appsettings endpoints | **Removed Task 2.1** — Key Vault and App Config URLs stay in appsettings files |
+| 2 | DefaultAzureCredential singleton expiry | **No concern** — Azure SDK handles token refresh internally. The `TokenCredential` abstraction caches tokens and requests new ones ~5 min before expiry. Singleton is safe. Added note in Task 3.1. |
+| 3 | Server-side only for website | **Enforced** — All Azure/config communication uses `"use server"` directive. Added explicit audit step. |
+| 4 | Secure experiments.arolariu.ro | **Added Phase 4.3** — Entra ID Easy Auth with `allowedPrincipals.identities` restricting access to frontend + backend UAMI object IDs. Callers acquire Bearer tokens from their UAMI. |
+| 5 | Remove App Config/KV libs after proxy | **Added Phase 7** — Removes `Microsoft.Azure.AppConfiguration.AspNetCore`, `Azure.Extensions.AspNetCore.Configuration.Secrets`, `Azure.Security.KeyVault.Secrets` from API, and `@azure/app-configuration`, `@azure/keyvault-secrets` from website. |
+| 6 | Hardcode config URL | **Done** — URL is a constant: `https://experiments.arolariu.ro` in Azure mode, `http://localhost:5002` in proxy mode. No env var needed. |
 
-1. **DefaultAzureCredential duplicated 15+ times** across 8 API source files and 7 website source files — each with the same `#if !DEBUG` / `AZURE_CLIENT_ID` pattern
-2. **Hardcoded Azure endpoints** in `appsettings.Development.json` and `appsettings.Production.json` (`https://qpfnu3kv.vault.azure.net/`, `https://qpfnu3appconfig.azconfig.io`)
-3. **Hardcoded hostname in `next.config.ts`** (`qpfnu3sacc.blob.core.windows.net`)
-4. **No config caching in frontend** — `fetchConfigurationValue()` creates a new `AppConfigurationClient` on every call via a connection string (not even managed identity)
-5. **No config refresh in frontend** — values are fetched once per Server Action call, no TTL or polling
-6. **Frontend uses connection string** for App Config (`CONFIG_STORE`) instead of managed identity
-7. **Config mapping uses reflection** in the API (`GetType().GetProperty().SetValue()`), which is fragile
-8. **No local-mode config story for the frontend** — `CONFIG_STORE` is empty in dev `.env`
+---
+
+## Current State (Reference)
 
 ### Credential Duplication Map
 
-**API (`sites/api.arolariu.ro/src/`):**
+**API (`sites/api.arolariu.ro/src/`) — 8 files with `new DefaultAzureCredential()`:**
 - `Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs:89`
 - `Common/Services/KeyVault/KeyVaultService.cs`
 - `Common/Telemetry/Tracing/TracingExtensions.cs`
@@ -35,7 +37,7 @@
 - `Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.cs`
 - `Invoices/Modules/WebApplicationBuilderExtensions.cs`
 
-**Website (`sites/arolariu.ro/src/`):**
+**Website (`sites/arolariu.ro/src/`) — 7 files with `new DefaultAzureCredential()`:**
 - `lib/actions/storage/uploadBlob.ts`
 - `lib/actions/storage/fetchBlob.ts`
 - `lib/actions/scans/uploadScan.ts`
@@ -69,12 +71,17 @@ public class AzureCredentialFactoryTests
     [Fact]
     public void CreateCredential_ReturnsDefaultAzureCredential()
     {
-        // Arrange & Act
         var credential = AzureCredentialFactory.CreateCredential();
-
-        // Assert
         Assert.NotNull(credential);
         Assert.IsType<DefaultAzureCredential>(credential);
+    }
+
+    [Fact]
+    public void CreateCredential_ReturnsSameInstance()
+    {
+        var first = AzureCredentialFactory.CreateCredential();
+        var second = AzureCredentialFactory.CreateCredential();
+        Assert.Same(first, second); // Singleton — same reference
     }
 }
 ```
@@ -95,19 +102,24 @@ using global::Azure.Core;
 using global::Azure.Identity;
 
 /// <summary>
-/// Centralized factory for creating Azure credentials.
+/// Centralized singleton factory for creating Azure credentials.
 /// Ensures consistent credential configuration across all Azure service clients.
 /// </summary>
+/// <remarks>
+/// <para><see cref="DefaultAzureCredential"/> handles token lifecycle internally —
+/// it caches tokens and requests fresh ones ~5 minutes before expiry.
+/// A singleton is safe and recommended to avoid redundant token acquisitions.</para>
+/// <para>In RELEASE builds, uses AZURE_CLIENT_ID for User Assigned Managed Identity.
+/// In DEBUG builds, falls back to Azure CLI, Visual Studio, etc.</para>
+/// </remarks>
 public static class AzureCredentialFactory
 {
     private static readonly Lazy<TokenCredential> CachedCredential = new(CreateCredentialInternal);
 
     /// <summary>
-    /// Creates a new <see cref="DefaultAzureCredential"/> configured for the current environment.
-    /// In RELEASE builds, uses the AZURE_CLIENT_ID environment variable for User Assigned Managed Identity.
-    /// In DEBUG builds, falls back to the default credential chain (Azure CLI, Visual Studio, etc.).
+    /// Returns the shared <see cref="TokenCredential"/> instance.
+    /// Thread-safe, lazy-initialized, and never expires (Azure SDK refreshes tokens internally).
     /// </summary>
-    /// <returns>A configured <see cref="TokenCredential"/> instance.</returns>
     public static TokenCredential CreateCredential() => CachedCredential.Value;
 
     private static DefaultAzureCredential CreateCredentialInternal()
@@ -133,24 +145,23 @@ Expected: PASS
 
 ```bash
 git add sites/api.arolariu.ro/src/Common/Azure/AzureCredentialFactory.cs sites/api.arolariu.ro/tests/Common/Azure/AzureCredentialFactoryTests.cs
-git commit -m "feat: add centralized AzureCredentialFactory for consistent credential management"
+git commit -m "feat: add centralized AzureCredentialFactory with singleton pattern"
 ```
 
-### Task 1.2: Replace all DefaultAzureCredential instantiations in API with AzureCredentialFactory
+### Task 1.2: Replace all DefaultAzureCredential instantiations in API
 
-**Files:**
-- Modify: `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs:89-96`
-- Modify: `sites/api.arolariu.ro/src/Common/Services/KeyVault/KeyVaultService.cs`
-- Modify: `sites/api.arolariu.ro/src/Common/Telemetry/Tracing/TracingExtensions.cs`
-- Modify: `sites/api.arolariu.ro/src/Common/Telemetry/Metering/MeteringExtensions.cs`
-- Modify: `sites/api.arolariu.ro/src/Common/Telemetry/Logging/LoggingExtensions.cs`
-- Modify: `sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.cs`
-- Modify: `sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.cs`
-- Modify: `sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationBuilderExtensions.cs`
+**Files to modify** (8 files):
+- `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs:89-96`
+- `sites/api.arolariu.ro/src/Common/Services/KeyVault/KeyVaultService.cs`
+- `sites/api.arolariu.ro/src/Common/Telemetry/Tracing/TracingExtensions.cs`
+- `sites/api.arolariu.ro/src/Common/Telemetry/Metering/MeteringExtensions.cs`
+- `sites/api.arolariu.ro/src/Common/Telemetry/Logging/LoggingExtensions.cs`
+- `sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.cs`
+- `sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.cs`
+- `sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationBuilderExtensions.cs`
 
-**Step 1: In each file, replace the credential creation block**
+**Step 1: In each file, replace this pattern:**
 
-Replace this pattern (found in all 8 files):
 ```csharp
 var credentials = new DefaultAzureCredential(
 #if !DEBUG
@@ -167,12 +178,9 @@ With:
 var credentials = AzureCredentialFactory.CreateCredential();
 ```
 
-Add the import to each file:
-```csharp
-using arolariu.Backend.Common.Azure;
-```
+Add import: `using arolariu.Backend.Common.Azure;`
 
-**Step 2: Build to verify compilation**
+**Step 2: Build**
 
 Run: `dotnet build sites/api.arolariu.ro/src/Core`
 Expected: Build succeeded with 0 errors
@@ -191,81 +199,16 @@ git commit -m "refactor: replace 8 DefaultAzureCredential instantiations with Az
 
 ---
 
-## Phase 2: Remove Hardcoded Values (API)
+## Phase 2: Remove Reflection-Based Config Mapping (API)
 
-### Task 2.1: Move Azure endpoints to environment variables
-
-**Files:**
-- Modify: `sites/api.arolariu.ro/src/Core/appsettings.Development.json`
-- Modify: `sites/api.arolariu.ro/src/Core/appsettings.Production.json`
-- Modify: `sites/api.arolariu.ro/src/Core/appsettings.json`
-- Modify: `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs`
-
-**Step 1: Update appsettings.Development.json**
-
-Change from:
-```json
-{
-  "ApplicationOptions": {
-    "SecretsEndpoint": "https://qpfnu3kv.vault.azure.net/",
-    "ConfigurationEndpoint": "https://qpfnu3appconfig.azconfig.io"
-  }
-}
-```
-
-To:
-```json
-{
-  "ApplicationOptions": {
-    "SecretsEndpoint": "",
-    "ConfigurationEndpoint": ""
-  }
-}
-```
-
-**Step 2: Do the same for appsettings.Production.json**
-
-Same change — empty strings. The actual values will come from environment variables or the config proxy.
-
-**Step 3: Update WebApplicationBuilderExtensions.cs to read from env vars with appsettings fallback**
-
-In `AddAzureConfiguration()`, update lines 98-99:
-```csharp
-var secretsStoreEndpoint = new Uri(
-    Environment.GetEnvironmentVariable("AZURE_KEYVAULT_ENDPOINT")
-    ?? configuration["ApplicationOptions:SecretsEndpoint"]
-    ?? throw new InvalidOperationException("SecretsEndpoint not configured. Set AZURE_KEYVAULT_ENDPOINT env var."));
-
-var configStoreEndpoint = new Uri(
-    Environment.GetEnvironmentVariable("AZURE_APPCONFIG_ENDPOINT")
-    ?? configuration["ApplicationOptions:ConfigurationEndpoint"]
-    ?? throw new InvalidOperationException("ConfigurationEndpoint not configured. Set AZURE_APPCONFIG_ENDPOINT env var."));
-```
-
-**Step 4: Update the Dockerfile to pass these env vars**
-
-Verify that `sites/api.arolariu.ro/Dockerfile` already passes `AZURE_KEYVAULT_ENDPOINT` and `AZURE_APPCONFIG_ENDPOINT` as build args or runtime env vars. If not, add them.
-
-**Step 5: Build and test**
-
-Run: `dotnet build sites/api.arolariu.ro/src/Core`
-Expected: Build succeeded
-
-**Step 6: Commit**
-
-```bash
-git add sites/api.arolariu.ro/src/Core/
-git commit -m "refactor: remove hardcoded Azure endpoints from appsettings, use env vars"
-```
-
-### Task 2.2: Replace reflection-based config mapping with strongly-typed binding
+### Task 2.1: Replace reflection mapping with direct property assignment
 
 **Files:**
 - Modify: `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs:138-165`
 
-**Step 1: Replace the reflection-based mapping**
+**Step 1: Replace the reflection-based config mapping block**
 
-Replace lines 138-165:
+Replace this (lines 138-165):
 ```csharp
 services.Configure<AzureOptions>(options =>
 {
@@ -288,7 +231,7 @@ services.Configure<AzureOptions>(options =>
 });
 ```
 
-With direct property assignment (no reflection):
+With direct assignment (no reflection):
 ```csharp
 services.Configure<AzureOptions>(options =>
 {
@@ -322,13 +265,19 @@ git commit -m "refactor: replace reflection-based config mapping with direct pro
 
 ---
 
-## Phase 3: Centralize Azure Credentials (Website)
+## Phase 3: Centralize Azure Credentials (Website) — Server-Side Only
 
-### Task 3.1: Create azureCredentials.ts utility
+> **Important:** ALL Azure SDK communication in the website MUST be server-only.
+> Every file using Azure Identity must have `"use server"` at the top.
+> No Azure SDK imports in client components.
+
+### Task 3.1: Create centralized getAzureCredential() utility
 
 **Files:**
 - Create: `sites/arolariu.ro/src/lib/azure/credentials.ts`
 - Test: `sites/arolariu.ro/src/lib/azure/credentials.test.ts`
+
+**Note on singleton lifecycle:** `DefaultAzureCredential` manages token refresh internally — it caches access tokens and automatically requests new ones ~5 minutes before expiry. A module-level singleton is safe and recommended. The credential object itself never "expires"; only the tokens it dispenses have lifetimes, and the SDK handles renewal transparently.
 
 **Step 1: Write the failing test**
 
@@ -337,11 +286,18 @@ git commit -m "refactor: replace reflection-based config mapping with direct pro
 import {describe, it, expect} from "vitest";
 
 describe("Azure Credentials", () => {
-  it("getAzureCredential returns a DefaultAzureCredential instance", async () => {
+  it("getAzureCredential returns an object with getToken method", async () => {
     const {getAzureCredential} = await import("./credentials");
     const credential = getAzureCredential();
     expect(credential).toBeDefined();
     expect(credential).toHaveProperty("getToken");
+  });
+
+  it("getAzureCredential returns the same singleton instance", async () => {
+    const {getAzureCredential} = await import("./credentials");
+    const first = getAzureCredential();
+    const second = getAzureCredential();
+    expect(first).toBe(second);
   });
 });
 ```
@@ -351,12 +307,16 @@ describe("Azure Credentials", () => {
 Run: `npx vitest run src/lib/azure/credentials.test.ts --config sites/arolariu.ro/vitest.config.ts`
 Expected: FAIL — module not found
 
-**Step 3: Write the implementation**
+**Step 3: Implement**
 
 ```typescript
 // sites/arolariu.ro/src/lib/azure/credentials.ts
 /**
- * @fileoverview Centralized Azure credential management for the frontend.
+ * @fileoverview Centralized Azure credential singleton for server-side use only.
+ *
+ * DefaultAzureCredential handles token lifecycle internally — it caches tokens
+ * and refreshes them ~5 min before expiry. The singleton never "expires".
+ *
  * @module sites/arolariu.ro/src/lib/azure/credentials
  */
 
@@ -371,6 +331,8 @@ let cachedCredential: TokenCredential | null = null;
  * Returns a singleton DefaultAzureCredential instance.
  * In production, uses AZURE_CLIENT_ID for User Assigned Managed Identity.
  * In development, falls back to Azure CLI / environment credentials.
+ *
+ * This function is server-only — enforced by "use server" directive.
  */
 export function getAzureCredential(): TokenCredential {
   if (!cachedCredential) {
@@ -392,65 +354,68 @@ Expected: PASS
 
 ```bash
 git add sites/arolariu.ro/src/lib/azure/credentials.ts sites/arolariu.ro/src/lib/azure/credentials.test.ts
-git commit -m "feat: add centralized Azure credential factory for frontend"
+git commit -m "feat: add centralized Azure credential singleton for server-side use"
 ```
 
-### Task 3.2: Replace all DefaultAzureCredential instantiations in website with getAzureCredential()
+### Task 3.2: Replace all DefaultAzureCredential in website + audit server-only enforcement
 
-**Files:**
-- Modify: `sites/arolariu.ro/src/lib/actions/storage/uploadBlob.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/storage/fetchBlob.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/scans/uploadScan.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/scans/fetchScans.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/scans/deleteScan.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/invoices/createInvoiceScan.ts`
-- Modify: `sites/arolariu.ro/src/instrumentation.server.ts`
+**Files to modify** (7 files):
+- `sites/arolariu.ro/src/lib/actions/storage/uploadBlob.ts`
+- `sites/arolariu.ro/src/lib/actions/storage/fetchBlob.ts`
+- `sites/arolariu.ro/src/lib/actions/scans/uploadScan.ts`
+- `sites/arolariu.ro/src/lib/actions/scans/fetchScans.ts`
+- `sites/arolariu.ro/src/lib/actions/scans/deleteScan.ts`
+- `sites/arolariu.ro/src/lib/actions/invoices/createInvoiceScan.ts`
+- `sites/arolariu.ro/src/instrumentation.server.ts`
 
 **Step 1: In each file, replace credential creation**
 
 Replace:
 ```typescript
 import {DefaultAzureCredential} from "@azure/identity";
-// ...
 const credentials = new DefaultAzureCredential();
-// or
-const credentials = new DefaultAzureCredential({managedIdentityClientId: process.env["AZURE_CLIENT_ID"]});
 ```
 
 With:
 ```typescript
 import {getAzureCredential} from "@/lib/azure/credentials";
-// ...
 const credentials = getAzureCredential();
 ```
 
-**Step 2: Run lint and build**
+**Step 2: Audit — verify every file using Azure SDK has `"use server"` at top**
 
-Run: `npm run lint --workspace=sites/arolariu.ro && npm run build:website`
-Expected: No errors
+Check that ALL these files have `"use server";` as their first meaningful line. If any is missing, add it. These files MUST NOT be importable by client components.
 
-**Step 3: Run tests**
+Files to audit:
+- `src/lib/azure/credentials.ts` — must have `"use server"`
+- `src/lib/actions/storage/uploadBlob.ts` — should already have it
+- `src/lib/actions/storage/fetchBlob.ts` — should already have it
+- `src/lib/actions/storage/fetchConfig.ts` — should already have it
+- `src/lib/actions/scans/uploadScan.ts` — should already have it
+- `src/lib/actions/scans/fetchScans.ts` — should already have it
+- `src/lib/actions/scans/deleteScan.ts` — should already have it
+- `src/lib/actions/invoices/createInvoiceScan.ts` — should already have it
+- `src/instrumentation.server.ts` — server-only by filename convention
 
-Run: `npm run test:website`
-Expected: All tests pass
+**Step 3: Build and test**
+
+Run: `npm run lint --workspace=sites/arolariu.ro && npm run build:website && npm run test:website`
+Expected: All pass
 
 **Step 4: Commit**
 
 ```bash
 git add sites/arolariu.ro/src/
-git commit -m "refactor: replace 7 DefaultAzureCredential instantiations with getAzureCredential()"
+git commit -m "refactor: replace 7 DefaultAzureCredential instances with centralized singleton"
 ```
 
 ---
 
-## Phase 4: Build experiments.arolariu.ro Config Proxy Service
+## Phase 4: Build experiments.arolariu.ro Config Proxy
 
 ### Task 4.1: Scaffold the .NET 10 Minimal API project
 
-**Files:**
-- Create: `sites/experiments.arolariu.ro/` (new project directory)
-
-**Step 1: Create the project**
+**Step 1: Create project**
 
 ```bash
 cd sites
@@ -460,9 +425,10 @@ dotnet add package Azure.Identity
 dotnet add package Microsoft.Extensions.Configuration.AzureAppConfiguration
 dotnet add package Azure.Extensions.AspNetCore.Configuration.Secrets
 dotnet add package Azure.Security.KeyVault.Secrets
+dotnet add package Microsoft.Identity.Web
 ```
 
-**Step 2: Verify build**
+**Step 2: Build**
 
 Run: `dotnet build sites/experiments.arolariu.ro`
 Expected: Build succeeded
@@ -471,16 +437,18 @@ Expected: Build succeeded
 
 ```bash
 git add sites/experiments.arolariu.ro/
-git commit -m "feat: scaffold experiments.arolariu.ro config proxy service"
+git commit -m "feat: scaffold experiments.arolariu.ro config proxy project"
 ```
 
-### Task 4.2: Implement the configuration loading pipeline
+### Task 4.2: Implement configuration loading + REST API
 
 **Files:**
 - Modify: `sites/experiments.arolariu.ro/Program.cs`
 - Create: `sites/experiments.arolariu.ro/ConfigurationContracts.cs`
+- Create: `sites/experiments.arolariu.ro/appsettings.json`
+- Create: `sites/experiments.arolariu.ro/appsettings.Development.json`
 
-**Step 1: Define the response contract**
+**Step 1: Define response contracts**
 
 ```csharp
 // sites/experiments.arolariu.ro/ConfigurationContracts.cs
@@ -491,18 +459,16 @@ public sealed record ConfigValueResponse(string Key, string Value, DateTime Fetc
 
 /// <summary>Response for multiple configuration values.</summary>
 public sealed record ConfigBatchResponse(IReadOnlyList<ConfigValueResponse> Values, DateTime FetchedAt);
-
-/// <summary>Health check response.</summary>
-public sealed record HealthResponse(string Status, string Environment, DateTime Timestamp);
 ```
 
-**Step 2: Implement Program.cs with config loading and caching**
+**Step 2: Implement Program.cs**
 
 ```csharp
 // sites/experiments.arolariu.ro/Program.cs
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration.AzureAppConfiguration;
+using Microsoft.Identity.Web;
 using experiments.arolariu.ro;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -510,24 +476,24 @@ var builder = WebApplication.CreateBuilder(args);
 var infrastructure = Environment.GetEnvironmentVariable("INFRA") ?? "local";
 var environment = builder.Environment.EnvironmentName;
 
-IConfigurationRoot? appConfigProvider = null;
+IConfigurationRoot? configProvider = null;
 
 if (infrastructure == "azure")
 {
+    var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
     var credentials = new DefaultAzureCredential(
-        Environment.GetEnvironmentVariable("AZURE_CLIENT_ID") is string clientId
+        clientId is not null
             ? new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }
             : new DefaultAzureCredentialOptions());
 
-    var configEndpoint = Environment.GetEnvironmentVariable("AZURE_APPCONFIG_ENDPOINT")
-        ?? throw new InvalidOperationException("AZURE_APPCONFIG_ENDPOINT required in azure mode");
-
-    var kvEndpoint = Environment.GetEnvironmentVariable("AZURE_KEYVAULT_ENDPOINT")
-        ?? throw new InvalidOperationException("AZURE_KEYVAULT_ENDPOINT required in azure mode");
+    var configEndpoint = builder.Configuration["ApplicationOptions:ConfigurationEndpoint"]
+        ?? throw new InvalidOperationException("ApplicationOptions:ConfigurationEndpoint required");
+    var kvEndpoint = builder.Configuration["ApplicationOptions:SecretsEndpoint"]
+        ?? throw new InvalidOperationException("ApplicationOptions:SecretsEndpoint required");
 
     var label = environment == "Production" ? "PRODUCTION" : "DEVELOPMENT";
 
-    appConfigProvider = new ConfigurationBuilder()
+    configProvider = new ConfigurationBuilder()
         .AddAzureAppConfiguration(config =>
         {
             config.Connect(new Uri(configEndpoint), credentials);
@@ -542,6 +508,13 @@ if (infrastructure == "azure")
                 refresh.RegisterAll();
                 refresh.SetRefreshInterval(TimeSpan.FromMinutes(5));
             });
+            config.ConfigureClientOptions(options =>
+            {
+                options.Retry.MaxRetries = 10;
+                options.Retry.Mode = RetryMode.Exponential;
+                options.Retry.Delay = TimeSpan.FromSeconds(30);
+                options.Retry.NetworkTimeout = TimeSpan.FromSeconds(300);
+            });
         })
         .AddAzureKeyVault(
             new Uri(kvEndpoint),
@@ -551,28 +524,45 @@ if (infrastructure == "azure")
                 ReloadInterval = TimeSpan.FromMinutes(15)
             })
         .Build();
+
+    // Entra ID authentication — only in Azure mode
+    builder.Services.AddMicrosoftIdentityWebApiAuthentication(builder.Configuration);
+    builder.Services.AddAuthorization();
 }
 else
 {
-    // Local mode: read from appsettings.json / env vars
-    appConfigProvider = new ConfigurationBuilder()
+    // Local mode: read from appsettings.json / env vars — NO auth
+    configProvider = new ConfigurationBuilder()
         .AddJsonFile("appsettings.json", optional: true)
         .AddJsonFile($"appsettings.{environment}.json", optional: true)
         .AddEnvironmentVariables()
         .Build();
 }
 
-builder.Services.AddSingleton<IConfiguration>(appConfigProvider);
+builder.Services.AddSingleton<IConfiguration>(configProvider);
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// GET /health
-app.MapHealthChecks("/health");
-app.MapGet("/", () => new HealthResponse("Healthy", infrastructure, DateTime.UtcNow));
+if (infrastructure == "azure")
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 
-// GET /config/{key} - Get a single config value
-app.MapGet("/config/{*key}", (string key, IConfiguration config) =>
+// Health endpoint — always public
+app.MapHealthChecks("/health");
+app.MapGet("/", () => Results.Ok(new { status = "Healthy", environment = infrastructure, timestamp = DateTime.UtcNow }));
+
+// Config endpoints — protected in Azure mode
+var configGroup = app.MapGroup("/config");
+if (infrastructure == "azure")
+{
+    configGroup.RequireAuthorization();
+}
+
+// GET /config/{key} — single value
+configGroup.MapGet("/{*key}", (string key, IConfiguration config) =>
 {
     var value = config[key];
     return value is not null
@@ -580,8 +570,8 @@ app.MapGet("/config/{*key}", (string key, IConfiguration config) =>
         : Results.NotFound(new { error = $"Key '{key}' not found" });
 });
 
-// GET /config?keys=key1,key2,key3 - Get multiple config values
-app.MapGet("/config", (string? keys, string? prefix, IConfiguration config) =>
+// GET /config?keys=key1,key2 — batch values
+configGroup.MapGet("/", (string? keys, string? prefix, IConfiguration config) =>
 {
     if (keys is not null)
     {
@@ -611,13 +601,16 @@ app.Run();
 
 ```json
 {
-  "Logging": {
-    "LogLevel": { "Default": "Information" }
-  },
+  "Logging": { "LogLevel": { "Default": "Information" } },
   "AllowedHosts": "*",
-  "Common:Auth:Secret": "local-dev-jwt-secret-at-least-32-characters-long",
+  "ApplicationOptions": {
+    "SecretsEndpoint": "",
+    "ConfigurationEndpoint": ""
+  },
+  "Common:Auth:Secret": "local-dev-jwt-secret-at-least-32-characters-long!!",
   "Common:Auth:Issuer": "https://localhost:5000",
   "Common:Auth:Audience": "https://localhost:3000",
+  "Common:Azure:TenantId": "",
   "Endpoints:StorageAccount": "http://127.0.0.1:10000/devstoreaccount1",
   "Endpoints:SqlServer": "Server=localhost,8082;Database=arolariu;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=true;",
   "Endpoints:NoSqlServer": "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;",
@@ -629,24 +622,42 @@ app.Run();
 }
 ```
 
-**Step 4: Build and verify**
+**Step 4: Add Entra ID config for production (appsettings.Production.json)**
+
+```json
+{
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "<from-env-or-bicep>",
+    "ClientId": "<app-registration-client-id>",
+    "Audience": "api://experiments-arolariu-ro"
+  },
+  "ApplicationOptions": {
+    "SecretsEndpoint": "https://qpfnu3kv.vault.azure.net/",
+    "ConfigurationEndpoint": "https://qpfnu3appconfig.azconfig.io"
+  }
+}
+```
+
+**Step 5: Build and verify**
 
 Run: `dotnet build sites/experiments.arolariu.ro`
 Expected: Build succeeded
 
-**Step 5: Commit**
+**Step 6: Commit**
 
 ```bash
 git add sites/experiments.arolariu.ro/
-git commit -m "feat: implement config proxy REST API with Azure/local mode support"
+git commit -m "feat: implement config proxy with Entra ID auth and local fallback"
 ```
 
-### Task 4.3: Add Dockerfile for experiments.arolariu.ro
+### Task 4.3: Add Dockerfile + Docker Compose entry
 
 **Files:**
 - Create: `sites/experiments.arolariu.ro/Dockerfile`
+- Modify: `infra/Local/Storage/docker-compose.yml`
 
-**Step 1: Write the Dockerfile**
+**Step 1: Write Dockerfile**
 
 ```dockerfile
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
@@ -673,26 +684,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 ENTRYPOINT ["dotnet", "experiments.arolariu.ro.dll"]
 ```
 
-**Step 2: Build Docker image locally**
+**Step 2: Add to Docker Compose**
 
-Run: `docker build -t experiments-arolariu-ro sites/experiments.arolariu.ro/`
-Expected: Image built successfully
-
-**Step 3: Commit**
-
-```bash
-git add sites/experiments.arolariu.ro/Dockerfile
-git commit -m "feat: add Dockerfile for experiments.arolariu.ro config proxy"
-```
-
-### Task 4.4: Add experiments service to local Docker Compose
-
-**Files:**
-- Modify: `infra/Local/Storage/docker-compose.yml`
-
-**Step 1: Add the experiments service**
-
-Add this service to the docker-compose file:
+Add to `infra/Local/Storage/docker-compose.yml`:
 
 ```yaml
   experiments:
@@ -713,28 +707,28 @@ Add this service to the docker-compose file:
       - azurite
 ```
 
-**Step 2: Test locally**
+**Step 3: Build and test Docker image**
 
-Run: `docker compose -f infra/Local/Storage/docker-compose.yml up experiments -d`
-Verify: `curl http://localhost:5002/health`
-Expected: `{"status":"Healthy","environment":"local","timestamp":"..."}`
+Run: `docker compose -f infra/Local/Storage/docker-compose.yml build experiments`
+Verify: `docker compose -f infra/Local/Storage/docker-compose.yml up experiments -d && curl http://localhost:5002/health`
+Expected: `{"status":"Healthy","environment":"local",...}`
 
-**Step 3: Commit**
+**Step 4: Commit**
 
 ```bash
-git add infra/Local/Storage/docker-compose.yml
-git commit -m "feat: add experiments.arolariu.ro to local Docker Compose"
+git add sites/experiments.arolariu.ro/Dockerfile infra/Local/Storage/docker-compose.yml
+git commit -m "feat: add Dockerfile and Docker Compose entry for experiments service"
 ```
 
 ---
 
 ## Phase 5: Config Client for API
 
-### Task 5.1: Create ConfigProxyClient for .NET
+### Task 5.1: Create ConfigProxyClient
 
 **Files:**
-- Create: `sites/api.arolariu.ro/src/Common/Configuration/ConfigProxyClient.cs`
 - Create: `sites/api.arolariu.ro/src/Common/Configuration/IConfigProxyClient.cs`
+- Create: `sites/api.arolariu.ro/src/Common/Configuration/ConfigProxyClient.cs`
 - Test: `sites/api.arolariu.ro/tests/Common/Configuration/ConfigProxyClientTests.cs`
 
 **Step 1: Define the interface**
@@ -743,19 +737,14 @@ git commit -m "feat: add experiments.arolariu.ro to local Docker Compose"
 // sites/api.arolariu.ro/src/Common/Configuration/IConfigProxyClient.cs
 namespace arolariu.Backend.Common.Configuration;
 
-/// <summary>
-/// Client for fetching configuration values from the experiments.arolariu.ro config proxy.
-/// </summary>
+/// <summary>Client for fetching configuration from experiments.arolariu.ro.</summary>
 public interface IConfigProxyClient
 {
     /// <summary>Fetches a single configuration value by key.</summary>
     Task<string?> GetValueAsync(string key, CancellationToken ct = default);
 
-    /// <summary>Fetches multiple configuration values by keys.</summary>
+    /// <summary>Fetches multiple configuration values.</summary>
     Task<IReadOnlyDictionary<string, string>> GetValuesAsync(IEnumerable<string> keys, CancellationToken ct = default);
-
-    /// <summary>Fetches all configuration values with a given prefix.</summary>
-    Task<IReadOnlyDictionary<string, string>> GetValuesByPrefixAsync(string prefix, CancellationToken ct = default);
 }
 ```
 
@@ -776,25 +765,31 @@ public class ConfigProxyClientTests
     [Fact]
     public async Task GetValueAsync_ReturnsValue_WhenKeyExists()
     {
-        // Arrange
-        var handler = new MockHttpMessageHandler(new HttpResponseMessage
+        var handler = new MockHttpHandler(new HttpResponseMessage(HttpStatusCode.OK)
         {
-            StatusCode = HttpStatusCode.OK,
-            Content = new StringContent(JsonSerializer.Serialize(new { Key = "test:key", Value = "test-value", FetchedAt = DateTime.UtcNow }))
+            Content = new StringContent(JsonSerializer.Serialize(
+                new { Key = "test:key", Value = "test-value", FetchedAt = DateTime.UtcNow }))
         });
-        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5002") };
-        var client = new ConfigProxyClient(httpClient);
+        var client = new ConfigProxyClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5002") });
 
-        // Act
         var result = await client.GetValueAsync("test:key");
 
-        // Assert
         Assert.Equal("test-value", result);
+    }
+
+    [Fact]
+    public async Task GetValueAsync_ReturnsNull_WhenNotFound()
+    {
+        var handler = new MockHttpHandler(new HttpResponseMessage(HttpStatusCode.NotFound));
+        var client = new ConfigProxyClient(new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5002") });
+
+        var result = await client.GetValueAsync("missing:key");
+
+        Assert.Null(result);
     }
 }
 
-// Simple mock handler for testing
-internal class MockHttpMessageHandler(HttpResponseMessage response) : HttpMessageHandler
+internal class MockHttpHandler(HttpResponseMessage response) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         => Task.FromResult(response);
@@ -806,7 +801,7 @@ internal class MockHttpMessageHandler(HttpResponseMessage response) : HttpMessag
 Run: `dotnet test sites/api.arolariu.ro/tests --filter "ConfigProxyClientTests" -v n`
 Expected: FAIL — `ConfigProxyClient` does not exist
 
-**Step 4: Implement the client**
+**Step 4: Implement**
 
 ```csharp
 // sites/api.arolariu.ro/src/Common/Configuration/ConfigProxyClient.cs
@@ -821,9 +816,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-/// <summary>
-/// HTTP client for the experiments.arolariu.ro configuration proxy service.
-/// </summary>
+/// <summary>HTTP client for the experiments.arolariu.ro config proxy.</summary>
 public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
@@ -849,22 +842,12 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
         return result?.Values.ToDictionary(v => v.Key, v => v.Value) ?? new Dictionary<string, string>();
     }
 
-    /// <inheritdoc />
-    public async Task<IReadOnlyDictionary<string, string>> GetValuesByPrefixAsync(string prefix, CancellationToken ct = default)
-    {
-        var response = await httpClient.GetAsync($"/config?prefix={Uri.EscapeDataString(prefix)}", ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode) return new Dictionary<string, string>();
-
-        var result = await response.Content.ReadFromJsonAsync<ConfigBatchDto>(JsonOptions, ct).ConfigureAwait(false);
-        return result?.Values.ToDictionary(v => v.Key, v => v.Value) ?? new Dictionary<string, string>();
-    }
-
     private sealed record ConfigValueDto(string Key, string Value, DateTime FetchedAt);
     private sealed record ConfigBatchDto(IReadOnlyList<ConfigValueDto> Values, DateTime FetchedAt);
 }
 ```
 
-**Step 5: Run test to verify it passes**
+**Step 5: Run tests**
 
 Run: `dotnet test sites/api.arolariu.ro/tests --filter "ConfigProxyClientTests" -v n`
 Expected: PASS
@@ -873,18 +856,25 @@ Expected: PASS
 
 ```bash
 git add sites/api.arolariu.ro/src/Common/Configuration/ sites/api.arolariu.ro/tests/Common/Configuration/
-git commit -m "feat: add ConfigProxyClient for experiments.arolariu.ro communication"
+git commit -m "feat: add ConfigProxyClient for experiments.arolariu.ro"
 ```
 
-### Task 5.2: Register ConfigProxyClient in DI and wire into AddAzureConfiguration
+### Task 5.2: Add "proxy" infrastructure mode with hardcoded URL + Bearer auth
 
 **Files:**
 - Modify: `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs`
 
-**Step 1: Add a new infrastructure mode "proxy" alongside "azure" and "local"**
+**Step 1: Add constants and new infrastructure mode**
 
-Update the `AddGeneralDomainConfiguration` method to support three infrastructure modes:
+Add at the top of the class:
+```csharp
+/// <summary>Config proxy URL — hardcoded by design, never changes.</summary>
+private const string ConfigProxyUrlAzure = "https://experiments.arolariu.ro";
+private const string ConfigProxyUrlLocal = "http://localhost:5002";
+private const string ExperimentsScope = "api://experiments-arolariu-ro/.default";
+```
 
+Update the switch in `AddGeneralDomainConfiguration`:
 ```csharp
 switch (infrastructure)
 {
@@ -902,22 +892,35 @@ switch (infrastructure)
 }
 ```
 
-**Step 2: Add the proxy configuration method**
+**Step 2: Add AddProxyConfiguration method**
 
 ```csharp
+/// <summary>
+/// Configures the application to fetch configuration from experiments.arolariu.ro.
+/// In Azure mode, acquires a Bearer token from the backend's UAMI.
+/// In proxy (local) mode, no auth — talks to localhost:5002.
+/// </summary>
 private static void AddProxyConfiguration(this WebApplicationBuilder builder)
 {
     var services = builder.Services;
-    var proxyUrl = Environment.GetEnvironmentVariable("CONFIG_PROXY_URL")
-        ?? "http://localhost:5002";
+    var isAzure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production";
+    var baseUrl = isAzure ? ConfigProxyUrlAzure : ConfigProxyUrlLocal;
 
     services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>
     {
-        client.BaseAddress = new Uri(proxyUrl);
+        client.BaseAddress = new Uri(baseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
+    }).ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        // In Azure: add Bearer token from UAMI
+        if (isAzure)
+        {
+            return new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExperimentsScope);
+        }
+        return new HttpClientHandler();
     });
 
-    // Fetch config from proxy at startup, populate IOptionsMonitor
+    // Fetch config at startup
     using var tempProvider = services.BuildServiceProvider();
     var proxyClient = tempProvider.GetRequiredService<IConfigProxyClient>();
     var configValues = proxyClient.GetValuesAsync(new[]
@@ -932,8 +935,9 @@ private static void AddProxyConfiguration(this WebApplicationBuilder builder)
     services.AddSingleton<IOptionsManager, CloudOptionsManager>();
     services.Configure<AzureOptions>(options =>
     {
-        options.SecretsEndpoint = Environment.GetEnvironmentVariable("AZURE_KEYVAULT_ENDPOINT") ?? string.Empty;
-        options.ConfigurationEndpoint = Environment.GetEnvironmentVariable("AZURE_APPCONFIG_ENDPOINT") ?? string.Empty;
+        var cfg = builder.Configuration;
+        options.SecretsEndpoint = cfg["ApplicationOptions:SecretsEndpoint"] ?? string.Empty;
+        options.ConfigurationEndpoint = cfg["ApplicationOptions:ConfigurationEndpoint"] ?? string.Empty;
         options.JwtSecret = configValues.GetValueOrDefault("Common:Auth:Secret", string.Empty);
         options.JwtIssuer = configValues.GetValueOrDefault("Common:Auth:Issuer", string.Empty);
         options.JwtAudience = configValues.GetValueOrDefault("Common:Auth:Audience", string.Empty);
@@ -949,16 +953,46 @@ private static void AddProxyConfiguration(this WebApplicationBuilder builder)
 }
 ```
 
-**Step 3: Build and test**
+**Step 3: Create BearerTokenHandler**
+
+```csharp
+// sites/api.arolariu.ro/src/Common/Azure/BearerTokenHandler.cs
+namespace arolariu.Backend.Common.Azure;
+
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
+using System.Threading.Tasks;
+using global::Azure.Core;
+
+/// <summary>
+/// DelegatingHandler that acquires a Bearer token from Azure Identity
+/// and attaches it to outgoing HTTP requests.
+/// </summary>
+public sealed class BearerTokenHandler(TokenCredential credential, string scope) : DelegatingHandler(new HttpClientHandler())
+{
+    private readonly TokenRequestContext _tokenContext = new([scope]);
+
+    /// <inheritdoc />
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        var token = await credential.GetTokenAsync(_tokenContext, ct).ConfigureAwait(false);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+        return await base.SendAsync(request, ct).ConfigureAwait(false);
+    }
+}
+```
+
+**Step 4: Build**
 
 Run: `dotnet build sites/api.arolariu.ro/src/Core`
 Expected: Build succeeded
 
-**Step 4: Commit**
+**Step 5: Commit**
 
 ```bash
-git add sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs
-git commit -m "feat: add 'proxy' infrastructure mode for config proxy integration"
+git add sites/api.arolariu.ro/src/
+git commit -m "feat: add proxy infrastructure mode with Entra ID Bearer auth"
 ```
 
 ### Task 5.3: Add background config refresh via HostedService
@@ -966,7 +1000,7 @@ git commit -m "feat: add 'proxy' infrastructure mode for config proxy integratio
 **Files:**
 - Create: `sites/api.arolariu.ro/src/Common/Configuration/ConfigRefreshHostedService.cs`
 
-**Step 1: Implement the background refresh service**
+**Step 1: Implement**
 
 ```csharp
 // sites/api.arolariu.ro/src/Common/Configuration/ConfigRefreshHostedService.cs
@@ -983,15 +1017,22 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-/// <summary>
-/// Background service that periodically refreshes configuration from the config proxy.
-/// </summary>
+/// <summary>Background service that refreshes config from the proxy every 5 minutes.</summary>
 public sealed class ConfigRefreshHostedService(
     IServiceProvider serviceProvider,
     IOptionsMonitor<AzureOptions> optionsMonitor,
     ILogger<ConfigRefreshHostedService> logger) : BackgroundService
 {
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
+
+    private static readonly string[] ConfigKeys =
+    [
+        "Common:Auth:Secret", "Common:Auth:Issuer", "Common:Auth:Audience",
+        "Common:Azure:TenantId", "Endpoints:OpenAI", "Endpoints:SqlServer",
+        "Endpoints:NoSqlServer", "Endpoints:StorageAccount",
+        "Endpoints:ApplicationInsights", "Endpoints:CognitiveServices",
+        "Endpoints:CognitiveServices:Key"
+    ];
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -1004,47 +1045,39 @@ public sealed class ConfigRefreshHostedService(
             {
                 using var scope = serviceProvider.CreateScope();
                 var proxyClient = scope.ServiceProvider.GetRequiredService<IConfigProxyClient>();
-                var configValues = await proxyClient.GetValuesAsync(new[]
-                {
-                    "Common:Auth:Secret", "Common:Auth:Issuer", "Common:Auth:Audience",
-                    "Common:Azure:TenantId", "Endpoints:OpenAI", "Endpoints:SqlServer",
-                    "Endpoints:NoSqlServer", "Endpoints:StorageAccount",
-                    "Endpoints:ApplicationInsights", "Endpoints:CognitiveServices",
-                    "Endpoints:CognitiveServices:Key"
-                }, stoppingToken).ConfigureAwait(false);
+                var values = await proxyClient.GetValuesAsync(ConfigKeys, stoppingToken).ConfigureAwait(false);
 
-                // Update the options through the monitor
-                var currentOptions = optionsMonitor.CurrentValue;
-                currentOptions.JwtSecret = configValues.GetValueOrDefault("Common:Auth:Secret", currentOptions.JwtSecret);
-                currentOptions.JwtIssuer = configValues.GetValueOrDefault("Common:Auth:Issuer", currentOptions.JwtIssuer);
-                currentOptions.JwtAudience = configValues.GetValueOrDefault("Common:Auth:Audience", currentOptions.JwtAudience);
-                currentOptions.OpenAIEndpoint = configValues.GetValueOrDefault("Endpoints:OpenAI", currentOptions.OpenAIEndpoint);
-                currentOptions.SqlConnectionString = configValues.GetValueOrDefault("Endpoints:SqlServer", currentOptions.SqlConnectionString);
-                currentOptions.NoSqlConnectionString = configValues.GetValueOrDefault("Endpoints:NoSqlServer", currentOptions.NoSqlConnectionString);
-                currentOptions.StorageAccountEndpoint = configValues.GetValueOrDefault("Endpoints:StorageAccount", currentOptions.StorageAccountEndpoint);
-                currentOptions.ApplicationInsightsEndpoint = configValues.GetValueOrDefault("Endpoints:ApplicationInsights", currentOptions.ApplicationInsightsEndpoint);
-                currentOptions.CognitiveServicesEndpoint = configValues.GetValueOrDefault("Endpoints:CognitiveServices", currentOptions.CognitiveServicesEndpoint);
-                currentOptions.CognitiveServicesKey = configValues.GetValueOrDefault("Endpoints:CognitiveServices:Key", currentOptions.CognitiveServicesKey);
+                var opts = optionsMonitor.CurrentValue;
+                opts.JwtSecret = values.GetValueOrDefault("Common:Auth:Secret", opts.JwtSecret);
+                opts.JwtIssuer = values.GetValueOrDefault("Common:Auth:Issuer", opts.JwtIssuer);
+                opts.JwtAudience = values.GetValueOrDefault("Common:Auth:Audience", opts.JwtAudience);
+                opts.OpenAIEndpoint = values.GetValueOrDefault("Endpoints:OpenAI", opts.OpenAIEndpoint);
+                opts.SqlConnectionString = values.GetValueOrDefault("Endpoints:SqlServer", opts.SqlConnectionString);
+                opts.NoSqlConnectionString = values.GetValueOrDefault("Endpoints:NoSqlServer", opts.NoSqlConnectionString);
+                opts.StorageAccountEndpoint = values.GetValueOrDefault("Endpoints:StorageAccount", opts.StorageAccountEndpoint);
+                opts.ApplicationInsightsEndpoint = values.GetValueOrDefault("Endpoints:ApplicationInsights", opts.ApplicationInsightsEndpoint);
+                opts.CognitiveServicesEndpoint = values.GetValueOrDefault("Endpoints:CognitiveServices", opts.CognitiveServicesEndpoint);
+                opts.CognitiveServicesKey = values.GetValueOrDefault("Endpoints:CognitiveServices:Key", opts.CognitiveServicesKey);
 
-                logger.LogInformation("Configuration refreshed successfully from config proxy at {Timestamp}", DateTime.UtcNow);
+                logger.LogInformation("Config refreshed from proxy at {Timestamp}", DateTime.UtcNow);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to refresh configuration from config proxy. Retrying in {Interval}.", RefreshInterval);
+                logger.LogWarning(ex, "Config refresh failed. Retrying in {Interval}.", RefreshInterval);
             }
         }
     }
 }
 ```
 
-**Step 2: Register in the proxy configuration method**
+**Step 2: Register in AddProxyConfiguration()**
 
-Add to `AddProxyConfiguration()`:
+Add at the end of `AddProxyConfiguration()`:
 ```csharp
 services.AddHostedService<ConfigRefreshHostedService>();
 ```
 
-**Step 3: Build and test**
+**Step 3: Build**
 
 Run: `dotnet build sites/api.arolariu.ro/src/Core`
 Expected: Build succeeded
@@ -1052,19 +1085,21 @@ Expected: Build succeeded
 **Step 4: Commit**
 
 ```bash
-git add sites/api.arolariu.ro/src/Common/Configuration/ConfigRefreshHostedService.cs
-git commit -m "feat: add background config refresh hosted service for proxy mode"
+git add sites/api.arolariu.ro/src/Common/Configuration/ConfigRefreshHostedService.cs sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs
+git commit -m "feat: add background config refresh hosted service"
 ```
 
 ---
 
-## Phase 6: Config Client for Website (Next.js)
+## Phase 6: Config Client for Website (Server-Side Only)
 
-### Task 6.1: Create configProxy.ts service with in-memory caching
+### Task 6.1: Create configProxy.ts with TTL cache + Bearer auth
 
 **Files:**
 - Create: `sites/arolariu.ro/src/lib/config/configProxy.ts`
 - Test: `sites/arolariu.ro/src/lib/config/configProxy.test.ts`
+
+> **Server-only enforcement:** This file uses `"use server"` and should NEVER be imported by client components.
 
 **Step 1: Write the failing test**
 
@@ -1075,9 +1110,10 @@ import {describe, it, expect, vi, beforeEach} from "vitest";
 describe("ConfigProxy", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.stubGlobal("fetch", vi.fn());
   });
 
-  it("fetchConfigValue returns cached value on second call", async () => {
+  it("fetchConfigValue returns cached value on second call without re-fetching", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({Key: "test:key", Value: "test-value", FetchedAt: new Date().toISOString()}),
@@ -1092,6 +1128,23 @@ describe("ConfigProxy", () => {
     expect(value2).toBe("test-value");
     expect(mockFetch).toHaveBeenCalledTimes(1); // Cached on second call
   });
+
+  it("fetchConfigValue returns stale value on network error", async () => {
+    let callCount = 0;
+    const mockFetch = vi.fn().mockImplementation(() => {
+      callCount++;
+      if (callCount === 1)
+        return Promise.resolve({ok: true, json: () => Promise.resolve({Key: "k", Value: "v", FetchedAt: ""})});
+      return Promise.reject(new Error("Network error"));
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    await fetchConfigValue("k"); // prime cache
+    invalidateConfigCache("k"); // force refetch
+    const result = await fetchConfigValue("k"); // should use stale value on error
+    expect(result).toBe("v");
+  });
 });
 ```
 
@@ -1100,20 +1153,28 @@ describe("ConfigProxy", () => {
 Run: `npx vitest run src/lib/config/configProxy.test.ts --config sites/arolariu.ro/vitest.config.ts`
 Expected: FAIL — module not found
 
-**Step 3: Implement the config proxy client with TTL cache**
+**Step 3: Implement**
 
 ```typescript
 // sites/arolariu.ro/src/lib/config/configProxy.ts
 /**
- * @fileoverview Configuration proxy client with in-memory caching and TTL-based refresh.
- * Replaces direct Azure App Configuration access with HTTP calls to experiments.arolariu.ro.
+ * @fileoverview Server-side-only config proxy client with TTL caching.
+ *
+ * Config URL is hardcoded:
+ * - Azure (production): https://experiments.arolariu.ro
+ * - Local (INFRA=proxy): http://localhost:5002
+ *
+ * In Azure mode, acquires a Bearer token from the frontend UAMI via @azure/identity.
+ *
  * @module sites/arolariu.ro/src/lib/config/configProxy
  */
 
 "use server";
 
-const CONFIG_PROXY_URL = process.env["CONFIG_PROXY_URL"] ?? "http://localhost:5002";
+const INFRA = process.env["INFRA"] ?? "local";
+const CONFIG_PROXY_URL = INFRA === "proxy" ? "http://localhost:5002" : "https://experiments.arolariu.ro";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const EXPERIMENTS_SCOPE = "api://experiments-arolariu-ro/.default";
 
 interface CacheEntry {
   value: string;
@@ -1123,10 +1184,20 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 
 /**
- * Fetches a single configuration value from the config proxy with TTL caching.
- * Values are cached for 5 minutes before being re-fetched.
- * @param key - The configuration key to fetch
- * @returns The configuration value, or empty string if not found
+ * Acquires a Bearer token for the experiments service (Azure only).
+ * Returns empty string in local mode.
+ */
+async function getBearerToken(): Promise<string> {
+  if (INFRA !== "azure") return "";
+  const {getAzureCredential} = await import("@/lib/azure/credentials");
+  const credential = getAzureCredential();
+  const token = await credential.getToken(EXPERIMENTS_SCOPE);
+  return token?.token ?? "";
+}
+
+/**
+ * Fetches a single config value with TTL caching + stale-while-revalidate.
+ * Server-only — enforced by "use server" directive.
  */
 export async function fetchConfigValue(key: string): Promise<string> {
   const cached = cache.get(key);
@@ -1135,9 +1206,14 @@ export async function fetchConfigValue(key: string): Promise<string> {
   }
 
   try {
+    const headers: Record<string, string> = {};
+    const bearerToken = await getBearerToken();
+    if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
+
     const response = await fetch(`${CONFIG_PROXY_URL}/config/${encodeURIComponent(key)}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
+      headers,
     });
 
     if (!response.ok) return cached?.value ?? "";
@@ -1146,18 +1222,14 @@ export async function fetchConfigValue(key: string): Promise<string> {
     cache.set(key, {value: data.Value, fetchedAt: Date.now()});
     return data.Value;
   } catch {
-    // Return stale cached value on error, or empty string
     return cached?.value ?? "";
   }
 }
 
 /**
- * Fetches multiple configuration values from the config proxy.
- * @param keys - Array of configuration keys to fetch
- * @returns Map of key to value
+ * Fetches multiple config values in one batch request.
  */
 export async function fetchConfigValues(keys: string[]): Promise<Record<string, string>> {
-  // Check cache first
   const uncachedKeys: string[] = [];
   const result: Record<string, string> = {};
 
@@ -1173,10 +1245,15 @@ export async function fetchConfigValues(keys: string[]): Promise<Record<string, 
   if (uncachedKeys.length === 0) return result;
 
   try {
+    const headers: Record<string, string> = {};
+    const bearerToken = await getBearerToken();
+    if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
+
     const keysParam = uncachedKeys.map(encodeURIComponent).join(",");
     const response = await fetch(`${CONFIG_PROXY_URL}/config?keys=${keysParam}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
+      headers,
     });
 
     if (response.ok) {
@@ -1187,30 +1264,22 @@ export async function fetchConfigValues(keys: string[]): Promise<Record<string, 
       }
     }
   } catch {
-    // Return whatever we have (cached or empty)
     for (const key of uncachedKeys) {
-      const cached = cache.get(key);
-      result[key] = cached?.value ?? "";
+      result[key] = cache.get(key)?.value ?? "";
     }
   }
 
   return result;
 }
 
-/**
- * Invalidates the cache for a specific key or all keys.
- * Useful for forcing a refresh after known config changes.
- */
+/** Invalidates cache for a key or all keys. */
 export function invalidateConfigCache(key?: string): void {
-  if (key) {
-    cache.delete(key);
-  } else {
-    cache.clear();
-  }
+  if (key) cache.delete(key);
+  else cache.clear();
 }
 ```
 
-**Step 4: Run test to verify it passes**
+**Step 4: Run tests**
 
 Run: `npx vitest run src/lib/config/configProxy.test.ts --config sites/arolariu.ro/vitest.config.ts`
 Expected: PASS
@@ -1219,20 +1288,16 @@ Expected: PASS
 
 ```bash
 git add sites/arolariu.ro/src/lib/config/
-git commit -m "feat: add config proxy client with TTL caching for frontend"
+git commit -m "feat: add server-only config proxy client with TTL cache and Bearer auth"
 ```
 
-### Task 6.2: Replace fetchConfigurationValue with configProxy in all server actions
+### Task 6.2: Replace fetchConfigurationValue + remove hardcoded hostname
 
 **Files:**
-- Modify: `sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts` (deprecate or redirect)
-- Modify: `sites/arolariu.ro/src/lib/actions/storage/uploadBlob.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/storage/fetchBlob.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/scans/uploadScan.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/scans/fetchScans.ts`
-- Modify: `sites/arolariu.ro/src/lib/actions/scans/deleteScan.ts`
+- Modify: `sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts`
+- Modify: `sites/arolariu.ro/next.config.ts:65`
 
-**Step 1: Update fetchConfig.ts to use the proxy**
+**Step 1: Redirect fetchConfig.ts through the proxy**
 
 ```typescript
 // sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts
@@ -1242,39 +1307,19 @@ import {fetchConfigValue} from "@/lib/config/configProxy";
 
 /**
  * Server action that fetches a configuration value.
- * Delegates to the config proxy service for centralized configuration management.
- * @param key - The key of the configuration value to fetch.
- * @returns The value of the configuration, or empty string.
+ * Delegates to the experiments.arolariu.ro config proxy.
  */
 export default async function fetchConfigurationValue(key: string): Promise<string> {
   return fetchConfigValue(key);
 }
 ```
 
-**Step 2: Build and run tests**
+**Step 2: Replace hardcoded blob hostname in next.config.ts**
 
-Run: `npm run build:website && npm run test:website`
-Expected: Build succeeds, all tests pass
-
-**Step 3: Commit**
-
-```bash
-git add sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts
-git commit -m "refactor: redirect fetchConfigurationValue through config proxy service"
-```
-
-### Task 6.3: Remove hardcoded blob storage hostname from next.config.ts
-
-**Files:**
-- Modify: `sites/arolariu.ro/next.config.ts:65`
-
-**Step 1: Replace hardcoded hostname with env var**
-
-Change:
+Change line 65:
 ```typescript
 {protocol: "https", hostname: "qpfnu3sacc.blob.core.windows.net"},
 ```
-
 To:
 ```typescript
 ...(process.env["AZURE_STORAGE_HOSTNAME"]
@@ -1282,57 +1327,147 @@ To:
   : []),
 ```
 
-**Step 2: Add the env var to .env and .env.example**
+Add `AZURE_STORAGE_HOSTNAME=qpfnu3sacc.blob.core.windows.net` to `.env` and `.env.example`.
 
-Add: `AZURE_STORAGE_HOSTNAME=qpfnu3sacc.blob.core.windows.net`
+**Step 3: Build and test**
 
-**Step 3: Build to verify**
-
-Run: `npm run build:website`
-Expected: Build succeeds
+Run: `npm run build:website && npm run test:website`
+Expected: All pass
 
 **Step 4: Commit**
 
 ```bash
-git add sites/arolariu.ro/next.config.ts sites/arolariu.ro/.env sites/arolariu.ro/.env.example
-git commit -m "refactor: replace hardcoded blob storage hostname with env var in next.config.ts"
+git add sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts sites/arolariu.ro/next.config.ts sites/arolariu.ro/.env sites/arolariu.ro/.env.example
+git commit -m "refactor: redirect config through proxy, remove hardcoded blob hostname"
 ```
 
 ---
 
-## Phase 7: Infrastructure (Bicep)
+## Phase 7: Remove Direct Azure Config Libraries
 
-### Task 7.1: Add experiments.arolariu.ro to Bicep deployment
+> Now that all config flows through experiments.arolariu.ro, the API and website no longer need direct Azure App Configuration or Key Vault libraries.
+
+### Task 7.1: Remove Azure App Config + Key Vault config libraries from API
+
+**Files:**
+- Modify: `sites/api.arolariu.ro/src/Common/Common.csproj`
+- Delete: `sites/api.arolariu.ro/src/Common/Services/KeyVault/KeyVaultService.cs`
+- Delete: `sites/api.arolariu.ro/src/Common/Services/KeyVault/IKeyVaultService.cs`
+- Modify: `sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs`
+
+**Step 1: Remove NuGet packages from Common.csproj**
+
+Remove these package references:
+```xml
+<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" />
+<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" />
+<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
+<PackageReference Include="Azure.Security.KeyVault.Secrets" />
+```
+
+**Keep** these (still needed for service clients like Cosmos, Storage, OpenAI):
+```xml
+<PackageReference Include="Azure.Identity" />
+<PackageReference Include="Azure.Core" />
+```
+
+**Step 2: Delete KeyVaultService and IKeyVaultService**
+
+These files are only registered in `AddAzureConfiguration()` and never consumed by any other service at runtime. Safe to delete.
+
+**Step 3: Clean up AddAzureConfiguration()**
+
+Remove `KeyVaultService` registration and Azure Key Vault configuration builder code from `AddAzureConfiguration()`. This method can now be marked as `[Obsolete("Use AddProxyConfiguration instead")]` or removed entirely if migration is complete.
+
+**Step 4: Build**
+
+Run: `dotnet build sites/api.arolariu.ro/src/Core`
+Expected: Build succeeded (may have warnings about obsolete method if you kept it)
+
+**Step 5: Run tests**
+
+Run: `dotnet test sites/api.arolariu.ro/tests -v n`
+Expected: All pass (remove any KeyVaultService tests if they existed)
+
+**Step 6: Commit**
+
+```bash
+git add -A sites/api.arolariu.ro/
+git commit -m "refactor: remove Azure App Config and Key Vault config libraries from API"
+```
+
+### Task 7.2: Remove Azure config libraries from website
+
+**Files:**
+- Modify: `sites/arolariu.ro/package.json`
+- Delete: `sites/arolariu.ro/src/lib/actions/storage/fetchConfig.test.ts` (old test)
+
+**Step 1: Remove npm packages**
+
+```bash
+cd sites/arolariu.ro
+npm uninstall @azure/app-configuration @azure/keyvault-secrets
+```
+
+**Note:** Keep `@azure/identity` and `@azure/storage-blob` — still needed for storage operations. Keep `@azure/monitor-opentelemetry-exporter` — still needed for telemetry.
+
+**Step 2: Verify no remaining imports**
+
+Run: `grep -r "@azure/app-configuration\|@azure/keyvault-secrets" sites/arolariu.ro/src/`
+Expected: No matches
+
+**Step 3: Build and test**
+
+Run: `npm run build:website && npm run test:website`
+Expected: All pass
+
+**Step 4: Commit**
+
+```bash
+git add sites/arolariu.ro/package.json sites/arolariu.ro/package-lock.json
+git commit -m "refactor: remove @azure/app-configuration and @azure/keyvault-secrets from website"
+```
+
+---
+
+## Phase 8: Infrastructure (Bicep)
+
+### Task 8.1: Create App Registration for experiments.arolariu.ro
+
+This is a manual Azure Portal / CLI step (cannot be fully automated in Bicep):
+
+**Step 1: Register the app in Entra ID**
+
+```bash
+az ad app create --display-name "experiments-arolariu-ro" \
+  --identifier-uris "api://experiments-arolariu-ro" \
+  --sign-in-audience "AzureADMyOrg"
+```
+
+**Step 2: Note the Application (client) ID** — use in Bicep as a parameter.
+
+### Task 8.2: Add experiments.arolariu.ro Bicep module
 
 **Files:**
 - Create: `infra/Azure/Bicep/sites/experiments.bicep`
 - Modify: `infra/Azure/Bicep/sites/deploymentFile.bicep`
 - Modify: `infra/Azure/Bicep/facade.bicep`
 
-**Step 1: Create the Bicep module for experiments site**
+**Step 1: Create Bicep module**
 
 ```bicep
 // infra/Azure/Bicep/sites/experiments.bicep
-metadata description = 'Deploys the experiments.arolariu.ro configuration proxy service.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Deploys experiments.arolariu.ro config proxy with Entra ID Easy Auth.'
 
-@description('The location for the resources.')
 param resourceLocation string
-
-@description('The date when the deployment is executed.')
 param resourceDeploymentDate string
-
-@description('The resource convention prefix.')
 param resourceConventionPrefix string
-
-@description('The App Service Plan ID to deploy on.')
 param appServicePlanId string
-
-@description('The backend managed identity resource ID.')
 param backendIdentityResourceId string
-
-@description('The backend managed identity client ID.')
 param backendIdentityClientId string
+param frontendIdentityPrincipalId string
+param backendIdentityPrincipalId string
+param entraAppClientId string
 
 resource experimentsWebApp 'Microsoft.Web/sites@2024-04-01' = {
   name: 'experiments-arolariu-ro'
@@ -1349,143 +1484,102 @@ resource experimentsWebApp 'Microsoft.Web/sites@2024-04-01' = {
     deploymentType: 'Bicep'
     deploymentDate: resourceDeploymentDate
     module: 'sites'
-    costCenter: 'infrastructure'
     project: 'arolariu.ro'
   }
   properties: {
     serverFarmId: appServicePlanId
     httpsOnly: true
     siteConfig: {
-      alwaysOn: false // Low traffic service, save costs
+      alwaysOn: false
       linuxFxVersion: 'DOCKER|experiments-arolariu-ro:latest'
       appSettings: [
         { name: 'AZURE_CLIENT_ID', value: backendIdentityClientId }
         { name: 'INFRA', value: 'azure' }
         { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
-        { name: 'AZURE_APPCONFIG_ENDPOINT', value: 'https://${resourceConventionPrefix}appconfig.azconfig.io' }
-        { name: 'AZURE_KEYVAULT_ENDPOINT', value: 'https://${resourceConventionPrefix}kv.vault.azure.net/' }
       ]
     }
   }
 }
 
-output experimentsSiteId string = experimentsWebApp.id
-output experimentsSiteName string = experimentsWebApp.name
+// Easy Auth v2 — restrict to frontend + backend UAMIs only
+resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
+  parent: experimentsWebApp
+  name: 'authsettingsV2'
+  properties: {
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'Return401'
+    }
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        registration: {
+          clientId: entraAppClientId
+          openIdIssuer: 'https://login.microsoftonline.com/${tenant().tenantId}/v2.0'
+        }
+        validation: {
+          defaultAuthorizationPolicy: {
+            allowedPrincipals: {
+              identities: [
+                frontendIdentityPrincipalId
+                backendIdentityPrincipalId
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 output experimentsSiteDefaultHostname string = experimentsWebApp.properties.defaultHostName
 ```
 
-**Step 2: Wire into the facade**
+**Step 2: Wire into facade.bicep and deploymentFile.bicep**
 
-Add the experiments module deployment to `facade.bicep` in the Sites section.
-
-**Step 3: Add RBAC for the experiments identity**
-
-The experiments service uses the backend UAMI. Ensure App Configuration Data Reader and Key Vault Secrets User roles are assigned (they likely already are for the backend identity).
-
-**Step 4: Commit**
-
-```bash
-git add infra/Azure/Bicep/sites/experiments.bicep infra/Azure/Bicep/sites/deploymentFile.bicep infra/Azure/Bicep/facade.bicep
-git commit -m "feat: add experiments.arolariu.ro Bicep deployment module"
-```
-
-### Task 7.2: Add CONFIG_PROXY_URL to API and Website app settings in Bicep
-
-**Files:**
-- Modify: `infra/Azure/Bicep/sites/deploymentFile.bicep` (or the individual site bicep files)
-
-**Step 1: Add CONFIG_PROXY_URL app setting to both API and Website deployments**
-
-For the API site:
-```bicep
-{ name: 'CONFIG_PROXY_URL', value: 'https://experiments-arolariu-ro.azurewebsites.net' }
-{ name: 'INFRA', value: 'proxy' }  // Switch from 'azure' to 'proxy' mode
-```
-
-For the Website site:
-```bicep
-{ name: 'CONFIG_PROXY_URL', value: 'https://experiments-arolariu-ro.azurewebsites.net' }
-```
-
-**Step 2: Commit**
-
-```bash
-git add infra/Azure/Bicep/sites/
-git commit -m "feat: add CONFIG_PROXY_URL to API and Website Bicep app settings"
-```
-
----
-
-## Phase 8: Local Development Story
-
-### Task 8.1: Update .env files for local proxy mode
-
-**Files:**
-- Modify: `sites/arolariu.ro/.env`
-- Modify: `sites/arolariu.ro/.env.example`
-- Modify: `sites/api.arolariu.ro/src/Core/appsettings.Development.json`
-
-**Step 1: Add CONFIG_PROXY_URL to frontend .env**
-
-```
-CONFIG_PROXY_URL=http://localhost:5002
-```
-
-**Step 2: Update API appsettings for local proxy support**
-
-The API already supports `INFRA=local`. For proxy mode, set `INFRA=proxy` and `CONFIG_PROXY_URL=http://localhost:5002`.
-
-Document in a comment or README that developers can choose:
-- `INFRA=local` — reads config from local appsettings files (no experiments service needed)
-- `INFRA=proxy` — reads config from experiments.arolariu.ro (run it via Docker Compose)
-- `INFRA=azure` — reads config directly from Azure services (needs Azure credentials)
+Pass the required parameters (identity principal IDs, App Registration client ID) through the facade.
 
 **Step 3: Commit**
 
 ```bash
-git add sites/arolariu.ro/.env sites/arolariu.ro/.env.example
-git commit -m "feat: add CONFIG_PROXY_URL to frontend environment configuration"
+git add infra/Azure/Bicep/
+git commit -m "feat: add experiments.arolariu.ro Bicep with Entra ID Easy Auth"
 ```
 
-### Task 8.2: Update generate.env.ts script for new env vars
+### Task 8.3: Add RBAC for experiments service
 
 **Files:**
-- Modify: `scripts/generate.env.ts`
+- Modify: `infra/Azure/Bicep/rbac/app-configuration-rbac.bicep`
+- Modify: `infra/Azure/Bicep/rbac/key-vault-rbac.bicep`
 
-**Step 1: Add the new environment variables to the generation script**
+The experiments service uses the **backend UAMI**, which already has App Configuration Data Reader and Key Vault Secrets User roles. No additional RBAC changes needed — just verify.
 
-Add these entries to the env generation:
-```typescript
-// Configuration proxy
-CONFIG_PROXY_URL: "http://localhost:5002",
-AZURE_STORAGE_HOSTNAME: "", // Filled by App Configuration in production
-```
+**Step 1: Verify existing roles**
 
-**Step 2: Test the script**
+Check that the backend UAMI has:
+- `App Configuration Data Reader` on the App Config store
+- `Key Vault Secrets User` on the Key Vault
 
-Run: `npm run generate`
-Expected: Script completes successfully, .env includes new vars
-
-**Step 3: Commit**
+**Step 2: Commit** (if any changes needed)
 
 ```bash
-git add scripts/generate.env.ts
-git commit -m "feat: add config proxy env vars to generation script"
+git add infra/Azure/Bicep/rbac/
+git commit -m "chore: verify RBAC for experiments service backend identity"
 ```
 
 ---
 
 ## Phase 9: Integration Testing
 
-### Task 9.1: End-to-end local test of the full config flow
+### Task 9.1: Local end-to-end test
 
-**Step 1: Start local infrastructure**
+**Step 1: Start local stack**
 
 ```bash
 docker compose -f infra/Local/Storage/docker-compose.yml up -d
 ```
 
-**Step 2: Verify experiments service responds**
+**Step 2: Verify experiments service**
 
 ```bash
 curl http://localhost:5002/health
@@ -1493,96 +1587,99 @@ curl http://localhost:5002/health
 
 curl http://localhost:5002/config/Endpoints:StorageAccount
 # Expected: {"key":"Endpoints:StorageAccount","value":"http://127.0.0.1:10000/devstoreaccount1",...}
+
+curl "http://localhost:5002/config?keys=Common:Auth:Issuer,Common:Auth:Audience"
+# Expected: {"values":[...], "fetchedAt":"..."}
 ```
 
 **Step 3: Start API in proxy mode**
 
 ```bash
-cd sites/api.arolariu.ro/src/Core
-INFRA=proxy CONFIG_PROXY_URL=http://localhost:5002 dotnet run
+INFRA=proxy ASPNETCORE_ENVIRONMENT=Development dotnet run --project sites/api.arolariu.ro/src/Core
 ```
 
-Verify health: `curl http://localhost:5000/health`
+Verify: `curl http://localhost:5000/health`
 
-**Step 4: Start website with proxy**
+**Step 4: Start website**
 
 ```bash
-cd sites/arolariu.ro
-CONFIG_PROXY_URL=http://localhost:5002 npm run dev
+INFRA=proxy npm run dev --workspace=sites/arolariu.ro
 ```
 
-Verify: Open http://localhost:3000 and test storage operations
-
-**Step 5: Commit integration test documentation**
-
-```bash
-git commit -m "docs: add integration testing instructions for config proxy flow"
-```
+Verify: Open http://localhost:3000, test storage operations.
 
 ---
 
-## Summary of Architecture
+## Architecture Summary
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Azure App Configuration                  │
-│                     + Azure Key Vault                       │
+│             Azure App Configuration + Key Vault             │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ (Managed Identity)
-                           │ 5-min refresh
+                           │ Managed Identity (backend UAMI)
+                           │ 5-min auto-refresh
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              experiments.arolariu.ro                         │
-│           (Config Proxy — .NET 10 Minimal API)              │
+│                experiments.arolariu.ro                       │
+│             (.NET 10 Minimal API — config proxy)            │
 │                                                             │
-│  • Caches all config in-memory                              │
-│  • Auto-refreshes from Azure every 5 min                    │
-│  • REST API: GET /config/{key}, GET /config?keys=...        │
-│  • Local mode: reads appsettings.json                       │
-│  • Health check: GET /health                                │
+│  Auth: Entra ID Easy Auth (Azure)  /  None (local)          │
+│  Allowed callers: frontend UAMI + backend UAMI only         │
+│  Cache: in-memory, 5-min refresh from Azure                 │
+│  REST: GET /config/{key}  |  GET /config?keys=...           │
 └──────────┬──────────────────────────┬───────────────────────┘
-           │ HTTP (5-min refresh)     │ HTTP (5-min TTL cache)
+           │ Bearer token (UAMI)      │ Bearer token (UAMI)
+           │ Hardcoded URL            │ Hardcoded URL
            ▼                          ▼
 ┌──────────────────────┐   ┌──────────────────────────────────┐
 │  api.arolariu.ro     │   │  arolariu.ro (Next.js)           │
 │  (.NET 10 API)       │   │                                   │
-│                      │   │  configProxy.ts                   │
-│  IOptionsMonitor     │   │  • In-memory TTL cache            │
-│  ConfigRefreshSvc    │   │  • Fetch from proxy               │
-│  ConfigProxyClient   │   │  • Stale-while-revalidate         │
+│                      │   │  configProxy.ts (server-only)     │
+│  IOptionsMonitor     │   │  • TTL cache (5 min)              │
+│  ConfigRefreshSvc    │   │  • Stale-while-revalidate         │
+│  ConfigProxyClient   │   │  • "use server" enforced          │
+│                      │   │                                   │
+│  NO App Config SDK   │   │  NO @azure/app-configuration     │
+│  NO Key Vault SDK    │   │  NO @azure/keyvault-secrets      │
 └──────────────────────┘   └──────────────────────────────────┘
 ```
 
 ## Environment Modes
 
-| Mode | `INFRA` env var | Config Source | Use Case |
-|------|----------------|---------------|----------|
-| **Azure Direct** | `azure` | Azure App Config + Key Vault directly | Legacy / migration |
-| **Proxy** | `proxy` | experiments.arolariu.ro REST API | Production (recommended) |
-| **Local** | `local` | appsettings.json / env vars | Offline development |
+| Mode | `INFRA` env var | Config Source | Auth | Config URL |
+|------|----------------|---------------|------|------------|
+| **Azure** | `azure` | App Config + KV directly | N/A (legacy) | N/A |
+| **Proxy (production)** | `azure` + proxy code | experiments.arolariu.ro | Entra ID Bearer | `https://experiments.arolariu.ro` |
+| **Proxy (local dev)** | `proxy` | experiments.arolariu.ro (Docker) | None | `http://localhost:5002` |
+| **Local** | `local` | appsettings.json / env vars | N/A | N/A |
 
-## Key Decisions
+## Security Model
 
-1. **Why .NET Minimal API instead of Azure Functions?** — Consistent with existing backend stack, simpler local dev story, no cold start issues, runs in same Docker Compose.
+| Layer | Mechanism | Details |
+|-------|-----------|---------|
+| **Network** | App Service Easy Auth v2 | All `/config/*` routes require Azure AD token |
+| **Identity** | `allowedPrincipals.identities` | Only frontend + backend UAMI object IDs can access |
+| **Token** | UAMI → Azure AD → Bearer | Callers acquire tokens via their UAMI automatically |
+| **Local bypass** | `INFRA != azure` | Auth disabled in local/proxy dev mode |
+| **Data** | Non-sensitive only via proxy | Secrets stay in Key Vault; proxy resolves references |
 
-2. **Why HTTP proxy instead of direct SDK access?** — Decouples config from apps (single place to manage Azure credentials), enables config refresh without redeployment, reduces Azure SDK dependencies in the frontend.
+## Libraries Removed After Migration
 
-3. **Why TTL cache instead of push-based refresh?** — Simpler to implement, works across HTTP, gracefully degrades on proxy failure (stale-while-revalidate pattern).
+| Library | Removed From | Reason |
+|---------|-------------|--------|
+| `Microsoft.Azure.AppConfiguration.AspNetCore` | API | Config via proxy now |
+| `Microsoft.Extensions.Configuration.AzureAppConfiguration` | API | Config via proxy now |
+| `Azure.Extensions.AspNetCore.Configuration.Secrets` | API | Config via proxy now |
+| `Azure.Security.KeyVault.Secrets` | API | KeyVaultService unused at runtime |
+| `@azure/app-configuration` | Website | Config via proxy now |
+| `@azure/keyvault-secrets` | Website | Never used in src |
 
-4. **Why keep `INFRA=azure` mode?** — Backward compatibility during migration. Can be removed once proxy mode is validated in production.
+## Libraries Kept
 
-## Migration Strategy
-
-1. Deploy experiments.arolariu.ro first
-2. Test with `INFRA=proxy` in staging
-3. Switch production API from `INFRA=azure` to `INFRA=proxy`
-4. Switch production website to use `CONFIG_PROXY_URL`
-5. Monitor for 1-2 weeks
-6. Optionally remove `INFRA=azure` codepath
-
-## Risk Mitigation
-
-- **Config proxy down?** Both clients have stale-while-revalidate: they return cached values when the proxy is unreachable.
-- **Startup dependency?** The API fetches config at startup. If the proxy is down, it fails fast with a clear error message.
-- **Security?** The proxy runs inside the same VNET/App Service plan. No public exposure of secrets.
-- **Performance?** Config values are cached in-memory with 5-min TTL. No per-request overhead.
+| Library | Kept In | Reason |
+|---------|---------|--------|
+| `Azure.Identity` | API | Still needed for Cosmos, Storage, OpenAI, Form Recognizer |
+| `Azure.Core` | API | Transitive dependency |
+| `@azure/identity` | Website | Still needed for Storage blob operations |
+| `@azure/storage-blob` | Website | Still needed for storage operations |
+| `@azure/monitor-opentelemetry-exporter` | Website | Still needed for telemetry |
