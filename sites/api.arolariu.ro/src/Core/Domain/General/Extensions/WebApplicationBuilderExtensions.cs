@@ -1,9 +1,11 @@
 namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Azure;
+using arolariu.Backend.Common.Configuration;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Services.KeyVault;
 using arolariu.Backend.Common.Telemetry.Logging;
@@ -42,6 +44,13 @@ using Microsoft.Extensions.DependencyInjection;
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested as it primarily consists of configuration logic.
 internal static class WebApplicationBuilderExtensions
 {
+  /// <summary>Config proxy URL — hardcoded, production.</summary>
+  private const string ConfigProxyUrlAzure = "https://experiments.arolariu.ro";
+  /// <summary>Config proxy URL — hardcoded, local dev.</summary>
+  private const string ConfigProxyUrlLocal = "http://localhost:5002";
+  /// <summary>Entra ID scope for experiments service.</summary>
+  private const string ExperimentsScope = "api://experiments-arolariu-ro/.default";
+
   /// <summary>
   /// Configures the application to use Azure Key Vault for secrets management and Azure App Configuration for centralized configuration.
   /// This method establishes secure connections to Azure services and sets up configuration providers with appropriate retry policies.
@@ -177,6 +186,72 @@ internal static class WebApplicationBuilderExtensions
   }
 
   /// <summary>
+  /// Configures the application to fetch configuration from experiments.arolariu.ro.
+  /// </summary>
+  /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure with proxy configuration.</param>
+  /// <remarks>
+  /// <para>
+  /// This method sets up a config proxy client that fetches configuration values from
+  /// the experiments.arolariu.ro service, which acts as a centralized configuration proxy
+  /// for Azure App Configuration and Key Vault.
+  /// </para>
+  /// <para>
+  /// The proxy URL is selected based on the ASPNETCORE_ENVIRONMENT variable:
+  /// - Production: https://experiments.arolariu.ro
+  /// - Other environments: http://localhost:5002
+  /// </para>
+  /// <para>
+  /// A background hosted service (<see cref="ConfigRefreshHostedService"/>) is registered
+  /// to periodically refresh configuration values every 5 minutes.
+  /// </para>
+  /// </remarks>
+  private static void AddProxyConfiguration(this WebApplicationBuilder builder)
+  {
+    var services = builder.Services;
+    var isAzureEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production";
+    var baseUrl = isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlLocal;
+
+    services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>
+    {
+      client.BaseAddress = new Uri(baseUrl);
+      client.Timeout = TimeSpan.FromSeconds(30);
+    });
+
+    // Fetch config at startup
+    using var tempProvider = services.BuildServiceProvider();
+    var proxyClient = tempProvider.GetRequiredService<IConfigProxyClient>();
+    var configValues = proxyClient.GetValuesAsync(new[]
+    {
+      "Common:Auth:Secret", "Common:Auth:Issuer", "Common:Auth:Audience",
+      "Common:Azure:TenantId", "Endpoints:OpenAI", "Endpoints:SqlServer",
+      "Endpoints:NoSqlServer", "Endpoints:StorageAccount",
+      "Endpoints:ApplicationInsights", "Endpoints:CognitiveServices",
+      "Endpoints:CognitiveServices:Key"
+    }).GetAwaiter().GetResult();
+
+    services.AddSingleton<IOptionsManager, CloudOptionsManager>();
+    services.Configure<AzureOptions>(options =>
+    {
+      var cfg = builder.Configuration;
+      options.SecretsEndpoint = cfg["ApplicationOptions:SecretsEndpoint"] ?? string.Empty;
+      options.ConfigurationEndpoint = cfg["ApplicationOptions:ConfigurationEndpoint"] ?? string.Empty;
+      options.JwtSecret = configValues.GetValueOrDefault("Common:Auth:Secret", string.Empty);
+      options.JwtIssuer = configValues.GetValueOrDefault("Common:Auth:Issuer", string.Empty);
+      options.JwtAudience = configValues.GetValueOrDefault("Common:Auth:Audience", string.Empty);
+      options.TenantId = configValues.GetValueOrDefault("Common:Azure:TenantId", string.Empty);
+      options.OpenAIEndpoint = configValues.GetValueOrDefault("Endpoints:OpenAI", string.Empty);
+      options.SqlConnectionString = configValues.GetValueOrDefault("Endpoints:SqlServer", string.Empty);
+      options.NoSqlConnectionString = configValues.GetValueOrDefault("Endpoints:NoSqlServer", string.Empty);
+      options.StorageAccountEndpoint = configValues.GetValueOrDefault("Endpoints:StorageAccount", string.Empty);
+      options.ApplicationInsightsEndpoint = configValues.GetValueOrDefault("Endpoints:ApplicationInsights", string.Empty);
+      options.CognitiveServicesEndpoint = configValues.GetValueOrDefault("Endpoints:CognitiveServices", string.Empty);
+      options.CognitiveServicesKey = configValues.GetValueOrDefault("Endpoints:CognitiveServices:Key", string.Empty);
+    });
+
+    services.AddHostedService<ConfigRefreshHostedService>();
+  }
+
+  /// <summary>
   /// Configures the <see cref="WebApplicationBuilder"/> with general domain services and cross-cutting infrastructure concerns.
   /// This method serves as the primary composition root for the application's foundational services.
   /// </summary>
@@ -250,11 +325,14 @@ internal static class WebApplicationBuilderExtensions
       case "azure":
         AddAzureConfiguration(builder);
         break;
+      case "proxy":
+        AddProxyConfiguration(builder);
+        break;
       case "local":
         AddLocalConfiguration(builder);
         break;
       default:
-        throw new ArgumentException("The `INFRA` env. var. is not defined! Aborting...");
+        throw new ArgumentException("The `INFRA` env. var. must be 'azure', 'proxy', or 'local'.");
     }
     #endregion
 

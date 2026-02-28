@@ -1,21 +1,18 @@
 /**
- * @fileoverview Server action for reading configuration from Azure App Configuration.
+ * @fileoverview Server action for reading configuration via the config proxy.
  * @module sites/arolariu.ro/src/lib/actions/storage/fetchConfig
  */
 
 "use server";
 
-import {CONFIG_STORE} from "@/lib/utils.server";
-import {AppConfigurationClient} from "@azure/app-configuration";
+import {fetchConfigValue} from "@/lib/config/configProxy";
 
 /**
- * Server action that fetches a configuration value from Azure App Configuration.
+ * Server action that fetches a configuration value.
+ * Delegates to the experiments.arolariu.ro config proxy.
  * @param key - The key of the configuration value to fetch.
  * @returns The value of the configuration value, if available.
  */
 export default async function fetchConfigurationValue(key: string): Promise<string> {
-  console.log("Trying to fetch the following key:", key);
-  const client = new AppConfigurationClient(CONFIG_STORE);
-  const setting = await client.getConfigurationSetting({key});
-  return setting.value ?? "";
+  return fetchConfigValue(key);
 }
