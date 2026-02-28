@@ -71,8 +71,8 @@ param entraAppClientId string
 @description('The name of the ACR for container image references.')
 param containerRegistryName string
 
-@description('The storage account connection string for AzureWebJobsStorage.')
-param storageAccountConnectionString string
+@description('The storage account name for identity-based AzureWebJobsStorage.')
+param storageAccountName string
 
 // Import common tags
 import { createTags } from '../constants/tags.bicep'
@@ -144,8 +144,8 @@ resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
           value: 'dotnet-isolated'
         }
         {
-          name: 'AzureWebJobsStorage'
-          value: storageAccountConnectionString
+          name: 'AzureWebJobsStorage__accountName'
+          value: storageAccountName
         }
       ]
     }
@@ -174,7 +174,7 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
         enabled: true
         registration: {
           clientId: entraAppClientId
-          openIdIssuer: 'https://login.microsoftonline.com/${tenant().tenantId}/v2.0'
+          openIdIssuer: '${environment().authentication.loginEndpoint}${tenant().tenantId}/v2.0'
         }
         validation: {
           defaultAuthorizationPolicy: {

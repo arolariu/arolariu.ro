@@ -1,0 +1,323 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.1-experimental",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+    "_EXPERIMENTAL_FEATURES_ENABLED": [
+      "Enable @validate() decorator"
+    ],
+    "_generator": {
+      "name": "bicep",
+      "version": "0.40.2.10011",
+      "templateHash": "1179030714049981779"
+    },
+    "description": "Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth",
+    "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
+    "version": "2.1.0"
+  },
+  "definitions": {
+    "_1.resourceTags": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "allowedValues": [
+            "DEVELOPMENT",
+            "PRODUCTION"
+          ],
+          "metadata": {
+            "description": "Environment tag"
+          }
+        },
+        "deploymentType": {
+          "type": "string",
+          "allowedValues": [
+            "ARM",
+            "Bicep",
+            "Terraform"
+          ],
+          "metadata": {
+            "description": "Deployment method"
+          }
+        },
+        "deploymentDate": {
+          "type": "string",
+          "metadata": {
+            "description": "Deployment date in YYYY-MM-DD format"
+          }
+        },
+        "deploymentAuthor": {
+          "type": "string",
+          "metadata": {
+            "description": "Deployment author"
+          }
+        },
+        "module": {
+          "type": "string",
+          "metadata": {
+            "description": "Module or service name"
+          }
+        },
+        "costCenter": {
+          "type": "string",
+          "metadata": {
+            "description": "Cost center for billing"
+          }
+        },
+        "project": {
+          "type": "string",
+          "metadata": {
+            "description": "Project name or identifier"
+          }
+        },
+        "version": {
+          "type": "string",
+          "metadata": {
+            "description": "Version of the deployment"
+          }
+        }
+      },
+      "metadata": {
+        "description": "Resource tagging configuration",
+        "__bicep_imported_from!": {
+          "sourceTemplate": "../types/common.type.bicep"
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "namespace": "__bicep",
+      "members": {
+        "createTags": {
+          "parameters": [
+            {
+              "type": "string",
+              "name": "moduleName"
+            },
+            {
+              "type": "string",
+              "name": "deploymentDate"
+            }
+          ],
+          "output": {
+            "$ref": "#/definitions/_1.resourceTags",
+            "value": {
+              "environment": "PRODUCTION",
+              "deploymentType": "Bicep",
+              "deploymentDate": "[parameters('deploymentDate')]",
+              "deploymentAuthor": "Alexandru-Razvan Olariu",
+              "module": "[parameters('moduleName')]",
+              "costCenter": "infrastructure",
+              "project": "arolariu.ro",
+              "version": "2.0.0"
+            }
+          },
+          "metadata": {
+            "__bicep_imported_from!": {
+              "sourceTemplate": "../constants/tags.bicep"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "parameters": {
+    "experimentsWebsiteLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "The location for the experiments Function App."
+      }
+    },
+    "experimentsWebsitePlanId": {
+      "type": "string",
+      "metadata": {
+        "description": "The ID of the App Service Plan to deploy on."
+      }
+    },
+    "experimentsWebsiteIdentityId": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource ID of the backend managed identity."
+      }
+    },
+    "experimentsWebsiteIdentityClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "The client ID of the backend managed identity for AZURE_CLIENT_ID."
+      }
+    },
+    "experimentsWebsiteDeploymentDate": {
+      "type": "string",
+      "metadata": {
+        "description": "The deployment timestamp."
+      }
+    },
+    "appInsightsConnectionString": {
+      "type": "string",
+      "metadata": {
+        "description": "The Application Insights connection string."
+      }
+    },
+    "frontendIdentityPrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "The frontend managed identity principal (object) ID - allowed caller."
+      }
+    },
+    "backendIdentityPrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "The backend managed identity principal (object) ID - allowed caller."
+      }
+    },
+    "entraAppClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "The Entra ID App Registration client ID for the experiments service."
+      }
+    },
+    "containerRegistryName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the ACR for container image references."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "The storage account name for identity-based AzureWebJobsStorage."
+      }
+    }
+  },
+  "variables": {
+    "commonTags": "[__bicep.createTags('sites', parameters('experimentsWebsiteDeploymentDate'))]"
+  },
+  "resources": {
+    "experimentsWebsite": {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2024-04-01",
+      "name": "experiments-arolariu-ro",
+      "location": "[parameters('experimentsWebsiteLocation')]",
+      "kind": "functionapp,linux,container",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', parameters('experimentsWebsiteIdentityId'))]": {}
+        }
+      },
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[parameters('experimentsWebsitePlanId')]",
+        "reserved": true,
+        "hyperV": false,
+        "siteConfig": {
+          "healthCheckPath": "/api/health",
+          "acrUseManagedIdentityCreds": true,
+          "alwaysOn": false,
+          "numberOfWorkers": 1,
+          "http20Enabled": true,
+          "linuxFxVersion": "[format('DOCKER|{0}.azurecr.io/experiments-arolariu-ro:latest', parameters('containerRegistryName'))]",
+          "requestTracingEnabled": true,
+          "httpLoggingEnabled": true,
+          "logsDirectorySizeLimit": 50,
+          "detailedErrorLoggingEnabled": false,
+          "webSocketsEnabled": false,
+          "loadBalancing": "LeastRequests",
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "ipSecurityRestrictions": [
+            {
+              "ipAddress": "AzureCloud",
+              "action": "Allow",
+              "tag": "ServiceTag",
+              "priority": 100,
+              "name": "AzureCloud",
+              "description": "Allow Azure services only."
+            },
+            {
+              "ipAddress": "Any",
+              "action": "Deny",
+              "priority": 2147483647,
+              "name": "Deny all",
+              "description": "Deny all public access."
+            }
+          ],
+          "ipSecurityRestrictionsDefaultAction": "Deny",
+          "appSettings": [
+            {
+              "name": "AZURE_CLIENT_ID",
+              "value": "[parameters('experimentsWebsiteIdentityClientId')]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[parameters('appInsightsConnectionString')]"
+            },
+            {
+              "name": "INFRA",
+              "value": "azure"
+            },
+            {
+              "name": "FUNCTIONS_WORKER_RUNTIME",
+              "value": "dotnet-isolated"
+            },
+            {
+              "name": "AzureWebJobsStorage__accountName",
+              "value": "[parameters('storageAccountName')]"
+            }
+          ]
+        },
+        "scmSiteAlsoStopped": true,
+        "clientAffinityEnabled": false,
+        "httpsOnly": true,
+        "redundancyMode": "None",
+        "publicNetworkAccess": "Enabled"
+      },
+      "tags": "[union(variables('commonTags'), createObject('displayName', 'Experiments Configuration Proxy (Azure Functions)'))]"
+    },
+    "authSettings": {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2024-04-01",
+      "name": "[format('{0}/{1}', 'experiments-arolariu-ro', 'authsettingsV2')]",
+      "properties": {
+        "globalValidation": {
+          "requireAuthentication": true,
+          "unauthenticatedClientAction": "Return401"
+        },
+        "identityProviders": {
+          "azureActiveDirectory": {
+            "enabled": true,
+            "registration": {
+              "clientId": "[parameters('entraAppClientId')]",
+              "openIdIssuer": "[format('{0}{1}/v2.0', environment().authentication.loginEndpoint, tenant().tenantId)]"
+            },
+            "validation": {
+              "defaultAuthorizationPolicy": {
+                "allowedPrincipals": {
+                  "identities": [
+                    "[parameters('frontendIdentityPrincipalId')]",
+                    "[parameters('backendIdentityPrincipalId')]"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "experimentsWebsite"
+      ]
+    }
+  },
+  "outputs": {
+    "experimentsWebsiteUrl": {
+      "type": "string",
+      "value": "[reference('experimentsWebsite').defaultHostName]"
+    },
+    "experimentsWebsiteName": {
+      "type": "string",
+      "value": "experiments-arolariu-ro"
+    }
+  }
+}
