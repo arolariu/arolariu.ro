@@ -3,6 +3,7 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Configuration;

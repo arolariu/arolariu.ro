@@ -59,7 +59,8 @@ export async function fetchConfigValue(key: string): Promise<string> {
     const data = (await response.json()) as {Key: string; Value: string; FetchedAt: string};
     cache.set(key, {value: data.Value, fetchedAt: Date.now()});
     return data.Value;
-  } catch {
+  } catch (error) {
+    console.error(`[configProxy] Failed to fetch key "${key}":`, error);
     return cached?.value ?? "";
   }
 }
@@ -101,7 +102,8 @@ export async function fetchConfigValues(keys: string[]): Promise<Record<string, 
         result[item.Key] = item.Value;
       }
     }
-  } catch {
+  } catch (error) {
+    console.error(`[configProxy] Failed to fetch batch keys [${uncachedKeys.join(", ")}]:`, error);
     for (const key of uncachedKeys) {
       result[key] = cache.get(key)?.value ?? "";
     }
