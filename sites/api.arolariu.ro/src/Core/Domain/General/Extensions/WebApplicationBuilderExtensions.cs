@@ -1,9 +1,9 @@
 namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Services.KeyVault;
 using arolariu.Backend.Common.Telemetry.Logging;
@@ -15,7 +15,6 @@ using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
-using Azure.Identity;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -55,7 +54,7 @@ internal static class WebApplicationBuilderExtensions
   /// - Azure App Configuration: For centralized application configuration management
   /// </para>
   /// <para>
-  /// Authentication is handled using DefaultAzureCredential, which supports multiple authentication methods:
+  /// Authentication is handled using AzureCredentialFactory, which supports multiple authentication methods:
   /// - Managed Identity (in production environments)
   /// - Azure CLI credentials (in development)
   /// - Environment variables and other fallback methods
@@ -86,14 +85,7 @@ internal static class WebApplicationBuilderExtensions
     var services = builder.Services;
     var configuration = builder.Configuration;
 
-    var credentials = new DefaultAzureCredential(
-#if !DEBUG
-            new DefaultAzureCredentialOptions
-            {
-                ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-            }
-#endif
-    );
+    var credentials = AzureCredentialFactory.CreateCredential();
 
     var secretsStoreEndpoint = new Uri(configuration["ApplicationOptions:SecretsEndpoint"]!);
     var configStoreEndpoint = new Uri(configuration["ApplicationOptions:ConfigurationEndpoint"]!);
@@ -139,29 +131,17 @@ internal static class WebApplicationBuilderExtensions
     {
       options.SecretsEndpoint = secretsStoreEndpoint.ToString();
       options.ConfigurationEndpoint = configStoreEndpoint.ToString();
-
-      var configMappings = new Dictionary<string, string>
-      {
-        { nameof(options.JwtSecret), "Common:Auth:Secret" },
-        { nameof(options.JwtIssuer), "Common:Auth:Issuer" },
-        { nameof(options.TenantId), "Common:Azure:TenantId" },
-        { nameof(options.OpenAIEndpoint), "Endpoints:OpenAI" },
-        { nameof(options.JwtAudience), "Common:Auth:Audience" },
-        { nameof(options.SqlConnectionString), "Endpoints:SqlServer" },
-        { nameof(options.NoSqlConnectionString), "Endpoints:NoSqlServer" },
-        { nameof(options.StorageAccountEndpoint), "Endpoints:StorageAccount" },
-        { nameof(options.ApplicationInsightsEndpoint), "Endpoints:ApplicationInsights" },
-        { nameof(options.CognitiveServicesEndpoint), "Endpoints:CognitiveServices" },
-        { nameof(options.CognitiveServicesKey), "Endpoints:CognitiveServices:Key" },
-      };
-
-      foreach (var mapping in configMappings)
-      {
-        if (configStoreConfigurationProvider[mapping.Value] is string value)
-        {
-          options.GetType().GetProperty(mapping.Key)?.SetValue(options, value);
-        }
-      }
+      options.JwtSecret = configStoreConfigurationProvider["Common:Auth:Secret"] ?? string.Empty;
+      options.JwtIssuer = configStoreConfigurationProvider["Common:Auth:Issuer"] ?? string.Empty;
+      options.JwtAudience = configStoreConfigurationProvider["Common:Auth:Audience"] ?? string.Empty;
+      options.TenantId = configStoreConfigurationProvider["Common:Azure:TenantId"] ?? string.Empty;
+      options.OpenAIEndpoint = configStoreConfigurationProvider["Endpoints:OpenAI"] ?? string.Empty;
+      options.SqlConnectionString = configStoreConfigurationProvider["Endpoints:SqlServer"] ?? string.Empty;
+      options.NoSqlConnectionString = configStoreConfigurationProvider["Endpoints:NoSqlServer"] ?? string.Empty;
+      options.StorageAccountEndpoint = configStoreConfigurationProvider["Endpoints:StorageAccount"] ?? string.Empty;
+      options.ApplicationInsightsEndpoint = configStoreConfigurationProvider["Endpoints:ApplicationInsights"] ?? string.Empty;
+      options.CognitiveServicesEndpoint = configStoreConfigurationProvider["Endpoints:CognitiveServices"] ?? string.Empty;
+      options.CognitiveServicesKey = configStoreConfigurationProvider["Endpoints:CognitiveServices:Key"] ?? string.Empty;
     });
   }
 

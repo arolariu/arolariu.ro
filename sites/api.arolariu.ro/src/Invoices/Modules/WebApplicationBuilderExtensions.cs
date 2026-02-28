@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Modules;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
@@ -15,8 +16,6 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
-
-using Azure.Identity;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.Cosmos;
@@ -61,14 +60,7 @@ public static class WebApplicationBuilderExtensions
                     .GetRequiredService<IOptionsManager>()
                     .GetApplicationOptions()
                     .NoSqlConnectionString);
-      var credentials = new DefaultAzureCredential(
-#if !DEBUG
-			new DefaultAzureCredentialOptions
-			{
-				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-			}
-#endif
-      );
+      var credentials = AzureCredentialFactory.CreateCredential();
 
       var cosmosClient = new CosmosClient(connectionString, credentials);
       return cosmosClient;

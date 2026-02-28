@@ -5,10 +5,10 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 
-using Azure.Identity;
-using Azure.Monitor.OpenTelemetry.Exporter;
+using global::Azure.Monitor.OpenTelemetry.Exporter;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -93,14 +93,7 @@ public static class MeteringExtensions
         metricsOptions.AddAzureMonitorMetricExporter(monitorOptions =>
         {
           monitorOptions.ConnectionString = connectionString;
-          monitorOptions.Credential = new DefaultAzureCredential(
-#if !DEBUG
-                      new DefaultAzureCredentialOptions
-                      {
-                          ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-                      }
-#endif
-          );
+          monitorOptions.Credential = AzureCredentialFactory.CreateCredential();
         });
       }
     });

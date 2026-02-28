@@ -4,12 +4,12 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 
-using Azure;
-using Azure.Core;
-using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
+using global::Azure;
+using global::Azure.Core;
+using global::Azure.Security.KeyVault.Secrets;
 
 /// <summary>
 /// Provides production-ready implementation for secure secret retrieval from Azure Key Vault.
@@ -164,14 +164,7 @@ public sealed class KeyVaultService : IKeyVaultService
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var keyVaultEndpoint = options.SecretsEndpoint;
-    var credentials = new DefaultAzureCredential(
-#if !DEBUG
-            new DefaultAzureCredentialOptions
-            {
-                ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-            }
-#endif
-    );
+    var credentials = AzureCredentialFactory.CreateCredential();
 
     _secretClient = new SecretClient(
       vaultUri: new Uri(keyVaultEndpoint),
