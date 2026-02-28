@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Configuration;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Telemetry.Logging;
@@ -107,9 +108,18 @@ internal static class WebApplicationBuilderExtensions
     {
       client.BaseAddress = new Uri(baseUrl);
       client.Timeout = TimeSpan.FromSeconds(30);
+    }).ConfigurePrimaryHttpMessageHandler(() =>
+    {
+      if (isAzureEnv)
+      {
+        return new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExperimentsScope);
+      }
+      return new HttpClientHandler();
     });
 
-    // Fetch config at startup
+    // Fetch config at startup.
+    // Sync-over-async at startup is safe here — no SynchronizationContext exists yet.
+    // The host hasn't started, so there's no deadlock risk.
     using var tempProvider = services.BuildServiceProvider();
     var proxyClient = tempProvider.GetRequiredService<IConfigProxyClient>();
     var configValues = proxyClient.GetValuesAsync(new[]

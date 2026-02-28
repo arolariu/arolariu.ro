@@ -25,7 +25,7 @@ using Azure.AI.FormRecognizer.DocumentAnalysis;
 /// <para><b>Lifecycle:</b> Stateless wrapper around a single <see cref="DocumentAnalysisClient"/> instance (thread-safe). Scoped lifetime
 /// registration is acceptable; underlying client could be promoted to singleton if connection reuse optimization is required.</para>
 /// <para><b>Resilience:</b> Lets Azure SDK exceptions bubble (network / 429 / service faults) for higher-layer classification (retry / circuit breaker).
-/// Partial extraction failures (missing fields, unexpected field types) are tolerated silently-unrecognized values remain at sentinel defaults.</para>
+/// Partial extraction failures (missing fields, unexpected field types) are tolerated silently — unrecognized values remain at sentinel defaults.</para>
 /// <para><b>Security:</b> Uses <see cref="AzureCredentialFactory"/> (managed identity in non-DEBUG) instead of API key string usage to reduce
 /// secret management risk. Environment variable <c>AZURE_CLIENT_ID</c> must be present in managed identity deployments.</para>
 /// <para><b>Output Model Fidelity:</b> Mapping intentionally narrow: only fields required for initial enrichment pipeline are projected.

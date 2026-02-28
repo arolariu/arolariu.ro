@@ -45,10 +45,14 @@ public sealed class ConfigRefreshHostedService(
                 var proxyClient = scope.ServiceProvider.GetRequiredService<IConfigProxyClient>();
                 var values = await proxyClient.GetValuesAsync(ConfigKeys, stoppingToken).ConfigureAwait(false);
 
+                // Note: Directly mutating CurrentValue works because AzureOptions properties are mutable
+                // and CloudOptionsManager returns CurrentValue by reference. For truly reactive options,
+                // consider implementing IOptionsChangeTokenSource<AzureOptions> in a future iteration.
                 var opts = optionsMonitor.CurrentValue;
                 opts.JwtSecret = values.GetValueOrDefault("Common:Auth:Secret", opts.JwtSecret);
                 opts.JwtIssuer = values.GetValueOrDefault("Common:Auth:Issuer", opts.JwtIssuer);
                 opts.JwtAudience = values.GetValueOrDefault("Common:Auth:Audience", opts.JwtAudience);
+                opts.TenantId = values.GetValueOrDefault("Common:Azure:TenantId", opts.TenantId);
                 opts.OpenAIEndpoint = values.GetValueOrDefault("Endpoints:OpenAI", opts.OpenAIEndpoint);
                 opts.SqlConnectionString = values.GetValueOrDefault("Endpoints:SqlServer", opts.SqlConnectionString);
                 opts.NoSqlConnectionString = values.GetValueOrDefault("Endpoints:NoSqlServer", opts.NoSqlConnectionString);

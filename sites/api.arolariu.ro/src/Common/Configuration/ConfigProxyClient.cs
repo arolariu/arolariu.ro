@@ -17,7 +17,7 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
     /// <inheritdoc />
     public async Task<string?> GetValueAsync(string key, CancellationToken ct = default)
     {
-        var response = await httpClient.GetAsync($"/api/config/{key}", ct).ConfigureAwait(false);
+        var response = await httpClient.GetAsync($"/api/config/{Uri.EscapeDataString(key)}", ct).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode) return null;
 
         var result = await response.Content.ReadFromJsonAsync<ConfigValueDto>(JsonOptions, ct).ConfigureAwait(false);

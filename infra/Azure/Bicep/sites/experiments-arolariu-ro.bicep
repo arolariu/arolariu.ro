@@ -168,6 +168,7 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
     globalValidation: {
       requireAuthentication: true
       unauthenticatedClientAction: 'Return401'
+      excludedPaths: ['/api/health']
     }
     identityProviders: {
       azureActiveDirectory: {

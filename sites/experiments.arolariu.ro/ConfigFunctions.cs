@@ -20,7 +20,7 @@ using Microsoft.Extensions.Logging;
 public sealed class ConfigFunctions(IConfiguration configuration, ILogger<ConfigFunctions> logger)
 {
     /// <summary>
-    /// Health check endpoint. Always public — not behind auth.
+    /// Health check endpoint. Excluded from Easy Auth via excludedPaths configuration.
     /// GET /api/health
     /// </summary>
     [Function("GetHealth")]
@@ -65,6 +65,7 @@ public sealed class ConfigFunctions(IConfiguration configuration, ILogger<Config
         if (keys is not null)
         {
             var keyList = keys.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            // Empty string for missing keys is intentional — callers treat missing as unconfigured.
             var values = keyList
                 .Select(k => new ConfigValueResponse(k, configuration[k] ?? string.Empty, DateTime.UtcNow))
                 .ToList();
@@ -80,7 +81,7 @@ public sealed class ConfigFunctions(IConfiguration configuration, ILogger<Config
                 .Select(c => new ConfigValueResponse($"{prefix}:{c.Key}", c.Value ?? string.Empty, DateTime.UtcNow))
                 .ToList();
 
-            logger.LogInformation("Fetched {Count} config keys with prefix '{Prefix}'", values.Count, prefix);
+            logger.LogInformation("Fetched {Count} config keys with prefix {Prefix}", values.Count, prefix);
             return new OkObjectResult(new ConfigBatchResponse(values, DateTime.UtcNow));
         }
 
