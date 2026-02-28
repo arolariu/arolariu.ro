@@ -1,19 +1,14 @@
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS base
-WORKDIR /app
-EXPOSE 8080
-
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY ["experiments.arolariu.ro.csproj", "."]
 RUN dotnet restore
 COPY . .
-RUN dotnet build -c Release -o /app/build
-
-FROM build AS publish
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENV ASPNETCORE_URLS=http://+:8080
-ENTRYPOINT ["dotnet", "experiments.arolariu.ro.dll"]
+FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated9.0 AS final
+WORKDIR /home/site/wwwroot
+COPY --from=build /app/publish .
+
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot
+ENV AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+ENV FUNCTIONS_WORKER_RUNTIME=dotnet-isolated

@@ -17,7 +17,7 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
     /// <inheritdoc />
     public async Task<string?> GetValueAsync(string key, CancellationToken ct = default)
     {
-        var response = await httpClient.GetAsync($"/config/{key}", ct).ConfigureAwait(false);
+        var response = await httpClient.GetAsync($"/api/config/{key}", ct).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode) return null;
 
         var result = await response.Content.ReadFromJsonAsync<ConfigValueDto>(JsonOptions, ct).ConfigureAwait(false);
@@ -28,7 +28,7 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
     public async Task<IReadOnlyDictionary<string, string>> GetValuesAsync(IEnumerable<string> keys, CancellationToken ct = default)
     {
         var keysParam = string.Join(",", keys);
-        var response = await httpClient.GetAsync($"/config?keys={Uri.EscapeDataString(keysParam)}", ct).ConfigureAwait(false);
+        var response = await httpClient.GetAsync($"/api/config?keys={Uri.EscapeDataString(keysParam)}", ct).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode) return new Dictionary<string, string>();
 
         var result = await response.Content.ReadFromJsonAsync<ConfigBatchDto>(JsonOptions, ct).ConfigureAwait(false);

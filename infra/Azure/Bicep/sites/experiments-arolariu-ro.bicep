@@ -7,10 +7,10 @@
 // values via REST API to the frontend and backend services.
 //
 // Runtime Configuration:
-// - Platform: Linux container (app,linux,container)
-// - Runtime: .NET Core 10.0 (linuxFxVersion)
+// - Platform: Azure Functions v4 isolated worker (.NET 10)
+// - Kind: functionapp,linux,container
 // - Container source: Azure Container Registry (via managed identity)
-// - Always On: Disabled (cost optimization — wakes on request)
+// - Serverless: Consumption/Flex plan for cost optimization
 //
 // Identity:
 // - User-Assigned Managed Identity (Backend UAMI)
@@ -74,7 +74,7 @@ var commonTags = createTags('sites', experimentsWebsiteDeploymentDate)
 resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'experiments-arolariu-ro'
   location: experimentsWebsiteLocation
-  kind: 'app,linux,container'
+  kind: 'functionapp,linux,container'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -87,12 +87,12 @@ resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
     reserved: true // reserved == linux plan
     hyperV: false
     siteConfig: {
-      healthCheckPath: '/'
+      healthCheckPath: '/api/health'
       acrUseManagedIdentityCreds: true
       alwaysOn: false // cost optimization — wakes on request
       numberOfWorkers: 1
       http20Enabled: true
-      linuxFxVersion: 'DOTNETCORE|10.0'
+      linuxFxVersion: 'DOCKER|experiments-arolariu-ro:latest'
       requestTracingEnabled: true
       httpLoggingEnabled: true
       logsDirectorySizeLimit: 50 // 50 MB
@@ -139,6 +139,14 @@ resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
         {
           name: 'INFRA'
           value: 'azure'
+        }
+        {
+          name: 'FUNCTIONS_WORKER_RUNTIME'
+          value: 'dotnet-isolated'
+        }
+        {
+          name: 'AzureWebJobsStorage'
+          value: 'UseDevelopmentStorage=false'
         }
       ]
     }

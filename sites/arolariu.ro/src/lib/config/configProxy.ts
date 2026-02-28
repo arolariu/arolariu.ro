@@ -48,7 +48,7 @@ export async function fetchConfigValue(key: string): Promise<string> {
     const bearerToken = await getBearerToken();
     if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
 
-    const response = await fetch(`${CONFIG_PROXY_URL}/config/${encodeURIComponent(key)}`, {
+    const response = await fetch(`${CONFIG_PROXY_URL}/api/config/${encodeURIComponent(key)}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
       headers,
@@ -88,7 +88,7 @@ export async function fetchConfigValues(keys: string[]): Promise<Record<string, 
     if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
 
     const keysParam = uncachedKeys.map((k) => encodeURIComponent(k)).join(",");
-    const response = await fetch(`${CONFIG_PROXY_URL}/config?keys=${keysParam}`, {
+    const response = await fetch(`${CONFIG_PROXY_URL}/api/config?keys=${keysParam}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
       headers,
