@@ -1,16 +1,16 @@
 // =====================================================================================
 // Experiments Service - experiments.arolariu.ro Configuration Proxy
 // =====================================================================================
-// This module provisions the App Service that hosts the experiments.arolariu.ro
+// This module provisions the Azure Function App that hosts the experiments.arolariu.ro
 // configuration proxy service. The service acts as a centralized configuration
 // gateway, reading from Azure App Configuration + Key Vault and exposing
 // values via REST API to the frontend and backend services.
 //
 // Runtime Configuration:
-// - Platform: Azure Functions v4 isolated worker (.NET 10)
+// - Platform: Azure Functions v4 isolated worker (.NET 9)
 // - Kind: functionapp,linux,container
 // - Container source: Azure Container Registry (via managed identity)
-// - Serverless: Consumption/Flex plan for cost optimization
+// - Serverless: Runs on development App Service Plan (cost optimization)
 //
 // Identity:
 // - User-Assigned Managed Identity (Backend UAMI)
@@ -19,6 +19,7 @@
 //
 // Security:
 // - Entra ID Easy Auth v2 restricts access to frontend + backend UAMIs only
+// - IP restrictions: Azure services only (AzureCloud service tag)
 // - No public access to configuration endpoints
 // - HTTPS Only: Enforced
 // - FTPS: Disabled
@@ -27,7 +28,7 @@
 // Observability:
 // - Application Insights instrumentation enabled
 // - HTTP logging enabled
-// - Health check path: /
+// - Health check path: /api/health
 //
 // See: compute/appServicePlans.bicep (hosting plan)
 // See: identity/userAssignedIdentity.bicep (Backend UAMI)
@@ -36,11 +37,11 @@
 
 targetScope = 'resourceGroup'
 
-metadata description = 'Experiments configuration proxy experiments.arolariu.ro with Entra ID Easy Auth'
+metadata description = 'Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
-metadata version = '2.0.0'
+metadata version = '2.1.0'
 
-@description('The location for the experiments website.')
+@description('The location for the experiments Function App.')
 param experimentsWebsiteLocation string
 
 @description('The ID of the App Service Plan to deploy on.')
@@ -67,11 +68,17 @@ param backendIdentityPrincipalId string
 @description('The Entra ID App Registration client ID for the experiments service.')
 param entraAppClientId string
 
+@description('The name of the ACR for container image references.')
+param containerRegistryName string
+
+@description('The storage account connection string for AzureWebJobsStorage.')
+param storageAccountConnectionString string
+
 // Import common tags
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('sites', experimentsWebsiteDeploymentDate)
 
-resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
+resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
   name: 'experiments-arolariu-ro'
   location: experimentsWebsiteLocation
   kind: 'functionapp,linux,container'
@@ -92,7 +99,7 @@ resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
       alwaysOn: false // cost optimization — wakes on request
       numberOfWorkers: 1
       http20Enabled: true
-      linuxFxVersion: 'DOCKER|experiments-arolariu-ro:latest'
+      linuxFxVersion: 'DOCKER|${containerRegistryName}.azurecr.io/experiments-arolariu-ro:latest'
       requestTracingEnabled: true
       httpLoggingEnabled: true
       logsDirectorySizeLimit: 50 // 50 MB
@@ -121,20 +128,12 @@ resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
       ipSecurityRestrictionsDefaultAction: 'Deny'
       appSettings: [
         {
-          name: 'ASPNETCORE_ENVIRONMENT'
-          value: 'Production'
-        }
-        {
           name: 'AZURE_CLIENT_ID'
           value: experimentsWebsiteIdentityClientId
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsightsConnectionString
-        }
-        {
-          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-          value: '~3'
         }
         {
           name: 'INFRA'
@@ -146,20 +145,18 @@ resource experimentsWebsite 'Microsoft.Web/sites@2025-03-01' = {
         }
         {
           name: 'AzureWebJobsStorage'
-          value: 'UseDevelopmentStorage=false'
+          value: storageAccountConnectionString
         }
       ]
     }
     scmSiteAlsoStopped: true
     clientAffinityEnabled: false
-    hostNamesDisabled: false
-    containerSize: 0
     httpsOnly: true
     redundancyMode: 'None'
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: 'Enabled' // IP restrictions enforce access control
   }
   tags: union(commonTags, {
-    displayName: 'Experiments Configuration Proxy'
+    displayName: 'Experiments Configuration Proxy (Azure Functions)'
   })
 }
 
