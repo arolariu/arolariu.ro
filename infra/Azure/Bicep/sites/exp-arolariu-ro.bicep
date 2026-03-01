@@ -152,6 +152,18 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
           name: 'AZURE_APPCONFIG_ENDPOINT'
           value: 'https://${appConfigurationName}.azconfig.io'
         }
+        {
+          name: 'EXP_CALLER_API_IDS'
+          value: backendIdentityPrincipalId
+        }
+        {
+          name: 'EXP_CALLER_WEBSITE_IDS'
+          value: frontendIdentityPrincipalId
+        }
+        {
+          name: 'EXP_CATALOG_REFRESH_INTERVAL_SECONDS'
+          value: '300'
+        }
       ]
     }
     scmSiteAlsoStopped: true

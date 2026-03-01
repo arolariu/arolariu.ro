@@ -46,3 +46,17 @@ class TestGetConfigSection:
         assert "Endpoints:Storage" in result
         assert "Endpoints:SQL" in result
         assert "Common:Auth" not in result
+
+
+class TestLoadLocalConfig:
+    def test_loads_explicit_local_config_path(self, tmp_path, monkeypatch):
+        config_path = tmp_path / "local-config.json"
+        payload = {"Common:Auth:Issuer": "https://example.test"}
+        config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+        monkeypatch.setenv("EXP_LOCAL_CONFIG_PATH", str(config_path))
+
+        from config_loader import _load_local_config
+
+        result = _load_local_config()
+        assert result["Common:Auth:Issuer"] == "https://example.test"

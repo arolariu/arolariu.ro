@@ -24,10 +24,20 @@ _loaded: bool = False
 
 def _load_local_config() -> dict[str, str]:
     """Load configuration from config.json for local development."""
-    config_path = Path(__file__).parent / "config.json"
+    local_path = os.getenv("EXP_LOCAL_CONFIG_PATH", "").strip()
+    config_path = Path(local_path) if local_path else Path(__file__).parent / "config.json"
     if not config_path.exists():
-        logger.warning("config.json not found at %s, using empty config", config_path)
-        return {}
+        template_path = Path(__file__).parent / "config.template.json"
+        if template_path.exists():
+            logger.warning(
+                "Local config not found at %s; loading template from %s",
+                config_path,
+                template_path,
+            )
+            config_path = template_path
+        else:
+            logger.warning("Local config not found at %s, using empty config", config_path)
+            return {}
 
     with open(config_path, "r", encoding="utf-8") as f:
         return json.load(f)
