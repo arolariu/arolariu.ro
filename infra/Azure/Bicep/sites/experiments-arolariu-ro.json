@@ -10,7 +10,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "8303456137616850692"
+      "templateHash": "7910490096569386443"
     },
     "description": "Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -178,12 +178,6 @@
         "description": "The Entra ID App Registration client ID for the experiments service."
       }
     },
-    "containerRegistryName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the ACR for container image references."
-      }
-    },
     "storageAccountName": {
       "type": "string",
       "metadata": {
@@ -200,7 +194,7 @@
       "apiVersion": "2024-04-01",
       "name": "experiments-arolariu-ro",
       "location": "[parameters('experimentsWebsiteLocation')]",
-      "kind": "functionapp,linux,container",
+      "kind": "functionapp,linux",
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
@@ -218,7 +212,7 @@
           "alwaysOn": false,
           "numberOfWorkers": 1,
           "http20Enabled": true,
-          "linuxFxVersion": "[format('DOCKER|{0}.azurecr.io/experiments-arolariu-ro:latest', parameters('containerRegistryName'))]",
+          "linuxFxVersion": "Python|3.12",
           "requestTracingEnabled": true,
           "httpLoggingEnabled": true,
           "logsDirectorySizeLimit": 50,
