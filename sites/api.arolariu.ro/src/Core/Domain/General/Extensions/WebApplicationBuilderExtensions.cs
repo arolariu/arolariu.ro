@@ -3,6 +3,7 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Net.Http;
 
 using arolariu.Backend.Common.Azure;
@@ -109,6 +110,7 @@ internal static class WebApplicationBuilderExtensions
     {
       client.BaseAddress = new Uri(baseUrl);
       client.Timeout = TimeSpan.FromSeconds(30);
+      client.DefaultRequestHeaders.Add("X-Exp-Target", "api");
     }).ConfigurePrimaryHttpMessageHandler(() =>
     {
       if (isAzureEnv)
@@ -123,16 +125,26 @@ internal static class WebApplicationBuilderExtensions
     // The host hasn't started, so there's no deadlock risk.
     using var tempProvider = services.BuildServiceProvider();
     var proxyClient = tempProvider.GetRequiredService<IConfigProxyClient>();
-    var configValues = proxyClient.GetValuesAsync(new[]
+    var configCatalog = proxyClient.GetCatalogAsync("api").GetAwaiter().GetResult()
+      ?? throw new InvalidOperationException("Unable to load API configuration catalog from exp service.");
+
+    if (configCatalog.RequiredKeys.Count == 0)
     {
-      "Common:Auth:Secret", "Common:Auth:Issuer", "Common:Auth:Audience",
-      "Common:Azure:TenantId", "Endpoints:OpenAI", "Endpoints:SqlServer",
-      "Endpoints:NoSqlServer", "Endpoints:StorageAccount",
-      "Endpoints:ApplicationInsights", "Endpoints:CognitiveServices",
-      "Endpoints:CognitiveServices:Key"
-    }).GetAwaiter().GetResult();
+      throw new InvalidOperationException("The API configuration catalog does not contain required keys.");
+    }
+
+    var configValues = proxyClient.GetValuesAsync(configCatalog.RequiredKeys).GetAwaiter().GetResult();
+    var missingRequiredKeys = configCatalog.RequiredKeys
+      .Where(key => !configValues.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
+      .ToArray();
+
+    if (missingRequiredKeys.Length > 0)
+    {
+      throw new InvalidOperationException($"Missing required config values: {string.Join(", ", missingRequiredKeys)}");
+    }
 
     services.AddSingleton<IOptionsManager, CloudOptionsManager>();
+    services.AddSingleton(new ConfigCatalogCache(configCatalog));
     services.Configure<AzureOptions>(options =>
     {
       var cfg = builder.Configuration;

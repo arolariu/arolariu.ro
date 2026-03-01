@@ -18,4 +18,10 @@ public interface IConfigProxyClient
   /// <param name="ct">Cancellation token for the operation.</param>
   /// <returns>A read-only dictionary of configuration key-value pairs.</returns>
   Task<IReadOnlyDictionary<string, string>> GetValuesAsync(IEnumerable<string> keys, CancellationToken ct = default);
+
+  /// <summary>Fetches the catalog that defines allowed and required keys for a target caller.</summary>
+  /// <param name="target">The target caller identifier (for example: api, website).</param>
+  /// <param name="ct">Cancellation token for the operation.</param>
+  /// <returns>The typed catalog response, or null when unavailable.</returns>
+  Task<ConfigCatalogResponse?> GetCatalogAsync(string target, CancellationToken ct = default);
 }

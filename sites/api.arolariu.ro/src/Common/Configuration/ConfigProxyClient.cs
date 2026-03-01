@@ -35,6 +35,15 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
     return result?.Values.ToDictionary(v => v.Key, v => v.Value) ?? new Dictionary<string, string>();
   }
 
+  /// <inheritdoc />
+  public async Task<ConfigCatalogResponse?> GetCatalogAsync(string target, CancellationToken ct = default)
+  {
+    var response = await httpClient.GetAsync($"/api/catalog?for={Uri.EscapeDataString(target)}", ct).ConfigureAwait(false);
+    if (!response.IsSuccessStatusCode) return null;
+
+    return await response.Content.ReadFromJsonAsync<ConfigCatalogResponse>(JsonOptions, ct).ConfigureAwait(false);
+  }
+
   /// <summary>DTO for a single configuration value response.</summary>
   /// <param name="Key">The configuration key.</param>
   /// <param name="Value">The configuration value.</param>

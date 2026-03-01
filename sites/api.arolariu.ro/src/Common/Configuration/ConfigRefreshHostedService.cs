@@ -7,30 +7,22 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 /// <summary>Background service that refreshes config from the proxy every 5 minutes.</summary>
-/// <param name="serviceProvider">The service provider for creating scoped services.</param>
+/// <param name="proxyClient">The config proxy client used to fetch catalogs and key values.</param>
+/// <param name="catalogCache">The in-memory catalog cache for required key definitions.</param>
 /// <param name="optionsMonitor">The options monitor for accessing current Azure options.</param>
 /// <param name="logger">The logger for recording refresh events and errors.</param>
 public sealed class ConfigRefreshHostedService(
-    IServiceProvider serviceProvider,
+    IConfigProxyClient proxyClient,
+    ConfigCatalogCache catalogCache,
     IOptionsMonitor<AzureOptions> optionsMonitor,
     ILogger<ConfigRefreshHostedService> logger) : BackgroundService
 {
   private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
-
-  private static readonly string[] ConfigKeys =
-  [
-      "Common:Auth:Secret", "Common:Auth:Issuer", "Common:Auth:Audience",
-        "Common:Azure:TenantId", "Endpoints:OpenAI", "Endpoints:SqlServer",
-        "Endpoints:NoSqlServer", "Endpoints:StorageAccount",
-        "Endpoints:ApplicationInsights", "Endpoints:CognitiveServices",
-        "Endpoints:CognitiveServices:Key"
-  ];
 
   /// <inheritdoc />
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -41,9 +33,32 @@ public sealed class ConfigRefreshHostedService(
 
       try
       {
-        using var scope = serviceProvider.CreateScope();
-        var proxyClient = scope.ServiceProvider.GetRequiredService<IConfigProxyClient>();
-        var values = await proxyClient.GetValuesAsync(ConfigKeys, stoppingToken).ConfigureAwait(false);
+        var latestCatalog = await proxyClient.GetCatalogAsync("api", stoppingToken).ConfigureAwait(false);
+        if (latestCatalog is null)
+        {
+          logger.LogWarning(
+            "Catalog refresh returned no catalog. Continuing with cached catalog version {CatalogVersion}.",
+            catalogCache.CurrentCatalog.Version);
+        }
+        else if (latestCatalog.RequiredKeys.Count == 0)
+        {
+          logger.LogWarning(
+            "Catalog refresh returned an empty required key set. Continuing with cached catalog version {CatalogVersion}.",
+            catalogCache.CurrentCatalog.Version);
+        }
+        else
+        {
+          catalogCache.Update(latestCatalog);
+        }
+
+        var configKeys = catalogCache.RequiredKeys;
+        if (configKeys.Count == 0)
+        {
+          logger.LogWarning("Catalog contains no required keys. Skipping refresh cycle.");
+          continue;
+        }
+
+        var values = await proxyClient.GetValuesAsync(configKeys, stoppingToken).ConfigureAwait(false);
 
         // Note: Directly mutating CurrentValue works because AzureOptions properties are mutable
         // and CloudOptionsManager returns CurrentValue by reference. For truly reactive options,
