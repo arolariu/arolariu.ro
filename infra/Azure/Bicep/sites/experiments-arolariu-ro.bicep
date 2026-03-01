@@ -7,7 +7,7 @@
 // values via REST API to the frontend and backend services.
 //
 // Runtime Configuration:
-// - Platform: Azure Functions v4 isolated worker (.NET 9)
+// - Platform: Azure Functions v4 Python 3.12
 // - Kind: functionapp,linux,container
 // - Container source: Azure Container Registry (via managed identity)
 // - Serverless: Runs on development App Service Plan (cost optimization)
@@ -39,7 +39,7 @@ targetScope = 'resourceGroup'
 
 metadata description = 'Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
-metadata version = '2.1.0'
+metadata version = '3.0.0'
 
 @description('The location for the experiments Function App.')
 param experimentsWebsiteLocation string
@@ -141,7 +141,7 @@ resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
         }
         {
           name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet-isolated'
+          value: 'python'
         }
         {
           name: 'AzureWebJobsStorage__accountName'

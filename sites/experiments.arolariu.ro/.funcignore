@@ -1,0 +1,8 @@
+.venv/
+.vscode/
+tests/
+__pycache__/
+*.pyc
+local.settings.json
+.git/
+.gitignore

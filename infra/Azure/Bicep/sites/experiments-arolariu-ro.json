@@ -10,11 +10,11 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "1179030714049981779"
+      "templateHash": "8303456137616850692"
     },
     "description": "Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
-    "version": "2.1.0"
+    "version": "3.0.0"
   },
   "definitions": {
     "_1.resourceTags": {
@@ -260,7 +260,7 @@
             },
             {
               "name": "FUNCTIONS_WORKER_RUNTIME",
-              "value": "dotnet-isolated"
+              "value": "python"
             },
             {
               "name": "AzureWebJobsStorage__accountName",
@@ -283,7 +283,10 @@
       "properties": {
         "globalValidation": {
           "requireAuthentication": true,
-          "unauthenticatedClientAction": "Return401"
+          "unauthenticatedClientAction": "Return401",
+          "excludedPaths": [
+            "/api/health"
+          ]
         },
         "identityProviders": {
           "azureActiveDirectory": {

@@ -1,10 +1,4 @@
 {
-  "Logging": { "LogLevel": { "Default": "Information" } },
-  "AllowedHosts": "*",
-  "ApplicationOptions": {
-    "SecretsEndpoint": "",
-    "ConfigurationEndpoint": ""
-  },
   "Common:Auth:Secret": "local-dev-jwt-secret-at-least-32-characters-long!!",
   "Common:Auth:Issuer": "https://localhost:5000",
   "Common:Auth:Audience": "https://localhost:3000",
