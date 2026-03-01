@@ -97,6 +97,8 @@ jobs:
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
 
+      # Note: .github/actions/setup-workspace is Node.js + .NET only.
+      # Python setup uses actions/setup-python directly with pip caching.
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:

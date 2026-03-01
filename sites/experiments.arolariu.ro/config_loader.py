@@ -4,8 +4,10 @@ Configuration loader for experiments.arolariu.ro.
 Loads configuration from Azure App Configuration + Key Vault (azure mode)
 or from a local config.json file (local/proxy mode).
 
-The config dict is loaded once at module import time and cached globally.
-Azure mode supports automatic refresh via the provider's built-in mechanism.
+The config dict is loaded once at module import time and cached as a plain dict.
+Azure Functions cold starts re-import the module, so config is refreshed on each
+new instance. Within a single instance, config values remain static for the
+lifetime of the process.
 """
 
 import json

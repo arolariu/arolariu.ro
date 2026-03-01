@@ -4,5 +4,7 @@ tests/
 __pycache__/
 *.pyc
 local.settings.json
+config.json
+pyproject.toml
 .git/
 .gitignore
