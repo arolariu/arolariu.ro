@@ -7,9 +7,10 @@
  * @module sites/arolariu.ro/src/lib/azure/credentials
  */
 
-"use server";
-
 import {DefaultAzureCredential, type TokenCredential} from "@azure/identity";
+
+// eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker, not a runtime import
+import "server-only";
 
 let cachedCredential: TokenCredential | null = null;
 

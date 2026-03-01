@@ -25,7 +25,13 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: () => mockAuth(),
 }));
 
+// Mock config proxy
+vi.mock("@/lib/config/configProxy", () => ({
+  fetchConfigValues: vi.fn(),
+}));
+
 // Import after mocks
+import {fetchConfigValues} from "@/lib/config/configProxy";
 import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {createJwtToken} from "@/lib/utils.server";
 import {fetchAaaSUserFromAuthService, fetchBFFUserFromAuthService} from "./fetchUser";
@@ -33,6 +39,10 @@ import {fetchAaaSUserFromAuthService, fetchBFFUserFromAuthService} from "./fetch
 describe("fetchUser actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(fetchConfigValues).mockResolvedValue({
+      "Common:Auth:Issuer": "https://auth.example.test",
+      "Common:Auth:Audience": "https://api.example.test",
+    });
   });
 
   afterEach(() => {
@@ -105,8 +115,8 @@ describe("fetchUser actions", () => {
 
         expect(createJwtToken).toHaveBeenCalledWith(
           expect.objectContaining({
-            iss: "https://auth.arolariu.ro",
-            aud: "https://api.arolariu.ro",
+            iss: "https://auth.example.test",
+            aud: "https://api.example.test",
             sub: "john@example.com",
             userIdentifier: "guid-john@example.com",
             role: "user",
@@ -222,8 +232,8 @@ describe("fetchUser actions", () => {
 
         expect(createJwtToken).toHaveBeenCalledWith(
           expect.objectContaining({
-            iss: "https://auth.arolariu.ro",
-            aud: "https://api.arolariu.ro",
+            iss: "https://auth.example.test",
+            aud: "https://api.example.test",
             sub: "guest",
             userIdentifier: EMPTY_GUID,
             role: "guest",
@@ -260,6 +270,18 @@ describe("fetchUser actions", () => {
         vi.mocked(createJwtToken).mockRejectedValueOnce(new Error("JWT creation failed"));
 
         await expect(fetchBFFUserFromAuthService()).rejects.toThrow("JWT creation failed");
+      });
+
+      it("should throw when required auth config values are missing", async () => {
+        mockAuth.mockResolvedValue({isAuthenticated: false, userId: null});
+        vi.mocked(fetchConfigValues).mockResolvedValue({
+          "Common:Auth:Issuer": "",
+          "Common:Auth:Audience": "",
+        });
+
+        await expect(fetchBFFUserFromAuthService()).rejects.toThrow(
+          "Missing required authentication configuration from exp catalog.",
+        );
       });
     });
   });
