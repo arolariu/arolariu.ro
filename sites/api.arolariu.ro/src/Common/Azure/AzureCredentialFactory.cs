@@ -17,23 +17,23 @@ using global::Azure.Identity;
 /// </remarks>
 public static class AzureCredentialFactory
 {
-    private static readonly Lazy<TokenCredential> CachedCredential = new(CreateCredentialInternal);
+  private static readonly Lazy<TokenCredential> CachedCredential = new(CreateCredentialInternal);
 
-    /// <summary>
-    /// Returns the shared <see cref="TokenCredential"/> instance.
-    /// Thread-safe, lazy-initialized, and never expires (Azure SDK refreshes tokens internally).
-    /// </summary>
-    public static TokenCredential CreateCredential() => CachedCredential.Value;
+  /// <summary>
+  /// Returns the shared <see cref="TokenCredential"/> instance.
+  /// Thread-safe, lazy-initialized, and never expires (Azure SDK refreshes tokens internally).
+  /// </summary>
+  public static TokenCredential CreateCredential() => CachedCredential.Value;
 
-    private static DefaultAzureCredential CreateCredentialInternal()
-    {
-        return new DefaultAzureCredential(
+  private static DefaultAzureCredential CreateCredentialInternal()
+  {
+    return new DefaultAzureCredential(
 #if !DEBUG
             new DefaultAzureCredentialOptions
             {
                 ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
             }
 #endif
-        );
-    }
+    );
+  }
 }

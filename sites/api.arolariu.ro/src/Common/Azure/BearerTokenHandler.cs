@@ -15,13 +15,13 @@ using global::Azure.Core;
 /// <param name="scope">The scope to request when acquiring the token.</param>
 public sealed class BearerTokenHandler(TokenCredential credential, string scope) : DelegatingHandler(new HttpClientHandler())
 {
-    private readonly TokenRequestContext _tokenContext = new([scope]);
+  private readonly TokenRequestContext _tokenContext = new([scope]);
 
-    /// <inheritdoc />
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-    {
-        var token = await credential.GetTokenAsync(_tokenContext, ct).ConfigureAwait(false);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
-        return await base.SendAsync(request, ct).ConfigureAwait(false);
-    }
+  /// <inheritdoc />
+  protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+  {
+    var token = await credential.GetTokenAsync(_tokenContext, ct).ConfigureAwait(false);
+    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+    return await base.SendAsync(request, ct).ConfigureAwait(false);
+  }
 }
