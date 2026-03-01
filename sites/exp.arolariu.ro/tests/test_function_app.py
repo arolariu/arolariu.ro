@@ -175,6 +175,20 @@ class TestGetConfigBatch:
         resp = get_config_batch(req)
         assert resp.status_code == 400
 
+    def test_returns_400_for_invalid_prefix_format(self):
+        from function_app import get_config_batch
+
+        req = func.HttpRequest(
+            method="GET",
+            body=b"",
+            url="/api/config?prefix=Endpoints:*",
+            params={"prefix": "Endpoints:*"},
+            headers={"X-Exp-Target": "api"},
+        )
+
+        resp = get_config_batch(req)
+        assert resp.status_code == 400
+
     def test_returns_403_for_disallowed_batch_keys_in_azure_mode(self, monkeypatch):
         from function_app import get_config_batch
 

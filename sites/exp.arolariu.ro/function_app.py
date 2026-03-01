@@ -35,6 +35,7 @@ load_config()
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 VALID_CONFIG_KEY_PATTERN = re.compile(r"^[A-Za-z0-9:_-]{1,256}$")
+VALID_CONFIG_PREFIX_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 
 def _json_response(body: dict, status_code: int = 200) -> func.HttpResponse:
@@ -182,19 +183,23 @@ def get_config_batch(req: func.HttpRequest) -> func.HttpResponse:
         return _json_response({"values": values, "fetchedAt": _utcnow_iso()})
 
     if prefix_param is not None:
-        authorization_result = authorize_prefix_request(req, prefix_param)
+        normalized_prefix = prefix_param.strip()
+        if not VALID_CONFIG_PREFIX_PATTERN.fullmatch(normalized_prefix):
+            return _json_response({"error": "Invalid prefix format."}, status_code=400)
+
+        authorization_result = authorize_prefix_request(req, normalized_prefix)
         if not authorization_result.is_authorized:
             return _auth_error_response(
                 message=authorization_result.message,
                 status_code=authorization_result.status_code,
             )
 
-        section = get_config_section(prefix_param)
+        section = get_config_section(normalized_prefix)
         values = [
             {"key": k, "value": v, "fetchedAt": _utcnow_iso()}
             for k, v in section.items()
         ]
-        logging.info("Fetched %d config keys with prefix %s", len(values), prefix_param)
+        logging.info("Fetched %d config keys with prefix %s", len(values), normalized_prefix)
         return _json_response({"values": values, "fetchedAt": _utcnow_iso()})
 
     return _json_response(

@@ -1,0 +1,12 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+tests/
+*.pyc
+*.pyo
+*.pyd
+local.settings.json
+config.json
+.git/
+.gitignore

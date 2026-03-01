@@ -60,3 +60,33 @@ class TestLoadLocalConfig:
 
         result = _load_local_config()
         assert result["Common:Auth:Issuer"] == "https://example.test"
+
+    def test_returns_empty_dict_for_malformed_json(self, tmp_path, monkeypatch):
+        config_path = tmp_path / "broken-config.json"
+        config_path.write_text("{ invalid json", encoding="utf-8")
+        monkeypatch.setenv("EXP_LOCAL_CONFIG_PATH", str(config_path))
+
+        from config_loader import _load_local_config
+
+        assert _load_local_config() == {}
+
+    def test_returns_empty_dict_for_non_object_payload(self, tmp_path, monkeypatch):
+        config_path = tmp_path / "array-config.json"
+        config_path.write_text(json.dumps(["not", "an", "object"]), encoding="utf-8")
+        monkeypatch.setenv("EXP_LOCAL_CONFIG_PATH", str(config_path))
+
+        from config_loader import _load_local_config
+
+        assert _load_local_config() == {}
+
+    def test_normalizes_local_config_values_to_strings(self, tmp_path, monkeypatch):
+        config_path = tmp_path / "typed-config.json"
+        payload = {"Feature:Enabled": True, "Feature:Limit": 5}
+        config_path.write_text(json.dumps(payload), encoding="utf-8")
+        monkeypatch.setenv("EXP_LOCAL_CONFIG_PATH", str(config_path))
+
+        from config_loader import _load_local_config
+
+        result = _load_local_config()
+        assert result["Feature:Enabled"] == "True"
+        assert result["Feature:Limit"] == "5"

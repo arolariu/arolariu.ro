@@ -39,8 +39,22 @@ def _load_local_config() -> dict[str, str]:
             logger.warning("Local config not found at %s, using empty config", config_path)
             return {}
 
-    with open(config_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError) as exception:
+        logger.error("Failed to load local config from %s: %s", config_path, exception)
+        return {}
+
+    if not isinstance(payload, dict):
+        logger.error(
+            "Local config root must be a JSON object at %s, but found %s",
+            config_path,
+            type(payload).__name__,
+        )
+        return {}
+
+    return {str(key): str(value) for key, value in payload.items()}
 
 
 def _load_azure_config() -> dict[str, str]:

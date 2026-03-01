@@ -8,6 +8,17 @@ import os
 from models import CatalogResponse
 
 
+def _parse_refresh_interval_seconds() -> int:
+    """Parse catalog refresh interval from environment with a safe fallback."""
+    raw_value = os.getenv("EXP_CATALOG_REFRESH_INTERVAL_SECONDS", "300").strip()
+    try:
+        parsed = int(raw_value)
+    except ValueError:
+        return 300
+
+    return parsed if parsed > 0 else 300
+
+
 def _catalog_version(
     required_keys: list[str],
     optional_keys: list[str],
@@ -29,7 +40,7 @@ def _build_catalog(
     """Build a catalog response instance for a target caller."""
     optional_values = optional_keys or []
     allowed_prefix_values = allowed_prefixes or []
-    refresh_seconds = int(os.getenv("EXP_CATALOG_REFRESH_INTERVAL_SECONDS", "300"))
+    refresh_seconds = _parse_refresh_interval_seconds()
     return CatalogResponse(
         target=target,
         version=_catalog_version(required_keys, optional_values, allowed_prefix_values),

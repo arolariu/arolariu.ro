@@ -141,7 +141,7 @@ jobs:
           echo "| Python | 3.12 |" >> $GITHUB_STEP_SUMMARY
 
   build:
-    if: github.repository == 'arolariu/arolariu.ro'
+    if: github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     name: 🛠️ Build phase (2/3)
     needs: test
     runs-on: ubuntu-latest
@@ -217,7 +217,7 @@ jobs:
           echo "::endgroup::"
 
   deploy:
-    if: github.repository == 'arolariu/arolariu.ro'
+    if: github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     name: 🚀 Deploy phase (3/3)
     needs: build
     runs-on: ubuntu-latest
