@@ -10,9 +10,9 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "18113235951515012849"
+      "templateHash": "12243781345670925789"
     },
-    "description": "Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth",
+    "description": "Azure Functions config proxy exp.arolariu.ro with Entra ID Easy Auth",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
     "version": "3.0.0"
   },
@@ -124,31 +124,31 @@
     }
   ],
   "parameters": {
-    "experimentsWebsiteLocation": {
+    "expWebsiteLocation": {
       "type": "string",
       "metadata": {
         "description": "The location for the experiments Function App."
       }
     },
-    "experimentsWebsitePlanId": {
+    "expWebsitePlanId": {
       "type": "string",
       "metadata": {
         "description": "The ID of the App Service Plan to deploy on."
       }
     },
-    "experimentsWebsiteIdentityId": {
+    "expWebsiteIdentityId": {
       "type": "string",
       "metadata": {
         "description": "The resource ID of the backend managed identity."
       }
     },
-    "experimentsWebsiteIdentityClientId": {
+    "expWebsiteIdentityClientId": {
       "type": "string",
       "metadata": {
         "description": "The client ID of the backend managed identity for AZURE_CLIENT_ID."
       }
     },
-    "experimentsWebsiteDeploymentDate": {
+    "expWebsiteDeploymentDate": {
       "type": "string",
       "metadata": {
         "description": "The deployment timestamp."
@@ -175,7 +175,7 @@
     "entraAppClientId": {
       "type": "string",
       "metadata": {
-        "description": "The Entra ID App Registration client ID for the experiments service."
+        "description": "The Entra ID App Registration client ID for the exp service."
       }
     },
     "storageAccountName": {
@@ -192,24 +192,24 @@
     }
   },
   "variables": {
-    "commonTags": "[__bicep.createTags('sites', parameters('experimentsWebsiteDeploymentDate'))]"
+    "commonTags": "[__bicep.createTags('sites', parameters('expWebsiteDeploymentDate'))]"
   },
   "resources": {
-    "experimentsWebsite": {
+    "expWebsite": {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2024-04-01",
-      "name": "experiments-arolariu-ro",
-      "location": "[parameters('experimentsWebsiteLocation')]",
+      "name": "exp-arolariu-ro",
+      "location": "[parameters('expWebsiteLocation')]",
       "kind": "functionapp,linux",
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
-          "[format('{0}', parameters('experimentsWebsiteIdentityId'))]": {}
+          "[format('{0}', parameters('expWebsiteIdentityId'))]": {}
         }
       },
       "properties": {
         "enabled": true,
-        "serverFarmId": "[parameters('experimentsWebsitePlanId')]",
+        "serverFarmId": "[parameters('expWebsitePlanId')]",
         "reserved": true,
         "hyperV": false,
         "siteConfig": {
@@ -248,7 +248,7 @@
           "appSettings": [
             {
               "name": "AZURE_CLIENT_ID",
-              "value": "[parameters('experimentsWebsiteIdentityClientId')]"
+              "value": "[parameters('expWebsiteIdentityClientId')]"
             },
             {
               "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
@@ -278,12 +278,12 @@
         "redundancyMode": "None",
         "publicNetworkAccess": "Enabled"
       },
-      "tags": "[union(variables('commonTags'), createObject('displayName', 'Experiments Configuration Proxy (Azure Functions)'))]"
+      "tags": "[union(variables('commonTags'), createObject('displayName', 'Exp Configuration Proxy (Azure Functions)'))]"
     },
     "authSettings": {
       "type": "Microsoft.Web/sites/config",
       "apiVersion": "2024-04-01",
-      "name": "[format('{0}/{1}', 'experiments-arolariu-ro', 'authsettingsV2')]",
+      "name": "[format('{0}/{1}', 'exp-arolariu-ro', 'authsettingsV2')]",
       "properties": {
         "globalValidation": {
           "requireAuthentication": true,
@@ -313,18 +313,18 @@
         }
       },
       "dependsOn": [
-        "experimentsWebsite"
+        "expWebsite"
       ]
     }
   },
   "outputs": {
-    "experimentsWebsiteUrl": {
+    "expWebsiteUrl": {
       "type": "string",
-      "value": "[reference('experimentsWebsite').defaultHostName]"
+      "value": "[reference('expWebsite').defaultHostName]"
     },
-    "experimentsWebsiteName": {
+    "expWebsiteName": {
       "type": "string",
-      "value": "experiments-arolariu-ro"
+      "value": "exp-arolariu-ro"
     }
   }
 }

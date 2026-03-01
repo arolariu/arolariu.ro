@@ -1,5 +1,5 @@
 [project]
-name = "experiments-arolariu-ro"
+name = "exp-arolariu-ro"
 version = "3.0.0"
 description = "Configuration proxy service for arolariu.ro platform"
 requires-python = ">=3.12"

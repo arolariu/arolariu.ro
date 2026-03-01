@@ -1,5 +1,5 @@
 """
-experiments.arolariu.ro — Configuration Proxy Service
+exp.arolariu.ro — Configuration Proxy Service
 
 Azure Functions v2 (Python) HTTP triggers for centralized configuration.
 Serves config values from Azure App Configuration + Key Vault (azure mode)

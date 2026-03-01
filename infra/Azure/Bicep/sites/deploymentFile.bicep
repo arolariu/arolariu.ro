@@ -8,7 +8,7 @@
 // Deployed Applications:
 // - arolariu.ro (Production) → Next.js frontend (App Service + Frontend UAMI)
 // - api.arolariu.ro → .NET backend API (App Service + Backend UAMI)
-// - experiments.arolariu.ro → Config proxy service (App Service + Backend UAMI + Easy Auth)
+// - exp.arolariu.ro → Config proxy service (App Service + Backend UAMI + Easy Auth)
 // - dev.arolariu.ro → Development/staging frontend (App Service)
 // - docs.arolariu.ro → DocFX documentation (Static Web App)
 // - cv.arolariu.ro → SvelteKit CV site (Static Web App)
@@ -21,7 +21,7 @@
 // Identity Model:
 // - Production frontend uses Frontend UAMI (read-only access)
 // - Backend API uses Backend UAMI (read-write access to storage/databases)
-// - Experiments proxy uses Backend UAMI (read access to App Config + Key Vault)
+// - Exp proxy uses Backend UAMI (read access to App Config + Key Vault)
 // - Development site shares Frontend UAMI for consistency
 //
 // App Service Plan Assignment:
@@ -74,7 +74,7 @@ param managedIdentityFrontendPrincipalId string
 param managedIdentityBackendPrincipalId string
 
 @description('Entra ID App Registration client ID for the experiments service Easy Auth.')
-param experimentsEntraAppClientId string
+param expEntraAppClientId string
 
 @description('The storage account name for identity-based AzureWebJobsStorage (Functions).')
 param storageAccountName string
@@ -126,18 +126,18 @@ module cvWebsiteDeployment 'cv-arolariu-ro.bicep' = {
   params: { staticWebAppDeploymentDate: resourceDeploymentDate }
 }
 
-module experimentsWebsiteDeployment 'experiments-arolariu-ro.bicep' = {
-  name: 'experimentsWebsiteDeployment-${resourceDeploymentDate}'
+module expWebsiteDeployment 'exp-arolariu-ro.bicep' = {
+  name: 'expWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     appInsightsConnectionString: appInsightsConnectionString
-    experimentsWebsiteLocation: resourceLocation
-    experimentsWebsitePlanId: developmentAppPlanId
-    experimentsWebsiteIdentityId: managedIdentityBackendId
-    experimentsWebsiteIdentityClientId: managedIdentityBackendClientId
-    experimentsWebsiteDeploymentDate: resourceDeploymentDate
+    expWebsiteLocation: resourceLocation
+    expWebsitePlanId: developmentAppPlanId
+    expWebsiteIdentityId: managedIdentityBackendId
+    expWebsiteIdentityClientId: managedIdentityBackendClientId
+    expWebsiteDeploymentDate: resourceDeploymentDate
     frontendIdentityPrincipalId: managedIdentityFrontendPrincipalId
     backendIdentityPrincipalId: managedIdentityBackendPrincipalId
-    entraAppClientId: experimentsEntraAppClientId
+    entraAppClientId: expEntraAppClientId
     storageAccountName: storageAccountName
     appConfigurationName: appConfigurationName
   }
@@ -149,7 +149,7 @@ output apiWebsiteUrl string = apiWebsiteDeployment.outputs.apiWebsiteUrl
 output devWebsiteUrl string = devWebsiteDeployment.outputs.devWebsiteUrl
 output docsWebsiteUrl string = docsWebsiteDeployment.outputs.docsWebsiteUrl
 output cvWebsiteUrl string = cvWebsiteDeployment.outputs.cvWebsiteUrl
-output experimentsWebsiteUrl string = experimentsWebsiteDeployment.outputs.experimentsWebsiteUrl
+output expWebsiteUrl string = expWebsiteDeployment.outputs.expWebsiteUrl
 
 // Output all website names for bindings
 output mainWebsiteName string = mainWebsiteDeployment.outputs.mainWebsiteName
@@ -157,4 +157,4 @@ output apiWebsiteName string = apiWebsiteDeployment.outputs.apiWebsiteName
 output devWebsiteName string = devWebsiteDeployment.outputs.devWebsiteName
 output docsWebsiteName string = docsWebsiteDeployment.outputs.docsWebsiteName
 output cvWebsiteName string = cvWebsiteDeployment.outputs.cvWebsiteName
-output experimentsWebsiteName string = experimentsWebsiteDeployment.outputs.experimentsWebsiteName
+output expWebsiteName string = expWebsiteDeployment.outputs.expWebsiteName

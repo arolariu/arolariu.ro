@@ -126,11 +126,11 @@ services:
       - "traefik.http.routers.redis.entrypoints=websecure"
       - "traefik.http.routers.redis.tls.certresolver=myresolver" # Added for Let's Encrypt
 
-  experiments:
+  exp:
     build:
-      context: ../../../sites/experiments.arolariu.ro
+      context: ../../../sites/exp.arolariu.ro
       dockerfile: Dockerfile
-    container_name: experiments-arolariu-ro
+    container_name: exp-arolariu-ro
     ports:
       - "5002:80"
     environment:

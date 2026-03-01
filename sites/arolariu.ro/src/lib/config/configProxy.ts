@@ -2,7 +2,7 @@
  * @fileoverview Server-side-only config proxy client with TTL caching.
  *
  * Config URL is hardcoded:
- * - Azure (production): https://experiments.arolariu.ro
+ * - Azure (production): https://exp.arolariu.ro
  * - Local (INFRA=proxy): http://localhost:5002
  *
  * @module sites/arolariu.ro/src/lib/config/configProxy
@@ -11,7 +11,7 @@
 "use server";
 
 const INFRA = process.env["INFRA"] ?? "local";
-const CONFIG_PROXY_URL = INFRA === "azure" ? "https://experiments.arolariu.ro" : "http://localhost:5002";
+const CONFIG_PROXY_URL = INFRA === "azure" ? "https://exp.arolariu.ro" : "http://localhost:5002";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface CacheEntry {
@@ -29,7 +29,7 @@ async function getBearerToken(): Promise<string> {
   if (INFRA !== "azure") return "";
   const {getAzureCredential} = await import("@/lib/azure/credentials");
   const credential = getAzureCredential();
-  const token = await credential.getToken("api://experiments-arolariu-ro/.default");
+  const token = await credential.getToken("api://exp-arolariu-ro/.default");
   return token?.token ?? "";
 }
 

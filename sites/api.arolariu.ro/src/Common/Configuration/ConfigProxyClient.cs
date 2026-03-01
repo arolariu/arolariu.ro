@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-/// <summary>HTTP client for the experiments.arolariu.ro config proxy.</summary>
+/// <summary>HTTP client for the exp.arolariu.ro config proxy.</summary>
 public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClient
 {
   private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };

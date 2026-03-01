@@ -2,7 +2,7 @@
 # Experiments Service Build and Deployment Workflow
 # =============================================================================
 # This workflow handles the CI/CD pipeline for the Python Azure Functions service
-# (experiments.arolariu.ro), including testing, containerization, and Azure deployment.
+# (exp.arolariu.ro), including testing, containerization, and Azure deployment.
 #
 # Architecture:
 #   - Phase 1: Test - Runs pytest to validate code quality
@@ -10,7 +10,7 @@
 #   - Phase 3: Deploy - Pushes container to ACR and deploys to Azure Function App
 #
 # Triggers:
-#   - Automatic: Push to 'main' branch with changes in sites/experiments.arolariu.ro/
+#   - Automatic: Push to 'main' branch with changes in sites/exp.arolariu.ro/
 #   - Manual: workflow_dispatch with environment and infrastructure selection
 #
 # Security:
@@ -36,13 +36,13 @@ permissions:
 
 defaults:
   run:
-    working-directory: ./sites/experiments.arolariu.ro
+    working-directory: ./sites/exp.arolariu.ro
 
 on:
   # Automatic trigger on main branch changes to experiments service
   push:
     branches: ["main"]
-    paths: ["sites/experiments.arolariu.ro/**"]
+    paths: ["sites/exp.arolariu.ro/**"]
 
   # Manual trigger for controlled deployments
   workflow_dispatch:
@@ -104,7 +104,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
-          cache-dependency-path: 'sites/experiments.arolariu.ro/requirements.txt'
+          cache-dependency-path: 'sites/exp.arolariu.ro/requirements.txt'
 
       - name: 📦 Install dependencies
         run: |
@@ -149,7 +149,7 @@ jobs:
           echo "│ 🏗️ BUILD PHASE                                            │"
           echo "├────────────────────────────────────────────────────────────┤"
           echo "│ 📦 Job:           Build phase (2/3)                        │"
-          echo "│ 🐳 Container:     experiments/experiments.arolariu         │"
+          echo "│ 🐳 Container:     exp/exp.arolariu         │"
           echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
           echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -171,7 +171,7 @@ jobs:
 
       - name: 🏗️ Building the docker container...
         env:
-          CONTAINER_NAME: "experiments/experiments.arolariu"
+          CONTAINER_NAME: "exp/exp.arolariu"
           CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         run: |
           echo "::group::🐳 Docker Build"
@@ -196,7 +196,7 @@ jobs:
 
       - name: ⏫ Pushing the docker container...
         env:
-          CONTAINER_NAME: "experiments/experiments.arolariu"
+          CONTAINER_NAME: "exp/exp.arolariu"
           CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         run: |
           echo "::group::⏫ Docker Push"
@@ -235,8 +235,8 @@ jobs:
         id: deploy-to-functionapp
         uses: azure/webapps-deploy@v3
         env:
-          CONTAINER_NAME: "experiments/experiments.arolariu"
+          CONTAINER_NAME: "exp/exp.arolariu"
           CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
         with:
-          app-name: "experiments-arolariu-ro"
+          app-name: "exp-arolariu-ro"
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-/// <summary>Client for fetching configuration from experiments.arolariu.ro.</summary>
+/// <summary>Client for fetching configuration from exp.arolariu.ro.</summary>
 public interface IConfigProxyClient
 {
   /// <summary>Fetches a single configuration value by key.</summary>

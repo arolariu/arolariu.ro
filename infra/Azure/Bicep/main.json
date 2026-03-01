@@ -10,7 +10,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "99722957456471432"
+      "templateHash": "11497995400830961480"
     },
     "description": "Root entry point for zero-touch deployment of the arolariu.ro Azure infrastructure.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -52,10 +52,10 @@
         "description": "The date when the deployment is executed."
       }
     },
-    "experimentsEntraAppClientId": {
+    "expEntraAppClientId": {
       "type": "string",
       "metadata": {
-        "description": "The Entra ID App Registration client ID for experiments.arolariu.ro Easy Auth."
+        "description": "The Entra ID App Registration client ID for exp.arolariu.ro Easy Auth."
       }
     }
   },
@@ -88,8 +88,8 @@
           "resourceLocation": {
             "value": "[parameters('resourceGroupLocation')]"
           },
-          "experimentsEntraAppClientId": {
-            "value": "[parameters('experimentsEntraAppClientId')]"
+          "expEntraAppClientId": {
+            "value": "[parameters('expEntraAppClientId')]"
           }
         },
         "template": {
@@ -104,7 +104,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.40.2.10011",
-              "templateHash": "17963484419115058928"
+              "templateHash": "12629633889640502891"
             },
             "description": "Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.",
             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -130,10 +130,10 @@
                 "description": "The location for the resources."
               }
             },
-            "experimentsEntraAppClientId": {
+            "expEntraAppClientId": {
               "type": "string",
               "metadata": {
-                "description": "Entra ID App Registration client ID for the experiments service Easy Auth."
+                "description": "Entra ID App Registration client ID for the exp service Easy Auth."
               }
             }
           },
@@ -3917,8 +3917,8 @@
                   "managedIdentityBackendPrincipalId": {
                     "value": "[reference('identitiesDeployment').outputs.managedIdentitiesList.value[1].principalId]"
                   },
-                  "experimentsEntraAppClientId": {
-                    "value": "[parameters('experimentsEntraAppClientId')]"
+                  "expEntraAppClientId": {
+                    "value": "[parameters('expEntraAppClientId')]"
                   },
                   "storageAccountName": {
                     "value": "[reference('storageDeployment').outputs.storageAccountName.value]"
@@ -3939,7 +3939,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.40.2.10011",
-                      "templateHash": "17835436178961353558"
+                      "templateHash": "8830220404299944922"
                     },
                     "description": "Sites orchestrator deploying all web applications and static sites",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -4019,7 +4019,7 @@
                         "description": "Principal (object) ID of the backend managed identity."
                       }
                     },
-                    "experimentsEntraAppClientId": {
+                    "expEntraAppClientId": {
                       "type": "string",
                       "metadata": {
                         "description": "Entra ID App Registration client ID for the experiments service Easy Auth."
@@ -5236,10 +5236,10 @@
                         }
                       }
                     },
-                    "experimentsWebsiteDeployment": {
+                    "expWebsiteDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2025-04-01",
-                      "name": "[format('experimentsWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "name": "[format('expWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
                       "properties": {
                         "expressionEvaluationOptions": {
                           "scope": "inner"
@@ -5249,19 +5249,19 @@
                           "appInsightsConnectionString": {
                             "value": "[parameters('appInsightsConnectionString')]"
                           },
-                          "experimentsWebsiteLocation": {
+                          "expWebsiteLocation": {
                             "value": "[parameters('resourceLocation')]"
                           },
-                          "experimentsWebsitePlanId": {
+                          "expWebsitePlanId": {
                             "value": "[parameters('developmentAppPlanId')]"
                           },
-                          "experimentsWebsiteIdentityId": {
+                          "expWebsiteIdentityId": {
                             "value": "[parameters('managedIdentityBackendId')]"
                           },
-                          "experimentsWebsiteIdentityClientId": {
+                          "expWebsiteIdentityClientId": {
                             "value": "[parameters('managedIdentityBackendClientId')]"
                           },
-                          "experimentsWebsiteDeploymentDate": {
+                          "expWebsiteDeploymentDate": {
                             "value": "[parameters('resourceDeploymentDate')]"
                           },
                           "frontendIdentityPrincipalId": {
@@ -5271,7 +5271,7 @@
                             "value": "[parameters('managedIdentityBackendPrincipalId')]"
                           },
                           "entraAppClientId": {
-                            "value": "[parameters('experimentsEntraAppClientId')]"
+                            "value": "[parameters('expEntraAppClientId')]"
                           },
                           "storageAccountName": {
                             "value": "[parameters('storageAccountName')]"
@@ -5292,9 +5292,9 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.40.2.10011",
-                              "templateHash": "18113235951515012849"
+                              "templateHash": "12243781345670925789"
                             },
-                            "description": "Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth",
+                            "description": "Azure Functions config proxy exp.arolariu.ro with Entra ID Easy Auth",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
                             "version": "3.0.0"
                           },
@@ -5406,31 +5406,31 @@
                             }
                           ],
                           "parameters": {
-                            "experimentsWebsiteLocation": {
+                            "expWebsiteLocation": {
                               "type": "string",
                               "metadata": {
                                 "description": "The location for the experiments Function App."
                               }
                             },
-                            "experimentsWebsitePlanId": {
+                            "expWebsitePlanId": {
                               "type": "string",
                               "metadata": {
                                 "description": "The ID of the App Service Plan to deploy on."
                               }
                             },
-                            "experimentsWebsiteIdentityId": {
+                            "expWebsiteIdentityId": {
                               "type": "string",
                               "metadata": {
                                 "description": "The resource ID of the backend managed identity."
                               }
                             },
-                            "experimentsWebsiteIdentityClientId": {
+                            "expWebsiteIdentityClientId": {
                               "type": "string",
                               "metadata": {
                                 "description": "The client ID of the backend managed identity for AZURE_CLIENT_ID."
                               }
                             },
-                            "experimentsWebsiteDeploymentDate": {
+                            "expWebsiteDeploymentDate": {
                               "type": "string",
                               "metadata": {
                                 "description": "The deployment timestamp."
@@ -5457,7 +5457,7 @@
                             "entraAppClientId": {
                               "type": "string",
                               "metadata": {
-                                "description": "The Entra ID App Registration client ID for the experiments service."
+                                "description": "The Entra ID App Registration client ID for the exp service."
                               }
                             },
                             "storageAccountName": {
@@ -5474,24 +5474,24 @@
                             }
                           },
                           "variables": {
-                            "commonTags": "[__bicep.createTags('sites', parameters('experimentsWebsiteDeploymentDate'))]"
+                            "commonTags": "[__bicep.createTags('sites', parameters('expWebsiteDeploymentDate'))]"
                           },
                           "resources": {
-                            "experimentsWebsite": {
+                            "expWebsite": {
                               "type": "Microsoft.Web/sites",
                               "apiVersion": "2024-04-01",
-                              "name": "experiments-arolariu-ro",
-                              "location": "[parameters('experimentsWebsiteLocation')]",
+                              "name": "exp-arolariu-ro",
+                              "location": "[parameters('expWebsiteLocation')]",
                               "kind": "functionapp,linux",
                               "identity": {
                                 "type": "UserAssigned",
                                 "userAssignedIdentities": {
-                                  "[format('{0}', parameters('experimentsWebsiteIdentityId'))]": {}
+                                  "[format('{0}', parameters('expWebsiteIdentityId'))]": {}
                                 }
                               },
                               "properties": {
                                 "enabled": true,
-                                "serverFarmId": "[parameters('experimentsWebsitePlanId')]",
+                                "serverFarmId": "[parameters('expWebsitePlanId')]",
                                 "reserved": true,
                                 "hyperV": false,
                                 "siteConfig": {
@@ -5530,7 +5530,7 @@
                                   "appSettings": [
                                     {
                                       "name": "AZURE_CLIENT_ID",
-                                      "value": "[parameters('experimentsWebsiteIdentityClientId')]"
+                                      "value": "[parameters('expWebsiteIdentityClientId')]"
                                     },
                                     {
                                       "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
@@ -5560,12 +5560,12 @@
                                 "redundancyMode": "None",
                                 "publicNetworkAccess": "Enabled"
                               },
-                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Experiments Configuration Proxy (Azure Functions)'))]"
+                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Exp Configuration Proxy (Azure Functions)'))]"
                             },
                             "authSettings": {
                               "type": "Microsoft.Web/sites/config",
                               "apiVersion": "2024-04-01",
-                              "name": "[format('{0}/{1}', 'experiments-arolariu-ro', 'authsettingsV2')]",
+                              "name": "[format('{0}/{1}', 'exp-arolariu-ro', 'authsettingsV2')]",
                               "properties": {
                                 "globalValidation": {
                                   "requireAuthentication": true,
@@ -5595,18 +5595,18 @@
                                 }
                               },
                               "dependsOn": [
-                                "experimentsWebsite"
+                                "expWebsite"
                               ]
                             }
                           },
                           "outputs": {
-                            "experimentsWebsiteUrl": {
+                            "expWebsiteUrl": {
                               "type": "string",
-                              "value": "[reference('experimentsWebsite').defaultHostName]"
+                              "value": "[reference('expWebsite').defaultHostName]"
                             },
-                            "experimentsWebsiteName": {
+                            "expWebsiteName": {
                               "type": "string",
-                              "value": "experiments-arolariu-ro"
+                              "value": "exp-arolariu-ro"
                             }
                           }
                         }
@@ -5634,9 +5634,9 @@
                       "type": "string",
                       "value": "[reference('cvWebsiteDeployment').outputs.cvWebsiteUrl.value]"
                     },
-                    "experimentsWebsiteUrl": {
+                    "expWebsiteUrl": {
                       "type": "string",
-                      "value": "[reference('experimentsWebsiteDeployment').outputs.experimentsWebsiteUrl.value]"
+                      "value": "[reference('expWebsiteDeployment').outputs.expWebsiteUrl.value]"
                     },
                     "mainWebsiteName": {
                       "type": "string",
@@ -5658,9 +5658,9 @@
                       "type": "string",
                       "value": "[reference('cvWebsiteDeployment').outputs.cvWebsiteName.value]"
                     },
-                    "experimentsWebsiteName": {
+                    "expWebsiteName": {
                       "type": "string",
-                      "value": "[reference('experimentsWebsiteDeployment').outputs.experimentsWebsiteName.value]"
+                      "value": "[reference('expWebsiteDeployment').outputs.expWebsiteName.value]"
                     }
                   }
                 }
@@ -9095,7 +9095,7 @@
                       "[reference('websiteDeployment').outputs.mainWebsiteName.value]",
                       "[reference('websiteDeployment').outputs.apiWebsiteName.value]",
                       "[reference('websiteDeployment').outputs.devWebsiteName.value]",
-                      "[reference('websiteDeployment').outputs.experimentsWebsiteName.value]"
+                      "[reference('websiteDeployment').outputs.expWebsiteName.value]"
                     ]
                   },
                   "infrastructurePrincipalId": {

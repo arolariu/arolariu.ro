@@ -9,7 +9,7 @@ import {fetchConfigValue} from "@/lib/config/configProxy";
 
 /**
  * Server action that fetches a configuration value.
- * Delegates to the experiments.arolariu.ro config proxy.
+ * Delegates to the exp.arolariu.ro config proxy.
  * @param key - The key of the configuration value to fetch.
  * @returns The value of the configuration value, if available.
  */

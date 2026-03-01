@@ -1,5 +1,5 @@
 """
-Configuration loader for experiments.arolariu.ro.
+Configuration loader for exp.arolariu.ro.
 
 Loads configuration from Azure App Configuration + Key Vault (azure mode)
 or from a local config.json file (local/proxy mode).

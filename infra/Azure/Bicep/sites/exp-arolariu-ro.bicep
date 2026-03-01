@@ -1,7 +1,7 @@
 // =====================================================================================
-// Experiments Service - experiments.arolariu.ro Configuration Proxy
+// Exp Service - exp.arolariu.ro Configuration Proxy
 // =====================================================================================
-// This module provisions the Azure Function App that hosts the experiments.arolariu.ro
+// This module provisions the Azure Function App that hosts the exp.arolariu.ro
 // configuration proxy service. The service acts as a centralized configuration
 // gateway, reading from Azure App Configuration + Key Vault and exposing
 // values via REST API to the frontend and backend services.
@@ -38,24 +38,24 @@
 
 targetScope = 'resourceGroup'
 
-metadata description = 'Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth'
+metadata description = 'Azure Functions config proxy exp.arolariu.ro with Entra ID Easy Auth'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '3.0.0'
 
 @description('The location for the experiments Function App.')
-param experimentsWebsiteLocation string
+param expWebsiteLocation string
 
 @description('The ID of the App Service Plan to deploy on.')
-param experimentsWebsitePlanId string
+param expWebsitePlanId string
 
 @description('The resource ID of the backend managed identity.')
-param experimentsWebsiteIdentityId string
+param expWebsiteIdentityId string
 
 @description('The client ID of the backend managed identity for AZURE_CLIENT_ID.')
-param experimentsWebsiteIdentityClientId string
+param expWebsiteIdentityClientId string
 
 @description('The deployment timestamp.')
-param experimentsWebsiteDeploymentDate string
+param expWebsiteDeploymentDate string
 
 @description('The Application Insights connection string.')
 param appInsightsConnectionString string
@@ -66,7 +66,7 @@ param frontendIdentityPrincipalId string
 @description('The backend managed identity principal (object) ID - allowed caller.')
 param backendIdentityPrincipalId string
 
-@description('The Entra ID App Registration client ID for the experiments service.')
+@description('The Entra ID App Registration client ID for the exp service.')
 param entraAppClientId string
 
 @description('The storage account name for identity-based AzureWebJobsStorage.')
@@ -77,21 +77,21 @@ param appConfigurationName string
 
 // Import common tags
 import { createTags } from '../constants/tags.bicep'
-var commonTags = createTags('sites', experimentsWebsiteDeploymentDate)
+var commonTags = createTags('sites', expWebsiteDeploymentDate)
 
-resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
-  name: 'experiments-arolariu-ro'
-  location: experimentsWebsiteLocation
+resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
+  name: 'exp-arolariu-ro'
+  location: expWebsiteLocation
   kind: 'functionapp,linux'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${experimentsWebsiteIdentityId}': {}
+      '${expWebsiteIdentityId}': {}
     }
   }
   properties: {
     enabled: true
-    serverFarmId: experimentsWebsitePlanId
+    serverFarmId: expWebsitePlanId
     reserved: true // reserved == linux plan
     hyperV: false
     siteConfig: {
@@ -130,7 +130,7 @@ resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
       appSettings: [
         {
           name: 'AZURE_CLIENT_ID'
-          value: experimentsWebsiteIdentityClientId
+          value: expWebsiteIdentityClientId
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -161,13 +161,13 @@ resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
     publicNetworkAccess: 'Enabled' // IP restrictions enforce access control
   }
   tags: union(commonTags, {
-    displayName: 'Experiments Configuration Proxy (Azure Functions)'
+    displayName: 'Exp Configuration Proxy (Azure Functions)'
   })
 }
 
 // Easy Auth v2 — restrict to frontend + backend UAMIs only
 resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
-  parent: experimentsWebsite
+  parent: expWebsite
   name: 'authsettingsV2'
   properties: {
     globalValidation: {
@@ -197,5 +197,5 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
   }
 }
 
-output experimentsWebsiteUrl string = experimentsWebsite.properties.defaultHostName
-output experimentsWebsiteName string = experimentsWebsite.name
+output expWebsiteUrl string = expWebsite.properties.defaultHostName
+output expWebsiteName string = expWebsite.name

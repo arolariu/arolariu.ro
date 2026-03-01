@@ -42,11 +42,11 @@ using Microsoft.Extensions.DependencyInjection;
 internal static class WebApplicationBuilderExtensions
 {
   /// <summary>Config proxy URL — hardcoded, production.</summary>
-  private const string ConfigProxyUrlAzure = "https://experiments.arolariu.ro";
+  private const string ConfigProxyUrlAzure = "https://exp.arolariu.ro";
   /// <summary>Config proxy URL — hardcoded, local dev.</summary>
   private const string ConfigProxyUrlLocal = "http://localhost:5002";
-  /// <summary>Entra ID scope for experiments service.</summary>
-  private const string ExperimentsScope = "api://experiments-arolariu-ro/.default";
+  /// <summary>Entra ID scope for exp service.</summary>
+  private const string ExpScope = "api://exp-arolariu-ro/.default";
 
   /// <summary>
   /// Configures the application to use local configuration sources instead of Azure services.
@@ -80,18 +80,18 @@ internal static class WebApplicationBuilderExtensions
   }
 
   /// <summary>
-  /// Configures the application to fetch configuration from experiments.arolariu.ro.
+  /// Configures the application to fetch configuration from exp.arolariu.ro.
   /// </summary>
   /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure with proxy configuration.</param>
   /// <remarks>
   /// <para>
   /// This method sets up a config proxy client that fetches configuration values from
-  /// the experiments.arolariu.ro service, which acts as a centralized configuration proxy
+  /// the exp.arolariu.ro service, which acts as a centralized configuration proxy
   /// for Azure App Configuration and Key Vault.
   /// </para>
   /// <para>
   /// The proxy URL is selected based on the ASPNETCORE_ENVIRONMENT variable:
-  /// - Production: https://experiments.arolariu.ro
+  /// - Production: https://exp.arolariu.ro
   /// - Other environments: http://localhost:5002
   /// </para>
   /// <para>
@@ -113,7 +113,7 @@ internal static class WebApplicationBuilderExtensions
     {
       if (isAzureEnv)
       {
-        return new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExperimentsScope);
+        return new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope);
       }
       return new HttpClientHandler();
     });
@@ -168,7 +168,7 @@ internal static class WebApplicationBuilderExtensions
   /// - Environment variables for runtime configuration overrides
   /// - appsettings.json for base application settings
   /// - Environment-specific appsettings files (Development/Production)
-  /// - Centralized config proxy (experiments.arolariu.ro) for secure configuration
+  /// - Centralized config proxy (exp.arolariu.ro) for secure configuration
   /// </para>
   /// <para>
   /// <strong>HTTP and Communication Services:</strong>
