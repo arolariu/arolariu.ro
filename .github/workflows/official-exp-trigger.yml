@@ -44,6 +44,13 @@ on:
     branches: ["main"]
     paths: ["sites/exp.arolariu.ro/**"]
 
+  # Validate experiments service changes in pull requests.
+  pull_request:
+    branches: ["preview", "main"]
+    paths:
+      - "sites/exp.arolariu.ro/**"
+      - ".github/workflows/official-exp-trigger.yml"
+
   # Manual trigger for controlled deployments
   workflow_dispatch:
     inputs:
@@ -150,18 +157,18 @@ jobs:
           echo "├────────────────────────────────────────────────────────────┤"
           echo "│ 📦 Job:           Build phase (2/3)                        │"
           echo "│ 🐳 Container:     exp/exp.arolariu         │"
-          echo "│ 🏷️ Tag:          ${{ inputs.environment == 'production' && github.sha || 'latest' }}"
+          echo "│ 🏷️ Tag:          ${{ github.sha }}"
           echo "│ 🌍 Environment:   ${{ inputs.environment || 'production' }}"
           echo "│ 📅 Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "└────────────────────────────────────────────────────────────┘"
           echo "::endgroup::"
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2
+        uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         working-directory: '.'
@@ -172,7 +179,7 @@ jobs:
       - name: 🏗️ Building the docker container...
         env:
           CONTAINER_NAME: "exp/exp.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
+          CONTAINER_TAG: ${{ github.sha }}
         run: |
           echo "::group::🐳 Docker Build"
           START_TIME=$(date +%s)
@@ -197,7 +204,7 @@ jobs:
       - name: ⏫ Pushing the docker container...
         env:
           CONTAINER_NAME: "exp/exp.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
+          CONTAINER_TAG: ${{ github.sha }}
         run: |
           echo "::group::⏫ Docker Push"
           echo "📤 Pushing to Azure Container Registry..."
@@ -219,11 +226,11 @@ jobs:
 
     steps:
       - name: 🔒 Handling the auth process to Azure Public Cloud...
-        uses: Azure/login@v2
+        uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         working-directory: '.'
@@ -236,7 +243,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         env:
           CONTAINER_NAME: "exp/exp.arolariu"
-          CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}
+          CONTAINER_TAG: ${{ github.sha }}
         with:
           app-name: "exp-arolariu-ro"
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
