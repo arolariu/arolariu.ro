@@ -10,7 +10,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "6982701571018097418"
+      "templateHash": "11299811887069231409"
     },
     "description": "Root entry point for zero-touch deployment of the arolariu.ro Azure infrastructure.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -104,7 +104,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.40.2.10011",
-              "templateHash": "15574833529205245626"
+              "templateHash": "9704813992694942950"
             },
             "description": "Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.",
             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -3920,9 +3920,6 @@
                   "experimentsEntraAppClientId": {
                     "value": "[parameters('experimentsEntraAppClientId')]"
                   },
-                  "containerRegistryName": {
-                    "value": "[reference('storageDeployment').outputs.containerRegistryName.value]"
-                  },
                   "storageAccountName": {
                     "value": "[reference('storageDeployment').outputs.storageAccountName.value]"
                   }
@@ -3939,7 +3936,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.40.2.10011",
-                      "templateHash": "17129780280322098923"
+                      "templateHash": "223201201563698934"
                     },
                     "description": "Sites orchestrator deploying all web applications and static sites",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -4023,12 +4020,6 @@
                       "type": "string",
                       "metadata": {
                         "description": "Entra ID App Registration client ID for the experiments service Easy Auth."
-                      }
-                    },
-                    "containerRegistryName": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The name of the ACR for container image references."
                       }
                     },
                     "storageAccountName": {
@@ -5273,9 +5264,6 @@
                           "entraAppClientId": {
                             "value": "[parameters('experimentsEntraAppClientId')]"
                           },
-                          "containerRegistryName": {
-                            "value": "[parameters('containerRegistryName')]"
-                          },
                           "storageAccountName": {
                             "value": "[parameters('storageAccountName')]"
                           }
@@ -5292,11 +5280,11 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.40.2.10011",
-                              "templateHash": "1179030714049981779"
+                              "templateHash": "7910490096569386443"
                             },
                             "description": "Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
-                            "version": "2.1.0"
+                            "version": "3.0.0"
                           },
                           "definitions": {
                             "_1.resourceTags": {
@@ -5460,12 +5448,6 @@
                                 "description": "The Entra ID App Registration client ID for the experiments service."
                               }
                             },
-                            "containerRegistryName": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The name of the ACR for container image references."
-                              }
-                            },
                             "storageAccountName": {
                               "type": "string",
                               "metadata": {
@@ -5482,7 +5464,7 @@
                               "apiVersion": "2024-04-01",
                               "name": "experiments-arolariu-ro",
                               "location": "[parameters('experimentsWebsiteLocation')]",
-                              "kind": "functionapp,linux,container",
+                              "kind": "functionapp,linux",
                               "identity": {
                                 "type": "UserAssigned",
                                 "userAssignedIdentities": {
@@ -5500,7 +5482,7 @@
                                   "alwaysOn": false,
                                   "numberOfWorkers": 1,
                                   "http20Enabled": true,
-                                  "linuxFxVersion": "[format('DOCKER|{0}.azurecr.io/experiments-arolariu-ro:latest', parameters('containerRegistryName'))]",
+                                  "linuxFxVersion": "Python|3.12",
                                   "requestTracingEnabled": true,
                                   "httpLoggingEnabled": true,
                                   "logsDirectorySizeLimit": 50,
@@ -5542,7 +5524,7 @@
                                     },
                                     {
                                       "name": "FUNCTIONS_WORKER_RUNTIME",
-                                      "value": "dotnet-isolated"
+                                      "value": "python"
                                     },
                                     {
                                       "name": "AzureWebJobsStorage__accountName",
@@ -5565,7 +5547,10 @@
                               "properties": {
                                 "globalValidation": {
                                   "requireAuthentication": true,
-                                  "unauthenticatedClientAction": "Return401"
+                                  "unauthenticatedClientAction": "Return401",
+                                  "excludedPaths": [
+                                    "/api/health"
+                                  ]
                                 },
                                 "identityProviders": {
                                   "azureActiveDirectory": {

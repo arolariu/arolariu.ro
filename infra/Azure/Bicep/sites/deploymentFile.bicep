@@ -76,9 +76,6 @@ param managedIdentityBackendPrincipalId string
 @description('Entra ID App Registration client ID for the experiments service Easy Auth.')
 param experimentsEntraAppClientId string
 
-@description('The name of the ACR for container image references.')
-param containerRegistryName string
-
 @description('The storage account name for identity-based AzureWebJobsStorage (Functions).')
 param storageAccountName string
 
@@ -138,7 +135,6 @@ module experimentsWebsiteDeployment 'experiments-arolariu-ro.bicep' = {
     frontendIdentityPrincipalId: managedIdentityFrontendPrincipalId
     backendIdentityPrincipalId: managedIdentityBackendPrincipalId
     entraAppClientId: experimentsEntraAppClientId
-    containerRegistryName: containerRegistryName
     storageAccountName: storageAccountName
   }
 }

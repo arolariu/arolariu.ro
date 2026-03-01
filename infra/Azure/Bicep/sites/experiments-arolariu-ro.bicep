@@ -8,8 +8,9 @@
 //
 // Runtime Configuration:
 // - Platform: Azure Functions v4 Python 3.12
-// - Kind: functionapp,linux,container
-// - Container source: Azure Container Registry (via managed identity)
+// - Kind: functionapp,linux
+// - Runtime: Python 3.12 (linuxFxVersion)
+// - Container deployment: Handled by GitHub Actions CI/CD pipeline
 // - Serverless: Runs on development App Service Plan (cost optimization)
 //
 // Identity:
@@ -68,9 +69,6 @@ param backendIdentityPrincipalId string
 @description('The Entra ID App Registration client ID for the experiments service.')
 param entraAppClientId string
 
-@description('The name of the ACR for container image references.')
-param containerRegistryName string
-
 @description('The storage account name for identity-based AzureWebJobsStorage.')
 param storageAccountName string
 
@@ -81,7 +79,7 @@ var commonTags = createTags('sites', experimentsWebsiteDeploymentDate)
 resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
   name: 'experiments-arolariu-ro'
   location: experimentsWebsiteLocation
-  kind: 'functionapp,linux,container'
+  kind: 'functionapp,linux'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -99,7 +97,7 @@ resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
       alwaysOn: false // cost optimization — wakes on request
       numberOfWorkers: 1
       http20Enabled: true
-      linuxFxVersion: 'DOCKER|${containerRegistryName}.azurecr.io/experiments-arolariu-ro:latest'
+      linuxFxVersion: 'Python|3.12'
       requestTracingEnabled: true
       httpLoggingEnabled: true
       logsDirectorySizeLimit: 50 // 50 MB

@@ -131,7 +131,6 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     managedIdentityFrontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
     managedIdentityBackendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
     experimentsEntraAppClientId: experimentsEntraAppClientId
-    containerRegistryName: storageDeployment.outputs.containerRegistryName
     storageAccountName: storageDeployment.outputs.storageAccountName
   }
 }
