@@ -10,7 +10,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "7910490096569386443"
+      "templateHash": "18113235951515012849"
     },
     "description": "Azure Functions config proxy experiments.arolariu.ro with Entra ID Easy Auth",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -183,6 +183,12 @@
       "metadata": {
         "description": "The storage account name for identity-based AzureWebJobsStorage."
       }
+    },
+    "appConfigurationName": {
+      "type": "string",
+      "metadata": {
+        "description": "The Azure App Configuration store name for constructing the endpoint URL."
+      }
     }
   },
   "variables": {
@@ -259,6 +265,10 @@
             {
               "name": "AzureWebJobsStorage__accountName",
               "value": "[parameters('storageAccountName')]"
+            },
+            {
+              "name": "AZURE_APPCONFIG_ENDPOINT",
+              "value": "[format('https://{0}.azconfig.io', parameters('appConfigurationName'))]"
             }
           ]
         },

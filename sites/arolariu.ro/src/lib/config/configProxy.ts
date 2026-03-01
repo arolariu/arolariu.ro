@@ -11,7 +11,7 @@
 "use server";
 
 const INFRA = process.env["INFRA"] ?? "local";
-const CONFIG_PROXY_URL = INFRA === "proxy" ? "http://localhost:5002" : "https://experiments.arolariu.ro";
+const CONFIG_PROXY_URL = INFRA === "azure" ? "https://experiments.arolariu.ro" : "http://localhost:5002";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface CacheEntry {
@@ -56,9 +56,9 @@ export async function fetchConfigValue(key: string): Promise<string> {
 
     if (!response.ok) return cached?.value ?? "";
 
-    const data = (await response.json()) as {Key: string; Value: string; FetchedAt: string};
-    cache.set(key, {value: data.Value, fetchedAt: Date.now()});
-    return data.Value;
+    const data = (await response.json()) as {key: string; value: string; fetchedAt: string};
+    cache.set(key, {value: data.value, fetchedAt: Date.now()});
+    return data.value;
   } catch (error) {
     console.error(`[configProxy] Failed to fetch key "${key}":`, error);
     return cached?.value ?? "";
@@ -96,10 +96,10 @@ export async function fetchConfigValues(keys: string[]): Promise<Record<string, 
     });
 
     if (response.ok) {
-      const data = (await response.json()) as {Values: Array<{Key: string; Value: string}>};
-      for (const item of data.Values) {
-        cache.set(item.Key, {value: item.Value, fetchedAt: Date.now()});
-        result[item.Key] = item.Value;
+      const data = (await response.json()) as {values: Array<{key: string; value: string}>};
+      for (const item of data.values) {
+        cache.set(item.key, {value: item.value, fetchedAt: Date.now()});
+        result[item.key] = item.value;
       }
     }
   } catch (error) {

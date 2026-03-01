@@ -72,6 +72,9 @@ param entraAppClientId string
 @description('The storage account name for identity-based AzureWebJobsStorage.')
 param storageAccountName string
 
+@description('The Azure App Configuration store name for constructing the endpoint URL.')
+param appConfigurationName string
+
 // Import common tags
 import { createTags } from '../constants/tags.bicep'
 var commonTags = createTags('sites', experimentsWebsiteDeploymentDate)
@@ -144,6 +147,10 @@ resource experimentsWebsite 'Microsoft.Web/sites@2024-04-01' = {
         {
           name: 'AzureWebJobsStorage__accountName'
           value: storageAccountName
+        }
+        {
+          name: 'AZURE_APPCONFIG_ENDPOINT'
+          value: 'https://${appConfigurationName}.azconfig.io'
         }
       ]
     }

@@ -79,6 +79,9 @@ param experimentsEntraAppClientId string
 @description('The storage account name for identity-based AzureWebJobsStorage (Functions).')
 param storageAccountName string
 
+@description('The Azure App Configuration store name.')
+param appConfigurationName string
+
 module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
   name: 'apiWebsiteDeployment-${resourceDeploymentDate}'
   params: {
@@ -136,6 +139,7 @@ module experimentsWebsiteDeployment 'experiments-arolariu-ro.bicep' = {
     backendIdentityPrincipalId: managedIdentityBackendPrincipalId
     entraAppClientId: experimentsEntraAppClientId
     storageAccountName: storageAccountName
+    appConfigurationName: appConfigurationName
   }
 }
 
