@@ -24,7 +24,7 @@
 #   3. Azure Function App configured for container deployment
 #   4. GitHub Secrets configured:
 #      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-#      - AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID
+#      - AZURE_INFRASTRUCTURE_MANAGED_IDENTITY_CLIENT_ID
 #      - AZURE_CONTAINER_REGISTRY_ADDRESS
 # =============================================================================
 
@@ -76,7 +76,7 @@ env:
   INFRA: ${{ inputs.infrastructure || 'azure' }}
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
   AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-  AZURE_CLIENT_ID: ${{secrets.AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID}}
+  AZURE_CLIENT_ID: ${{secrets.AZURE_INFRASTRUCTURE_MANAGED_IDENTITY_CLIENT_ID}}
 
 jobs:
   test:
