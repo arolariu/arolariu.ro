@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [50, 75, 100],
     remotePatterns: [
-      ...(process.env["AZURE_STORAGE_HOSTNAME"] ? [{protocol: "https" as const, hostname: process.env["AZURE_STORAGE_HOSTNAME"]}] : []), // Azure Blob Storage — hostname from env var.
+      {protocol: "https", hostname: "**.blob.core.windows.net"}, // Azure Blob Storage (any account).
       {protocol: "https", hostname: "cdn.arolariu.ro"}, // CDN assets.
       {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
