@@ -1,5 +1,6 @@
 """Tests for function_app HTTP triggers."""
 
+import base64
 import json
 import pytest
 from unittest.mock import patch
@@ -21,6 +22,11 @@ def mock_config():
              k: v for k, v in test_config.items() if k.startswith(f"{prefix}:")
          }):
         yield
+
+
+def _encode_client_principal(identifier: str) -> str:
+    payload = {"claims": [{"typ": "oid", "val": identifier}]}
+    return base64.b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
 
 
 class TestGetHealth:
@@ -132,7 +138,10 @@ class TestGetConfigValue:
             body=b"",
             url="/api/config/Common:Auth:Secret",
             route_params={"key": "Common:Auth:Secret"},
-            headers={"X-MS-CLIENT-PRINCIPAL-ID": "website-caller-1"},
+            headers={
+                "X-MS-CLIENT-PRINCIPAL-ID": "website-caller-1",
+                "X-MS-CLIENT-PRINCIPAL": _encode_client_principal("website-caller-1"),
+            },
         )
 
         resp = get_config_value_endpoint(req)
@@ -201,7 +210,10 @@ class TestGetConfigBatch:
             body=b"",
             url="/api/config?keys=Common:Auth:Secret",
             params={"keys": "Common:Auth:Secret"},
-            headers={"X-MS-CLIENT-PRINCIPAL-ID": "website-caller-1"},
+            headers={
+                "X-MS-CLIENT-PRINCIPAL-ID": "website-caller-1",
+                "X-MS-CLIENT-PRINCIPAL": _encode_client_principal("website-caller-1"),
+            },
         )
 
         resp = get_config_batch(req)

@@ -90,16 +90,19 @@ def _extract_claim_values(principal_payload: dict) -> set[str]:
 def _extract_caller_ids(req) -> set[str]:
     """Extract caller identity IDs from Easy Auth headers."""
     headers = req.headers if req is not None else {}
-    caller_ids: set[str] = set()
-
-    principal_id = _get_header_value(headers, "X-MS-CLIENT-PRINCIPAL-ID").strip()
-    if principal_id:
-        caller_ids.add(principal_id)
 
     encoded_principal = _get_header_value(headers, "X-MS-CLIENT-PRINCIPAL")
-    if encoded_principal:
-        principal_payload = _decode_client_principal(encoded_principal)
-        caller_ids |= _extract_claim_values(principal_payload)
+    if not encoded_principal:
+        return set()
+
+    principal_payload = _decode_client_principal(encoded_principal)
+    caller_ids = _extract_claim_values(principal_payload)
+    if not caller_ids:
+        return set()
+
+    principal_id = _get_header_value(headers, "X-MS-CLIENT-PRINCIPAL-ID").strip()
+    if principal_id and principal_id in caller_ids:
+        caller_ids.add(principal_id)
 
     return caller_ids
 
@@ -158,9 +161,15 @@ def _resolve_target_for_caller(
 
 def _authorize_request(req, requested_target: str | None = None) -> AuthorizationResult:
     """Authorize a request and resolve the caller target context."""
-    infra = os.getenv("INFRA", "local").lower()
-    if infra != "azure":
+    infra = (os.getenv("INFRA") or "").strip().lower()
+    if infra in {"local", "proxy"}:
         return _authorize_local(req, requested_target)
+    if infra != "azure":
+        return AuthorizationResult(
+            is_authorized=False,
+            status_code=500,
+            message="Service infrastructure mode is not configured correctly.",
+        )
 
     caller_ids = _extract_caller_ids(req)
     return _resolve_target_for_caller(caller_ids, requested_target)

@@ -1,5 +1,8 @@
 """Unit tests for authz helpers."""
 
+import base64
+import json
+
 from authz import authorize_catalog_request, authorize_key_request
 
 
@@ -10,7 +13,24 @@ class RequestStub:
         self.headers = headers or {}
 
 
+def encode_client_principal(identifier: str) -> str:
+    """Build a minimal Easy Auth principal payload with one OID claim."""
+    payload = {"claims": [{"typ": "oid", "val": identifier}]}
+    return base64.b64encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
+
+
 class TestAuthorizeKeyRequestLocal:
+    def test_returns_500_when_infra_mode_is_missing(self, monkeypatch):
+        monkeypatch.delenv("INFRA", raising=False)
+
+        result = authorize_key_request(
+            RequestStub(headers={"X-Exp-Target": "website"}),
+            "Common:Auth:Issuer",
+        )
+
+        assert result.is_authorized is False
+        assert result.status_code == 500
+
     def test_returns_401_when_local_target_header_missing(self, monkeypatch):
         monkeypatch.setenv("INFRA", "local")
 
@@ -51,7 +71,10 @@ class TestAuthorizeCatalogRequestAzure:
         monkeypatch.setenv("EXP_CALLER_WEBSITE_IDS", "website-caller-1")
 
         result = authorize_catalog_request(
-            RequestStub(headers={"X-MS-CLIENT-PRINCIPAL-ID": "website-caller-1"}),
+            RequestStub(headers={
+                "X-MS-CLIENT-PRINCIPAL-ID": "website-caller-1",
+                "X-MS-CLIENT-PRINCIPAL": encode_client_principal("website-caller-1"),
+            }),
             "website",
         )
 
@@ -65,7 +88,10 @@ class TestAuthorizeCatalogRequestAzure:
         monkeypatch.setenv("EXP_CALLER_WEBSITE_IDS", "website-caller-1")
 
         result = authorize_catalog_request(
-            RequestStub(headers={"X-MS-CLIENT-PRINCIPAL-ID": "unknown-caller"}),
+            RequestStub(headers={
+                "X-MS-CLIENT-PRINCIPAL-ID": "unknown-caller",
+                "X-MS-CLIENT-PRINCIPAL": encode_client_principal("unknown-caller"),
+            }),
             "website",
         )
 
