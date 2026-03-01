@@ -9,20 +9,24 @@ def reset_config():
     """Reset global config between tests."""
     import config_loader
     config_loader._config = {}
+    config_loader._loaded = False
     yield
     config_loader._config = {}
+    config_loader._loaded = False
 
 
 class TestGetConfigValue:
     def test_returns_value_for_existing_key(self):
         import config_loader
         config_loader._config = {"test:key": "test-value"}
+        config_loader._loaded = True
         from config_loader import get_config_value
         assert get_config_value("test:key") == "test-value"
 
     def test_returns_none_for_missing_key(self):
         import config_loader
         config_loader._config = {"test:key": "test-value"}
+        config_loader._loaded = True
         from config_loader import get_config_value
         assert get_config_value("missing:key") is None
 
@@ -35,6 +39,7 @@ class TestGetConfigSection:
             "Endpoints:SQL": "http://sql",
             "Common:Auth": "secret",
         }
+        config_loader._loaded = True
         from config_loader import get_config_section
         result = get_config_section("Endpoints")
         assert len(result) == 2

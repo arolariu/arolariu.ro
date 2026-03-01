@@ -112,8 +112,8 @@ export async function createInvoiceScan({base64Data, metadata, blobName}: Server
       // Step 1. Prepare for blob upload
       const containerName = "invoices";
       const storageCredentials = getAzureCredential();
-      // todo: fetch from config service.
-      const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
+      const fetchConfigurationValue = (await import("@/lib/actions/storage/fetchConfig")).default;
+      const storageEndpoint = await fetchConfigurationValue("AzureOptions:StorageAccountEndpoint");
 
       // Step 2. Upload the blob to Azure Storage
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);

@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Global config store — loaded once, accessed by all functions
 _config: dict[str, str] = {}
+_loaded: bool = False
 
 
 def _load_local_config() -> dict[str, str]:
@@ -65,7 +66,7 @@ def _load_azure_config() -> dict[str, str]:
 
 def load_config() -> dict[str, str]:
     """Load configuration based on the INFRA environment variable."""
-    global _config
+    global _config, _loaded
 
     infra = os.getenv("INFRA", "local")
     logger.info("Loading configuration (INFRA=%s)", infra)
@@ -75,13 +76,14 @@ def load_config() -> dict[str, str]:
     else:
         _config = _load_local_config()
 
+    _loaded = True
     logger.info("Loaded %d configuration keys", len(_config))
     return _config
 
 
 def get_config() -> dict[str, str]:
     """Get the current configuration dict. Loads on first access."""
-    if not _config:
+    if not _loaded:
         load_config()
     return _config
 
