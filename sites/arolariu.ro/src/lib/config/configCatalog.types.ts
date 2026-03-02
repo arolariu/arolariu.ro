@@ -9,7 +9,7 @@
 export type ConfigCatalogTarget = "api" | "website";
 
 /**
- * Typed catalog response returned by `/api/catalog?for=<target>`.
+ * Typed catalog response returned by `/api/v2/catalog?for=<target>`.
  */
 export type ConfigCatalogResponse = Readonly<{
   target: ConfigCatalogTarget;

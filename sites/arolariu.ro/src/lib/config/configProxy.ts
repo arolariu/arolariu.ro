@@ -5,7 +5,7 @@
  * - Azure (production): https://exp.arolariu.ro
  * - Local (INFRA=proxy): http://localhost:5002
  *
- * Catalog ownership is delegated to exp via `/api/catalog?for=website`.
+ * Catalog ownership is delegated to exp via `/api/v2/catalog?for=website`.
  *
  * @module sites/arolariu.ro/src/lib/config/configProxy
  */
@@ -64,7 +64,7 @@ async function getWebsiteCatalog(): Promise<ConfigCatalogResponse> {
   if (cachedCatalog) return cachedCatalog;
 
   const headers = await getRequestHeaders();
-  const response = await fetch(`${CONFIG_PROXY_URL}/api/catalog?for=${CATALOG_TARGET}`, {
+  const response = await fetch(`${CONFIG_PROXY_URL}/api/v2/catalog?for=${CATALOG_TARGET}`, {
     cache: "no-store",
     signal: AbortSignal.timeout(10_000),
     headers,
@@ -119,7 +119,7 @@ function splitCachedValues(keys: ReadonlyArray<string>): Readonly<{result: Recor
 
 async function fetchBatchValues(uncachedKeys: ReadonlyArray<string>): Promise<Map<string, string>> {
   const keysParam = uncachedKeys.map((key) => encodeURIComponent(key)).join(",");
-  const response = await fetch(`${CONFIG_PROXY_URL}/api/config?keys=${keysParam}`, {
+  const response = await fetch(`${CONFIG_PROXY_URL}/api/v2/config?keys=${keysParam}`, {
     cache: "no-store",
     signal: AbortSignal.timeout(10_000),
     headers: await getRequestHeaders(),
@@ -185,7 +185,7 @@ export async function fetchConfigValue(key: string): Promise<string> {
     const isRequiredKey = catalog.requiredKeys.includes(key);
     requiredKeyWithoutFallback = isRequiredKey && !cached;
 
-    const response = await fetch(`${CONFIG_PROXY_URL}/api/config/${encodeURIComponent(key)}`, {
+    const response = await fetch(`${CONFIG_PROXY_URL}/api/v2/config/${encodeURIComponent(key)}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(10_000),
       headers: await getRequestHeaders(),

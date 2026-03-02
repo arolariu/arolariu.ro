@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-/// <summary>Represents the typed response returned by /api/catalog.</summary>
+/// <summary>Represents the typed response returned by /api/v2/catalog.</summary>
 public sealed class ConfigCatalogResponse
 {
   /// <summary>Gets or sets the caller target the catalog belongs to.</summary>
