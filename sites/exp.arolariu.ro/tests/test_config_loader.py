@@ -1,6 +1,7 @@
 """Tests for config_loader module."""
 
 import json
+
 import pytest
 
 
@@ -10,9 +11,11 @@ def reset_config():
     import config_loader
     config_loader._config = {}
     config_loader._loaded = False
+    config_loader._last_loaded_at = None
     yield
     config_loader._config = {}
     config_loader._loaded = False
+    config_loader._last_loaded_at = None
 
 
 class TestGetConfigValue:
@@ -90,3 +93,35 @@ class TestLoadLocalConfig:
         result = _load_local_config()
         assert result["Feature:Enabled"] == "True"
         assert result["Feature:Limit"] == "5"
+
+
+class TestRefreshInterval:
+    def test_is_refresh_due_when_interval_elapsed(self, monkeypatch):
+        import config_loader
+        monkeypatch.setenv("EXP_CONFIG_REFRESH_INTERVAL_SECONDS", "10")
+        config_loader._loaded = True
+        config_loader._last_loaded_at = 0.0
+
+        assert config_loader._is_refresh_due(current_time=11.0) is True
+
+    def test_is_not_due_when_interval_disabled(self, monkeypatch):
+        import config_loader
+        monkeypatch.setenv("EXP_CONFIG_REFRESH_INTERVAL_SECONDS", "0")
+        config_loader._loaded = True
+        config_loader._last_loaded_at = 0.0
+
+        assert config_loader._is_refresh_due(current_time=100.0) is False
+
+    def test_get_config_triggers_refresh_when_due(self, monkeypatch):
+        import config_loader
+
+        config_loader._config = {"x": "1"}
+        config_loader._loaded = True
+        config_loader._last_loaded_at = 0.0
+        monkeypatch.setenv("EXP_CONFIG_REFRESH_INTERVAL_SECONDS", "10")
+        monkeypatch.setattr(config_loader, "_load_local_config", lambda: {"x": "2"})
+        monkeypatch.setattr(config_loader, "_is_refresh_due", lambda current_time=None: True)
+        monkeypatch.setenv("INFRA", "local")
+
+        result = config_loader.get_config()
+        assert result["x"] == "2"

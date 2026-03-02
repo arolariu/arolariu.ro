@@ -100,6 +100,22 @@ class TestAuthorizeCatalogRequestAzure:
 
 
 class TestAuthorizeKeyRequestAzure:
+    def test_denies_when_client_principal_payload_is_invalid(self, monkeypatch):
+        monkeypatch.setenv("INFRA", "azure")
+        monkeypatch.setenv("EXP_CALLER_API_IDS", "shared-caller")
+        monkeypatch.setenv("EXP_CALLER_WEBSITE_IDS", "shared-caller")
+
+        result = authorize_key_request(
+            RequestStub(headers={
+                "X-MS-CLIENT-PRINCIPAL": "not-base64",
+                "X-MS-CLIENT-PRINCIPAL-ID": "shared-caller",
+            }),
+            "Endpoints:StorageAccount",
+        )
+
+        assert result.is_authorized is False
+        assert result.status_code == 401
+
     def test_honors_exp_target_header_when_caller_is_in_multiple_target_allow_lists(self, monkeypatch):
         monkeypatch.setenv("INFRA", "azure")
         monkeypatch.setenv("EXP_CALLER_API_IDS", "shared-caller")

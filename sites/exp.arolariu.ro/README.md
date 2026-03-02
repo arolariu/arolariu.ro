@@ -15,7 +15,7 @@ The service exposes a narrow HTTP API for catalog and key retrieval while enforc
 
 - Platform: Python FastAPI (ASGI) hosted in Azure App Service container
 - Entrypoint: `function_app.py`
-- Route prefix: `/api`
+- Route prefix: `/api/v2` for configuration endpoints (`/api/health` and `/api/ready` remain unversioned operational probes)
 - Container image base: `python:3.12-slim` + `uvicorn`
 
 ## API contract
@@ -24,7 +24,11 @@ The service exposes a narrow HTTP API for catalog and key retrieval while enforc
 
 Health endpoint (used by local Docker health checks and platform probes).
 
-### `GET /api/catalog?for=api|website`
+### `GET /api/ready`
+
+Readiness endpoint. Returns `503` when the service cannot read current configuration state.
+
+### `GET /api/v2/catalog?for=api|website`
 
 Returns typed catalog metadata for the requested target:
 
@@ -36,7 +40,7 @@ Returns typed catalog metadata for the requested target:
 - `refreshIntervalSeconds`
 - `fetchedAt`
 
-### `GET /api/config/{key}`
+### `GET /api/v2/config/{key}`
 
 Returns one key:
 
@@ -48,7 +52,7 @@ Returns one key:
 }
 ```
 
-### `GET /api/config?keys=k1,k2`
+### `GET /api/v2/config?keys=k1,k2`
 
 Returns a batch:
 
@@ -62,9 +66,24 @@ Returns a batch:
 }
 ```
 
-### `GET /api/config?prefix=Common`
+### `GET /api/v2/config?prefix=Common`
 
 Returns all keys matching `prefix:`.
+
+## Error contract
+
+All error responses use a standardized shape:
+
+```json
+{
+  "error": "message",
+  "deniedKeys": [],
+  "invalidKeys": [],
+  "missingRequiredKeys": []
+}
+```
+
+Optional arrays are included only when relevant for the failing request.
 
 ## Security model
 
@@ -126,7 +145,7 @@ Additional hardening:
 | `AZURE_CLIENT_ID` | Optional | User Assigned Managed Identity client ID |
 | `EXP_CALLER_API_IDS` | Azure only | Comma-separated principal IDs allowed as `api` |
 | `EXP_CALLER_WEBSITE_IDS` | Azure only | Comma-separated principal IDs allowed as `website` |
-| `EXP_CATALOG_REFRESH_INTERVAL_SECONDS` | Optional | Catalog refresh hint (default `300`) |
+| `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` | Optional | In-process config snapshot refresh interval in seconds (default `300`, `0` disables auto-refresh) |
 | `EXP_LOCAL_SHARED_TOKEN` | Optional (local) | Shared token required in local mode when set |
 | `EXP_LOCAL_CONFIG_PATH` | Optional (local) | Absolute path to alternative local config JSON |
 | `EXP_ENVIRONMENT` | Optional (azure) | Label selector source (`Production` or `Development`) |
@@ -146,8 +165,8 @@ Smoke checks:
 
 ```powershell
 Invoke-WebRequest -Uri "http://localhost:5002/api/health"
-Invoke-WebRequest -Uri "http://localhost:5002/api/catalog?for=website"
-Invoke-WebRequest -Uri "http://localhost:5002/api/config/Common:Auth:Issuer" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v2/catalog?for=website"
+Invoke-WebRequest -Uri "http://localhost:5002/api/v2/config/Common:Auth:Issuer" -Headers @{ "X-Exp-Target" = "website" }
 ```
 
 ### Run tests
@@ -168,3 +187,5 @@ python -m uvicorn function_app:app --host 0.0.0.0 --port 5002
 - This service is intentionally server-to-server only.
 - Website integration must happen in server context (`server-only` paths), never client-side.
 - API and website consume catalog-driven keys so key ownership remains centralized in this service.
+- The service is stateless by design: no caller session state is stored and each request is independently authorized.
+- V2 is the only supported configuration API surface; legacy non-versioned config/catalog routes are removed.

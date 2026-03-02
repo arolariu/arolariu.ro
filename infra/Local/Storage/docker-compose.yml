@@ -135,7 +135,7 @@ services:
       - "5002:80"
     environment:
       - INFRA=local
-      - EXP_CATALOG_REFRESH_INTERVAL_SECONDS=300
+      - EXP_CONFIG_REFRESH_INTERVAL_SECONDS=300
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/api/health', timeout=5)"]
       interval: 30s

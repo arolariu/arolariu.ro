@@ -10,7 +10,7 @@ from models import CatalogResponse
 
 def _parse_refresh_interval_seconds() -> int:
     """Parse catalog refresh interval from environment with a safe fallback."""
-    raw_value = os.getenv("EXP_CATALOG_REFRESH_INTERVAL_SECONDS", "300").strip()
+    raw_value = os.getenv("EXP_CONFIG_REFRESH_INTERVAL_SECONDS", "300").strip()
     try:
         parsed = int(raw_value)
     except ValueError:

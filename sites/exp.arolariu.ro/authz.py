@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import hmac
 import json
 import os
@@ -58,7 +59,12 @@ def _decode_client_principal(encoded_principal: str) -> dict:
         payload = json.loads(decoded)
         if isinstance(payload, dict):
             return payload
-    except Exception:  # pragma: no cover - defensive branch
+    except (
+        ValueError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        binascii.Error,
+    ):  # pragma: no cover - defensive branch
         return {}
     return {}
 
@@ -101,7 +107,7 @@ def _extract_caller_ids(req) -> set[str]:
         return set()
 
     principal_id = _get_header_value(headers, "X-MS-CLIENT-PRINCIPAL-ID").strip()
-    if principal_id and principal_id in caller_ids:
+    if principal_id:
         caller_ids.add(principal_id)
 
     return caller_ids
@@ -220,7 +226,12 @@ def authorize_key_request(req, key: str) -> AuthorizationResult:
     matching_targets = [target for target in allowed_targets if is_key_allowed(target, key)]
     if not matching_targets:
         if result.target:
-            return AuthorizationResult(False, 403, f"Key '{key}' is not allowed for target '{result.target}'.", result.target)
+            return AuthorizationResult(
+                False,
+                403,
+                f"Key '{key}' is not allowed for target '{result.target}'.",
+                result.target,
+            )
         return AuthorizationResult(False, 403, f"Key '{key}' is not allowed for caller targets.")
 
     resolved_target = result.target or matching_targets[0]
@@ -243,7 +254,11 @@ def authorize_keys_request(req, keys: list[str]) -> tuple[AuthorizationResult, l
             AuthorizationResult(
                 False,
                 403,
-                f"Some keys are not allowed for target '{result.target}'." if result.target else "Some keys are not allowed for caller targets.",
+                (
+                    f"Some keys are not allowed for target '{result.target}'."
+                    if result.target
+                    else "Some keys are not allowed for caller targets."
+                ),
                 result.target,
             ),
             denied_keys,
