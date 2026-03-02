@@ -81,7 +81,7 @@
     "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.32",
     "@azure/storage-blob": "12.31.0",
     "@clerk/localizations": "3.37.1",
-    "@clerk/nextjs": "6.38.3",
+    "@clerk/nextjs": "6.39.0",
     "@eslint/js": "9.39.2",
     "@faker-js/faker": "10.3.0",
     "@hookform/resolvers": "5.2.2",
