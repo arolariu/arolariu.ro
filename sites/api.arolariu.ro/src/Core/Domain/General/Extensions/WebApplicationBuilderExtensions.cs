@@ -47,7 +47,7 @@ internal static class WebApplicationBuilderExtensions
   /// <summary>Config proxy URL — hardcoded, local dev.</summary>
   private const string ConfigProxyUrlLocal = "http://localhost:5002";
   /// <summary>Entra ID scope for exp service.</summary>
-  private const string ExpScope = "api://exp-arolariu-ro/.default";
+  private const string ExpScope = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
 
   /// <summary>
   /// Configures the application to use local configuration sources instead of Azure services.
