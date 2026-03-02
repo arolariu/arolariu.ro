@@ -13,10 +13,10 @@ The service exposes a narrow HTTP API for catalog and key retrieval while enforc
 
 ## Runtime model
 
-- Platform: Azure Functions v4 (Python 3.12)
+- Platform: Python FastAPI (ASGI) hosted in Azure App Service container
 - Entrypoint: `function_app.py`
-- Route prefix: `api` (see `host.json`)
-- Container image: `mcr.microsoft.com/azure-functions/python:4-python3.12`
+- Route prefix: `/api`
+- Container image base: `python:3.12-slim` + `uvicorn`
 
 ## API contract
 
@@ -115,6 +115,7 @@ Additional hardening:
 - Source: Azure App Configuration (+ Key Vault references)
 - Required setting: `AZURE_APPCONFIG_ENDPOINT`
 - Identity: `DefaultAzureCredential` (optionally using `AZURE_CLIENT_ID`)
+- Optional env selector: `EXP_ENVIRONMENT` (`Production` -> production label, otherwise development)
 
 ## Environment variables
 
@@ -128,6 +129,7 @@ Additional hardening:
 | `EXP_CATALOG_REFRESH_INTERVAL_SECONDS` | Optional | Catalog refresh hint (default `300`) |
 | `EXP_LOCAL_SHARED_TOKEN` | Optional (local) | Shared token required in local mode when set |
 | `EXP_LOCAL_CONFIG_PATH` | Optional (local) | Absolute path to alternative local config JSON |
+| `EXP_ENVIRONMENT` | Optional (azure) | Label selector source (`Production` or `Development`) |
 
 ## Local development
 
@@ -137,7 +139,7 @@ From repository root:
 
 ```powershell
 docker network create arolariu-network
-docker compose -f infra/Local/Storage/docker-compose.yml up -d exp azurite
+docker compose -f infra/Local/Storage/docker-compose.yml up -d exp
 ```
 
 Smoke checks:
@@ -152,6 +154,13 @@ Invoke-WebRequest -Uri "http://localhost:5002/api/config/Common:Auth:Issuer" -He
 
 ```powershell
 python -m pytest sites/exp.arolariu.ro/tests -q
+```
+
+### Run service directly (without Docker)
+
+```powershell
+cd sites/exp.arolariu.ro
+python -m uvicorn function_app:app --host 0.0.0.0 --port 5002
 ```
 
 ## Design notes

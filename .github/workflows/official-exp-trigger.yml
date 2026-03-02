@@ -1,13 +1,13 @@
 # =============================================================================
 # Experiments Service Build and Deployment Workflow
 # =============================================================================
-# This workflow handles the CI/CD pipeline for the Python Azure Functions service
+# This workflow handles the CI/CD pipeline for the Python FastAPI service
 # (exp.arolariu.ro), including testing, containerization, and Azure deployment.
 #
 # Architecture:
 #   - Phase 1: Test - Runs pytest to validate code quality
-#   - Phase 2: Build - Containerizes the Python Functions app using Docker
-#   - Phase 3: Deploy - Pushes container to ACR and deploys to Azure Function App
+#   - Phase 2: Build - Containerizes the Python FastAPI app using Docker
+#   - Phase 3: Deploy - Pushes container to ACR and deploys to Azure App Service
 #
 # Triggers:
 #   - Automatic: Push to 'main' branch with changes in sites/exp.arolariu.ro/
@@ -21,10 +21,10 @@
 # Prerequisites:
 #   1. Azure Managed Identity configured with Federated Credentials
 #   2. Azure Container Registry with push/pull access
-#   3. Azure Function App configured for container deployment
+#   3. Azure App Service configured for container deployment
 #   4. GitHub Secrets configured:
 #      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-#      - AZURE_INFRASTRUCTURE_MANAGED_IDENTITY_CLIENT_ID
+#      - AZURE_CLIENT_ID
 #      - AZURE_CONTAINER_REGISTRY_ADDRESS
 # =============================================================================
 
@@ -229,7 +229,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment || 'production' }}
-      url: ${{ steps.deploy-to-functionapp.outputs.webapp-url }}
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: 🔒 Handling the auth process to Azure Public Cloud...
@@ -245,8 +245,8 @@ jobs:
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
-      - name: ⚓ Deploying docker container to Azure Function App...
-        id: deploy-to-functionapp
+      - name: ⚓ Deploying docker container to Azure App Service...
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         env:
           CONTAINER_NAME: "exp/exp.arolariu"
