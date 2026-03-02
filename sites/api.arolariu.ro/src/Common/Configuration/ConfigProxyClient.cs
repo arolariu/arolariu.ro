@@ -12,46 +12,51 @@ using System.Threading.Tasks;
 /// <summary>HTTP client for the exp.arolariu.ro config proxy.</summary>
 public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClient
 {
-  private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-
   /// <inheritdoc />
   public async Task<string?> GetValueAsync(string key, CancellationToken ct = default)
   {
-    var response = await httpClient.GetAsync($"/api/v2/config/{Uri.EscapeDataString(key)}", ct).ConfigureAwait(false);
+    var requestUri = new Uri($"/api/v2/config/{Uri.EscapeDataString(key)}", UriKind.Relative);
+    var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
     if (!response.IsSuccessStatusCode) return null;
 
-    var result = await response.Content.ReadFromJsonAsync<ConfigValueDto>(JsonOptions, ct).ConfigureAwait(false);
-    return result?.Value;
+    using var payload = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: ct).ConfigureAwait(false);
+    if (payload is null) return null;
+
+    return payload.RootElement.TryGetProperty("value", out var valueElement)
+      ? valueElement.GetString()
+      : null;
   }
 
   /// <inheritdoc />
   public async Task<IReadOnlyDictionary<string, string>> GetValuesAsync(IEnumerable<string> keys, CancellationToken ct = default)
   {
     var keysParam = string.Join(",", keys);
-    var response = await httpClient.GetAsync($"/api/v2/config?keys={Uri.EscapeDataString(keysParam)}", ct).ConfigureAwait(false);
+    var requestUri = new Uri($"/api/v2/config?keys={Uri.EscapeDataString(keysParam)}", UriKind.Relative);
+    var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
     if (!response.IsSuccessStatusCode) return new Dictionary<string, string>();
 
-    var result = await response.Content.ReadFromJsonAsync<ConfigBatchDto>(JsonOptions, ct).ConfigureAwait(false);
-    return result?.Values.ToDictionary(v => v.Key, v => v.Value) ?? new Dictionary<string, string>();
+    using var payload = await response.Content.ReadFromJsonAsync<JsonDocument>(cancellationToken: ct).ConfigureAwait(false);
+    if (payload is null || !payload.RootElement.TryGetProperty("values", out var valuesElement) || valuesElement.ValueKind != JsonValueKind.Array)
+    {
+      return new Dictionary<string, string>();
+    }
+
+    return valuesElement.EnumerateArray()
+      .Where(static item =>
+        item.TryGetProperty("key", out var key) && key.ValueKind == JsonValueKind.String &&
+        item.TryGetProperty("value", out var value) && value.ValueKind == JsonValueKind.String)
+      .ToDictionary(
+        static item => item.GetProperty("key").GetString()!,
+        static item => item.GetProperty("value").GetString()!);
   }
 
   /// <inheritdoc />
   public async Task<ConfigCatalogResponse?> GetCatalogAsync(string target, CancellationToken ct = default)
   {
-    var response = await httpClient.GetAsync($"/api/v2/catalog?for={Uri.EscapeDataString(target)}", ct).ConfigureAwait(false);
+    var requestUri = new Uri($"/api/v2/catalog?for={Uri.EscapeDataString(target)}", UriKind.Relative);
+    var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
     if (!response.IsSuccessStatusCode) return null;
 
-    return await response.Content.ReadFromJsonAsync<ConfigCatalogResponse>(JsonOptions, ct).ConfigureAwait(false);
+    return await response.Content.ReadFromJsonAsync<ConfigCatalogResponse>(cancellationToken: ct).ConfigureAwait(false);
   }
-
-  /// <summary>DTO for a single configuration value response.</summary>
-  /// <param name="Key">The configuration key.</param>
-  /// <param name="Value">The configuration value.</param>
-  /// <param name="FetchedAt">Timestamp when the value was fetched.</param>
-  private sealed record ConfigValueDto(string Key, string Value, DateTime FetchedAt);
-
-  /// <summary>DTO for a batch configuration values response.</summary>
-  /// <param name="Values">The list of configuration key-value pairs.</param>
-  /// <param name="FetchedAt">Timestamp when the values were fetched.</param>
-  private sealed record ConfigBatchDto(IReadOnlyList<ConfigValueDto> Values, DateTime FetchedAt);
 }

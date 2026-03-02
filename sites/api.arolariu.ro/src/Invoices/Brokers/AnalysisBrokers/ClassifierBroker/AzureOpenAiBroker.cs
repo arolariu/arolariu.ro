@@ -51,7 +51,6 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var openAiEndpoint = options.OpenAIEndpoint;
-    var openAiApiKey = options.OpenAIKey;
     var credentials = AzureCredentialFactory.CreateCredential();
 
     openAIClient = new AzureOpenAIClient(

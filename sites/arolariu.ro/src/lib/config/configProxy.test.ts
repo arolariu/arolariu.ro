@@ -33,13 +33,16 @@ describe("configProxy", () => {
   });
 
   it("fetches website catalog and single config value", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({
-        key: "AzureOptions:StorageAccountEndpoint",
-        value: "https://storage.example.test",
-        fetchedAt: "2026-01-01T00:00:00Z",
-      }));
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          key: "AzureOptions:StorageAccountEndpoint",
+          value: "https://storage.example.test",
+          fetchedAt: "2026-01-01T00:00:00Z",
+        }),
+      );
 
     vi.stubGlobal("fetch", fetchMock);
 
@@ -54,13 +57,16 @@ describe("configProxy", () => {
   });
 
   it("returns cached single value without extra network call", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({
-        key: "Common:Auth:Issuer",
-        value: "https://issuer.example.test",
-        fetchedAt: "2026-01-01T00:00:00Z",
-      }));
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          key: "Common:Auth:Issuer",
+          value: "https://issuer.example.test",
+          fetchedAt: "2026-01-01T00:00:00Z",
+        }),
+      );
 
     vi.stubGlobal("fetch", fetchMock);
 
@@ -77,7 +83,8 @@ describe("configProxy", () => {
   });
 
   it("throws when required single key cannot be resolved", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
       .mockResolvedValueOnce(createJsonResponse({}, 500));
 
@@ -100,20 +107,21 @@ describe("configProxy", () => {
     invalidateCatalogCache();
     invalidateConfigCache();
 
-    await expect(fetchConfigValues(["Unknown:Key"])).rejects.toThrow(
-      "Key 'Unknown:Key' is not declared in the 'website' catalog.",
-    );
+    await expect(fetchConfigValues(["Unknown:Key"])).rejects.toThrow("Key 'Unknown:Key' is not declared in the 'website' catalog.");
   });
 
   it("returns batch values for required and optional keys", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({
-        values: [
-          {key: "Common:Auth:Issuer", value: "https://issuer.example.test"},
-          {key: "Optional:FeatureFlag", value: "enabled"},
-        ],
-      }));
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          values: [
+            {key: "Common:Auth:Issuer", value: "https://issuer.example.test"},
+            {key: "Optional:FeatureFlag", value: "enabled"},
+          ],
+        }),
+      );
 
     vi.stubGlobal("fetch", fetchMock);
 
@@ -127,7 +135,8 @@ describe("configProxy", () => {
   });
 
   it("throws when required batch keys are unresolved after proxy failure", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
       .mockResolvedValueOnce(createJsonResponse({}, 500));
 
@@ -143,7 +152,8 @@ describe("configProxy", () => {
   });
 
   it("returns fallback for optional batch key when proxy fails", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
       .mockResolvedValueOnce(createJsonResponse({}, 500));
 
@@ -158,7 +168,8 @@ describe("configProxy", () => {
   });
 
   it("returns empty for optional single key when proxy returns non-success", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
       .mockResolvedValueOnce(createJsonResponse({}, 503));
 
@@ -185,13 +196,14 @@ describe("configProxy", () => {
   });
 
   it("throws when required key is returned empty in a successful batch response", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({
-        values: [
-          {key: "Common:Auth:Issuer", value: ""},
-        ],
-      }));
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          values: [{key: "Common:Auth:Issuer", value: ""}],
+        }),
+      );
 
     vi.stubGlobal("fetch", fetchMock);
 
@@ -205,18 +217,23 @@ describe("configProxy", () => {
   });
 
   it("returns all values from cache when batch keys are already cached", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({
-        key: "Common:Auth:Issuer",
-        value: "https://issuer.example.test",
-        fetchedAt: "2026-01-01T00:00:00Z",
-      }))
-      .mockResolvedValueOnce(createJsonResponse({
-        key: "Common:Auth:Audience",
-        value: "https://audience.example.test",
-        fetchedAt: "2026-01-01T00:00:00Z",
-      }));
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          key: "Common:Auth:Issuer",
+          value: "https://issuer.example.test",
+          fetchedAt: "2026-01-01T00:00:00Z",
+        }),
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          key: "Common:Auth:Audience",
+          value: "https://audience.example.test",
+          fetchedAt: "2026-01-01T00:00:00Z",
+        }),
+      );
 
     vi.stubGlobal("fetch", fetchMock);
 
@@ -233,13 +250,16 @@ describe("configProxy", () => {
   });
 
   it("returns cached optional values when batch request throws", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({
-        key: "Optional:FeatureFlag",
-        value: "cached",
-        fetchedAt: "2026-01-01T00:00:00Z",
-      }))
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          key: "Optional:FeatureFlag",
+          value: "cached",
+          fetchedAt: "2026-01-01T00:00:00Z",
+        }),
+      )
       .mockRejectedValueOnce(new Error("Network down"));
 
     vi.stubGlobal("fetch", fetchMock);
@@ -255,7 +275,8 @@ describe("configProxy", () => {
   });
 
   it("returns empty optional values when batch request throws and cache is empty", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
       .mockRejectedValueOnce(new Error("Network down"));
 
@@ -270,26 +291,27 @@ describe("configProxy", () => {
   });
 
   it("invalidates single-key cache entries", async () => {
-    const fetchMock = vi.fn()
+    const fetchMock = vi
+      .fn()
       .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({
-        key: "Optional:FeatureFlag",
-        value: "initial",
-        fetchedAt: "2026-01-01T00:00:00Z",
-      }))
-      .mockResolvedValueOnce(createJsonResponse({
-        key: "Optional:FeatureFlag",
-        value: "updated",
-        fetchedAt: "2026-01-01T00:00:00Z",
-      }));
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          key: "Optional:FeatureFlag",
+          value: "initial",
+          fetchedAt: "2026-01-01T00:00:00Z",
+        }),
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          key: "Optional:FeatureFlag",
+          value: "updated",
+          fetchedAt: "2026-01-01T00:00:00Z",
+        }),
+      );
 
     vi.stubGlobal("fetch", fetchMock);
 
-    const {
-      fetchConfigValue,
-      invalidateCatalogCache,
-      invalidateConfigCache,
-    } = await import("./configProxy");
+    const {fetchConfigValue, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
     invalidateCatalogCache();
     invalidateConfigCache();
 

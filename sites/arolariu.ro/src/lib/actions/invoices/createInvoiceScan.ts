@@ -22,8 +22,8 @@
  */
 
 import {withSpan} from "@/instrumentation.server";
-import {getAzureCredential} from "@/lib/azure/credentials";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {convertBase64ToBlob} from "@/lib/utils.server";
 import {BlobServiceClient} from "@azure/storage-blob";
 

@@ -23,8 +23,8 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {getAzureCredential} from "@/lib/azure/credentials";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {convertBase64ToBlob} from "@/lib/utils.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 import {BlobServiceClient} from "@azure/storage-blob";

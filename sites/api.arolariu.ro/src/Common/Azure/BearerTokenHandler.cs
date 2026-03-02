@@ -1,5 +1,6 @@
 namespace arolariu.Backend.Common.Azure;
 
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -13,15 +14,17 @@ using global::Azure.Core;
 /// </summary>
 /// <param name="credential">The Azure token credential used to acquire tokens.</param>
 /// <param name="scope">The scope to request when acquiring the token.</param>
-public sealed class BearerTokenHandler(TokenCredential credential, string scope) : DelegatingHandler(new HttpClientHandler())
+public sealed class BearerTokenHandler(TokenCredential credential, string scope) : DelegatingHandler
 {
   private readonly TokenRequestContext _tokenContext = new([scope]);
 
   /// <inheritdoc />
-  protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+  protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
   {
-    var token = await credential.GetTokenAsync(_tokenContext, ct).ConfigureAwait(false);
+    ArgumentNullException.ThrowIfNull(request);
+
+    var token = await credential.GetTokenAsync(_tokenContext, cancellationToken).ConfigureAwait(false);
     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
-    return await base.SendAsync(request, ct).ConfigureAwait(false);
+    return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
   }
 }

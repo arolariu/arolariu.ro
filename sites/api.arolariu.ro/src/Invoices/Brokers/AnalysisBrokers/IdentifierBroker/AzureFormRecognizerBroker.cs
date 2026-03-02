@@ -56,7 +56,6 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
-    var documentIntelligenceKey = options.CognitiveServicesKey;
     var credentials = AzureCredentialFactory.CreateCredential();
 
     client = new DocumentAnalysisClient(

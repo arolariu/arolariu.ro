@@ -17,8 +17,8 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {getAzureCredential} from "@/lib/azure/credentials";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {getAzureCredential} from "@/lib/azure/credentials";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";

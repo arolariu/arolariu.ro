@@ -17,7 +17,7 @@ public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
     {
       lock (syncLock)
       {
-        return currentCatalog;
+        return CloneCatalog(currentCatalog);
       }
     }
   }
@@ -29,7 +29,7 @@ public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
     {
       lock (syncLock)
       {
-        return currentCatalog.RequiredKeys;
+        return currentCatalog.RequiredKeys.ToArray();
       }
     }
   }
@@ -42,7 +42,7 @@ public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
 
     lock (syncLock)
     {
-      currentCatalog = catalog;
+      currentCatalog = CloneCatalog(catalog);
     }
   }
 
@@ -63,4 +63,14 @@ public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
 
     return catalog;
   }
+
+  private static ConfigCatalogResponse CloneCatalog(ConfigCatalogResponse source) => new()
+  {
+    Target = source.Target,
+    Version = source.Version,
+    RequiredKeys = source.RequiredKeys.ToArray(),
+    OptionalKeys = source.OptionalKeys.ToArray(),
+    AllowedPrefixes = source.AllowedPrefixes.ToArray(),
+    RefreshIntervalSeconds = source.RefreshIntervalSeconds,
+  };
 }

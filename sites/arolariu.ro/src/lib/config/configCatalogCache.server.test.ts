@@ -5,11 +5,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {
-  getCachedCatalog,
-  invalidateCatalogCache,
-  setCachedCatalog,
-} from "./configCatalogCache.server";
+import {getCachedCatalog, invalidateCatalogCache, setCachedCatalog} from "./configCatalogCache.server";
 
 const sampleCatalog = {
   target: "website",

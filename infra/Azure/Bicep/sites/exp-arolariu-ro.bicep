@@ -1,17 +1,17 @@
 // =====================================================================================
 // Exp Service - exp.arolariu.ro Configuration Proxy
 // =====================================================================================
-// This module provisions the Azure Function App that hosts the exp.arolariu.ro
+// This module provisions the Linux Web App that hosts the exp.arolariu.ro
 // configuration proxy service. The service acts as a centralized configuration
 // gateway, reading from Azure App Configuration + Key Vault and exposing
 // values via REST API to the frontend and backend services.
 //
 // Runtime Configuration:
-// - Platform: Azure Functions v4 Python 3.12
-// - Kind: functionapp,linux
-// - Runtime: Python 3.12 (linuxFxVersion)
+// - Platform: Linux App Service (container)
+// - Kind: app,linux,container
+// - Runtime: Docker image supplied by CI/CD (linuxFxVersion)
 // - Container deployment: Handled by GitHub Actions CI/CD pipeline
-// - Serverless: Runs on development App Service Plan (cost optimization)
+// - Runs on development App Service Plan (cost optimization)
 //
 // Identity:
 // - User-Assigned Managed Identity (Backend UAMI)
@@ -38,11 +38,11 @@
 
 targetScope = 'resourceGroup'
 
-metadata description = 'Azure Functions config proxy exp.arolariu.ro with Entra ID Easy Auth'
+metadata description = 'Linux container web app config proxy exp.arolariu.ro with Entra ID Easy Auth'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '3.0.0'
 
-@description('The location for the experiments Function App.')
+@description('The location for the experiments web app.')
 param expWebsiteLocation string
 
 @description('The ID of the App Service Plan to deploy on.')
@@ -69,9 +69,6 @@ param backendIdentityPrincipalId string
 @description('The Entra ID App Registration client ID for the exp service.')
 param entraAppClientId string
 
-@description('The storage account name for identity-based AzureWebJobsStorage.')
-param storageAccountName string
-
 @description('The Azure App Configuration store name for constructing the endpoint URL.')
 param appConfigurationName string
 
@@ -82,7 +79,7 @@ var commonTags = createTags('sites', expWebsiteDeploymentDate)
 resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
   name: 'exp-arolariu-ro'
   location: expWebsiteLocation
-  kind: 'functionapp,linux'
+  kind: 'app,linux,container'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -100,7 +97,9 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
       alwaysOn: false // cost optimization — wakes on request
       numberOfWorkers: 1
       http20Enabled: true
-      linuxFxVersion: 'Python|3.12'
+      // Placeholder image; workflow deployment overwrites this with the current
+      // ACR image tag during release.
+      linuxFxVersion: 'DOCKER|mcr.microsoft.com/azuredocs/aci-helloworld:latest'
       requestTracingEnabled: true
       httpLoggingEnabled: true
       logsDirectorySizeLimit: 50 // 50 MB
@@ -141,14 +140,6 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
           value: 'azure'
         }
         {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'python'
-        }
-        {
-          name: 'AzureWebJobsStorage__accountName'
-          value: storageAccountName
-        }
-        {
           name: 'AZURE_APPCONFIG_ENDPOINT'
           value: 'https://${appConfigurationName}.azconfig.io'
         }
@@ -173,7 +164,7 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
     publicNetworkAccess: 'Enabled' // IP restrictions enforce access control
   }
   tags: union(commonTags, {
-    displayName: 'Exp Configuration Proxy (Azure Functions)'
+    displayName: 'Exp Configuration Proxy (App Service Container)'
   })
 }
 

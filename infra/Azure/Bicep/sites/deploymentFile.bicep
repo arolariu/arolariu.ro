@@ -76,9 +76,6 @@ param managedIdentityBackendPrincipalId string
 @description('Entra ID App Registration client ID for the experiments service Easy Auth.')
 param expEntraAppClientId string
 
-@description('The storage account name for identity-based AzureWebJobsStorage (Functions).')
-param storageAccountName string
-
 @description('The Azure App Configuration store name.')
 param appConfigurationName string
 
@@ -138,7 +135,6 @@ module expWebsiteDeployment 'exp-arolariu-ro.bicep' = {
     frontendIdentityPrincipalId: managedIdentityFrontendPrincipalId
     backendIdentityPrincipalId: managedIdentityBackendPrincipalId
     entraAppClientId: expEntraAppClientId
-    storageAccountName: storageAccountName
     appConfigurationName: appConfigurationName
   }
 }

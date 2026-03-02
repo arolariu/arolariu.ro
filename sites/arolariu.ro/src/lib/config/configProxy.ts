@@ -13,14 +13,8 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
-import {
-  getCachedCatalog,
-  setCachedCatalog,
-} from "@/lib/config/configCatalogCache.server";
-import {
-  isConfigCatalogResponse,
-  type ConfigCatalogResponse,
-} from "@/lib/config/configCatalog.types";
+import {isConfigCatalogResponse, type ConfigCatalogResponse} from "@/lib/config/configCatalog.types";
+import {getCachedCatalog, setCachedCatalog} from "@/lib/config/configCatalogCache.server";
 
 const INFRA = process.env["INFRA"] ?? "local";
 const CONFIG_PROXY_URL = INFRA === "azure" ? "https://exp.arolariu.ro" : "http://localhost:5002";
@@ -160,12 +154,14 @@ function applyFallbackValues(result: Record<string, string>, uncachedKeys: Reado
 }
 
 function logProxyError(message: string, error: unknown): void {
+  const payload = {error, message: String(message)};
+
   if (INFRA === "azure") {
-    console.error(message);
+    console.error(payload);
     return;
   }
 
-  console.error(message, error);
+  console.error(payload);
 }
 
 /**
@@ -231,10 +227,7 @@ export async function fetchConfigValues(keys: string[]): Promise<Record<string, 
     logProxyError(`[configProxy] Failed to fetch batch keys [${uncachedKeys.join(", ")}].`, error);
     const missingRequiredKeys = getMissingRequiredKeys(catalog, uncachedKeys);
     if (missingRequiredKeys.length > 0) {
-      throw new Error(
-        `Required keys could not be resolved from config proxy: ${missingRequiredKeys.join(", ")}`,
-        {cause: error},
-      );
+      throw new Error(`Required keys could not be resolved from config proxy: ${missingRequiredKeys.join(", ")}`, {cause: error});
     }
 
     applyFallbackValues(result, uncachedKeys);
