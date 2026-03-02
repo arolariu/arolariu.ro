@@ -177,16 +177,28 @@ jobs:
           CONTAINER_TAG: ${{ github.sha }}
         run: |
           echo "::group::🐳 Docker Build"
+          echo "┌────────────────────────────────────────────────────────────┐"
+          echo "│ 🐳 DOCKER BUILD STARTED                                    │"
+          echo "├────────────────────────────────────────────────────────────┤"
+          echo "│ 📦 Image: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+          echo "│ 📁 Context: ./sites/exp.arolariu.ro"
+          echo "│ 🔧 Build args:"
+          echo "│    - COMMIT_SHA=${{ env.COMMIT_SHA }}"
+          echo "│    - INFRA=${{ env.INFRA }}"
+          echo "└────────────────────────────────────────────────────────────┘"
+          echo ""
           START_TIME=$(date +%s)
           docker build \
             -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} \
             .
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
+          echo ""
           echo "::notice::✅ Docker build completed in ${DURATION}s"
           echo "::endgroup::"
 
           IMAGE_SIZE=$(docker images --format "{{.Size}}" ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}})
+          echo "📦 Image size: $IMAGE_SIZE"
 
           echo "## 🐳 Docker Build Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
