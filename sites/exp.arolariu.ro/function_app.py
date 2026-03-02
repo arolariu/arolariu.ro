@@ -1,25 +1,12 @@
-"""
-exp.arolariu.ro — Configuration Proxy Service
+"""exp.arolariu.ro FastAPI service exposing configuration proxy endpoints."""
 
-Azure Functions v2 (Python) HTTP triggers for centralized configuration.
-Serves config values from Azure App Configuration + Key Vault (azure mode)
-or local config.json (local mode).
-
-REST API contract (identical to the previous .NET implementation):
-  GET /api/health            → health check
-  GET /api/catalog?for=...   → typed key catalog for caller target
-  GET /api/config/{key}      → single config value
-  GET /api/config?keys=...   → batch config values
-  GET /api/config?prefix=... → config section by prefix
-"""
-
-import json
 import logging
 import os
 import re
 from datetime import datetime, timezone
 
-import azure.functions as func
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import JSONResponse
 
 from authz import (
     authorize_catalog_request,
@@ -33,17 +20,21 @@ from config_loader import get_config, get_config_value, get_config_section, load
 # Load configuration at module import time (warm start optimization)
 load_config()
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = FastAPI(
+    title="exp.arolariu.ro",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 VALID_CONFIG_KEY_PATTERN = re.compile(r"^[A-Za-z0-9:_-]{1,256}$")
 VALID_CONFIG_PREFIX_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 
-def _json_response(body: dict, status_code: int = 200) -> func.HttpResponse:
-    """Helper to create a JSON HttpResponse with camelCase-compatible output."""
-    return func.HttpResponse(
-        body=json.dumps(body, default=str),
+def _json_response(body: dict, status_code: int = 200) -> JSONResponse:
+    """Create a JSON response."""
+    return JSONResponse(
+        content=body,
         status_code=status_code,
-        mimetype="application/json",
     )
 
 
@@ -52,7 +43,7 @@ def _utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _auth_error_response(message: str, status_code: int, details: dict | None = None) -> func.HttpResponse:
+def _auth_error_response(message: str, status_code: int, details: dict | None = None) -> JSONResponse:
     """Build a consistent auth-related JSON error response."""
     payload = {"error": message}
     if details:
@@ -60,10 +51,9 @@ def _auth_error_response(message: str, status_code: int, details: dict | None = 
     return _json_response(payload, status_code=status_code)
 
 
-@app.function_name(name="GetHealth")
-@app.route(route="health", methods=["GET"])
-def get_health(req: func.HttpRequest) -> func.HttpResponse:
-    """Health check endpoint. Excluded from Easy Auth via excludedPaths."""
+@app.get("/api/health")
+def get_health() -> JSONResponse:
+    """Health check endpoint."""
     infra = os.getenv("INFRA", "local")
     return _json_response({
         "status": "Healthy",
@@ -72,11 +62,13 @@ def get_health(req: func.HttpRequest) -> func.HttpResponse:
     })
 
 
-@app.function_name(name="GetCatalog")
-@app.route(route="catalog", methods=["GET"])
-def get_catalog_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+@app.get("/api/catalog")
+def get_catalog_endpoint(
+    req: Request,
+    for_target: str = Query("", alias="for"),
+) -> JSONResponse:
     """Get the catalog for a caller target (`for=api|website`)."""
-    requested_target = (req.params.get("for") or "").strip().lower()
+    requested_target = for_target.strip().lower()
     if not requested_target:
         return _json_response({"error": "Query parameter 'for' is required."}, status_code=400)
 
@@ -96,49 +88,15 @@ def get_catalog_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     return _json_response(payload)
 
 
-@app.function_name(name="GetConfigValue")
-@app.route(route="config/{*key}", methods=["GET"])
-def get_config_value_endpoint(req: func.HttpRequest) -> func.HttpResponse:
-    """Get a single configuration value by key."""
-    key = (req.route_params.get("key") or "").strip()
-    if not VALID_CONFIG_KEY_PATTERN.fullmatch(key):
-        return _json_response({"error": "Invalid key format."}, status_code=400)
-
-    logging.info("Fetching config key: %s", key)
-
-    authorization_result = authorize_key_request(req, key)
-    if not authorization_result.is_authorized:
-        return _auth_error_response(
-            message=authorization_result.message,
-            status_code=authorization_result.status_code,
-        )
-
-    value = get_config_value(key)
-    if value is None:
-        target_catalog = get_catalog(authorization_result.target or "")
-        if target_catalog and key in target_catalog.requiredKeys:
-            return _json_response(
-                {"error": f"Required key '{key}' is missing from configuration store."},
-                status_code=500,
-            )
-        return _json_response({"error": f"Key '{key}' not found"}, status_code=404)
-
-    return _json_response({
-        "key": key,
-        "value": value,
-        "fetchedAt": _utcnow_iso(),
-    })
-
-
-@app.function_name(name="GetConfigBatch")
-@app.route(route="config", methods=["GET"])
-def get_config_batch(req: func.HttpRequest) -> func.HttpResponse:
+@app.get("/api/config")
+def get_config_batch(
+    req: Request,
+    keys: str | None = Query(default=None),
+    prefix: str | None = Query(default=None),
+) -> JSONResponse:
     """Get multiple configuration values by keys or prefix."""
-    keys_param = req.params.get("keys")
-    prefix_param = req.params.get("prefix")
-
-    if keys_param is not None:
-        key_list = [k.strip() for k in keys_param.split(",") if k.strip()]
+    if keys is not None:
+        key_list = [k.strip() for k in keys.split(",") if k.strip()]
         if not key_list:
             return _json_response({"error": "Query parameter 'keys' must include at least one key."}, status_code=400)
 
@@ -182,8 +140,8 @@ def get_config_batch(req: func.HttpRequest) -> func.HttpResponse:
         logging.info("Fetched %d config keys", len(values))
         return _json_response({"values": values, "fetchedAt": _utcnow_iso()})
 
-    if prefix_param is not None:
-        normalized_prefix = prefix_param.strip()
+    if prefix is not None:
+        normalized_prefix = prefix.strip()
         if not VALID_CONFIG_PREFIX_PATTERN.fullmatch(normalized_prefix):
             return _json_response({"error": "Invalid prefix format."}, status_code=400)
 
@@ -206,3 +164,36 @@ def get_config_batch(req: func.HttpRequest) -> func.HttpResponse:
         {"error": "Provide 'keys' or 'prefix' query parameter"},
         status_code=400,
     )
+
+
+@app.get("/api/config/{key:path}")
+def get_config_value_endpoint(req: Request, key: str) -> JSONResponse:
+    """Get a single configuration value by key."""
+    normalized_key = key.strip()
+    if not VALID_CONFIG_KEY_PATTERN.fullmatch(normalized_key):
+        return _json_response({"error": "Invalid key format."}, status_code=400)
+
+    logging.info("Fetching config key: %s", normalized_key)
+
+    authorization_result = authorize_key_request(req, normalized_key)
+    if not authorization_result.is_authorized:
+        return _auth_error_response(
+            message=authorization_result.message,
+            status_code=authorization_result.status_code,
+        )
+
+    value = get_config_value(normalized_key)
+    if value is None:
+        target_catalog = get_catalog(authorization_result.target or "")
+        if target_catalog and normalized_key in target_catalog.requiredKeys:
+            return _json_response(
+                {"error": f"Required key '{normalized_key}' is missing from configuration store."},
+                status_code=500,
+            )
+        return _json_response({"error": f"Key '{normalized_key}' not found"}, status_code=404)
+
+    return _json_response({
+        "key": normalized_key,
+        "value": value,
+        "fetchedAt": _utcnow_iso(),
+    })
