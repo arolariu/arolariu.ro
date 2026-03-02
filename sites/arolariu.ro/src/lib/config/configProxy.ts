@@ -42,7 +42,7 @@ async function getBearerToken(): Promise<string> {
   if (INFRA !== "azure") return "";
   const {getAzureCredential} = await import("@/lib/azure/credentials");
   const credential = getAzureCredential();
-  const token = await credential.getToken("api://exp-arolariu-ro/.default");
+  const token = await credential.getToken("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default");
   return token?.token ?? "";
 }
 
