@@ -2,6 +2,8 @@ namespace arolariu.Backend.Common.Configuration;
 
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,11 +17,13 @@ using Microsoft.Extensions.Options;
 /// <param name="proxyClient">The config proxy client used to fetch catalogs and key values.</param>
 /// <param name="catalogCache">The in-memory catalog cache for required key definitions.</param>
 /// <param name="optionsMonitor">The options monitor for accessing current Azure options.</param>
+/// <param name="optionsCache">The options cache used to atomically swap refreshed option snapshots.</param>
 /// <param name="logger">The logger for recording refresh events and errors.</param>
 public sealed class ConfigRefreshHostedService(
     IConfigProxyClient proxyClient,
     ConfigCatalogCache catalogCache,
     IOptionsMonitor<AzureOptions> optionsMonitor,
+    IOptionsMonitorCache<AzureOptions> optionsCache,
     ILogger<ConfigRefreshHostedService> logger) : BackgroundService
 {
   private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
@@ -36,15 +40,11 @@ public sealed class ConfigRefreshHostedService(
         var latestCatalog = await proxyClient.GetCatalogAsync("api", stoppingToken).ConfigureAwait(false);
         if (latestCatalog is null)
         {
-          logger.LogWarning(
-            "Catalog refresh returned no catalog. Continuing with cached catalog version {CatalogVersion}.",
-            catalogCache.CurrentCatalog.Version);
+          logger.LogCatalogMissing(catalogCache.CurrentCatalog.Version);
         }
         else if (latestCatalog.RequiredKeys.Count == 0)
         {
-          logger.LogWarning(
-            "Catalog refresh returned an empty required key set. Continuing with cached catalog version {CatalogVersion}.",
-            catalogCache.CurrentCatalog.Version);
+          logger.LogEmptyCatalogReceived(catalogCache.CurrentCatalog.Version);
         }
         else
         {
@@ -54,34 +54,62 @@ public sealed class ConfigRefreshHostedService(
         var configKeys = catalogCache.RequiredKeys;
         if (configKeys.Count == 0)
         {
-          logger.LogWarning("Catalog contains no required keys. Skipping refresh cycle.");
+          logger.LogNoRequiredKeys();
           continue;
         }
 
         var values = await proxyClient.GetValuesAsync(configKeys, stoppingToken).ConfigureAwait(false);
 
-        // Note: Directly mutating CurrentValue works because AzureOptions properties are mutable
-        // and CloudOptionsManager returns CurrentValue by reference. For truly reactive options,
-        // consider implementing IOptionsChangeTokenSource<AzureOptions> in a future iteration.
-        var opts = optionsMonitor.CurrentValue;
-        opts.JwtSecret = values.GetValueOrDefault("Common:Auth:Secret", opts.JwtSecret);
-        opts.JwtIssuer = values.GetValueOrDefault("Common:Auth:Issuer", opts.JwtIssuer);
-        opts.JwtAudience = values.GetValueOrDefault("Common:Auth:Audience", opts.JwtAudience);
-        opts.TenantId = values.GetValueOrDefault("Common:Azure:TenantId", opts.TenantId);
-        opts.OpenAIEndpoint = values.GetValueOrDefault("Endpoints:OpenAI", opts.OpenAIEndpoint);
-        opts.SqlConnectionString = values.GetValueOrDefault("Endpoints:SqlServer", opts.SqlConnectionString);
-        opts.NoSqlConnectionString = values.GetValueOrDefault("Endpoints:NoSqlServer", opts.NoSqlConnectionString);
-        opts.StorageAccountEndpoint = values.GetValueOrDefault("Endpoints:StorageAccount", opts.StorageAccountEndpoint);
-        opts.ApplicationInsightsEndpoint = values.GetValueOrDefault("Endpoints:ApplicationInsights", opts.ApplicationInsightsEndpoint);
-        opts.CognitiveServicesEndpoint = values.GetValueOrDefault("Endpoints:CognitiveServices", opts.CognitiveServicesEndpoint);
-        opts.CognitiveServicesKey = values.GetValueOrDefault("Endpoints:CognitiveServices:Key", opts.CognitiveServicesKey);
+        var refreshedOptions = CloneAzureOptions(optionsMonitor.CurrentValue);
+        ApplyRefreshedValues(refreshedOptions, values);
 
-        logger.LogInformation("Config refreshed from proxy at {Timestamp}", DateTime.UtcNow);
+        optionsCache.TryRemove(Options.DefaultName);
+        optionsCache.TryAdd(Options.DefaultName, refreshedOptions);
+
+        logger.LogRefreshSucceeded();
       }
-      catch (Exception ex)
+      catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
       {
-        logger.LogWarning(ex, "Config refresh failed. Retrying in {Interval}.", RefreshInterval);
+        break;
+      }
+      catch (HttpRequestException ex)
+      {
+        logger.LogRefreshFailed(ex, RefreshInterval);
+      }
+      catch (JsonException ex)
+      {
+        logger.LogRefreshFailed(ex, RefreshInterval);
+      }
+      catch (InvalidOperationException ex)
+      {
+        logger.LogRefreshFailed(ex, RefreshInterval);
+      }
+      catch (TaskCanceledException ex)
+      {
+        logger.LogRefreshFailed(ex, RefreshInterval);
       }
     }
+  }
+
+  private static void ApplyRefreshedValues(AzureOptions options, IReadOnlyDictionary<string, string> values)
+  {
+    options.JwtSecret = values.GetValueOrDefault("Common:Auth:Secret", options.JwtSecret);
+    options.JwtIssuer = values.GetValueOrDefault("Common:Auth:Issuer", options.JwtIssuer);
+    options.JwtAudience = values.GetValueOrDefault("Common:Auth:Audience", options.JwtAudience);
+    options.TenantId = values.GetValueOrDefault("Common:Azure:TenantId", options.TenantId);
+    options.OpenAIEndpoint = values.GetValueOrDefault("Endpoints:OpenAI", options.OpenAIEndpoint);
+    options.SqlConnectionString = values.GetValueOrDefault("Endpoints:SqlServer", options.SqlConnectionString);
+    options.NoSqlConnectionString = values.GetValueOrDefault("Endpoints:NoSqlServer", options.NoSqlConnectionString);
+    options.StorageAccountEndpoint = values.GetValueOrDefault("Endpoints:StorageAccount", options.StorageAccountEndpoint);
+    options.ApplicationInsightsEndpoint = values.GetValueOrDefault("Endpoints:ApplicationInsights", options.ApplicationInsightsEndpoint);
+    options.CognitiveServicesEndpoint = values.GetValueOrDefault("Endpoints:CognitiveServices", options.CognitiveServicesEndpoint);
+    options.CognitiveServicesKey = values.GetValueOrDefault("Endpoints:CognitiveServices:Key", options.CognitiveServicesKey);
+  }
+
+  private static AzureOptions CloneAzureOptions(AzureOptions source)
+  {
+    var serialized = JsonSerializer.Serialize(source);
+    return JsonSerializer.Deserialize<AzureOptions>(serialized)
+      ?? throw new InvalidOperationException("Failed to clone Azure options snapshot.");
   }
 }
