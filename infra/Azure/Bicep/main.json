@@ -10,7 +10,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.40.2.10011",
-      "templateHash": "11497995400830961480"
+      "templateHash": "5461366314298329937"
     },
     "description": "Root entry point for zero-touch deployment of the arolariu.ro Azure infrastructure.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -104,7 +104,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.40.2.10011",
-              "templateHash": "12629633889640502891"
+              "templateHash": "3425492090070506394"
             },
             "description": "Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.",
             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -3939,7 +3939,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.40.2.10011",
-                      "templateHash": "8830220404299944922"
+                      "templateHash": "12367486317049673377"
                     },
                     "description": "Sites orchestrator deploying all web applications and static sites",
                     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -5292,7 +5292,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.40.2.10011",
-                              "templateHash": "12243781345670925789"
+                              "templateHash": "6685884786382703502"
                             },
                             "description": "Azure Functions config proxy exp.arolariu.ro with Entra ID Easy Auth",
                             "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
@@ -5551,6 +5551,18 @@
                                     {
                                       "name": "AZURE_APPCONFIG_ENDPOINT",
                                       "value": "[format('https://{0}.azconfig.io', parameters('appConfigurationName'))]"
+                                    },
+                                    {
+                                      "name": "EXP_CALLER_API_IDS",
+                                      "value": "[parameters('backendIdentityPrincipalId')]"
+                                    },
+                                    {
+                                      "name": "EXP_CALLER_WEBSITE_IDS",
+                                      "value": "[parameters('frontendIdentityPrincipalId')]"
+                                    },
+                                    {
+                                      "name": "EXP_CONFIG_REFRESH_INTERVAL_SECONDS",
+                                      "value": "300"
                                     }
                                   ]
                                 },
@@ -5571,7 +5583,8 @@
                                   "requireAuthentication": true,
                                   "unauthenticatedClientAction": "Return401",
                                   "excludedPaths": [
-                                    "/api/health"
+                                    "/api/health",
+                                    "/api/ready"
                                   ]
                                 },
                                 "identityProviders": {

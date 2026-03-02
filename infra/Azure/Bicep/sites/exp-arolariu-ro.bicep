@@ -161,7 +161,7 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
           value: frontendIdentityPrincipalId
         }
         {
-          name: 'EXP_CATALOG_REFRESH_INTERVAL_SECONDS'
+          name: 'EXP_CONFIG_REFRESH_INTERVAL_SECONDS'
           value: '300'
         }
       ]
@@ -185,7 +185,10 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
     globalValidation: {
       requireAuthentication: true
       unauthenticatedClientAction: 'Return401'
-      excludedPaths: ['/api/health']
+      excludedPaths: [
+        '/api/health'
+        '/api/ready'
+      ]
     }
     identityProviders: {
       azureActiveDirectory: {
