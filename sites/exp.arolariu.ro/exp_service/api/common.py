@@ -8,6 +8,8 @@ from fastapi.responses import JSONResponse
 from models import ErrorResponse
 
 API_VERSION_PREFIX = "/api/v2"
+# Restrict characters to conservative key/prefix alphabets to reduce abuse
+# surface and ensure predictable catalog matching semantics.
 VALID_CONFIG_KEY_PATTERN = re.compile(r"^[A-Za-z0-9:_-]{1,256}$")
 VALID_CONFIG_PREFIX_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 

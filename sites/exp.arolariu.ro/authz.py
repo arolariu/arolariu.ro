@@ -30,6 +30,8 @@ def _parse_identity_list(env_var_name: str) -> set[str]:
 
 def _identity_policy() -> dict[str, set[str]]:
     """Build the caller-to-target identity policy map."""
+    # Identity allow-lists are resolved on demand from environment to keep
+    # runtime behavior explicit and side-effect free.
     return {
         "api": _parse_identity_list("EXP_CALLER_API_IDS"),
         "website": _parse_identity_list("EXP_CALLER_WEBSITE_IDS"),
@@ -76,6 +78,7 @@ def _extract_claim_values(principal_payload: dict) -> set[str]:
     if not isinstance(claims, list):
         return values
 
+    # Accept both short and URI claim type forms emitted by Easy Auth / Entra.
     allowed_claim_types = {
         "oid",
         "appid",
@@ -106,6 +109,7 @@ def _extract_caller_ids(req) -> set[str]:
     if not caller_ids:
         return set()
 
+    # Principal ID is added as an additional trust signal when present.
     principal_id = _get_header_value(headers, "X-MS-CLIENT-PRINCIPAL-ID").strip()
     if principal_id:
         caller_ids.add(principal_id)
@@ -179,6 +183,8 @@ def _authorize_request_with_targets(
     """Authorize a request and return all allowed caller targets."""
     infra = (os.getenv("INFRA") or "").strip().lower()
     if infra in {"local", "proxy"}:
+        # Local mode uses explicit target + optional shared token instead of
+        # Easy Auth claims.
         local_result = _authorize_local(req, requested_target)
         if not local_result.is_authorized or not local_result.target:
             return local_result, []
@@ -200,6 +206,7 @@ def _authorize_request_with_targets(
     if resolved_target is not None and get_catalog(resolved_target) is None:
         return AuthorizationResult(False, 400, f"Unknown catalog target '{resolved_target}'."), []
 
+    # Azure mode always resolves caller identities from Easy Auth headers.
     caller_ids = _extract_caller_ids(req)
     return _resolve_targets_for_caller(caller_ids, resolved_target)
 

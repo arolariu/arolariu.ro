@@ -29,6 +29,8 @@ def get_config_batch(
 ) -> ConfigBatchResponse | JSONResponse:
     """Get multiple configuration values by keys or prefix."""
     if keys is not None:
+        # Key mode returns requested keys in input order for deterministic
+        # downstream mapping.
         key_list = [k.strip() for k in keys.split(",") if k.strip()]
         if not key_list:
             return error_response("Query parameter 'keys' must include at least one key.", status_code=400)
@@ -61,11 +63,14 @@ def get_config_batch(
                 details={"missingRequiredKeys": missing_required_keys},
             )
 
+        # Non-required missing keys intentionally resolve to empty string so
+        # callers can distinguish "not configured" from transport errors.
         values = [ConfigValueResponse(key=k, value=config.get(k, ""), fetchedAt=utcnow_iso()) for k in key_list]
         logging.info("Fetched %d config keys", len(values))
         return ConfigBatchResponse(values=values, fetchedAt=utcnow_iso())
 
     if prefix is not None:
+        # Prefix mode is constrained by catalog prefix allow-lists.
         normalized_prefix = prefix.strip()
         if not VALID_CONFIG_PREFIX_PATTERN.fullmatch(normalized_prefix):
             return error_response("Invalid prefix format.", status_code=400)

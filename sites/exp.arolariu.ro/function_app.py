@@ -49,6 +49,7 @@ async def attach_request_context(
     response.headers["X-Request-Id"] = request_id
     response.headers["X-Content-Type-Options"] = "nosniff"
     if request.url.path.startswith(f"{API_VERSION_PREFIX}/config"):
+        # Config endpoints should never be cached by intermediate proxies.
         response.headers["Cache-Control"] = "no-store"
         response.headers["Pragma"] = "no-cache"
 

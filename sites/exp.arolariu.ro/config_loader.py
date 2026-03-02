@@ -19,7 +19,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# Global config store — loaded once, accessed by all functions
+# Global config snapshot. Access is synchronized because request handlers and
+# refresh logic may run concurrently in the same process.
 _config: dict[str, str] = {}
 _loaded: bool = False
 _last_loaded_at: float | None = None
@@ -145,6 +146,7 @@ def get_config() -> dict[str, str]:
             if _loaded:
                 logger.info("Refreshing configuration due to refresh interval.")
             load_config()
+        # Return a detached snapshot so callers cannot mutate shared state.
         return dict(_config)
 
 
