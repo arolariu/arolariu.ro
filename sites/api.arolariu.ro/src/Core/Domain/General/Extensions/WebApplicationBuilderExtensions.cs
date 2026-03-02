@@ -91,9 +91,9 @@ internal static class WebApplicationBuilderExtensions
   /// for Azure App Configuration and Key Vault.
   /// </para>
   /// <para>
-  /// The proxy URL is selected based on the ASPNETCORE_ENVIRONMENT variable:
-  /// - Production: https://exp.arolariu.ro
-  /// - Other environments: http://localhost:5002
+  /// The proxy URL is selected based on infrastructure mode:
+  /// - INFRA=azure (or production fallback): https://exp.arolariu.ro
+  /// - Local/proxy mode: http://localhost:5002
   /// </para>
   /// <para>
   /// A background hosted service (<see cref="ConfigRefreshHostedService"/>) is registered
@@ -103,7 +103,13 @@ internal static class WebApplicationBuilderExtensions
   private static void AddProxyConfiguration(this WebApplicationBuilder builder)
   {
     var services = builder.Services;
-    var isAzureEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production";
+    var infra = Environment.GetEnvironmentVariable("INFRA");
+    var isAzureEnv =
+      string.Equals(infra, "azure", StringComparison.OrdinalIgnoreCase) ||
+      string.Equals(
+        Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+        "Production",
+        StringComparison.OrdinalIgnoreCase);
     var baseUrl = isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlLocal;
 
     services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>

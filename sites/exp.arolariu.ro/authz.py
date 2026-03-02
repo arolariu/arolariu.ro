@@ -134,45 +134,74 @@ def _authorize_local(req, requested_target: str | None) -> AuthorizationResult:
     return AuthorizationResult(True, 200, "", target)
 
 
-def _resolve_target_for_caller(
+def _resolve_targets_for_caller(
     caller_ids: set[str],
     requested_target: str | None,
-) -> AuthorizationResult:
-    """Resolve target authorization for an Azure-mode caller."""
+) -> tuple[AuthorizationResult, list[str]]:
+    """Resolve authorized targets for an Azure-mode caller."""
     identity_policy = _identity_policy()
     if not caller_ids:
-        return AuthorizationResult(False, 401, "Unauthorized caller.")
+        return AuthorizationResult(False, 401, "Unauthorized caller."), []
 
     if requested_target is not None:
         target = requested_target.lower()
         allowed_callers = identity_policy.get(target, set())
         if not allowed_callers:
-            return AuthorizationResult(False, 403, f"No callers configured for target '{target}'.")
+            return AuthorizationResult(False, 403, f"No callers configured for target '{target}'."), []
         if caller_ids.isdisjoint(allowed_callers):
-            return AuthorizationResult(False, 403, f"Caller is not allowed for target '{target}'.")
-        return AuthorizationResult(True, 200, "", target)
+            return AuthorizationResult(False, 403, f"Caller is not allowed for target '{target}'."), []
+        return AuthorizationResult(True, 200, "", target), [target]
 
-    for target, allowed_callers in identity_policy.items():
-        if allowed_callers and not caller_ids.isdisjoint(allowed_callers):
-            return AuthorizationResult(True, 200, "", target)
+    matched_targets = [
+        target
+        for target, allowed_callers in identity_policy.items()
+        if allowed_callers and not caller_ids.isdisjoint(allowed_callers)
+    ]
+    if not matched_targets:
+        return AuthorizationResult(False, 401, "Unauthorized caller."), []
 
-    return AuthorizationResult(False, 401, "Unauthorized caller.")
+    if len(matched_targets) == 1:
+        return AuthorizationResult(True, 200, "", matched_targets[0]), matched_targets
+
+    return AuthorizationResult(True, 200, "", None), matched_targets
 
 
-def _authorize_request(req, requested_target: str | None = None) -> AuthorizationResult:
-    """Authorize a request and resolve the caller target context."""
+def _authorize_request_with_targets(
+    req,
+    requested_target: str | None = None,
+) -> tuple[AuthorizationResult, list[str]]:
+    """Authorize a request and return all allowed caller targets."""
     infra = (os.getenv("INFRA") or "").strip().lower()
     if infra in {"local", "proxy"}:
-        return _authorize_local(req, requested_target)
+        local_result = _authorize_local(req, requested_target)
+        if not local_result.is_authorized or not local_result.target:
+            return local_result, []
+        return local_result, [local_result.target]
+
     if infra != "azure":
         return AuthorizationResult(
             is_authorized=False,
             status_code=500,
             message="Service infrastructure mode is not configured correctly.",
-        )
+        ), []
+
+    resolved_target = requested_target
+    if resolved_target is None:
+        header_target = _get_header_value(req.headers if req is not None else {}, "X-Exp-Target").strip().lower()
+        if header_target:
+            resolved_target = header_target
+
+    if resolved_target is not None and get_catalog(resolved_target) is None:
+        return AuthorizationResult(False, 400, f"Unknown catalog target '{resolved_target}'."), []
 
     caller_ids = _extract_caller_ids(req)
-    return _resolve_target_for_caller(caller_ids, requested_target)
+    return _resolve_targets_for_caller(caller_ids, resolved_target)
+
+
+def _authorize_request(req, requested_target: str | None = None) -> AuthorizationResult:
+    """Authorize a request and resolve the caller target context."""
+    result, _ = _authorize_request_with_targets(req, requested_target)
+    return result
 
 
 def authorize_catalog_request(req, target: str) -> AuthorizationResult:
@@ -184,49 +213,71 @@ def authorize_catalog_request(req, target: str) -> AuthorizationResult:
 
 def authorize_key_request(req, key: str) -> AuthorizationResult:
     """Authorize a single-key lookup request."""
-    result = _authorize_request(req)
-    if not result.is_authorized or not result.target:
+    result, allowed_targets = _authorize_request_with_targets(req)
+    if not result.is_authorized:
         return result
 
-    if not is_key_allowed(result.target, key):
-        return AuthorizationResult(False, 403, f"Key '{key}' is not allowed for target '{result.target}'.", result.target)
+    matching_targets = [target for target in allowed_targets if is_key_allowed(target, key)]
+    if not matching_targets:
+        if result.target:
+            return AuthorizationResult(False, 403, f"Key '{key}' is not allowed for target '{result.target}'.", result.target)
+        return AuthorizationResult(False, 403, f"Key '{key}' is not allowed for caller targets.")
 
-    return result
+    resolved_target = result.target or matching_targets[0]
+    return AuthorizationResult(True, 200, "", resolved_target)
 
 
 def authorize_keys_request(req, keys: list[str]) -> tuple[AuthorizationResult, list[str]]:
     """Authorize a multi-key lookup request."""
-    result = _authorize_request(req)
-    if not result.is_authorized or not result.target:
+    result, allowed_targets = _authorize_request_with_targets(req)
+    if not result.is_authorized:
         return result, []
 
-    denied_keys = sorted([key for key in keys if not is_key_allowed(result.target, key)])
+    denied_keys = sorted([
+        key
+        for key in keys
+        if not any(is_key_allowed(target, key) for target in allowed_targets)
+    ])
     if denied_keys:
         return (
             AuthorizationResult(
                 False,
                 403,
-                f"Some keys are not allowed for target '{result.target}'.",
+                f"Some keys are not allowed for target '{result.target}'." if result.target else "Some keys are not allowed for caller targets.",
                 result.target,
             ),
             denied_keys,
         )
 
-    return result, []
+    unified_targets = [
+        target
+        for target in allowed_targets
+        if all(is_key_allowed(target, key) for key in keys)
+    ]
+    resolved_target = result.target or (unified_targets[0] if unified_targets else None)
+    return AuthorizationResult(True, 200, "", resolved_target), []
 
 
 def authorize_prefix_request(req, prefix: str) -> AuthorizationResult:
     """Authorize a prefix lookup request."""
-    result = _authorize_request(req)
-    if not result.is_authorized or not result.target:
+    result, allowed_targets = _authorize_request_with_targets(req)
+    if not result.is_authorized:
         return result
 
-    if not is_prefix_allowed(result.target, prefix):
+    matching_targets = [target for target in allowed_targets if is_prefix_allowed(target, prefix)]
+    if not matching_targets:
+        if result.target:
+            return AuthorizationResult(
+                False,
+                403,
+                f"Prefix '{prefix}' is not allowed for target '{result.target}'.",
+                result.target,
+            )
         return AuthorizationResult(
             False,
             403,
-            f"Prefix '{prefix}' is not allowed for target '{result.target}'.",
-            result.target,
+            f"Prefix '{prefix}' is not allowed for caller targets.",
         )
 
-    return result
+    resolved_target = result.target or matching_targets[0]
+    return AuthorizationResult(True, 200, "", resolved_target)
