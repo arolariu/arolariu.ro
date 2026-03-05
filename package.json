@@ -234,7 +234,7 @@
     "storybook-addon-rslib": "3.2.3",
     "storybook-builder-rsbuild": "3.2.3",
     "storybook-react-rsbuild": "3.2.3",
-    "svelte": "5.53.0",
+    "svelte": "5.53.5",
     "svelte-adapter-azure-swa": "0.22.1",
     "svelte-check": "4.4.3",
     "svelte-eslint-parser": "1.4.1",
