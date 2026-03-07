@@ -1,6 +1,7 @@
 .venv/
 .vscode/
-tests/
+*.test.py
+conftest.py
 __pycache__/
 *.pyc
 local.settings.json

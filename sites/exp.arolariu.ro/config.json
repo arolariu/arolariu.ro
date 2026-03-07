@@ -6,9 +6,9 @@
   "Endpoints:StorageAccount": "http://127.0.0.1:10000/devstoreaccount1",
   "Endpoints:SqlServer": "Server=localhost,8082;Database=arolariu;User Id=<sql-user>;Password=<sql-password>;TrustServerCertificate=true;",
   "Endpoints:NoSqlServer": "AccountEndpoint=https://localhost:8081/;AccountKey=<cosmos-account-key>;",
-  "Endpoints:ApplicationInsights": "",
-  "Endpoints:OpenAI": "",
-  "Endpoints:CognitiveServices": "",
-  "Endpoints:CognitiveServices:Key": "",
+  "Endpoints:ApplicationInsights": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://localhost/;LiveEndpoint=https://localhost/;ApplicationId=local-development",
+  "Endpoints:OpenAI": "https://openai.localhost/",
+  "Endpoints:CognitiveServices": "https://cognitiveservices.localhost/",
+  "Endpoints:CognitiveServices:Key": "local-development-cognitive-services-key",
   "AzureOptions:StorageAccountEndpoint": "http://127.0.0.1:10000/devstoreaccount1"
 }

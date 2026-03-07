@@ -1,78 +1,360 @@
 # exp.arolariu.ro
 
-Configuration and experimentation store service for the arolariu.ro platform.
+Configuration and experimentation service for the arolariu.ro platform.
 
 ## Purpose
 
-`exp.arolariu.ro` is the server-side source of truth for runtime configuration catalogs and values used by:
+`exp.arolariu.ro` is the server-to-server source of truth for target-scoped configuration
+documents and feature-flag state consumed by:
 
-- `sites/api.arolariu.ro` (backend API)
-- `sites/arolariu.ro` (main website, server context only)
+- `sites/api.arolariu.ro`
+- `sites/arolariu.ro` (**server context only**)
 
-The service exposes a narrow HTTP API for catalog and key retrieval while enforcing caller authorization and key-level access control.
+> **Server-only boundary**: `exp` must never be called from browser JavaScript or any
+> other client-side code. Website integration is limited to Server Components,
+> Server Actions, route handlers with server responsibilities, and `server-only`
+> utilities.
 
 ## Runtime model
 
-- Platform: Python FastAPI (ASGI) hosted in Azure App Service container
+- Platform: Python FastAPI (ASGI)
 - Entrypoint: `function_app.py`
-- Route prefix: `/api/v2` for configuration endpoints (`/api/health` and `/api/ready` remain unversioned operational probes)
-- Container image base: `python:3.12-slim` + `uvicorn`
+- Versioned route prefix: `/api/v1`
+- Unversioned probes: `/api/health`, `/api/ready`
+- Container base: `python:3.12-slim` + `uvicorn`
+
+## Architecture overview
+
+```mermaid
+flowchart LR
+    subgraph Consumers[Server-side consumers]
+        API[sites/api.arolariu.ro]
+        WEBSITE[sites/arolariu.ro<br/>server context only]
+    end
+
+    API -->|GET /api/v1/build-time| EXP[exp.arolariu.ro]
+    API -->|GET /api/v1/run-time| EXP
+    API -->|GET /api/v1/config?name=...| EXP
+    WEBSITE -->|GET /api/v1/build-time| EXP
+    WEBSITE -->|GET /api/v1/run-time| EXP
+    WEBSITE -->|GET /api/v1/config?name=...| EXP
+
+    subgraph ExpRuntime[exp runtime]
+        ROUTERS[api/* slices]
+        AUTH[security/authz.py]
+        CATALOG[config/catalog.py]
+        LOADER[config/loader.py]
+        TELEMETRY[telemetry/*]
+    end
+
+    EXP --> ROUTERS
+    ROUTERS --> AUTH
+    ROUTERS --> CATALOG
+    ROUTERS --> LOADER
+    ROUTERS --> TELEMETRY
+    AUTH --> TELEMETRY
+    LOADER --> TELEMETRY
+
+    subgraph LocalSources[Local mode]
+        LOCAL_JSON[config.json]
+        TEMPLATE_JSON[config.template.json]
+    end
+
+    subgraph AzureSources[Azure mode]
+        APP_CONFIG[Azure App Configuration]
+        KEY_VAULT[Azure Key Vault references]
+    end
+
+    LOADER --> LOCAL_JSON
+    LOADER --> TEMPLATE_JSON
+    LOADER --> APP_CONFIG
+    APP_CONFIG --> KEY_VAULT
+```
+
+## Vertical slice shape
+
+The service keeps source and tests side-by-side directly under the service root:
+
+```text
+api/
+  build_time.py
+  build_time.test.py
+  common.py
+  config.py
+  config.test.py
+  health.py
+  run_time.py
+  run_time.test.py
+config/
+  catalog.py
+  catalog.test.py
+  loader.py
+  loader.test.py
+  settings.py
+security/
+  authz.py
+  authz.test.py
+runtime/
+  metrics.py
+telemetry/
+  bootstrap.py
+  bootstrap.test.py
+  settings.py
+  settings.test.py
+models.py
+function_app.py
+function_app.test.py
+conftest.py
+```
+
+- `api/*` owns the public HTTP slices (`health`, `build-time`, `run-time`, `config`)
+- `config/*` owns target indexes, configuration loading, and shared env-driven runtime settings
+- `security/*` owns caller authorization
+- `runtime/*` owns process-local diagnostics that are useful for probes but never persisted across restarts
+- `telemetry/*` owns OpenTelemetry resource settings, exporter bootstrap, manual spans, and custom metrics
+- `models.py` holds the dedicated API/website build-time and run-time contracts plus the single-key config response
+- `function_app.py` remains the Azure Functions / ASGI composition root
+- Slice directories intentionally avoid `__init__.py` so sibling `*.test.py` files stay importable under pytest's importlib mode.
+
+## Contract models
+
+`models.py` intentionally defines separate configuration payloads for each consumer and lifecycle stage:
+
+| Model | Purpose |
+| --- | --- |
+| `ApiBuildTimeConfig` | API startup configuration and dependency endpoints |
+| `ApiRunTimeConfig` | API refresh-time configuration contract |
+| `WebsiteBuildTimeConfig` | Website build/startup server configuration |
+| `WebsiteRunTimeConfig` | Website server-request configuration including secrets |
+| `ConfigValueResponse` | Single-key metadata-rich response for `/api/v1/config` |
+
+The per-key `/config` endpoint is backed by a registry dictionary in `config/catalog.py`. That
+registry documents:
+
+- which targets can request a key,
+- which documents include the key,
+- whether the key is required or optional in each document,
+- and how the key should be used safely.
 
 ## API contract
 
 ### `GET /api/health`
 
-Health endpoint (used by local Docker health checks and platform probes).
+Liveness endpoint used by container and platform probes. The response also
+includes process-local diagnostics that help explain what the current worker has
+done since startup.
+
+```json
+{
+  "status": "Healthy",
+  "environment": "local",
+  "timestamp": "2025-01-01T00:00:05+00:00",
+  "startedAt": "2025-01-01T00:00:00+00:00",
+  "uptimeSeconds": 5.0,
+  "hostname": "exp-7f6d5c4b9f",
+  "processId": 1,
+  "requestsServed": 12,
+  "requestsByPath": {
+    "/api/health": 3,
+    "/api/v1/build-time": 2,
+    "/api/v1/run-time": 4,
+    "/api/v1/config": 3
+  },
+  "configKeysLoaded": 17,
+  "configLoadCount": 1,
+  "lastConfigLoadedAt": "2025-01-01T00:00:00+00:00",
+  "configResponsesServed": 9,
+  "configValuesServed": 41,
+  "configResponsesByEndpoint": {
+    "build-time": 2,
+    "run-time": 4,
+    "config": 3
+  },
+  "configResponsesByTarget": {
+    "api": 3,
+    "website": 6
+  },
+  "configResponsesByCaller": {
+    "api-managed-identity-object-id": 3,
+    "local:website": 6
+  },
+  "configValuesByTarget": {
+    "api": 11,
+    "website": 30
+  },
+  "configValuesByCaller": {
+    "api-managed-identity-object-id": 11,
+    "local:website": 30
+  },
+  "configValuesByName": {
+    "Endpoints:Api": 5,
+    "Common:Auth:Issuer": 6
+  },
+  "lastConfigServedAt": "2025-01-01T00:00:04+00:00"
+}
+```
+
+These counters are intentionally **process-local and ephemeral**. They reset
+when the worker restarts, which keeps the microservice stateless while still
+providing useful live diagnostics. In Azure, `configResponsesByCaller` and
+`configValuesByCaller` are keyed by the Easy Auth principal ID; in local/proxy
+mode they fall back to labels such as `local:website`.
 
 ### `GET /api/ready`
 
-Readiness endpoint. Returns `503` when the service cannot read current configuration state.
+Readiness endpoint. Returns `503` when the service cannot read its current configuration
+snapshot.
 
-### `GET /api/v2/catalog?for=api|website`
+### `GET /api/v1/build-time?for=api|website`
 
-Returns typed catalog metadata for the requested target:
-
-- `target`
-- `version`
-- `requiredKeys`
-- `optionalKeys`
-- `allowedPrefixes`
-- `refreshIntervalSeconds`
-- `fetchedAt`
-
-### `GET /api/v2/config/{key}`
-
-Returns one key:
+Returns the build-time configuration document for the requested target.
 
 ```json
 {
-  "key": "Common:Auth:Issuer",
-  "value": "https://example",
-  "fetchedAt": "..."
+  "target": "website",
+  "contractVersion": "1",
+  "version": "<12-char hash>",
+  "config": {
+    "AzureOptions:StorageAccountEndpoint": "https://...",
+    "Common:Auth:Issuer": "https://...",
+    "Common:Auth:Audience": "https://...",
+    "Endpoints:Api": "https://..."
+  },
+  "refreshIntervalSeconds": 300,
+  "fetchedAt": "2025-01-01T00:00:00+00:00"
 }
 ```
 
-### `GET /api/v2/config?keys=k1,k2`
+The build-time document contains only the keys indexed for startup/build-sensitive
+behavior. For the website target, server-only secrets such as `Common:Auth:Secret` are
+excluded from this slice.
 
-Returns a batch:
+### `GET /api/v1/run-time?for=api|website`
+
+Returns the runtime configuration document plus feature flags for the requested target.
 
 ```json
 {
-  "values": [
-    {"key": "k1", "value": "v1", "fetchedAt": "..."},
-    {"key": "k2", "value": "v2", "fetchedAt": "..."}
-  ],
-  "fetchedAt": "..."
+  "target": "website",
+  "contractVersion": "1",
+  "version": "<12-char hash>",
+  "config": {
+    "AzureOptions:StorageAccountEndpoint": "https://...",
+    "Common:Auth:Issuer": "https://...",
+    "Common:Auth:Audience": "https://...",
+    "Common:Auth:Secret": "...",
+    "Endpoints:Api": "https://...",
+    "Communication:Resend:ApiKey": ""
+  },
+  "features": {
+    "website.commander.enabled": false,
+    "website.web-vitals.enabled": true
+  },
+  "refreshIntervalSeconds": 300,
+  "fetchedAt": "2025-01-01T00:00:00+00:00"
 }
 ```
 
-### `GET /api/v2/config?prefix=Common`
+This is the single runtime bootstrap call for both consumers.
 
-Returns all keys matching `prefix:`.
+```mermaid
+sequenceDiagram
+    participant Consumer as API / Website server
+    participant Router as api/run_time.py
+    participant Auth as security/authz.py
+    participant Catalog as config/catalog.py
+    participant Loader as config/loader.py
+    participant Source as Local JSON or Azure App Configuration
+
+    Consumer->>Router: GET /api/v1/run-time?for=website
+    Router->>Catalog: resolve target index
+    Router->>Auth: authorize_target_request()
+    Auth-->>Router: authorized / denied
+    Router->>Loader: get_config()
+    alt first load or refresh due
+        Loader->>Source: load snapshot
+        Source-->>Loader: key/value config
+    end
+    Loader-->>Router: current snapshot
+    Router->>Catalog: resolve runtime config
+    Router->>Loader: extract_features()
+    Router-->>Consumer: WebsiteRunTimeConfigDocumentResponse / ApiRunTimeConfigDocumentResponse
+```
+
+### `GET /api/v1/config?name=<config-key>`
+
+Returns exactly one indexed configuration value plus its ownership and usage metadata.
+
+```json
+{
+  "name": "Endpoints:Api",
+  "value": "https://api.arolariu.ro",
+  "availableForTargets": ["website"],
+  "availableInDocuments": ["website.build-time", "website.run-time"],
+  "requiredInDocuments": ["website.build-time", "website.run-time"],
+  "description": "Base URL of the backend API that the website calls from server-only code.",
+  "usage": "Website-only. Use this value for server-to-server fetches instead of hard-coding environment-specific API URLs.",
+  "refreshIntervalSeconds": 300,
+  "fetchedAt": "2025-01-01T00:00:00+00:00"
+}
+```
+
+`name` is always a configuration key such as `Endpoints:Api` or `Common:Auth:Secret`.
+When a key is shared by multiple targets, callers must also send `X-Exp-Target` so
+authorization remains explicit.
+
+## Indexed target ownership
+
+### `api`
+
+- Build-time keys
+  - `Common:Auth:Secret`
+  - `Common:Auth:Issuer`
+  - `Common:Auth:Audience`
+  - `Common:Azure:TenantId`
+  - `Endpoints:OpenAI`
+  - `Endpoints:SqlServer`
+  - `Endpoints:NoSqlServer`
+  - `Endpoints:StorageAccount`
+  - `Endpoints:ApplicationInsights`
+  - `Endpoints:CognitiveServices`
+  - `Endpoints:CognitiveServices:Key`
+- Runtime keys
+  - same as build-time
+- Feature IDs
+  - none
+
+### `website`
+
+- Build-time keys
+  - `AzureOptions:StorageAccountEndpoint`
+  - `Common:Auth:Issuer`
+  - `Common:Auth:Audience`
+  - `Endpoints:Api`
+- Runtime keys
+  - `AzureOptions:StorageAccountEndpoint`
+  - `Common:Auth:Issuer`
+  - `Common:Auth:Audience`
+  - `Common:Auth:Secret`
+  - `Endpoints:Api`
+- Runtime optional keys
+  - `Communication:Resend:ApiKey`
+- Feature IDs
+  - `website.commander.enabled`
+  - `website.web-vitals.enabled`
+
+## Feature flag conventions
+
+Feature flags are extracted from the loaded config snapshot using:
+
+1. `FeatureManagement:<id>` with string boolean values (`true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off`)
+2. `.appconfig.featureflag/<id>` with JSON containing an `enabled` boolean
+
+Convention 1 wins when both forms are present.
 
 ## Error contract
 
-All error responses use a standardized shape:
+All errors use the same JSON shape:
 
 ```json
 {
@@ -83,78 +365,151 @@ All error responses use a standardized shape:
 }
 ```
 
-Optional arrays are included only when relevant for the failing request.
+Only relevant arrays are included.
 
 ## Security model
 
-### Authorization modes
+### Azure mode (`INFRA=azure`)
 
-#### Azure mode (`INFRA=azure`)
-
-- Caller identity is resolved from Easy Auth headers:
+- Caller identity is read from Easy Auth headers
   - `X-MS-CLIENT-PRINCIPAL-ID`
-  - `X-MS-CLIENT-PRINCIPAL` (decoded for `oid`/`appid` claims)
-- Allowed callers are configured via:
+  - `X-MS-CLIENT-PRINCIPAL`
+- Allowed callers are configured with:
   - `EXP_CALLER_API_IDS`
   - `EXP_CALLER_WEBSITE_IDS`
-- Access is deny-by-default:
+- Access is deny-by-default
   - unknown caller -> `401`
-  - disallowed key/prefix/target -> `403`
+  - caller not allowed for requested target -> `403`
 
-#### Local mode (`INFRA!=azure`)
+### Local and proxy mode (`INFRA=local|proxy`)
 
-- Caller target is required for config routes:
-  - `X-Exp-Target: api|website`
-- Optional local shared token:
-  - set `EXP_LOCAL_SHARED_TOKEN`
+- Query inputs are required
+  - `for=api|website` for build-time and run-time
+  - `name=<config-key>` for config
+- `X-Exp-Target` is optional, but when present it must match the requested target
+- Optional shared token support
+  - configure `EXP_LOCAL_SHARED_TOKEN`
   - send `X-Exp-Local-Token`
 
-## Access policy enforcement
+```mermaid
+flowchart TD
+    Request[Incoming request] --> Mode{INFRA}
+    Mode -->|local / proxy| Local[Validate query input]
+    Mode -->|azure| Azure[Decode Easy Auth principal]
+    Mode -->|other| Error500[500 invalid infrastructure mode]
 
-Catalog ownership and allow-lists are defined in `catalog.py`:
+    Local --> Token{Local token configured?}
+    Token -->|no| LocalTarget[Allow if target exists and optional header matches]
+    Token -->|yes| LocalHeader{X-Exp-Local-Token valid?}
+    LocalHeader -->|no| Deny401[401 unauthorized]
+    LocalHeader -->|yes| LocalTarget
 
-- key-level allow-list (`requiredKeys` + `optionalKeys`)
-- prefix allow-list (`allowedPrefixes`)
-- per-target catalog contract (`api`, `website`)
-
-Additional hardening:
-
-- key format validation (`^[A-Za-z0-9:_-]{1,256}$`)
-- required-key missing checks return `500` for required catalog keys
+    Azure --> Claims{Caller IDs extracted?}
+    Claims -->|no| Deny401
+    Claims -->|yes| Policy{Caller allow-listed for target?}
+    Policy -->|no| Deny403[403 forbidden]
+    Policy -->|yes| Allow[200 authorized]
+    LocalTarget --> Allow
+```
 
 ## Configuration sources
 
 ### Local
 
-- Source: `config.json` (or `EXP_LOCAL_CONFIG_PATH`)
-- Fallback: `config.template.json` when `config.json` is missing
+- Source: `config.json`
+- Override path: `EXP_LOCAL_CONFIG_PATH`
+- Fallback: `config.template.json`
+- Docker Compose uses `config.docker.json` so containerized callers resolve Docker DNS
+  names like `http://exp`
 
 ### Azure
 
-- Source: Azure App Configuration (+ Key Vault references)
+- Source: Azure App Configuration plus Key Vault references
 - Required setting: `AZURE_APPCONFIG_ENDPOINT`
-- Identity: `DefaultAzureCredential` (optionally using `AZURE_CLIENT_ID`)
-- Optional env selector: `EXP_ENVIRONMENT` (`Production` -> production label, otherwise development)
+- Identity: `DefaultAzureCredential` with optional `AZURE_CLIENT_ID`
+- Optional selector: `EXP_ENVIRONMENT`
+
+## Snapshot lifecycle
+
+```mermaid
+flowchart TD
+    Startup[App startup] --> Prime[function_app lifespan calls load_config()]
+    Prime --> Snapshot[(In-memory snapshot)]
+    Snapshot --> Request[Request needs config]
+    Request --> Refresh{Loaded and refresh due?}
+    Refresh -->|no| Serve[Serve detached copy]
+    Refresh -->|yes| Reload[Reload from local JSON or Azure App Configuration]
+    Reload --> Snapshot
+    Serve --> Consumer[Endpoint builds typed response]
+```
+
+## OpenTelemetry runtime
+
+- Local Docker mode exports traces and metrics to the container console.
+- Azure mode exports traces, metrics, and logs directly to Azure Monitor /
+  Application Insights.
+- Azure exporters use `APPLICATIONINSIGHTS_CONNECTION_STRING` plus
+  `DefaultAzureCredential`, honoring `AZURE_CLIENT_ID` when a user-assigned
+  managed identity is configured.
+- Python logs stay correlated with the active trace/span IDs.
+- Azure Monitor offline storage is disabled so telemetry export does not create
+  retry files on disk and the microservice remains stateless.
+
+```mermaid
+flowchart LR
+    Request[Incoming HTTP request] --> HttpSpan[FastAPIInstrumentor HTTP span]
+    HttpSpan --> Manual[Manual spans in config/loader.py and security/authz.py]
+    Manual --> EndpointAttrs[Endpoint span attributes in api/*]
+    Manual --> Meter[Custom counters, histograms, and observable gauges]
+    HttpSpan --> Logs[Correlated Python logs]
+
+    subgraph Local[Local Docker]
+        ConsoleTraces[Console span exporter]
+        ConsoleMetrics[Console metric exporter]
+        ConsoleLogs[Container stdout logs]
+    end
+
+    subgraph Azure[Azure runtime]
+        AzureTraces[Azure Monitor trace exporter]
+        AzureMetrics[Azure Monitor metric exporter]
+        AzureLogs[Azure Monitor log exporter]
+    end
+
+    HttpSpan --> ConsoleTraces
+    Meter --> ConsoleMetrics
+    Logs --> ConsoleLogs
+
+    HttpSpan --> AzureTraces
+    Meter --> AzureMetrics
+    Logs --> AzureLogs
+```
 
 ## Environment variables
 
 | Name | Required | Description |
 | --- | --- | --- |
-| `INFRA` | Yes | `azure` or local-like mode (`local`/`proxy`) |
-| `AZURE_APPCONFIG_ENDPOINT` | Azure only | App Configuration endpoint URL |
-| `AZURE_CLIENT_ID` | Optional | User Assigned Managed Identity client ID |
+| `INFRA` | Yes | `azure`, `local`, or `proxy` |
+| `AZURE_APPCONFIG_ENDPOINT` | Azure only | Azure App Configuration endpoint |
+| `AZURE_CLIENT_ID` | Optional | User-assigned managed identity client ID |
 | `EXP_CALLER_API_IDS` | Azure only | Comma-separated principal IDs allowed as `api` |
 | `EXP_CALLER_WEBSITE_IDS` | Azure only | Comma-separated principal IDs allowed as `website` |
-| `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` | Optional | In-process config snapshot refresh interval in seconds (default `300`, `0` disables auto-refresh) |
-| `EXP_LOCAL_SHARED_TOKEN` | Optional (local) | Shared token required in local mode when set |
-| `EXP_LOCAL_CONFIG_PATH` | Optional (local) | Absolute path to alternative local config JSON |
-| `EXP_ENVIRONMENT` | Optional (azure) | Label selector source (`Production` or `Development`) |
+| `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` | Optional | Snapshot refresh interval in seconds |
+| `EXP_LOCAL_SHARED_TOKEN` | Optional | Shared token for local/proxy mode |
+| `EXP_LOCAL_CONFIG_PATH` | Optional | Absolute path to alternate local config JSON |
+| `EXP_ENVIRONMENT` | Optional | Azure label selector source |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Azure telemetry | Application Insights connection string used by the Azure Monitor OTel exporters |
+| `EXP_OTEL_ENABLED` | Optional | Enables or disables OpenTelemetry bootstrap (defaults to `true`) |
+| `EXP_OTEL_EXCLUDED_URLS` | Optional | Comma-delimited request-path regexes excluded from FastAPI tracing |
+| `EXP_OTEL_TRACE_SAMPLE_RATIO` | Optional | Trace sampling ratio between `0.0` and `1.0` |
+| `EXP_OTEL_METRIC_EXPORT_INTERVAL_SECONDS` | Optional | Export cadence for console/Azure metric readers |
+| `EXP_OTEL_LOG_LEVEL` | Optional | Root Python log level used when telemetry bootstraps logging correlation |
+| `EXP_OTEL_CONSOLE_TRACE_EXPORT_ENABLED` | Optional | Enables local console trace export; defaults to `true` outside Azure |
+| `EXP_OTEL_CONSOLE_METRIC_EXPORT_ENABLED` | Optional | Enables local console metric export; defaults to `true` outside Azure |
+| `EXP_OTEL_CONSOLE_LOG_EXPORT_ENABLED` | Optional | Enables OTel log export to the local console; defaults to `false` to avoid duplicate local log lines |
 
 ## Local development
 
 ### Run with Docker Compose
-
-From repository root:
 
 ```powershell
 docker network create arolariu-network
@@ -165,27 +520,38 @@ Smoke checks:
 
 ```powershell
 Invoke-WebRequest -Uri "http://localhost:5002/api/health"
-Invoke-WebRequest -Uri "http://localhost:5002/api/v2/catalog?for=website"
-Invoke-WebRequest -Uri "http://localhost:5002/api/v2/config/Common:Auth:Issuer" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/build-time?for=website" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Endpoints:Api" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Common:Auth:Secret" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/run-time?for=website" -Headers @{ "X-Exp-Target" = "website" }
 ```
 
 ### Run tests
 
 ```powershell
-python -m pytest sites/exp.arolariu.ro/tests -q
+python -m pytest -q
+python -m ruff check .
 ```
 
-### Run service directly (without Docker)
+### Run directly
 
 ```powershell
 cd sites/exp.arolariu.ro
 python -m uvicorn function_app:app --host 0.0.0.0 --port 5002
 ```
 
+Local console exporters are enabled by default for traces and metrics. If you
+also want OpenTelemetry log records printed in addition to the normal container
+logs, set `EXP_OTEL_CONSOLE_LOG_EXPORT_ENABLED=true`.
+
 ## Design notes
 
-- This service is intentionally server-to-server only.
-- Website integration must happen in server context (`server-only` paths), never client-side.
-- API and website consume catalog-driven keys so key ownership remains centralized in this service.
-- The service is stateless by design: no caller session state is stored and each request is independently authorized.
-- V2 is the only supported configuration API surface; legacy non-versioned config/catalog routes are removed.
+- The service is stateless: no caller session state is stored.
+- Telemetry export also respects statelessness: Azure Monitor retry-file storage is disabled.
+- `exp` is the only supported runtime configuration surface for API and website server
+  consumers.
+- `v1` is the only supported versioned API surface; the old `v2` contract is removed.
+- Build-time and run-time response documents are target-scoped, typed, and versioned so
+  downstream services can safely refresh cached snapshots.
+- The `/config` endpoint is intentionally single-key and metadata-rich so consumers can fetch
+  only the values they need without downloading entire target documents.

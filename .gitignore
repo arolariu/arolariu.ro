@@ -46,6 +46,13 @@ nul
 **/.env
 **/.env.*
 
+# Python runtime artifacts:
+**/local.settings.json
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/.python_packages/
+
 
 # arolariu.ro specific:
 sites/arolariu.ro/certificates
