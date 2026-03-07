@@ -20,3 +20,35 @@ services:
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
       - "traefik.http.routers.whoami.entrypoints=websecure"
       - "traefik.http.routers.whoami.tls.certresolver=myresolver" # Added for Let's Encrypt
+
+  website:
+    build:
+      context: ../../..
+      dockerfile: infra/containers/Dockerfile.frontend
+      args:
+        INFRA: local
+        SITE_ENV: DEVELOPMENT
+        SITE_URL: http://localhost:3000
+        SITE_NAME: dev.arolariu.ro
+        COMMIT_SHA: local-docker
+        VERSION: local-docker
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
+    container_name: website-arolariu-ro
+    restart: unless-stopped
+    environment:
+      INFRA: local
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-sk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
+      COMMIT_SHA: local-docker
+    ports:
+      - "3000:3000"
+    networks:
+      arolariu-network:
+        aliases:
+          - website
+      default: {}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.website.rule=Host(`website.localhost`)"
+      - "traefik.http.services.website.loadbalancer.server.port=3000"
+      - "traefik.http.routers.website.entrypoints=websecure"
+      - "traefik.http.routers.website.tls.certresolver=myresolver"

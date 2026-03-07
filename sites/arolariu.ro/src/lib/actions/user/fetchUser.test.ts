@@ -5,16 +5,28 @@
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+// Use vi.hoisted so these mock refs are captured before any imports are
+// processed.  This is required because the root vitest.config.ts sets
+// mockReset: true, which resets all mock implementations between tests.
+// We re-apply the implementations in beforeEach below.
+const {mockFetchApiJwtSecret} = vi.hoisted(() => ({
+  mockFetchApiJwtSecret: vi.fn(),
+}));
+
 // Mock utils.generic
 vi.mock("@/lib/utils.generic", () => ({
   EMPTY_GUID: "00000000-0000-0000-0000-000000000000",
   generateGuid: vi.fn((seed?: string) => (seed ? `guid-${seed}` : "generated-guid")),
 }));
 
-// Mock utils.server
+// Mock utils.server — only createJwtToken is still used directly
 vi.mock("@/lib/utils.server", () => ({
-  API_JWT: "test-api-jwt-secret",
   createJwtToken: vi.fn().mockResolvedValue("mock-jwt-token"),
+}));
+
+// Mock the exp-backed JWT secret helper — avoids network calls to exp
+vi.mock("@/lib/config/expServerConfig.server", () => ({
+  fetchApiJwtSecret: mockFetchApiJwtSecret,
 }));
 
 // Mock Clerk
@@ -33,6 +45,10 @@ import {fetchAaaSUserFromAuthService, fetchBFFUserFromAuthService} from "./fetch
 describe("fetchUser actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // mockReset: true clears all implementations; re-apply defaults here.
+    mockFetchApiJwtSecret.mockResolvedValue("test-api-jwt-secret");
+    vi.mocked(createJwtToken).mockResolvedValue("mock-jwt-token");
+    vi.mocked(generateGuid).mockImplementation((seed?: string | Uint8Array) => (seed && typeof seed === "string" ? `guid-${seed}` : "generated-guid"));
   });
 
   afterEach(() => {

@@ -321,6 +321,48 @@
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
+    },
+    {
+      "key": "Endpoints:Api",
+      "value": "https://api.arolariu.ro",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:Api",
+      "value": "https://api.arolariu.ro",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "AzureOptions:StorageAccountEndpoint",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "AzureOptions:StorageAccountEndpoint",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Communication:Resend:ApiKey",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Communication:Resend:ApiKey",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
     }
   ]
 }

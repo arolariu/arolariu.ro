@@ -17,8 +17,8 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
 }));
 
-vi.mock("../../utils.server", () => ({
-  API_URL: "https://mock-api.test", // Must be inlined - vi.mock is hoisted before const declarations
+vi.mock("@/lib/config/expServerConfig.server", () => ({
+  fetchApiUrl: async () => "https://mock-api.test",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -56,14 +56,17 @@ describe("patchInvoice", () => {
 
       expect(result).toEqual({success: true, invoice: mockUpdatedInvoice});
       expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-      expect(globalThis.fetch).toHaveBeenCalledWith(`${MOCK_API_URL}/rest/v1/invoices/${mockInvoiceId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${mockToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${MOCK_API_URL}/rest/v1/invoices/${mockInvoiceId}`,
+        expect.objectContaining({
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${mockToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }),
+      );
     });
 
     it("should patch invoice description successfully", async () => {

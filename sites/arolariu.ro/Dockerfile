@@ -34,19 +34,32 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 
-# Environment variables from workflow context (Azure identity)
+# Environment variables from workflow context (Azure identity + build-time inlining)
 ARG AZURE_TENANT_ID
 ARG AZURE_SUBSCRIPTION_ID
 ARG AZURE_CLIENT_ID
 ARG COMMIT_SHA
 ARG INFRA
+# next.config.ts env block: inlined into the JS bundle at build time
+ARG SITE_ENV
+ARG SITE_URL
+ARG SITE_NAME
+# NEXT_PUBLIC_ prefix → Next.js also replaces this in the client bundle at build time
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-# Make them available during build (Next.js can embed these at build time)
+# Make them available during build (Next.js embeds these at build time)
+# NOTE: SITE_ENV / SITE_URL / SITE_NAME / NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+#       are intentionally NOT propagated to the runner stage — they are baked into the
+#       .next/standalone bundle and do not need to be re-set as container runtime envs.
 ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
     AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \
     COMMIT_SHA=${COMMIT_SHA} \
-    INFRA=${INFRA}
+    INFRA=${INFRA} \
+    SITE_ENV=${SITE_ENV} \
+    SITE_URL=${SITE_URL} \
+    SITE_NAME=${SITE_NAME} \
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 
 # Copy everything from deps (includes node_modules with workspace links)
 COPY --from=deps /app/node_modules ./node_modules

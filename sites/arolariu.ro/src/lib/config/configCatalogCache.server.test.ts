@@ -1,50 +1,54 @@
 /**
- * @fileoverview Unit tests for server-side config catalog cache.
+ * @fileoverview Unit tests for server-side single-key config cache.
  * @module sites/arolariu.ro/src/lib/config/configCatalogCache.server.test
  */
 
 import {describe, expect, it} from "vitest";
 
-import {getCachedCatalog, invalidateCatalogCache, setCachedCatalog} from "./configCatalogCache.server";
+import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "./configCatalogCache.server";
 
-const sampleCatalog = {
-  target: "website",
-  version: "v1",
-  requiredKeys: ["Common:Auth:Issuer"],
-  optionalKeys: [],
-  allowedPrefixes: [],
+const samplePayload = {
+  name: "Endpoints:Api",
+  value: "https://api.example.test",
+  availableForTargets: ["website"],
+  availableInDocuments: ["website.build-time", "website.run-time"],
+  requiredInDocuments: ["website.build-time", "website.run-time"],
+  description: "API endpoint.",
+  usage: "Server-only.",
   refreshIntervalSeconds: 300,
+  fetchedAt: "2026-01-01T00:00:00Z",
 } as const;
 
 describe("configCatalogCache.server", () => {
-  it("stores and retrieves a catalog entry", () => {
-    invalidateCatalogCache();
-    setCachedCatalog("website", sampleCatalog);
-    const cached = getCachedCatalog("website", 60_000);
-    expect(cached).toEqual(sampleCatalog);
+  it("stores and retrieves a config value entry", () => {
+    invalidateConfigValueCache();
+    setCachedConfigValue("Endpoints:Api", samplePayload);
+
+    expect(getCachedConfigValue("Endpoints:Api")).toEqual(samplePayload);
   });
 
   it("returns null for missing entries", () => {
-    invalidateCatalogCache();
-    expect(getCachedCatalog("website", 60_000)).toBeNull();
+    invalidateConfigValueCache();
+    expect(getCachedConfigValue("Endpoints:Api")).toBeNull();
   });
 
   it("returns null for stale entries", () => {
-    invalidateCatalogCache();
-    setCachedCatalog("website", sampleCatalog);
-    expect(getCachedCatalog("website", 0)).toBeNull();
+    invalidateConfigValueCache();
+    setCachedConfigValue("Endpoints:Api", {...samplePayload, refreshIntervalSeconds: 0});
+
+    expect(getCachedConfigValue("Endpoints:Api")).toBeNull();
   });
 
-  it("invalidates by target and globally", () => {
-    invalidateCatalogCache();
-    setCachedCatalog("website", sampleCatalog);
-    setCachedCatalog("api", {...sampleCatalog, target: "api"});
+  it("invalidates by key and globally", () => {
+    invalidateConfigValueCache();
+    setCachedConfigValue("Endpoints:Api", samplePayload);
+    setCachedConfigValue("Common:Auth:Secret", {...samplePayload, name: "Common:Auth:Secret"});
 
-    invalidateCatalogCache("website");
-    expect(getCachedCatalog("website", 60_000)).toBeNull();
-    expect(getCachedCatalog("api", 60_000)?.target).toBe("api");
+    invalidateConfigValueCache("Endpoints:Api");
+    expect(getCachedConfigValue("Endpoints:Api")).toBeNull();
+    expect(getCachedConfigValue("Common:Auth:Secret")?.name).toBe("Common:Auth:Secret");
 
-    invalidateCatalogCache();
-    expect(getCachedCatalog("api", 60_000)).toBeNull();
+    invalidateConfigValueCache();
+    expect(getCachedConfigValue("Common:Auth:Secret")).toBeNull();
   });
 });

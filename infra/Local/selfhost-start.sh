@@ -16,7 +16,7 @@ sleep 10
 
 # Creating the 'arolariu-sql' SQL database...
 echo "📦 Running the setup script for SQL..."
-docker exec -it mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P qazWSXedcRFV1234! -d master -i /usr/sql/sqlSchema.sql -No
+docker exec -it mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P qazWSXedcRFV1234! -d master -i /usr/sql/sqlSchema.sql -No
 
 sleep 3
 

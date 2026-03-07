@@ -17,7 +17,14 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import pc from "picocolors";
-import {APP_CONFIGURATION_MAPPING, APP_CONFIGURATION_SERVER, getSecretFromKeyVault, isKeyVaultRef, isSecretKey} from "./azure/index.ts";
+import {
+  APP_CONFIGURATION_MAPPING,
+  APP_CONFIGURATION_SERVER,
+  LEGACY_APP_CONFIGURATION_MAPPING,
+  getSecretFromKeyVault,
+  isKeyVaultRef,
+  isSecretKey,
+} from "./azure/index.ts";
 import {isAzureInfrastructure, isInCI, isProductionEnvironment, isVerboseMode} from "./common/index.ts";
 import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/index.ts";
 
@@ -33,7 +40,10 @@ import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/
  */
 async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = false): Promise<TypedConfigurationType> {
   const appConfigStore = APP_CONFIGURATION_SERVER;
-  const appConfigValues = Object.entries(APP_CONFIGURATION_MAPPING);
+  const appConfigValues = [
+    ...Object.entries(APP_CONFIGURATION_MAPPING).map(([key, envVar]) => ({key, envVar, required: true})),
+    ...Object.entries(LEGACY_APP_CONFIGURATION_MAPPING).map(([key, envVar]) => ({key, envVar, required: false})),
+  ];
 
   verbose && console.info(`🔍 Azure App Configuration server hostname: ${appConfigStore}`);
   verbose && console.info(`🔍 Azure App Configuration values: ${JSON.stringify(appConfigValues, null, 2)}`);
@@ -45,11 +55,15 @@ async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = fa
 
   const config = {} as TypedConfigurationType;
 
-  for (const [key, envVar] of appConfigValues) {
+  for (const {key, envVar, required} of appConfigValues) {
     try {
       const setting = await client.getConfigurationSetting({key: key, label: label});
       if (!setting.value) {
-        console.log(pc.yellow(`⚠️ No value found for key: ${key}`));
+        if (required) {
+          console.log(pc.yellow(`⚠️ No value found for key: ${key}`));
+        } else {
+          verbose && console.log(pc.gray(`Optional legacy key not found: ${key}`));
+        }
         continue;
       }
 
@@ -69,7 +83,11 @@ async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = fa
         config[envVar] = setting.value;
       }
     } catch (error) {
-      console.log(pc.red(`❌ Failed to fetch ${key}: ${error instanceof Error ? error.message : "Unknown error"}`));
+      if (required) {
+        console.log(pc.red(`❌ Failed to fetch ${key}: ${error instanceof Error ? error.message : "Unknown error"}`));
+      } else {
+        verbose && console.log(pc.gray(`Optional legacy key failed: ${key}`));
+      }
     }
   }
 
@@ -347,11 +365,17 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   // Site config
   addConfigSection(lines, "Site", "📦", ["SITE_ENV", "SITE_NAME", "SITE_URL"], config);
 
-  // API config
-  addConfigSection(lines, "API", "🌐", ["API_ENV", "API_NAME", "API_URL", "API_JWT"], config);
+  // Accepted auth config
+  addConfigSection(lines, "Accepted Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"], config);
 
-  // Auth config
-  addConfigSection(lines, "Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "RESEND_API_KEY"], config);
+  // Accepted Azure runtime identity config (preserved if present)
+  addConfigSection(
+    lines,
+    "Accepted Azure Runtime Identity",
+    "☁️",
+    ["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"],
+    config,
+  );
 
   // Metadata config
   console.log(pc.gray("   📊 Adding Metadata Configuration..."));
@@ -368,6 +392,14 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
     ...(configStore ? [`CONFIG_STORE=${quoteIfNeeded(configStore)}`] : []),
     `USE_CDN=${quoteIfNeeded(useCdn)}`,
     "# Metadata Configuration End",
+  );
+
+  addConfigSection(
+    lines,
+    "Legacy Optional Fallbacks",
+    "🧰",
+    ["API_ENV", "API_NAME", "API_URL", "API_JWT", "RESEND_API_KEY", "CONFIG_STORE"],
+    config,
   );
 
   console.log(pc.green("   ✓ File content generated successfully!\n"));

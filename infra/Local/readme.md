@@ -21,11 +21,11 @@ The local environment is organized into four main container groups:
 
 3. **Backend** - API and service layer
 
-   - Keycloak for identity management
-   - Backend services and APIs
+    - Keycloak for identity management
+    - `sites/api.arolariu.ro` containerized API service
 
 4. **Frontend** - User interface components
-   - Frontend applications
+    - `sites/arolariu.ro` containerized website
 
 ## Prerequisites
 
@@ -73,9 +73,10 @@ The startup process:
 
 1. Starts Management containers (Traefik)
 2. Deploys Storage containers (databases)
-3. Creates and configures the SQL database
-4. Launches Backend services
-5. Starts Frontend applications
+3. Boots `exp.arolariu.ro` with Docker-network configuration from `sites/exp.arolariu.ro/config.docker.json`
+4. Creates and configures the SQL database
+5. Builds and launches Backend services
+6. Builds and launches Frontend applications
 
 ### Accessing Services
 
@@ -92,6 +93,16 @@ After startup completes, you can access the following services:
 - **Whoami Test Service**: [https://whoami.localhost](https://whoami.localhost)
 
   - Test service showing request information
+
+- **Website**: [http://localhost:3000](http://localhost:3000) or [https://website.localhost](https://website.localhost)
+
+  - Server-side runtime config is fetched from `http://exp`
+
+- **API Health**: [http://localhost:5000/health](http://localhost:5000/health) or [https://api.localhost/health](https://api.localhost/health)
+
+  - API runtime bootstrap is fetched from `http://exp`
+
+- **exp Health**: [http://localhost:5002/api/health](http://localhost:5002/api/health)
 
 - **SQL Server Connection Info**:
 
@@ -114,8 +125,9 @@ All service configurations are stored in:
    - `Backend/docker-compose.yml`
    - `Frontend/docker-compose.yml`
 
-2. Environment variables:
-   - Update the `.env` file in the `infra/Local` directory to customize settings
+2. Shell environment variables:
+   - Export `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` before `selfhost-start` when you want real Clerk-backed auth flows locally
+   - If those variables are omitted, the website container uses placeholder test-like values so the stack can still boot for non-auth smoke checks, but browser-driven Clerk authentication will still fail until you provide real local Clerk keys
 
 ## Stopping the Environment
 

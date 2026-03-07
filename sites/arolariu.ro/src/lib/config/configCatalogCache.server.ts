@@ -1,53 +1,53 @@
 /**
- * @fileoverview Server-side in-memory cache for exp catalog payloads.
+ * @fileoverview Server-side in-memory cache for single-key exp config payloads.
  * @module sites/arolariu.ro/src/lib/config/configCatalogCache.server
  */
 
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
-import type {ConfigCatalogResponse} from "@/lib/config/configCatalog.types";
+import type {ConfigValueResponse} from "@/lib/config/configCatalog.types";
 
-/**
- * In-memory catalog cache entry metadata.
- */
-type CatalogCacheEntry = Readonly<{
-  catalog: ConfigCatalogResponse;
+type ConfigValueCacheEntry = Readonly<{
+  payload: ConfigValueResponse;
   fetchedAt: number;
 }>;
 
-const catalogCache = new Map<string, CatalogCacheEntry>();
+const configValueCache = new Map<string, ConfigValueCacheEntry>();
 
 /**
- * Gets a cached catalog if still valid.
- * @param target - Caller target used as cache key.
- * @param ttlMs - Cache time-to-live in milliseconds.
- * @returns Cached catalog or null if stale/missing.
+ * Returns a cached config value when its server-declared TTL has not elapsed.
+ * @param key - Canonical config key name used as the cache key.
+ * @returns Cached config payload or null when stale or missing.
  */
-export function getCachedCatalog(target: string, ttlMs: number): ConfigCatalogResponse | null {
-  const cached = catalogCache.get(target);
+export function getCachedConfigValue(key: string): ConfigValueResponse | null {
+  const cached = configValueCache.get(key);
   if (!cached) return null;
+
+  const ttlMs = cached.payload.refreshIntervalSeconds * 1000;
   if (Date.now() - cached.fetchedAt >= ttlMs) return null;
-  return cached.catalog;
+
+  return cached.payload;
 }
 
 /**
- * Stores the latest catalog in cache.
- * @param target - Caller target used as cache key.
- * @param catalog - Typed catalog payload.
+ * Stores a resolved config value response in the process-local cache.
+ * @param key - Canonical config key name used as the cache key.
+ * @param payload - Typed single-key config payload returned by exp.
  */
-export function setCachedCatalog(target: string, catalog: ConfigCatalogResponse): void {
-  catalogCache.set(target, {catalog, fetchedAt: Date.now()});
+export function setCachedConfigValue(key: string, payload: ConfigValueResponse): void {
+  configValueCache.set(key, {payload, fetchedAt: Date.now()});
 }
 
 /**
- * Invalidates one cached catalog or all catalogs.
- * @param target - Optional target key; clears all when omitted.
+ * Invalidates one cached config value or clears the entire cache.
+ * @param key - Optional config key to evict.
  */
-export function invalidateCatalogCache(target?: string): void {
-  if (target) {
-    catalogCache.delete(target);
+export function invalidateConfigValueCache(key?: string): void {
+  if (key) {
+    configValueCache.delete(key);
     return;
   }
-  catalogCache.clear();
+
+  configValueCache.clear();
 }

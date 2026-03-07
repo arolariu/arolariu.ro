@@ -81,14 +81,20 @@ export const APP_CONFIGURATION_MAPPING: Record<string, AllEnvironmentVariablesKe
   "Common:Site:Environment": "SITE_ENV",
   "Common:Site:Name": "SITE_NAME",
   "Common:Site:Url": "SITE_URL",
+  "Other:ClerkPublishableKey": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "Other:ClerkSecretKey": "CLERK_SECRET_KEY",
+  "Other:UseCdn": "USE_CDN",
+};
+
+/**
+ * Optional legacy values preserved for compatibility during the exp rollout.
+ */
+export const LEGACY_APP_CONFIGURATION_MAPPING: Record<string, AllEnvironmentVariablesKeys> = {
   "Common:Api:Environment": "API_ENV",
   "Common:Api:Name": "API_NAME",
   "Common:Api:Url": "API_URL",
   "Common:Auth:Secret": "API_JWT",
-  "Other:ClerkPublishableKey": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-  "Other:ClerkSecretKey": "CLERK_SECRET_KEY",
   "Other:ResendKey": "RESEND_API_KEY",
-  "Other:UseCdn": "USE_CDN",
 };
 
 /**

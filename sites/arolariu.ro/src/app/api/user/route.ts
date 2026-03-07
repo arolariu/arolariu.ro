@@ -16,7 +16,8 @@ import {
   withSpan,
 } from "@/instrumentation.server";
 import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
-import {API_JWT, createJwtToken} from "@/lib/utils.server";
+import {fetchApiJwtSecret} from "@/lib/config/expServerConfig.server";
+import {createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {auth, currentUser} from "@clerk/nextjs/server";
 import {NextResponse} from "next/server";
@@ -55,7 +56,7 @@ const requestDurationHistogram = createHistogram("api.user.duration", "Request d
  * - **Custom Claims**: `userIdentifier` (GUID), `role` ("user" or "guest")
  *
  * **Security Considerations**:
- * - Tokens signed with `API_JWT` secret key (HS256 algorithm)
+ * - Tokens signed with the exp-backed auth secret (HS256 algorithm)
  * - Short expiration (5 min) limits exposure window if token is compromised
  * - Guest tokens have sentinel GUID (`00000000-0000-0000-0000-000000000000`)
  * - Backend validates JWT signature and expiration before processing requests
@@ -184,7 +185,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             addSpanEvent("jwt.create.start");
-            const token = await createJwtToken(jwtPayload, API_JWT);
+            const token = await createJwtToken(jwtPayload, await fetchApiJwtSecret());
             addSpanEvent("jwt.create.complete", {
               token_expiration: expirationTime,
             });
@@ -249,7 +250,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             addSpanEvent("jwt.create.start");
-            const guestToken = await createJwtToken(jwtPayload, API_JWT);
+            const guestToken = await createJwtToken(jwtPayload, await fetchApiJwtSecret());
             addSpanEvent("jwt.create.complete", {
               token_expiration: expirationTime,
             });

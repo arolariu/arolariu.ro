@@ -4,30 +4,37 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-/// <summary>Represents the typed response returned by /api/v2/catalog.</summary>
+/// <summary>Represents the typed response returned by <c>GET /api/v1/build-time?for={target}</c>.</summary>
+/// <remarks>
+/// <para>The build-time endpoint returns a target-scoped configuration document:
+/// a versioned key/value snapshot plus the server-authoritative refresh cadence.</para>
+/// <para>Callers should treat <see cref="Version"/> as an opaque hash and refresh their local
+/// snapshot according to <see cref="RefreshIntervalSeconds"/>.</para>
+/// </remarks>
 public sealed class ConfigCatalogResponse
 {
-  /// <summary>Gets or sets the caller target the catalog belongs to.</summary>
+  /// <summary>Gets the caller target this catalog describes (for example: <c>api</c>, <c>website</c>).</summary>
   [JsonPropertyName("target")]
   public string Target { get; init; } = string.Empty;
 
-  /// <summary>Gets or sets the catalog version identifier.</summary>
+  /// <summary>Gets the schema contract version used to produce this catalog payload.</summary>
+  /// <remarks>Empty string when the server has not yet adopted the v2 contract.</remarks>
+  [JsonPropertyName("contractVersion")]
+  public string ContractVersion { get; init; } = string.Empty;
+
+  /// <summary>Gets the document version identifier (opaque string).</summary>
   [JsonPropertyName("version")]
   public string Version { get; init; } = string.Empty;
 
-  /// <summary>Gets or sets the list of required keys for the target caller.</summary>
-  [JsonPropertyName("requiredKeys")]
-  public IReadOnlyList<string> RequiredKeys { get; init; } = Array.Empty<string>();
+  /// <summary>Gets the configuration key/value pairs resolved for the target caller.</summary>
+  [JsonPropertyName("config")]
+  public IReadOnlyDictionary<string, string> Config { get; init; } = new Dictionary<string, string>();
 
-  /// <summary>Gets or sets the list of optional keys for the target caller.</summary>
-  [JsonPropertyName("optionalKeys")]
-  public IReadOnlyList<string> OptionalKeys { get; init; } = Array.Empty<string>();
-
-  /// <summary>Gets or sets the list of allowed key prefixes for the target caller.</summary>
-  [JsonPropertyName("allowedPrefixes")]
-  public IReadOnlyList<string> AllowedPrefixes { get; init; } = Array.Empty<string>();
-
-  /// <summary>Gets or sets the recommended refresh interval in seconds.</summary>
+  /// <summary>Gets the server-recommended interval in seconds at which clients should refresh this catalog.</summary>
   [JsonPropertyName("refreshIntervalSeconds")]
   public int RefreshIntervalSeconds { get; init; } = 300;
+
+  /// <summary>Gets the UTC timestamp at which the exp service produced this payload.</summary>
+  [JsonPropertyName("fetchedAt")]
+  public DateTimeOffset FetchedAt { get; init; } = DateTimeOffset.UtcNow;
 }

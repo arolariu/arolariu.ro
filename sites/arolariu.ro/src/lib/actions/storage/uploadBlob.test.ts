@@ -17,9 +17,6 @@ vi.mock("@azure/storage-blob");
 vi.mock("./fetchConfig");
 vi.mock("@/lib/utils.server", () => ({
   convertBase64ToBlob: mockConvertBase64ToBlob,
-  API_URL: "mock-api-url",
-  API_JWT: "mock-api-jwt",
-  resend: {},
 }));
 
 import fetchConfigurationValue from "./fetchConfig";

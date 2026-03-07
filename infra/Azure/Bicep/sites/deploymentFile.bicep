@@ -109,6 +109,7 @@ module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
     developmentWebsiteLocation: resourceLocation
     developmentWebsiteAppPlanId: developmentAppPlanId
     developmentWebsiteIdentityId: managedIdentityFrontendId
+    developmentWebsiteIdentityClientId: managedIdentityFrontendClientId
     developmentWebsiteDeploymentDate: resourceDeploymentDate
   }
 }

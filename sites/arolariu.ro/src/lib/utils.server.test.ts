@@ -5,7 +5,7 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
-import {API_JWT, API_URL, CONFIG_STORE, convertBase64ToBlob} from "./utils.server";
+import {convertBase64ToBlob} from "./utils.server";
 
 // Mock the telemetry module
 vi.mock("@/instrumentation.server", () => ({
@@ -21,11 +21,9 @@ vi.mock("@/instrumentation.server", () => ({
   recordSpanError: vi.fn(),
 }));
 
-// Mock Resend to avoid requiring API key
-vi.mock("resend", () => ({
-  Resend: vi.fn(function (this: any) {
-    return {};
-  }),
+const mockFetchApiUrl = vi.fn(async () => "https://api.example.com");
+vi.mock("@/lib/config/expServerConfig.server", () => ({
+  fetchApiUrl: () => mockFetchApiUrl(),
 }));
 
 // Mock jose library for JWT operations
@@ -66,40 +64,13 @@ vi.mock("jose", () => {
   };
 });
 
-describe("Environment Variables", () => {
-  it("should have API_URL defined", () => {
-    expect(API_URL).toBeDefined();
-  });
-
-  it("should have API_JWT defined", () => {
-    expect(API_JWT).toBeDefined();
-  });
-
-  it("should have CONFIG_STORE defined", () => {
-    expect(CONFIG_STORE).toBeDefined();
-  });
-
+describe("Build metadata", () => {
   it("should have COMMIT_SHA defined", () => {
     expect(COMMIT_SHA).toBeDefined();
   });
 
   it("should have TIMESTAMP defined", () => {
     expect(TIMESTAMP).toBeDefined();
-  });
-
-  it("should use empty string when API_URL is not set", () => {
-    // The ?? operator defaults to "" when undefined
-    expect(typeof API_URL).toBe("string");
-  });
-
-  it("should use empty string when API_JWT is not set", () => {
-    // The ?? operator defaults to "" when undefined
-    expect(typeof API_JWT).toBe("string");
-  });
-
-  it("should use empty string when CONFIG_STORE is not set", () => {
-    // The ?? operator defaults to "" when undefined
-    expect(typeof CONFIG_STORE).toBe("string");
   });
 });
 
@@ -328,6 +299,11 @@ describe("createJwtToken", () => {
 });
 
 describe("fetchWithTimeout", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetchApiUrl.mockResolvedValue("https://api.example.com");
+  });
+
   it("should call fetch with correct parameters", async () => {
     const {fetchWithTimeout} = await import("./utils.server");
     const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
@@ -344,6 +320,18 @@ describe("fetchWithTimeout", () => {
     expect(fetchOptions.method).toBe("GET");
     expect(fetchOptions.signal).toBeDefined();
     expect(fetchOptions.cache).toBe("no-store");
+  });
+
+  it("should resolve API-relative paths through exp-backed API discovery", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    await fetchWithTimeout("/rest/v1/invoices");
+
+    expect(mockFetchApiUrl).toHaveBeenCalledTimes(1);
+    const [fetchUrl] = mockFetch.mock.calls[0];
+    expect(fetchUrl).toBe("https://api.example.com/rest/v1/invoices");
   });
 
   it("should return response on success", async () => {
@@ -364,6 +352,7 @@ describe("fetchWithTimeout", () => {
     await fetchWithTimeout("https://api.example.com/data");
 
     expect(globalThis.fetch).toHaveBeenCalled();
+    expect(mockFetchApiUrl).not.toHaveBeenCalled();
   });
 
   it("should throw timeout error when request times out", async () => {

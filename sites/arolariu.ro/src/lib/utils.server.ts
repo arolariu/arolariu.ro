@@ -7,30 +7,9 @@
 import "server-only";
 
 import {addSpanEvent, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
+import {fetchApiUrl} from "@/lib/config/expServerConfig.server";
 import {type JWTPayload, SignJWT, jwtVerify} from "jose";
 import {Blob} from "node:buffer";
-import {Resend} from "resend";
-
-/* v8 ignore start - Environment variables evaluated at module load time cannot be unit tested */
-export const API_URL = process.env["API_URL"] ?? "";
-export const API_JWT = process.env["API_JWT"] ?? "";
-
-/**
- * The configuration store identifier.
- *
- * @remarks
- * **Source**: `process.env.CONFIG_STORE`
- *
- * **Usage**: Identifies the Azure App Configuration store or local config source.
- */
-export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
-/* v8 ignore stop */
-
-/**
- * Singleton pattern class object that handles the interaction with the Resend API (mail).
- * @see https://resend.com/docs/getting-started
- */
-export const resend = new Resend(process.env["RESEND_API_KEY"]);
 
 /**
  * This async function converts a base64 string to a Blob object.
@@ -134,11 +113,39 @@ export type ServerActionResult<T> =
  */
 export const DEFAULT_FETCH_TIMEOUT = 30_000;
 
+function trimTrailingSlashes(value: string): string {
+  let normalizedValue = value;
+
+  while (normalizedValue.endsWith("/")) {
+    normalizedValue = normalizedValue.slice(0, -1);
+  }
+
+  return normalizedValue;
+}
+
+async function resolveFetchUrl(url: string): Promise<string> {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  const apiUrl = await fetchApiUrl();
+
+  if (apiUrl.trim().length === 0) {
+    return url;
+  }
+
+  const normalizedBaseUrl = trimTrailingSlashes(apiUrl);
+  const normalizedPath = url.startsWith("/") ? url : `/${url}`;
+
+  return `${normalizedBaseUrl}${normalizedPath}`;
+}
+
 /**
- * Performs a fetch request with timeout support.
- * Wraps the native fetch with AbortController for timeout handling.
+ * Performs a fetch request with timeout support for either absolute URLs or API-relative paths.
+ * Wraps the native fetch with AbortController for timeout handling and resolves relative paths
+ * against the exp-provided API base URL on the server.
  *
- * @param url - The URL to fetch
+ * @param url - Absolute URL or API-relative path to fetch
  * @param options - Fetch options (headers, method, body, etc.)
  * @param timeoutMs - Timeout in milliseconds (default: 30 seconds)
  * @returns Promise resolving to the Response object
@@ -146,8 +153,8 @@ export const DEFAULT_FETCH_TIMEOUT = 30_000;
  *
  * @example
  * ```typescript
- * const response = await fetchWithTimeout(
- *   `${API_URL}/invoices`,
+  * const response = await fetchWithTimeout(
+ *   "/rest/v1/invoices",
  *   { headers: { Authorization: `Bearer ${token}` } },
  *   15000 // 15 second timeout
  * );
@@ -162,7 +169,8 @@ export async function fetchWithTimeout(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(url, {
+    const resolvedUrl = await resolveFetchUrl(url);
+    const response = await fetch(resolvedUrl, {
       ...options,
       signal: controller.signal,
       cache: "no-store", // Disable caching for authenticated requests

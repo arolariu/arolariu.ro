@@ -51,6 +51,9 @@ param developmentWebsiteAppPlanId string
 @description('The resource ID of the frontend managed identity.')
 param developmentWebsiteIdentityId string
 
+@description('The client ID of the frontend managed identity — sets AZURE_CLIENT_ID for the development site to the same identity as production for realistic testing.')
+param developmentWebsiteIdentityClientId string
+
 @description('The deployment timestamp.')
 param developmentWebsiteDeploymentDate string
 
@@ -106,6 +109,12 @@ resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
       scmIpSecurityRestrictionsDefaultAction: 'Allow'
       scmIpSecurityRestrictionsUseMain: false
       loadBalancing: 'LeastRequests' // Load balancing algorithm.
+      appSettings: [
+        {
+          name: 'AZURE_CLIENT_ID'
+          value: developmentWebsiteIdentityClientId
+        }
+      ]
       ipSecurityRestrictions: [
         {
           ipAddress: 'Any'

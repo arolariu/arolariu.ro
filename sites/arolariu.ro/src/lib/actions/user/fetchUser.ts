@@ -6,7 +6,8 @@
 "use server";
 
 import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
-import {API_JWT, createJwtToken} from "@/lib/utils.server";
+import {fetchApiJwtSecret} from "@/lib/config/expServerConfig.server";
+import {createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {auth, currentUser, type User} from "@clerk/nextjs/server";
 
@@ -61,7 +62,7 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
         role: "user",
       };
 
-      const token = await createJwtToken(jwtPayload, API_JWT);
+      const token = await createJwtToken(jwtPayload, await fetchApiJwtSecret());
 
       const userInformation: UserInformation = {
         user,
@@ -85,7 +86,7 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
         userIdentifier: guestIdentifier,
         role: "guest",
       };
-      const guestToken = await createJwtToken(jwtPayload, API_JWT);
+      const guestToken = await createJwtToken(jwtPayload, await fetchApiJwtSecret());
       const userInformation: UserInformation = {
         user: null,
         userIdentifier: guestIdentifier,

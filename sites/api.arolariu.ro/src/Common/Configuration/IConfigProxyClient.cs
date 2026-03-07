@@ -1,27 +1,26 @@
 namespace arolariu.Backend.Common.Configuration;
 
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-/// <summary>Client for fetching configuration from exp.arolariu.ro.</summary>
+/// <summary>Client for fetching configuration and typed exp payloads from the simplified exp service contract.</summary>
 public interface IConfigProxyClient
 {
-  /// <summary>Fetches a single configuration value by key.</summary>
-  /// <param name="key">The configuration key to retrieve.</param>
+  /// <summary>Fetches a single indexed configuration value by name.</summary>
+  /// <param name="name">The canonical configuration key name (for example: <c>Endpoints:Api</c>).</param>
   /// <param name="ct">Cancellation token for the operation.</param>
-  /// <returns>The configuration value, or null if not found.</returns>
-  Task<string?> GetValueAsync(string key, CancellationToken ct = default);
+  /// <returns>The typed config value response, or <see langword="null"/> when the request fails or the service is unavailable.</returns>
+  Task<ConfigValueResponse?> GetConfigValueAsync(string name, CancellationToken ct = default);
 
-  /// <summary>Fetches multiple configuration values.</summary>
-  /// <param name="keys">The configuration keys to retrieve.</param>
+  /// <summary>Fetches the build-time configuration document for a target caller.</summary>
+  /// <param name="target">The target caller identifier (for example: <c>api</c>, <c>website</c>).</param>
   /// <param name="ct">Cancellation token for the operation.</param>
-  /// <returns>A read-only dictionary of configuration key-value pairs.</returns>
-  Task<IReadOnlyDictionary<string, string>> GetValuesAsync(IEnumerable<string> keys, CancellationToken ct = default);
+  /// <returns>The typed build-time response, or <see langword="null"/> when the request fails or the service is unavailable.</returns>
+  Task<ConfigCatalogResponse?> GetBuildTimeAsync(string target, CancellationToken ct = default);
 
-  /// <summary>Fetches the catalog that defines allowed and required keys for a target caller.</summary>
-  /// <param name="target">The target caller identifier (for example: api, website).</param>
+  /// <summary>Fetches the run-time payload that combines config values, feature flag states, and scheduling metadata.</summary>
+  /// <param name="target">The target caller identifier (for example: <c>api</c>, <c>website</c>).</param>
   /// <param name="ct">Cancellation token for the operation.</param>
-  /// <returns>The typed catalog response, or null when unavailable.</returns>
-  Task<ConfigCatalogResponse?> GetCatalogAsync(string target, CancellationToken ct = default);
+  /// <returns>The typed run-time response, or <see langword="null"/> when the request fails or the service is unavailable.</returns>
+  Task<BootstrapResponse?> GetRunTimeAsync(string target, CancellationToken ct = default);
 }

@@ -17,7 +17,7 @@ timeout /t 10 /nobreak > nul
 
 rem Creating the 'arolariu-sql' SQL database...
 echo 📦 Running the setup script for SQL...
-docker exec -i mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P qazWSXedcRFV1234! -d master -i /usr/sql/sqlSchema.sql -No
+docker exec -i mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P qazWSXedcRFV1234! -d master -i /usr/sql/sqlSchema.sql -No
 
 timeout /t 3 /nobreak > nul
 

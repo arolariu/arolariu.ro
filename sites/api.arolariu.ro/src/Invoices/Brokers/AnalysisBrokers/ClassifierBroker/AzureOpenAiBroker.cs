@@ -84,7 +84,6 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     #region Generate possible products
     foreach (var product in invoice.Items)
     {
-      // TODO: further processing of the product.
       product.Category = await GenerateProductCategory(product).ConfigureAwait(false);
       product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
     }
@@ -94,11 +93,9 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     var possibleRecipesCollection = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
     foreach (var recipe in possibleRecipesCollection)
     {
-      // TODO: further processing of the recipe.
       invoice.PossibleRecipes.Add(recipe);
     }
     #endregion
-    // TODO: further processing of the invoice.
 
     invoice.Category = await GenerateInvoiceCategory(invoice).ConfigureAwait(false);
     return invoice;

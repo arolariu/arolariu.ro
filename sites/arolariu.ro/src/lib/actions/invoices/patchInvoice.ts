@@ -19,7 +19,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Invoice, InvoiceCategory, PaymentInformation} from "@/types/invoices";
-import {API_URL} from "../../utils.server";
+import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -129,7 +129,7 @@ export default async function patchInvoice({invoiceId, payload}: ServerActionInp
       // Step 2. Make the API request to patch the invoice
       addSpanEvent("bff.request.patch-invoice.start");
       logWithTrace("info", "Making API request to patch invoice", {invoiceId}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${authToken}`,

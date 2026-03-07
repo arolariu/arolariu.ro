@@ -21,8 +21,8 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {API_URL} from "@/lib/utils.server";
 import type {CreateInvoiceScanDtoPayload} from "@/types/invoices";
+import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -106,7 +106,7 @@ export async function attachInvoiceScan({invoiceId, payload}: ServerActionInputT
       // Step 2. Make the API request to attach the invoice scan
       addSpanEvent("bff.request.attach-scan.start");
       logWithTrace("info", "Making API request to attach invoice scan", {invoiceId}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}/scans`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/scans`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,

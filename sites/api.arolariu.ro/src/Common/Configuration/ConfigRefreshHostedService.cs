@@ -13,58 +13,64 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-/// <summary>Background service that refreshes config from the proxy every 5 minutes.</summary>
-/// <param name="proxyClient">The config proxy client used to fetch catalogs and key values.</param>
-/// <param name="catalogCache">The in-memory catalog cache for required key definitions.</param>
-/// <param name="optionsMonitor">The options monitor for accessing current Azure options.</param>
+/// <summary>
+/// Background service that periodically refreshes configuration and feature flags from the exp proxy.
+/// </summary>
+/// <remarks>
+/// <para>On each cycle the service:
+/// <list type="number">
+///   <item><description>Waits for the build-time-seeded <see cref="ConfigCatalogResponse.RefreshIntervalSeconds"/> from the cached config snapshot.</description></item>
+///   <item><description>Calls <c>GET /api/v1/run-time?for=api</c> to retrieve config values and feature flags in a single round-trip.</description></item>
+///   <item><description>Swaps the <see cref="AzureOptions"/> snapshot via <see cref="IOptionsMonitorCache{TOptions}"/>.</description></item>
+///   <item><description>Atomically replaces the <see cref="FeatureSnapshotCache"/> snapshot.</description></item>
+/// </list>
+/// </para>
+/// <para>If the run-time refresh fails the error is logged and the previous snapshot is preserved.
+/// The refresh interval remains sourced from the build-time payload captured during startup.</para>
+/// </remarks>
+/// <param name="proxyClient">The config proxy client used to fetch build-time and run-time payloads.</param>
+/// <param name="catalogCache">The in-memory build-time config cache used for refresh scheduling.</param>
+/// <param name="featureSnapshotCache">The in-memory feature flag snapshot cache refreshed each cycle.</param>
+/// <param name="optionsMonitor">The options monitor for reading the current <see cref="AzureOptions"/> snapshot.</param>
 /// <param name="optionsCache">The options cache used to atomically swap refreshed option snapshots.</param>
 /// <param name="logger">The logger for recording refresh events and errors.</param>
 public sealed class ConfigRefreshHostedService(
     IConfigProxyClient proxyClient,
     ConfigCatalogCache catalogCache,
+    FeatureSnapshotCache featureSnapshotCache,
     IOptionsMonitor<AzureOptions> optionsMonitor,
     IOptionsMonitorCache<AzureOptions> optionsCache,
     ILogger<ConfigRefreshHostedService> logger) : BackgroundService
 {
-  private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
-
   /// <inheritdoc />
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
     while (!stoppingToken.IsCancellationRequested)
     {
-      await Task.Delay(RefreshInterval, stoppingToken).ConfigureAwait(false);
+      // Read the server-declared refresh interval at the start of each wait so
+      // the server can change cadence without restarting the API.
+      var refreshInterval = TimeSpan.FromSeconds(catalogCache.CurrentCatalog.RefreshIntervalSeconds);
+      await Task.Delay(refreshInterval, stoppingToken).ConfigureAwait(false);
 
       try
       {
-        var latestCatalog = await proxyClient.GetCatalogAsync("api", stoppingToken).ConfigureAwait(false);
-        if (latestCatalog is null)
+        // Refresh config values + feature flags via a single run-time call.
+        var bootstrap = await proxyClient.GetRunTimeAsync("api", stoppingToken).ConfigureAwait(false);
+        if (bootstrap is null)
         {
-          logger.LogCatalogMissing(catalogCache.CurrentCatalog.Version);
-        }
-        else if (latestCatalog.RequiredKeys.Count == 0)
-        {
-          logger.LogEmptyCatalogReceived(catalogCache.CurrentCatalog.Version);
-        }
-        else
-        {
-          catalogCache.Update(latestCatalog);
-        }
-
-        var configKeys = catalogCache.RequiredKeys;
-        if (configKeys.Count == 0)
-        {
-          logger.LogNoRequiredKeys();
+          logger.LogBootstrapMissing();
           continue;
         }
 
-        var values = await proxyClient.GetValuesAsync(configKeys, stoppingToken).ConfigureAwait(false);
-
+        // Step 2: Swap AzureOptions snapshot.
         var refreshedOptions = CloneAzureOptions(optionsMonitor.CurrentValue);
-        ApplyRefreshedValues(refreshedOptions, values);
-
+        ApplyRefreshedValues(refreshedOptions, bootstrap.Config);
         optionsCache.TryRemove(Options.DefaultName);
         optionsCache.TryAdd(Options.DefaultName, refreshedOptions);
+
+        // Step 3: Replace the feature snapshot.
+        featureSnapshotCache.Update(bootstrap.Features, bootstrap.ContractVersion, bootstrap.FetchedAt);
+        logger.LogFeatureSnapshotUpdated(bootstrap.Features.Count);
 
         logger.LogRefreshSucceeded();
       }
@@ -74,24 +80,26 @@ public sealed class ConfigRefreshHostedService(
       }
       catch (HttpRequestException ex)
       {
-        logger.LogRefreshFailed(ex, RefreshInterval);
+        logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (JsonException ex)
       {
-        logger.LogRefreshFailed(ex, RefreshInterval);
+        logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (InvalidOperationException ex)
       {
-        logger.LogRefreshFailed(ex, RefreshInterval);
+        logger.LogRefreshFailed(ex, refreshInterval);
       }
       catch (TaskCanceledException ex)
       {
-        logger.LogRefreshFailed(ex, RefreshInterval);
+        logger.LogRefreshFailed(ex, refreshInterval);
       }
     }
   }
 
-  private static void ApplyRefreshedValues(AzureOptions options, IReadOnlyDictionary<string, string> values)
+  private static void ApplyRefreshedValues(
+      AzureOptions options,
+      IReadOnlyDictionary<string, string> values)
   {
     options.JwtSecret = values.GetValueOrDefault("Common:Auth:Secret", options.JwtSecret);
     options.JwtIssuer = values.GetValueOrDefault("Common:Auth:Issuer", options.JwtIssuer);

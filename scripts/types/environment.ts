@@ -52,9 +52,9 @@ type EnvironmentOptions = "production" | "development";
  *
  * @remarks
  * This conditional type resolves environment identifiers to their canonical site names:
- * - `"production"` → `"arolariu.ro"` (live production site)
- * - `"development"` → `"dev.arolariu.ro"` (development preview site)
- * - Any other value → `never` (compile-time error)
+ * - `"production"` ΓåÆ `"arolariu.ro"` (live production site)
+ * - `"development"` ΓåÆ `"dev.arolariu.ro"` (development preview site)
+ * - Any other value ΓåÆ `never` (compile-time error)
  *
  * **Type Safety Benefits:**
  * - Prevents typos in site name strings
@@ -89,9 +89,9 @@ type SiteName<Environment extends string> = Environment extends "production"
  *
  * @remarks
  * This conditional type constructs complete, protocol-qualified URLs for each environment:
- * - `"production"` → `"https://arolariu.ro"` (primary production domain)
- * - `"development"` → `"https://dev.arolariu.ro"` (preview deployment domain)
- * - Any other value → `never` (compile-time type error)
+ * - `"production"` ΓåÆ `"https://arolariu.ro"` (primary production domain)
+ * - `"development"` ΓåÆ `"https://dev.arolariu.ro"` (preview deployment domain)
+ * - Any other value ΓåÆ `never` (compile-time type error)
  *
  * **Protocol Enforcement:**
  * All URLs use HTTPS exclusively. The protocol is hard-coded to prevent accidental
@@ -133,8 +133,8 @@ type SiteUrl<Environment extends string> = Environment extends "production"
  *
  * @remarks
  * This conditional type resolves environment identifiers to the canonical API service name:
- * - `"production"` → `"arolariu-api"` (production .NET backend service)
- * - Any other value → `never` (compile-time error)
+ * - `"production"` ΓåÆ `"arolariu-api"` (production .NET backend service)
+ * - Any other value ΓåÆ `never` (compile-time error)
  *
  * **Design Decision:**
  * Currently, only production API is supported. Development and staging environments share
@@ -173,8 +173,8 @@ type ApiName<Environment extends string> = Environment extends "production" ? "a
  *
  * @remarks
  * This conditional type constructs the complete API endpoint URL for backend communication:
- * - `"production"` → `"https://api.arolariu.ro"` (production .NET REST API)
- * - Any other value → `never` (no development API deployment)
+ * - `"production"` ΓåÆ `"https://api.arolariu.ro"` (production .NET REST API)
+ * - Any other value ΓåÆ `never` (no development API deployment)
  *
  * **API Architecture:**
  * The URL points to the .NET 10 backend API hosted on Azure App Service (modular monolith
@@ -784,10 +784,10 @@ export type TypedDevelopmentEnvironmentVariablesType = Readonly<TypedEnvironment
  *
  * **Never Log Secrets:**
  * ```typescript
- * // ❌ BAD: Secret exposed in logs
+ * // Γ¥î BAD: Secret exposed in logs
  * console.log('API JWT:', process.env.API_JWT);
  *
- * // ✅ GOOD: Redact or omit secrets from logs
+ * // Γ£à GOOD: Redact or omit secrets from logs
  * console.log('API JWT:', process.env.API_JWT ? '[REDACTED]' : '[MISSING]');
  * ```
  *
@@ -799,12 +799,12 @@ export type TypedDevelopmentEnvironmentVariablesType = Readonly<TypedEnvironment
  *
  * **Never Send to Client:**
  * ```typescript
- * // ❌ BAD: Secret sent to client
+ * // Γ¥î BAD: Secret sent to client
  * export async function getServerData() {
  *   return { apiJwt: process.env.API_JWT }; // Exposed in client bundle!
  * }
  *
- * // ✅ GOOD: Keep secrets server-side only
+ * // Γ£à GOOD: Keep secrets server-side only
  * export async function getServerData() {
  *   const response = await fetch(process.env.API_URL, {
  *     headers: { 'Authorization': `Bearer ${process.env.API_JWT}` }
@@ -922,8 +922,8 @@ export type SecretEnvironmentVariablesType = Extract<
  *   return process.env[key];
  * }
  *
- * const siteUrl = getEnvValue('SITE_URL'); // ✅ Valid
- * const invalid = getEnvValue('INVALID_KEY'); // ❌ Type error
+ * const siteUrl = getEnvValue('SITE_URL'); // Γ£à Valid
+ * const invalid = getEnvValue('INVALID_KEY'); // Γ¥î Type error
  *
  * // Generate environment documentation
  * function documentEnvironmentVariables(): Record<AllEnvironmentVariablesKeys, string> {
@@ -1068,9 +1068,18 @@ export type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironmentVaria
  * @see {@link AllEnvironmentVariablesKeys} - Union of all known environment variable keys
  * @see {@link TypedEnvironment} - Strongly-typed environment variable contract
  */
-// Note: TypeScript warns that AllEnvironmentVariablesKeys is "overridden by string" in this union.
-// This is intentional - we want both:
-// 1. Type safety and autocomplete for known keys (AllEnvironmentVariablesKeys)
-// 2. Runtime flexibility for arbitrary string keys (e.g., third-party env vars)
-// The warning is a TypeScript limitation, not a bug. See RFC 1002 for design rationale.
-export type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | string, string>;
+type DynamicConfigurationValues = {
+  [key: string]: string | undefined;
+};
+
+/**
+ * The script configuration shape preserves autocomplete for known keys while still allowing
+ * arbitrary string keys discovered at runtime.
+ *
+ * @remarks
+ * This intersection avoids the `KnownKeys | string` union that triggered the Sonar warning
+ * while keeping the intended ergonomic behavior for script-side configuration objects.
+ */
+export type TypedConfigurationType =
+  Partial<Record<AllEnvironmentVariablesKeys, string>> &
+  DynamicConfigurationValues;

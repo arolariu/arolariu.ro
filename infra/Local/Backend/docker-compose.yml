@@ -38,3 +38,34 @@ services:
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
       - "traefik.http.routers.keycloak.tls.certresolver=myresolver" # Added for Let's Encrypt
+
+  api:
+    build:
+      context: ../../..
+      dockerfile: infra/containers/Dockerfile.backend
+      args:
+        INFRA: local
+        API_NAME: arolariu-backend-api
+        API_URL: http://localhost:5000
+        COMMIT_SHA: local-docker
+        VERSION: 0.0.0-local-docker
+    container_name: api-arolariu-ro
+    restart: unless-stopped
+    environment:
+      INFRA: local
+      API_NAME: arolariu-backend-api
+      API_URL: http://localhost:5000
+      COMMIT_SHA: local-docker
+    ports:
+      - "5000:8080"
+    networks:
+      arolariu-network:
+        aliases:
+          - api
+      default: {}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=myresolver"

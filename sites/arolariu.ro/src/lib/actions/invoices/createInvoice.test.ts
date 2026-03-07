@@ -16,8 +16,8 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
 }));
 
-vi.mock("@/lib/utils.server", () => ({
-  API_URL: "https://mock-api",
+vi.mock("@/lib/config/expServerConfig.server", () => ({
+  fetchApiUrl: async () => "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -66,14 +66,17 @@ describe("createInvoice", () => {
     const result = await createInvoice(mockPayload);
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(globalThis.fetch).toHaveBeenCalledWith("https://mock-api/rest/v1/invoices", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mockToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({...mockPayload, userIdentifier: mockUserIdentifier}),
-    });
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "https://mock-api/rest/v1/invoices",
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${mockToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({...mockPayload, userIdentifier: mockUserIdentifier}),
+      }),
+    );
     expect(result).toEqual(mockInvoice);
   });
 

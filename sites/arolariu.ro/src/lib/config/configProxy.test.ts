@@ -1,5 +1,5 @@
 /**
- * @fileoverview Unit tests for catalog-driven exp config proxy behavior.
+ * @fileoverview Unit tests for single-key exp config proxy behavior.
  * @module sites/arolariu.ro/src/lib/config/configProxy.test
  */
 
@@ -7,71 +7,62 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 function createJsonResponse(body: unknown, status = 200): Response {
   return {
+    json: async () => body,
     ok: status >= 200 && status < 300,
     status,
-    json: async () => body,
   } as Response;
 }
 
-const websiteCatalogPayload = {
-  target: "website",
-  version: "v1",
-  requiredKeys: ["AzureOptions:StorageAccountEndpoint", "Common:Auth:Issuer", "Common:Auth:Audience"],
-  optionalKeys: ["Optional:FeatureFlag"],
-  allowedPrefixes: [],
-  refreshIntervalSeconds: 300,
-} as const;
+function createConfigValuePayload(name: string, value: string, refreshIntervalSeconds = 300) {
+  return {
+    name,
+    value,
+    availableForTargets: ["website"],
+    availableInDocuments: ["website.build-time", "website.run-time"],
+    description: `${name} description`,
+    fetchedAt: "2026-01-01T00:00:00Z",
+    refreshIntervalSeconds,
+    requiredInDocuments: ["website.build-time", "website.run-time"],
+    usage: `${name} usage`,
+  } as const;
+}
 
 describe("configProxy", () => {
   beforeEach(() => {
     vi.resetModules();
-    process.env["INFRA"] = "local";
+    delete process.env["AZURE_CLIENT_ID"];
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    delete process.env["AZURE_CLIENT_ID"];
   });
 
-  it("fetches website catalog and single config value", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          key: "AzureOptions:StorageAccountEndpoint",
-          value: "https://storage.example.test",
-          fetchedAt: "2026-01-01T00:00:00Z",
-        }),
-      );
-
+  it("fetches one config value and returns the resolved value", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      createJsonResponse(createConfigValuePayload("AzureOptions:StorageAccountEndpoint", "https://storage.example.test")),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
-    const {fetchConfigValue, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
     const value = await fetchConfigValue("AzureOptions:StorageAccountEndpoint");
 
     expect(value).toBe("https://storage.example.test");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0] as [string])[0]).toContain(
+      "/api/v1/config?name=AzureOptions%3AStorageAccountEndpoint",
+    );
   });
 
-  it("returns cached single value without extra network call", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          key: "Common:Auth:Issuer",
-          value: "https://issuer.example.test",
-          fetchedAt: "2026-01-01T00:00:00Z",
-        }),
-      );
-
+  it("returns cached values without an additional network call", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      createJsonResponse(createConfigValuePayload("Common:Auth:Issuer", "https://issuer.example.test")),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
-    const {fetchConfigValue, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
     const first = await fetchConfigValue("Common:Auth:Issuer");
@@ -79,247 +70,98 @@ describe("configProxy", () => {
 
     expect(first).toBe("https://issuer.example.test");
     expect(second).toBe("https://issuer.example.test");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when exp rejects an unknown key", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "Unknown"}, 400)));
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    await expect(fetchConfigValue("Unknown:Key")).rejects.toThrow("Failed to fetch config 'Unknown:Key' (status=400).");
+  });
+
+  it("returns an empty string for optional keys with empty values", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Communication:Resend:ApiKey", ""))),
+    );
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    const value = await fetchConfigValue("Communication:Resend:ApiKey");
+
+    expect(value).toBe("");
+  });
+
+  it("fetches multiple values independently and returns them as a record", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Common:Auth:Issuer", "https://issuer.example.test")))
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Common:Auth:Secret", "super-secret")));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const {fetchConfigValues, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    const values = await fetchConfigValues(["Common:Auth:Issuer", "Common:Auth:Secret"]);
+
+    expect(values["Common:Auth:Issuer"]).toBe("https://issuer.example.test");
+    expect(values["Common:Auth:Secret"]).toBe("super-secret");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("throws when required single key cannot be resolved", async () => {
+  it("invalidates cached keys so the next read refetches", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({}, 500));
-
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Common:Auth:Issuer", "https://issuer.example.test")))
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Common:Auth:Issuer", "https://updated.example.test")));
     vi.stubGlobal("fetch", fetchMock);
 
-    const {fetchConfigValue, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
-    await expect(fetchConfigValue("Common:Auth:Audience")).rejects.toThrow(
-      "Required key 'Common:Auth:Audience' could not be resolved from config proxy.",
-    );
+    const first = await fetchConfigValue("Common:Auth:Issuer");
+    invalidateConfigCache("Common:Auth:Issuer");
+    const second = await fetchConfigValue("Common:Auth:Issuer");
+
+    expect(first).toBe("https://issuer.example.test");
+    expect(second).toBe("https://updated.example.test");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("throws when fetching a key not declared in website catalog", async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload));
+  it("uses http://exp when AZURE_CLIENT_ID is not set", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Api", "https://api.example.test")));
     vi.stubGlobal("fetch", fetchMock);
 
-    const {fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
-    await expect(fetchConfigValues(["Unknown:Key"])).rejects.toThrow("Key 'Unknown:Key' is not declared in the 'website' catalog.");
+    await fetchConfigValue("Endpoints:Api");
+
+    expect((fetchMock.mock.calls[0] as [string])[0]).toContain("http://exp");
   });
 
-  it("returns batch values for required and optional keys", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          values: [
-            {key: "Common:Auth:Issuer", value: "https://issuer.example.test"},
-            {key: "Optional:FeatureFlag", value: "enabled"},
-          ],
-        }),
-      );
+  it("uses https://exp.arolariu.ro when AZURE_CLIENT_ID is set", async () => {
+    process.env["AZURE_CLIENT_ID"] = "test-managed-identity-id";
+    vi.resetModules();
 
+    vi.doMock("@/lib/azure/credentials", () => ({
+      getAzureCredential: () => ({
+        getToken: vi.fn().mockResolvedValue({token: "mock-azure-bearer-token"}),
+      }),
+    }));
+
+    const fetchMock = vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Api", "https://api.example.test")));
     vi.stubGlobal("fetch", fetchMock);
 
-    const {fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
-    const values = await fetchConfigValues(["Common:Auth:Issuer", "Optional:FeatureFlag"]);
-    expect(values["Common:Auth:Issuer"]).toBe("https://issuer.example.test");
-    expect(values["Optional:FeatureFlag"]).toBe("enabled");
-  });
+    await fetchConfigValue("Endpoints:Api");
 
-  it("throws when required batch keys are unresolved after proxy failure", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({}, 500));
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    await expect(fetchConfigValues(["Common:Auth:Issuer"])).rejects.toThrow(
-      "Required keys could not be resolved from config proxy: Common:Auth:Issuer",
-    );
-  });
-
-  it("returns fallback for optional batch key when proxy fails", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({}, 500));
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    const values = await fetchConfigValues(["Optional:FeatureFlag"]);
-    expect(values["Optional:FeatureFlag"]).toBe("");
-  });
-
-  it("returns empty for optional single key when proxy returns non-success", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(createJsonResponse({}, 503));
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValue, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    const value = await fetchConfigValue("Optional:FeatureFlag");
-    expect(value).toBe("");
-  });
-
-  it("returns empty when catalog payload is invalid for optional key", async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(createJsonResponse({target: "website"}));
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValue, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    const value = await fetchConfigValue("Optional:FeatureFlag");
-    expect(value).toBe("");
-  });
-
-  it("throws when required key is returned empty in a successful batch response", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          values: [{key: "Common:Auth:Issuer", value: ""}],
-        }),
-      );
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    await expect(fetchConfigValues(["Common:Auth:Issuer"])).rejects.toThrow(
-      "Required keys could not be resolved from config proxy: Common:Auth:Issuer",
-    );
-  });
-
-  it("returns all values from cache when batch keys are already cached", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          key: "Common:Auth:Issuer",
-          value: "https://issuer.example.test",
-          fetchedAt: "2026-01-01T00:00:00Z",
-        }),
-      )
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          key: "Common:Auth:Audience",
-          value: "https://audience.example.test",
-          fetchedAt: "2026-01-01T00:00:00Z",
-        }),
-      );
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValue, fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    await fetchConfigValue("Common:Auth:Issuer");
-    await fetchConfigValue("Common:Auth:Audience");
-
-    const values = await fetchConfigValues(["Common:Auth:Issuer", "Common:Auth:Audience"]);
-    expect(values["Common:Auth:Issuer"]).toBe("https://issuer.example.test");
-    expect(values["Common:Auth:Audience"]).toBe("https://audience.example.test");
-  });
-
-  it("returns cached optional values when batch request throws", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          key: "Optional:FeatureFlag",
-          value: "cached",
-          fetchedAt: "2026-01-01T00:00:00Z",
-        }),
-      )
-      .mockRejectedValueOnce(new Error("Network down"));
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValue, fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    await fetchConfigValue("Optional:FeatureFlag");
-    const values = await fetchConfigValues(["Optional:FeatureFlag"]);
-
-    expect(values["Optional:FeatureFlag"]).toBe("cached");
-  });
-
-  it("returns empty optional values when batch request throws and cache is empty", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockRejectedValueOnce(new Error("Network down"));
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValues, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    const values = await fetchConfigValues(["Optional:FeatureFlag"]);
-    expect(values["Optional:FeatureFlag"]).toBe("");
-  });
-
-  it("invalidates single-key cache entries", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(createJsonResponse(websiteCatalogPayload))
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          key: "Optional:FeatureFlag",
-          value: "initial",
-          fetchedAt: "2026-01-01T00:00:00Z",
-        }),
-      )
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          key: "Optional:FeatureFlag",
-          value: "updated",
-          fetchedAt: "2026-01-01T00:00:00Z",
-        }),
-      );
-
-    vi.stubGlobal("fetch", fetchMock);
-
-    const {fetchConfigValue, invalidateCatalogCache, invalidateConfigCache} = await import("./configProxy");
-    invalidateCatalogCache();
-    invalidateConfigCache();
-
-    const first = await fetchConfigValue("Optional:FeatureFlag");
-    invalidateConfigCache("Optional:FeatureFlag");
-    const second = await fetchConfigValue("Optional:FeatureFlag");
-
-    expect(first).toBe("initial");
-    expect(second).toBe("updated");
+    expect((fetchMock.mock.calls[0] as [string])[0]).toContain("https://exp.arolariu.ro");
   });
 });

@@ -2,12 +2,12 @@ namespace arolariu.Backend.Common.Configuration;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 
-/// <summary>Thread-safe in-memory cache for the API configuration catalog.</summary>
+/// <summary>Thread-safe in-memory cache for the API build-time configuration document.</summary>
 public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
 {
-  private readonly object syncLock = new();
+  private readonly Lock syncLock = new();
   private ConfigCatalogResponse currentCatalog = ValidateCatalogOrThrow(initialCatalog, nameof(initialCatalog));
 
   /// <summary>Gets the current catalog snapshot.</summary>
@@ -22,15 +22,13 @@ public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
     }
   }
 
-  /// <summary>Gets the required keys for the current catalog snapshot.</summary>
-  public IReadOnlyList<string> RequiredKeys
+  /// <summary>Creates a detached copy of the current config snapshot.</summary>
+  /// <returns>A detached copy of the current config dictionary.</returns>
+  public IReadOnlyDictionary<string, string> CreateConfigSnapshot()
   {
-    get
+    lock (syncLock)
     {
-      lock (syncLock)
-      {
-        return currentCatalog.RequiredKeys.ToArray();
-      }
+      return new Dictionary<string, string>(currentCatalog.Config);
     }
   }
 
@@ -50,15 +48,19 @@ public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
     ConfigCatalogResponse? catalog,
     string parameterName)
   {
-    ArgumentNullException.ThrowIfNull(catalog, parameterName);
+    if (catalog is null)
+    {
+      throw new ArgumentNullException(parameterName);
+    }
+
     if (string.IsNullOrWhiteSpace(catalog.Version))
     {
       throw new ArgumentException("Catalog version cannot be null or empty.", parameterName);
     }
 
-    if (!catalog.RequiredKeys.Any())
+    if (catalog.Config.Count == 0)
     {
-      throw new ArgumentException("Catalog must contain at least one required key.", parameterName);
+      throw new ArgumentException("Catalog must contain at least one config value.", parameterName);
     }
 
     return catalog;
@@ -67,10 +69,10 @@ public sealed class ConfigCatalogCache(ConfigCatalogResponse initialCatalog)
   private static ConfigCatalogResponse CloneCatalog(ConfigCatalogResponse source) => new()
   {
     Target = source.Target,
+    ContractVersion = source.ContractVersion,
     Version = source.Version,
-    RequiredKeys = source.RequiredKeys.ToArray(),
-    OptionalKeys = source.OptionalKeys.ToArray(),
-    AllowedPrefixes = source.AllowedPrefixes.ToArray(),
+    Config = new Dictionary<string, string>(source.Config),
     RefreshIntervalSeconds = source.RefreshIntervalSeconds,
+    FetchedAt = source.FetchedAt,
   };
 }

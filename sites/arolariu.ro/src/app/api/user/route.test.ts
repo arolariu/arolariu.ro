@@ -7,14 +7,20 @@ import type {UserInformation} from "@/types";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GET} from "./route";
 
-// Create hoisted mocks
-const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan, mockGenerateGuid} = vi.hoisted(() => ({
-  mockAuth: vi.fn(),
-  mockCurrentUser: vi.fn(),
-  mockCreateJwtToken: vi.fn(),
-  mockWithSpan: vi.fn(),
-  mockGenerateGuid: vi.fn(),
-}));
+// Create hoisted mocks.
+// mockFetchApiJwtSecret is hoisted separately so we can re-apply its
+// implementation in beforeEach (mockReset: true in vitest.config.ts clears all
+// mock implementations between tests).
+const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan, mockGenerateGuid, mockFetchApiJwtSecret} = vi.hoisted(
+  () => ({
+    mockAuth: vi.fn(),
+    mockCurrentUser: vi.fn(),
+    mockCreateJwtToken: vi.fn(),
+    mockWithSpan: vi.fn(),
+    mockGenerateGuid: vi.fn(),
+    mockFetchApiJwtSecret: vi.fn(),
+  }),
+);
 
 // Mock Clerk functions
 vi.mock("@clerk/nextjs/server", () => ({
@@ -22,10 +28,14 @@ vi.mock("@clerk/nextjs/server", () => ({
   currentUser: mockCurrentUser,
 }));
 
-// Mock server utilities
+// Mock server utilities - auth secrets now resolve through expServerConfig.server.
 vi.mock("@/lib/utils.server", () => ({
-  API_JWT: "mock-api-jwt-secret",
   createJwtToken: mockCreateJwtToken,
+}));
+
+// Mock the exp-backed JWT secret helper — avoids network calls to exp
+vi.mock("@/lib/config/expServerConfig.server", () => ({
+  fetchApiJwtSecret: mockFetchApiJwtSecret,
 }));
 
 // Mock generateGuid
@@ -55,6 +65,8 @@ vi.mock("@/instrumentation.server", () => ({
 describe("GET /api/user", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // mockReset: true clears all implementations; re-apply defaults here.
+    mockFetchApiJwtSecret.mockResolvedValue("mock-api-jwt-secret");
     // Default withSpan implementation that provides span object and handles nested withSpan calls
     mockWithSpan.mockImplementation(async (_spanName: string, fn: (span?: unknown) => Promise<unknown>) => {
       const mockSpan = {

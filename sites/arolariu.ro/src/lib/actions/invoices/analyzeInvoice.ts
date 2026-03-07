@@ -21,8 +21,8 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {API_URL} from "@/lib/utils.server";
 import type {InvoiceAnalysisOptions} from "@/types/invoices";
+import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -98,7 +98,7 @@ export default async function analyzeInvoice({invoiceIdentifier, analysisOptions
       // Step 2. Make the API request to analyze the invoice
       addSpanEvent("bff.invoice.analyze.start");
       logWithTrace("info", "Making API request to analyze invoice", {}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceIdentifier}/analyze`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,

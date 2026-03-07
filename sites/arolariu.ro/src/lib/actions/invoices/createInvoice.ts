@@ -22,8 +22,8 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {API_URL} from "@/lib/utils.server";
 import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
+import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -99,7 +99,7 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
       // Step 2. Make the API request to create the invoice
       addSpanEvent("bff.invoice.create.start");
       logWithTrace("info", "Making API request to create invoice", {}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices`, {
+      const response = await fetchWithTimeout("/rest/v1/invoices", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,

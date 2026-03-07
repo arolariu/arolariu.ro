@@ -1,46 +1,46 @@
 /**
- * @fileoverview Types and runtime guards for exp catalog responses.
+ * @fileoverview Types and runtime guards for single-key exp config responses.
  * @module sites/arolariu.ro/src/lib/config/configCatalog.types
  */
 
 /**
- * Supported caller targets returned by exp catalog endpoint.
+ * Typed payload returned by `/api/v1/config?name=<config-key>`.
  */
-export type ConfigCatalogTarget = "api" | "website";
-
-/**
- * Typed catalog response returned by `/api/v2/catalog?for=<target>`.
- */
-export type ConfigCatalogResponse = Readonly<{
-  target: ConfigCatalogTarget;
-  version: string;
-  requiredKeys: ReadonlyArray<string>;
-  optionalKeys: ReadonlyArray<string>;
-  allowedPrefixes: ReadonlyArray<string>;
+export type ConfigValueResponse = Readonly<{
+  name: string;
+  value: string;
+  availableForTargets: ReadonlyArray<string>;
+  availableInDocuments: ReadonlyArray<string>;
+  requiredInDocuments: ReadonlyArray<string>;
+  description: string;
+  usage: string;
   refreshIntervalSeconds: number;
-  fetchedAt?: string;
+  fetchedAt: string;
 }>;
 
-function isStringArray(entries: unknown): entries is string[] {
-  return Array.isArray(entries) && entries.every((entry) => typeof entry === "string");
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
 }
 
 /**
- * Runtime type guard for catalog payloads.
+ * Runtime type guard for single-key config payloads.
  * @param value - Unknown payload to validate.
- * @returns True when payload matches catalog response shape.
+ * @returns True when payload matches the exp config-value response shape.
  */
-export function isConfigCatalogResponse(value: unknown): value is ConfigCatalogResponse {
+export function isConfigValueResponse(value: unknown): value is ConfigValueResponse {
   if (!value || typeof value !== "object") return false;
 
-  const candidate = value as Partial<ConfigCatalogResponse>;
+  const candidate = value as Partial<ConfigValueResponse>;
 
   return (
-    (candidate.target === "api" || candidate.target === "website")
-    && typeof candidate.version === "string"
-    && isStringArray(candidate.requiredKeys)
-    && isStringArray(candidate.optionalKeys)
-    && isStringArray(candidate.allowedPrefixes)
+    typeof candidate.name === "string"
+    && typeof candidate.value === "string"
+    && isStringArray(candidate.availableForTargets)
+    && isStringArray(candidate.availableInDocuments)
+    && isStringArray(candidate.requiredInDocuments)
+    && typeof candidate.description === "string"
+    && typeof candidate.usage === "string"
     && typeof candidate.refreshIntervalSeconds === "number"
+    && typeof candidate.fetchedAt === "string"
   );
 }
