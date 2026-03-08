@@ -40,14 +40,16 @@ public class AzureTranslatorBroker : ITranslatorBroker
   /// <para>Construction is side‑effect free (no network calls). The client is thread-safe; the broker instance is suitable for scoped
   /// or singleton lifetimes depending on broader DI design.</para>
   /// </remarks>
-  /// <param name="optionsManager">Options source providing <c>CognitiveServicesKey</c> (required) and <c>CognitiveServicesEndpoint</c>.</param>
+  /// <param name="optionsManager">Options source providing <c>CognitiveServicesKey</c> (required) and <c>CognitiveServicesEndpoint</c> (falls back to the standard Microsoft Translator global endpoint when empty).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
   public AzureTranslatorBroker(IOptionsManager optionsManager)
   {
     ArgumentNullException.ThrowIfNull(optionsManager);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
+    var cognitiveServicesEndpoint = string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint)
+      ? "https://api.cognitive.microsofttranslator.com/"
+      : options.CognitiveServicesEndpoint;
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
 
     // Use AzureKeyCredential instead of DefaultAzureCredential
@@ -75,7 +77,9 @@ public class AzureTranslatorBroker : ITranslatorBroker
     ArgumentNullException.ThrowIfNull(httpClient);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
+    var cognitiveServicesEndpoint = string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint)
+      ? "https://api.cognitive.microsofttranslator.com/"
+      : options.CognitiveServicesEndpoint;
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
 
     // Use AzureKeyCredential instead of DefaultAzureCredential

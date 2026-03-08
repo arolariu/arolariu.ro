@@ -9,9 +9,9 @@ import threading
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 
 from config.settings import get_refresh_interval_seconds, get_runtime_infra_mode
 from telemetry.bootstrap import (
@@ -23,8 +23,8 @@ from telemetry.bootstrap import (
 
 logger = logging.getLogger(__name__)
 
-ConfigSnapshot: TypeAlias = dict[str, str]
-FeatureSnapshot: TypeAlias = dict[str, bool]
+type ConfigSnapshot = dict[str, str]
+type FeatureSnapshot = dict[str, bool]
 
 
 @dataclass(frozen=True, slots=True)
@@ -217,7 +217,7 @@ def load_config() -> ConfigSnapshot:
             _config = loaded_config
             _loaded = True
             _last_loaded_at = time.monotonic()
-            _last_loaded_at_utc = datetime.now(timezone.utc)
+            _last_loaded_at_utc = datetime.now(UTC)
             _load_count += 1
             logger.info("Loaded %d configuration keys", len(_config))
             return dict(_config)

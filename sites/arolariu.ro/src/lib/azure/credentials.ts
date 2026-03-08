@@ -19,7 +19,7 @@ let cachedCredential: TokenCredential | null = null;
  * In production, uses AZURE_CLIENT_ID for User Assigned Managed Identity.
  * In development, falls back to Azure CLI / environment credentials.
  *
- * This function is server-only — enforced by "use server" directive.
+ * This function is server-only — enforced by the "server-only" build-time marker import.
  */
 export function getAzureCredential(): TokenCredential {
   if (!cachedCredential) {

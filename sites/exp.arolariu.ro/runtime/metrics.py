@@ -15,7 +15,7 @@ import time
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,7 +52,7 @@ class ServedConfigMetricsSnapshot:
 
 
 _metrics_lock = threading.RLock()
-_started_at_utc = datetime.now(timezone.utc)
+_started_at_utc = datetime.now(UTC)
 _started_at_monotonic = time.monotonic()
 _total_requests = 0
 _requests_by_path: Counter[str] = Counter()
@@ -88,7 +88,7 @@ def reset_metrics() -> None:
     global _last_served_at_utc
 
     with _metrics_lock:
-        _started_at_utc = datetime.now(timezone.utc)
+        _started_at_utc = datetime.now(UTC)
         _started_at_monotonic = time.monotonic()
         _total_requests = 0
         _requests_by_path.clear()
@@ -154,7 +154,7 @@ def record_config_delivery(
         _values_by_target[normalized_target] += len(value_names)
         _values_by_caller[normalized_caller] += len(value_names)
         _values_by_name.update(value_names)
-        _last_served_at_utc = datetime.now(timezone.utc)
+        _last_served_at_utc = datetime.now(UTC)
 
 
 def get_process_runtime_snapshot() -> ProcessRuntimeSnapshot:

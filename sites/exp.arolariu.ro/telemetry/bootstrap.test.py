@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import ClassVar
 
 import pytest
 from fastapi import FastAPI
 
-from telemetry.bootstrap import TelemetryDependencies, initialize_telemetry, shutdown_telemetry
+from telemetry.bootstrap import (
+    TelemetryDependencies,
+    get_current_trace_context,
+    initialize_telemetry,
+    record_current_span_exception,
+    set_current_span_attributes,
+    shutdown_telemetry,
+    start_span,
+)
 
 
 def _build_fake_dependencies() -> TelemetryDependencies:
@@ -209,8 +218,8 @@ def _build_fake_dependencies() -> TelemetryDependencies:
             self.uninstrumented = True
 
     class FakeFastAPIInstrumentor:
-        instrument_calls: list[dict[str, object]] = []
-        uninstrument_calls: list[FastAPI] = []
+        instrument_calls: ClassVar[list[dict[str, object]]] = []
+        uninstrument_calls: ClassVar[list[FastAPI]] = []
 
         @staticmethod
         def instrument_app(app: FastAPI, **kwargs: object) -> None:
@@ -331,5 +340,101 @@ class TestTelemetryBootstrap:
             log_exporter = runtime.logger_provider.processors[0].exporter
             assert isinstance(log_exporter, dependencies.AzureMonitorLogExporter)
             assert log_exporter.kwargs["disable_offline_storage"] is True
+        finally:
+            shutdown_telemetry()
+
+    def test_disabled_telemetry_returns_uninitialized_runtime(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "false")
+
+        app = FastAPI()
+        runtime = initialize_telemetry(app)
+        try:
+            assert runtime.initialized is False
+            assert runtime.tracer_provider is None
+            assert runtime.meter_provider is None
+            assert runtime.logger_provider is None
+        finally:
+            shutdown_telemetry()
+
+    def test_shutdown_flushes_and_stops_providers(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        dependencies = _build_fake_dependencies()
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "true")
+        monkeypatch.setenv("INFRA", "local")
+        monkeypatch.setattr("telemetry.bootstrap._import_telemetry_dependencies", lambda: dependencies)
+
+        app = FastAPI()
+        runtime = initialize_telemetry(app)
+        tracer_provider = runtime.tracer_provider
+        meter_provider = runtime.meter_provider
+
+        shutdown_telemetry()
+
+        assert tracer_provider.flushed is True
+        assert tracer_provider.stopped is True
+        assert meter_provider.flushed is True
+        assert meter_provider.stopped is True
+
+
+class TestSpanHelpers:
+    def test_start_span_is_noop_when_disabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "false")
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            with start_span("test.span", instrumentation_scope="test") as span:
+                # The noop span context yields None when telemetry is disabled
+                assert span is None
+        finally:
+            shutdown_telemetry()
+
+    def test_set_current_span_attributes_is_noop_when_disabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "false")
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            # Should not raise even when telemetry is disabled
+            set_current_span_attributes({"test.key": "test_value"})
+        finally:
+            shutdown_telemetry()
+
+    def test_get_current_trace_context_returns_none_when_disabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "false")
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            context = get_current_trace_context()
+            assert context is None
+        finally:
+            shutdown_telemetry()
+
+    def test_record_current_span_exception_is_noop_when_disabled(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("EXP_OTEL_ENABLED", "false")
+
+        app = FastAPI()
+        initialize_telemetry(app)
+        try:
+            # Should not raise even when telemetry is disabled
+            record_current_span_exception(RuntimeError("test error"))
         finally:
             shutdown_telemetry()

@@ -187,8 +187,8 @@ done since startup.
     "local:website": 30
   },
   "configValuesByName": {
-    "Endpoints:Api": 5,
-    "Common:Auth:Issuer": 6
+    "Endpoints:Service:Api": 5,
+    "Auth:JWT:Issuer": 6
   },
   "lastConfigServedAt": "2025-01-01T00:00:04+00:00"
 }
@@ -215,10 +215,10 @@ Returns the build-time configuration document for the requested target.
   "contractVersion": "1",
   "version": "<12-char hash>",
   "config": {
-    "AzureOptions:StorageAccountEndpoint": "https://...",
-    "Common:Auth:Issuer": "https://...",
-    "Common:Auth:Audience": "https://...",
-    "Endpoints:Api": "https://..."
+    "Endpoints:Storage:Blob": "https://...",
+    "Auth:JWT:Issuer": "https://...",
+    "Auth:JWT:Audience": "https://...",
+    "Endpoints:Service:Api": "https://..."
   },
   "refreshIntervalSeconds": 300,
   "fetchedAt": "2025-01-01T00:00:00+00:00"
@@ -226,7 +226,7 @@ Returns the build-time configuration document for the requested target.
 ```
 
 The build-time document contains only the keys indexed for startup/build-sensitive
-behavior. For the website target, server-only secrets such as `Common:Auth:Secret` are
+behavior. For the website target, server-only secrets such as `Auth:JWT:Secret` are
 excluded from this slice.
 
 ### `GET /api/v1/run-time?for=api|website`
@@ -239,12 +239,12 @@ Returns the runtime configuration document plus feature flags for the requested 
   "contractVersion": "1",
   "version": "<12-char hash>",
   "config": {
-    "AzureOptions:StorageAccountEndpoint": "https://...",
-    "Common:Auth:Issuer": "https://...",
-    "Common:Auth:Audience": "https://...",
-    "Common:Auth:Secret": "...",
-    "Endpoints:Api": "https://...",
-    "Communication:Resend:ApiKey": ""
+    "Endpoints:Storage:Blob": "https://...",
+    "Auth:JWT:Issuer": "https://...",
+    "Auth:JWT:Audience": "https://...",
+    "Auth:JWT:Secret": "...",
+    "Endpoints:Service:Api": "https://...",
+    "Communication:Email:ApiKey": ""
   },
   "features": {
     "website.commander.enabled": false,
@@ -287,19 +287,19 @@ Returns exactly one indexed configuration value plus its ownership and usage met
 
 ```json
 {
-  "name": "Endpoints:Api",
+  "name": "Endpoints:Service:Api",
   "value": "https://api.arolariu.ro",
   "availableForTargets": ["website"],
   "availableInDocuments": ["website.build-time", "website.run-time"],
   "requiredInDocuments": ["website.build-time", "website.run-time"],
-  "description": "Base URL of the backend API that the website calls from server-only code.",
+  "description": "Base URL of the backend API under the Endpoint hierarchy, called by the website from server-only code.",
   "usage": "Website-only. Use this value for server-to-server fetches instead of hard-coding environment-specific API URLs.",
   "refreshIntervalSeconds": 300,
   "fetchedAt": "2025-01-01T00:00:00+00:00"
 }
 ```
 
-`name` is always a configuration key such as `Endpoints:Api` or `Common:Auth:Secret`.
+`name` is always a configuration key such as `Endpoints:Service:Api` or `Auth:JWT:Secret`.
 When a key is shared by multiple targets, callers must also send `X-Exp-Target` so
 authorization remains explicit.
 
@@ -308,17 +308,17 @@ authorization remains explicit.
 ### `api`
 
 - Build-time keys
-  - `Common:Auth:Secret`
-  - `Common:Auth:Issuer`
-  - `Common:Auth:Audience`
-  - `Common:Azure:TenantId`
-  - `Endpoints:OpenAI`
-  - `Endpoints:SqlServer`
-  - `Endpoints:NoSqlServer`
-  - `Endpoints:StorageAccount`
-  - `Endpoints:ApplicationInsights`
-  - `Endpoints:CognitiveServices`
-  - `Endpoints:CognitiveServices:Key`
+  - `Auth:JWT:Secret`
+  - `Auth:JWT:Issuer`
+  - `Auth:JWT:Audience`
+  - `Identity:Tenant:Id`
+  - `Endpoints:AI:OpenAI`
+  - `Endpoints:Database:SQL`
+  - `Endpoints:Database:NoSQL`
+  - `Endpoints:Storage:Blob`
+  - `Endpoints:Observability:Telemetry`
+  - `Endpoints:AI:OCR`
+  - `Endpoints:AI:OCR:Key`
 - Runtime keys
   - same as build-time
 - Feature IDs
@@ -327,18 +327,18 @@ authorization remains explicit.
 ### `website`
 
 - Build-time keys
-  - `AzureOptions:StorageAccountEndpoint`
-  - `Common:Auth:Issuer`
-  - `Common:Auth:Audience`
-  - `Endpoints:Api`
+  - `Endpoints:Storage:Blob`
+  - `Auth:JWT:Issuer`
+  - `Auth:JWT:Audience`
+  - `Endpoints:Service:Api`
 - Runtime keys
-  - `AzureOptions:StorageAccountEndpoint`
-  - `Common:Auth:Issuer`
-  - `Common:Auth:Audience`
-  - `Common:Auth:Secret`
-  - `Endpoints:Api`
+  - `Endpoints:Storage:Blob`
+  - `Auth:JWT:Issuer`
+  - `Auth:JWT:Audience`
+  - `Auth:JWT:Secret`
+  - `Endpoints:Service:Api`
 - Runtime optional keys
-  - `Communication:Resend:ApiKey`
+  - `Communication:Email:ApiKey`
 - Feature IDs
   - `website.commander.enabled`
   - `website.web-vitals.enabled`
@@ -521,8 +521,8 @@ Smoke checks:
 ```powershell
 Invoke-WebRequest -Uri "http://localhost:5002/api/health"
 Invoke-WebRequest -Uri "http://localhost:5002/api/v1/build-time?for=website" -Headers @{ "X-Exp-Target" = "website" }
-Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Endpoints:Api" -Headers @{ "X-Exp-Target" = "website" }
-Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Common:Auth:Secret" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Endpoints:Service:Api" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Auth:JWT:Secret" -Headers @{ "X-Exp-Target" = "website" }
 Invoke-WebRequest -Uri "http://localhost:5002/api/v1/run-time?for=website" -Headers @{ "X-Exp-Target" = "website" }
 ```
 
