@@ -59,7 +59,7 @@ class TestGetConfigSection:
 class TestLoadLocalConfig:
     def test_loads_explicit_local_config_path(self, tmp_path, monkeypatch):
         config_path = tmp_path / "local-config.json"
-        payload = {"Common:Auth:Issuer": "https://example.test"}
+        payload = {"Auth:JWT:Issuer": "https://example.test"}
         config_path.write_text(json.dumps(payload), encoding="utf-8")
 
         monkeypatch.setenv("EXP_LOCAL_CONFIG_PATH", str(config_path))
@@ -67,11 +67,11 @@ class TestLoadLocalConfig:
         from config.loader import _load_local_config
 
         result = _load_local_config()
-        assert result["Common:Auth:Issuer"] == "https://example.test"
+        assert result["Auth:JWT:Issuer"] == "https://example.test"
 
     def test_loads_default_service_root_config_when_override_is_not_set(self, tmp_path, monkeypatch):
         config_path = tmp_path / "config.json"
-        config_path.write_text(json.dumps({"Endpoints:Api": "http://exp"}), encoding="utf-8")
+        config_path.write_text(json.dumps({"Service:Api:Url": "http://exp"}), encoding="utf-8")
         monkeypatch.delenv("EXP_LOCAL_CONFIG_PATH", raising=False)
 
         import config.loader as config_loader
@@ -79,7 +79,7 @@ class TestLoadLocalConfig:
         monkeypatch.setattr(config_loader, "_service_root", lambda: tmp_path)
 
         result = config_loader._load_local_config()
-        assert result["Endpoints:Api"] == "http://exp"
+        assert result["Service:Api:Url"] == "http://exp"
 
     def test_returns_empty_dict_for_malformed_json(self, tmp_path, monkeypatch):
         config_path = tmp_path / "broken-config.json"
@@ -148,7 +148,7 @@ class TestConfigStats:
     def test_returns_current_snapshot_metadata(self):
         import config.loader as config_loader
 
-        config_loader._config = {"Endpoints:Api": "https://localhost:5000"}
+        config_loader._config = {"Service:Api:Url": "https://localhost:5000"}
         config_loader._loaded = True
         config_loader._load_count = 2
         config_loader._last_loaded_at_utc = datetime(2026, 3, 7, tzinfo=timezone.utc)

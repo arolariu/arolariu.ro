@@ -65,22 +65,22 @@ class TestCatalogWebsiteIndexedKeys:
     def test_website_runtime_requires_auth_secret(self):
         index = catalog.get_target_index("website")
         assert index is not None
-        assert "Common:Auth:Secret" in index.runtime_required_keys
+        assert "Auth:JWT:Secret" in index.runtime_required_keys
 
     def test_website_build_time_excludes_auth_secret(self):
         index = catalog.get_target_index("website")
         assert index is not None
-        assert "Common:Auth:Secret" not in index.build_time_keys
+        assert "Auth:JWT:Secret" not in index.build_time_keys
 
     def test_website_indexed_keys_include_resend_key(self):
         index = catalog.get_target_index("website")
         assert index is not None
-        assert "Communication:Resend:ApiKey" in index.indexed_keys
+        assert "Communication:Email:ApiKey" in index.indexed_keys
 
 
 class TestConfigRegistry:
     def test_shared_auth_secret_is_registered_for_both_targets(self):
-        definition = catalog.get_config_definition("Common:Auth:Secret")
+        definition = catalog.get_config_definition("Auth:JWT:Secret")
 
         assert definition is not None
         assert definition.available_for_targets == ("api", "website")
@@ -88,7 +88,7 @@ class TestConfigRegistry:
         assert "website.run-time" in definition.required_in_documents
 
     def test_unique_endpoint_key_is_registered_for_website_only(self):
-        definition = catalog.get_config_definition("Endpoints:Api")
+        definition = catalog.get_config_definition("Service:Api:Url")
 
         assert definition is not None
         assert definition.available_for_targets == ("website",)

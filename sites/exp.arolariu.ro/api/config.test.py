@@ -8,10 +8,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 _CONFIG_SNAPSHOT: dict[str, str] = {
-    "Common:Auth:Secret": "local-secret",
-    "Common:Auth:Issuer": "https://localhost:5000",
-    "Common:Auth:Audience": "https://localhost:3000",
-    "Endpoints:Api": "https://localhost:5000",
+    "Auth:JWT:Secret": "local-secret",
+    "Auth:JWT:Issuer": "https://localhost:5000",
+    "Auth:JWT:Audience": "https://localhost:3000",
+    "Service:Api:Url": "https://localhost:5000",
 }
 
 
@@ -49,7 +49,7 @@ class TestConfigAuthorization:
         """Local mode should enforce the shared token when it is configured."""
 
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
-            response = client.get("/api/v1/config", params={"name": "Endpoints:Api"})
+            response = client.get("/api/v1/config", params={"name": "Service:Api:Url"})
 
         assert response.status_code == 401
         assert response.json()["error"] == "Missing or invalid local token."
@@ -60,7 +60,7 @@ class TestConfigAuthorization:
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
             response = client.get(
                 "/api/v1/config",
-                params={"name": "Common:Auth:Secret"},
+                params={"name": "Auth:JWT:Secret"},
                 headers={"X-Exp-Local-Token": "local-dev-token"},
             )
 
@@ -76,7 +76,7 @@ class TestConfigAuthorization:
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
             response = client.get(
                 "/api/v1/config",
-                params={"name": "Endpoints:Api"},
+                params={"name": "Service:Api:Url"},
                 headers={
                     "X-Exp-Local-Token": "local-dev-token",
                     "X-Exp-Target": "api",
@@ -97,13 +97,13 @@ class TestConfigContract:
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
             response = client.get(
                 "/api/v1/config",
-                params={"name": "Endpoints:Api"},
+                params={"name": "Service:Api:Url"},
                 headers={"X-Exp-Local-Token": "local-dev-token"},
             )
 
         assert response.status_code == 200
         payload = response.json()
-        assert payload["name"] == "Endpoints:Api"
+        assert payload["name"] == "Service:Api:Url"
         assert payload["value"] == "https://localhost:5000"
         assert payload["availableForTargets"] == ["website"]
         assert payload["availableInDocuments"] == ["website.build-time", "website.run-time"]
@@ -115,7 +115,7 @@ class TestConfigContract:
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
             response = client.get(
                 "/api/v1/config",
-                params={"name": "Common:Auth:Secret"},
+                params={"name": "Auth:JWT:Secret"},
                 headers={
                     "X-Exp-Local-Token": "local-dev-token",
                     "X-Exp-Target": "website",
@@ -124,17 +124,17 @@ class TestConfigContract:
 
         assert response.status_code == 200
         payload = response.json()
-        assert payload["name"] == "Common:Auth:Secret"
+        assert payload["name"] == "Auth:JWT:Secret"
         assert payload["value"] == "local-secret"
         assert payload["availableForTargets"] == ["api", "website"]
 
     def test_returns_500_when_required_key_is_missing(self, client: TestClient) -> None:
         """Required config keys should fail loudly if the backing snapshot is incomplete."""
 
-        with patch("api.config.get_config", return_value={"Common:Auth:Issuer": "https://localhost:5000"}):
+        with patch("api.config.get_config", return_value={"Auth:JWT:Issuer": "https://localhost:5000"}):
             response = client.get(
                 "/api/v1/config",
-                params={"name": "Common:Auth:Secret"},
+                params={"name": "Auth:JWT:Secret"},
                 headers={
                     "X-Exp-Local-Token": "local-dev-token",
                     "X-Exp-Target": "api",
@@ -142,4 +142,4 @@ class TestConfigContract:
             )
 
         assert response.status_code == 500
-        assert response.json()["missingRequiredKeys"] == ["Common:Auth:Secret"]
+        assert response.json()["missingRequiredKeys"] == ["Auth:JWT:Secret"]

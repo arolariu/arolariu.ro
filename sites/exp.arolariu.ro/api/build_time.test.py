@@ -7,11 +7,11 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 _FULL_WEBSITE_CONFIG: dict[str, str] = {
-    "AzureOptions:StorageAccountEndpoint": "http://127.0.0.1:10000",
-    "Common:Auth:Issuer": "https://localhost:5000",
-    "Common:Auth:Audience": "https://localhost:3000",
-    "Common:Auth:Secret": "local-secret",
-    "Endpoints:Api": "https://localhost:5000",
+    "Storage:Blob:Endpoint": "http://127.0.0.1:10000",
+    "Auth:JWT:Issuer": "https://localhost:5000",
+    "Auth:JWT:Audience": "https://localhost:3000",
+    "Auth:JWT:Secret": "local-secret",
+    "Service:Api:Url": "https://localhost:5000",
 }
 
 _EMPTY_CONFIG: dict[str, str] = {}
@@ -68,6 +68,6 @@ class TestBuildTimeContract:
         assert response.status_code == 200
         assert body["target"] == "website"
         assert body["contractVersion"] == "1"
-        assert body["config"]["Endpoints:Api"] == "https://localhost:5000"
-        assert "Common:Auth:Secret" not in body["config"]
+        assert body["config"]["Service:Api:Url"] == "https://localhost:5000"
+        assert "Auth:JWT:Secret" not in body["config"]
         assert response.headers.get("Cache-Control") == "no-store"

@@ -16,10 +16,10 @@ def mock_config(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Mock config dependencies for probe and routing tests."""
 
     test_config = {
-        "AzureOptions:StorageAccountEndpoint": "http://127.0.0.1:10000",
-        "Common:Auth:Issuer": "https://localhost:5000",
-        "Common:Auth:Audience": "https://localhost:3000",
-        "Endpoints:Api": "https://localhost:5000",
+        "Storage:Blob:Endpoint": "http://127.0.0.1:10000",
+        "Auth:JWT:Issuer": "https://localhost:5000",
+        "Auth:JWT:Audience": "https://localhost:3000",
+        "Service:Api:Url": "https://localhost:5000",
     }
 
     with (
@@ -65,10 +65,10 @@ class TestOperationalProbes:
 
     def test_health_tracks_served_config_metrics(self, client: TestClient):
         website_config = {
-            "AzureOptions:StorageAccountEndpoint": "http://127.0.0.1:10000",
-            "Common:Auth:Issuer": "https://localhost:5000",
-            "Common:Auth:Audience": "https://localhost:3000",
-            "Endpoints:Api": "https://localhost:5000",
+            "Storage:Blob:Endpoint": "http://127.0.0.1:10000",
+            "Auth:JWT:Issuer": "https://localhost:5000",
+            "Auth:JWT:Audience": "https://localhost:3000",
+            "Service:Api:Url": "https://localhost:5000",
         }
 
         with (
@@ -82,7 +82,7 @@ class TestOperationalProbes:
             )
             config_response = client.get(
                 "/api/v1/config",
-                params={"name": "Endpoints:Api"},
+                params={"name": "Service:Api:Url"},
                 headers={"X-Exp-Target": "website"},
             )
 
@@ -99,7 +99,7 @@ class TestOperationalProbes:
         assert body["configResponsesByCaller"] == {"local:website": 2}
         assert body["configValuesByTarget"] == {"website": 5}
         assert body["configValuesByCaller"] == {"local:website": 5}
-        assert body["configValuesByName"]["Endpoints:Api"] == 2
+        assert body["configValuesByName"]["Service:Api:Url"] == 2
         assert body["requestsServed"] == 3
 
 

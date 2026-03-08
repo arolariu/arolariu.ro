@@ -15,12 +15,12 @@ def _encode_principal(identifier: str) -> str:
 
 
 _FULL_WEBSITE_CONFIG: dict[str, str] = {
-    "AzureOptions:StorageAccountEndpoint": "http://127.0.0.1:10000",
-    "Common:Auth:Issuer": "https://localhost:5000",
-    "Common:Auth:Audience": "https://localhost:3000",
-    "Common:Auth:Secret": "local-secret",
-    "Endpoints:Api": "https://localhost:5000",
-    "Communication:Resend:ApiKey": "",
+    "Storage:Blob:Endpoint": "http://127.0.0.1:10000",
+    "Auth:JWT:Issuer": "https://localhost:5000",
+    "Auth:JWT:Audience": "https://localhost:3000",
+    "Auth:JWT:Secret": "local-secret",
+    "Service:Api:Url": "https://localhost:5000",
+    "Communication:Email:ApiKey": "",
     "FeatureManagement:website.commander.enabled": "true",
     "FeatureManagement:website.web-vitals.enabled": "false",
 }

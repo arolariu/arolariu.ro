@@ -1,14 +1,13 @@
 {
-  "Common:Auth:Secret": "replace-with-local-jwt-secret",
-  "Common:Auth:Issuer": "https://localhost:5000",
-  "Common:Auth:Audience": "https://localhost:3000",
-  "Common:Azure:TenantId": "",
-  "Endpoints:StorageAccount": "http://127.0.0.1:10000/devstoreaccount1",
-  "Endpoints:SqlServer": "Server=localhost,8082;Database=arolariu;User Id=<sql-user>;Password=<sql-password>;TrustServerCertificate=true;",
-  "Endpoints:NoSqlServer": "AccountEndpoint=https://localhost:8081/;AccountKey=<cosmos-account-key>;",
-  "Endpoints:ApplicationInsights": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://localhost/;LiveEndpoint=https://localhost/;ApplicationId=local-development",
-  "Endpoints:OpenAI": "https://openai.localhost/",
-  "Endpoints:CognitiveServices": "https://cognitiveservices.localhost/",
-  "Endpoints:CognitiveServices:Key": "local-development-cognitive-services-key",
-  "AzureOptions:StorageAccountEndpoint": "http://127.0.0.1:10000/devstoreaccount1"
+  "Auth:JWT:Secret": "replace-with-local-jwt-secret",
+  "Auth:JWT:Issuer": "https://localhost:5000",
+  "Auth:JWT:Audience": "https://localhost:3000",
+  "Identity:Tenant:Id": "",
+  "Storage:Blob:Endpoint": "http://127.0.0.1:10000/devstoreaccount1",
+  "Database:SQL:ConnectionString": "Server=localhost,8082;Database=arolariu;User Id=<sql-user>;Password=<sql-password>;TrustServerCertificate=true;",
+  "Database:NoSQL:ConnectionString": "AccountEndpoint=https://localhost:8081/;AccountKey=<cosmos-account-key>;",
+  "Observability:Telemetry:Endpoint": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://localhost/;LiveEndpoint=https://localhost/;ApplicationId=local-development",
+  "AI:OpenAI:Endpoint": "https://openai.localhost/",
+  "AI:OCR:Endpoint": "https://cognitiveservices.localhost/",
+  "AI:OCR:Key": "local-development-cognitive-services-key"
 }

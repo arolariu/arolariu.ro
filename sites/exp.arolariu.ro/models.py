@@ -104,52 +104,52 @@ class ApiBuildTimeConfig(ExpModel):
     """Configuration values required to boot the API service and schedule refreshes.
 
     Every field in this model is server-only. The API uses these values to wire
-    authentication, Azure dependency endpoints, and data-store connectivity.
+    authentication, dependency endpoints, and data-store connectivity.
     """
 
     jwt_secret: str = Field(
-        alias="Common:Auth:Secret",
+        alias="Auth:JWT:Secret",
         description="HS256 signing secret used by the API authentication flow. Never expose or log this value.",
     )
     jwt_issuer: str = Field(
-        alias="Common:Auth:Issuer",
+        alias="Auth:JWT:Issuer",
         description="JWT issuer URI used when the API validates and issues tokens.",
     )
     jwt_audience: str = Field(
-        alias="Common:Auth:Audience",
+        alias="Auth:JWT:Audience",
         description="JWT audience identifier expected by the API authentication pipeline.",
     )
     azure_tenant_id: str = Field(
-        alias="Common:Azure:TenantId",
-        description="Microsoft Entra tenant identifier used by Azure-dependent API integrations.",
+        alias="Identity:Tenant:Id",
+        description="Identity tenant identifier used by cloud-dependent API integrations.",
     )
     open_ai_endpoint: str = Field(
-        alias="Endpoints:OpenAI",
-        description="Azure OpenAI endpoint used by invoice analysis and classifier brokers.",
+        alias="AI:OpenAI:Endpoint",
+        description="OpenAI endpoint used by invoice analysis and classifier brokers.",
     )
     sql_server_connection_string: str = Field(
-        alias="Endpoints:SqlServer",
-        description="Azure SQL connection string used by the API authentication and relational data flows.",
+        alias="Database:SQL:ConnectionString",
+        description="SQL connection string used by the API authentication and relational data flows.",
     )
     no_sql_server_connection_string: str = Field(
-        alias="Endpoints:NoSqlServer",
-        description="Azure Cosmos DB connection string used by invoice document storage flows.",
+        alias="Database:NoSQL:ConnectionString",
+        description="NoSQL database connection string used by invoice document storage flows.",
     )
     storage_account_endpoint: str = Field(
-        alias="Endpoints:StorageAccount",
-        description="Azure Blob Storage endpoint used for invoice scans and other persisted binary assets.",
+        alias="Storage:Blob:Endpoint",
+        description="Blob storage endpoint used for invoice scans and other persisted binary assets.",
     )
     application_insights_endpoint: str = Field(
-        alias="Endpoints:ApplicationInsights",
-        description="Application Insights connection endpoint used by telemetry exporters.",
+        alias="Observability:Telemetry:Endpoint",
+        description="Telemetry connection endpoint used by observability exporters.",
     )
     cognitive_services_endpoint: str = Field(
-        alias="Endpoints:CognitiveServices",
-        description="Azure AI / Cognitive Services endpoint used by OCR and related enrichment flows.",
+        alias="AI:OCR:Endpoint",
+        description="OCR endpoint used by document analysis and related enrichment flows.",
     )
     cognitive_services_key: str = Field(
-        alias="Endpoints:CognitiveServices:Key",
-        description="Credential used by the API when a Cognitive Services integration still requires a key.",
+        alias="AI:OCR:Key",
+        description="Credential used by the API when an OCR integration still requires a key.",
     )
 
 
@@ -170,19 +170,19 @@ class WebsiteBuildTimeConfig(ExpModel):
     """
 
     storage_account_endpoint: str = Field(
-        alias="AzureOptions:StorageAccountEndpoint",
-        description="Azure Blob Storage endpoint used by server-side upload helpers and storage clients.",
+        alias="Storage:Blob:Endpoint",
+        description="Blob storage endpoint used by server-side upload helpers and storage clients.",
     )
     jwt_issuer: str = Field(
-        alias="Common:Auth:Issuer",
+        alias="Auth:JWT:Issuer",
         description="Issuer value used when the website validates BFF-authored JWTs.",
     )
     jwt_audience: str = Field(
-        alias="Common:Auth:Audience",
+        alias="Auth:JWT:Audience",
         description="Audience value used for server-side JWT validation and issuance flows.",
     )
     api_endpoint: str = Field(
-        alias="Endpoints:Api",
+        alias="Service:Api:Url",
         description="Base URL of the API service that the website calls from server-side code.",
     )
 
@@ -196,16 +196,16 @@ class WebsiteRunTimeConfig(WebsiteBuildTimeConfig):
     """
 
     jwt_secret: str = Field(
-        alias="Common:Auth:Secret",
+        alias="Auth:JWT:Secret",
         description=(
             "HS256 signing secret used by the website's server-side auth bridge. "
             "Never forward this value to the browser."
         ),
     )
     resend_api_key: str = Field(
-        alias="Communication:Resend:ApiKey",
+        alias="Communication:Email:ApiKey",
         description=(
-            "Optional Resend API key used by server-side email flows. Empty "
+            "Optional email API key used by server-side email flows. Empty "
             "string means email is not configured."
         ),
     )
@@ -271,7 +271,7 @@ class ConfigValueResponse(ExpModel):
     which callers are allowed to request it.
     """
 
-    name: str = Field(description="Canonical configuration key name, for example ``Endpoints:Api``.")
+    name: str = Field(description="Canonical configuration key name, for example ``Service:Api:Url``.")
     value: str = Field(description="Resolved configuration value for the requested key.")
     availableForTargets: tuple[str, ...] = Field(
         description="Targets allowed to request this configuration key through the config endpoint.",

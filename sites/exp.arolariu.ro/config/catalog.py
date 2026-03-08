@@ -150,36 +150,36 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
     "api": _build_index(
         target="api",
         build_time_required_keys=[
-            "Common:Auth:Secret",
-            "Common:Auth:Issuer",
-            "Common:Auth:Audience",
-            "Common:Azure:TenantId",
-            "Endpoints:OpenAI",
-            "Endpoints:SqlServer",
-            "Endpoints:NoSqlServer",
-            "Endpoints:StorageAccount",
-            "Endpoints:ApplicationInsights",
-            "Endpoints:CognitiveServices",
-            "Endpoints:CognitiveServices:Key",
+            "Auth:JWT:Secret",
+            "Auth:JWT:Issuer",
+            "Auth:JWT:Audience",
+            "Identity:Tenant:Id",
+            "AI:OpenAI:Endpoint",
+            "Database:SQL:ConnectionString",
+            "Database:NoSQL:ConnectionString",
+            "Storage:Blob:Endpoint",
+            "Observability:Telemetry:Endpoint",
+            "AI:OCR:Endpoint",
+            "AI:OCR:Key",
         ],
     ),
     "website": _build_index(
         target="website",
         build_time_required_keys=[
-            "AzureOptions:StorageAccountEndpoint",
-            "Common:Auth:Issuer",
-            "Common:Auth:Audience",
-            "Endpoints:Api",
+            "Storage:Blob:Endpoint",
+            "Auth:JWT:Issuer",
+            "Auth:JWT:Audience",
+            "Service:Api:Url",
         ],
         runtime_required_keys=[
-            "AzureOptions:StorageAccountEndpoint",
-            "Common:Auth:Issuer",
-            "Common:Auth:Audience",
-            "Common:Auth:Secret",
-            "Endpoints:Api",
+            "Storage:Blob:Endpoint",
+            "Auth:JWT:Issuer",
+            "Auth:JWT:Audience",
+            "Auth:JWT:Secret",
+            "Service:Api:Url",
         ],
         runtime_optional_keys=[
-            "Communication:Resend:ApiKey",
+            "Communication:Email:ApiKey",
         ],
         feature_ids=[
             "website.commander.enabled",
@@ -189,82 +189,81 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
 }
 
 _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
-    "AzureOptions:StorageAccountEndpoint": ConfigKeyDocumentation(
-        description="Azure Blob Storage endpoint consumed by the website's server-side storage helpers.",
+    "AI:OCR:Endpoint": ConfigKeyDocumentation(
+        description="OCR endpoint used by API document analysis and enrichment flows.",
         usage=(
-            "Website-only. Safe for server-side rendering and upload helpers, "
-            "but do not expose raw storage clients to browser code."
+            "API-only. Keep this endpoint inside the backend boundary and pair "
+            "it with managed identity or the documented key when required."
         ),
     ),
-    "Common:Auth:Audience": ConfigKeyDocumentation(
+    "AI:OCR:Key": ConfigKeyDocumentation(
+        description="Credential for API integrations that still require an OCR service key.",
+        usage=(
+            "API-only and server-only. Prefer managed identity when supported, "
+            "and never expose or log this secret value."
+        ),
+    ),
+    "AI:OpenAI:Endpoint": ConfigKeyDocumentation(
+        description="OpenAI endpoint used by API analysis and classification brokers.",
+        usage="API-only. Use from backend broker code and keep AI endpoint resolution out of client-facing surfaces.",
+    ),
+    "Auth:JWT:Audience": ConfigKeyDocumentation(
         description="JWT audience used by both API and website server-side auth flows.",
         usage=(
             "Server-only authentication input. Keep API and website auth "
             "validation logic aligned to this audience string."
         ),
     ),
-    "Common:Auth:Issuer": ConfigKeyDocumentation(
+    "Auth:JWT:Issuer": ConfigKeyDocumentation(
         description="JWT issuer used by both API and website server-side auth flows.",
         usage=(
             "Server-only authentication input. Use this value whenever tokens "
             "are minted or validated across the platform."
         ),
     ),
-    "Common:Auth:Secret": ConfigKeyDocumentation(
-        description="HS256 signing secret shared by the API and by the website's server-side token bridge.",
+    "Auth:JWT:Secret": ConfigKeyDocumentation(
+        description="JWT signing secret shared by the API and by the website's server-side token bridge.",
         usage="Strictly server-only. Never log, serialize, or expose this value to the browser or client-side bundles.",
     ),
-    "Common:Azure:TenantId": ConfigKeyDocumentation(
-        description="Microsoft Entra tenant identifier used by API Azure integrations.",
+    "Communication:Email:ApiKey": ConfigKeyDocumentation(
+        description="Optional email API key used by website server-side email features.",
+        usage="Website run-time only. Empty string means email delivery is intentionally disabled.",
+    ),
+    "Database:NoSQL:ConnectionString": ConfigKeyDocumentation(
+        description="NoSQL database connection string used by the API invoice document store.",
+        usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
+    ),
+    "Database:SQL:ConnectionString": ConfigKeyDocumentation(
+        description="SQL database connection string used by the API authentication and relational storage flows.",
+        usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
+    ),
+    "Identity:Tenant:Id": ConfigKeyDocumentation(
+        description="Identity tenant identifier used by API cloud integrations.",
         usage=(
-            "API-only. Required when the backend resolves Azure resources or "
+            "API-only. Required when the backend resolves cloud resources or "
             "validates tenant-bound managed identity flows."
         ),
     ),
-    "Communication:Resend:ApiKey": ConfigKeyDocumentation(
-        description="Optional Resend API key used by website server-side email features.",
-        usage="Website run-time only. Empty string means email delivery is intentionally disabled.",
+    "Observability:Telemetry:Endpoint": ConfigKeyDocumentation(
+        description="Telemetry endpoint used by the API observability exporters.",
+        usage="API-only. Feed this value into telemetry configuration, not into business logic.",
     ),
-    "Endpoints:Api": ConfigKeyDocumentation(
+    "Service:Api:Url": ConfigKeyDocumentation(
         description="Base URL of the backend API that the website calls from server-only code.",
         usage=(
             "Website-only. Use this value for server-to-server fetches instead "
             "of hard-coding environment-specific API URLs."
         ),
     ),
-    "Endpoints:ApplicationInsights": ConfigKeyDocumentation(
-        description="Application Insights endpoint used by the API telemetry exporters.",
-        usage="API-only. Feed this value into telemetry configuration, not into business logic.",
-    ),
-    "Endpoints:CognitiveServices": ConfigKeyDocumentation(
-        description="Azure AI / Cognitive Services endpoint used by API OCR and enrichment flows.",
-        usage=(
-            "API-only. Keep this endpoint inside the backend boundary and pair "
-            "it with managed identity or the documented key when required."
+    "Storage:Blob:Endpoint": ConfigKeyDocumentation(
+        description=(
+            "Blob storage endpoint used by both API and website for persisted "
+            "binary assets and server-side storage helpers."
         ),
-    ),
-    "Endpoints:CognitiveServices:Key": ConfigKeyDocumentation(
-        description="Credential for API integrations that still require a Cognitive Services key.",
         usage=(
-            "API-only and server-only. Prefer managed identity when supported, "
-            "and never expose or log this secret value."
+            "Safe for server-side rendering and upload helpers, "
+            "but do not expose raw storage clients to browser code."
         ),
-    ),
-    "Endpoints:NoSqlServer": ConfigKeyDocumentation(
-        description="Azure Cosmos DB connection string used by the API invoice document store.",
-        usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
-    ),
-    "Endpoints:OpenAI": ConfigKeyDocumentation(
-        description="Azure OpenAI endpoint used by API analysis and classification brokers.",
-        usage="API-only. Use from backend broker code and keep AI endpoint resolution out of client-facing surfaces.",
-    ),
-    "Endpoints:SqlServer": ConfigKeyDocumentation(
-        description="Azure SQL connection string used by the API authentication and relational storage flows.",
-        usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
-    ),
-    "Endpoints:StorageAccount": ConfigKeyDocumentation(
-        description="Azure Blob Storage endpoint used by the API for persisted binary assets.",
-        usage="API-only. Used by storage brokers and upload flows, not by browser code.",
     ),
 }
 
