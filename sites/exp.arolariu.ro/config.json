@@ -3,11 +3,11 @@
   "Auth:JWT:Issuer": "https://localhost:5000",
   "Auth:JWT:Audience": "https://localhost:3000",
   "Identity:Tenant:Id": "",
-  "Storage:Blob:Endpoint": "http://127.0.0.1:10000/devstoreaccount1",
-  "Database:SQL:ConnectionString": "Server=localhost,8082;Database=arolariu;User Id=<sql-user>;Password=<sql-password>;TrustServerCertificate=true;",
-  "Database:NoSQL:ConnectionString": "AccountEndpoint=https://localhost:8081/;AccountKey=<cosmos-account-key>;",
-  "Observability:Telemetry:Endpoint": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://localhost/;LiveEndpoint=https://localhost/;ApplicationId=local-development",
-  "AI:OpenAI:Endpoint": "https://openai.localhost/",
-  "AI:OCR:Endpoint": "https://cognitiveservices.localhost/",
-  "AI:OCR:Key": "local-development-cognitive-services-key"
+  "Endpoint:Storage:Blob": "http://127.0.0.1:10000/devstoreaccount1",
+  "Endpoint:Database:SQL": "Server=localhost,8082;Database=arolariu;User Id=<sql-user>;Password=<sql-password>;TrustServerCertificate=true;",
+  "Endpoint:Database:NoSQL": "AccountEndpoint=https://localhost:8081/;AccountKey=<cosmos-account-key>;",
+  "Endpoint:Observability:Telemetry": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://localhost/;LiveEndpoint=https://localhost/;ApplicationId=local-development",
+  "Endpoint:AI:OpenAI": "https://openai.localhost/",
+  "Endpoint:AI:OCR": "https://cognitiveservices.localhost/",
+  "Endpoint:AI:OCR:Key": "local-development-cognitive-services-key"
 }

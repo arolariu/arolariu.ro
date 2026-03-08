@@ -15,11 +15,11 @@ def _encode_principal(identifier: str) -> str:
 
 
 _FULL_WEBSITE_CONFIG: dict[str, str] = {
-    "Storage:Blob:Endpoint": "http://127.0.0.1:10000",
+    "Endpoint:Storage:Blob": "http://127.0.0.1:10000",
     "Auth:JWT:Issuer": "https://localhost:5000",
     "Auth:JWT:Audience": "https://localhost:3000",
     "Auth:JWT:Secret": "local-secret",
-    "Service:Api:Url": "https://localhost:5000",
+    "Endpoint:Service:Api": "https://localhost:5000",
     "Communication:Email:ApiKey": "",
     "FeatureManagement:website.commander.enabled": "true",
     "FeatureManagement:website.web-vitals.enabled": "false",

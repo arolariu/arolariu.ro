@@ -154,29 +154,29 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
             "Auth:JWT:Issuer",
             "Auth:JWT:Audience",
             "Identity:Tenant:Id",
-            "AI:OpenAI:Endpoint",
-            "Database:SQL:ConnectionString",
-            "Database:NoSQL:ConnectionString",
-            "Storage:Blob:Endpoint",
-            "Observability:Telemetry:Endpoint",
-            "AI:OCR:Endpoint",
-            "AI:OCR:Key",
+            "Endpoint:AI:OpenAI",
+            "Endpoint:Database:SQL",
+            "Endpoint:Database:NoSQL",
+            "Endpoint:Storage:Blob",
+            "Endpoint:Observability:Telemetry",
+            "Endpoint:AI:OCR",
+            "Endpoint:AI:OCR:Key",
         ],
     ),
     "website": _build_index(
         target="website",
         build_time_required_keys=[
-            "Storage:Blob:Endpoint",
+            "Endpoint:Storage:Blob",
             "Auth:JWT:Issuer",
             "Auth:JWT:Audience",
-            "Service:Api:Url",
+            "Endpoint:Service:Api",
         ],
         runtime_required_keys=[
-            "Storage:Blob:Endpoint",
+            "Endpoint:Storage:Blob",
             "Auth:JWT:Issuer",
             "Auth:JWT:Audience",
             "Auth:JWT:Secret",
-            "Service:Api:Url",
+            "Endpoint:Service:Api",
         ],
         runtime_optional_keys=[
             "Communication:Email:ApiKey",
@@ -189,24 +189,6 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
 }
 
 _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
-    "AI:OCR:Endpoint": ConfigKeyDocumentation(
-        description="OCR endpoint used by API document analysis and enrichment flows.",
-        usage=(
-            "API-only. Keep this endpoint inside the backend boundary and pair "
-            "it with managed identity or the documented key when required."
-        ),
-    ),
-    "AI:OCR:Key": ConfigKeyDocumentation(
-        description="Credential for API integrations that still require an OCR service key.",
-        usage=(
-            "API-only and server-only. Prefer managed identity when supported, "
-            "and never expose or log this secret value."
-        ),
-    ),
-    "AI:OpenAI:Endpoint": ConfigKeyDocumentation(
-        description="OpenAI endpoint used by API analysis and classification brokers.",
-        usage="API-only. Use from backend broker code and keep AI endpoint resolution out of client-facing surfaces.",
-    ),
     "Auth:JWT:Audience": ConfigKeyDocumentation(
         description="JWT audience used by both API and website server-side auth flows.",
         usage=(
@@ -229,40 +211,67 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
         description="Optional email API key used by website server-side email features.",
         usage="Website run-time only. Empty string means email delivery is intentionally disabled.",
     ),
-    "Database:NoSQL:ConnectionString": ConfigKeyDocumentation(
-        description="NoSQL database connection string used by the API invoice document store.",
+    "Endpoint:AI:OCR": ConfigKeyDocumentation(
+        description="OCR endpoint under the Endpoint hierarchy, used by API document analysis and enrichment flows.",
+        usage=(
+            "API-only. Keep this endpoint inside the backend boundary and pair "
+            "it with managed identity or the documented key when required."
+        ),
+    ),
+    "Endpoint:AI:OCR:Key": ConfigKeyDocumentation(
+        description=(
+            "Credential under the Endpoint hierarchy for API integrations "
+            "that still require an OCR service key."
+        ),
+        usage=(
+            "API-only and server-only. Prefer managed identity when supported, "
+            "and never expose or log this secret value."
+        ),
+    ),
+    "Endpoint:AI:OpenAI": ConfigKeyDocumentation(
+        description="OpenAI endpoint under the Endpoint hierarchy, used by API analysis and classification brokers.",
+        usage="API-only. Use from backend broker code and keep AI endpoint resolution out of client-facing surfaces.",
+    ),
+    "Endpoint:Database:NoSQL": ConfigKeyDocumentation(
+        description="NoSQL database endpoint under the Endpoint hierarchy, used by the API invoice document store.",
         usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
     ),
-    "Database:SQL:ConnectionString": ConfigKeyDocumentation(
-        description="SQL database connection string used by the API authentication and relational storage flows.",
+    "Endpoint:Database:SQL": ConfigKeyDocumentation(
+        description=(
+            "SQL database endpoint under the Endpoint hierarchy, used by the API "
+            "authentication and relational storage flows."
+        ),
         usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
+    ),
+    "Endpoint:Observability:Telemetry": ConfigKeyDocumentation(
+        description="Telemetry endpoint under the Endpoint hierarchy, used by the API observability exporters.",
+        usage="API-only. Feed this value into telemetry configuration, not into business logic.",
+    ),
+    "Endpoint:Service:Api": ConfigKeyDocumentation(
+        description=(
+            "Base URL of the backend API under the Endpoint hierarchy, "
+            "called by the website from server-only code."
+        ),
+        usage=(
+            "Website-only. Use this value for server-to-server fetches instead "
+            "of hard-coding environment-specific API URLs."
+        ),
+    ),
+    "Endpoint:Storage:Blob": ConfigKeyDocumentation(
+        description=(
+            "Blob storage endpoint under the Endpoint hierarchy, used by both API and website for persisted "
+            "binary assets and server-side storage helpers."
+        ),
+        usage=(
+            "Safe for server-side rendering and upload helpers, "
+            "but do not expose raw storage clients to browser code."
+        ),
     ),
     "Identity:Tenant:Id": ConfigKeyDocumentation(
         description="Identity tenant identifier used by API cloud integrations.",
         usage=(
             "API-only. Required when the backend resolves cloud resources or "
             "validates tenant-bound managed identity flows."
-        ),
-    ),
-    "Observability:Telemetry:Endpoint": ConfigKeyDocumentation(
-        description="Telemetry endpoint used by the API observability exporters.",
-        usage="API-only. Feed this value into telemetry configuration, not into business logic.",
-    ),
-    "Service:Api:Url": ConfigKeyDocumentation(
-        description="Base URL of the backend API that the website calls from server-only code.",
-        usage=(
-            "Website-only. Use this value for server-to-server fetches instead "
-            "of hard-coding environment-specific API URLs."
-        ),
-    ),
-    "Storage:Blob:Endpoint": ConfigKeyDocumentation(
-        description=(
-            "Blob storage endpoint used by both API and website for persisted "
-            "binary assets and server-side storage helpers."
-        ),
-        usage=(
-            "Safe for server-side rendering and upload helpers, "
-            "but do not expose raw storage clients to browser code."
         ),
     ),
 }

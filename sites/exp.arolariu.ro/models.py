@@ -124,32 +124,44 @@ class ApiBuildTimeConfig(ExpModel):
         description="Identity tenant identifier used by cloud-dependent API integrations.",
     )
     open_ai_endpoint: str = Field(
-        alias="AI:OpenAI:Endpoint",
-        description="OpenAI endpoint used by invoice analysis and classifier brokers.",
+        alias="Endpoint:AI:OpenAI",
+        description="OpenAI endpoint under the Endpoint hierarchy, used by invoice analysis and classifier brokers.",
     )
     sql_server_connection_string: str = Field(
-        alias="Database:SQL:ConnectionString",
-        description="SQL connection string used by the API authentication and relational data flows.",
+        alias="Endpoint:Database:SQL",
+        description=(
+            "SQL database endpoint under the Endpoint hierarchy, "
+            "used by the API authentication and relational data flows."
+        ),
     )
     no_sql_server_connection_string: str = Field(
-        alias="Database:NoSQL:ConnectionString",
-        description="NoSQL database connection string used by invoice document storage flows.",
+        alias="Endpoint:Database:NoSQL",
+        description="NoSQL database endpoint under the Endpoint hierarchy, used by invoice document storage flows.",
     )
     storage_account_endpoint: str = Field(
-        alias="Storage:Blob:Endpoint",
-        description="Blob storage endpoint used for invoice scans and other persisted binary assets.",
+        alias="Endpoint:Storage:Blob",
+        description=(
+            "Blob storage endpoint under the Endpoint hierarchy, "
+            "used for invoice scans and other persisted binary assets."
+        ),
     )
     application_insights_endpoint: str = Field(
-        alias="Observability:Telemetry:Endpoint",
-        description="Telemetry connection endpoint used by observability exporters.",
+        alias="Endpoint:Observability:Telemetry",
+        description="Telemetry endpoint under the Endpoint hierarchy, used by observability exporters.",
     )
     cognitive_services_endpoint: str = Field(
-        alias="AI:OCR:Endpoint",
-        description="OCR endpoint used by document analysis and related enrichment flows.",
+        alias="Endpoint:AI:OCR",
+        description=(
+            "OCR endpoint under the Endpoint hierarchy, "
+            "used by document analysis and related enrichment flows."
+        ),
     )
     cognitive_services_key: str = Field(
-        alias="AI:OCR:Key",
-        description="Credential used by the API when an OCR integration still requires a key.",
+        alias="Endpoint:AI:OCR:Key",
+        description=(
+            "Credential under the Endpoint hierarchy, used by the API "
+            "when an OCR integration still requires a key."
+        ),
     )
 
 
@@ -170,8 +182,11 @@ class WebsiteBuildTimeConfig(ExpModel):
     """
 
     storage_account_endpoint: str = Field(
-        alias="Storage:Blob:Endpoint",
-        description="Blob storage endpoint used by server-side upload helpers and storage clients.",
+        alias="Endpoint:Storage:Blob",
+        description=(
+            "Blob storage endpoint under the Endpoint hierarchy, "
+            "used by server-side upload helpers and storage clients."
+        ),
     )
     jwt_issuer: str = Field(
         alias="Auth:JWT:Issuer",
@@ -182,8 +197,11 @@ class WebsiteBuildTimeConfig(ExpModel):
         description="Audience value used for server-side JWT validation and issuance flows.",
     )
     api_endpoint: str = Field(
-        alias="Service:Api:Url",
-        description="Base URL of the API service that the website calls from server-side code.",
+        alias="Endpoint:Service:Api",
+        description=(
+            "Base URL of the API service under the Endpoint hierarchy, "
+            "called by the website from server-side code."
+        ),
     )
 
 
@@ -271,7 +289,7 @@ class ConfigValueResponse(ExpModel):
     which callers are allowed to request it.
     """
 
-    name: str = Field(description="Canonical configuration key name, for example ``Service:Api:Url``.")
+    name: str = Field(description="Canonical configuration key name, for example ``Endpoint:Service:Api``.")
     value: str = Field(description="Resolved configuration value for the requested key.")
     availableForTargets: tuple[str, ...] = Field(
         description="Targets allowed to request this configuration key through the config endpoint.",
