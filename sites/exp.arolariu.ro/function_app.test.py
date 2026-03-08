@@ -16,10 +16,10 @@ def mock_config(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Mock config dependencies for probe and routing tests."""
 
     test_config = {
-        "Endpoint:Storage:Blob": "http://127.0.0.1:10000",
+        "Endpoints:Storage:Blob": "http://127.0.0.1:10000",
         "Auth:JWT:Issuer": "https://localhost:5000",
         "Auth:JWT:Audience": "https://localhost:3000",
-        "Endpoint:Service:Api": "https://localhost:5000",
+        "Endpoints:Service:Api": "https://localhost:5000",
     }
 
     with (
@@ -65,10 +65,10 @@ class TestOperationalProbes:
 
     def test_health_tracks_served_config_metrics(self, client: TestClient):
         website_config = {
-            "Endpoint:Storage:Blob": "http://127.0.0.1:10000",
+            "Endpoints:Storage:Blob": "http://127.0.0.1:10000",
             "Auth:JWT:Issuer": "https://localhost:5000",
             "Auth:JWT:Audience": "https://localhost:3000",
-            "Endpoint:Service:Api": "https://localhost:5000",
+            "Endpoints:Service:Api": "https://localhost:5000",
         }
 
         with (
@@ -82,7 +82,7 @@ class TestOperationalProbes:
             )
             config_response = client.get(
                 "/api/v1/config",
-                params={"name": "Endpoint:Service:Api"},
+                params={"name": "Endpoints:Service:Api"},
                 headers={"X-Exp-Target": "website"},
             )
 
@@ -99,7 +99,7 @@ class TestOperationalProbes:
         assert body["configResponsesByCaller"] == {"local:website": 2}
         assert body["configValuesByTarget"] == {"website": 5}
         assert body["configValuesByCaller"] == {"local:website": 5}
-        assert body["configValuesByName"]["Endpoint:Service:Api"] == 2
+        assert body["configValuesByName"]["Endpoints:Service:Api"] == 2
         assert body["requestsServed"] == 3
 
 

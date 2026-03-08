@@ -154,29 +154,29 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
             "Auth:JWT:Issuer",
             "Auth:JWT:Audience",
             "Identity:Tenant:Id",
-            "Endpoint:AI:OpenAI",
-            "Endpoint:Database:SQL",
-            "Endpoint:Database:NoSQL",
-            "Endpoint:Storage:Blob",
-            "Endpoint:Observability:Telemetry",
-            "Endpoint:AI:OCR",
-            "Endpoint:AI:OCR:Key",
+            "Endpoints:AI:OpenAI",
+            "Endpoints:Database:SQL",
+            "Endpoints:Database:NoSQL",
+            "Endpoints:Storage:Blob",
+            "Endpoints:Observability:Telemetry",
+            "Endpoints:AI:OCR",
+            "Endpoints:AI:OCR:Key",
         ],
     ),
     "website": _build_index(
         target="website",
         build_time_required_keys=[
-            "Endpoint:Storage:Blob",
+            "Endpoints:Storage:Blob",
             "Auth:JWT:Issuer",
             "Auth:JWT:Audience",
-            "Endpoint:Service:Api",
+            "Endpoints:Service:Api",
         ],
         runtime_required_keys=[
-            "Endpoint:Storage:Blob",
+            "Endpoints:Storage:Blob",
             "Auth:JWT:Issuer",
             "Auth:JWT:Audience",
             "Auth:JWT:Secret",
-            "Endpoint:Service:Api",
+            "Endpoints:Service:Api",
         ],
         runtime_optional_keys=[
             "Communication:Email:ApiKey",
@@ -211,14 +211,14 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
         description="Optional email API key used by website server-side email features.",
         usage="Website run-time only. Empty string means email delivery is intentionally disabled.",
     ),
-    "Endpoint:AI:OCR": ConfigKeyDocumentation(
+    "Endpoints:AI:OCR": ConfigKeyDocumentation(
         description="OCR endpoint under the Endpoint hierarchy, used by API document analysis and enrichment flows.",
         usage=(
             "API-only. Keep this endpoint inside the backend boundary and pair "
             "it with managed identity or the documented key when required."
         ),
     ),
-    "Endpoint:AI:OCR:Key": ConfigKeyDocumentation(
+    "Endpoints:AI:OCR:Key": ConfigKeyDocumentation(
         description=(
             "Credential under the Endpoint hierarchy for API integrations "
             "that still require an OCR service key."
@@ -228,26 +228,26 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
             "and never expose or log this secret value."
         ),
     ),
-    "Endpoint:AI:OpenAI": ConfigKeyDocumentation(
+    "Endpoints:AI:OpenAI": ConfigKeyDocumentation(
         description="OpenAI endpoint under the Endpoint hierarchy, used by API analysis and classification brokers.",
         usage="API-only. Use from backend broker code and keep AI endpoint resolution out of client-facing surfaces.",
     ),
-    "Endpoint:Database:NoSQL": ConfigKeyDocumentation(
+    "Endpoints:Database:NoSQL": ConfigKeyDocumentation(
         description="NoSQL database endpoint under the Endpoint hierarchy, used by the API invoice document store.",
         usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
     ),
-    "Endpoint:Database:SQL": ConfigKeyDocumentation(
+    "Endpoints:Database:SQL": ConfigKeyDocumentation(
         description=(
             "SQL database endpoint under the Endpoint hierarchy, used by the API "
             "authentication and relational storage flows."
         ),
         usage="API-only and server-only. Treat the value as secret infrastructure configuration.",
     ),
-    "Endpoint:Observability:Telemetry": ConfigKeyDocumentation(
+    "Endpoints:Observability:Telemetry": ConfigKeyDocumentation(
         description="Telemetry endpoint under the Endpoint hierarchy, used by the API observability exporters.",
         usage="API-only. Feed this value into telemetry configuration, not into business logic.",
     ),
-    "Endpoint:Service:Api": ConfigKeyDocumentation(
+    "Endpoints:Service:Api": ConfigKeyDocumentation(
         description=(
             "Base URL of the backend API under the Endpoint hierarchy, "
             "called by the website from server-only code."
@@ -257,7 +257,7 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
             "of hard-coding environment-specific API URLs."
         ),
     ),
-    "Endpoint:Storage:Blob": ConfigKeyDocumentation(
+    "Endpoints:Storage:Blob": ConfigKeyDocumentation(
         description=(
             "Blob storage endpoint under the Endpoint hierarchy, used by both API and website for persisted "
             "binary assets and server-side storage helpers."

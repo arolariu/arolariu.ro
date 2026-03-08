@@ -88,7 +88,7 @@ class TestConfigRegistry:
         assert "website.run-time" in definition.required_in_documents
 
     def test_unique_endpoint_key_is_registered_for_website_only(self):
-        definition = catalog.get_config_definition("Endpoint:Service:Api")
+        definition = catalog.get_config_definition("Endpoints:Service:Api")
 
         assert definition is not None
         assert definition.available_for_targets == ("website",)

@@ -124,40 +124,40 @@ class ApiBuildTimeConfig(ExpModel):
         description="Identity tenant identifier used by cloud-dependent API integrations.",
     )
     open_ai_endpoint: str = Field(
-        alias="Endpoint:AI:OpenAI",
+        alias="Endpoints:AI:OpenAI",
         description="OpenAI endpoint under the Endpoint hierarchy, used by invoice analysis and classifier brokers.",
     )
     sql_server_connection_string: str = Field(
-        alias="Endpoint:Database:SQL",
+        alias="Endpoints:Database:SQL",
         description=(
             "SQL database endpoint under the Endpoint hierarchy, "
             "used by the API authentication and relational data flows."
         ),
     )
     no_sql_server_connection_string: str = Field(
-        alias="Endpoint:Database:NoSQL",
+        alias="Endpoints:Database:NoSQL",
         description="NoSQL database endpoint under the Endpoint hierarchy, used by invoice document storage flows.",
     )
     storage_account_endpoint: str = Field(
-        alias="Endpoint:Storage:Blob",
+        alias="Endpoints:Storage:Blob",
         description=(
             "Blob storage endpoint under the Endpoint hierarchy, "
             "used for invoice scans and other persisted binary assets."
         ),
     )
     application_insights_endpoint: str = Field(
-        alias="Endpoint:Observability:Telemetry",
+        alias="Endpoints:Observability:Telemetry",
         description="Telemetry endpoint under the Endpoint hierarchy, used by observability exporters.",
     )
     cognitive_services_endpoint: str = Field(
-        alias="Endpoint:AI:OCR",
+        alias="Endpoints:AI:OCR",
         description=(
             "OCR endpoint under the Endpoint hierarchy, "
             "used by document analysis and related enrichment flows."
         ),
     )
     cognitive_services_key: str = Field(
-        alias="Endpoint:AI:OCR:Key",
+        alias="Endpoints:AI:OCR:Key",
         description=(
             "Credential under the Endpoint hierarchy, used by the API "
             "when an OCR integration still requires a key."
@@ -182,7 +182,7 @@ class WebsiteBuildTimeConfig(ExpModel):
     """
 
     storage_account_endpoint: str = Field(
-        alias="Endpoint:Storage:Blob",
+        alias="Endpoints:Storage:Blob",
         description=(
             "Blob storage endpoint under the Endpoint hierarchy, "
             "used by server-side upload helpers and storage clients."
@@ -197,7 +197,7 @@ class WebsiteBuildTimeConfig(ExpModel):
         description="Audience value used for server-side JWT validation and issuance flows.",
     )
     api_endpoint: str = Field(
-        alias="Endpoint:Service:Api",
+        alias="Endpoints:Service:Api",
         description=(
             "Base URL of the API service under the Endpoint hierarchy, "
             "called by the website from server-side code."
@@ -289,7 +289,7 @@ class ConfigValueResponse(ExpModel):
     which callers are allowed to request it.
     """
 
-    name: str = Field(description="Canonical configuration key name, for example ``Endpoint:Service:Api``.")
+    name: str = Field(description="Canonical configuration key name, for example ``Endpoints:Service:Api``.")
     value: str = Field(description="Resolved configuration value for the requested key.")
     availableForTargets: tuple[str, ...] = Field(
         description="Targets allowed to request this configuration key through the config endpoint.",

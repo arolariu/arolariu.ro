@@ -11,7 +11,7 @@ _CONFIG_SNAPSHOT: dict[str, str] = {
     "Auth:JWT:Secret": "local-secret",
     "Auth:JWT:Issuer": "https://localhost:5000",
     "Auth:JWT:Audience": "https://localhost:3000",
-    "Endpoint:Service:Api": "https://localhost:5000",
+    "Endpoints:Service:Api": "https://localhost:5000",
 }
 
 
@@ -49,7 +49,7 @@ class TestConfigAuthorization:
         """Local mode should enforce the shared token when it is configured."""
 
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
-            response = client.get("/api/v1/config", params={"name": "Endpoint:Service:Api"})
+            response = client.get("/api/v1/config", params={"name": "Endpoints:Service:Api"})
 
         assert response.status_code == 401
         assert response.json()["error"] == "Missing or invalid local token."
@@ -76,7 +76,7 @@ class TestConfigAuthorization:
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
             response = client.get(
                 "/api/v1/config",
-                params={"name": "Endpoint:Service:Api"},
+                params={"name": "Endpoints:Service:Api"},
                 headers={
                     "X-Exp-Local-Token": "local-dev-token",
                     "X-Exp-Target": "api",
@@ -97,13 +97,13 @@ class TestConfigContract:
         with patch("api.config.get_config", return_value=_CONFIG_SNAPSHOT):
             response = client.get(
                 "/api/v1/config",
-                params={"name": "Endpoint:Service:Api"},
+                params={"name": "Endpoints:Service:Api"},
                 headers={"X-Exp-Local-Token": "local-dev-token"},
             )
 
         assert response.status_code == 200
         payload = response.json()
-        assert payload["name"] == "Endpoint:Service:Api"
+        assert payload["name"] == "Endpoints:Service:Api"
         assert payload["value"] == "https://localhost:5000"
         assert payload["availableForTargets"] == ["website"]
         assert payload["availableInDocuments"] == ["website.build-time", "website.run-time"]
