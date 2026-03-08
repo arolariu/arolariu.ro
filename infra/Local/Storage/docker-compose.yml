@@ -23,7 +23,7 @@ services:
       MSSQL_SA_PASSWORD: "qazWSXedcRFV1234!"
       ACCEPT_EULA: "Y"
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P qazWSXedcRFV1234! -Q \"SELECT 1\" -No"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -No"]
       interval: 30s
       timeout: 10s
       retries: 2
