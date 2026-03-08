@@ -50,7 +50,7 @@ describe("expServerConfig.server", () => {
       const result = await fetchApiUrl();
 
       expect(result).toBe("https://api.arolariu.ro");
-      expect(mockFetchConfigValue).toHaveBeenCalledWith("Endpoint:Service:Api");
+      expect(mockFetchConfigValue).toHaveBeenCalledWith("Endpoints:Service:Api");
     });
 
     it("falls back to API_URL env var when exp returns an empty string", async () => {

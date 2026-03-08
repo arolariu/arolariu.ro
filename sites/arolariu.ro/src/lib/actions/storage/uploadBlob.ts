@@ -43,7 +43,7 @@ export default async function uploadBlob(payload: ServerActionInputType): Server
     const originalFile = await convertBase64ToBlob(base64Data);
 
     const storageCredentials = getAzureCredential();
-    const storageEndpoint = await fetchConfigurationValue("Endpoint:Storage:Blob");
+    const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
     const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
     const containerClient = storageClient.getContainerClient(containerName);

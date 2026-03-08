@@ -46,7 +46,7 @@ describe("fetchBlob", () => {
   it("should fetch a blob successfully", async () => {
     const result = await fetchBlob({containerName: "test-container", blobName: "test-blob.png"});
 
-    expect(fetchConfigurationValue).toHaveBeenCalledWith("Endpoint:Storage:Blob");
+    expect(fetchConfigurationValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
     expect(BlobServiceClient).toHaveBeenCalledWith("https://test.blob.core.windows.net", expect.any(Object));
     expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
     expect(mockGetBlockBlobClient).toHaveBeenCalledWith("test-blob.png");

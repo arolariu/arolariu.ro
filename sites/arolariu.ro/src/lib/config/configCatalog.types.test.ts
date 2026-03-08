@@ -11,7 +11,7 @@ describe("isConfigValueResponse", () => {
   it("returns true for a valid single-key config payload", () => {
     expect(
       isConfigValueResponse({
-        name: "Endpoint:Service:Api",
+        name: "Endpoints:Service:Api",
         value: "https://api.example.test",
         availableForTargets: ["website"],
         availableInDocuments: ["website.build-time", "website.run-time"],
@@ -32,7 +32,7 @@ describe("isConfigValueResponse", () => {
   it("returns false when array metadata contains non-string values", () => {
     expect(
       isConfigValueResponse({
-        name: "Endpoint:Service:Api",
+        name: "Endpoints:Service:Api",
         value: "https://api.example.test",
         availableForTargets: [42],
         availableInDocuments: ["website.build-time"],
@@ -48,7 +48,7 @@ describe("isConfigValueResponse", () => {
   it("returns false when refresh interval is not numeric", () => {
     expect(
       isConfigValueResponse({
-        name: "Endpoint:Service:Api",
+        name: "Endpoints:Service:Api",
         value: "https://api.example.test",
         availableForTargets: ["website"],
         availableInDocuments: ["website.build-time"],

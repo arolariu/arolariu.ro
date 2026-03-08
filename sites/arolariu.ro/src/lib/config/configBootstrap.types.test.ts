@@ -16,8 +16,8 @@ const validBootstrap = {
   contractVersion: "1",
   version: "v3",
   config: {
-    "Endpoint:Service:Api": "https://api.arolariu.ro",
-    "Endpoint:Storage:Blob": "https://storage.example.com",
+    "Endpoints:Service:Api": "https://api.arolariu.ro",
+    "Endpoints:Storage:Blob": "https://storage.example.com",
   },
   features: {
     "website.commander.enabled": true,

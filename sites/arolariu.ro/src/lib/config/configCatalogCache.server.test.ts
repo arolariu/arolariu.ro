@@ -8,7 +8,7 @@ import {describe, expect, it} from "vitest";
 import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "./configCatalogCache.server";
 
 const samplePayload = {
-  name: "Endpoint:Service:Api",
+  name: "Endpoints:Service:Api",
   value: "https://api.example.test",
   availableForTargets: ["website"],
   availableInDocuments: ["website.build-time", "website.run-time"],
@@ -22,30 +22,30 @@ const samplePayload = {
 describe("configCatalogCache.server", () => {
   it("stores and retrieves a config value entry", () => {
     invalidateConfigValueCache();
-    setCachedConfigValue("Endpoint:Service:Api", samplePayload);
+    setCachedConfigValue("Endpoints:Service:Api", samplePayload);
 
-    expect(getCachedConfigValue("Endpoint:Service:Api")).toEqual(samplePayload);
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toEqual(samplePayload);
   });
 
   it("returns null for missing entries", () => {
     invalidateConfigValueCache();
-    expect(getCachedConfigValue("Endpoint:Service:Api")).toBeNull();
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toBeNull();
   });
 
   it("returns null for stale entries", () => {
     invalidateConfigValueCache();
-    setCachedConfigValue("Endpoint:Service:Api", {...samplePayload, refreshIntervalSeconds: 0});
+    setCachedConfigValue("Endpoints:Service:Api", {...samplePayload, refreshIntervalSeconds: 0});
 
-    expect(getCachedConfigValue("Endpoint:Service:Api")).toBeNull();
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toBeNull();
   });
 
   it("invalidates by key and globally", () => {
     invalidateConfigValueCache();
-    setCachedConfigValue("Endpoint:Service:Api", samplePayload);
+    setCachedConfigValue("Endpoints:Service:Api", samplePayload);
     setCachedConfigValue("Auth:JWT:Secret", {...samplePayload, name: "Auth:JWT:Secret"});
 
-    invalidateConfigValueCache("Endpoint:Service:Api");
-    expect(getCachedConfigValue("Endpoint:Service:Api")).toBeNull();
+    invalidateConfigValueCache("Endpoints:Service:Api");
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toBeNull();
     expect(getCachedConfigValue("Auth:JWT:Secret")?.name).toBe("Auth:JWT:Secret");
 
     invalidateConfigValueCache();

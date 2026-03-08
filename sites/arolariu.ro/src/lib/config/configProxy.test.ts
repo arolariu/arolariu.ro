@@ -41,17 +41,17 @@ describe("configProxy", () => {
   it("fetches one config value and returns the resolved value", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoint:Storage:Blob", "https://storage.example.test")));
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Storage:Blob", "https://storage.example.test")));
     vi.stubGlobal("fetch", fetchMock);
 
     const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
-    const value = await fetchConfigValue("Endpoint:Storage:Blob");
+    const value = await fetchConfigValue("Endpoints:Storage:Blob");
 
     expect(value).toBe("https://storage.example.test");
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect((fetchMock.mock.calls[0] as [string])[0]).toContain("/api/v1/config?name=Endpoint%3AStorage%3ABlob");
+    expect((fetchMock.mock.calls[0] as [string])[0]).toContain("/api/v1/config?name=Endpoints%3AStorage%3ABlob");
   });
 
   it("returns cached values without an additional network call", async () => {
@@ -130,13 +130,13 @@ describe("configProxy", () => {
   it("uses http://exp when AZURE_CLIENT_ID is not set", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoint:Service:Api", "https://api.example.test")));
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "https://api.example.test")));
     vi.stubGlobal("fetch", fetchMock);
 
     const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
-    await fetchConfigValue("Endpoint:Service:Api");
+    await fetchConfigValue("Endpoints:Service:Api");
 
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("http://exp");
   });
@@ -153,13 +153,13 @@ describe("configProxy", () => {
 
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoint:Service:Api", "https://api.example.test")));
+      .mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "https://api.example.test")));
     vi.stubGlobal("fetch", fetchMock);
 
     const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
     invalidateConfigCache();
 
-    await fetchConfigValue("Endpoint:Service:Api");
+    await fetchConfigValue("Endpoints:Service:Api");
 
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("https://exp.arolariu.ro");
   });

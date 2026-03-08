@@ -33,7 +33,7 @@ type ServerActionOutputType = Promise<
  */
 export default async function fetchBlob({containerName, blobName}: ServerActionInputType): ServerActionOutputType {
   try {
-    const storageEndpoint = await fetchConfigurationValue("Endpoint:Storage:Blob");
+    const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
     const storageCredentials = getAzureCredential();
     const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
 

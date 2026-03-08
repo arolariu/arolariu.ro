@@ -113,7 +113,7 @@ export async function createInvoiceScan({base64Data, metadata, blobName}: Server
       // Step 1. Prepare for blob upload
       const containerName = "invoices";
       const storageCredentials = getAzureCredential();
-      const storageEndpoint = await fetchConfigurationValue("Endpoint:Storage:Blob");
+      const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
       // Step 2. Upload the blob to Azure Storage
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
       const containerClient = storageClient.getContainerClient(containerName);

@@ -72,7 +72,7 @@ describe("uploadBlob", () => {
     });
 
     expect(mockConvertBase64ToBlob).toHaveBeenCalledWith("base64data");
-    expect(fetchConfigurationValue).toHaveBeenCalledWith("Endpoint:Storage:Blob");
+    expect(fetchConfigurationValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
     expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
     expect(mockGetBlockBlobClient).toHaveBeenCalledWith("custom-name.png");
 
