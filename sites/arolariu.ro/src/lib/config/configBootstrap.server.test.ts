@@ -17,7 +17,7 @@ const validRunTimePayload = {
   target: "website",
   contractVersion: "1",
   version: "v3",
-  config: {"Service:Api:Url": "https://api.arolariu.ro"},
+  config: {"Endpoint:Service:Api": "https://api.arolariu.ro"},
   features: {
     "website.commander.enabled": false,
     "website.web-vitals.enabled": true,
@@ -48,7 +48,7 @@ describe("configBootstrap.server", () => {
 
       expect(result.target).toBe("website");
       expect(result.contractVersion).toBe("1");
-      expect(result.config["Service:Api:Url"]).toBe("https://api.arolariu.ro");
+      expect(result.config["Endpoint:Service:Api"]).toBe("https://api.arolariu.ro");
       expect(result.features["website.web-vitals.enabled"]).toBe(true);
     });
 

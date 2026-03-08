@@ -111,7 +111,7 @@ export async function deleteScan({blobUrl}: DeleteScanInput): DeleteScanOutput {
       // Step 4. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
       const storageCredentials = getAzureCredential();
-      const storageEndpoint = await fetchConfigurationValue("Storage:Blob:Endpoint");
+      const storageEndpoint = await fetchConfigurationValue("Endpoint:Storage:Blob");
 
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
       const containerClient = storageClient.getContainerClient(containerName ?? "invoices");

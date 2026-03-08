@@ -11,7 +11,7 @@
  * The values are secrets or internal endpoints — they must stay server-only.
  *
  * exp config keys consumed by the website target:
- *   - `Service:Api:Url`             → backend REST API base URL
+ *   - `Endpoint:Service:Api`         → backend REST API base URL
  *   - `Auth:JWT:Secret`            → HS256 JWT signing secret
  *   - `Communication:Email:ApiKey`  → Resend transactional-email API key (optional)
  *
@@ -28,7 +28,7 @@ import {fetchConfigValue} from "@/lib/config/configProxy";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** exp config key for the backend REST API base URL. */
-const EXP_KEY_API_URL = "Service:Api:Url" as const;
+const EXP_KEY_API_URL = "Endpoint:Service:Api" as const;
 
 /** exp config key for the HS256 JWT signing secret. */
 const EXP_KEY_API_JWT_SECRET = "Auth:JWT:Secret" as const;
@@ -44,7 +44,7 @@ const EXP_KEY_RESEND_API_KEY = "Communication:Email:ApiKey" as const;
  * Returns the backend REST API base URL.
  *
  * @remarks
- * Reads `Service:Api:Url` from exp.  Falls back to `process.env.API_URL` when
+ * Reads `Endpoint:Service:Api` from exp.  Falls back to `process.env.API_URL` when
  * exp is unavailable.
  *
  * @returns Base URL string (e.g. `"https://api.arolariu.ro"`).
