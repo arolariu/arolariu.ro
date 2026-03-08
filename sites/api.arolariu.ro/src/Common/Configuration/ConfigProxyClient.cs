@@ -3,6 +3,7 @@ namespace arolariu.Backend.Common.Configuration;
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,29 +21,50 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
   public async Task<ConfigValueResponse?> GetConfigValueAsync(string name, CancellationToken ct = default)
   {
     var requestUri = new Uri($"/api/v1/config?name={Uri.EscapeDataString(name)}", UriKind.Relative);
-    var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
+    using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
     if (!response.IsSuccessStatusCode) return null;
 
-    return await response.Content.ReadFromJsonAsync<ConfigValueResponse>(cancellationToken: ct).ConfigureAwait(false);
+    try
+    {
+      return await response.Content.ReadFromJsonAsync<ConfigValueResponse>(cancellationToken: ct).ConfigureAwait(false);
+    }
+    catch (JsonException)
+    {
+      return null;
+    }
   }
 
   /// <inheritdoc />
   public async Task<ConfigCatalogResponse?> GetBuildTimeAsync(string target, CancellationToken ct = default)
   {
     var requestUri = new Uri($"/api/v1/build-time?for={Uri.EscapeDataString(target)}", UriKind.Relative);
-    var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
+    using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
     if (!response.IsSuccessStatusCode) return null;
 
-    return await response.Content.ReadFromJsonAsync<ConfigCatalogResponse>(cancellationToken: ct).ConfigureAwait(false);
+    try
+    {
+      return await response.Content.ReadFromJsonAsync<ConfigCatalogResponse>(cancellationToken: ct).ConfigureAwait(false);
+    }
+    catch (JsonException)
+    {
+      return null;
+    }
   }
 
   /// <inheritdoc />
   public async Task<BootstrapResponse?> GetRunTimeAsync(string target, CancellationToken ct = default)
   {
     var requestUri = new Uri($"/api/v1/run-time?for={Uri.EscapeDataString(target)}", UriKind.Relative);
-    var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
+    using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
     if (!response.IsSuccessStatusCode) return null;
 
-    return await response.Content.ReadFromJsonAsync<BootstrapResponse>(cancellationToken: ct).ConfigureAwait(false);
+    try
+    {
+      return await response.Content.ReadFromJsonAsync<BootstrapResponse>(cancellationToken: ct).ConfigureAwait(false);
+    }
+    catch (JsonException)
+    {
+      return null;
+    }
   }
 }
