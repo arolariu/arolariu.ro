@@ -8,7 +8,7 @@ import {describe, expect, it} from "vitest";
 import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "./configCatalogCache.server";
 
 const samplePayload = {
-  name: "Endpoints:Api",
+  name: "Service:Api:Url",
   value: "https://api.example.test",
   availableForTargets: ["website"],
   availableInDocuments: ["website.build-time", "website.run-time"],
@@ -22,33 +22,33 @@ const samplePayload = {
 describe("configCatalogCache.server", () => {
   it("stores and retrieves a config value entry", () => {
     invalidateConfigValueCache();
-    setCachedConfigValue("Endpoints:Api", samplePayload);
+    setCachedConfigValue("Service:Api:Url", samplePayload);
 
-    expect(getCachedConfigValue("Endpoints:Api")).toEqual(samplePayload);
+    expect(getCachedConfigValue("Service:Api:Url")).toEqual(samplePayload);
   });
 
   it("returns null for missing entries", () => {
     invalidateConfigValueCache();
-    expect(getCachedConfigValue("Endpoints:Api")).toBeNull();
+    expect(getCachedConfigValue("Service:Api:Url")).toBeNull();
   });
 
   it("returns null for stale entries", () => {
     invalidateConfigValueCache();
-    setCachedConfigValue("Endpoints:Api", {...samplePayload, refreshIntervalSeconds: 0});
+    setCachedConfigValue("Service:Api:Url", {...samplePayload, refreshIntervalSeconds: 0});
 
-    expect(getCachedConfigValue("Endpoints:Api")).toBeNull();
+    expect(getCachedConfigValue("Service:Api:Url")).toBeNull();
   });
 
   it("invalidates by key and globally", () => {
     invalidateConfigValueCache();
-    setCachedConfigValue("Endpoints:Api", samplePayload);
-    setCachedConfigValue("Common:Auth:Secret", {...samplePayload, name: "Common:Auth:Secret"});
+    setCachedConfigValue("Service:Api:Url", samplePayload);
+    setCachedConfigValue("Auth:JWT:Secret", {...samplePayload, name: "Auth:JWT:Secret"});
 
-    invalidateConfigValueCache("Endpoints:Api");
-    expect(getCachedConfigValue("Endpoints:Api")).toBeNull();
-    expect(getCachedConfigValue("Common:Auth:Secret")?.name).toBe("Common:Auth:Secret");
+    invalidateConfigValueCache("Service:Api:Url");
+    expect(getCachedConfigValue("Service:Api:Url")).toBeNull();
+    expect(getCachedConfigValue("Auth:JWT:Secret")?.name).toBe("Auth:JWT:Secret");
 
     invalidateConfigValueCache();
-    expect(getCachedConfigValue("Common:Auth:Secret")).toBeNull();
+    expect(getCachedConfigValue("Auth:JWT:Secret")).toBeNull();
   });
 });

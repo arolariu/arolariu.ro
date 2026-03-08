@@ -50,7 +50,7 @@ describe("expServerConfig.server", () => {
       const result = await fetchApiUrl();
 
       expect(result).toBe("https://api.arolariu.ro");
-      expect(mockFetchConfigValue).toHaveBeenCalledWith("Endpoints:Api");
+      expect(mockFetchConfigValue).toHaveBeenCalledWith("Service:Api:Url");
     });
 
     it("falls back to API_URL env var when exp returns an empty string", async () => {
@@ -91,7 +91,7 @@ describe("expServerConfig.server", () => {
       const result = await fetchApiJwtSecret();
 
       expect(result).toBe("super-secret-from-exp");
-      expect(mockFetchConfigValue).toHaveBeenCalledWith("Common:Auth:Secret");
+      expect(mockFetchConfigValue).toHaveBeenCalledWith("Auth:JWT:Secret");
     });
 
     it("falls back to API_JWT env var when exp returns empty", async () => {
@@ -132,7 +132,7 @@ describe("expServerConfig.server", () => {
       const result = await fetchResendApiKey();
 
       expect(result).toBe("re_exp_key_value");
-      expect(mockFetchConfigValue).toHaveBeenCalledWith("Communication:Resend:ApiKey");
+      expect(mockFetchConfigValue).toHaveBeenCalledWith("Communication:Email:ApiKey");
     });
 
     it("falls back to RESEND_API_KEY env var when exp returns empty", async () => {

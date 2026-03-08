@@ -106,7 +106,7 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
       addSpanEvent("azure.storage.connect.start");
       const containerName = "invoices";
       const storageCredentials = getAzureCredential();
-      const storageEndpoint = await fetchConfigurationValue("AzureOptions:StorageAccountEndpoint");
+      const storageEndpoint = await fetchConfigurationValue("Storage:Blob:Endpoint");
 
       const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
       const containerClient = storageClient.getContainerClient(containerName);

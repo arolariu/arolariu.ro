@@ -11,9 +11,9 @@
  * The values are secrets or internal endpoints — they must stay server-only.
  *
  * exp config keys consumed by the website target:
- *   - `Endpoints:Api`             → backend REST API base URL
- *   - `Common:Auth:Secret`        → HS256 JWT signing secret
- *   - `Communication:Resend:ApiKey` → Resend transactional-email API key (optional)
+ *   - `Service:Api:Url`             → backend REST API base URL
+ *   - `Auth:JWT:Secret`            → HS256 JWT signing secret
+ *   - `Communication:Email:ApiKey`  → Resend transactional-email API key (optional)
  *
  * @module sites/arolariu.ro/src/lib/config/expServerConfig.server
  */
@@ -28,13 +28,13 @@ import {fetchConfigValue} from "@/lib/config/configProxy";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** exp config key for the backend REST API base URL. */
-const EXP_KEY_API_URL = "Endpoints:Api" as const;
+const EXP_KEY_API_URL = "Service:Api:Url" as const;
 
 /** exp config key for the HS256 JWT signing secret. */
-const EXP_KEY_API_JWT_SECRET = "Common:Auth:Secret" as const;
+const EXP_KEY_API_JWT_SECRET = "Auth:JWT:Secret" as const;
 
 /** exp config key for the Resend transactional-email API key (optional). */
-const EXP_KEY_RESEND_API_KEY = "Communication:Resend:ApiKey" as const;
+const EXP_KEY_RESEND_API_KEY = "Communication:Email:ApiKey" as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API
@@ -44,7 +44,7 @@ const EXP_KEY_RESEND_API_KEY = "Communication:Resend:ApiKey" as const;
  * Returns the backend REST API base URL.
  *
  * @remarks
- * Reads `Endpoints:Api` from exp.  Falls back to `process.env.API_URL` when
+ * Reads `Service:Api:Url` from exp.  Falls back to `process.env.API_URL` when
  * exp is unavailable.
  *
  * @returns Base URL string (e.g. `"https://api.arolariu.ro"`).
@@ -63,7 +63,7 @@ export async function fetchApiUrl(): Promise<string> {
  * Returns the HS256 JWT signing secret used to mint BFF tokens.
  *
  * @remarks
- * Reads `Common:Auth:Secret` from exp.  Falls back to `process.env.API_JWT`
+ * Reads `Auth:JWT:Secret` from exp.  Falls back to `process.env.API_JWT`
  * when exp is unavailable.
  *
  * **Security**: The returned value is a cryptographic secret.  Never log,
@@ -85,7 +85,7 @@ export async function fetchApiJwtSecret(): Promise<string> {
  * Returns the Resend transactional-email API key.
  *
  * @remarks
- * Reads `Communication:Resend:ApiKey` from exp (optional config key).
+ * Reads `Communication:Email:ApiKey` from exp (optional config key).
  * Falls back to `process.env.RESEND_API_KEY` when exp is unavailable or
  * the key is absent from the exp registry.
  *

@@ -72,7 +72,7 @@ describe("uploadBlob", () => {
     });
 
     expect(mockConvertBase64ToBlob).toHaveBeenCalledWith("base64data");
-    expect(fetchConfigurationValue).toHaveBeenCalledWith("AzureOptions:StorageAccountEndpoint");
+    expect(fetchConfigurationValue).toHaveBeenCalledWith("Storage:Blob:Endpoint");
     expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
     expect(mockGetBlockBlobClient).toHaveBeenCalledWith("custom-name.png");
 
