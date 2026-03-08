@@ -52,9 +52,9 @@ type EnvironmentOptions = "production" | "development";
  *
  * @remarks
  * This conditional type resolves environment identifiers to their canonical site names:
- * - `"production"` ΓåÆ `"arolariu.ro"` (live production site)
- * - `"development"` ΓåÆ `"dev.arolariu.ro"` (development preview site)
- * - Any other value ΓåÆ `never` (compile-time error)
+ * - `"production"` → `"arolariu.ro"` (live production site)
+ * - `"development"` → `"dev.arolariu.ro"` (development preview site)
+ * - Any other value → `never` (compile-time error)
  *
  * **Type Safety Benefits:**
  * - Prevents typos in site name strings
@@ -89,9 +89,9 @@ type SiteName<Environment extends string> = Environment extends "production"
  *
  * @remarks
  * This conditional type constructs complete, protocol-qualified URLs for each environment:
- * - `"production"` ΓåÆ `"https://arolariu.ro"` (primary production domain)
- * - `"development"` ΓåÆ `"https://dev.arolariu.ro"` (preview deployment domain)
- * - Any other value ΓåÆ `never` (compile-time type error)
+ * - `"production"` → `"https://arolariu.ro"` (primary production domain)
+ * - `"development"` → `"https://dev.arolariu.ro"` (preview deployment domain)
+ * - Any other value → `never` (compile-time type error)
  *
  * **Protocol Enforcement:**
  * All URLs use HTTPS exclusively. The protocol is hard-coded to prevent accidental
@@ -133,8 +133,8 @@ type SiteUrl<Environment extends string> = Environment extends "production"
  *
  * @remarks
  * This conditional type resolves environment identifiers to the canonical API service name:
- * - `"production"` ΓåÆ `"arolariu-api"` (production .NET backend service)
- * - Any other value ΓåÆ `never` (compile-time error)
+ * - `"production"` → `"arolariu-api"` (production .NET backend service)
+ * - Any other value → `never` (compile-time error)
  *
  * **Design Decision:**
  * Currently, only production API is supported. Development and staging environments share
@@ -173,8 +173,8 @@ type ApiName<Environment extends string> = Environment extends "production" ? "a
  *
  * @remarks
  * This conditional type constructs the complete API endpoint URL for backend communication:
- * - `"production"` ΓåÆ `"https://api.arolariu.ro"` (production .NET REST API)
- * - Any other value ΓåÆ `never` (no development API deployment)
+ * - `"production"` → `"https://api.arolariu.ro"` (production .NET REST API)
+ * - Any other value → `never` (no development API deployment)
  *
  * **API Architecture:**
  * The URL points to the .NET 10 backend API hosted on Azure App Service (modular monolith
@@ -784,10 +784,10 @@ export type TypedDevelopmentEnvironmentVariablesType = Readonly<TypedEnvironment
  *
  * **Never Log Secrets:**
  * ```typescript
- * // Γ¥î BAD: Secret exposed in logs
+ * // ❌ BAD: Secret exposed in logs
  * console.log('API JWT:', process.env.API_JWT);
  *
- * // Γ£à GOOD: Redact or omit secrets from logs
+ * // ✅ GOOD: Redact or omit secrets from logs
  * console.log('API JWT:', process.env.API_JWT ? '[REDACTED]' : '[MISSING]');
  * ```
  *
@@ -799,12 +799,12 @@ export type TypedDevelopmentEnvironmentVariablesType = Readonly<TypedEnvironment
  *
  * **Never Send to Client:**
  * ```typescript
- * // Γ¥î BAD: Secret sent to client
+ * // ❌ BAD: Secret sent to client
  * export async function getServerData() {
  *   return { apiJwt: process.env.API_JWT }; // Exposed in client bundle!
  * }
  *
- * // Γ£à GOOD: Keep secrets server-side only
+ * // ✅ GOOD: Keep secrets server-side only
  * export async function getServerData() {
  *   const response = await fetch(process.env.API_URL, {
  *     headers: { 'Authorization': `Bearer ${process.env.API_JWT}` }
@@ -922,8 +922,8 @@ export type SecretEnvironmentVariablesType = Extract<
  *   return process.env[key];
  * }
  *
- * const siteUrl = getEnvValue('SITE_URL'); // Γ£à Valid
- * const invalid = getEnvValue('INVALID_KEY'); // Γ¥î Type error
+ * const siteUrl = getEnvValue('SITE_URL'); // ✅ Valid
+ * const invalid = getEnvValue('INVALID_KEY'); // ❌ Type error
  *
  * // Generate environment documentation
  * function documentEnvironmentVariables(): Record<AllEnvironmentVariablesKeys, string> {
