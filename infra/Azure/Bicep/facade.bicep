@@ -119,19 +119,19 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     configurationDeployment
   ]
   params: {
-    resourceLocation: resourceLocation
-    resourceDeploymentDate: resourceDeploymentDate
-    appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
-    productionAppPlanId: computeDeployment.outputs.productionAppPlanId
-    developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
-    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
-    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
-    managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
-    managedIdentityBackendClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
-    managedIdentityFrontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
-    managedIdentityBackendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
-    expEntraAppClientId: expEntraAppClientId
     appConfigurationName: configurationDeployment.outputs.appConfigurationName
+    appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
+    developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
+    expEntraAppClientId: expEntraAppClientId
+    managedIdentityBackendClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
+    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
+    managedIdentityBackendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
+    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
+    managedIdentityFrontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
+    productionAppPlanId: computeDeployment.outputs.productionAppPlanId
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceLocation: resourceLocation
   }
 }
 
