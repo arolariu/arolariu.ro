@@ -89,8 +89,6 @@ ARG SITE_NAME
 # Make environment variables available during build (Next.js embeds these at build time)
 # NOTE: SITE_ENV / SITE_URL / SITE_NAME are intentionally NOT propagated to the runner
 #       stage — they are baked into the .next/standalone bundle.
-# NOTE: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is expected to be present in the build
-#       context via `npm run generate` rather than injected as a Docker build arg.
 ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
     AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \
