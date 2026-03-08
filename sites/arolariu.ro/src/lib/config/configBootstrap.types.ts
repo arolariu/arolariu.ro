@@ -19,7 +19,10 @@
 export type WebsiteFeatureKey = "website.commander.enabled" | "website.web-vitals.enabled";
 
 /** All recognised website feature-flag key strings as a readonly tuple. */
-export const WEBSITE_FEATURE_KEYS = ["website.commander.enabled", "website.web-vitals.enabled"] as const satisfies ReadonlyArray<WebsiteFeatureKey>;
+export const WEBSITE_FEATURE_KEYS = [
+  "website.commander.enabled",
+  "website.web-vitals.enabled",
+] as const satisfies ReadonlyArray<WebsiteFeatureKey>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Derived public type (safe to pass to client components)

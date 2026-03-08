@@ -48,7 +48,9 @@ describe("fetchUser actions", () => {
     // mockReset: true clears all implementations; re-apply defaults here.
     mockFetchApiJwtSecret.mockResolvedValue("test-api-jwt-secret");
     vi.mocked(createJwtToken).mockResolvedValue("mock-jwt-token");
-    vi.mocked(generateGuid).mockImplementation((seed?: string | Uint8Array) => (seed && typeof seed === "string" ? `guid-${seed}` : "generated-guid"));
+    vi.mocked(generateGuid).mockImplementation((seed?: string | Uint8Array) =>
+      seed && typeof seed === "string" ? `guid-${seed}` : "generated-guid",
+    );
   });
 
   afterEach(() => {

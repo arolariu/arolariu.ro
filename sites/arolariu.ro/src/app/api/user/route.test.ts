@@ -11,16 +11,14 @@ import {GET} from "./route";
 // mockFetchApiJwtSecret is hoisted separately so we can re-apply its
 // implementation in beforeEach (mockReset: true in vitest.config.ts clears all
 // mock implementations between tests).
-const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan, mockGenerateGuid, mockFetchApiJwtSecret} = vi.hoisted(
-  () => ({
-    mockAuth: vi.fn(),
-    mockCurrentUser: vi.fn(),
-    mockCreateJwtToken: vi.fn(),
-    mockWithSpan: vi.fn(),
-    mockGenerateGuid: vi.fn(),
-    mockFetchApiJwtSecret: vi.fn(),
-  }),
-);
+const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan, mockGenerateGuid, mockFetchApiJwtSecret} = vi.hoisted(() => ({
+  mockAuth: vi.fn(),
+  mockCurrentUser: vi.fn(),
+  mockCreateJwtToken: vi.fn(),
+  mockWithSpan: vi.fn(),
+  mockGenerateGuid: vi.fn(),
+  mockFetchApiJwtSecret: vi.fn(),
+}));
 
 // Mock Clerk functions
 vi.mock("@clerk/nextjs/server", () => ({

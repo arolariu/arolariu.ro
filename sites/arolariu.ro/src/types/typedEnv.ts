@@ -65,18 +65,22 @@ type AuthEnvironmentVariables = Readonly<{
  * These values are optional because local Docker execution intentionally omits
  * them and falls back to the `http://exp` service address.
  */
-type AzureRuntimeEnvironmentVariables = Readonly<Partial<{
-  readonly AZURE_CLIENT_ID: string;
-  readonly AZURE_TENANT_ID: string;
-  readonly AZURE_SUBSCRIPTION_ID: string;
-}>>;
+type AzureRuntimeEnvironmentVariables = Readonly<
+  Partial<{
+    readonly AZURE_CLIENT_ID: string;
+    readonly AZURE_TENANT_ID: string;
+    readonly AZURE_SUBSCRIPTION_ID: string;
+  }>
+>;
 
 /**
  * Optional legacy fallback inputs preserved during the exp-driven migration.
  */
-type LegacyRuntimeEnvironmentVariables = Readonly<Partial<{
-  readonly CONFIG_STORE: string;
-}>>;
+type LegacyRuntimeEnvironmentVariables = Readonly<
+  Partial<{
+    readonly CONFIG_STORE: string;
+  }>
+>;
 
 /**
  * Build metadata injected during container/image creation.
@@ -102,12 +106,12 @@ type MetadataEnvironmentVariables = Readonly<{
  * optional to preserve compatibility during the rollout.
  */
 export type TypedEnvironment<SiteEnv extends "production" | "development", ApiEnv extends "production"> = Readonly<
-  SiteEnvironmentVariables<SiteEnv> &
-    ApiEnvironmentVariables<ApiEnv> &
-    AuthEnvironmentVariables &
-    AzureRuntimeEnvironmentVariables &
-    LegacyRuntimeEnvironmentVariables &
-    MetadataEnvironmentVariables
+  SiteEnvironmentVariables<SiteEnv>
+    & ApiEnvironmentVariables<ApiEnv>
+    & AuthEnvironmentVariables
+    & AzureRuntimeEnvironmentVariables
+    & LegacyRuntimeEnvironmentVariables
+    & MetadataEnvironmentVariables
 >;
 
 /**

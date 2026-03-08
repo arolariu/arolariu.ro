@@ -153,7 +153,7 @@ async function resolveFetchUrl(url: string): Promise<string> {
  *
  * @example
  * ```typescript
-  * const response = await fetchWithTimeout(
+ * const response = await fetchWithTimeout(
  *   "/rest/v1/invoices",
  *   { headers: { Authorization: `Bearer ${token}` } },
  *   15000 // 15 second timeout

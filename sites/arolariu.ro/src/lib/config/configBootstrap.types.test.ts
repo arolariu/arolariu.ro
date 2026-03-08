@@ -5,12 +5,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {
-  DEFAULT_FEATURE_FLAGS,
-  WEBSITE_FEATURE_KEYS,
-  deriveFeatureFlags,
-  isBootstrapResponse,
-} from "./configBootstrap.types";
+import {DEFAULT_FEATURE_FLAGS, WEBSITE_FEATURE_KEYS, deriveFeatureFlags, isBootstrapResponse} from "./configBootstrap.types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures
@@ -102,7 +97,7 @@ describe("isBootstrapResponse", () => {
     expect(
       isBootstrapResponse({
         ...validBootstrap,
-        config: {"key": 123},
+        config: {key: 123},
       }),
     ).toBe(false);
   });

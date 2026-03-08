@@ -15,11 +15,7 @@
 import "server-only";
 
 import {isConfigValueResponse, type ConfigValueResponse} from "@/lib/config/configCatalog.types";
-import {
-  getCachedConfigValue,
-  invalidateConfigValueCache,
-  setCachedConfigValue,
-} from "@/lib/config/configCatalogCache.server";
+import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "@/lib/config/configCatalogCache.server";
 
 /** `true` when running on Azure with a Managed Identity client ID configured. */
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
@@ -109,9 +105,7 @@ export async function fetchConfigValue(key: string): Promise<string> {
  * Fetches multiple config values in parallel.
  */
 export async function fetchConfigValues(keys: string[]): Promise<Record<string, string>> {
-  const entries = await Promise.all(
-    keys.map(async (key) => [key, await fetchConfigValue(key)] as const),
-  );
+  const entries = await Promise.all(keys.map(async (key) => [key, await fetchConfigValue(key)] as const));
 
   return Object.fromEntries(entries);
 }

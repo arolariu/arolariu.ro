@@ -15,8 +15,8 @@ import {
   setSpanAttributes,
   withSpan,
 } from "@/instrumentation.server";
-import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {fetchApiJwtSecret} from "@/lib/config/expServerConfig.server";
+import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {auth, currentUser} from "@clerk/nextjs/server";
