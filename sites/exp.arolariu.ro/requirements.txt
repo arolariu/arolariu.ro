@@ -1,7 +1,7 @@
-azure-identity==1.18.0
+azure-identity==1.25.2
 azure-monitor-opentelemetry-exporter==1.0.0b48
 azure-appconfiguration-provider==2.4.0
-azure-keyvault-secrets==4.9.0
+azure-keyvault-secrets==4.10.0
 fastapi==0.135.1
 opentelemetry-api==1.39.0
 opentelemetry-sdk==1.39.0
