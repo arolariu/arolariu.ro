@@ -32,13 +32,13 @@ services:
         SITE_NAME: dev.arolariu.ro
         COMMIT_SHA: local-docker
         VERSION: local-docker
-        # Clerk requires structurally-valid base64 keys to boot.
-        # These decode to "clerk.clerk.dev$" — a fabricated value, not a real key.
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
     container_name: website-arolariu-ro
     restart: unless-stopped
     environment:
       INFRA: local
+      # Clerk requires structurally-valid base64 keys to boot.
+      # These decode to "clerk.clerk.dev$" — a fabricated value, not a real key.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
       # See comment above — same fabricated base64 value for local container startup.
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-sk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
       COMMIT_SHA: local-docker
