@@ -156,13 +156,13 @@ internal static class WebApplicationBuilderExtensions
       options.JwtIssuer = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Issuer", string.Empty);
       options.JwtAudience = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Audience", string.Empty);
       options.TenantId = runtimePayload.Config.GetValueOrDefault("Identity:Tenant:Id", string.Empty);
-      options.OpenAIEndpoint = runtimePayload.Config.GetValueOrDefault("AI:OpenAI:Endpoint", string.Empty);
-      options.SqlConnectionString = runtimePayload.Config.GetValueOrDefault("Database:SQL:ConnectionString", string.Empty);
-      options.NoSqlConnectionString = runtimePayload.Config.GetValueOrDefault("Database:NoSQL:ConnectionString", string.Empty);
-      options.StorageAccountEndpoint = runtimePayload.Config.GetValueOrDefault("Storage:Blob:Endpoint", string.Empty);
-      options.ApplicationInsightsEndpoint = runtimePayload.Config.GetValueOrDefault("Observability:Telemetry:Endpoint", string.Empty);
-      options.CognitiveServicesEndpoint = runtimePayload.Config.GetValueOrDefault("AI:OCR:Endpoint", string.Empty);
-      options.CognitiveServicesKey = runtimePayload.Config.GetValueOrDefault("AI:OCR:Key", string.Empty);
+      options.OpenAIEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoint:AI:OpenAI", string.Empty);
+      options.SqlConnectionString = runtimePayload.Config.GetValueOrDefault("Endpoint:Database:SQL", string.Empty);
+      options.NoSqlConnectionString = runtimePayload.Config.GetValueOrDefault("Endpoint:Database:NoSQL", string.Empty);
+      options.StorageAccountEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoint:Storage:Blob", string.Empty);
+      options.ApplicationInsightsEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoint:Observability:Telemetry", string.Empty);
+      options.CognitiveServicesEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoint:AI:OCR", string.Empty);
+      options.CognitiveServicesKey = runtimePayload.Config.GetValueOrDefault("Endpoint:AI:OCR:Key", string.Empty);
     });
 
     services.AddHostedService<ConfigRefreshHostedService>();
