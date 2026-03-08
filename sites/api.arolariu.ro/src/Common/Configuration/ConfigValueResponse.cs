@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 /// </remarks>
 public sealed class ConfigValueResponse
 {
-  /// <summary>Gets the canonical configuration key name, for example <c>Endpoints:Api</c>.</summary>
+  /// <summary>Gets the canonical configuration key name, for example <c>Endpoints:Service:Api</c>.</summary>
   [JsonPropertyName("name")]
   public string Name { get; init; } = string.Empty;
 
