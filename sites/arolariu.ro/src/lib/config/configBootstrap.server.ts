@@ -23,14 +23,11 @@ import {
   type BootstrapResponse,
   type WebsiteFeatureFlags,
 } from "@/lib/config/configBootstrap.types";
-import {EXP_SERVICE_TOKEN_SCOPE} from "@/lib/config/configProxy";
+import {EXP_BASE_URL, EXP_SERVICE_TOKEN_SCOPE} from "@/lib/config/configProxy";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// URL & target constants  (kept in sync with configProxy.ts)
+// Target constant
 // ─────────────────────────────────────────────────────────────────────────────
-
-// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
-const EXP_BASE_URL: string = process.env["AZURE_CLIENT_ID"] ? "https://exp.arolariu.ro" : "http://exp";
 
 const EXP_TARGET = "website" as const;
 
