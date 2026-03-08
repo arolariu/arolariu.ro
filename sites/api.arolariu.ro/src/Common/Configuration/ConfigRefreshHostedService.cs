@@ -108,13 +108,13 @@ public sealed class ConfigRefreshHostedService(
     options.JwtIssuer = values.GetValueOrDefault("Auth:JWT:Issuer", options.JwtIssuer);
     options.JwtAudience = values.GetValueOrDefault("Auth:JWT:Audience", options.JwtAudience);
     options.TenantId = values.GetValueOrDefault("Identity:Tenant:Id", options.TenantId);
-    options.OpenAIEndpoint = values.GetValueOrDefault("Endpoint:AI:OpenAI", options.OpenAIEndpoint);
-    options.SqlConnectionString = values.GetValueOrDefault("Endpoint:Database:SQL", options.SqlConnectionString);
-    options.NoSqlConnectionString = values.GetValueOrDefault("Endpoint:Database:NoSQL", options.NoSqlConnectionString);
-    options.StorageAccountEndpoint = values.GetValueOrDefault("Endpoint:Storage:Blob", options.StorageAccountEndpoint);
-    options.ApplicationInsightsEndpoint = values.GetValueOrDefault("Endpoint:Observability:Telemetry", options.ApplicationInsightsEndpoint);
-    options.CognitiveServicesEndpoint = values.GetValueOrDefault("Endpoint:AI:OCR", options.CognitiveServicesEndpoint);
-    options.CognitiveServicesKey = values.GetValueOrDefault("Endpoint:AI:OCR:Key", options.CognitiveServicesKey);
+    options.OpenAIEndpoint = values.GetValueOrDefault("Endpoints:AI:OpenAI", options.OpenAIEndpoint);
+    options.SqlConnectionString = values.GetValueOrDefault("Endpoints:Database:SQL", options.SqlConnectionString);
+    options.NoSqlConnectionString = values.GetValueOrDefault("Endpoints:Database:NoSQL", options.NoSqlConnectionString);
+    options.StorageAccountEndpoint = values.GetValueOrDefault("Endpoints:Storage:Blob", options.StorageAccountEndpoint);
+    options.ApplicationInsightsEndpoint = values.GetValueOrDefault("Endpoints:Observability:Telemetry", options.ApplicationInsightsEndpoint);
+    options.CognitiveServicesEndpoint = values.GetValueOrDefault("Endpoints:AI:OCR", options.CognitiveServicesEndpoint);
+    options.CognitiveServicesKey = values.GetValueOrDefault("Endpoints:AI:OCR:Key", options.CognitiveServicesKey);
   }
 
   private static AzureOptions CloneAzureOptions(AzureOptions source)
