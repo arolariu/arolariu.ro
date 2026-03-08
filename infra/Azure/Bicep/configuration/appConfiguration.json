@@ -155,98 +155,98 @@
       "tags": {}
     },
     {
-      "key": "Database:NoSQL:ConnectionString",
+      "key": "Endpoint:Database:NoSQL",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Database:NoSQL:ConnectionString",
+      "key": "Endpoint:Database:NoSQL",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Database:SQL:ConnectionString",
+      "key": "Endpoint:Database:SQL",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Database:SQL:ConnectionString",
+      "key": "Endpoint:Database:SQL",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "AI:OCR:Endpoint",
+      "key": "Endpoint:AI:OCR",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "AI:OCR:Endpoint",
+      "key": "Endpoint:AI:OCR",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "AI:OpenAI:Endpoint",
+      "key": "Endpoint:AI:OpenAI",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "AI:OpenAI:Endpoint",
+      "key": "Endpoint:AI:OpenAI",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Storage:Blob:Endpoint",
+      "key": "Endpoint:Storage:Blob",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Storage:Blob:Endpoint",
+      "key": "Endpoint:Storage:Blob",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Observability:Telemetry:Endpoint",
+      "key": "Endpoint:Observability:Telemetry",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Observability:Telemetry:Endpoint",
+      "key": "Endpoint:Observability:Telemetry",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Service:Api:Url",
+      "key": "Endpoint:Service:Api",
       "value": "https://api.arolariu.ro",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Service:Api:Url",
+      "key": "Endpoint:Service:Api",
       "value": "https://api.arolariu.ro",
       "label": "PRODUCTION",
       "content_type": "",
