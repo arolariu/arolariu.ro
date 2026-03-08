@@ -20,7 +20,6 @@ import pc from "picocolors";
 import {
   APP_CONFIGURATION_MAPPING,
   APP_CONFIGURATION_SERVER,
-  LEGACY_APP_CONFIGURATION_MAPPING,
   getSecretFromKeyVault,
   isKeyVaultRef,
   isSecretKey,
@@ -42,7 +41,6 @@ async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = fa
   const appConfigStore = APP_CONFIGURATION_SERVER;
   const appConfigValues = [
     ...Object.entries(APP_CONFIGURATION_MAPPING).map(([key, envVar]) => ({key, envVar, required: true})),
-    ...Object.entries(LEGACY_APP_CONFIGURATION_MAPPING).map(([key, envVar]) => ({key, envVar, required: false})),
   ];
 
   verbose && console.info(`🔍 Azure App Configuration server hostname: ${appConfigStore}`);
