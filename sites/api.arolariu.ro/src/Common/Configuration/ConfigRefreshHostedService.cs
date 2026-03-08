@@ -101,17 +101,17 @@ public sealed class ConfigRefreshHostedService(
       AzureOptions options,
       IReadOnlyDictionary<string, string> values)
   {
-    options.JwtSecret = values.GetValueOrDefault("Common:Auth:Secret", options.JwtSecret);
-    options.JwtIssuer = values.GetValueOrDefault("Common:Auth:Issuer", options.JwtIssuer);
-    options.JwtAudience = values.GetValueOrDefault("Common:Auth:Audience", options.JwtAudience);
-    options.TenantId = values.GetValueOrDefault("Common:Azure:TenantId", options.TenantId);
-    options.OpenAIEndpoint = values.GetValueOrDefault("Endpoints:OpenAI", options.OpenAIEndpoint);
-    options.SqlConnectionString = values.GetValueOrDefault("Endpoints:SqlServer", options.SqlConnectionString);
-    options.NoSqlConnectionString = values.GetValueOrDefault("Endpoints:NoSqlServer", options.NoSqlConnectionString);
-    options.StorageAccountEndpoint = values.GetValueOrDefault("Endpoints:StorageAccount", options.StorageAccountEndpoint);
-    options.ApplicationInsightsEndpoint = values.GetValueOrDefault("Endpoints:ApplicationInsights", options.ApplicationInsightsEndpoint);
-    options.CognitiveServicesEndpoint = values.GetValueOrDefault("Endpoints:CognitiveServices", options.CognitiveServicesEndpoint);
-    options.CognitiveServicesKey = values.GetValueOrDefault("Endpoints:CognitiveServices:Key", options.CognitiveServicesKey);
+    options.JwtSecret = values.GetValueOrDefault("Auth:JWT:Secret", options.JwtSecret);
+    options.JwtIssuer = values.GetValueOrDefault("Auth:JWT:Issuer", options.JwtIssuer);
+    options.JwtAudience = values.GetValueOrDefault("Auth:JWT:Audience", options.JwtAudience);
+    options.TenantId = values.GetValueOrDefault("Identity:Tenant:Id", options.TenantId);
+    options.OpenAIEndpoint = values.GetValueOrDefault("AI:OpenAI:Endpoint", options.OpenAIEndpoint);
+    options.SqlConnectionString = values.GetValueOrDefault("Database:SQL:ConnectionString", options.SqlConnectionString);
+    options.NoSqlConnectionString = values.GetValueOrDefault("Database:NoSQL:ConnectionString", options.NoSqlConnectionString);
+    options.StorageAccountEndpoint = values.GetValueOrDefault("Storage:Blob:Endpoint", options.StorageAccountEndpoint);
+    options.ApplicationInsightsEndpoint = values.GetValueOrDefault("Observability:Telemetry:Endpoint", options.ApplicationInsightsEndpoint);
+    options.CognitiveServicesEndpoint = values.GetValueOrDefault("AI:OCR:Endpoint", options.CognitiveServicesEndpoint);
+    options.CognitiveServicesKey = values.GetValueOrDefault("AI:OCR:Key", options.CognitiveServicesKey);
   }
 
   private static AzureOptions CloneAzureOptions(AzureOptions source)

@@ -32,7 +32,7 @@ public sealed class ConfigProxyClientTests
       Target = "api",
       ContractVersion = "1",
       Version = "v3",
-      Config = new Dictionary<string, string> { ["Common:Auth:Secret"] = "secret-1" },
+      Config = new Dictionary<string, string> { ["Auth:JWT:Secret"] = "secret-1" },
       RefreshIntervalSeconds = 180,
       FetchedAt = DateTimeOffset.UtcNow,
     };
@@ -47,7 +47,7 @@ public sealed class ConfigProxyClientTests
     Assert.AreEqual("api", result.Target);
     Assert.AreEqual("1", result.ContractVersion);
     Assert.AreEqual("v3", result.Version);
-    Assert.AreEqual("secret-1", result.Config["Common:Auth:Secret"]);
+    Assert.AreEqual("secret-1", result.Config["Auth:JWT:Secret"]);
   }
 
   [TestMethod]
@@ -70,7 +70,7 @@ public sealed class ConfigProxyClientTests
       Target = "api",
       ContractVersion = "1",
       Version = "v5",
-      Config = new Dictionary<string, string> { ["Common:Auth:Secret"] = "s3cr3t" },
+      Config = new Dictionary<string, string> { ["Auth:JWT:Secret"] = "s3cr3t" },
       Features = new Dictionary<string, bool> { ["invoices.analysis"] = true },
       RefreshIntervalSeconds = 240,
       FetchedAt = now,
@@ -84,7 +84,7 @@ public sealed class ConfigProxyClientTests
     Assert.IsNotNull(result);
     Assert.AreEqual("/api/v1/run-time?for=api", handler.LastRequestUri?.PathAndQuery);
     Assert.AreEqual("v5", result.Version);
-    Assert.AreEqual("s3cr3t", result.Config["Common:Auth:Secret"]);
+    Assert.AreEqual("s3cr3t", result.Config["Auth:JWT:Secret"]);
     Assert.IsTrue(result.Features["invoices.analysis"]);
     Assert.AreEqual(240, result.RefreshIntervalSeconds);
   }

@@ -152,17 +152,17 @@ internal static class WebApplicationBuilderExtensions
       var cfg = builder.Configuration;
       options.SecretsEndpoint = cfg["ApplicationOptions:SecretsEndpoint"] ?? string.Empty;
       options.ConfigurationEndpoint = cfg["ApplicationOptions:ConfigurationEndpoint"] ?? string.Empty;
-      options.JwtSecret = runtimePayload.Config.GetValueOrDefault("Common:Auth:Secret", string.Empty);
-      options.JwtIssuer = runtimePayload.Config.GetValueOrDefault("Common:Auth:Issuer", string.Empty);
-      options.JwtAudience = runtimePayload.Config.GetValueOrDefault("Common:Auth:Audience", string.Empty);
-      options.TenantId = runtimePayload.Config.GetValueOrDefault("Common:Azure:TenantId", string.Empty);
-      options.OpenAIEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:OpenAI", string.Empty);
-      options.SqlConnectionString = runtimePayload.Config.GetValueOrDefault("Endpoints:SqlServer", string.Empty);
-      options.NoSqlConnectionString = runtimePayload.Config.GetValueOrDefault("Endpoints:NoSqlServer", string.Empty);
-      options.StorageAccountEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:StorageAccount", string.Empty);
-      options.ApplicationInsightsEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:ApplicationInsights", string.Empty);
-      options.CognitiveServicesEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:CognitiveServices", string.Empty);
-      options.CognitiveServicesKey = runtimePayload.Config.GetValueOrDefault("Endpoints:CognitiveServices:Key", string.Empty);
+      options.JwtSecret = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Secret", string.Empty);
+      options.JwtIssuer = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Issuer", string.Empty);
+      options.JwtAudience = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Audience", string.Empty);
+      options.TenantId = runtimePayload.Config.GetValueOrDefault("Identity:Tenant:Id", string.Empty);
+      options.OpenAIEndpoint = runtimePayload.Config.GetValueOrDefault("AI:OpenAI:Endpoint", string.Empty);
+      options.SqlConnectionString = runtimePayload.Config.GetValueOrDefault("Database:SQL:ConnectionString", string.Empty);
+      options.NoSqlConnectionString = runtimePayload.Config.GetValueOrDefault("Database:NoSQL:ConnectionString", string.Empty);
+      options.StorageAccountEndpoint = runtimePayload.Config.GetValueOrDefault("Storage:Blob:Endpoint", string.Empty);
+      options.ApplicationInsightsEndpoint = runtimePayload.Config.GetValueOrDefault("Observability:Telemetry:Endpoint", string.Empty);
+      options.CognitiveServicesEndpoint = runtimePayload.Config.GetValueOrDefault("AI:OCR:Endpoint", string.Empty);
+      options.CognitiveServicesKey = runtimePayload.Config.GetValueOrDefault("AI:OCR:Key", string.Empty);
     });
 
     services.AddHostedService<ConfigRefreshHostedService>();

@@ -29,7 +29,7 @@ public sealed class ConfigRefreshHostedServiceTests
       Version = "v1",
       ContractVersion = "1",
       RefreshIntervalSeconds = refreshSeconds,
-      Config = new Dictionary<string, string> { ["Common:Auth:Secret"] = "startup-secret" },
+      Config = new Dictionary<string, string> { ["Auth:JWT:Secret"] = "startup-secret" },
       FetchedAt = BaseTime,
     };
 
@@ -41,7 +41,7 @@ public sealed class ConfigRefreshHostedServiceTests
       Target = "api",
       ContractVersion = "1",
       Version = "v1",
-      Config = new Dictionary<string, string> { ["Common:Auth:Secret"] = secret },
+      Config = new Dictionary<string, string> { ["Auth:JWT:Secret"] = secret },
       Features = new Dictionary<string, bool> { ["invoices.analysis"] = analysisEnabled },
       RefreshIntervalSeconds = 1,
       FetchedAt = BaseTime,
