@@ -116,8 +116,28 @@ public sealed class ConfigRefreshHostedService(
 
   private static AzureOptions CloneAzureOptions(AzureOptions source)
   {
-    var serialized = JsonSerializer.Serialize(source);
-    return JsonSerializer.Deserialize<AzureOptions>(serialized)
-      ?? throw new InvalidOperationException("Failed to clone Azure options snapshot.");
+    return new AzureOptions
+    {
+      TenantId = source.TenantId,
+      SecretsEndpoint = source.SecretsEndpoint,
+      ConfigurationEndpoint = source.ConfigurationEndpoint,
+      StorageAccountName = source.StorageAccountName,
+      StorageAccountEndpoint = source.StorageAccountEndpoint,
+      SqlConnectionString = source.SqlConnectionString,
+      NoSqlConnectionString = source.NoSqlConnectionString,
+      OpenAIEndpoint = source.OpenAIEndpoint,
+      OpenAIKey = source.OpenAIKey,
+      ApplicationInsightsEndpoint = source.ApplicationInsightsEndpoint,
+      CognitiveServicesEndpoint = source.CognitiveServicesEndpoint,
+      CognitiveServicesKey = source.CognitiveServicesKey,
+      JwtIssuer = source.JwtIssuer,
+      JwtAudience = source.JwtAudience,
+      JwtSecret = source.JwtSecret,
+      ApplicationName = source.ApplicationName,
+      ApplicationVersion = source.ApplicationVersion,
+      ApplicationDescription = source.ApplicationDescription,
+      ApplicationAuthor = source.ApplicationAuthor,
+      TermsAndConditions = source.TermsAndConditions,
+    };
   }
 }
