@@ -21,6 +21,12 @@ import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} 
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
 
 /**
+ * Azure AD token scope for the experiments service.
+ * Used for Managed Identity bearer-token acquisition in Azure deployments.
+ */
+export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default" as const;
+
+/**
  * Base URL for the experiments / config service.
  *
  * Determined once at module load time so every fetch uses the same endpoint.
@@ -39,7 +45,7 @@ async function getBearerToken(): Promise<string> {
 
   const {getAzureCredential} = await import("@/lib/azure/credentials");
   const credential = getAzureCredential();
-  const token = await credential.getToken("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default");
+  const token = await credential.getToken(EXP_SERVICE_TOKEN_SCOPE);
 
   return token?.token ?? "";
 }
@@ -114,6 +120,3 @@ export async function fetchConfigValues(keys: string[]): Promise<Record<string, 
 export function invalidateConfigCache(key?: string): void {
   invalidateConfigValueCache(key);
 }
-
-/** Invalidates one cached config value or the entire cache. */
-export {invalidateConfigValueCache} from "@/lib/config/configCatalogCache.server";

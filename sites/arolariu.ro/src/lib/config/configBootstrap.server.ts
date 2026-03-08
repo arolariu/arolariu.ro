@@ -23,6 +23,7 @@ import {
   type BootstrapResponse,
   type WebsiteFeatureFlags,
 } from "@/lib/config/configBootstrap.types";
+import {EXP_SERVICE_TOKEN_SCOPE} from "@/lib/config/configProxy";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // URL & target constants  (kept in sync with configProxy.ts)
@@ -72,7 +73,7 @@ async function getBearerToken(): Promise<string> {
   try {
     const {getAzureCredential} = await import("@/lib/azure/credentials");
     const credential = getAzureCredential();
-    const token = await credential.getToken("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default");
+    const token = await credential.getToken(EXP_SERVICE_TOKEN_SCOPE);
     return token?.token ?? "";
   } catch {
     return "";
