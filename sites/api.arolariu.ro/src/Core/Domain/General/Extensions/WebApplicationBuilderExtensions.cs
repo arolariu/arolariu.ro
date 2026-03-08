@@ -104,19 +104,18 @@ internal static class WebApplicationBuilderExtensions
     var isAzureEnv = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_CLIENT_ID"));
     var baseUrl = isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlDocker;
 
-    services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>
+    var httpClientBuilder = services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>
     {
       client.BaseAddress = new Uri(baseUrl);
       client.Timeout = TimeSpan.FromSeconds(30);
       client.DefaultRequestHeaders.Add("X-Exp-Target", "api");
-    }).ConfigurePrimaryHttpMessageHandler(() =>
-    {
-      if (isAzureEnv)
-      {
-        return new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope);
-      }
-      return new HttpClientHandler();
     });
+
+    if (isAzureEnv)
+    {
+      httpClientBuilder.AddHttpMessageHandler(() =>
+        new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));
+    }
 
     // Fetch config and features at startup.
     // Sync-over-async at startup is safe here — no SynchronizationContext exists yet.
