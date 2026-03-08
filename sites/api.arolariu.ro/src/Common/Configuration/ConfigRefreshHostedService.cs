@@ -62,11 +62,14 @@ public sealed class ConfigRefreshHostedService(
           continue;
         }
 
-        // Step 2: Swap AzureOptions snapshot.
+        // Step 2: Swap AzureOptions snapshot atomically.
         var refreshedOptions = CloneAzureOptions(optionsMonitor.CurrentValue);
         ApplyRefreshedValues(refreshedOptions, bootstrap.Config);
-        optionsCache.TryRemove(Options.DefaultName);
-        optionsCache.TryAdd(Options.DefaultName, refreshedOptions);
+        lock (optionsCache)
+        {
+          optionsCache.TryRemove(Options.DefaultName);
+          optionsCache.TryAdd(Options.DefaultName, refreshedOptions);
+        }
 
         // Step 3: Replace the feature snapshot.
         featureSnapshotCache.Update(bootstrap.Features, bootstrap.ContractVersion, bootstrap.FetchedAt);
