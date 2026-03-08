@@ -379,7 +379,6 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   console.log(pc.gray("   📊 Adding Metadata Configuration..."));
   const timestamp = new Date().toISOString();
   const commitSha = process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A";
-  const configStore = config["CONFIG_STORE"];
   const useCdn = config["USE_CDN"] ?? "false";
 
   lines.push(
@@ -387,17 +386,8 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
     "# Metadata Configuration Start",
     `TIMESTAMP=${quoteIfNeeded(timestamp)}`,
     `COMMIT_SHA=${quoteIfNeeded(commitSha)}`,
-    ...(configStore ? [`CONFIG_STORE=${quoteIfNeeded(configStore)}`] : []),
     `USE_CDN=${quoteIfNeeded(useCdn)}`,
     "# Metadata Configuration End",
-  );
-
-  addConfigSection(
-    lines,
-    "Legacy Optional Fallbacks",
-    "🧰",
-    ["API_ENV", "API_NAME", "API_URL", "API_JWT", "RESEND_API_KEY", "CONFIG_STORE"],
-    config,
   );
 
   console.log(pc.green("   ✓ File content generated successfully!\n"));
