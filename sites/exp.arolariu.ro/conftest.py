@@ -29,8 +29,8 @@ def base_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def client() -> Iterator[TestClient]:
     """Create a test client with startup configuration loading suppressed."""
 
-    with patch("function_app.load_config"):
-        from function_app import app
+    with patch("main.load_config"):
+        from main import app
 
         with TestClient(app) as test_client:
             yield test_client

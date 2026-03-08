@@ -18,7 +18,7 @@ documents and feature-flag state consumed by:
 ## Runtime model
 
 - Platform: Python FastAPI (ASGI)
-- Entrypoint: `function_app.py`
+- Entrypoint: `main.py`
 - Versioned route prefix: `/api/v1`
 - Unversioned probes: `/api/health`, `/api/ready`
 - Container base: `python:3.12-slim` + `uvicorn`
@@ -102,8 +102,8 @@ telemetry/
   settings.py
   settings.test.py
 models.py
-function_app.py
-function_app.test.py
+main.py
+main.test.py
 conftest.py
 ```
 
@@ -113,7 +113,7 @@ conftest.py
 - `runtime/*` owns process-local diagnostics that are useful for probes but never persisted across restarts
 - `telemetry/*` owns OpenTelemetry resource settings, exporter bootstrap, manual spans, and custom metrics
 - `models.py` holds the dedicated API/website build-time and run-time contracts plus the single-key config response
-- `function_app.py` remains the Azure Functions / ASGI composition root
+- `main.py` is the FastAPI / ASGI composition root
 - Slice directories intentionally avoid `__init__.py` so sibling `*.test.py` files stay importable under pytest's importlib mode.
 
 ## Contract models
@@ -433,7 +433,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Startup[App startup] --> Prime[function_app lifespan calls load_config()]
+    Startup[App startup] --> Prime[main.py lifespan calls load_config()]
     Prime --> Snapshot[(In-memory snapshot)]
     Snapshot --> Request[Request needs config]
     Request --> Refresh{Loaded and refresh due?}
@@ -537,7 +537,7 @@ python -m ruff check .
 
 ```powershell
 cd sites/exp.arolariu.ro
-python -m uvicorn function_app:app --host 0.0.0.0 --port 5002
+python -m uvicorn main:app --host 0.0.0.0 --port 5002
 ```
 
 Local console exporters are enabled by default for traces and metrics. If you
