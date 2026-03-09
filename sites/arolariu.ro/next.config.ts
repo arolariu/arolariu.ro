@@ -13,16 +13,16 @@ import createNextIntlPlugin from "next-intl/plugin";
 import type {RemotePattern} from "next/dist/shared/lib/image-config";
 
 const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
+const localDevSources = "http://localhost:* http://127.0.0.1:*";
 const cspHeader = `
     default-src 'self' blob: data: https: ${trustedDomains};
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
     style-src 'self' 'unsafe-inline' https: ${trustedDomains};
+    img-src 'self' blob: data: https: ${trustedDomains} ${localDevSources};
     worker-src 'self' blob: data: https: ${trustedDomains};
     base-uri 'none';
     object-src 'none';
     frame-ancestors 'self';
-    block-all-mixed-content;
-    upgrade-insecure-requests;
 `;
 
 const isCdnEnabled = process.env["USE_CDN"] === "true";
