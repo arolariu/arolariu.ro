@@ -160,23 +160,24 @@ internal static class WebApplicationBuilderExtensions
       string.Empty,
       DateTimeOffset.UtcNow));
 
-    services.Configure<AzureOptions>(options =>
+    // Inject exp-fetched config into the configuration system so the auth module
+    // (which builds its own temporary ServiceProvider) can resolve the signing key
+    // through the options pattern without needing a shared ServiceProvider.
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     {
-      var cfg = builder.Configuration;
-      options.SecretsEndpoint = cfg["ApplicationOptions:SecretsEndpoint"] ?? string.Empty;
-      options.ConfigurationEndpoint = cfg["ApplicationOptions:ConfigurationEndpoint"] ?? string.Empty;
-      options.JwtSecret = configValues.GetValueOrDefault("Auth:JWT:Secret", string.Empty);
-      options.JwtIssuer = configValues.GetValueOrDefault("Auth:JWT:Issuer", string.Empty);
-      options.JwtAudience = configValues.GetValueOrDefault("Auth:JWT:Audience", string.Empty);
-      options.TenantId = configValues.GetValueOrDefault("Identity:Tenant:Id", string.Empty);
-      options.OpenAIEndpoint = configValues.GetValueOrDefault("Endpoints:AI:OpenAI", string.Empty);
-      options.SqlConnectionString = configValues.GetValueOrDefault("Endpoints:Database:SQL", string.Empty);
-      options.NoSqlConnectionString = configValues.GetValueOrDefault("Endpoints:Database:NoSQL", string.Empty);
-      options.StorageAccountEndpoint = configValues.GetValueOrDefault("Endpoints:Storage:Blob", string.Empty);
-      options.ApplicationInsightsEndpoint = configValues.GetValueOrDefault("Endpoints:Observability:Telemetry", string.Empty);
-      options.CognitiveServicesEndpoint = configValues.GetValueOrDefault("Endpoints:AI:OCR", string.Empty);
-      options.CognitiveServicesKey = configValues.GetValueOrDefault("Endpoints:AI:OCR:Key", string.Empty);
+      ["AzureOptions:JwtSecret"] = configValues.GetValueOrDefault("Auth:JWT:Secret"),
+      ["AzureOptions:JwtIssuer"] = configValues.GetValueOrDefault("Auth:JWT:Issuer"),
+      ["AzureOptions:JwtAudience"] = configValues.GetValueOrDefault("Auth:JWT:Audience"),
+      ["AzureOptions:TenantId"] = configValues.GetValueOrDefault("Identity:Tenant:Id"),
+      ["AzureOptions:OpenAIEndpoint"] = configValues.GetValueOrDefault("Endpoints:AI:OpenAI"),
+      ["AzureOptions:SqlConnectionString"] = configValues.GetValueOrDefault("Endpoints:Database:SQL"),
+      ["AzureOptions:NoSqlConnectionString"] = configValues.GetValueOrDefault("Endpoints:Database:NoSQL"),
+      ["AzureOptions:StorageAccountEndpoint"] = configValues.GetValueOrDefault("Endpoints:Storage:Blob"),
+      ["AzureOptions:ApplicationInsightsEndpoint"] = configValues.GetValueOrDefault("Endpoints:Observability:Telemetry"),
+      ["AzureOptions:CognitiveServicesEndpoint"] = configValues.GetValueOrDefault("Endpoints:AI:OCR"),
+      ["AzureOptions:CognitiveServicesKey"] = configValues.GetValueOrDefault("Endpoints:AI:OCR:Key"),
     });
+    services.Configure<AzureOptions>(builder.Configuration.GetSection("AzureOptions"));
 
     services.AddHostedService<ConfigRefreshHostedService>();
 

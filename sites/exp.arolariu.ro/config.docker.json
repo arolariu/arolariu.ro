@@ -1,7 +1,7 @@
 {
   "Auth:Clerk:PublishableKey": "pk_test_Y2xlcmsuY2xlcmsuZGV2JA==",
   "Auth:Clerk:SecretKey": "sk_test_Y2xlcmsuY2xlcmsuZGV2JA==",
-  "Auth:JWT:Secret": "local-docker-jwt-secret",
+  "Auth:JWT:Secret": "local-docker-jwt-secret-key-256bit-ok",
   "Auth:JWT:Issuer": "https://auth.arolariu.ro",
   "Auth:JWT:Audience": "https://api.arolariu.ro",
   "Identity:Tenant:Id": "00000000-0000-0000-0000-000000000000",
