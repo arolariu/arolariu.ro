@@ -14,10 +14,10 @@ from fastapi.responses import JSONResponse
 
 from api.common import (
     API_VERSION_PREFIX,
-    auth_error_response,
     build_build_time_response,
     build_internal_resolution_error,
     build_missing_keys_error,
+    error_response,
     resolve_caller_label,
     resolve_target_query,
 )
@@ -50,7 +50,7 @@ def get_build_time(
 
     authorization_result = authorize_target_request(req, resolution.target)
     if not authorization_result.is_authorized:
-        return auth_error_response(
+        return error_response(
             message=authorization_result.message,
             status_code=authorization_result.status_code,
         )

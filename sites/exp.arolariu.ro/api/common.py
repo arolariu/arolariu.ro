@@ -76,12 +76,12 @@ def utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def auth_error_response(
+def error_response(
     message: str,
     status_code: int,
     details: ErrorDetails | None = None,
 ) -> JSONResponse:
-    """Build a consistent auth-related JSON error response."""
+    """Build a consistent JSON error response."""
 
     payload = ErrorResponse(
         error=message,
@@ -90,16 +90,6 @@ def auth_error_response(
         missingRequiredKeys=details.get("missingRequiredKeys") if details else None,
     )
     return json_response(payload.model_dump(exclude_none=True), status_code=status_code)
-
-
-def error_response(
-    message: str,
-    status_code: int,
-    details: ErrorDetails | None = None,
-) -> JSONResponse:
-    """Build a consistent non-auth JSON error response."""
-
-    return auth_error_response(message=message, status_code=status_code, details=details)
 
 
 def resolve_target_query(

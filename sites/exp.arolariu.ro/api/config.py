@@ -15,10 +15,10 @@ from fastapi.responses import JSONResponse
 
 from api.common import (
     API_VERSION_PREFIX,
-    auth_error_response,
     build_config_value_response,
     build_internal_resolution_error,
     build_missing_config_value_error,
+    error_response,
     resolve_caller_label,
     resolve_config_name_query,
 )
@@ -48,7 +48,7 @@ def get_config_value_endpoint(
 
     authorization_result = authorize_config_request(req, resolution.definition.available_for_targets)
     if not authorization_result.is_authorized:
-        return auth_error_response(
+        return error_response(
             message=authorization_result.message,
             status_code=authorization_result.status_code,
         )
