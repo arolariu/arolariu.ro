@@ -69,7 +69,7 @@ services:
   azurite:
     image: "mcr.microsoft.com/azure-storage/azurite:latest"
     container_name: "azurite"
-    command: "azurite --oauth basic --blobHost 0.0.0.0 --blobPort 10000 --queueHost 0.0.0.0 --queuePort 10001 --tableHost 0.0.0.0 --tablePort 10002"
+    command: "azurite --oauth basic --skipApiVersionCheck --blobHost 0.0.0.0 --blobPort 10000 --queueHost 0.0.0.0 --queuePort 10001 --tableHost 0.0.0.0 --tablePort 10002"
     ports:
       - "10000:10000" # Blob service
       - "10001:10001" # Queue service
