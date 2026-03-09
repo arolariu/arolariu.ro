@@ -7,7 +7,6 @@
 name: "arolariu-storage"
 
 volumes:
-  cosmos-data:
   redis-data:
   azurite-data:
 
@@ -43,30 +42,28 @@ services:
       - "traefik.http.routers.mssql.tls.certresolver=myresolver" # Added for Let's Encrypt
 
   cosmosdb:
-    image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest"
+    image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview"
     container_name: "cosmosdb"
     ports:
-      - "8081:8081" # CosmosDB default port
-      # the following ports are used for the data explorer
-      - "10250:10250"
-      - "10251:10251"
-      - "10252:10252"
-      - "10253:10253"
-      - "10254:10254"
-      - "10255:10255"
-    volumes:
-      - "cosmos-data:/var/opt/cosmosdb"
-      - "cosmos-data:/var/opt/cosmosdb/data"
-      - "cosmos-data:/var/opt/cosmosdb/logs"
+      - "8081:8081" # CosmosDB SDK endpoint
+      - "1234:1234" # Data Explorer UI
+    environment:
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
     networks:
       - arolariu-network
       - default
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.cosmosdb.rule=Host(`cosmosdb.localhost`)"
       - "traefik.http.services.cosmosdb.loadbalancer.server.port=8081"
       - "traefik.http.routers.cosmosdb.entrypoints=websecure"
-      - "traefik.http.routers.cosmosdb.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.cosmosdb.tls.certresolver=myresolver"
 
   azurite:
     image: "mcr.microsoft.com/azure-storage/azurite:latest"

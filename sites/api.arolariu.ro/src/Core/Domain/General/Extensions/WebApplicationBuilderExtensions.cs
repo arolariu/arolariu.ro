@@ -179,6 +179,43 @@ internal static class WebApplicationBuilderExtensions
     });
 
     services.AddHostedService<ConfigRefreshHostedService>();
+
+    // Wire dependency health checks using the config values fetched at startup.
+    var cosmosConnStr = configValues.GetValueOrDefault("Endpoints:Database:NoSQL", string.Empty);
+    var cosmosMatch = System.Text.RegularExpressions.Regex.Match(cosmosConnStr, @"AccountEndpoint=([^;]+)");
+
+    var healthBuilder = services.AddHealthChecks()
+      .AddSqlServer(
+        name: "mssql",
+        connectionStringFactory: sp => sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.SqlConnectionString,
+        tags: ["db", "sql"])
+      .AddAzureBlobStorage(
+        clientFactory: sp =>
+        {
+          var endpoint = sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.StorageAccountEndpoint;
+          if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+          {
+            var connStr = $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint={endpoint};";
+            return new Azure.Storage.Blobs.BlobServiceClient(connStr, new Azure.Storage.Blobs.BlobClientOptions(Azure.Storage.Blobs.BlobClientOptions.ServiceVersion.V2025_01_05));
+          }
+          return new Azure.Storage.Blobs.BlobServiceClient(new Uri(endpoint), AzureCredentialFactory.CreateCredential());
+        },
+        configureOptions: (Action<HealthChecks.AzureStorage.AzureBlobStorageHealthCheckOptions>?)null,
+        name: "blob-storage",
+        failureStatus: null,
+        tags: ["storage"])
+      .AddUrlGroup(
+        name: "exp",
+        uri: new Uri($"{baseUrl}/api/health"),
+        tags: ["config"]);
+
+    if (cosmosMatch.Success)
+    {
+      healthBuilder.AddUrlGroup(
+        name: "cosmosdb",
+        uri: new Uri(cosmosMatch.Groups[1].Value),
+        tags: ["db", "nosql"]);
+    }
   }
 
   /// <summary>
@@ -247,32 +284,7 @@ internal static class WebApplicationBuilderExtensions
     services.AddLocalization();
     services.AddOpenApi();
     services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
-    services.AddHealthChecks()
-      .AddSqlServer(
-        name: "mssql",
-        connectionStringFactory: sp => sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.SqlConnectionString,
-        tags: ["db", "sql"])
-      .AddAzureBlobStorage(
-        clientFactory: sp =>
-        {
-          var endpoint = sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.StorageAccountEndpoint;
-          if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-          {
-            // Local Azurite uses HTTP — connect with the well-known dev storage connection string
-            // and pin to a service version that Azurite supports.
-            var connStr = $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint={endpoint};";
-            return new Azure.Storage.Blobs.BlobServiceClient(connStr, new Azure.Storage.Blobs.BlobClientOptions(Azure.Storage.Blobs.BlobClientOptions.ServiceVersion.V2025_01_05));
-          }
-          return new Azure.Storage.Blobs.BlobServiceClient(new Uri(endpoint), AzureCredentialFactory.CreateCredential());
-        },
-        configureOptions: (Action<HealthChecks.AzureStorage.AzureBlobStorageHealthCheckOptions>?)null,
-        name: "azurite-blob",
-        failureStatus: null,
-        tags: ["storage"])
-      .AddUrlGroup(
-        name: "exp",
-        uri: new Uri($"{(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")) ? ConfigProxyUrlAzure : ConfigProxyUrlDocker)}/api/health"),
-        tags: ["config"]);
+    services.AddHealthChecks();
     services.AddRateLimitingPolicies();
 
     builder.AddOTelLogging();
