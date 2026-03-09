@@ -21,8 +21,9 @@ docker exec -it mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P "$MSS
 # Creating the CosmosDB database and container...
 echo "📦 Initializing CosmosDB emulator database..."
 curl -sf -X POST http://localhost:8081/dbs -H "Content-Type: application/json" -d '{"id":"primary"}' > /dev/null 2>&1 || true
-curl -sf -X POST http://localhost:8081/dbs/primary/colls -H "Content-Type: application/json" -d '{"id":"invoices","partitionKey":{"paths":["/id"],"kind":"Hash"}}' > /dev/null 2>&1 || true
-echo "✅ CosmosDB database 'primary' and container 'invoices' initialized."
+curl -sf -X POST http://localhost:8081/dbs/primary/colls -H "Content-Type: application/json" -d '{"id":"invoices","partitionKey":{"paths":["/UserIdentifier"],"kind":"Hash"}}' > /dev/null 2>&1 || true
+curl -sf -X POST http://localhost:8081/dbs/primary/colls -H "Content-Type: application/json" -d '{"id":"merchants","partitionKey":{"paths":["/id"],"kind":"Hash"}}' > /dev/null 2>&1 || true
+echo "✅ CosmosDB database 'primary' with containers 'invoices' and 'merchants' initialized."
 
 # Creating the Azurite blob containers...
 echo "📦 Initializing Azurite blob containers..."
