@@ -274,6 +274,14 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
             "validates tenant-bound managed identity flows."
         ),
     ),
+    "website.commander.enabled": ConfigKeyDocumentation(
+        description="Feature flag controlling the Commander component on the website.",
+        usage="Website run-time only. Returns 'true' or 'false' as a string.",
+    ),
+    "website.web-vitals.enabled": ConfigKeyDocumentation(
+        description="Feature flag controlling Web Vitals reporting on the website.",
+        usage="Website run-time only. Returns 'true' or 'false' as a string.",
+    ),
 }
 
 
@@ -303,6 +311,9 @@ def _build_config_registry() -> dict[str, ConfigValueDefinition]:
         register(index.build_time_optional_keys, target=target, stage="build-time", required=False)
         register(index.runtime_required_keys, target=target, stage="run-time", required=True)
         register(index.runtime_optional_keys, target=target, stage="run-time", required=False)
+        # Feature flags are registered as optional run-time keys so they are
+        # resolvable through the single-key /api/v1/config endpoint.
+        register(index.feature_ids, target=target, stage="run-time", required=False)
 
     registry: dict[str, ConfigValueDefinition] = {}
     for key, entry in registry_builder.items():
@@ -406,13 +417,25 @@ def resolve_runtime_config(
     )
 
 
+_FEATURE_KEY_PREFIX: Final[str] = "FeatureManagement:"
+
+
 def resolve_config_value(
     definition: ConfigValueDefinition,
     config_snapshot: ConfigSnapshot,
 ) -> ConfigValueResolution:
-    """Resolve one indexed configuration value from the current config snapshot."""
+    """Resolve one indexed configuration value from the current config snapshot.
+
+    Feature flag keys are stored in the snapshot with a ``FeatureManagement:``
+    prefix but registered in the catalog under their bare name.  This function
+    checks both the bare key and the prefixed key so callers can request
+    ``website.commander.enabled`` regardless of how the underlying store labels
+    the entry.
+    """
 
     value = config_snapshot.get(definition.name)
+    if value is None:
+        value = config_snapshot.get(f"{_FEATURE_KEY_PREFIX}{definition.name}")
     is_missing_required = value is None and bool(definition.required_in_documents)
     return ConfigValueResolution(
         definition=definition,

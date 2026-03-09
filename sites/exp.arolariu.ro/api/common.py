@@ -37,7 +37,7 @@ NON_CACHEABLE_API_PATH_PREFIXES: Final[tuple[str, ...]] = (
 
 # Config keys and target names share the same conservative query alphabet:
 # letters, digits, colon separators, underscores, and hyphens.
-VALID_QUERY_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9:_-]{1,64}$")
+VALID_QUERY_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9:._-]{1,64}$")
 
 
 class ErrorDetails(TypedDict, total=False):
