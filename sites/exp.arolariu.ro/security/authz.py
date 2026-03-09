@@ -107,11 +107,17 @@ def _parse_identity_list(env_var_name: str) -> set[str]:
 
 
 def _identity_policy() -> dict[str, set[str]]:
-    """Build the caller-to-target identity policy map."""
+    """Build the caller-to-target identity policy map.
 
+    The infrastructure identity is granted access to both ``api`` and ``website``
+    targets because CI/CD pipelines need to fetch build-time and run-time
+    documents for all services during container construction.
+    """
+
+    infra_ids = _parse_identity_list("EXP_CALLER_INFRA_IDS")
     return {
-        "api": _parse_identity_list("EXP_CALLER_API_IDS"),
-        "website": _parse_identity_list("EXP_CALLER_WEBSITE_IDS"),
+        "api": _parse_identity_list("EXP_CALLER_API_IDS") | infra_ids,
+        "website": _parse_identity_list("EXP_CALLER_WEBSITE_IDS") | infra_ids,
     }
 
 

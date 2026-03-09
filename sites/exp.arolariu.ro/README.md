@@ -344,13 +344,18 @@ values into container images during the build phase.
 
 | Consumer | Identity | Endpoint | Authentication |
 |----------|----------|----------|---------------|
-| `official-api-trigger.yml` | Backend UAMI | `/api/v1/build-time?for=api` | Bearer token via OIDC |
-| `official-website-build.yml` | Frontend UAMI | `/api/v1/build-time?for=website` | Bearer token via OIDC |
+| `official-api-trigger.yml` | Infrastructure UAMI | `/api/v1/build-time?for=api` | Bearer token via OIDC |
+| `official-api-trigger.yml` | Infrastructure UAMI | `/api/v1/run-time?for=api` | Bearer token via OIDC |
+| `official-website-build.yml` | Infrastructure UAMI | `/api/v1/build-time?for=website` | Bearer token via OIDC |
 
-These workflows authenticate with the same UAMIs that are in the Easy Auth
-allow-list, acquired via GitHub Actions OIDC federation. The build-time and
-run-time documents are NOT consumed by the application at runtime — they exist
-solely for the build/deployment pipeline.
+The Infrastructure UAMI is the CI/CD orchestrator — it handles Azure login,
+ACR push, and config fetching. It is whitelisted in exp's Easy Auth allow-list
+and granted access to both `api` and `website` targets via `EXP_CALLER_INFRA_IDS`.
+
+The `npm run generate /e` script (called during website container builds) will
+fetch build-time environment variables from exp instead of directly accessing
+Azure App Configuration. This keeps the Infrastructure UAMI as the single
+identity responsible for all CI/CD operations.
 
 ### Local Docker consumers
 
