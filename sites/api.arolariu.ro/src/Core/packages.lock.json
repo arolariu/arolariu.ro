@@ -51,6 +51,12 @@
           "AspNetCore.HealthChecks.UI.Core": "9.0.0"
         }
       },
+      "AspNetCore.HealthChecks.Uris": {
+        "type": "Direct",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "XYdNlA437KeF8p9qOpZFyNqAN+c0FXt/JjTvzH/Qans0q0O3pPE8KPnn39ucQQjR/Roum1vLTP3kXiUs8VHyuA=="
+      },
       "Azure.AI.OpenAI": {
         "type": "Direct",
         "requested": "[2.7.0-beta.2, )",

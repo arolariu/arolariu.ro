@@ -18,6 +18,7 @@ using arolariu.Backend.Core.Domain.General.Services.Swagger;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Provides extension methods for configuring the <see cref="WebApplicationBuilder"/> with general domain services and infrastructure.
@@ -246,7 +247,30 @@ internal static class WebApplicationBuilderExtensions
     services.AddLocalization();
     services.AddOpenApi();
     services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
-    services.AddHealthChecks();
+    services.AddHealthChecks()
+      .AddSqlServer(
+        name: "mssql",
+        connectionStringFactory: sp => sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.SqlConnectionString,
+        tags: ["db", "sql"])
+      .AddAzureBlobStorage(
+        clientFactory: sp =>
+        {
+          var endpoint = sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.StorageAccountEndpoint;
+          if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+          {
+            // Local Azurite uses HTTP — connect with the well-known dev storage connection string.
+            return new Azure.Storage.Blobs.BlobServiceClient($"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint={endpoint};");
+          }
+          return new Azure.Storage.Blobs.BlobServiceClient(new Uri(endpoint), AzureCredentialFactory.CreateCredential());
+        },
+        configureOptions: (Action<HealthChecks.AzureStorage.AzureBlobStorageHealthCheckOptions>?)null,
+        name: "azurite-blob",
+        failureStatus: null,
+        tags: ["storage"])
+      .AddUrlGroup(
+        name: "exp",
+        uri: new Uri($"{(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")) ? ConfigProxyUrlAzure : ConfigProxyUrlDocker)}/api/health"),
+        tags: ["config"]);
     services.AddRateLimitingPolicies();
 
     builder.AddOTelLogging();
