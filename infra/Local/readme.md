@@ -19,10 +19,9 @@ The local environment is organized into four main container groups:
    - Azurite for blob storage
    - Redis cache
 
-3. **Backend** - API and service layer
+3. **Backend** - API service
 
-    - Keycloak for identity management
-    - `sites/api.arolariu.ro` containerized API service
+    - `sites/api.arolariu.ro` containerized API service (auth via Clerk)
 
 4. **Frontend** - User interface components
     - `sites/arolariu.ro` containerized website
@@ -85,10 +84,6 @@ After startup completes, you can access the following services:
 - **Traefik Dashboard**: [https://traefik.localhost](https://traefik.localhost) or [http://localhost:8090](http://localhost:8090)
 
   - Shows all configured routes and services
-
-- **Keycloak Administration**: [https://keycloak.localhost](https://keycloak.localhost)
-
-  - Default credentials: admin/qazWSXedcRFV1234!
 
 - **Whoami Test Service**: [https://whoami.localhost](https://whoami.localhost)
 
