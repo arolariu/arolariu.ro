@@ -18,7 +18,7 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
 }));
 
-vi.mock("@/lib/config/expServerConfig.server", () => ({
+vi.mock("@/lib/config/configProxy", () => ({
   fetchApiUrl: async () => "https://mock-api",
 }));
 

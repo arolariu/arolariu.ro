@@ -22,7 +22,7 @@ vi.mock("@/instrumentation.server", () => ({
 }));
 
 const mockFetchApiUrl = vi.fn(async () => "https://api.example.com");
-vi.mock("@/lib/config/expServerConfig.server", () => ({
+vi.mock("@/lib/config/configProxy", () => ({
   fetchApiUrl: () => mockFetchApiUrl(),
 }));
 

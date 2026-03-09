@@ -26,13 +26,13 @@ vi.mock("@clerk/nextjs/server", () => ({
   currentUser: mockCurrentUser,
 }));
 
-// Mock server utilities - auth secrets now resolve through expServerConfig.server.
+// Mock server utilities - auth secrets now resolve through configProxy.
 vi.mock("@/lib/utils.server", () => ({
   createJwtToken: mockCreateJwtToken,
 }));
 
-// Mock the exp-backed JWT secret helper — avoids network calls to exp
-vi.mock("@/lib/config/expServerConfig.server", () => ({
+// Mock the config proxy JWT secret helper — avoids network calls to exp
+vi.mock("@/lib/config/configProxy", () => ({
   fetchApiJwtSecret: mockFetchApiJwtSecret,
 }));
 

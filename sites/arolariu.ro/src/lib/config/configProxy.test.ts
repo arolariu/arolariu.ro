@@ -164,3 +164,167 @@ describe("configProxy", () => {
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("https://exp.arolariu.ro");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Typed config value helpers (with env-var fallback)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("configProxy typed helpers", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.unstubAllGlobals();
+    delete process.env["AZURE_CLIENT_ID"];
+    delete process.env["API_URL"];
+    delete process.env["API_JWT"];
+    delete process.env["RESEND_API_KEY"];
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env["AZURE_CLIENT_ID"];
+    delete process.env["API_URL"];
+    delete process.env["API_JWT"];
+    delete process.env["RESEND_API_KEY"];
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // fetchApiUrl
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe("fetchApiUrl", () => {
+    it("returns the value from exp when available", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", "https://api.arolariu.ro"))),
+      );
+
+      const {fetchApiUrl, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiUrl();
+
+      expect(result).toBe("https://api.arolariu.ro");
+    });
+
+    it("falls back to API_URL env var when exp returns empty", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Endpoints:Service:Api", ""))));
+      process.env["API_URL"] = "https://api-fallback.example.com";
+
+      const {fetchApiUrl, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiUrl();
+
+      expect(result).toBe("https://api-fallback.example.com");
+    });
+
+    it("falls back to API_URL env var when exp throws", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "unavailable"}, 500)));
+      process.env["API_URL"] = "https://api-env.example.com";
+
+      const {fetchApiUrl, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiUrl();
+
+      expect(result).toBe("https://api-env.example.com");
+    });
+
+    it("returns empty string when both exp and env are absent", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "unavailable"}, 500)));
+
+      const {fetchApiUrl, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiUrl();
+
+      expect(result).toBe("");
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // fetchApiJwtSecret
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe("fetchApiJwtSecret", () => {
+    it("returns the value from exp when available", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Auth:JWT:Secret", "super-secret-from-exp"))),
+      );
+
+      const {fetchApiJwtSecret, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiJwtSecret();
+
+      expect(result).toBe("super-secret-from-exp");
+    });
+
+    it("falls back to API_JWT env var when exp throws", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "unavailable"}, 500)));
+      process.env["API_JWT"] = "env-jwt-fallback";
+
+      const {fetchApiJwtSecret, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiJwtSecret();
+
+      expect(result).toBe("env-jwt-fallback");
+    });
+
+    it("returns empty string when both exp and env are absent", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "unavailable"}, 500)));
+
+      const {fetchApiJwtSecret, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchApiJwtSecret();
+
+      expect(result).toBe("");
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // fetchResendApiKey
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe("fetchResendApiKey", () => {
+    it("returns the value from exp when available", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce(createJsonResponse(createConfigValuePayload("Communication:Email:ApiKey", "re_exp_key_value"))),
+      );
+
+      const {fetchResendApiKey, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchResendApiKey();
+
+      expect(result).toBe("re_exp_key_value");
+    });
+
+    it("falls back to RESEND_API_KEY env var when exp throws", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "unavailable"}, 500)));
+      process.env["RESEND_API_KEY"] = "re_env_key";
+
+      const {fetchResendApiKey, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchResendApiKey();
+
+      expect(result).toBe("re_env_key");
+    });
+
+    it("returns empty string when both exp and env are absent", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({error: "unavailable"}, 500)));
+
+      const {fetchResendApiKey, invalidateConfigCache} = await import("./configProxy");
+      invalidateConfigCache();
+
+      const result = await fetchResendApiKey();
+
+      expect(result).toBe("");
+    });
+  });
+});

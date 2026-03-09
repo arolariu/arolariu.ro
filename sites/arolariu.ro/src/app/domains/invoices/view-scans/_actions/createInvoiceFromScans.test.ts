@@ -21,8 +21,8 @@ vi.mock("@/lib/actions/user/fetchUser", () => ({
   fetchBFFUserFromAuthService: () => mockFetchBFFUser(),
 }));
 
-// Mock expServerConfig.server
-vi.mock("@/lib/config/expServerConfig.server", () => ({
+// Mock configProxy
+vi.mock("@/lib/config/configProxy", () => ({
   fetchApiUrl: async () => "https://api.test.com",
 }));
 

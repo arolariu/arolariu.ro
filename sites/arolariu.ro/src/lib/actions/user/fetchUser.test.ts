@@ -24,8 +24,8 @@ vi.mock("@/lib/utils.server", () => ({
   createJwtToken: vi.fn().mockResolvedValue("mock-jwt-token"),
 }));
 
-// Mock the exp-backed JWT secret helper — avoids network calls to exp
-vi.mock("@/lib/config/expServerConfig.server", () => ({
+// Mock the config proxy JWT secret helper — avoids network calls to exp
+vi.mock("@/lib/config/configProxy", () => ({
   fetchApiJwtSecret: mockFetchApiJwtSecret,
 }));
 
