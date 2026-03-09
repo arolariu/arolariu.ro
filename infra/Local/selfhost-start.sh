@@ -34,7 +34,7 @@ Promise.all(['invoices'].map(async n => {
   const r = await cc.createIfNotExists();
   await cc.setAccessPolicy('blob');
   console.log(n + ':', r.succeeded ? 'created (public)' : 'exists (public)');
-})).catch(e => console.error(e.message));
+})).then(() => c.setProperties({ cors: [{ allowedOrigins: '*', allowedMethods: 'GET,HEAD,OPTIONS', allowedHeaders: '*', exposedHeaders: '*', maxAgeInSeconds: 3600 }] })).then(() => console.log('CORS enabled')).catch(e => console.error(e.message));
 "
 echo "✅ Azurite blob containers initialized."
 
