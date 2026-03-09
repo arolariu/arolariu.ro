@@ -68,13 +68,9 @@ const nextConfig: NextConfig = {
       {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.googleusercontent.com"}, // External assets.
       {protocol: "https", hostname: "**.githubusercontent.com"}, // External assets.
+      {protocol: "http", hostname: "localhost", port: "10000"}, // Azurite blob storage (local Docker).
       ...(isDebugBuild
         ? ([
-            {
-              protocol: "http",
-              hostname: "localhost",
-              port: "10000", // Azurite blob storage (local Docker).
-            },
             {
               protocol: "https",
               hostname: "loremflickr.com",
