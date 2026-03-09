@@ -186,7 +186,7 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
         id: scanId,
         userIdentifier,
         name: fileName,
-        blobUrl: blockBlobClient.url,
+        blobUrl: blockBlobClient.url.replace("http://azurite:10000", "http://localhost:10000"),
         mimeType,
         sizeInBytes: originalFile.size,
         scanType: mimeTypeToScanType(mimeType),

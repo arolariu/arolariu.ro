@@ -131,7 +131,8 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
           // Only include non-archived scans (or all scans if includeArchived is true)
           if (includeArchived || status !== ScanStatus.ARCHIVED) {
             // Construct blob URL
-            const blobUrl = containerClient.getBlockBlobClient(blob.name).url;
+            const blobUrl = containerClient.getBlockBlobClient(blob.name).url
+              .replace("http://azurite:10000", "http://localhost:10000");
 
             // Parse upload timestamp
             const uploadedAt = metadata["uploadedAt"] ? new Date(metadata["uploadedAt"]) : (blob.properties.createdOn ?? new Date());

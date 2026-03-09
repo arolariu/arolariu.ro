@@ -71,6 +71,11 @@ const nextConfig: NextConfig = {
       ...(isDebugBuild
         ? ([
             {
+              protocol: "http",
+              hostname: "localhost",
+              port: "10000", // Azurite blob storage (local Docker).
+            },
+            {
               protocol: "https",
               hostname: "loremflickr.com",
             },
