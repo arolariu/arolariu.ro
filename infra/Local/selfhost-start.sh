@@ -24,6 +24,15 @@ curl -sf -X POST http://localhost:8081/dbs -H "Content-Type: application/json" -
 curl -sf -X POST http://localhost:8081/dbs/primary/colls -H "Content-Type: application/json" -d '{"id":"invoices","partitionKey":{"paths":["/id"],"kind":"Hash"}}' > /dev/null 2>&1 || true
 echo "✅ CosmosDB database 'primary' and container 'invoices' initialized."
 
+# Creating the Azurite blob containers...
+echo "📦 Initializing Azurite blob containers..."
+node -e "
+const { BlobServiceClient } = require('@azure/storage-blob');
+const c = BlobServiceClient.fromConnectionString('DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10000/devstoreaccount1;');
+Promise.all(['invoices'].map(n => c.getContainerClient(n).createIfNotExists().then(r => console.log(n + ':', r.succeeded ? 'created' : 'exists')))).catch(e => console.error(e.message));
+"
+echo "✅ Azurite blob containers initialized."
+
 sleep 3
 
 # Start the Backend containers
