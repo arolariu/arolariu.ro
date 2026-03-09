@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 /// <summary>
-/// HTTP client implementation for the exp config proxy, backed by the simplified <c>/api/v1</c> endpoints.
+/// HTTP client implementation for the exp config proxy, backed by the simplified <c>/api/v1</c> config endpoint.
 /// </summary>
 /// <remarks>
 /// <para>All methods are stateless: each call issues exactly one HTTP GET request and
@@ -27,40 +27,6 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
     try
     {
       return await response.Content.ReadFromJsonAsync<ConfigValueResponse>(cancellationToken: ct).ConfigureAwait(false);
-    }
-    catch (JsonException)
-    {
-      return null;
-    }
-  }
-
-  /// <inheritdoc />
-  public async Task<ConfigCatalogResponse?> GetBuildTimeAsync(string target, CancellationToken ct = default)
-  {
-    var requestUri = new Uri($"/api/v1/build-time?for={Uri.EscapeDataString(target)}", UriKind.Relative);
-    using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
-    if (!response.IsSuccessStatusCode) return null;
-
-    try
-    {
-      return await response.Content.ReadFromJsonAsync<ConfigCatalogResponse>(cancellationToken: ct).ConfigureAwait(false);
-    }
-    catch (JsonException)
-    {
-      return null;
-    }
-  }
-
-  /// <inheritdoc />
-  public async Task<BootstrapResponse?> GetRunTimeAsync(string target, CancellationToken ct = default)
-  {
-    var requestUri = new Uri($"/api/v1/run-time?for={Uri.EscapeDataString(target)}", UriKind.Relative);
-    using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
-    if (!response.IsSuccessStatusCode) return null;
-
-    try
-    {
-      return await response.Content.ReadFromJsonAsync<BootstrapResponse>(cancellationToken: ct).ConfigureAwait(false);
     }
     catch (JsonException)
     {

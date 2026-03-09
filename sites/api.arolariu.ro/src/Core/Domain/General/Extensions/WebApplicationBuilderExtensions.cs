@@ -3,7 +3,6 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Net.Http;
 
 using arolariu.Backend.Common.Azure;
@@ -74,7 +73,7 @@ internal static class WebApplicationBuilderExtensions
   }
 
   /// <summary>
-  /// Configures the application to fetch configuration and feature flags from the exp proxy service.
+  /// Configures the application to fetch configuration values from the exp proxy service using individual key lookups.
   /// </summary>
   /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure.</param>
   /// <remarks>
@@ -89,10 +88,9 @@ internal static class WebApplicationBuilderExtensions
   /// <para>
   /// <strong>Startup sequence</strong> (sync-over-async is safe here — composition root, no SynchronizationContext):
   /// <list type="number">
-  ///   <item><description>Call <c>GET /api/v1/run-time?for=api</c> to retrieve config values, feature flags, and refresh cadence.</description></item>
-  ///   <item><description>Call <c>GET /api/v1/build-time?for=api</c> to retrieve the build-time config document for refresh scheduling.</description></item>
-  ///   <item><description>Seed <see cref="ConfigCatalogCache"/>, <see cref="FeatureSnapshotCache"/>, and <see cref="AzureOptions"/>.</description></item>
-  ///   <item><description>Register <see cref="ConfigRefreshHostedService"/> to keep all snapshots current.</description></item>
+  ///   <item><description>Fetch each of the 11 config keys individually via <c>GET /api/v1/config?name={key}</c>.</description></item>
+  ///   <item><description>Seed <see cref="FeatureSnapshotCache"/> (empty — no feature flags for API currently) and <see cref="AzureOptions"/>.</description></item>
+  ///   <item><description>Register <see cref="ConfigRefreshHostedService"/> to keep config values current.</description></item>
   /// </list>
   /// </para>
   /// </remarks>
@@ -117,51 +115,66 @@ internal static class WebApplicationBuilderExtensions
         new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));
     }
 
-    // Fetch config and features at startup.
+    // Fetch config values at startup.
     // Sync-over-async at startup is safe here — no SynchronizationContext exists yet.
     // The host has not started, so there is no deadlock risk.
     using var tempProvider = services.BuildServiceProvider();
     var proxyClient = tempProvider.GetRequiredService<IConfigProxyClient>();
 
-    // Run-time payload: single call for config values + feature flags + refresh cadence.
-    var runtimePayload = proxyClient.GetRunTimeAsync("api").GetAwaiter().GetResult()
-      ?? throw new InvalidOperationException(
-            $"Unable to load API run-time payload from exp service at {baseUrl}. " +
-            "Verify the exp service is reachable and AZURE_CLIENT_ID is set correctly for Azure deployments.");
+    // Config key names to fetch at startup (same set used by ConfigRefreshHostedService).
+    string[] configKeys = [
+      "Auth:JWT:Secret",
+      "Auth:JWT:Issuer",
+      "Auth:JWT:Audience",
+      "Identity:Tenant:Id",
+      "Endpoints:AI:OpenAI",
+      "Endpoints:Database:SQL",
+      "Endpoints:Database:NoSQL",
+      "Endpoints:Storage:Blob",
+      "Endpoints:Observability:Telemetry",
+      "Endpoints:AI:OCR",
+      "Endpoints:AI:OCR:Key",
+    ];
 
-    // Build-time config document: used primarily to seed refresh cadence without hard-coded intervals.
-    var configCatalog = proxyClient.GetBuildTimeAsync("api").GetAwaiter().GetResult()
-      ?? throw new InvalidOperationException(
-            $"Unable to load API build-time payload from exp service at {baseUrl}.");
-
-    if (configCatalog.Config.Count == 0)
+    var configValues = new Dictionary<string, string>(configKeys.Length);
+    foreach (var key in configKeys)
     {
-      throw new InvalidOperationException("The API build-time configuration document does not contain config values.");
+      var response = proxyClient.GetConfigValueAsync(key).GetAwaiter().GetResult();
+      if (response is not null)
+      {
+        configValues[key] = response.Value;
+      }
+    }
+
+    if (configValues.Count == 0)
+    {
+      throw new InvalidOperationException(
+            $"Unable to load any API config values from exp service at {baseUrl}. " +
+            "Verify the exp service is reachable and AZURE_CLIENT_ID is set correctly for Azure deployments.");
     }
 
     services.AddSingleton<IOptionsManager, CloudOptionsManager>();
-    services.AddSingleton(new ConfigCatalogCache(configCatalog));
     services.AddSingleton(new FeatureSnapshotCache(
-      runtimePayload.Features,
-      runtimePayload.ContractVersion,
-      runtimePayload.FetchedAt));
+      new Dictionary<string, bool>(),
+      string.Empty,
+      DateTimeOffset.UtcNow));
 
     services.Configure<AzureOptions>(options =>
     {
       var cfg = builder.Configuration;
       options.SecretsEndpoint = cfg["ApplicationOptions:SecretsEndpoint"] ?? string.Empty;
       options.ConfigurationEndpoint = cfg["ApplicationOptions:ConfigurationEndpoint"] ?? string.Empty;
-      options.JwtSecret = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Secret", string.Empty);
-      options.JwtIssuer = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Issuer", string.Empty);
-      options.JwtAudience = runtimePayload.Config.GetValueOrDefault("Auth:JWT:Audience", string.Empty);
-      options.TenantId = runtimePayload.Config.GetValueOrDefault("Identity:Tenant:Id", string.Empty);
-      options.OpenAIEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:AI:OpenAI", string.Empty);
-      options.SqlConnectionString = runtimePayload.Config.GetValueOrDefault("Endpoints:Database:SQL", string.Empty);
-      options.NoSqlConnectionString = runtimePayload.Config.GetValueOrDefault("Endpoints:Database:NoSQL", string.Empty);
-      options.StorageAccountEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:Storage:Blob", string.Empty);
-      options.ApplicationInsightsEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:Observability:Telemetry", string.Empty);
-      options.CognitiveServicesEndpoint = runtimePayload.Config.GetValueOrDefault("Endpoints:AI:OCR", string.Empty);
-      options.CognitiveServicesKey = runtimePayload.Config.GetValueOrDefault("Endpoints:AI:OCR:Key", string.Empty);
+      options.JwtSecret = configValues.GetValueOrDefault("Auth:JWT:Secret", string.Empty);
+      options.JwtIssuer = configValues.GetValueOrDefault("Auth:JWT:Issuer", string.Empty);
+      options.JwtAudience = configValues.GetValueOrDefault("Auth:JWT:Audience", string.Empty);
+      options.TenantId = configValues.GetValueOrDefault("Identity:Tenant:Id", string.Empty);
+      options.OpenAIEndpoint = configValues.GetValueOrDefault("Endpoints:AI:OpenAI", string.Empty);
+      options.SqlConnectionString = configValues.GetValueOrDefault("Endpoints:Database:SQL", string.Empty);
+      options.NoSqlConnectionString = configValues.GetValueOrDefault("Endpoints:Database:NoSQL", string.Empty);
+      options.StorageAccountEndpoint = configValues.GetValueOrDefault("Endpoints:Storage:Blob", string.Empty);
+      options.ApplicationInsightsEndpoint = configValues.GetValueOrDefault("Endpoints:Observability:Telemetry", string.Empty);
+      options.CognitiveServicesEndpoint = configValues.GetValueOrDefault("Endpoints:AI:OCR", string.Empty);
+      options.CognitiveServicesKey = configValues.GetValueOrDefault("Endpoints:AI:OCR:Key", string.Empty);
     });
 
     services.AddHostedService<ConfigRefreshHostedService>();
@@ -189,6 +202,7 @@ internal static class WebApplicationBuilderExtensions
   /// <see cref="AddProxyConfiguration"/>. The actual exp endpoint and authentication strategy are
   /// determined solely by <c>AZURE_CLIENT_ID</c> presence — not by the INFRA value — so local
   /// Docker environments that set <c>INFRA=local</c> transparently reach <c>http://exp</c>.
+  /// Configuration values are fetched individually via the config endpoint.
   /// </para>
   /// </remarks>
   public static void AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
