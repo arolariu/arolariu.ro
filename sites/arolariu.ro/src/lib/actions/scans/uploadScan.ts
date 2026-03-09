@@ -24,10 +24,9 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import {getAzureCredential} from "@/lib/azure/credentials";
+import {createBlobClient} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob} from "@/lib/utils.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
-import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -145,14 +144,13 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
 
       // Step 3. Prepare for blob upload
       const containerName = "invoices";
-      const storageCredentials = getAzureCredential();
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
       // Step 4. Upload the blob to Azure Storage
       addSpanEvent("azure.blob.upload.start");
       logWithTrace("info", "Uploading scan to Azure Blob Storage", {blobName}, "server");
 
-      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const storageClient = await createBlobClient(storageEndpoint);
       const containerClient = storageClient.getContainerClient(containerName);
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 

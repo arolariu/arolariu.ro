@@ -23,9 +23,8 @@
 
 import {withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import {getAzureCredential} from "@/lib/azure/credentials";
+import {createBlobClient} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob} from "@/lib/utils.server";
-import {BlobServiceClient} from "@azure/storage-blob";
 
 /**
  * Input parameters for uploading an invoice scan.
@@ -112,10 +111,9 @@ export async function createInvoiceScan({base64Data, metadata, blobName}: Server
     try {
       // Step 1. Prepare for blob upload
       const containerName = "invoices";
-      const storageCredentials = getAzureCredential();
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
       // Step 2. Upload the blob to Azure Storage
-      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const storageClient = await createBlobClient(storageEndpoint);
       const containerClient = storageClient.getContainerClient(containerName);
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 

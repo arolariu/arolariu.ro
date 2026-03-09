@@ -14,8 +14,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import {getAzureCredential} from "@/lib/azure/credentials";
-import {BlobServiceClient} from "@azure/storage-blob";
+import {createBlobClient} from "@/lib/azure/storageClient";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -110,10 +109,9 @@ export async function deleteScan({blobUrl}: DeleteScanInput): DeleteScanOutput {
 
       // Step 4. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
-      const storageCredentials = getAzureCredential();
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
-      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const storageClient = await createBlobClient(storageEndpoint);
       const containerClient = storageClient.getContainerClient(containerName ?? "invoices");
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
       addSpanEvent("azure.storage.connect.complete");

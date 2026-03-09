@@ -18,9 +18,8 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import {getAzureCredential} from "@/lib/azure/credentials";
+import {createBlobClient} from "@/lib/azure/storageClient";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
-import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -105,10 +104,9 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
       // Step 2. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
       const containerName = "invoices";
-      const storageCredentials = getAzureCredential();
       const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
-      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const storageClient = await createBlobClient(storageEndpoint);
       const containerClient = storageClient.getContainerClient(containerName);
       addSpanEvent("azure.storage.connect.complete");
 
