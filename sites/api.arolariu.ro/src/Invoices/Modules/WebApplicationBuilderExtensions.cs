@@ -65,15 +65,17 @@ public static class WebApplicationBuilderExtensions
       // Azure production uses the endpoint URI with Managed Identity.
       if (connectionString.Contains("AccountKey=", StringComparison.OrdinalIgnoreCase))
       {
-        var clientOptions = new CosmosClientOptions
+        // Parse endpoint and key from the connection string for explicit constructor.
+        var endpointMatch = System.Text.RegularExpressions.Regex.Match(connectionString, @"AccountEndpoint=([^;]+)");
+        var keyMatch = System.Text.RegularExpressions.Regex.Match(connectionString, @"AccountKey=([^;]+)");
+        var endpoint = endpointMatch.Success ? endpointMatch.Groups[1].Value : "http://cosmosdb:8081/";
+        var key = keyMatch.Success ? keyMatch.Groups[1].Value : string.Empty;
+
+        return new CosmosClient(endpoint, key, new CosmosClientOptions
         {
           ConnectionMode = ConnectionMode.Gateway,
-          // The vNext emulator runs HTTP by default — allow insecure connections for local dev.
-          HttpClientFactory = connectionString.Contains("http://", StringComparison.OrdinalIgnoreCase)
-            ? () => new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true })
-            : null,
-        };
-        return new CosmosClient(connectionString, clientOptions);
+          LimitToEndpoint = true,
+        });
       }
 
       var credentials = AzureCredentialFactory.CreateCredential();
@@ -90,15 +92,7 @@ public static class WebApplicationBuilderExtensions
 
       options.UseCosmos(connectionString, "primary", noSqlOptions =>
       {
-        // Use gateway mode for emulator compatibility.
         noSqlOptions.ConnectionMode(ConnectionMode.Gateway);
-
-        // Accept HTTP for local vNext emulator.
-        if (connectionString.Contains("http://", StringComparison.OrdinalIgnoreCase))
-        {
-          noSqlOptions.HttpClientFactory(() =>
-            new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true }));
-        }
       });
       options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     });

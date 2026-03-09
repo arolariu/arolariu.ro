@@ -49,6 +49,7 @@ services:
       - "1234:1234" # Data Explorer UI
     environment:
       - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP=true
     networks:
       - arolariu-network
       - default
@@ -56,8 +57,8 @@ services:
       test: ["CMD-SHELL", "curl -sf http://localhost:8081/ || exit 1"]
       interval: 30s
       timeout: 10s
-      start_period: 30s
-      retries: 3
+      start_period: 60s
+      retries: 5
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.cosmosdb.rule=Host(`cosmosdb.localhost`)"

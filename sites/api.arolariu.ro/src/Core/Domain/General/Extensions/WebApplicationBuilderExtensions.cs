@@ -212,9 +212,10 @@ internal static class WebApplicationBuilderExtensions
 
     if (cosmosMatch.Success)
     {
+      var cosmosUri = new Uri(cosmosMatch.Groups[1].Value);
       healthBuilder.AddUrlGroup(
         name: "cosmosdb",
-        uri: new Uri(cosmosMatch.Groups[1].Value),
+        uri: cosmosUri,
         tags: ["db", "nosql"]);
     }
   }
