@@ -23,7 +23,8 @@ const AZURITE_CONN_PREFIX =
  */
 export async function createBlobClient(storageEndpoint: string): Promise<BlobServiceClient> {
   if (storageEndpoint.startsWith("http://")) {
-    return new BlobServiceClient(`${AZURITE_CONN_PREFIX}${storageEndpoint};`);
+    const connStr = `${AZURITE_CONN_PREFIX}${storageEndpoint};`;
+    return BlobServiceClient.fromConnectionString(connStr);
   }
 
   const {getAzureCredential} = await import("@/lib/azure/credentials");
