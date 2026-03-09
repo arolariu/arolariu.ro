@@ -73,6 +73,9 @@ param managedIdentityFrontendPrincipalId string
 @description('Principal (object) ID of the backend managed identity.')
 param managedIdentityBackendPrincipalId string
 
+@description('Principal (object) ID of the infrastructure managed identity (CI/CD).')
+param managedIdentityInfrastructurePrincipalId string
+
 @description('Entra ID App Registration client ID for the experiments service Easy Auth.')
 param expEntraAppClientId string
 
@@ -127,16 +130,17 @@ module cvWebsiteDeployment 'cv-arolariu-ro.bicep' = {
 module expWebsiteDeployment 'exp-arolariu-ro.bicep' = {
   name: 'expWebsiteDeployment-${resourceDeploymentDate}'
   params: {
+    appConfigurationName: appConfigurationName
     appInsightsConnectionString: appInsightsConnectionString
-    expWebsiteLocation: resourceLocation
-    expWebsitePlanId: developmentAppPlanId
-    expWebsiteIdentityId: managedIdentityBackendId
-    expWebsiteIdentityClientId: managedIdentityBackendClientId
-    expWebsiteDeploymentDate: resourceDeploymentDate
-    frontendIdentityPrincipalId: managedIdentityFrontendPrincipalId
     backendIdentityPrincipalId: managedIdentityBackendPrincipalId
     entraAppClientId: expEntraAppClientId
-    appConfigurationName: appConfigurationName
+    expWebsiteDeploymentDate: resourceDeploymentDate
+    expWebsiteIdentityClientId: managedIdentityBackendClientId
+    expWebsiteIdentityId: managedIdentityBackendId
+    expWebsiteLocation: resourceLocation
+    expWebsitePlanId: developmentAppPlanId
+    frontendIdentityPrincipalId: managedIdentityFrontendPrincipalId
+    infrastructureIdentityPrincipalId: managedIdentityInfrastructurePrincipalId
   }
 }
 

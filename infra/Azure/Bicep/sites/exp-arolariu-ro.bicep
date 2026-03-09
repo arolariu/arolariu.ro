@@ -66,6 +66,9 @@ param frontendIdentityPrincipalId string
 @description('The backend managed identity principal (object) ID - allowed caller.')
 param backendIdentityPrincipalId string
 
+@description('The infrastructure managed identity principal (object) ID - allowed CI/CD caller.')
+param infrastructureIdentityPrincipalId string
+
 @description('The Entra ID App Registration client ID for the exp service.')
 param entraAppClientId string
 
@@ -152,6 +155,10 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
           value: frontendIdentityPrincipalId
         }
         {
+          name: 'EXP_CALLER_INFRA_IDS'
+          value: infrastructureIdentityPrincipalId
+        }
+        {
           name: 'EXP_CONFIG_REFRESH_INTERVAL_SECONDS'
           value: '300'
         }
@@ -168,7 +175,7 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
   })
 }
 
-// Easy Auth v2 — restrict to frontend + backend UAMIs only
+// Easy Auth v2 — restrict to frontend + backend + infrastructure UAMIs
 resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
   parent: expWebsite
   name: 'authsettingsV2'
@@ -194,6 +201,7 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
               identities: [
                 frontendIdentityPrincipalId
                 backendIdentityPrincipalId
+                infrastructureIdentityPrincipalId
               ]
             }
           }
