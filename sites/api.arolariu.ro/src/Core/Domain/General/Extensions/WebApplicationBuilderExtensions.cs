@@ -212,11 +212,20 @@ internal static class WebApplicationBuilderExtensions
 
     if (cosmosMatch.Success)
     {
-      var cosmosUri = new Uri(cosmosMatch.Groups[1].Value);
-      healthBuilder.AddUrlGroup(
-        name: "cosmosdb",
-        uri: cosmosUri,
-        tags: ["db", "nosql"]);
+      var cosmosEndpoint = cosmosMatch.Groups[1].Value;
+      if (cosmosEndpoint.Contains("documents.azure.com", StringComparison.OrdinalIgnoreCase))
+      {
+        // Azure Cosmos DB — use the already-registered CosmosClient singleton for health checks.
+        healthBuilder.AddCheck("cosmosdb", new CosmosDbHealthCheck(cosmosEndpoint), tags: ["db", "nosql"]);
+      }
+      else
+      {
+        // Local emulator — unauthenticated URL probe is sufficient.
+        healthBuilder.AddUrlGroup(
+          name: "cosmosdb",
+          uri: new Uri(cosmosEndpoint),
+          tags: ["db", "nosql"]);
+      }
     }
   }
 
