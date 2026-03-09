@@ -60,10 +60,24 @@ public static class WebApplicationBuilderExtensions
                     .GetRequiredService<IOptionsManager>()
                     .GetApplicationOptions()
                     .NoSqlConnectionString);
-      var credentials = AzureCredentialFactory.CreateCredential();
 
-      var cosmosClient = new CosmosClient(connectionString, credentials);
-      return cosmosClient;
+      // Local emulator uses a full connection string (AccountEndpoint=...;AccountKey=...).
+      // Azure production uses the endpoint URI with Managed Identity.
+      if (connectionString.Contains("AccountKey=", StringComparison.OrdinalIgnoreCase))
+      {
+        var clientOptions = new CosmosClientOptions
+        {
+          ConnectionMode = ConnectionMode.Gateway,
+          // The vNext emulator runs HTTP by default — allow insecure connections for local dev.
+          HttpClientFactory = connectionString.Contains("http://", StringComparison.OrdinalIgnoreCase)
+            ? () => new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true })
+            : null,
+        };
+        return new CosmosClient(connectionString, clientOptions);
+      }
+
+      var credentials = AzureCredentialFactory.CreateCredential();
+      return new CosmosClient(connectionString, credentials);
     });
 
     services.AddDbContext<InvoiceNoSqlBroker>(options =>
@@ -76,7 +90,15 @@ public static class WebApplicationBuilderExtensions
 
       options.UseCosmos(connectionString, "primary", noSqlOptions =>
       {
+        // Use gateway mode for emulator compatibility.
+        noSqlOptions.ConnectionMode(ConnectionMode.Gateway);
 
+        // Accept HTTP for local vNext emulator.
+        if (connectionString.Contains("http://", StringComparison.OrdinalIgnoreCase))
+        {
+          noSqlOptions.HttpClientFactory(() =>
+            new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true }));
+        }
       });
       options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     });
