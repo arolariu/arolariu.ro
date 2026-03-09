@@ -35,7 +35,7 @@ export default async function RootLayout(props: Readonly<LayoutProps<"/">>): Pro
   const eulaCookie = await getCookie("eula-accepted");
 
   // Evaluate feature flags server-side; getWebsiteFeatureFlags() falls back to
-  // DEFAULT_FEATURE_FLAGS (both enabled) when exp is unavailable.
+  // DEFAULT_FEATURE_FLAGS (both disabled) when exp is unavailable.
   const featureFlags = await getWebsiteFeatureFlags();
 
   return (

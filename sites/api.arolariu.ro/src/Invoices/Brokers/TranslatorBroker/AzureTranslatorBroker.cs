@@ -39,8 +39,10 @@ public class AzureTranslatorBroker : ITranslatorBroker
   /// <remarks>
   /// <para>Construction is side‑effect free (no network calls). The client is thread-safe; the broker instance is suitable for scoped
   /// or singleton lifetimes depending on broader DI design.</para>
+  /// <para>The Translator endpoint is fixed at <c>https://api.cognitive.microsofttranslator.com/</c> and the region is fixed at
+  /// <c>swedencentral</c>. Only <c>CognitiveServicesKey</c> is sourced from application options.</para>
   /// </remarks>
-  /// <param name="optionsManager">Options source providing <c>CognitiveServicesKey</c> (required) and <c>CognitiveServicesEndpoint</c>.</param>
+  /// <param name="optionsManager">Options source providing <c>CognitiveServicesKey</c> (required).</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
   public AzureTranslatorBroker(IOptionsManager optionsManager)
   {

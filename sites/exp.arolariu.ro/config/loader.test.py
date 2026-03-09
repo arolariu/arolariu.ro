@@ -1,7 +1,7 @@
 """Tests for config_loader module."""
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -151,7 +151,7 @@ class TestConfigStats:
         config_loader._config = {"Endpoints:Service:Api": "https://localhost:5000"}
         config_loader._loaded = True
         config_loader._load_count = 2
-        config_loader._last_loaded_at_utc = datetime(2026, 3, 7, tzinfo=timezone.utc)
+        config_loader._last_loaded_at_utc = datetime(2026, 3, 7, tzinfo=UTC)
 
         result = config_loader.get_config_stats()
 

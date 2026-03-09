@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import ClassVar
 
 import pytest
 from fastapi import FastAPI
@@ -209,8 +210,8 @@ def _build_fake_dependencies() -> TelemetryDependencies:
             self.uninstrumented = True
 
     class FakeFastAPIInstrumentor:
-        instrument_calls: list[dict[str, object]] = []
-        uninstrument_calls: list[FastAPI] = []
+        instrument_calls: ClassVar[list[dict[str, object]]] = []
+        uninstrument_calls: ClassVar[list[FastAPI]] = []
 
         @staticmethod
         def instrument_app(app: FastAPI, **kwargs: object) -> None:
