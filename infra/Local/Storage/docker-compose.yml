@@ -132,8 +132,8 @@ services:
 
   exp:
     build:
-      context: ../../../sites/exp.arolariu.ro
-      dockerfile: Dockerfile
+      context: ../../..
+      dockerfile: infra/containers/Dockerfile.exp
     container_name: exp-arolariu-ro
     ports:
       - "5002:80"
