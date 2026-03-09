@@ -8,167 +8,145 @@ This repository contains a complete containerized development environment for th
 
 The local environment is organized into four main container groups:
 
-1. **Management** - Infrastructure monitoring and routing services
+1. **Management** — Traefik reverse proxy with dashboard
 
-   - Traefik as a reverse proxy with dashboard
-
-2. **Storage** - Database and persistence layer
-
-   - Microsoft SQL Server
-   - NoSQL database
-   - Azurite for blob storage
+2. **Storage** — Data persistence and configuration
+   - `exp.arolariu.ro` — experimentation / config proxy (serves all runtime config)
+   - Microsoft SQL Server (auth database)
+   - CosmosDB vNext emulator (invoice document store)
+   - Azurite (blob storage emulator)
    - Redis cache
 
-3. **Backend** - API service
+3. **Backend** — `sites/api.arolariu.ro` containerized API service
 
-    - `sites/api.arolariu.ro` containerized API service (auth via Clerk)
+4. **Frontend** — `sites/arolariu.ro` containerized Next.js website
 
-4. **Frontend** - User interface components
-    - `sites/arolariu.ro` containerized website
+### Service dependency flow
+
+```
+Frontend (localhost:3000)  →  exp (http://exp:80)  ←  Backend (localhost:5000)
+     ↓                            ↓                        ↓
+   Clerk Auth               config.docker.json         CosmosDB / SQL / Azurite
+```
+
+Both the API and website fetch ALL runtime configuration (JWT secrets, database
+endpoints, feature flags, etc.) from the exp service. No config is hardcoded in
+the application containers.
 
 ## Prerequisites
 
-To run this project locally, you need:
-
-- **Docker** (20.10.0 or higher)
-- **Docker Compose** (v2.0.0 or higher)
+- **Docker** (20.10.0 or higher) with Docker Compose v2
+- **Node.js** ≥ 24 and **npm** ≥ 11 (for `selfhost-start.sh` blob container init)
 - **Git** (to clone the repository)
 - 4GB+ RAM available for containers
 - 10GB+ of free disk space
 
 ## Getting Started
 
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/arolariu/arolariu.ro.git
-   cd arolariu.ro
-   ```
-
-2. Navigate to the local infrastructure directory:
-   ```bash
-   cd infra/Local
-   ```
-
-### Starting the Environment
-
-Choose the appropriate startup script based on your operating system:
-
-#### Windows
-
-```cmd
-selfhost-start.bat
-```
-
-#### Linux/macOS
+### 1. Clone and install
 
 ```bash
-./selfhost-start.sh
+git clone https://github.com/arolariu/arolariu.ro.git
+cd arolariu.ro
+npm install
+```
+
+### 2. Create local config files
+
+The exp service needs a local config file with your secrets:
+
+```bash
+cd sites/exp.arolariu.ro
+cp config.template.json config.docker.json
+# Edit config.docker.json with your real values (Clerk keys, etc.)
+```
+
+The frontend needs Clerk keys for Docker Compose:
+
+```bash
+cd infra/Local/Frontend
+# Create .env with your Clerk keys:
+echo 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_KEY' > .env
+echo 'CLERK_SECRET_KEY=sk_test_YOUR_KEY' >> .env
+```
+
+Both files are gitignored — they will never be committed.
+
+### 3. Start the environment
+
+```bash
+cd infra/Local
+./selfhost-start.sh    # Linux/macOS
+selfhost-start.bat     # Windows
 ```
 
 The startup process:
 
 1. Starts Management containers (Traefik)
-2. Deploys Storage containers (databases)
-3. Boots `exp.arolariu.ro` with Docker-network configuration from `sites/exp.arolariu.ro/config.docker.json`
-4. Creates and configures the SQL database
-5. Builds and launches Backend services
-6. Builds and launches Frontend applications
+2. Deploys Storage containers (SQL, CosmosDB, Azurite, Redis, **exp**)
+3. Waits for databases to be ready
+4. Creates SQL schema (`arolariu-sql` database)
+5. Creates CosmosDB database (`primary`) with containers (`invoices`, `merchants`)
+6. Creates Azurite blob containers (`invoices`) with public read access and CORS
+7. Builds and launches the Backend API
+8. Builds and launches the Frontend website
 
 ### Accessing Services
 
-After startup completes, you can access the following services:
+| Service | URL | Notes |
+|---------|-----|-------|
+| **Website** | http://localhost:3000 | Auth via Clerk |
+| **API Health** | http://localhost:5000/health | Shows dependency status |
+| **exp Health** | http://localhost:5002/api/health | Config service diagnostics |
+| **exp Admin** | http://localhost:5002/admin | Config editor (local only) |
+| **CosmosDB Explorer** | http://localhost:1234 | vNext emulator data explorer |
+| **Azurite Blobs** | http://localhost:10000 | Blob storage (public read) |
+| **SQL Server** | localhost:8082 | User: `sa`, Password in compose |
+| **Redis** | localhost:6379 | No auth locally |
+| **Traefik Dashboard** | http://localhost:8090 | Reverse proxy routes |
 
-- **Traefik Dashboard**: [https://traefik.localhost](https://traefik.localhost) or [http://localhost:8090](http://localhost:8090)
+### How config flows locally
 
-  - Shows all configured routes and services
+1. **exp** loads `config.docker.json` at startup (contains all config keys)
+2. **API** fetches 11 config keys individually from `http://exp/api/v1/config`
+3. **Website** fetches config keys on demand from `http://exp/api/v1/config`
+4. **Feature flags** are fetched fresh on every page load (no cache)
+5. Changes via the **admin UI** (`http://localhost:5002/admin`) take effect immediately
 
-- **Whoami Test Service**: [https://whoami.localhost](https://whoami.localhost)
+### Changing config at runtime
 
-  - Test service showing request information
-
-- **Website**: [http://localhost:3000](http://localhost:3000) or [https://website.localhost](https://website.localhost)
-
-  - Server-side runtime config is fetched from `http://exp`
-
-- **API Health**: [http://localhost:5000/health](http://localhost:5000/health) or [https://api.localhost/health](https://api.localhost/health)
-
-  - API runtime bootstrap is fetched from `http://exp`
-
-- **exp Health**: [http://localhost:5002/api/health](http://localhost:5002/api/health)
-
-- **SQL Server Connection Info**:
-
-  - Host: `mssql.localhost` or `localhost`
-  - Port: `8082`
-  - Username: `sa`
-  - Password: `qazWSXedcRFV1234!`
-
-- **Cosmos DB Admin**: [https://cosmosdb.localhost](https://cosmosdb.localhost)
-  - Web interface for database management
-
-## Configuration
-
-All service configurations are stored in:
-
-1. Docker Compose files in each subdirectory:
-
-   - `Management/docker-compose.yml`
-   - `Storage/docker-compose.yml`
-   - `Backend/docker-compose.yml`
-   - `Frontend/docker-compose.yml`
-
-2. Shell environment variables:
-   - Export `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` before `selfhost-start` when you want real Clerk-backed auth flows locally
-   - If those variables are omitted, the website container uses placeholder test-like values so the stack can still boot for non-auth smoke checks, but browser-driven Clerk authentication will still fail until you provide real local Clerk keys
+Open http://localhost:5002/admin to view and edit config values. Changes are
+ephemeral (reset on container restart). Feature flag toggles take effect on
+the next browser page load.
 
 ## Stopping the Environment
 
-To stop all running containers:
-
-#### Windows
-
-```cmd
-selfhost-stop.bat
-```
-
-#### Linux/macOS
-
 ```bash
-./selfhost-stop.sh
+cd infra/Local
+./selfhost-stop.sh    # Linux/macOS
+selfhost-stop.bat     # Windows
 ```
-
-This will gracefully shut down all containers in reverse order:
-
-1. Frontend
-2. Backend
-3. Storage
-4. Management
 
 ## Troubleshooting
 
-### Common Issues
+| Issue | Solution |
+|-------|----------|
+| Port conflicts | Ensure ports 3000, 5000, 5002, 8081, 8082, 10000 are free |
+| `exp` not starting | Check `config.docker.json` exists and is valid JSON |
+| Clerk auth errors | Verify Clerk keys in `Frontend/.env` match your Clerk dashboard |
+| Scan images not loading | Ensure Azurite has CORS enabled (done by `selfhost-start.sh`) |
+| Invoice creation fails | Check CosmosDB containers exist with correct partition keys |
+| API health unhealthy | Run `docker logs api-arolariu-ro` to see which dependency failed |
+| Container build stale | Use `docker compose ... up -d --build --force-recreate` |
 
-- **Port Conflicts**: Ensure ports 80, 443, 8080-8090 are available on your machine
-- **Container Startup Failures**: Check Docker logs with `docker logs [container_name]`
-- **Database Connection Issues**: Verify that SQL Server has fully initialized (~30 seconds after startup)
-- **SSL Certificate Warnings**: Local certificates are self-signed, you can add exceptions in your browser
+### Viewing logs
 
-### Logs and Debugging
-
-- View container logs:
-
-  ```bash
-  docker logs -f [container_name]
-  ```
-
-- Check container status:
-  ```bash
-  docker ps
-  ```
+```bash
+docker logs -f exp-arolariu-ro       # exp config service
+docker logs -f api-arolariu-ro       # backend API
+docker logs -f website-arolariu-ro   # frontend website
+```
 
 ## Contributing
 
-See the main [CONTRIBUTING.md](../../CONTRIBUTING.md) file for details on contributing to this project.
+See the main [CONTRIBUTING.md](../../CONTRIBUTING.md) file for details.
