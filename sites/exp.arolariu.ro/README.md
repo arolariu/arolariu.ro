@@ -27,17 +27,22 @@ documents and feature-flag state consumed by:
 
 ```mermaid
 flowchart LR
-    subgraph Consumers[Server-side consumers]
+    subgraph RuntimeConsumers[Runtime consumers]
         API[sites/api.arolariu.ro]
         WEBSITE[sites/arolariu.ro<br/>server context only]
     end
 
-    API -->|GET /api/v1/build-time| EXP[exp.arolariu.ro]
-    API -->|GET /api/v1/run-time| EXP
-    API -->|GET /api/v1/config?name=...| EXP
-    WEBSITE -->|GET /api/v1/build-time| EXP
-    WEBSITE -->|GET /api/v1/run-time| EXP
+    subgraph InfraConsumers[CI/CD infrastructure]
+        CICD_API[official-api-trigger.yml]
+        CICD_WEB[official-website-build.yml]
+    end
+
+    API -->|GET /api/v1/config?name=...| EXP[exp.arolariu.ro]
     WEBSITE -->|GET /api/v1/config?name=...| EXP
+    CICD_API -->|GET /api/v1/build-time?for=api| EXP
+    CICD_API -->|GET /api/v1/run-time?for=api| EXP
+    CICD_WEB -->|GET /api/v1/build-time?for=website| EXP
+    CICD_WEB -->|GET /api/v1/run-time?for=website| EXP
 
     subgraph ExpRuntime[exp runtime]
         ROUTERS[api/* slices]
@@ -187,8 +192,8 @@ done since startup.
     "local:website": 30
   },
   "configValuesByName": {
-    "Endpoints:Api": 5,
-    "Common:Auth:Issuer": 6
+    "Endpoints:Service:Api": 5,
+    "Auth:JWT:Issuer": 6
   },
   "lastConfigServedAt": "2025-01-01T00:00:04+00:00"
 }
@@ -215,10 +220,10 @@ Returns the build-time configuration document for the requested target.
   "contractVersion": "1",
   "version": "<12-char hash>",
   "config": {
-    "AzureOptions:StorageAccountEndpoint": "https://...",
-    "Common:Auth:Issuer": "https://...",
-    "Common:Auth:Audience": "https://...",
-    "Endpoints:Api": "https://..."
+    "Endpoints:Storage:Blob": "https://...",
+    "Auth:JWT:Issuer": "https://...",
+    "Auth:JWT:Audience": "https://...",
+    "Endpoints:Service:Api": "https://..."
   },
   "refreshIntervalSeconds": 300,
   "fetchedAt": "2025-01-01T00:00:00+00:00"
@@ -226,7 +231,7 @@ Returns the build-time configuration document for the requested target.
 ```
 
 The build-time document contains only the keys indexed for startup/build-sensitive
-behavior. For the website target, server-only secrets such as `Common:Auth:Secret` are
+behavior. For the website target, server-only secrets such as `Auth:JWT:Secret` are
 excluded from this slice.
 
 ### `GET /api/v1/run-time?for=api|website`
@@ -239,12 +244,12 @@ Returns the runtime configuration document plus feature flags for the requested 
   "contractVersion": "1",
   "version": "<12-char hash>",
   "config": {
-    "AzureOptions:StorageAccountEndpoint": "https://...",
-    "Common:Auth:Issuer": "https://...",
-    "Common:Auth:Audience": "https://...",
-    "Common:Auth:Secret": "...",
-    "Endpoints:Api": "https://...",
-    "Communication:Resend:ApiKey": ""
+    "Endpoints:Storage:Blob": "https://...",
+    "Auth:JWT:Issuer": "https://...",
+    "Auth:JWT:Audience": "https://...",
+    "Auth:JWT:Secret": "...",
+    "Endpoints:Service:Api": "https://...",
+    "Communication:Email:ApiKey": ""
   },
   "features": {
     "website.commander.enabled": false,
@@ -287,7 +292,7 @@ Returns exactly one indexed configuration value plus its ownership and usage met
 
 ```json
 {
-  "name": "Endpoints:Api",
+  "name": "Endpoints:Service:Api",
   "value": "https://api.arolariu.ro",
   "availableForTargets": ["website"],
   "availableInDocuments": ["website.build-time", "website.run-time"],
@@ -299,26 +304,81 @@ Returns exactly one indexed configuration value plus its ownership and usage met
 }
 ```
 
-`name` is always a configuration key such as `Endpoints:Api` or `Common:Auth:Secret`.
+`name` is always a configuration key such as `Endpoints:Service:Api` or `Auth:JWT:Secret`.
 When a key is shared by multiple targets, callers must also send `X-Exp-Target` so
 authorization remains explicit.
+
+## Endpoint access patterns
+
+### Runtime consumers (API + Website)
+
+Both the API and website services consume exp exclusively through the single-key
+`/api/v1/config?name=<key>` endpoint at runtime. They do NOT call `/build-time`
+or `/run-time` — those are infrastructure endpoints.
+
+| Consumer | Identity | Endpoint | Authentication |
+|----------|----------|----------|---------------|
+| API (.NET) | Backend UAMI | `/api/v1/config?name=...` | Bearer token via Managed Identity |
+| Website (Next.js) | Frontend UAMI | `/api/v1/config?name=...` | Bearer token via Managed Identity |
+
+**API whitelisted keys** (fetched at startup + refreshed every 5 min):
+- `Auth:JWT:Secret`, `Auth:JWT:Issuer`, `Auth:JWT:Audience`
+- `Identity:Tenant:Id`
+- `Endpoints:AI:OpenAI`, `Endpoints:AI:OCR`, `Endpoints:AI:OCR:Key`
+- `Endpoints:Database:SQL`, `Endpoints:Database:NoSQL`
+- `Endpoints:Storage:Blob`, `Endpoints:Observability:Telemetry`
+
+**Website whitelisted keys** (fetched on demand with TTL cache):
+- `Endpoints:Service:Api` — backend API base URL
+- `Auth:JWT:Secret` — JWT signing secret
+- `Communication:Email:ApiKey` — Resend email key (optional)
+- `Endpoints:Storage:Blob` — blob storage endpoint
+- `website.commander.enabled` — feature flag
+- `website.web-vitals.enabled` — feature flag
+
+### Infrastructure consumers (CI/CD)
+
+The `/api/v1/build-time` and `/api/v1/run-time` endpoints are designed for
+infrastructure tooling — CI/CD pipelines that need to inject configuration
+values into container images during the build phase.
+
+| Consumer | Identity | Endpoint | Authentication |
+|----------|----------|----------|---------------|
+| `official-api-trigger.yml` | Backend UAMI | `/api/v1/build-time?for=api` | Bearer token via OIDC |
+| `official-website-build.yml` | Frontend UAMI | `/api/v1/build-time?for=website` | Bearer token via OIDC |
+
+These workflows authenticate with the same UAMIs that are in the Easy Auth
+allow-list, acquired via GitHub Actions OIDC federation. The build-time and
+run-time documents are NOT consumed by the application at runtime — they exist
+solely for the build/deployment pipeline.
+
+### Local Docker consumers
+
+In local Docker mode (`INFRA=local`), exp runs without Easy Auth. Authorization
+falls back to query-parameter validation and optional shared-token auth via
+`EXP_LOCAL_SHARED_TOKEN` / `X-Exp-Local-Token`.
+
+| Consumer | Endpoint | Authentication |
+|----------|----------|---------------|
+| API container | `/api/v1/config?name=...` | `X-Exp-Target: api` header |
+| Website container | `/api/v1/config?name=...` | `X-Exp-Target: website` header |
 
 ## Indexed target ownership
 
 ### `api`
 
 - Build-time keys
-  - `Common:Auth:Secret`
-  - `Common:Auth:Issuer`
-  - `Common:Auth:Audience`
-  - `Common:Azure:TenantId`
-  - `Endpoints:OpenAI`
-  - `Endpoints:SqlServer`
-  - `Endpoints:NoSqlServer`
-  - `Endpoints:StorageAccount`
-  - `Endpoints:ApplicationInsights`
-  - `Endpoints:CognitiveServices`
-  - `Endpoints:CognitiveServices:Key`
+  - `Auth:JWT:Secret`
+  - `Auth:JWT:Issuer`
+  - `Auth:JWT:Audience`
+  - `Identity:Tenant:Id`
+  - `Endpoints:AI:OpenAI`
+  - `Endpoints:Database:SQL`
+  - `Endpoints:Database:NoSQL`
+  - `Endpoints:Storage:Blob`
+  - `Endpoints:Observability:Telemetry`
+  - `Endpoints:AI:OCR`
+  - `Endpoints:AI:OCR:Key`
 - Runtime keys
   - same as build-time
 - Feature IDs
@@ -327,18 +387,18 @@ authorization remains explicit.
 ### `website`
 
 - Build-time keys
-  - `AzureOptions:StorageAccountEndpoint`
-  - `Common:Auth:Issuer`
-  - `Common:Auth:Audience`
-  - `Endpoints:Api`
+  - `Endpoints:Storage:Blob`
+  - `Auth:JWT:Issuer`
+  - `Auth:JWT:Audience`
+  - `Endpoints:Service:Api`
 - Runtime keys
-  - `AzureOptions:StorageAccountEndpoint`
-  - `Common:Auth:Issuer`
-  - `Common:Auth:Audience`
-  - `Common:Auth:Secret`
-  - `Endpoints:Api`
+  - `Endpoints:Storage:Blob`
+  - `Auth:JWT:Issuer`
+  - `Auth:JWT:Audience`
+  - `Auth:JWT:Secret`
+  - `Endpoints:Service:Api`
 - Runtime optional keys
-  - `Communication:Resend:ApiKey`
+  - `Communication:Email:ApiKey`
 - Feature IDs
   - `website.commander.enabled`
   - `website.web-vitals.enabled`
@@ -521,8 +581,8 @@ Smoke checks:
 ```powershell
 Invoke-WebRequest -Uri "http://localhost:5002/api/health"
 Invoke-WebRequest -Uri "http://localhost:5002/api/v1/build-time?for=website" -Headers @{ "X-Exp-Target" = "website" }
-Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Endpoints:Api" -Headers @{ "X-Exp-Target" = "website" }
-Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Common:Auth:Secret" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Endpoints:Service:Api" -Headers @{ "X-Exp-Target" = "website" }
+Invoke-WebRequest -Uri "http://localhost:5002/api/v1/config?name=Auth:JWT:Secret" -Headers @{ "X-Exp-Target" = "website" }
 Invoke-WebRequest -Uri "http://localhost:5002/api/v1/run-time?for=website" -Headers @{ "X-Exp-Target" = "website" }
 ```
 
