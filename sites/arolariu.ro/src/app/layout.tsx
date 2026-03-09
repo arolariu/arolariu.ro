@@ -1,7 +1,7 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {getCookie} from "@/lib/actions/cookies";
-import {getWebsiteFeatureFlags} from "@/lib/config/configBootstrap.server";
+import {getWebsiteFeatureFlags} from "@/lib/config/featureFlags.server";
 import type {AbstractIntlMessages} from "next-intl";
 import {getLocale, getMessages} from "next-intl/server";
 import {Suspense} from "react";

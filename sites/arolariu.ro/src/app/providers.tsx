@@ -2,7 +2,7 @@
 
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
-import {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/configBootstrap.types";
+import {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";
 import {onLocaleSync} from "@/stores/preferencesStore";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
