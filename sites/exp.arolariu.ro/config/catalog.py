@@ -166,17 +166,29 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
     "website": _build_index(
         target="website",
         build_time_required_keys=[
-            "Endpoints:Storage:Blob",
-            "Auth:JWT:Issuer",
+            "Auth:Clerk:PublishableKey",
+            "Auth:Clerk:SecretKey",
             "Auth:JWT:Audience",
+            "Auth:JWT:Issuer",
             "Endpoints:Service:Api",
+            "Endpoints:Storage:Blob",
+            "Site:Environment",
+            "Site:Name",
+            "Site:Url",
+            "Site:UseCdn",
         ],
         runtime_required_keys=[
-            "Endpoints:Storage:Blob",
-            "Auth:JWT:Issuer",
+            "Auth:Clerk:PublishableKey",
+            "Auth:Clerk:SecretKey",
             "Auth:JWT:Audience",
+            "Auth:JWT:Issuer",
             "Auth:JWT:Secret",
             "Endpoints:Service:Api",
+            "Endpoints:Storage:Blob",
+            "Site:Environment",
+            "Site:Name",
+            "Site:Url",
+            "Site:UseCdn",
         ],
         runtime_optional_keys=[
             "Communication:Email:ApiKey",
@@ -189,6 +201,14 @@ _TARGET_INDEXES: Final[dict[str, TargetConfigIndex]] = {
 }
 
 _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
+    "Auth:Clerk:PublishableKey": ConfigKeyDocumentation(
+        description="Clerk publishable key for client-side authentication.",
+        usage="Inlined into the Next.js bundle at build time via NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.",
+    ),
+    "Auth:Clerk:SecretKey": ConfigKeyDocumentation(
+        description="Clerk secret key for server-side authentication.",
+        usage="Server-only. Used as CLERK_SECRET_KEY during website runtime.",
+    ),
     "Auth:JWT:Audience": ConfigKeyDocumentation(
         description="JWT audience used by both API and website server-side auth flows.",
         usage=(
@@ -273,6 +293,22 @@ _CONFIG_KEY_DOCUMENTATION: Final[dict[str, ConfigKeyDocumentation]] = {
             "API-only. Required when the backend resolves cloud resources or "
             "validates tenant-bound managed identity flows."
         ),
+    ),
+    "Site:Environment": ConfigKeyDocumentation(
+        description="Deployment environment label (Development or Production).",
+        usage="Injected as SITE_ENV at website build time.",
+    ),
+    "Site:Name": ConfigKeyDocumentation(
+        description="Canonical site domain name (e.g. arolariu.ro or dev.arolariu.ro).",
+        usage="Injected as SITE_NAME at website build time.",
+    ),
+    "Site:Url": ConfigKeyDocumentation(
+        description="Fully-qualified site URL (e.g. https://arolariu.ro).",
+        usage="Injected as SITE_URL at website build time.",
+    ),
+    "Site:UseCdn": ConfigKeyDocumentation(
+        description="CDN toggle for static asset prefix (true in production).",
+        usage="Injected as USE_CDN at website build time.",
     ),
     "website.commander.enabled": ConfigKeyDocumentation(
         description="Feature flag controlling the Commander component on the website.",

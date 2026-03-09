@@ -1,4 +1,6 @@
 {
+  "Auth:Clerk:PublishableKey": "pk_test_Y2xlcmsuY2xlcmsuZGV2JA==",
+  "Auth:Clerk:SecretKey": "sk_test_Y2xlcmsuY2xlcmsuZGV2JA==",
   "Auth:JWT:Secret": "local-docker-jwt-secret",
   "Auth:JWT:Issuer": "https://auth.arolariu.ro",
   "Auth:JWT:Audience": "https://api.arolariu.ro",
@@ -12,6 +14,10 @@
   "Endpoints:AI:OCR": "https://cognitiveservices.localhost/",
   "Endpoints:AI:OCR:Key": "local-docker-cognitive-services-key",
   "Communication:Email:ApiKey": "",
+  "Site:Environment": "Development",
+  "Site:Name": "dev.arolariu.ro",
+  "Site:Url": "http://localhost:3000",
+  "Site:UseCdn": "false",
   "FeatureManagement:website.commander.enabled": "false",
   "FeatureManagement:website.web-vitals.enabled": "false"
 }

@@ -177,16 +177,18 @@ class ApiRunTimeConfig(ApiBuildTimeConfig):
 class WebsiteBuildTimeConfig(ExpModel):
     """Configuration values needed to build and boot the website server runtime.
 
-    These values are safe for server-side website bootstrap, but they do not
-    include website-only secrets that must stay out of build-time payloads.
+    Includes both server-side infrastructure config AND build-time env vars
+    (Site:*, Auth:Clerk:*) that the CI/CD pipeline injects into the container
+    via the generated .env file.
     """
 
-    storage_account_endpoint: str = Field(
-        alias="Endpoints:Storage:Blob",
-        description=(
-            "Blob storage endpoint under the Endpoint hierarchy, "
-            "used by server-side upload helpers and storage clients."
-        ),
+    clerk_publishable_key: str = Field(
+        alias="Auth:Clerk:PublishableKey",
+        description="Clerk publishable key inlined into the Next.js client bundle at build time.",
+    )
+    clerk_secret_key: str = Field(
+        alias="Auth:Clerk:SecretKey",
+        description="Clerk secret key for server-side authentication.",
     )
     jwt_issuer: str = Field(
         alias="Auth:JWT:Issuer",
@@ -202,6 +204,29 @@ class WebsiteBuildTimeConfig(ExpModel):
             "Base URL of the API service under the Endpoint hierarchy, "
             "called by the website from server-side code."
         ),
+    )
+    storage_account_endpoint: str = Field(
+        alias="Endpoints:Storage:Blob",
+        description=(
+            "Blob storage endpoint under the Endpoint hierarchy, "
+            "used by server-side upload helpers and storage clients."
+        ),
+    )
+    site_environment: str = Field(
+        alias="Site:Environment",
+        description="Deployment environment label (Development or Production).",
+    )
+    site_name: str = Field(
+        alias="Site:Name",
+        description="Canonical site domain name (e.g. arolariu.ro).",
+    )
+    site_url: str = Field(
+        alias="Site:Url",
+        description="Fully-qualified site URL (e.g. https://arolariu.ro).",
+    )
+    site_use_cdn: str = Field(
+        alias="Site:UseCdn",
+        description="CDN toggle for static asset prefix.",
     )
 
 

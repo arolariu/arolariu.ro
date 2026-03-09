@@ -1,4 +1,6 @@
 {
+  "Auth:Clerk:PublishableKey": "<replace-with-clerk-publishable-key>",
+  "Auth:Clerk:SecretKey": "<replace-with-clerk-secret-key>",
   "Auth:JWT:Secret": "<replace-with-jwt-secret>",
   "Auth:JWT:Issuer": "https://auth.arolariu.ro",
   "Auth:JWT:Audience": "https://api.arolariu.ro",
@@ -12,6 +14,10 @@
   "Endpoints:AI:OCR": "https://cognitiveservices.localhost/",
   "Endpoints:AI:OCR:Key": "<replace-with-ocr-key>",
   "Communication:Email:ApiKey": "",
+  "Site:Environment": "Development",
+  "Site:Name": "dev.arolariu.ro",
+  "Site:Url": "https://localhost:5000",
+  "Site:UseCdn": "false",
   "FeatureManagement:website.commander.enabled": "false",
   "FeatureManagement:website.web-vitals.enabled": "false"
 }

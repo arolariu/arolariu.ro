@@ -15,14 +15,20 @@ def _encode_principal(identifier: str) -> str:
 
 
 _FULL_WEBSITE_CONFIG: dict[str, str] = {
-    "Endpoints:Storage:Blob": "http://127.0.0.1:10000",
-    "Auth:JWT:Issuer": "https://localhost:5000",
+    "Auth:Clerk:PublishableKey": "pk_test_placeholder",
+    "Auth:Clerk:SecretKey": "sk_test_placeholder",
     "Auth:JWT:Audience": "https://localhost:3000",
+    "Auth:JWT:Issuer": "https://localhost:5000",
     "Auth:JWT:Secret": "local-secret",
-    "Endpoints:Service:Api": "https://localhost:5000",
     "Communication:Email:ApiKey": "",
+    "Endpoints:Service:Api": "https://localhost:5000",
+    "Endpoints:Storage:Blob": "http://127.0.0.1:10000",
     "FeatureManagement:website.commander.enabled": "true",
     "FeatureManagement:website.web-vitals.enabled": "false",
+    "Site:Environment": "Development",
+    "Site:Name": "dev.arolariu.ro",
+    "Site:Url": "http://localhost:3000",
+    "Site:UseCdn": "false",
 }
 
 _EMPTY_CONFIG: dict[str, str] = {}
