@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 
+from api.admin import router as admin_router
 from api.build_time import router as build_time_router
 from api.common import is_non_cacheable_path
 from api.config import router as config_router
@@ -126,6 +127,7 @@ async def attach_request_context(
 
 
 app.include_router(health_router)
+app.include_router(admin_router)
 app.include_router(build_time_router)
 app.include_router(config_router)
 app.include_router(run_time_router)

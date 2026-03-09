@@ -23,7 +23,7 @@ DEFAULT_TRACE_SAMPLE_RATIO = 1.0
 DEFAULT_LOG_LEVEL = "INFO"
 DEFAULT_SERVICE_NAME = "exp.arolariu.ro"
 DEFAULT_SERVICE_NAMESPACE = "arolariu.ro"
-DEFAULT_EXCLUDED_URLS = "/api/health,/api/ready"
+DEFAULT_EXCLUDED_URLS = "/api/health,/api/ready,/admin"
 
 
 @dataclass(frozen=True, slots=True)

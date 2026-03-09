@@ -20,7 +20,7 @@ class TestTelemetrySettings:
         assert settings.console_metric_export_enabled is True
         assert settings.console_log_export_enabled is False
         assert settings.azure_export_enabled is False
-        assert settings.excluded_urls == "/api/health,/api/ready"
+        assert settings.excluded_urls == "/api/health,/api/ready,/admin"
         assert settings.service_version == "3.0.0"
 
     def test_resolves_azure_export_when_connection_string_is_present(

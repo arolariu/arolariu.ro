@@ -272,6 +272,19 @@ def get_config_stats() -> ConfigLoaderStats:
         )
 
 
+def update_config_value(key: str, value: str) -> bool:
+    """Update a single key in the in-memory config snapshot.
+
+    Returns ``True`` if the key already existed, ``False`` if it was newly
+    created.  The change is ephemeral — it is lost on process restart.
+    """
+
+    with _config_lock:
+        existed = key in _config
+        _config[key] = value
+        return existed
+
+
 def _parse_bool(value: str) -> bool | None:
     """Parse a string as a boolean flag value."""
 
