@@ -29,7 +29,12 @@ echo "📦 Initializing Azurite blob containers..."
 node -e "
 const { BlobServiceClient } = require('@azure/storage-blob');
 const c = BlobServiceClient.fromConnectionString('DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10000/devstoreaccount1;');
-Promise.all(['invoices'].map(n => c.getContainerClient(n).createIfNotExists().then(r => console.log(n + ':', r.succeeded ? 'created' : 'exists')))).catch(e => console.error(e.message));
+Promise.all(['invoices'].map(async n => {
+  const cc = c.getContainerClient(n);
+  const r = await cc.createIfNotExists();
+  await cc.setAccessPolicy('blob');
+  console.log(n + ':', r.succeeded ? 'created (public)' : 'exists (public)');
+})).catch(e => console.error(e.message));
 "
 echo "✅ Azurite blob containers initialized."
 
