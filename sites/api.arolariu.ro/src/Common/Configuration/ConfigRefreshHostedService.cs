@@ -49,7 +49,7 @@ public sealed class ConfigRefreshHostedService(
     {
       // Read the server-declared refresh interval at the start of each wait so
       // the server can change cadence without restarting the API.
-      var refreshInterval = TimeSpan.FromSeconds(catalogCache.CurrentCatalog.RefreshIntervalSeconds);
+      var refreshInterval = TimeSpan.FromSeconds(Math.Max(60, catalogCache.CurrentCatalog.RefreshIntervalSeconds));
       await Task.Delay(refreshInterval, stoppingToken).ConfigureAwait(false);
 
       try
