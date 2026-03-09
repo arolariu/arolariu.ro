@@ -65,4 +65,4 @@ LABEL org.opencontainers.image.title="exp.arolariu.ro" \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl --fail --silent http://127.0.0.1:80/api/health || exit 1
 
-CMD ["dumb-init", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "1"]
+CMD ["dumb-init", "python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--workers", "1"]
