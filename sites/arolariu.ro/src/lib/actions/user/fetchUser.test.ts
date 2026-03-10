@@ -251,6 +251,31 @@ describe("fetchUser actions", () => {
       });
     });
 
+    describe("edge cases", () => {
+      it("should throw when jwtSecret is empty", async () => {
+        mockAuth.mockResolvedValue({isAuthenticated: false, userId: null});
+        mockFetchApiJwtSecret.mockResolvedValue("");
+
+        await expect(fetchBFFUserFromAuthService()).rejects.toThrow("API JWT secret is empty or unavailable");
+      });
+
+      it("should use 'N/A' as sub when authenticated user is null from currentUser", async () => {
+        mockAuth.mockResolvedValue({isAuthenticated: true, userId: "user-456"});
+        mockCurrentUser.mockResolvedValue(null);
+
+        await fetchBFFUserFromAuthService();
+
+        expect(createJwtToken).toHaveBeenCalledWith(
+          expect.objectContaining({
+            sub: "N/A",
+            userIdentifier: "guid-user-456",
+            role: "user",
+          }),
+          expect.any(String),
+        );
+      });
+    });
+
     describe("error handling", () => {
       it("should throw error when auth fails", async () => {
         const error = new Error("Auth failed");

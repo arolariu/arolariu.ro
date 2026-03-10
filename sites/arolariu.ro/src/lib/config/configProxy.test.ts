@@ -170,6 +170,15 @@ describe("configProxy", () => {
 
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("https://exp.arolariu.ro");
   });
+
+  it("throws when exp returns OK but payload is invalid (non-config shape)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(createJsonResponse({unexpected: "shape"})));
+
+    const {fetchConfigValue, invalidateConfigCache} = await import("./configProxy");
+    invalidateConfigCache();
+
+    await expect(fetchConfigValue("Some:Key")).rejects.toThrow("Invalid config response payload for key 'Some:Key'.");
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
