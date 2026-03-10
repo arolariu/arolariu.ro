@@ -188,6 +188,9 @@ Windows hosts file entries (optional, requires admin):
 127.0.0.1  traefik.localhost website.localhost api.localhost health.localhost
 ```
 
+> Use:
+> Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n# arolariu.ro local development (Traefik HTTPS)`n127.0.0.1  traefik.localhost website.localhost api.localhost health.localhost cosmosdb.localhost azurite-blob.localhost redis.localhost" -Encoding ASCII
+
 ### Regenerating certificates
 
 Certs in `Management/certs/` don't expire for 2+ years. To regenerate:
