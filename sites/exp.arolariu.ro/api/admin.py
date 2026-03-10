@@ -100,8 +100,9 @@ def admin_page() -> HTMLResponse:
     infra = _get_infra_mode()
     client_id = _get_client_id()
     tenant_id = _get_tenant_id()
+    commit_sha = os.getenv("COMMIT_SHA", "unknown")
 
-    html = _build_admin_html(infra=infra, client_id=client_id, tenant_id=tenant_id)
+    html = _build_admin_html(infra=infra, client_id=client_id, tenant_id=tenant_id, commit_sha=commit_sha)
     return HTMLResponse(content=html)
 
 
@@ -150,9 +151,11 @@ async def admin_put_config(
 # ---------------------------------------------------------------------------
 
 
-def _build_admin_html(*, infra: str, client_id: str, tenant_id: str) -> str:
+def _build_admin_html(*, infra: str, client_id: str, tenant_id: str, commit_sha: str) -> str:
     is_azure = infra == "azure"
     auth_label = "MSAL (Entra ID)" if is_azure else "None (open)"
+    short_sha = commit_sha[:12] if len(commit_sha) >= 12 else commit_sha
+    commit_url = f"https://github.com/arolariu/arolariu.ro/commit/{commit_sha}" if commit_sha != "unknown" else ""
 
     return f"""\
 <!DOCTYPE html>
@@ -260,6 +263,7 @@ input:checked+.slider::before{{transform:translateX(20px)}}
   <h1>exp.arolariu.ro — admin</h1>
   <span class="badge {"badge-azure" if is_azure else "badge-local"}">{infra}</span>
   <span class="badge badge-auth">auth: {auth_label}</span>
+  {'<a href="' + commit_url + '" target="_blank" rel="noopener" style="text-decoration:none"><span class="badge badge-auth" title="' + commit_sha + '">&#x1f517; ' + short_sha + '</span></a>' if commit_url else '<span class="badge badge-auth">' + short_sha + '</span>'}
 </div>
 <div class="toolbar">
   <button class="btn btn-primary" onclick="refreshConfig()" id="btn-refresh">&#x21bb; Refresh</button>
