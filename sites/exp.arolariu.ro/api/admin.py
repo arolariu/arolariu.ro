@@ -247,7 +247,6 @@ def _build_admin_html(*, infra: str, client_id: str, tenant_id: str, commit_sha:
         "<div class='tab-group'>"
         "<span class='tab active' data-label='DEVELOPMENT' onclick='switchLabel(this)'>DEV</span>"
         "<span class='tab' data-label='PRODUCTION' onclick='switchLabel(this)'>PROD</span>"
-        "<span class='tab' data-label='' onclick='switchLabel(this)'>LIVE</span>"
         "</div>"
         if is_azure else ""
     )
