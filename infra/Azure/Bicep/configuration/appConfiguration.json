@@ -211,6 +211,20 @@
       "tags": {}
     },
     {
+      "key": "Endpoints:AI:OCR:Key",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:AI:OCR:Key",
+      "value": "",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
       "key": "Endpoints:Storage:Blob",
       "value": "",
       "label": "DEVELOPMENT",
@@ -276,6 +290,34 @@
     {
       "key": "Site:UseCdn",
       "value": "true",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "FeatureManagement:website.commander.enabled",
+      "value": "true",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "FeatureManagement:website.commander.enabled",
+      "value": "true",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "FeatureManagement:website.web-vitals.enabled",
+      "value": "false",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "FeatureManagement:website.web-vitals.enabled",
+      "value": "false",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
