@@ -12,6 +12,7 @@ vi.mock("@/instrumentation.server", () => ({
   createHistogram: vi.fn(() => ({record: vi.fn()})),
   createCounter: vi.fn(() => ({add: vi.fn()})),
   createHttpServerAttributes: vi.fn(() => ({})),
+  getTraceparentHeader: vi.fn(() => ""),
 }));
 
 vi.mock("next/package.json", () => ({version: "16.1.6"}));

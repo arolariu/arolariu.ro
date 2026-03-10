@@ -19,6 +19,7 @@ vi.mock("@/instrumentation.server", () => ({
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
   recordSpanError: vi.fn(),
+  getTraceparentHeader: vi.fn(() => ""),
 }));
 
 const mockFetchApiUrl = vi.fn(async () => "https://api.example.com");

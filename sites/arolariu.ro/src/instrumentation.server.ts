@@ -478,16 +478,25 @@ const {traceExporter, metricExporter} = connectionString
 /**
  * Service resource with standard OTel semantic conventions.
  * Used by the NodeSDK to identify this service in traces, metrics, and logs.
+ * Wrapped in a function to handle environments where @opentelemetry/resources is unavailable.
  */
-const serviceResource = new Resource({
-  "service.name": "arolariu-website",
-  "service.namespace": "arolariu.ro",
-  "service.version": process.env["COMMIT_SHA"] ?? "unknown",
-  "service.instance.id": process.env["HOSTNAME"] ?? `node-${process.pid}`,
-  "deployment.environment": process.env["SITE_ENV"] ?? "development",
-  "cloud.role": "website",
-  "cloud.provider": "azure",
-});
+function createServiceResource(): InstanceType<typeof Resource> | undefined {
+  try {
+    return new Resource({
+      "service.name": "arolariu-website",
+      "service.namespace": "arolariu.ro",
+      "service.version": process.env["COMMIT_SHA"] ?? "unknown",
+      "service.instance.id": process.env["HOSTNAME"] ?? `node-${process.pid}`,
+      "deployment.environment": process.env["SITE_ENV"] ?? "development",
+      "cloud.role": "website",
+      "cloud.provider": "azure",
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+const serviceResource = createServiceResource();
 
 /**
  * OpenTelemetry SDK instance.
@@ -505,7 +514,7 @@ const serviceResource = new Resource({
  * @see {@link https://opentelemetry.io/docs/languages/js/getting-started/nodejs/}
  */
 const sdk = new NodeSDK({
-  resource: serviceResource,
+  ...(serviceResource ? {resource: serviceResource} : {serviceName: "arolariu-website"}),
   traceExporter,
   metricReader: new PeriodicExportingMetricReader({
     exporter: metricExporter,

@@ -10,6 +10,7 @@ vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn((_name: string, fn: () => unknown) => fn()),
   logWithTrace: vi.fn(),
   addSpanEvent: vi.fn(),
+  getTraceparentHeader: vi.fn(() => ""),
 }));
 
 function createJsonResponse(body: unknown, status = 200): Response {

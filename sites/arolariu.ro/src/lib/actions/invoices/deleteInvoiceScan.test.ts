@@ -16,6 +16,7 @@ vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
+  getTraceparentHeader: vi.fn(() => ""),
 }));
 
 vi.mock("@/lib/config/configProxy", () => ({

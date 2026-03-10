@@ -13,6 +13,7 @@ vi.mock("@/instrumentation.server", () => ({
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
   withSpan: vi.fn((name: string, fn: () => Promise<unknown>) => fn()),
+  getTraceparentHeader: vi.fn(() => ""),
 }));
 
 // Mock fetchUser
