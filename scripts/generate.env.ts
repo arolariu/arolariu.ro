@@ -27,6 +27,8 @@ const EXP_BASE_URL = process.env["AZURE_CLIENT_ID"] ? "https://exp.arolariu.ro" 
 const CONFIG_LABEL: string =
   (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
 
+console.log(`[generate.env] SITE_ENV=${process.env["SITE_ENV"] ?? "(unset)"} → CONFIG_LABEL=${CONFIG_LABEL}`);
+
 /** Azure AD token scope for authenticating to the exp service. */
 const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
 
