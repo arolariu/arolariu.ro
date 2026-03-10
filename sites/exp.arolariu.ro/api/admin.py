@@ -88,6 +88,51 @@ def _require_auth(authorization: str | None) -> JSONResponse | None:
     return None
 
 
+def _load_azure_config_for_label(label: str) -> dict[str, str]:
+    """Load config from Azure App Configuration for a specific label."""
+
+    from azure.appconfiguration.provider import AzureAppConfigurationKeyVaultOptions, SettingSelector, load
+    from azure.identity import DefaultAzureCredential
+
+    client_id = os.getenv("AZURE_CLIENT_ID")
+    credential = (
+        DefaultAzureCredential(managed_identity_client_id=client_id)
+        if client_id
+        else DefaultAzureCredential()
+    )
+
+    endpoint = os.getenv("AZURE_APPCONFIG_ENDPOINT", "")
+    config = load(
+        endpoint=endpoint,
+        credential=credential,
+        selects=[SettingSelector(key_filter="*", label_filter=label)],
+        key_vault_options=AzureAppConfigurationKeyVaultOptions(credential=credential),
+    )
+
+    return {k: str(v) for k, v in dict(config).items()}
+
+
+def _set_azure_config_value(key: str, value: str, label: str) -> None:
+    """Write a config value to Azure App Configuration for a specific label."""
+
+    from azure.appconfiguration import AzureAppConfigurationClient, ConfigurationSetting
+    from azure.identity import DefaultAzureCredential
+
+    client_id = os.getenv("AZURE_CLIENT_ID")
+    credential = (
+        DefaultAzureCredential(managed_identity_client_id=client_id)
+        if client_id
+        else DefaultAzureCredential()
+    )
+
+    endpoint = os.getenv("AZURE_APPCONFIG_ENDPOINT", "")
+    client = AzureAppConfigurationClient(base_url=endpoint, credential=credential)
+
+    setting = ConfigurationSetting(key=key, value=value, label=label)
+    client.set_configuration_setting(setting)
+    logger.info("Persisted config key '%s' (label=%s) to Azure App Configuration", key, label)
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -109,12 +154,26 @@ def admin_page() -> HTMLResponse:
 @router.get("/admin/api/config")
 def admin_get_config(
     authorization: str | None = Header(default=None),
+    label: str | None = None,
 ) -> Response:
-    """Return all config keys and values as JSON."""
+    """Return config keys and values as JSON.
+
+    When ``label`` is provided and the service runs in Azure mode, loads
+    config directly from Azure App Configuration for that label. Otherwise
+    returns the in-memory snapshot.
+    """
 
     auth_error = _require_auth(authorization)
     if auth_error is not None:
         return auth_error
+
+    if label and _is_azure_mode():
+        try:
+            snapshot = _load_azure_config_for_label(label)
+            return JSONResponse(snapshot)
+        except Exception as exc:
+            logger.warning("Failed to load config for label '%s': %s", label, exc)
+            return JSONResponse({"error": f"Failed to load label '{label}': {exc}"}, status_code=500)
 
     snapshot = get_config()
     return JSONResponse(snapshot)
@@ -126,7 +185,12 @@ async def admin_put_config(
     request: Request,
     authorization: str | None = Header(default=None),
 ) -> Response:
-    """Update a single config value in the in-memory snapshot."""
+    """Update a single config value.
+
+    When ``label`` is provided in the JSON body and the service runs in Azure
+    mode, writes the value directly to Azure App Configuration for that label.
+    Otherwise updates only the in-memory snapshot.
+    """
 
     auth_error = _require_auth(authorization)
     if auth_error is not None:
@@ -140,6 +204,17 @@ async def admin_put_config(
     value = body.get("value")
     if value is None:
         return JSONResponse({"error": "Missing 'value' field"}, status_code=400)
+
+    label = body.get("label")
+
+    # Write to Azure App Configuration when a label is specified
+    if label and _is_azure_mode():
+        try:
+            _set_azure_config_value(key, str(value), label)
+            return JSONResponse({"key": key, "value": str(value), "label": label, "persisted": True})
+        except Exception as exc:
+            logger.warning("Failed to set config key '%s' (label=%s): %s", key, label, exc)
+            return JSONResponse({"error": f"Failed to persist: {exc}"}, status_code=500)
 
     existed = update_config_value(key, str(value))
     status = 200 if existed else 201
@@ -256,6 +331,14 @@ input:checked+.slider::before{{transform:translateX(20px)}}
 }}
 .search-box:focus{{border-color:#58a6ff;outline:none}}
 .count{{font-size:12px;color:#484f58}}
+.tab-group{{display:flex;gap:4px;margin-left:8px}}
+.tab{{
+  padding:4px 12px;border:1px solid #30363d;border-radius:6px;
+  background:#21262d;color:#8b949e;cursor:pointer;font-size:12px;
+  font-weight:600;text-transform:uppercase;transition:all .15s;
+}}
+.tab:hover{{background:#30363d;color:#c9d1d9}}
+.tab.active{{background:#1f6feb;border-color:#1f6feb;color:#fff}}
 </style>
 </head>
 <body>
@@ -267,6 +350,7 @@ input:checked+.slider::before{{transform:translateX(20px)}}
 </div>
 <div class="toolbar">
   <button class="btn btn-primary" onclick="refreshConfig()" id="btn-refresh">&#x21bb; Refresh</button>
+  {"<div class='tab-group'><span class='tab active' data-label='DEVELOPMENT' onclick='switchLabel(this)'>DEVELOPMENT</span><span class='tab' data-label='PRODUCTION' onclick='switchLabel(this)'>PRODUCTION</span><span class='tab' data-label='' onclick='switchLabel(this)'>LIVE</span></div>" if is_azure else ""}
   <input class="search-box" type="text" id="search" placeholder="Filter keys\u2026" oninput="filterRows()" />
   <span class="count" id="count"></span>
   {"<button class='btn btn-signin' id='btn-signin' onclick='signIn()'>Sign In</button>" if is_azure else ""}
@@ -298,6 +382,7 @@ input:checked+.slider::before{{transform:translateX(20px)}}
 
   let accessToken = null;
   let msalInstance = null;
+  let currentLabel = IS_AZURE ? "DEVELOPMENT" : "";
 
   // Feature-flag key detection
   function isFeatureFlag(key) {{
@@ -405,9 +490,17 @@ input:checked+.slider::before{{transform:translateX(20px)}}
     el.classList.add(ok ? "flash-ok" : "flash-err");
   }}
 
+  window.switchLabel = function(el) {{
+    currentLabel = el.dataset.label;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    el.classList.add("active");
+    refreshConfig();
+  }};
+
   window.refreshConfig = async function() {{
     try {{
-      const resp = await fetch("/admin/api/config", {{headers: authHeaders()}});
+      const labelParam = currentLabel ? "?label=" + encodeURIComponent(currentLabel) : "";
+      const resp = await fetch("/admin/api/config" + labelParam, {{headers: authHeaders()}});
       if (!resp.ok) throw new Error(resp.status);
       const data = await resp.json();
       allEntries = Object.entries(data).sort(([a],[b]) => a.localeCompare(b));
@@ -431,14 +524,14 @@ input:checked+.slider::before{{transform:translateX(20px)}}
     const key = input.dataset.key;
     const value = input.value;
     try {{
+      const payload = currentLabel ? {{value, label: currentLabel}} : {{value}};
       const resp = await fetch("/admin/api/config/" + encodeURIComponent(key), {{
         method: "PUT",
         headers: authHeaders(),
-        body: JSON.stringify({{value}}),
+        body: JSON.stringify(payload),
       }});
       flash(tr, resp.ok);
       if (resp.ok) {{
-        // Update local cache so a refresh re-renders correctly.
         const idx = allEntries.findIndex(([k]) => k === key);
         if (idx >= 0) allEntries[idx][1] = value;
       }}
@@ -450,10 +543,11 @@ input:checked+.slider::before{{transform:translateX(20px)}}
   window.saveFlag = async function(key, enabled, tr) {{
     const value = enabled ? "true" : "false";
     try {{
+      const payload = currentLabel ? {{value, label: currentLabel}} : {{value}};
       const resp = await fetch("/admin/api/config/" + encodeURIComponent(key), {{
         method: "PUT",
         headers: authHeaders(),
-        body: JSON.stringify({{value}}),
+        body: JSON.stringify(payload),
       }});
       flash(tr, resp.ok);
       if (resp.ok) {{
