@@ -263,3 +263,13 @@ module websitesRbac 'rbac/websites-rbac.bicep' = {
     infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
   }
 }
+
+module appInsightsRbac 'rbac/app-insights-rbac.bicep' = {
+  name: 'appInsightsRbac-${resourceDeploymentDate}'
+  params: {
+    appInsightsName: observabilityDeployment.outputs.appInsightsName
+    frontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
+    backendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
+  }
+}

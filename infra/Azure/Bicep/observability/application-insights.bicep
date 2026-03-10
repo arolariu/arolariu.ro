@@ -74,3 +74,4 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 // Output the Application Insights connection string
 output applicationInsightsConnectionString string = applicationInsights.properties.ConnectionString
+output applicationInsightsName string = applicationInsights.name
