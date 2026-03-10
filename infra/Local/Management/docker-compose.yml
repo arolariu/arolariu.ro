@@ -1,6 +1,13 @@
 # This docker compose will spin up the following management containers:
-# - Traefik (Reverse Proxy);
+# - Traefik (Reverse Proxy) with mkcert HTTPS;
+# - Healthchecks dashboard;
 # - Network for external use (by other docker-compose files);
+#
+# HTTPS Setup (one-time):
+#   1. Install mkcert: https://github.com/FiloSottile/mkcert#installation
+#   2. Run: mkcert -install
+#   3. Run: cd certs && mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
+#   4. The certs/ directory is gitignored.
 
 name: "arolariu-management"
 
@@ -27,17 +34,17 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "./letsencrypt:/letsencrypt"
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "./certs:/certs:ro"
     command:
-      - "--api.insecure=true" # Keep this if you want to access the dashboard over HTTP, otherwise remove or set to false for production
+      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=admin@arolariu.ro"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      
+
       # Redirect HTTP to HTTPS
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
@@ -46,8 +53,7 @@ services:
       - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.traefik-dashboard.tls=true" # Use Traefik's default cert for localhost
-      # - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$apr1$$yourhashedpasswordhere"
+      - "traefik.http.routers.traefik-dashboard.tls=true"
 
   healthchecks:
     image: linuxserver/healthchecks

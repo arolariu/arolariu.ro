@@ -1,0 +1,16 @@
+# Dynamic TLS configuration for Traefik.
+# Loads mkcert-generated certificates for local *.localhost HTTPS.
+#
+# Generate certs (one-time):
+#   mkcert -install
+#   mkcert -key-file ../certs/local-key.pem -cert-file ../certs/local-cert.pem "localhost" "*.localhost"
+
+tls:
+  certificates:
+    - certFile: /certs/local-cert.pem
+      keyFile: /certs/local-key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/local-cert.pem
+        keyFile: /certs/local-key.pem

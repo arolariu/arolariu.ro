@@ -37,6 +37,7 @@ the application containers.
 
 - **Docker** (20.10.0 or higher) with Docker Compose v2
 - **Node.js** ≥ 24 and **npm** ≥ 11 (for `selfhost-start.sh` blob container init)
+- **mkcert** — for local HTTPS certificates ([install guide](https://github.com/FiloSottile/mkcert#installation))
 - **Git** (to clone the repository)
 - 4GB+ RAM available for containers
 - 10GB+ of free disk space
@@ -51,7 +52,22 @@ cd arolariu.ro
 npm install
 ```
 
-### 2. Create local config files
+### 2. Set up local HTTPS certificates (one-time)
+
+Traefik terminates TLS for all `*.localhost` subdomains using [mkcert](https://github.com/FiloSottile/mkcert)-generated certificates trusted by your OS/browser.
+
+```bash
+# Install mkcert's local CA into your system trust store
+mkcert -install
+
+# Generate a wildcard certificate
+cd infra/Local/Management/certs
+mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
+```
+
+The `certs/` directory is gitignored — certificates stay local. Without this step, Traefik will still start but browsers will show self-signed certificate warnings.
+
+### 3. Create local config files
 
 The exp service needs a local config file with your secrets:
 
@@ -72,7 +88,7 @@ echo 'CLERK_SECRET_KEY=sk_test_YOUR_KEY' >> .env
 
 Both files are gitignored — they will never be committed.
 
-### 3. Start the environment
+### 4. Start the environment
 
 ```bash
 cd infra/Local
@@ -93,17 +109,17 @@ The startup process:
 
 ### Accessing Services
 
-| Service | URL | Notes |
-|---------|-----|-------|
-| **Website** | http://localhost:3000 | Auth via Clerk |
-| **API Health** | http://localhost:5000/health | Shows dependency status |
-| **exp Health** | http://localhost:5002/api/health | Config service diagnostics |
-| **exp Admin** | http://localhost:5002/admin | Config editor (local only) |
-| **CosmosDB Explorer** | http://localhost:1234 | vNext emulator data explorer |
-| **Azurite Blobs** | http://localhost:10000 | Blob storage (public read) |
-| **SQL Server** | localhost:8082 | User: `sa`, Password in compose |
-| **Redis** | localhost:6379 | No auth locally |
-| **Traefik Dashboard** | http://localhost:8090 | Reverse proxy routes |
+| Service | URL | HTTPS URL | Notes |
+|---------|-----|-----------|-------|
+| **Website** | http://localhost:3000 | https://website.localhost | Auth via Clerk |
+| **API Health** | http://localhost:5000/health | https://api.localhost/health | Shows dependency status |
+| **exp Health** | http://localhost:5002/api/health | — | Config service diagnostics |
+| **exp Admin** | http://localhost:5002/admin | — | Config editor (local only) |
+| **CosmosDB Explorer** | http://localhost:1234 | — | vNext emulator data explorer |
+| **Azurite Blobs** | http://localhost:10000 | — | Blob storage (public read) |
+| **SQL Server** | localhost:8082 | — | User: `sa`, Password in compose |
+| **Redis** | localhost:6379 | — | No auth locally |
+| **Traefik Dashboard** | http://localhost:8080 | https://traefik.localhost | Reverse proxy routes |
 
 ### How config flows locally
 
@@ -125,6 +141,54 @@ the next browser page load.
 cd infra/Local
 ./selfhost-stop.sh    # Linux/macOS
 selfhost-stop.bat     # Windows
+```
+
+## HTTPS via Traefik + mkcert
+
+The local stack uses **Traefik v3** as a reverse proxy with `mkcert`-generated certificates for trusted HTTPS on `*.localhost` subdomains.
+
+### How it works
+
+```
+Browser ──HTTPS──▸ Traefik (:443) ──HTTP──▸ website (:3000)
+                       │                   api (:8080)
+                       │                   cosmosdb (:8081)
+                       │                   ...
+                       ▼
+            mkcert local CA ──▸ certs/local-cert.pem
+                               certs/local-key.pem
+```
+
+1. **mkcert** installs a local Certificate Authority into your OS/browser trust store
+2. A wildcard cert for `*.localhost` is generated and mounted into Traefik
+3. Traefik's **file provider** loads the cert via `traefik/dynamic/tls.yml`
+4. All services use `tls=true` labels — Traefik presents the mkcert cert
+5. HTTP→HTTPS redirect is enabled on the `:80` entrypoint
+
+### Available HTTPS routes
+
+| Route | Service |
+|-------|---------|
+| `https://website.localhost` | Next.js website |
+| `https://api.localhost` | .NET API |
+| `https://traefik.localhost` | Traefik dashboard |
+| `https://health.localhost` | Healthchecks dashboard |
+| `https://mssql.localhost` | SQL Server |
+| `https://cosmosdb.localhost` | CosmosDB emulator |
+| `https://azurite-blob.localhost` | Azurite blob storage |
+
+### Why not Let's Encrypt ACME?
+
+ACME requires a publicly resolvable domain — `*.localhost` never resolves externally. The `mkcert` approach gives browser-trusted certs without needing a real domain, DNS, or public internet access.
+
+### Regenerating certificates
+
+Certs in `Management/certs/` don't expire for 2+ years. To regenerate:
+
+```bash
+cd infra/Local/Management/certs
+mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
+docker restart traefik
 ```
 
 ## Troubleshooting
