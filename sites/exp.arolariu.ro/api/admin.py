@@ -23,11 +23,20 @@ def _get_infra_mode() -> str:
 
 
 def _get_tenant_id() -> str:
-    return os.getenv("AZURE_TENANT_ID", "")
+    return os.getenv("AZURE_TENANT_ID", "") or os.getenv("WEBSITE_AUTH_AAD_ALLOWED_TENANTS", "")
 
 
 def _get_client_id() -> str:
-    return os.getenv("EXP_ENTRA_APP_CLIENT_ID", "")
+    """Return the Entra App Registration client ID for MSAL popup login.
+
+    Checks EXP_ENTRA_APP_CLIENT_ID first, then falls back to the Easy Auth
+    provider's client ID (MICROSOFT_PROVIDER_AUTHENTICATION_CLIENT_ID) which
+    is auto-set by App Service when Easy Auth is configured.
+    """
+    return (
+        os.getenv("EXP_ENTRA_APP_CLIENT_ID", "")
+        or os.getenv("MICROSOFT_PROVIDER_AUTHENTICATION_CLIENT_ID", "")
+    )
 
 
 def _is_azure_mode() -> bool:
@@ -310,6 +319,13 @@ input:checked+.slider::before{{transform:translateX(20px)}}
     msalInstance = new msal.PublicClientApplication({{
       auth: {{ clientId: CLIENT_ID, authority: AUTHORITY, redirectUri: window.location.origin + "/admin" }},
       cache: {{ cacheLocation: "sessionStorage" }},
+    }});
+    // MSAL 2.x requires initialize() before any interaction
+    msalInstance.initialize().then(() => {{
+      console.log("MSAL initialized");
+    }}).catch(e => {{
+      console.error("MSAL init failed", e);
+      msalInstance = null;
     }});
   }}
 
