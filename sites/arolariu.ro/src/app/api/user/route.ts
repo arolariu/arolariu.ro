@@ -185,7 +185,9 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             addSpanEvent("jwt.create.start");
-            const token = await createJwtToken(jwtPayload, await fetchApiJwtSecret());
+            const jwtSecret = await fetchApiJwtSecret();
+            if (!jwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue user token.");
+            const token = await createJwtToken(jwtPayload, jwtSecret);
             addSpanEvent("jwt.create.complete", {
               token_expiration: expirationTime,
             });
@@ -250,7 +252,9 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             addSpanEvent("jwt.create.start");
-            const guestToken = await createJwtToken(jwtPayload, await fetchApiJwtSecret());
+            const guestJwtSecret = await fetchApiJwtSecret();
+            if (!guestJwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue guest token.");
+            const guestToken = await createJwtToken(jwtPayload, guestJwtSecret);
             addSpanEvent("jwt.create.complete", {
               token_expiration: expirationTime,
             });
