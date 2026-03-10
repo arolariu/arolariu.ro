@@ -175,7 +175,7 @@
     "cross-env": "10.1.0",
     "cssnano": "7.1.2",
     "daisyui": "5.5.19",
-    "dexie": "4.2.1",
+    "dexie": "4.3.0",
     "embla-carousel-react": "8.6.0",
     "eslint": "9.39.2",
     "eslint-plugin-jsx-a11y": "6.10.2",
