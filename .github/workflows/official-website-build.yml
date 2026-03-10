@@ -329,6 +329,7 @@ jobs:
             --build-arg SITE_ENV=${{ env.SITE_ENV }} \
             --build-arg SITE_URL=${{ env.SITE_URL }} \
             --build-arg SITE_NAME=${{ env.SITE_NAME }} \
+            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
             -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
