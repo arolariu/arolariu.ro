@@ -623,6 +623,78 @@ target-scoped config. The Infrastructure UAMI is merged into both `api` and
 - Container orchestrators can probe liveness without authentication
 - The admin UI handles its own MSAL popup login for human operators
 
+## Entra ID App Registration cheatsheet
+
+The exp service uses an Entra ID App Registration for Easy Auth v2. Here are
+common operations for troubleshooting and maintenance.
+
+### Token version (critical)
+
+Easy Auth v2 with `/v2.0` issuer requires **v2 tokens** where `aud` equals the
+client ID. If `accessTokenAcceptedVersion` is `null` (v1 default), tokens will
+have `aud = api://...` which Easy Auth rejects with 401.
+
+```bash
+# Check current token version
+az ad app show --id 950ac239-5c2c-4759-bd83-911e68f6a8c9 \
+  --query "api.requestedAccessTokenVersion"
+
+# Set to v2 (required for Easy Auth v2)
+az rest --method PATCH \
+  --url "https://graph.microsoft.com/v1.0/applications/<OBJECT-ID>" \
+  --headers "Content-Type=application/json" \
+  --body '{"api":{"requestedAccessTokenVersion":2}}'
+```
+
+### Common az ad commands
+
+```bash
+# Show App Registration details
+az ad app show --id 950ac239-5c2c-4759-bd83-911e68f6a8c9 \
+  --query "{appId:appId, identifierUris:identifierUris, tokenVersion:api.requestedAccessTokenVersion}"
+
+# Show service principal (for principal/object ID)
+az ad sp show --id 950ac239-5c2c-4759-bd83-911e68f6a8c9 \
+  --query "{appId:appId, objectId:id, displayName:displayName}"
+
+# Show UAMI details (client ID + principal ID)
+az identity show --name <uami-name> --resource-group arolariu-rg \
+  --query "{clientId:clientId, principalId:principalId}"
+
+# Grant admin consent for API permissions
+az ad app permission admin-consent --id 950ac239-5c2c-4759-bd83-911e68f6a8c9
+
+# List redirect URIs
+az ad app show --id 950ac239-5c2c-4759-bd83-911e68f6a8c9 \
+  --query "spa.redirectUris"
+
+# Add SPA redirect URI
+az ad app update --id 950ac239-5c2c-4759-bd83-911e68f6a8c9 \
+  --spa-redirect-uris "https://exp.arolariu.ro/admin"
+```
+
+### Easy Auth management
+
+```bash
+# Read current Easy Auth config
+az rest --method GET --url "https://management.azure.com/subscriptions/<SUB>/resourceGroups/arolariu-rg/providers/Microsoft.Web/sites/exp-arolariu-ro/config/authsettingsV2?api-version=2024-04-01"
+
+# Update Easy Auth (PUT replaces entire config — include ALL fields)
+# Save current config to file, edit, then PUT back:
+az rest --method GET --url "..." -o json > auth.json
+# Edit auth.json
+az rest --method PUT --headers "Content-Type=application/json" --url "..." --body @auth.json
+```
+
+### Troubleshooting 401 errors
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| 401 with valid token | `accessTokenAcceptedVersion` is null (v1) | Set to `2` via Graph API |
+| 401 after Easy Auth PUT | PUT replaced `allowedPrincipals` | Re-apply full config with all principal IDs |
+| 401 for specific UAMI | Principal ID not in `allowedPrincipals` | Add the UAMI's **principal/object ID** (not client ID) |
+| 401 in CI but not runtime | CI uses different identity than runtime | Check which `AZURE_CLIENT_ID` the workflow sets |
+
 ## Configuration sources
 
 ### Local
