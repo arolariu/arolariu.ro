@@ -11,6 +11,8 @@ class TestTelemetrySettings:
     def test_resolves_local_defaults(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("INFRA", "local")
         monkeypatch.delenv("APPLICATIONINSIGHTS_CONNECTION_STRING", raising=False)
+        monkeypatch.delenv("COMMIT_SHA", raising=False)
+        monkeypatch.delenv("EXP_SERVICE_VERSION", raising=False)
 
         settings = get_telemetry_settings()
 
