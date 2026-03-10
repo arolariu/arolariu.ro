@@ -176,6 +176,18 @@ Browser ──HTTPS──▸ Traefik (:443) ──HTTP──▸ website (:3000)
 
 ACME requires a publicly resolvable domain — `*.localhost` never resolves externally. The `mkcert` approach gives browser-trusted certs without needing a real domain, DNS, or public internet access.
 
+### OS compatibility
+
+| OS | `*.localhost` DNS | HTTPS routes |
+|----|-------------------|--------------|
+| **macOS / Linux** | ✅ Resolves automatically (RFC 6761) | Work out of the box |
+| **Windows** | ❌ Does not resolve subdomains | Use direct `localhost:PORT` URLs, or add entries to `C:\Windows\System32\drivers\etc\hosts` |
+
+Windows hosts file entries (optional, requires admin):
+```
+127.0.0.1  traefik.localhost website.localhost api.localhost health.localhost
+```
+
 ### Regenerating certificates
 
 Certs in `Management/certs/` don't expire for 2+ years. To regenerate:
