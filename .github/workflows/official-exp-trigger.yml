@@ -253,17 +253,10 @@ jobs:
 
       - name: ⚓ Deploying docker container to Azure App Service...
         id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
         env:
           CONTAINER_NAME: "exp/exp.arolariu"
           CONTAINER_TAG: ${{ github.sha }}
-          APP_NAME: "exp-arolariu-ro"
-          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP || 'arolariu-rg' }}
-        run: |
-          echo "🚀 Deploying ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${CONTAINER_NAME}:${CONTAINER_TAG} to ${APP_NAME}..."
-          az webapp config container set \
-            --name "${APP_NAME}" \
-            --resource-group "${RESOURCE_GROUP}" \
-            --container-image-name "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${CONTAINER_NAME}:${CONTAINER_TAG}" \
-            --container-registry-url "https://${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}"
-          az webapp restart --name "${APP_NAME}" --resource-group "${RESOURCE_GROUP}"
-          echo "✅ Deployment complete"
+        with:
+          app-name: "exp-arolariu-ro"
+          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
