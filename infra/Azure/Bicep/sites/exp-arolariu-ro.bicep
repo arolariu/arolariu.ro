@@ -162,6 +162,14 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
           name: 'EXP_CONFIG_REFRESH_INTERVAL_SECONDS'
           value: '300'
         }
+        {
+          name: 'EXP_ENTRA_APP_CLIENT_ID'
+          value: entraAppClientId
+        }
+        {
+          name: 'AZURE_TENANT_ID'
+          value: tenant().tenantId
+        }
       ]
     }
     scmSiteAlsoStopped: true
