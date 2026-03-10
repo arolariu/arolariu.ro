@@ -46,14 +46,20 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
   if (process.env["AZURE_CLIENT_ID"]) {
     try {
       const credential = new DefaultAzureCredential();
+      console.log(pc.gray(`🔐 Acquiring token for scope: ${EXP_TOKEN_SCOPE}`));
+      console.log(pc.gray(`   AZURE_CLIENT_ID: ${process.env["AZURE_CLIENT_ID"]?.substring(0, 8)}...`));
       const token = await credential.getToken(EXP_TOKEN_SCOPE);
       if (token?.token) {
         headers["Authorization"] = `Bearer ${token.token}`;
-        verbose && console.info("🔐 Acquired bearer token for exp");
+        console.log(pc.green("🔐 Bearer token acquired successfully"));
+      } else {
+        console.log(pc.yellow("⚠️ Token acquisition returned empty token"));
       }
     } catch (error) {
       console.log(pc.yellow(`⚠️ Failed to acquire bearer token: ${error instanceof Error ? error.message : String(error)}`));
     }
+  } else {
+    console.log(pc.gray("ℹ️  No AZURE_CLIENT_ID — skipping bearer token acquisition"));
   }
 
   const url = `${EXP_BASE_URL}/api/v1/build-time?for=website`;
@@ -65,6 +71,9 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
   });
 
   if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
+    console.log(pc.red(`❌ exp returned ${response.status} for ${url}`));
+    if (errorBody) console.log(pc.gray(`   Response body: ${errorBody.substring(0, 500)}`));
     throw new Error(`exp returned ${response.status} for /api/v1/build-time?for=website`);
   }
 

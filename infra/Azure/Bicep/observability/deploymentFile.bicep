@@ -65,3 +65,4 @@ module applicationInsightsDeployment 'application-insights.bicep' = {
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspaceDeployment.outputs.logAnalyticsWorkspaceId
 
 output appInsightsConnectionString string = applicationInsightsDeployment.outputs.applicationInsightsConnectionString
+output appInsightsName string = applicationInsightsDeployment.outputs.applicationInsightsName
