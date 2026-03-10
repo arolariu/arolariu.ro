@@ -126,7 +126,8 @@ export type MetricName =
   | `user.${string}`
   | `page.${string}`
   | `component.${string}`
-  | `business.${string}`;
+  | `business.${string}`
+  | `website.${string}`;
 
 /**
  * Standard semantic attribute keys for HTTP operations.
