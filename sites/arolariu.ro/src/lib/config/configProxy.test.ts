@@ -5,6 +5,13 @@
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+// Mock instrumentation — configProxy.ts imports {addSpanEvent, logWithTrace, withSpan}
+vi.mock("@/instrumentation.server", () => ({
+  withSpan: vi.fn((_name: string, fn: () => unknown) => fn()),
+  logWithTrace: vi.fn(),
+  addSpanEvent: vi.fn(),
+}));
+
 function createJsonResponse(body: unknown, status = 200): Response {
   return {
     json: async () => body,
