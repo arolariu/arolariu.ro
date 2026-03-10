@@ -248,14 +248,21 @@ def get_config() -> ConfigSnapshot:
         return dict(_config)
 
 
+_ALLOWED_LABELS: frozenset[str] = frozenset({"DEVELOPMENT", "PRODUCTION"})
+
+
 def get_config_for_label(label: str) -> ConfigSnapshot:
     """Return a configuration snapshot for the given Azure App Configuration label.
 
-    The snapshot is cached per-label and refreshed when stale (same interval as
-    the default snapshot).  In local/non-azure mode the label is ignored and the
-    standard :func:`get_config` snapshot is returned, since the local JSON file
-    has no concept of labels.
+    Only ``DEVELOPMENT`` and ``PRODUCTION`` labels are accepted. Unknown labels
+    fall back to the default snapshot.  In local/non-azure mode the label is
+    ignored and the standard :func:`get_config` snapshot is returned, since
+    the local JSON file has no concept of labels.
     """
+
+    label = label.strip().upper()
+    if label not in _ALLOWED_LABELS:
+        return get_config()
 
     infra = get_runtime_infra_mode()
     if infra != "azure":

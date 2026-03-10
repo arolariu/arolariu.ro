@@ -48,7 +48,8 @@ const WEBSITE_TARGET = "website" as const;
  * When `SITE_ENV` equals `"PRODUCTION"` the PRODUCTION label is requested;
  * all other values (including absent) resolve to the DEVELOPMENT label.
  */
-const CONFIG_LABEL: string = process.env["SITE_ENV"] === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+const CONFIG_LABEL: string =
+  (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
 
 /**
  * Acquires a Bearer token for the experiments service.

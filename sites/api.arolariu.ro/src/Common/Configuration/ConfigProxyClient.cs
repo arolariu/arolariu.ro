@@ -27,7 +27,7 @@ public sealed class ConfigProxyClient(HttpClient httpClient, ILogger<ConfigProxy
   {
     using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.fetch");
     activity?.SetTag("config.key", name);
-    if (label is not null) activity?.SetTag("config.label", label);
+    if (!string.IsNullOrEmpty(label)) activity?.SetTag("config.label", label);
 
     try
     {
