@@ -126,7 +126,7 @@ jobs:
         run: |
           echo "::group::🧪 Running Python Tests"
           START_TIME=$(date +%s)
-          python -m pytest tests/ -v --tb=short --cov=. --cov-report=term-missing --cov-fail-under=85
+          python -m pytest -v --tb=short --cov=. --cov-report=term-missing --cov-fail-under=85
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
           echo "::notice::✅ Tests completed in ${DURATION}s"
