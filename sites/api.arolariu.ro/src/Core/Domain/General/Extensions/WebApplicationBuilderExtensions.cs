@@ -146,7 +146,7 @@ internal static class WebApplicationBuilderExtensions
       configValues.Clear();
       foreach (var key in configKeys)
       {
-        var response = proxyClient.GetConfigValueAsync(key).GetAwaiter().GetResult();
+        var response = proxyClient.GetConfigValueAsync(key, label: "PRODUCTION").GetAwaiter().GetResult();
         if (response is not null)
         {
           configValues[key] = response.Value;

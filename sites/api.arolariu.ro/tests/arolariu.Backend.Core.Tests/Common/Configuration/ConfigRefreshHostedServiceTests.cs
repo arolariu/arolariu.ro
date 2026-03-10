@@ -94,7 +94,7 @@ public sealed class ConfigRefreshHostedServiceTests
 
   private sealed class FakeConfigProxyClient(Dictionary<string, ConfigValueResponse> responses) : IConfigProxyClient
   {
-    public Task<ConfigValueResponse?> GetConfigValueAsync(string name, CancellationToken ct = default) =>
+    public Task<ConfigValueResponse?> GetConfigValueAsync(string name, string? label = null, CancellationToken ct = default) =>
       Task.FromResult(responses.TryGetValue(name, out var value) ? value : null);
   }
 

@@ -230,7 +230,30 @@ def _build_admin_html(*, infra: str, client_id: str, tenant_id: str, commit_sha:
     is_azure = infra == "azure"
     auth_label = "MSAL (Entra ID)" if is_azure else "None (open)"
     short_sha = commit_sha[:12] if len(commit_sha) >= 12 else commit_sha
-    commit_url = f"https://github.com/arolariu/arolariu.ro/commit/{commit_sha}" if commit_sha != "unknown" else ""
+    commit_url = (
+        f"https://github.com/arolariu/arolariu.ro/commit/{commit_sha}"
+        if commit_sha != "unknown" else ""
+    )
+
+    # Pre-build long HTML fragments to stay under line-length limit.
+    sha_badge = (
+        f'<a href="{commit_url}" target="_blank" rel="noopener" '
+        f'style="text-decoration:none"><span class="badge badge-auth" '
+        f'title="{commit_sha}">&#x1f517; {short_sha}</span></a>'
+        if commit_url
+        else f'<span class="badge badge-auth">{short_sha}</span>'
+    )
+    label_tabs = (
+        "<div class='tab-group'>"
+        "<span class='tab active' data-label='DEVELOPMENT' onclick='switchLabel(this)'>DEV</span>"
+        "<span class='tab' data-label='PRODUCTION' onclick='switchLabel(this)'>PROD</span>"
+        "</div>"
+        if is_azure else ""
+    )
+    signin_btn = (
+        "<button class='btn btn-signin' id='btn-signin' onclick='signIn()'>Sign In</button>"
+        if is_azure else ""
+    )
 
     return f"""\
 <!DOCTYPE html>
@@ -346,14 +369,14 @@ input:checked+.slider::before{{transform:translateX(20px)}}
   <h1>exp.arolariu.ro — admin</h1>
   <span class="badge {"badge-azure" if is_azure else "badge-local"}">{infra}</span>
   <span class="badge badge-auth">auth: {auth_label}</span>
-  {'<a href="' + commit_url + '" target="_blank" rel="noopener" style="text-decoration:none"><span class="badge badge-auth" title="' + commit_sha + '">&#x1f517; ' + short_sha + '</span></a>' if commit_url else '<span class="badge badge-auth">' + short_sha + '</span>'}
+  {sha_badge}
 </div>
 <div class="toolbar">
   <button class="btn btn-primary" onclick="refreshConfig()" id="btn-refresh">&#x21bb; Refresh</button>
-  {"<div class='tab-group'><span class='tab active' data-label='DEVELOPMENT' onclick='switchLabel(this)'>DEVELOPMENT</span><span class='tab' data-label='PRODUCTION' onclick='switchLabel(this)'>PRODUCTION</span><span class='tab' data-label='' onclick='switchLabel(this)'>LIVE</span></div>" if is_azure else ""}
+  {label_tabs}
   <input class="search-box" type="text" id="search" placeholder="Filter keys\u2026" oninput="filterRows()" />
   <span class="count" id="count"></span>
-  {"<button class='btn btn-signin' id='btn-signin' onclick='signIn()'>Sign In</button>" if is_azure else ""}
+  {signin_btn}
   <span id="user-info"></span>
 </div>
 <div class="container">

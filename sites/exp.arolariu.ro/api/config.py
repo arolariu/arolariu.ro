@@ -23,7 +23,8 @@ from api.common import (
     resolve_config_name_query,
 )
 from config.catalog import get_refresh_interval_for_targets, resolve_config_value
-from config.loader import get_config
+from config.loader import get_config, get_config_for_label
+from config.settings import get_runtime_infra_mode
 from models import ConfigValueResponse
 from runtime.metrics import record_config_delivery
 from security.authz import authorize_config_request
@@ -36,6 +37,7 @@ router = APIRouter(prefix=API_VERSION_PREFIX)
 def get_config_value_endpoint(
     req: Request,
     name: Annotated[str, Query(alias="name")] = "",
+    label: Annotated[str, Query(alias="label")] = "",
 ) -> ConfigValueResponse | JSONResponse:
     """Return one indexed configuration value plus its ownership and usage metadata."""
 
@@ -53,7 +55,11 @@ def get_config_value_endpoint(
             status_code=authorization_result.status_code,
         )
 
-    config_snapshot = get_config()
+    requested_label = label.strip()
+    if requested_label and get_runtime_infra_mode() == "azure":
+        config_snapshot = get_config_for_label(requested_label)
+    else:
+        config_snapshot = get_config()
     config_resolution = resolve_config_value(resolution.definition, config_snapshot)
     if config_resolution.is_missing_required:
         return build_missing_config_value_error(resolution.name)
