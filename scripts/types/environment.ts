@@ -1068,9 +1068,18 @@ export type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironmentVaria
  * @see {@link AllEnvironmentVariablesKeys} - Union of all known environment variable keys
  * @see {@link TypedEnvironment} - Strongly-typed environment variable contract
  */
-// Note: TypeScript warns that AllEnvironmentVariablesKeys is "overridden by string" in this union.
-// This is intentional - we want both:
-// 1. Type safety and autocomplete for known keys (AllEnvironmentVariablesKeys)
-// 2. Runtime flexibility for arbitrary string keys (e.g., third-party env vars)
-// The warning is a TypeScript limitation, not a bug. See RFC 1002 for design rationale.
-export type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | string, string>;
+type DynamicConfigurationValues = {
+  [key: string]: string | undefined;
+};
+
+/**
+ * The script configuration shape preserves autocomplete for known keys while still allowing
+ * arbitrary string keys discovered at runtime.
+ *
+ * @remarks
+ * This intersection avoids the `KnownKeys | string` union that triggered the Sonar warning
+ * while keeping the intended ergonomic behavior for script-side configuration objects.
+ */
+export type TypedConfigurationType =
+  Partial<Record<AllEnvironmentVariablesKeys, string>> &
+  DynamicConfigurationValues;

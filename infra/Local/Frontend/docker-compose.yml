@@ -5,18 +5,37 @@ networks:
     external: true
 
 services:
-  whoami:
-    image: traefik/whoami
-    container_name: whoami
+  website:
+    build:
+      context: ../../..
+      dockerfile: infra/containers/Dockerfile.frontend
+      args:
+        INFRA: local
+        SITE_ENV: DEVELOPMENT
+        SITE_URL: http://localhost:3000
+        SITE_NAME: dev.arolariu.ro
+        COMMIT_SHA: local-docker
+        VERSION: local-docker
+    container_name: website-arolariu-ro
     restart: unless-stopped
-    networks:
-      - arolariu-network
-      - default
+    environment:
+      INFRA: local
+      # Clerk requires structurally-valid base64 keys to boot.
+      # These decode to "clerk.clerk.dev$" — a fabricated value, not a real key.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
+      # See comment above — same fabricated base64 value for local container startup.
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-sk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
+      COMMIT_SHA: local-docker
     ports:
-      - "8888:80"
+      - "3000:3000"
+    networks:
+      arolariu-network:
+        aliases:
+          - website
+      default: {}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
-      - "traefik.http.services.whoami.loadbalancer.server.port=80"
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      - "traefik.http.routers.whoami.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.website.rule=Host(`website.localhost`)"
+      - "traefik.http.services.website.loadbalancer.server.port=3000"
+      - "traefik.http.routers.website.entrypoints=websecure"
+      - "traefik.http.routers.website.tls=true"

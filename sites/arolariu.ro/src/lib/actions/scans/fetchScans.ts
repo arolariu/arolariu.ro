@@ -17,9 +17,9 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
-import {DefaultAzureCredential} from "@azure/identity";
-import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -104,11 +104,9 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
       // Step 2. Connect to Azure Storage
       addSpanEvent("azure.storage.connect.start");
       const containerName = "invoices";
-      const storageCredentials = new DefaultAzureCredential();
-      // todo: fetch from config service.
-      const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
+      const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
-      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const storageClient = await createBlobClient(storageEndpoint);
       const containerClient = storageClient.getContainerClient(containerName);
       addSpanEvent("azure.storage.connect.complete");
 
@@ -133,7 +131,7 @@ export async function fetchScans({includeArchived = false}: FetchScansInput = {}
           // Only include non-archived scans (or all scans if includeArchived is true)
           if (includeArchived || status !== ScanStatus.ARCHIVED) {
             // Construct blob URL
-            const blobUrl = containerClient.getBlockBlobClient(blob.name).url;
+            const blobUrl = rewriteAzuriteUrl(containerClient.getBlockBlobClient(blob.name).url);
 
             // Parse upload timestamp
             const uploadedAt = metadata["uploadedAt"] ? new Date(metadata["uploadedAt"]) : (blob.properties.createdOn ?? new Date());

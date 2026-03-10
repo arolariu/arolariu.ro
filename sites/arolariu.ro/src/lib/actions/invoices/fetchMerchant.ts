@@ -22,7 +22,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Merchant} from "@/types/invoices";
-import {API_URL, createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -105,7 +105,7 @@ export default async function fetchMerchant({merchantId}: ServerActionInputType)
       // Step 2. Make the API request to fetch the merchant (with timeout)
       addSpanEvent("bff.request.fetch-merchant.start");
       logWithTrace("info", "Making API request to fetch merchant", {merchantId}, "server");
-      const response = await fetchWithTimeout(`${API_URL}/rest/v1/merchants/${merchantId}`, {
+      const response = await fetchWithTimeout(`/rest/v1/merchants/${merchantId}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",

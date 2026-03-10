@@ -21,7 +21,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {API_URL} from "../../utils.server";
+import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -100,7 +100,7 @@ export default async function deleteInvoice({invoiceId}: ServerActionInputType):
       // Step 2. Make the API request to delete the invoice
       addSpanEvent("bff.request.delete-invoice.start");
       logWithTrace("info", "Making API request to delete invoice", {invoiceId}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${authToken}`,

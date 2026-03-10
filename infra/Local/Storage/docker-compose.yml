@@ -7,7 +7,6 @@
 name: "arolariu-storage"
 
 volumes:
-  cosmos-data:
   redis-data:
   azurite-data:
 
@@ -23,7 +22,7 @@ services:
       MSSQL_SA_PASSWORD: "qazWSXedcRFV1234!"
       ACCEPT_EULA: "Y"
     healthcheck:
-      test: CMD sqlcmd -U sa -P qazWSXedcRFV1234! -Q "SELECT 1"
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -No"]
       interval: 30s
       timeout: 10s
       retries: 2
@@ -40,38 +39,37 @@ services:
       - "traefik.http.routers.mssql.rule=Host(`mssql.localhost`)"
       - "traefik.http.services.mssql.loadbalancer.server.port=1433"
       - "traefik.http.routers.mssql.entrypoints=websecure"
-      - "traefik.http.routers.mssql.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.mssql.tls=true"
 
   cosmosdb:
-    image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest"
+    image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview"
     container_name: "cosmosdb"
     ports:
-      - "8081:8081" # CosmosDB default port
-      # the following ports are used for the data explorer
-      - "10250:10250"
-      - "10251:10251"
-      - "10252:10252"
-      - "10253:10253"
-      - "10254:10254"
-      - "10255:10255"
-    volumes:
-      - "cosmos-data:/var/opt/cosmosdb"
-      - "cosmos-data:/var/opt/cosmosdb/data"
-      - "cosmos-data:/var/opt/cosmosdb/logs"
+      - "8081:8081" # CosmosDB SDK endpoint
+      - "1234:1234" # Data Explorer UI
+    environment:
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP=true
     networks:
       - arolariu-network
       - default
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.cosmosdb.rule=Host(`cosmosdb.localhost`)"
       - "traefik.http.services.cosmosdb.loadbalancer.server.port=8081"
       - "traefik.http.routers.cosmosdb.entrypoints=websecure"
-      - "traefik.http.routers.cosmosdb.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.cosmosdb.tls=true"
 
   azurite:
     image: "mcr.microsoft.com/azure-storage/azurite:latest"
     container_name: "azurite"
-    command: "azurite --oauth basic --blobPort 10000 --queuePort 10001 --tablePort 10002" # Removed --cert and --key flags
+    command: "azurite --oauth basic --skipApiVersionCheck --blobHost 0.0.0.0 --blobPort 10000 --queueHost 0.0.0.0 --queuePort 10001 --tableHost 0.0.0.0 --tablePort 10002"
     ports:
       - "10000:10000" # Blob service
       - "10001:10001" # Queue service
@@ -82,7 +80,13 @@ services:
       - arolariu-network
       - default
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:10000/__health"] # Changed healthcheck to use curl against Azurite's health endpoint
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const net=require('node:net'); const socket=net.createConnection({host:'127.0.0.1', port:10000}, () => { socket.end(); process.exit(0); }); socket.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 5000);",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -92,15 +96,15 @@ services:
       - "traefik.http.routers.azurite-blob.rule=Host(`azurite-blob.localhost`)"
       - "traefik.http.services.azurite-blob.loadbalancer.server.port=10000"
       - "traefik.http.routers.azurite-blob.entrypoints=websecure"
-      - "traefik.http.routers.azurite-blob.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.azurite-blob.tls=true"
       - "traefik.http.routers.azurite-queue.rule=Host(`azurite-queue.localhost`)"
       - "traefik.http.services.azurite-queue.loadbalancer.server.port=10001"
       - "traefik.http.routers.azurite-queue.entrypoints=websecure"
-      - "traefik.http.routers.azurite-queue.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.azurite-queue.tls=true"
       - "traefik.http.routers.azurite-table.rule=Host(`azurite-table.localhost`)"
       - "traefik.http.services.azurite-table.loadbalancer.server.port=10002"
       - "traefik.http.routers.azurite-table.entrypoints=websecure"
-      - "traefik.http.routers.azurite-table.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.azurite-table.tls=true"
 
   redis:
     image: "redis:alpine"
@@ -124,4 +128,23 @@ services:
       - "traefik.http.routers.redis.rule=Host(`redis.localhost`)"
       - "traefik.http.services.redis.loadbalancer.server.port=6379"
       - "traefik.http.routers.redis.entrypoints=websecure"
-      - "traefik.http.routers.redis.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.redis.tls=true"
+
+  exp:
+    build:
+      context: ../../..
+      dockerfile: infra/containers/Dockerfile.exp
+    container_name: exp-arolariu-ro
+    ports:
+      - "5002:80"
+    environment:
+      - INFRA=local
+      - EXP_CONFIG_REFRESH_INTERVAL_SECONDS=300
+      - EXP_LOCAL_CONFIG_PATH=/app/config.docker.json
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - arolariu-network

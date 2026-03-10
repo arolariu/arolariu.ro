@@ -17,9 +17,6 @@ vi.mock("@azure/storage-blob");
 vi.mock("./fetchConfig");
 vi.mock("@/lib/utils.server", () => ({
   convertBase64ToBlob: mockConvertBase64ToBlob,
-  API_URL: "mock-api-url",
-  API_JWT: "mock-api-jwt",
-  resend: {},
 }));
 
 import fetchConfigurationValue from "./fetchConfig";
@@ -75,7 +72,7 @@ describe("uploadBlob", () => {
     });
 
     expect(mockConvertBase64ToBlob).toHaveBeenCalledWith("base64data");
-    expect(fetchConfigurationValue).toHaveBeenCalledWith("AzureOptions:StorageAccountEndpoint");
+    expect(fetchConfigurationValue).toHaveBeenCalledWith("Endpoints:Storage:Blob");
     expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
     expect(mockGetBlockBlobClient).toHaveBeenCalledWith("custom-name.png");
 

@@ -28,7 +28,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
-import {API_URL} from "../../utils.server";
+import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -126,7 +126,7 @@ export default async function updateInvoice({invoiceId, invoice}: ServerActionIn
       // Step 2. Make the API request to update the invoice
       addSpanEvent("bff.request.update-invoice.start");
       logWithTrace("info", "Making API request to update invoice", {invoiceId}, "server");
-      const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,

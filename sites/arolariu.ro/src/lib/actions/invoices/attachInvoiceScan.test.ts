@@ -16,8 +16,8 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
 }));
 
-vi.mock("@/lib/utils.server", () => ({
-  API_URL: "https://mock-api",
+vi.mock("@/lib/config/configProxy", () => ({
+  fetchApiUrl: async () => "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -52,14 +52,17 @@ describe("attachInvoiceScan", () => {
     await attachInvoiceScan({invoiceId: mockInvoice.id, payload});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(globalThis.fetch).toHaveBeenCalledWith(`https://mock-api/rest/v1/invoices/${mockInvoice.id}/scans`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${mockToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `https://mock-api/rest/v1/invoices/${mockInvoice.id}/scans`,
+      expect.objectContaining({
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${mockToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }),
+    );
   });
 
   it("should throw an error if attachment fails", async () => {

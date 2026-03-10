@@ -1,0 +1,204 @@
+/**
+ * @fileoverview Server-side-only config proxy client with per-key TTL caching
+ * and typed config value helpers with env-var fallback.
+ *
+ * Config URL is determined deterministically by `AZURE_CLIENT_ID` presence:
+ *   - `AZURE_CLIENT_ID` set -> `https://exp.arolariu.ro`  (Azure / production)
+ *   - otherwise             -> `http://exp`               (local Docker / CI)
+ *
+ * The website consumes the exp service through the single-key endpoint:
+ * `/api/v1/config?name=<config-key>`.
+ *
+ * Typed helpers (`fetchApiUrl`, `fetchApiJwtSecret`, `fetchResendApiKey`) resolve
+ * specific whitelisted keys and fall back to environment variables when exp is
+ * unavailable.
+ *
+ * @module sites/arolariu.ro/src/lib/config/configProxy
+ */
+
+// eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
+import "server-only";
+
+import {isConfigValueResponse, type ConfigValueResponse} from "@/lib/config/configCatalog.types";
+import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "@/lib/config/configCatalogCache.server";
+
+/** `true` when running on Azure with a Managed Identity client ID configured. */
+const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
+
+/**
+ * Azure AD token scope for the experiments service.
+ * Used for Managed Identity bearer-token acquisition in Azure deployments.
+ */
+export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default" as const;
+
+/**
+ * Base URL for the experiments / config service.
+ *
+ * Determined once at module load time so every fetch uses the same endpoint.
+ * Local Docker Compose exposes the service as `http://exp` (not localhost).
+ */
+// eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
+const EXP_BASE_URL: string = HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "http://exp";
+const WEBSITE_TARGET = "website" as const;
+
+/**
+ * Acquires a Bearer token for the experiments service.
+ * Returns an empty string when `AZURE_CLIENT_ID` is not set (local / Docker).
+ */
+async function getBearerToken(): Promise<string> {
+  if (!HAS_AZURE_CLIENT_ID) return "";
+
+  const {getAzureCredential} = await import("@/lib/azure/credentials");
+  const credential = getAzureCredential();
+  const token = await credential.getToken(EXP_SERVICE_TOKEN_SCOPE);
+
+  return token?.token ?? "";
+}
+
+/**
+ * Builds request headers for exp proxy requests.
+ */
+async function getRequestHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {"X-Exp-Target": WEBSITE_TARGET};
+  const bearerToken = await getBearerToken();
+  if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
+  return headers;
+}
+
+/**
+ * Fetches one typed config payload from exp, honoring the process-local cache.
+ * @param key - Canonical exp config key name.
+ * @returns Typed single-key payload.
+ */
+async function getConfigPayload(key: string): Promise<ConfigValueResponse> {
+  const cachedPayload = getCachedConfigValue(key);
+  if (cachedPayload) return cachedPayload;
+
+  const headers = await getRequestHeaders();
+  const response = await fetch(`${EXP_BASE_URL}/api/v1/config?name=${encodeURIComponent(key)}`, {
+    cache: "no-store",
+    headers,
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch config '${key}' (status=${response.status}).`);
+  }
+
+  const payload: unknown = await response.json();
+  if (!isConfigValueResponse(payload)) {
+    throw new Error(`Invalid config response payload for key '${key}'.`);
+  }
+
+  setCachedConfigValue(key, payload);
+  return payload;
+}
+
+function logProxyError(message: string, error: unknown): void {
+  console.error({error, message: String(message)});
+}
+
+/**
+ * Fetches a single config value from exp.
+ * Server-only — guarded by the `server-only` package import.
+ */
+export async function fetchConfigValue(key: string): Promise<string> {
+  try {
+    const payload = await getConfigPayload(key);
+    return payload.value;
+  } catch (error) {
+    logProxyError(`[configProxy] Failed to fetch key "${key}".`, error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches multiple config values in parallel.
+ */
+export async function fetchConfigValues(keys: string[]): Promise<Record<string, string>> {
+  const entries = await Promise.all(keys.map(async (key) => [key, await fetchConfigValue(key)] as const));
+
+  return Object.fromEntries(entries);
+}
+
+/** Invalidates one cached config value or the entire cache. */
+export function invalidateConfigCache(key?: string): void {
+  invalidateConfigValueCache(key);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Typed config value helpers (with env-var fallback)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** exp config key for the backend REST API base URL. */
+const EXP_KEY_API_URL = "Endpoints:Service:Api" as const;
+
+/** exp config key for the HS256 JWT signing secret. */
+const EXP_KEY_API_JWT_SECRET = "Auth:JWT:Secret" as const;
+
+/** exp config key for the Resend transactional-email API key (optional). */
+const EXP_KEY_RESEND_API_KEY = "Communication:Email:ApiKey" as const;
+
+/**
+ * Returns the backend REST API base URL.
+ *
+ * @remarks
+ * Reads `Endpoints:Service:Api` from exp.  Falls back to `process.env.API_URL` when
+ * exp is unavailable.
+ *
+ * @returns Base URL string (e.g. `"https://api.arolariu.ro"`).
+ */
+export async function fetchApiUrl(): Promise<string> {
+  try {
+    const value = await fetchConfigValue(EXP_KEY_API_URL);
+    if (value) return value;
+  } catch {
+    // Fall through to env fallback.
+  }
+  return process.env["API_URL"] ?? "";
+}
+
+/**
+ * Returns the HS256 JWT signing secret used to mint BFF tokens.
+ *
+ * @remarks
+ * Reads `Auth:JWT:Secret` from exp.  Falls back to `process.env.API_JWT`
+ * when exp is unavailable.
+ *
+ * **Security**: The returned value is a cryptographic secret.  Never log,
+ * serialise, or forward it to the browser.
+ *
+ * @returns Base64-encoded HS256 signing secret.
+ */
+export async function fetchApiJwtSecret(): Promise<string> {
+  try {
+    const value = await fetchConfigValue(EXP_KEY_API_JWT_SECRET);
+    if (value) return value;
+  } catch {
+    // Fall through to env fallback.
+  }
+  return process.env["API_JWT"] ?? "";
+}
+
+/**
+ * Returns the Resend transactional-email API key.
+ *
+ * @remarks
+ * Reads `Communication:Email:ApiKey` from exp (optional config key).
+ * Falls back to `process.env.RESEND_API_KEY` when exp is unavailable or
+ * the key is absent from the exp registry.
+ *
+ * **Security**: The returned value is a secret API key.  Never log,
+ * serialise, or forward it to the browser.
+ *
+ * @returns Resend API key string, or empty string if not configured.
+ */
+export async function fetchResendApiKey(): Promise<string> {
+  try {
+    const value = await fetchConfigValue(EXP_KEY_RESEND_API_KEY);
+    if (value) return value;
+  } catch {
+    // Fall through to env fallback.
+  }
+  return process.env["RESEND_API_KEY"] ?? "";
+}

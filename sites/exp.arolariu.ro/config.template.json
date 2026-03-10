@@ -1,0 +1,23 @@
+{
+  "Auth:Clerk:PublishableKey": "<replace-with-clerk-publishable-key>",
+  "Auth:Clerk:SecretKey": "<replace-with-clerk-secret-key>",
+  "Auth:JWT:Secret": "<replace-with-jwt-secret>",
+  "Auth:JWT:Issuer": "https://auth.arolariu.ro",
+  "Auth:JWT:Audience": "https://api.arolariu.ro",
+  "Identity:Tenant:Id": "00000000-0000-0000-0000-000000000000",
+  "Endpoints:Service:Api": "https://localhost:5000",
+  "Endpoints:Storage:Blob": "http://127.0.0.1:10000/devstoreaccount1",
+  "Endpoints:Database:SQL": "<replace-with-sql-connection-string>",
+  "Endpoints:Database:NoSQL": "<replace-with-nosql-connection-string>",
+  "Endpoints:Observability:Telemetry": "<replace-with-app-insights-connection-string>",
+  "Endpoints:AI:OpenAI": "https://openai.localhost/",
+  "Endpoints:AI:OCR": "https://cognitiveservices.localhost/",
+  "Endpoints:AI:OCR:Key": "<replace-with-ocr-key>",
+  "Communication:Email:ApiKey": "",
+  "Site:Environment": "Development",
+  "Site:Name": "dev.arolariu.ro",
+  "Site:Url": "https://localhost:5000",
+  "Site:UseCdn": "false",
+  "FeatureManagement:website.commander.enabled": "false",
+  "FeatureManagement:website.web-vitals.enabled": "false"
+}

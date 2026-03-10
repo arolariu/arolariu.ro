@@ -9,7 +9,6 @@ using arolariu.Backend.Common.Options;
 
 using Azure.AI.Translation.Text;
 using Azure.Core.Pipeline;
-using Azure.Identity;
 
 /// <summary>
 /// Azure AI Translation concrete broker that provides best‑effort text translation and language detection services
@@ -19,8 +18,9 @@ using Azure.Identity;
 /// <para><b>Role (Broker Standard):</b> Implements <see cref="ITranslatorBroker"/> by delegating to <see cref="TextTranslationClient"/>.
 /// Performs ONLY external service invocation + minimal projection. NO responsibility for: domain validation, caching, throttling,
 /// retry / circuit breaker policy, authorization, logging, metrics, or batching.</para>
-/// <para><b>Security:</b> Relies on <see cref="DefaultAzureCredential"/> (managed identity in non-DEBUG builds) instead of static keys.
-/// Environment variable <c>AZURE_CLIENT_ID</c> must be configured in managed identity deployments.</para>
+/// <para><b>Authentication:</b> Uses <see cref="Azure.AzureKeyCredential"/> sourced from <c>CognitiveServicesKey</c> in
+/// application options. The Cognitive Services translator API does not support managed identity through the standard
+/// <see cref="TextTranslationClient"/> constructor path; a static API key credential is therefore used.</para>
 /// <para><b>Determinism:</b> Translation output may change over time as underlying models evolve; callers SHOULD NOT rely on exact
 /// string stability for idempotent storage decisions (store original text + target locale if persistence required).</para>
 /// <para><b>Throughput:</b> Each call is a network round trip. High-volume translation SHOULD be centralized in an orchestration layer
@@ -34,20 +34,22 @@ public class AzureTranslatorBroker : ITranslatorBroker
   private readonly TextTranslationClient textTranslationClient;
 
   /// <summary>
-  /// Initializes the broker with application configuration and builds a <see cref="TextTranslationClient"/> using default Azure credentials.
+  /// Initialises the broker with application configuration and builds a <see cref="TextTranslationClient"/> using an API key credential.
   /// </summary>
   /// <remarks>
   /// <para>Construction is side‑effect free (no network calls). The client is thread-safe; the broker instance is suitable for scoped
   /// or singleton lifetimes depending on broader DI design.</para>
   /// </remarks>
-  /// <param name="optionsManager">Options source providing <c>CognitiveServicesEndpoint</c> (required). Key material unused when managed identity is active.</param>
+  /// <param name="optionsManager">Options source providing <c>CognitiveServicesKey</c> (required) and <c>CognitiveServicesEndpoint</c>.</param>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
   public AzureTranslatorBroker(IOptionsManager optionsManager)
   {
     ArgumentNullException.ThrowIfNull(optionsManager);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
+    var cognitiveServicesEndpoint = string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint)
+      ? "https://api.cognitive.microsofttranslator.com/"
+      : options.CognitiveServicesEndpoint;
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
 
     // Use AzureKeyCredential instead of DefaultAzureCredential
@@ -75,7 +77,9 @@ public class AzureTranslatorBroker : ITranslatorBroker
     ArgumentNullException.ThrowIfNull(httpClient);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
+    var cognitiveServicesEndpoint = string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint)
+      ? "https://api.cognitive.microsofttranslator.com/"
+      : options.CognitiveServicesEndpoint;
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
 
     // Use AzureKeyCredential instead of DefaultAzureCredential

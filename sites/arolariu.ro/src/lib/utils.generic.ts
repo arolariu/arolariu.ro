@@ -99,22 +99,24 @@ export const LAST_GUID = "99999999-9999-9999-9999-999999999999";
 export const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 /**
- * Regular expression pattern for validating UUID v4 format.
+ * Regular expression pattern for validating UUID v4 and v7 formats.
  *
  * @remarks
- * Matches the standard UUID v4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
- * where `x` is any hexadecimal digit and `y` is one of `8`, `9`, `a`, or `b`.
+ * Matches the standard UUID format: `xxxxxxxx-xxxx-Vxxx-yxxx-xxxxxxxxxxxx`
+ * where `V` is the version nibble (`4` for v4, `7` for v7),
+ * `x` is any hexadecimal digit, and `y` is one of `8`, `9`, `a`, or `b`.
  *
  * @see {@link https://tools.ietf.org/html/rfc4122#section-4.4} - RFC 4122 Section 4.4
+ * @see {@link https://www.ietf.org/archive/id/draft-peabody-dispatch-new-uuid-format-04.html} - UUID v7
  */
-const UUID_V4_REGEX = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/iu;
+const UUID_REGEX = /^[\da-f]{8}-[\da-f]{4}-[47][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/iu;
 
 /**
- * Asserts that a given string is a valid UUID v4 format or a special sentinel GUID.
+ * Asserts that a given string is a valid UUID (v4 or v7) or a special sentinel GUID.
  *
  * @remarks
- * This function validates that the input string conforms to the UUID v4 specification
- * or is one of the special sentinel GUIDs (EMPTY_GUID or LAST_GUID).
+ * This function validates that the input string conforms to the UUID v4 or v7
+ * specification, or is one of the special sentinel GUIDs (EMPTY_GUID or LAST_GUID).
  * It throws an error if the input is invalid, making it suitable for
  * runtime validation of identifiers in server actions.
  *
@@ -122,12 +124,13 @@ const UUID_V4_REGEX = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-
  * - Must be a non-empty string
  * - Must match one of:
  *   - UUID v4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
+ *   - UUID v7 format: `xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx`
  *   - EMPTY_GUID: `00000000-0000-0000-0000-000000000000`
  *   - LAST_GUID: `99999999-9999-9999-9999-999999999999`
  *
- * @param input - The string to validate as a UUID v4 or sentinel GUID.
+ * @param input - The string to validate as a UUID or sentinel GUID.
  * @param paramName - Optional parameter name for error messages (defaults to "identifier").
- * @throws {Error} If the input is not a valid UUID v4 or sentinel GUID string.
+ * @throws {Error} If the input is not a valid UUID or sentinel GUID string.
  *
  * @example
  * ```typescript
@@ -155,7 +158,7 @@ export function validateStringIsGuidType(input: string, paramName = "identifier"
     return;
   }
 
-  if (!UUID_V4_REGEX.test(input)) {
+  if (!UUID_REGEX.test(input)) {
     throw new Error(`Invalid ${paramName}: "${input}" is not a valid GUID`);
   }
 }

@@ -24,7 +24,6 @@ vi.mock("../../utils.server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../utils.server")>();
   return {
     ...actual,
-    API_URL: "https://mock-api",
     fetchWithTimeout: mockFetchWithTimeout,
   };
 });
@@ -56,7 +55,7 @@ describe("fetchInvoices", () => {
     const result = await fetchInvoices();
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(mockFetchWithTimeout).toHaveBeenCalledWith("https://mock-api/rest/v1/invoices/", {
+    expect(mockFetchWithTimeout).toHaveBeenCalledWith("/rest/v1/invoices/", {
       headers: {
         Authorization: `Bearer ${mockToken}`,
         "Content-Type": "application/json",

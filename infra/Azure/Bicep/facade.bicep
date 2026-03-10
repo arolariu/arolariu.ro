@@ -35,6 +35,9 @@ param resourceDeploymentDate string = utcNow()
 @allowed(['francecentral', 'northeurope', 'westeurope', 'swedencentral'])
 param resourceLocation string
 
+@description('Entra ID App Registration client ID for the exp service Easy Auth.')
+param expEntraAppClientId string
+
 var resourceConventionPrefix = 'q${substring(uniqueString(resourceDeploymentDate), 0, 5)}'
 
 // =====================================================================================
@@ -116,15 +119,20 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     configurationDeployment
   ]
   params: {
-    resourceLocation: resourceLocation
-    resourceDeploymentDate: resourceDeploymentDate
+    appConfigurationName: configurationDeployment.outputs.appConfigurationName
     appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
-    productionAppPlanId: computeDeployment.outputs.productionAppPlanId
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
-    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
-    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
-    managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
+    expEntraAppClientId: expEntraAppClientId
     managedIdentityBackendClientId: identitiesDeployment.outputs.managedIdentitiesList[1].clientId
+    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
+    managedIdentityBackendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+    managedIdentityFrontendClientId: identitiesDeployment.outputs.managedIdentitiesList[0].clientId
+    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
+    managedIdentityFrontendPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[0].principalId
+    managedIdentityInfrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
+    productionAppPlanId: computeDeployment.outputs.productionAppPlanId
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceLocation: resourceLocation
   }
 }
 
@@ -250,6 +258,7 @@ module websitesRbac 'rbac/websites-rbac.bicep' = {
       websiteDeployment.outputs.mainWebsiteName
       websiteDeployment.outputs.apiWebsiteName
       websiteDeployment.outputs.devWebsiteName
+      websiteDeployment.outputs.expWebsiteName
     ]
     infrastructurePrincipalId: identitiesDeployment.outputs.managedIdentitiesList[2].principalId
   }

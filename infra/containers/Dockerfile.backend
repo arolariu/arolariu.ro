@@ -146,9 +146,9 @@ RUN dotnet publish src/Core/arolariu.Backend.Core.csproj \
     /p:PublishTrimmed=false \
     -o /app/publish
 
-# Remove unnecessary files from publish output
-RUN find /app/publish -name "*.pdb" -type f -delete && \
-    find /app/publish -name "*.xml" -type f -delete || true
+# Remove unnecessary files from publish output.
+# Keep XML documentation files because Swagger loads them at runtime.
+RUN find /app/publish -name "*.pdb" -type f -delete || true
 
 # ========================================
 # Stage 5: Security scanning (optional)

@@ -21,7 +21,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {API_URL} from "@/lib/utils.server";
+import {fetchWithTimeout} from "@/lib/utils.server";
 import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice, InvoiceScanType} from "@/types/invoices";
 import {type Scan, ScanType} from "@/types/scans";
 
@@ -87,7 +87,7 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
     },
   };
 
-  const response = await fetch(`${API_URL}/rest/v1/invoices`, {
+  const response = await fetchWithTimeout("/rest/v1/invoices", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${authToken}`,
@@ -124,7 +124,7 @@ async function attachScanToInvoice(invoiceId: string, scan: Scan, authToken: str
     },
   };
 
-  const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}/scans`, {
+  const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/scans`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${authToken}`,
