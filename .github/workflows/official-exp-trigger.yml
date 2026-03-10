@@ -262,6 +262,7 @@ jobs:
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
 
       - name: 🏷️ Set COMMIT_SHA app setting
+        working-directory: .
         run: |
           az webapp config appsettings set \
             --name exp-arolariu-ro \
