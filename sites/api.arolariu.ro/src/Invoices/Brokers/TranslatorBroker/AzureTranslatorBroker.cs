@@ -47,7 +47,9 @@ public class AzureTranslatorBroker : ITranslatorBroker
     ArgumentNullException.ThrowIfNull(optionsManager);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
+    var cognitiveServicesEndpoint = string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint)
+      ? "https://api.cognitive.microsofttranslator.com/"
+      : options.CognitiveServicesEndpoint;
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
 
     // Use AzureKeyCredential instead of DefaultAzureCredential
@@ -75,7 +77,9 @@ public class AzureTranslatorBroker : ITranslatorBroker
     ArgumentNullException.ThrowIfNull(httpClient);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
+    var cognitiveServicesEndpoint = string.IsNullOrWhiteSpace(options.CognitiveServicesEndpoint)
+      ? "https://api.cognitive.microsofttranslator.com/"
+      : options.CognitiveServicesEndpoint;
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
 
     // Use AzureKeyCredential instead of DefaultAzureCredential

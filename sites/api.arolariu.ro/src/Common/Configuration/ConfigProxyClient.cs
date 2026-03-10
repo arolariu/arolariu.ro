@@ -20,15 +20,15 @@ public sealed class ConfigProxyClient(HttpClient httpClient) : IConfigProxyClien
   /// <inheritdoc />
   public async Task<ConfigValueResponse?> GetConfigValueAsync(string name, CancellationToken ct = default)
   {
-    var requestUri = new Uri($"/api/v1/config?name={Uri.EscapeDataString(name)}", UriKind.Relative);
-    using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
-    if (!response.IsSuccessStatusCode) return null;
-
     try
     {
+      var requestUri = new Uri($"/api/v1/config?name={Uri.EscapeDataString(name)}", UriKind.Relative);
+      using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
+      if (!response.IsSuccessStatusCode) return null;
+
       return await response.Content.ReadFromJsonAsync<ConfigValueResponse>(cancellationToken: ct).ConfigureAwait(false);
     }
-    catch (JsonException)
+    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
     {
       return null;
     }
