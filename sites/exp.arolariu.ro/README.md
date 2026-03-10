@@ -477,6 +477,151 @@ flowchart TD
     LocalTarget --> Allow
 ```
 
+## Azure Easy Auth deployment guide
+
+Easy Auth v2 (Microsoft Entra ID) protects exp in Azure. This section explains
+how to set it up from scratch and how the authorization flow works end-to-end.
+
+### Prerequisites
+
+| Resource | Purpose |
+|----------|---------|
+| **Entra ID App Registration** | Represents exp as a protected resource |
+| **3 User-Assigned Managed Identities** | Frontend, Backend, Infrastructure callers |
+| **Azure App Service** | Hosts the exp container |
+| **Azure App Configuration** | Stores config key/value pairs |
+| **Azure Key Vault** | Stores secret values (referenced by App Configuration) |
+
+### Step 1 — Create the Entra ID App Registration
+
+1. Go to **Azure Portal → Entra ID → App registrations → New registration**
+2. Name: `exp.arolariu.ro`
+3. Supported account types: **Single tenant**
+4. Redirect URI: leave empty (server-to-server only)
+5. After creation, note the **Application (client) ID** — this is `expEntraAppClientId`
+
+6. Go to **Expose an API**:
+   - Set Application ID URI: `api://<client-id>` (e.g., `api://950ac239-5c2c-4759-bd83-911e68f6a8c9`)
+   - Add a scope: `api://<client-id>/.default` (admin consent required)
+
+### Step 2 — Deploy infrastructure (Bicep)
+
+The Bicep template at `infra/Azure/Bicep/sites/exp-arolariu-ro.bicep` creates:
+
+```
+App Service (exp-arolariu-ro)
+  ├── Easy Auth v2 (authsettingsV2)
+  │   ├── globalValidation:
+  │   │   ├── requireAuthentication: true
+  │   │   ├── unauthenticatedClientAction: Return401
+  │   │   └── excludedPaths: [/api/health, /api/ready]
+  │   └── identityProviders.azureActiveDirectory:
+  │       ├── clientId: <expEntraAppClientId>
+  │       ├── openIdIssuer: https://login.microsoftonline.com/<tenant>/v2.0
+  │       └── allowedPrincipals.identities:
+  │           ├── Frontend UAMI principal ID
+  │           ├── Backend UAMI principal ID
+  │           └── Infrastructure UAMI principal ID
+  ├── App Settings:
+  │   ├── AZURE_CLIENT_ID = <backend UAMI client ID>
+  │   ├── AZURE_APPCONFIG_ENDPOINT = https://<name>.azconfig.io
+  │   ├── EXP_CALLER_API_IDS = <backend principal ID>
+  │   ├── EXP_CALLER_WEBSITE_IDS = <frontend principal ID>
+  │   ├── EXP_CALLER_INFRA_IDS = <infrastructure principal ID>
+  │   └── INFRA = azure
+  └── IP Restrictions: AzureCloud service tag only
+```
+
+Deploy with:
+
+```bash
+# Set the App Registration client ID in parameters
+az deployment sub create \
+  --location swedencentral \
+  --template-file infra/Azure/Bicep/main.bicep \
+  --parameters expEntraAppClientId=<your-app-registration-client-id>
+```
+
+### Step 3 — Deploy the exp container
+
+Use the GitHub Actions workflow (manual dispatch):
+
+1. Go to **Actions → official-exp-trigger → Run workflow**
+2. Select branch: `preview` or `main`
+3. Environment: `production`
+4. Infrastructure: `azure`
+
+Or via CLI:
+
+```bash
+gh workflow run official-exp-trigger.yml --ref main \
+  -f environment=production -f infrastructure=azure
+```
+
+### Step 4 — Verify
+
+```bash
+# Health probe (excluded from auth)
+curl https://exp.arolariu.ro/api/health
+
+# Authenticated request (requires bearer token)
+TOKEN=$(az account get-access-token \
+  --resource api://950ac239-5c2c-4759-bd83-911e68f6a8c9 \
+  --query accessToken -o tsv)
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://exp.arolariu.ro/api/v1/config?name=Endpoints:Service:Api"
+```
+
+### How the authorization flow works
+
+```mermaid
+sequenceDiagram
+    participant Caller as API / Website / CI
+    participant EasyAuth as Azure Easy Auth (v2)
+    participant Exp as exp.arolariu.ro
+    participant Authz as security/authz.py
+
+    Caller->>Caller: Acquire token for api://<exp-client-id>/.default
+    Caller->>EasyAuth: GET /api/v1/config?name=... + Bearer token
+    EasyAuth->>EasyAuth: Validate JWT signature (Entra ID)
+    EasyAuth->>EasyAuth: Check caller in allowedPrincipals
+
+    alt Caller not in allowedPrincipals
+        EasyAuth-->>Caller: 401 Unauthorized (never reaches exp)
+    end
+
+    EasyAuth->>Exp: Forward request + X-MS-CLIENT-PRINCIPAL headers
+    Exp->>Authz: authorize_config_request(request)
+    Authz->>Authz: Decode X-MS-CLIENT-PRINCIPAL (base64 JSON)
+    Authz->>Authz: Extract caller OID / app ID
+    Authz->>Authz: Match against EXP_CALLER_*_IDS → resolve target
+
+    alt Caller not in EXP_CALLER_*_IDS
+        Authz-->>Caller: 403 Forbidden (known but wrong target)
+    end
+
+    Authz-->>Exp: Authorized for target
+    Exp->>Exp: Verify key belongs to target
+    Exp-->>Caller: 200 + config value
+```
+
+### Two layers of authorization
+
+| Layer | Enforces | Rejects with |
+|-------|----------|-------------|
+| **Easy Auth (Azure)** | JWT validity + caller in `allowedPrincipals` list | `401` — request never reaches exp code |
+| **security/authz.py** | Caller-to-target mapping via `EXP_CALLER_*_IDS` env vars | `403` — caller known but not authorized for this target |
+
+This double gate means even if a UAMI is in the `allowedPrincipals` Bicep list,
+it still needs to be in the correct `EXP_CALLER_*_IDS` env var to access
+target-scoped config. The Infrastructure UAMI is merged into both `api` and
+`website` targets so CI/CD pipelines can fetch config for any target.
+
+### Excluded paths
+
+`/api/health` and `/api/ready` are excluded from Easy Auth so container
+orchestrators (App Service, Docker) can probe liveness without authentication.
+
 ## Configuration sources
 
 ### Local
