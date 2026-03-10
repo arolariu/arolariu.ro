@@ -2,12 +2,14 @@ namespace arolariu.Backend.Common.Configuration;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
+using arolariu.Backend.Common.Telemetry.Tracing;
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -73,6 +75,9 @@ public sealed class ConfigRefreshHostedService(
 
       try
       {
+        using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.refresh-cycle");
+        activity?.SetTag("config.keys.count", ConfigKeys.Length);
+
         // Fetch each config key individually and collect results.
         var configValues = new Dictionary<string, string>(ConfigKeys.Length);
         foreach (var key in ConfigKeys)
@@ -86,9 +91,13 @@ public sealed class ConfigRefreshHostedService(
 
         if (configValues.Count == 0)
         {
+          activity?.SetStatus(ActivityStatusCode.Error, "no keys returned");
+          activity?.SetTag("config.resolved.count", 0);
           logger.LogBootstrapMissing();
           continue;
         }
+
+        activity?.SetTag("config.resolved.count", configValues.Count);
 
         // Swap AzureOptions snapshot atomically.
         var refreshedOptions = CloneAzureOptions(optionsMonitor.CurrentValue);
