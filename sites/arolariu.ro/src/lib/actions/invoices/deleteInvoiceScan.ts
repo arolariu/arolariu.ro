@@ -18,7 +18,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
-import {API_URL} from "@/lib/utils.server";
+import {fetchWithTimeout} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -104,7 +104,7 @@ export async function deleteInvoiceScan({invoiceId, scanLocation}: ServerActionI
       logWithTrace("info", "Making API request to delete invoice scan", {invoiceId, scanLocation}, "server");
 
       const encodedScanLocation = encodeURIComponent(scanLocation);
-      const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceId}/scans?location=${encodedScanLocation}`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/scans?location=${encodedScanLocation}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${authToken}`,

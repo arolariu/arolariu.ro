@@ -5,9 +5,8 @@
 
 "use server";
 
+import {createBlobClient} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob} from "@/lib/utils.server";
-import {DefaultAzureCredential} from "@azure/identity";
-import {BlobServiceClient} from "@azure/storage-blob";
 import fetchConfigurationValue from "./fetchConfig";
 
 type ServerActionInputType = {
@@ -42,10 +41,9 @@ export default async function uploadBlob(payload: ServerActionInputType): Server
     const {containerName, base64Data, metadata = {}, blobName} = payload;
     const originalFile = await convertBase64ToBlob(base64Data);
 
-    const storageCredentials = new DefaultAzureCredential();
-    const storageEndpoint = await fetchConfigurationValue("AzureOptions:StorageAccountEndpoint");
+    const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
-    const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+    const storageClient = await createBlobClient(storageEndpoint);
     const containerClient = storageClient.getContainerClient(containerName);
 
     const uuid = crypto.randomUUID();

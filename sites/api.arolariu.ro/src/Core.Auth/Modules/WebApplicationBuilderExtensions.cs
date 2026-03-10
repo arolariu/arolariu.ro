@@ -118,11 +118,12 @@ public static class WebApplicationBuilderExtensions
     }).AddJwtBearer(jwtOptions =>
     {
       using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+      var appOptions = optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions();
       var authOptions = new Dictionary<string, string>
       {
-        { "Secret", optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions().JwtSecret },
-        { "Issuer", optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions().JwtIssuer },
-        { "Audience", optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions().JwtAudience },
+        { "Secret", appOptions.JwtSecret },
+        { "Issuer", appOptions.JwtIssuer },
+        { "Audience", appOptions.JwtAudience },
       };
 
       jwtOptions.TokenValidationParameters = new()

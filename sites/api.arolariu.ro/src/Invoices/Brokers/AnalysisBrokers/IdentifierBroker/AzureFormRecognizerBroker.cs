@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -12,10 +13,9 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
-using Azure.Identity;
 
 /// <summary>
-/// Azure Form Recognizer (Document Intelligence) concrete broker that performs best‑effort OCR + structural extraction over invoice scans
+/// Azure Form Recognizer (Document Intelligence) concrete broker that performs best-effort OCR + structural extraction over invoice scans
 /// and projects recognized signals (merchant, products, payment) into a domain aggregate.
 /// </summary>
 /// <remarks>
@@ -25,12 +25,12 @@ using Azure.Identity;
 /// <para><b>Lifecycle:</b> Stateless wrapper around a single <see cref="DocumentAnalysisClient"/> instance (thread-safe). Scoped lifetime
 /// registration is acceptable; underlying client could be promoted to singleton if connection reuse optimization is required.</para>
 /// <para><b>Resilience:</b> Lets Azure SDK exceptions bubble (network / 429 / service faults) for higher-layer classification (retry / circuit breaker).
-/// Partial extraction failures (missing fields, unexpected field types) are tolerated silently—unrecognized values remain at sentinel defaults.</para>
-/// <para><b>Security:</b> Uses <see cref="DefaultAzureCredential"/> (managed identity in non-DEBUG) instead of API key string usage to reduce
+/// Partial extraction failures (missing fields, unexpected field types) are tolerated silently — unrecognized values remain at sentinel defaults.</para>
+/// <para><b>Security:</b> Uses <see cref="AzureCredentialFactory"/> (managed identity in non-DEBUG) instead of API key string usage to reduce
 /// secret management risk. Environment variable <c>AZURE_CLIENT_ID</c> must be present in managed identity deployments.</para>
 /// <para><b>Output Model Fidelity:</b> Mapping intentionally narrow: only fields required for initial enrichment pipeline are projected.
 /// Backlog: field provenance (confidence, bounding boxes) exposure for advanced UI / validation workflows.</para>
-/// <para><b>Performance:</b> Dominated by service round‑trip latency and image size. Caller SHOULD parallelize at orchestration layer for bulk imports
+/// <para><b>Performance:</b> Dominated by service round-trip latency and image size. Caller SHOULD parallelize at orchestration layer for bulk imports
 /// and consider idempotent hashing to skip duplicate scans.</para>
 /// <para><b>Backlog:</b> Cancellation token support, adaptive model routing (custom vs prebuilt), multi-page invoices, locale normalization,
 /// normalization of currency codes, confidence threshold filtering, telemetry decorators.</para>
@@ -44,7 +44,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   /// Initializes the broker with configured Azure Cognitive Services (Document Intelligence) endpoint credentials.
   /// </summary>
   /// <remarks>
-  /// <para>Builds a single <see cref="DocumentAnalysisClient"/> using <see cref="DefaultAzureCredential"/>. In non-DEBUG builds a managed identity
+  /// <para>Builds a single <see cref="DocumentAnalysisClient"/> using <see cref="AzureCredentialFactory"/>. In non-DEBUG builds a managed identity
   /// client id is injected (federated workload identity). Throws fast on null dependency to fail early in composition root.</para>
   /// <para>No network calls are made during construction; the client performs lazy connection initialization on first request.</para>
   /// </remarks>
@@ -56,15 +56,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
-    var documentIntelligenceKey = options.CognitiveServicesKey;
-    var credentials = new DefaultAzureCredential(
-#if !DEBUG
-			new DefaultAzureCredentialOptions
-			{
-				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-			}
-#endif
-    );
+    var credentials = AzureCredentialFactory.CreateCredential();
 
     client = new DocumentAnalysisClient(
       endpoint: new Uri(documentIntelligenceEndpoint),
@@ -81,7 +73,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   /// Existing collection contents are appended (current implementation performs additive population; upstream deduplication MAY be required).</para>
   /// <para><b>Failure Handling:</b> Throws on null invoice argument and propagates Azure SDK exceptions (network/service) without translation.
   /// Partial field absence results in sentinel defaults without exception.</para>
-  /// <para><b>Options:</b> Current implementation does not conditionally short‑circuit based on <paramref name="options"/> (backlog: selectively disable OCR stage).</para>
+  /// <para><b>Options:</b> Current implementation does not conditionally short-circuit based on <paramref name="options"/> (backlog: selectively disable OCR stage).</para>
   /// </remarks>
   /// <param name="invoice">Target invoice aggregate (MUST NOT be null; MUST contain a <c>Scans.Location</c> URI).</param>
   /// <param name="options">Analysis directives (currently advisory placeholder).</param>

@@ -4,12 +4,12 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure.AI.OpenAI;
-using Azure.Identity;
 
 /// <summary>
 /// Azure OpenAI concrete broker responsible for Large Language Model (LLM) backed enrichment of invoice domain aggregates.
@@ -26,7 +26,7 @@ using Azure.Identity;
 /// <para><b>Determinism:</b> Non-deterministic by design; repeated executions can yield variant textual outputs. Upstream caching or
 /// freeze-on-first-success strategies SHOULD be applied if immutability is desired.</para>
 /// <para><b>Thread Safety:</b> Reuses a single <see cref="AzureOpenAIClient"/> instance which is thread-safe; the class itself contains no mutable shared state.</para>
-/// <para><b>Security:</b> Relies on managed identity (non-DEBUG builds) via <see cref="DefaultAzureCredential"/>; API key usage is intentionally avoided.
+/// <para><b>Security:</b> Relies on managed identity (non-DEBUG builds) via <see cref="AzureCredentialFactory"/>; API key usage is intentionally avoided.
 /// Ensure environment variables (e.g. AZURE_CLIENT_ID) are correctly provisioned in deployment.</para>
 /// </remarks>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
@@ -39,7 +39,7 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
   /// </summary>
   /// <remarks>
   /// <para>Retrieves application options via <paramref name="optionsManager"/> (endpoint + credentials context) and builds a single
-  /// long‑lived <see cref="AzureOpenAIClient"/> instance. In non-DEBUG builds a managed identity client id is injected to support
+  /// long-lived <see cref="AzureOpenAIClient"/> instance. In non-DEBUG builds a managed identity client id is injected to support
   /// workload identity / federated credentials in Azure.</para>
   /// <para>Throws fast on null dependency to fail early in composition root.</para>
   /// </remarks>
@@ -51,15 +51,7 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
     var openAiEndpoint = options.OpenAIEndpoint;
-    var openAiApiKey = options.OpenAIKey;
-    var credentials = new DefaultAzureCredential(
-#if !DEBUG
-			new DefaultAzureCredentialOptions
-			{
-				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-			}
-#endif
-    );
+    var credentials = AzureCredentialFactory.CreateCredential();
 
     openAIClient = new AzureOpenAIClient(
       endpoint: new Uri(openAiEndpoint),
@@ -70,7 +62,7 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
   /// Executes the full enrichment sequence over a single invoice aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Sequence:</b> Name → Description → Product loop (category + allergens) → Recipes → Invoice category.</para>
+  /// <para><b>Sequence:</b> Name -> Description -> Product loop (category + allergens) -> Recipes -> Invoice category.</para>
   /// <para><b>Graceful Degradation:</b> Each discrete LLM call is isolated; on content filter or transient provider exception the step
   /// yields a default and processing continues. No aggregate rollback is attempted.</para>
   /// <para><b>Mutation:</b> Operates on the supplied <paramref name="invoice"/> instance in-place (returns same reference) to avoid
@@ -92,7 +84,6 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     #region Generate possible products
     foreach (var product in invoice.Items)
     {
-      // TODO: further processing of the product.
       product.Category = await GenerateProductCategory(product).ConfigureAwait(false);
       product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
     }
@@ -102,11 +93,9 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
     var possibleRecipesCollection = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
     foreach (var recipe in possibleRecipesCollection)
     {
-      // TODO: further processing of the recipe.
       invoice.PossibleRecipes.Add(recipe);
     }
     #endregion
-    // TODO: further processing of the invoice.
 
     invoice.Category = await GenerateInvoiceCategory(invoice).ConfigureAwait(false);
     return invoice;

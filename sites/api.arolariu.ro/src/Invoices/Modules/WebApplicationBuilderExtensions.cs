@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Modules;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
@@ -15,8 +16,6 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
-
-using Azure.Identity;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.Cosmos;
@@ -61,17 +60,27 @@ public static class WebApplicationBuilderExtensions
                     .GetRequiredService<IOptionsManager>()
                     .GetApplicationOptions()
                     .NoSqlConnectionString);
-      var credentials = new DefaultAzureCredential(
-#if !DEBUG
-			new DefaultAzureCredentialOptions
-			{
-				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-			}
-#endif
-      );
 
-      var cosmosClient = new CosmosClient(connectionString, credentials);
-      return cosmosClient;
+      // Local emulator uses a full connection string (AccountEndpoint=...;AccountKey=...).
+      // Azure production uses the endpoint URI with Managed Identity.
+      if (connectionString.Contains("AccountKey=", StringComparison.OrdinalIgnoreCase))
+      {
+        // Parse endpoint and key from the connection string for explicit constructor.
+        var endpointMatch = System.Text.RegularExpressions.Regex.Match(connectionString, @"AccountEndpoint=([^;]+)");
+        var keyMatch = System.Text.RegularExpressions.Regex.Match(connectionString, @"AccountKey=([^;]+)");
+
+        if (!endpointMatch.Success || !keyMatch.Success)
+          throw new InvalidOperationException("CosmosDB connection string contains AccountKey= but could not parse both AccountEndpoint and AccountKey.");
+
+        return new CosmosClient(endpointMatch.Groups[1].Value, keyMatch.Groups[1].Value, new CosmosClientOptions
+        {
+          ConnectionMode = ConnectionMode.Gateway,
+          LimitToEndpoint = true,
+        });
+      }
+
+      var credentials = AzureCredentialFactory.CreateCredential();
+      return new CosmosClient(connectionString, credentials);
     });
 
     services.AddDbContext<InvoiceNoSqlBroker>(options =>
@@ -84,7 +93,7 @@ public static class WebApplicationBuilderExtensions
 
       options.UseCosmos(connectionString, "primary", noSqlOptions =>
       {
-
+        noSqlOptions.ConnectionMode(ConnectionMode.Gateway);
       });
       options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     });

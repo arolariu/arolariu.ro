@@ -38,6 +38,18 @@ vi.mock("@azure/storage-blob", () => ({
   },
 }));
 
+// Mock storage config — prevent real fetch to config service
+vi.mock("@/lib/actions/storage/fetchConfig", () => ({
+  default: vi.fn().mockResolvedValue("http://mock-storage:10000/devstoreaccount1"),
+}));
+
+// Mock storageClient — delegate to hoisted mock chain
+vi.mock("@/lib/azure/storageClient", () => ({
+  createBlobClient: vi.fn(async () => ({
+    getContainerClient: (...args: unknown[]) => mockGetContainerClient(...args),
+  })),
+}));
+
 // Import after mocks
 import {deleteScan} from "./deleteScan";
 

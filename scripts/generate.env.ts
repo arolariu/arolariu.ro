@@ -1,79 +1,93 @@
 /**
- * @fileoverview Environment generator from Azure App Configuration or prompts.
+ * @fileoverview Environment generator from the exp service or manual prompts.
  * @module scripts/generate.env
  *
  * @remarks
- * This script generates a `.env` file for local development.
+ * This script generates a `.env` file for website container builds.
  *
  * Depending on runtime detection, it either:
- * - fetches configuration from Azure App Configuration (and resolves Key Vault
- *   references), or
+ * - fetches build-time configuration from the exp service
+ *   (`/api/v1/build-time?for=website`), or
  * - prompts the developer for missing values based on required keys.
  */
 
-import {AppConfigurationClient} from "@azure/app-configuration";
 import {DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import pc from "picocolors";
-import {APP_CONFIGURATION_MAPPING, APP_CONFIGURATION_SERVER, getSecretFromKeyVault, isKeyVaultRef, isSecretKey} from "./azure/index.ts";
+import {APP_CONFIGURATION_MAPPING, isSecretKey} from "./azure/index.ts";
 import {isAzureInfrastructure, isInCI, isProductionEnvironment, isVerboseMode} from "./common/index.ts";
 import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/index.ts";
 
+/** exp service URL — same deterministic logic as the runtime consumers. */
+const EXP_BASE_URL = process.env["AZURE_CLIENT_ID"] ? "https://exp.arolariu.ro" : "http://exp";
+
+/** Azure AD token scope for authenticating to the exp service. */
+const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
+
 /**
- * Fetches configuration values from Azure App Configuration.
+ * Fetches build-time configuration from the exp service.
  *
  * @remarks
- * Values may either be literals or Key Vault references. When a Key Vault
- * reference is detected, the secret is resolved via `getSecretFromKeyVault`.
+ * Calls `GET /api/v1/build-time?for=website` to get the full build-time config
+ * document, then maps exp config keys to environment variable names using
+ * {@link APP_CONFIGURATION_MAPPING}.
  *
- * @param verbose - Enables verbose logging (useful for troubleshooting).
+ * @param verbose - Enables verbose logging.
  * @returns A promise that resolves to the typed configuration object.
  */
-async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = false): Promise<TypedConfigurationType> {
-  const appConfigStore = APP_CONFIGURATION_SERVER;
-  const appConfigValues = Object.entries(APP_CONFIGURATION_MAPPING);
+async function fetchConfigurationFromExp(verbose: boolean = false): Promise<TypedConfigurationType> {
+  verbose && console.info(`🔍 Exp service URL: ${EXP_BASE_URL}`);
 
-  verbose && console.info(`🔍 Azure App Configuration server hostname: ${appConfigStore}`);
-  verbose && console.info(`🔍 Azure App Configuration values: ${JSON.stringify(appConfigValues, null, 2)}`);
+  const headers: Record<string, string> = {"X-Exp-Target": "website"};
 
-  const credentials = new DefaultAzureCredential();
-  const client = new AppConfigurationClient(appConfigStore, credentials);
-  const label = isProductionEnvironment ? "PRODUCTION" : "DEVELOPMENT";
-  verbose && console.info(`🔍 Azure App Configuration requested label : ${label}`);
-
-  const config = {} as TypedConfigurationType;
-
-  for (const [key, envVar] of appConfigValues) {
+  // Acquire a bearer token when running with Azure identity.
+  if (process.env["AZURE_CLIENT_ID"]) {
     try {
-      const setting = await client.getConfigurationSetting({key: key, label: label});
-      if (!setting.value) {
-        console.log(pc.yellow(`⚠️ No value found for key: ${key}`));
-        continue;
-      }
-
-      // Check if the value is a Key Vault reference.
-      if (isKeyVaultRef(setting.value)) {
-        console.log(pc.gray(`📝 Retrieved Key Vault reference for: ${key}`));
-        console.log(pc.cyan(`🔑 Fetching secret for KV reference: ${pc.bold(key)}`));
-        try {
-          const ref = JSON.parse(setting.value);
-          config[envVar] = await getSecretFromKeyVault(ref.uri);
-          console.log(pc.green(`✅ Retrieved value from Key Vault!`));
-        } catch (error: unknown) {
-          console.log(pc.red(`❌ Failed to retrieve secret from Key Vault: ${error instanceof Error ? error.message : "Unknown error"}`));
-        }
-      } else {
-        console.log(pc.gray(`📝 Retrieved key: ${key}`));
-        config[envVar] = setting.value;
+      const credential = new DefaultAzureCredential();
+      const token = await credential.getToken(EXP_TOKEN_SCOPE);
+      if (token?.token) {
+        headers["Authorization"] = `Bearer ${token.token}`;
+        verbose && console.info("🔐 Acquired bearer token for exp");
       }
     } catch (error) {
-      console.log(pc.red(`❌ Failed to fetch ${key}: ${error instanceof Error ? error.message : "Unknown error"}`));
+      console.log(pc.yellow(`⚠️ Failed to acquire bearer token: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
-  console.log(pc.green(`\n   ✓ Fetched ${Object.keys(config).length} configuration values from Azure\n`));
+  const url = `${EXP_BASE_URL}/api/v1/build-time?for=website`;
+  verbose && console.info(`🌐 Fetching: ${url}`);
+
+  const response = await fetch(url, {
+    headers,
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`exp returned ${response.status} for /api/v1/build-time?for=website`);
+  }
+
+  const payload = (await response.json()) as {config: Record<string, string>};
+  if (!payload?.config || typeof payload.config !== "object") {
+    throw new Error("exp build-time response missing 'config' object");
+  }
+
+  verbose && console.info(`📦 Received ${Object.keys(payload.config).length} config keys from exp`);
+
+  // Map exp config keys to environment variable names.
+  const config = {} as TypedConfigurationType;
+  for (const [expKey, envVar] of Object.entries(APP_CONFIGURATION_MAPPING)) {
+    const value = payload.config[expKey];
+    if (value !== undefined && value !== null) {
+      config[envVar] = value;
+      console.log(pc.gray(`📝 Mapped ${expKey} → ${envVar}`));
+    } else {
+      console.log(pc.yellow(`⚠️ Key ${expKey} not found in exp build-time response`));
+    }
+  }
+
+  console.log(pc.green(`\n   ✓ Fetched ${Object.keys(config).length} configuration values from exp\n`));
   return config;
 }
 
@@ -347,17 +361,22 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   // Site config
   addConfigSection(lines, "Site", "📦", ["SITE_ENV", "SITE_NAME", "SITE_URL"], config);
 
-  // API config
-  addConfigSection(lines, "API", "🌐", ["API_ENV", "API_NAME", "API_URL", "API_JWT"], config);
+  // Accepted auth config
+  addConfigSection(lines, "Accepted Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"], config);
 
-  // Auth config
-  addConfigSection(lines, "Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "RESEND_API_KEY"], config);
+  // Accepted Azure runtime identity config (preserved if present)
+  addConfigSection(
+    lines,
+    "Accepted Azure Runtime Identity",
+    "☁️",
+    ["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"],
+    config,
+  );
 
   // Metadata config
   console.log(pc.gray("   📊 Adding Metadata Configuration..."));
   const timestamp = new Date().toISOString();
   const commitSha = process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A";
-  const configStore = config["CONFIG_STORE"];
   const useCdn = config["USE_CDN"] ?? "false";
 
   lines.push(
@@ -365,7 +384,6 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
     "# Metadata Configuration Start",
     `TIMESTAMP=${quoteIfNeeded(timestamp)}`,
     `COMMIT_SHA=${quoteIfNeeded(commitSha)}`,
-    ...(configStore ? [`CONFIG_STORE=${quoteIfNeeded(configStore)}`] : []),
     `USE_CDN=${quoteIfNeeded(useCdn)}`,
     "# Metadata Configuration End",
   );
@@ -419,8 +437,8 @@ export async function main(verbose: boolean = false): Promise<number> {
   let config = {} as TypedConfigurationType;
   try {
     if (isAzureInfrastructure) {
-      isVerboseMode && console.log(pc.cyan("☁️  Fetching configuration from Azure App Configuration...\n"));
-      config = await fetchConfigurationFromAzureAppConfiguration(verbose);
+      isVerboseMode && console.log(pc.cyan("☁️  Fetching configuration from exp service...\n"));
+      config = await fetchConfigurationFromExp(verbose);
     } else {
       isVerboseMode && console.log(pc.yellow("📝 Populating configuration via manual input...\n"));
       config = await ensureLocalEnvIsComplete(verbose);

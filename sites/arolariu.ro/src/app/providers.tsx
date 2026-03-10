@@ -2,6 +2,7 @@
 
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
+import {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";
 import {onLocaleSync} from "@/stores/preferencesStore";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, frFR, roRO} from "@clerk/localizations";
@@ -15,18 +16,23 @@ import React, {useEffect, useState} from "react";
 const WebVitals = dynamic(() => import("./web-vitals"));
 
 /**
- * Props for the ContextProviders component defining locale and children.
+ * Props for the ContextProviders component defining locale, children, and server-derived
+ * feature flags.
  *
  * @remarks
- * **Locale Constraint**: Supports "en" (English), "ro" (Romanian), and "fr" (French) locales.
- * This constraint ensures type safety and prevents invalid locale values from being passed.
+ * **Feature Flags**: `featureFlags` must be derived on the server (in `layout.tsx`) from the
+ * exp bootstrap endpoint.  Only plain booleans should reach this client component — the raw
+ * exp payload must never be forwarded to the browser.
  *
- * **Children Pattern**: Uses React.ReactNode to accept any valid React children,
- * including elements, fragments, strings, numbers, and portals.
+ * **Locale Constraint**: Supports "en" (English), "ro" (Romanian), and "fr" (French) locales.
+ *
+ * **Children Pattern**: Uses React.ReactNode to accept any valid React children.
  */
 type Props = {
   locale: Locale;
   messages?: AbstractIntlMessages;
+  /** Derived feature flags from exp bootstrap — safe to pass as they contain only booleans. */
+  featureFlags?: WebsiteFeatureFlags;
   children: React.ReactNode;
 };
 
@@ -122,10 +128,14 @@ type Props = {
  * @see {@link WebVitals} - Performance monitoring component
  * @see RFC 1003 - Internationalization System documentation
  */
-export default function ContextProviders({locale, messages, children}: Readonly<Props>): React.JSX.Element {
+export default function ContextProviders({locale, messages, featureFlags, children}: Readonly<Props>): React.JSX.Element {
   const localizationMap = {en: enUS, ro: roRO, fr: frFR} as const;
   const localization = localizationMap[locale];
   const [resolvedMessages, setResolvedMessages] = useState<AbstractIntlMessages>(messages ?? ({} satisfies AbstractIntlMessages));
+
+  // Resolve feature flags with safe defaults when not provided (e.g. Storybook / tests).
+  const commanderEnabled = featureFlags?.commanderEnabled ?? DEFAULT_FEATURE_FLAGS.commanderEnabled;
+  const webVitalsEnabled = featureFlags?.webVitalsEnabled ?? DEFAULT_FEATURE_FLAGS.webVitalsEnabled;
 
   // Register router.refresh() as the callback for locale → cookie sync.
   // The store subscription handles setCookie(); this just triggers re-rendering.
@@ -143,7 +153,8 @@ export default function ContextProviders({locale, messages, children}: Readonly<
     let isMounted = true;
 
     const loadMessages = async (): Promise<void> => {
-      const importedMessages = (await import(`../../messages/${locale}.json`)).default as AbstractIntlMessages;
+      const localeMessagesModule = await import(`../../messages/${locale}.json`);
+      const importedMessages = localeMessagesModule.default as AbstractIntlMessages;
       if (isMounted) {
         setResolvedMessages(importedMessages);
       }
@@ -172,8 +183,8 @@ export default function ContextProviders({locale, messages, children}: Readonly<
             themes={["light", "dark"]}>
             {children}
             <ToastProvider />
-            <Commander />
-            <WebVitals />
+            {commanderEnabled ? <Commander /> : null}
+            {webVitalsEnabled ? <WebVitals /> : null}
           </ThemeProvider>
         </FontProvider>
       </AuthProvider>

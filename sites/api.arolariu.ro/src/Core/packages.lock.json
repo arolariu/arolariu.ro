@@ -51,6 +51,12 @@
           "AspNetCore.HealthChecks.UI.Core": "9.0.0"
         }
       },
+      "AspNetCore.HealthChecks.Uris": {
+        "type": "Direct",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "XYdNlA437KeF8p9qOpZFyNqAN+c0FXt/JjTvzH/Qans0q0O3pPE8KPnn39ucQQjR/Roum1vLTP3kXiUs8VHyuA=="
+      },
       "Azure.AI.OpenAI": {
         "type": "Direct",
         "requested": "[2.7.0-beta.2, )",
@@ -59,16 +65,6 @@
         "dependencies": {
           "Azure.Core": "1.50.0",
           "OpenAI": "2.7.0"
-        }
-      },
-      "Azure.Extensions.AspNetCore.Configuration.Secrets": {
-        "type": "Direct",
-        "requested": "[1.4.0, )",
-        "resolved": "1.4.0",
-        "contentHash": "cy8kazCYnG/IUHQ9048UUmObgbPsqkQbcdrCAPxl1JA6ylLBV+v+8586bOWpuSF6GZaxpulLGFDBBm3PR5t1gA==",
-        "dependencies": {
-          "Azure.Core": "1.44.1",
-          "Azure.Security.KeyVault.Secrets": "4.6.0"
         }
       },
       "Azure.Storage.Blobs": {
@@ -133,31 +129,6 @@
         "resolved": "9.0.0",
         "contentHash": "TVriy4hgYnhfqz6NAzv8qe62Q8wf82iKUL6WV9selqeFZTq1ILi39Sic6sFQegRysvAVcnxKP/vY8z9Fk8x6XQ=="
       },
-      "Azure.Data.AppConfiguration": {
-        "type": "Transitive",
-        "resolved": "1.6.1",
-        "contentHash": "Vlc3hlCAsAf7BU8nH91sc6al++SmBfifF7BEol7SlRHxZKO7yC/UvduxHKytSBtdArYgsocaxUKZ8II55UfwTw==",
-        "dependencies": {
-          "Azure.Core": "1.46.0"
-        }
-      },
-      "Azure.Messaging.EventGrid": {
-        "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "/lc0X9Na9v8mb6cY8vRIaMuQEcerHK8msmwmc3nhkY9QX4x4R8w+sDxnHM0eXezzzmEumkfUPnDWIKCEzvsl9A==",
-        "dependencies": {
-          "Azure.Core": "1.46.2",
-          "Azure.Messaging.EventGrid.SystemEvents": "1.0.0"
-        }
-      },
-      "Azure.Messaging.EventGrid.SystemEvents": {
-        "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "sGAZL0Kw3ErcPPdN3+OcMM+fTCeyGtP/No0+D7PP4tCI5VqKB2DxOlu/tdF4UYuk6YXE3XAZ/yHDjmzEaqr59g==",
-        "dependencies": {
-          "Azure.Core": "1.46.2"
-        }
-      },
       "Azure.Security.KeyVault.Certificates": {
         "type": "Transitive",
         "resolved": "4.5.1",
@@ -170,6 +141,14 @@
         "type": "Transitive",
         "resolved": "4.5.0",
         "contentHash": "HnW9kjhRzQkfJE4ISl63cWVa6qLe3FM1MxoxNvNFtDUeT5iMBEg0YgGbcx2YgEiYaazIvSgZyjBr4L3Ur3+m7g==",
+        "dependencies": {
+          "Azure.Core": "1.30.0"
+        }
+      },
+      "Azure.Security.KeyVault.Secrets": {
+        "type": "Transitive",
+        "resolved": "4.5.0",
+        "contentHash": "ztr26Ai4K7AZGuw68/ffLDn+2G3WL0myjC7nY1RYkxPMnsplTPEH+Ke4RGxvSkg4kC7bJ9NwdlqpEwfDX0qhdw==",
         "dependencies": {
           "Azure.Core": "1.30.0"
         }
@@ -205,11 +184,6 @@
         "resolved": "5.2.1",
         "contentHash": "wHARzQA695jwwKreOzNsq54KiGqKP38tv8hi8e2FXDEC/sA6BtrX90tVPDkOfVu13PbEzr00TCV8coikl+D1Iw=="
       },
-      "DnsClient": {
-        "type": "Transitive",
-        "resolved": "1.7.0",
-        "contentHash": "2hrXR83b5g6/ZMJOA36hXp4t56yb7G1mF3Hg6IkrHxvtyaoXRn2WVdgDPN3V8+GugOlUBbTWXgPaka4dXw1QIg=="
-      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "10.0.2",
@@ -222,8 +196,8 @@
       },
       "Microsoft.Bcl.HashCode": {
         "type": "Transitive",
-        "resolved": "6.0.0",
-        "contentHash": "GI4jcoi6eC9ZhNOQylIBaWOQjyGaR8T6N3tC1u8p3EXfndLCVNNWa+Zp+ocjvvS3kNBN09Zma2HXL0ezO0dRfw=="
+        "resolved": "1.1.0",
+        "contentHash": "J2G1k+u5unBV+aYcwxo94ip16Rkp65pgWFb0R6zwJipzWNMgvqlWeuI7/+R+e8bob66LnSG+llLJ+z8wI94cHg=="
       },
       "Microsoft.Data.SqlClient": {
         "type": "Transitive",
@@ -422,14 +396,12 @@
           "Azure.Core": "[1.51.1, )",
           "Azure.Identity": "[1.18.0-beta.2, )",
           "Azure.Monitor.OpenTelemetry.Exporter": "[1.6.0, )",
-          "Azure.Security.KeyVault.Secrets": "[4.8.0, )",
           "Microsoft.ApplicationInsights": "[3.0.0, )",
           "Microsoft.ApplicationInsights.AspNetCore": "[3.0.0, )",
           "Microsoft.ApplicationInsights.DependencyCollector": "[2.23.0, )",
           "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "[10.0.2, )",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.2, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.2, )",
-          "Microsoft.Azure.AppConfiguration.AspNetCore": "[8.4.0, )",
           "Microsoft.Azure.Cosmos": "[3.57.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.Abstractions": "[10.0.2, )",
@@ -439,7 +411,6 @@
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.Sqlite.Core": "[10.0.2, )",
-          "Microsoft.Extensions.Configuration.AzureAppConfiguration": "[8.4.0, )",
           "Newtonsoft.Json": "[13.0.4, )",
           "OpenTelemetry": "[1.15.0, )",
           "OpenTelemetry.Api": "[1.15.0, )",
@@ -474,7 +445,6 @@
           "Azure.AI.OpenAI": "[2.7.0-beta.2, )",
           "Azure.AI.OpenAI.Assistants": "[1.0.0-beta.4, )",
           "Azure.AI.Translation.Text": "[1.0.0, )",
-          "Azure.Extensions.AspNetCore.Configuration.Secrets": "[1.4.0, )",
           "Azure.Storage.Blobs": "[12.27.0, )",
           "Microsoft.Azure.Cosmos": "[3.57.0, )",
           "Microsoft.Extensions.Azure": "[1.13.1, )",
@@ -554,15 +524,6 @@
           "OpenTelemetry.PersistentStorage.FileSystem": "1.0.2"
         }
       },
-      "Azure.Security.KeyVault.Secrets": {
-        "type": "CentralTransitive",
-        "requested": "[4.8.0, )",
-        "resolved": "4.8.0",
-        "contentHash": "tmcIgo+de2K5+PTBRNlnFLQFbmSoyuT9RpDr5MwKS6mIfNxLPQpARkRAP91r3tmeiJ9j/UCO0F+hTlk1Bk7HNQ==",
-        "dependencies": {
-          "Azure.Core": "1.46.2"
-        }
-      },
       "Microsoft.ApplicationInsights": {
         "type": "CentralTransitive",
         "requested": "[3.0.0, )",
@@ -615,15 +576,6 @@
         "contentHash": "YuEjUNpsoZLs0I5ONt013Z+Udsz3f9sPUh1Xm59LN7+/Z8oVG/swCUYLBbANtfreiunWnoT2uk+5kst4s2jr3Q==",
         "dependencies": {
           "Microsoft.OpenApi": "2.0.0"
-        }
-      },
-      "Microsoft.Azure.AppConfiguration.AspNetCore": {
-        "type": "CentralTransitive",
-        "requested": "[8.4.0, )",
-        "resolved": "8.4.0",
-        "contentHash": "Q48T/fp5anJYK9gp+CRpJ9efAhimn2MRHF6EKUrBsb5X11mczc1+zHYpfy3WTy3vO8yepBhyhSb6CaS2aGmUyA==",
-        "dependencies": {
-          "Microsoft.Extensions.Configuration.AzureAppConfiguration": "8.4.0"
         }
       },
       "Microsoft.EntityFrameworkCore": {
@@ -698,20 +650,6 @@
         "dependencies": {
           "Microsoft.Data.SqlClient": "6.1.1",
           "Microsoft.EntityFrameworkCore.Relational": "10.0.2"
-        }
-      },
-      "Microsoft.Extensions.Configuration.AzureAppConfiguration": {
-        "type": "CentralTransitive",
-        "requested": "[8.4.0, )",
-        "resolved": "8.4.0",
-        "contentHash": "Gk8TtbewXsgWrYlGTIiyy+VJlv7O7FMWSLdN6xfEr57nqtW+PkQBikCDW2dlG3U9iqPDT1F8pSIR5Uf6UG5W3w==",
-        "dependencies": {
-          "Azure.Data.AppConfiguration": "1.6.1",
-          "Azure.Messaging.EventGrid": "5.0.0",
-          "Azure.Security.KeyVault.Secrets": "4.8.0",
-          "DnsClient": "1.7.0",
-          "Microsoft.Bcl.HashCode": "6.0.0",
-          "Microsoft.Extensions.Azure": "1.12.0"
         }
       },
       "Microsoft.IdentityModel.JsonWebTokens": {

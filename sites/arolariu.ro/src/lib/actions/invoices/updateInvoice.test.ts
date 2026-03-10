@@ -19,8 +19,8 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
 }));
 
-vi.mock("../../utils.server", () => ({
-  API_URL: "https://mock-api.test", // Must be inlined - vi.mock is hoisted before const declarations
+vi.mock("@/lib/config/configProxy", () => ({
+  fetchApiUrl: async () => "https://mock-api.test",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -67,14 +67,17 @@ describe("updateInvoice", () => {
 
       expect(result).toEqual({success: true, invoice: mockUpdatedInvoice});
       expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-      expect(globalThis.fetch).toHaveBeenCalledWith(`${MOCK_API_URL}/rest/v1/invoices/${mockInvoiceId}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${mockToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(mockInvoice),
-      });
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `${MOCK_API_URL}/rest/v1/invoices/${mockInvoiceId}`,
+        expect.objectContaining({
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${mockToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(mockInvoice),
+        }),
+      );
     });
 
     it("should update invoice with modified name", async () => {

@@ -3,9 +3,12 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
+using System.Threading;
 
+using arolariu.Backend.Common.Azure;
+using arolariu.Backend.Common.Configuration;
 using arolariu.Backend.Common.Options;
-using arolariu.Backend.Common.Services.KeyVault;
 using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Common.Telemetry.Tracing;
@@ -13,13 +16,10 @@ using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Domain.General.Configuration;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
-using Azure.Core;
-using Azure.Extensions.AspNetCore.Configuration.Secrets;
-using Azure.Identity;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Provides extension methods for configuring the <see cref="WebApplicationBuilder"/> with general domain services and infrastructure.
@@ -30,7 +30,7 @@ using Microsoft.Extensions.DependencyInjection;
 /// <para>
 /// This class follows the Composition Root pattern, where all dependency injection configuration is centralized
 /// in one location. It configures:
-/// - Configuration sources (Azure Key Vault, App Configuration, local files)
+/// - Configuration sources (centralized config proxy, local files)
 /// - Cross-cutting concerns (CORS, localization, HTTP clients)
 /// - Infrastructure services (health checks, telemetry, authentication)
 /// - Third-party integrations (Swagger documentation, Azure services)
@@ -43,148 +43,26 @@ using Microsoft.Extensions.DependencyInjection;
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested as it primarily consists of configuration logic.
 internal static class WebApplicationBuilderExtensions
 {
-  /// <summary>
-  /// Configures the application to use Azure Key Vault for secrets management and Azure App Configuration for centralized configuration.
-  /// This method establishes secure connections to Azure services and sets up configuration providers with appropriate retry policies.
-  /// </summary>
-  /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure with Azure services.</param>
-  /// <remarks>
-  /// <para>
-  /// This method configures two primary Azure services:
-  /// - Azure Key Vault: For secure storage and retrieval of application secrets
-  /// - Azure App Configuration: For centralized application configuration management
-  /// </para>
-  /// <para>
-  /// Authentication is handled using DefaultAzureCredential, which supports multiple authentication methods:
-  /// - Managed Identity (in production environments)
-  /// - Azure CLI credentials (in development)
-  /// - Environment variables and other fallback methods
-  /// </para>
-  /// <para>
-  /// Configuration behavior varies by environment:
-  /// - DEBUG builds: Uses "DEVELOPMENT" label filter for App Configuration
-  /// - RELEASE builds: Uses "PRODUCTION" label filter and explicit Managed Identity client ID
-  /// </para>
-  /// <para>
-  /// Retry policies are configured with exponential backoff:
-  /// - Maximum 10 retries with 30-second base delay
-  /// - 5-minute network timeout for resilience against transient failures
-  /// </para>
-  /// <para>
-  /// Both services are configured with 30-minute refresh intervals to balance between
-  /// configuration freshness and service load.
-  /// </para>
-  /// </remarks>
-  /// <exception cref="ArgumentNullException">
-  /// Thrown when required configuration keys (SecretsEndpoint, ConfigurationEndpoint) are missing.
-  /// </exception>
-  /// <exception cref="UriFormatException">
-  /// Thrown when the provided endpoint URLs are not valid URIs.
-  /// </exception>
-  private static void AddAzureConfiguration(this WebApplicationBuilder builder)
-  {
-    var services = builder.Services;
-    var configuration = builder.Configuration;
+  /// <summary>Config proxy URL when running in Azure (AZURE_CLIENT_ID present → managed identity auth).</summary>
+  private const string ConfigProxyUrlAzure = "https://exp.arolariu.ro";
 
-    var credentials = new DefaultAzureCredential(
-#if !DEBUG
-            new DefaultAzureCredentialOptions
-            {
-                ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-            }
-#endif
-    );
+  /// <summary>Config proxy URL when running in a local Docker environment (service name resolution via Docker DNS).</summary>
+  private const string ConfigProxyUrlDocker = "http://exp";
 
-    var secretsStoreEndpoint = new Uri(configuration["ApplicationOptions:SecretsEndpoint"]!);
-    var configStoreEndpoint = new Uri(configuration["ApplicationOptions:ConfigurationEndpoint"]!);
-
-    var keyVaultConfigurationProvider = new ConfigurationBuilder()
-      .AddAzureKeyVault(
-        vaultUri: secretsStoreEndpoint,
-        credential: credentials,
-        options: new AzureKeyVaultConfigurationOptions() { ReloadInterval = TimeSpan.FromMinutes(30) })
-      .Build();
-
-    var configStoreConfigurationProvider = new ConfigurationBuilder()
-      .AddAzureAppConfiguration(config =>
-      {
-        config.ConfigureKeyVault(kv =>
-        {
-          kv.SetCredential(credentials);
-          kv.SetSecretRefreshInterval(TimeSpan.FromMinutes(30));
-        });
-
-        config.ConfigureClientOptions(options =>
-        {
-          options.Retry.MaxRetries = 10;
-          options.Retry.Mode = RetryMode.Exponential;
-          options.Retry.Delay = TimeSpan.FromSeconds(30);
-          options.Retry.NetworkTimeout = TimeSpan.FromSeconds(300);
-        });
-
-#if DEBUG
-        config.Select("*", labelFilter: "DEVELOPMENT");
-#else
-                config.Select("*", labelFilter: "PRODUCTION");
-#endif
-
-        config.Connect(configStoreEndpoint, credentials);
-      })
-      .Build();
-
-    services.AddSingleton<IOptionsManager, CloudOptionsManager>();
-    services.AddSingleton<IKeyVaultService, KeyVaultService>();
-
-    services.Configure<AzureOptions>(options =>
-    {
-      options.SecretsEndpoint = secretsStoreEndpoint.ToString();
-      options.ConfigurationEndpoint = configStoreEndpoint.ToString();
-
-      var configMappings = new Dictionary<string, string>
-      {
-        { nameof(options.JwtSecret), "Common:Auth:Secret" },
-        { nameof(options.JwtIssuer), "Common:Auth:Issuer" },
-        { nameof(options.TenantId), "Common:Azure:TenantId" },
-        { nameof(options.OpenAIEndpoint), "Endpoints:OpenAI" },
-        { nameof(options.JwtAudience), "Common:Auth:Audience" },
-        { nameof(options.SqlConnectionString), "Endpoints:SqlServer" },
-        { nameof(options.NoSqlConnectionString), "Endpoints:NoSqlServer" },
-        { nameof(options.StorageAccountEndpoint), "Endpoints:StorageAccount" },
-        { nameof(options.ApplicationInsightsEndpoint), "Endpoints:ApplicationInsights" },
-        { nameof(options.CognitiveServicesEndpoint), "Endpoints:CognitiveServices" },
-        { nameof(options.CognitiveServicesKey), "Endpoints:CognitiveServices:Key" },
-      };
-
-      foreach (var mapping in configMappings)
-      {
-        if (configStoreConfigurationProvider[mapping.Value] is string value)
-        {
-          options.GetType().GetProperty(mapping.Key)?.SetValue(options, value);
-        }
-      }
-    });
-  }
+  /// <summary>Entra ID scope for the exp service bearer-token flow.</summary>
+  private const string ExpScope = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
 
   /// <summary>
   /// Configures the application to use local configuration sources instead of Azure services.
-  /// This method is intended for local development scenarios where Azure services are not available or desired.
+  /// Retained as an explicit override for special test or tooling scenarios only.
   /// </summary>
-  /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure with local configuration sources.</param>
+  /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure.</param>
   /// <remarks>
   /// <para>
-  /// This method sets up local configuration management using:
-  /// - LocalOptionsManager: Manages configuration from local files and environment variables
-  /// - LocalOptions: Configuration section binding for local development settings
-  /// </para>
-  /// <para>
-  /// This configuration approach is typically used during:
-  /// - Local development and testing
-  /// - CI/CD pipeline builds where Azure connectivity is not required
-  /// - Offline development scenarios
-  /// </para>
-  /// <para>
-  /// Note: This method is currently marked as unused but reserved for future implementation
-  /// of environment-specific configuration logic.
+  /// This method is <strong>not</strong> wired into the normal startup switch. All runtime modes
+  /// (azure, proxy, local) now route through <see cref="AddProxyConfiguration"/> so that even a
+  /// local Docker deployment reaches the exp service at <c>http://exp</c>. This method is preserved
+  /// only for scenarios where a developer explicitly opts into file-only configuration.
   /// </para>
   /// </remarks>
   private static void AddLocalConfiguration(this WebApplicationBuilder builder)
@@ -194,6 +72,181 @@ internal static class WebApplicationBuilderExtensions
 
     services.AddSingleton<IOptionsManager, LocalOptionsManager>();
     services.Configure<LocalOptions>(configuration.GetSection(nameof(LocalOptions)));
+  }
+
+  /// <summary>
+  /// Configures the application to fetch configuration values from the exp proxy service using individual key lookups.
+  /// </summary>
+  /// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure.</param>
+  /// <remarks>
+  /// <para>
+  /// <strong>Endpoint selection</strong> is deterministic and based solely on <c>AZURE_CLIENT_ID</c>
+  /// environment variable presence:
+  /// <list type="bullet">
+  ///   <item><description><c>AZURE_CLIENT_ID</c> present → <c>https://exp.arolariu.ro</c> with Entra ID bearer token.</description></item>
+  ///   <item><description><c>AZURE_CLIENT_ID</c> absent → <c>http://exp</c> (Docker service-name DNS) with no auth.</description></item>
+  /// </list>
+  /// </para>
+  /// <para>
+  /// <strong>Startup sequence</strong> (sync-over-async is safe here — composition root, no SynchronizationContext):
+  /// <list type="number">
+  ///   <item><description>Fetch each of the 11 config keys individually via <c>GET /api/v1/config?name={key}</c>.</description></item>
+  ///   <item><description>Seed <see cref="FeatureSnapshotCache"/> (empty — no feature flags for API currently) and <see cref="AzureOptions"/>.</description></item>
+  ///   <item><description>Register <see cref="ConfigRefreshHostedService"/> to keep config values current.</description></item>
+  /// </list>
+  /// </para>
+  /// </remarks>
+  private static void AddProxyConfiguration(this WebApplicationBuilder builder)
+  {
+    var services = builder.Services;
+
+    // Endpoint selection: deterministic, based solely on AZURE_CLIENT_ID presence.
+    var isAzureEnv = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_CLIENT_ID"));
+    var baseUrl = isAzureEnv ? ConfigProxyUrlAzure : ConfigProxyUrlDocker;
+
+    var httpClientBuilder = services.AddHttpClient<IConfigProxyClient, ConfigProxyClient>(client =>
+    {
+      client.BaseAddress = new Uri(baseUrl);
+      client.Timeout = TimeSpan.FromSeconds(30);
+      client.DefaultRequestHeaders.Add("X-Exp-Target", "api");
+    });
+
+    if (isAzureEnv)
+    {
+      httpClientBuilder.AddHttpMessageHandler(() =>
+        new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));
+    }
+
+    // Fetch config values at startup with retry.
+    // Sync-over-async at startup is safe here — no SynchronizationContext exists yet.
+    // The host has not started, so there is no deadlock risk.
+    using var tempProvider = services.BuildServiceProvider();
+    var proxyClient = tempProvider.GetRequiredService<IConfigProxyClient>();
+
+    // Config key names to fetch at startup (same set used by ConfigRefreshHostedService).
+    string[] configKeys = [
+      "Auth:JWT:Secret",
+      "Auth:JWT:Issuer",
+      "Auth:JWT:Audience",
+      "Identity:Tenant:Id",
+      "Endpoints:AI:OpenAI",
+      "Endpoints:Database:SQL",
+      "Endpoints:Database:NoSQL",
+      "Endpoints:Storage:Blob",
+      "Endpoints:Observability:Telemetry",
+      "Endpoints:AI:OCR",
+      "Endpoints:AI:OCR:Key",
+    ];
+
+    // Retry up to 3 times with exponential backoff in case exp is still starting.
+    var configValues = new Dictionary<string, string>(configKeys.Length);
+    const int maxRetries = 3;
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
+    {
+      configValues.Clear();
+      foreach (var key in configKeys)
+      {
+        var response = proxyClient.GetConfigValueAsync(key).GetAwaiter().GetResult();
+        if (response is not null)
+        {
+          configValues[key] = response.Value;
+        }
+      }
+
+      if (configValues.Count > 0) break;
+
+      if (attempt < maxRetries)
+      {
+        var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt));
+        Console.WriteLine($"[exp] Startup config fetch attempt {attempt}/{maxRetries} returned 0 keys from {baseUrl}. Retrying in {delay.TotalSeconds}s...");
+        Thread.Sleep(delay);
+      }
+    }
+
+    if (configValues.Count == 0)
+    {
+      throw new InvalidOperationException(
+            $"Unable to load any API config values from exp service at {baseUrl} after {maxRetries} attempts. " +
+            $"Verify: (1) exp is running and healthy at {baseUrl}/api/health, " +
+            "(2) AZURE_CLIENT_ID is set correctly for Azure deployments, " +
+            "(3) the API's managed identity is in EXP_CALLER_API_IDS on the exp service.");
+    }
+
+    Console.WriteLine($"[exp] Loaded {configValues.Count}/{configKeys.Length} config keys from {baseUrl}.");
+
+    services.AddSingleton<IOptionsManager, CloudOptionsManager>();
+    services.AddSingleton(new FeatureSnapshotCache(
+      new Dictionary<string, bool>(),
+      string.Empty,
+      DateTimeOffset.UtcNow));
+
+    // Inject exp-fetched config into the configuration system so the auth module
+    // (which builds its own temporary ServiceProvider) can resolve the signing key
+    // through the options pattern without needing a shared ServiceProvider.
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+      ["AzureOptions:JwtSecret"] = configValues.GetValueOrDefault("Auth:JWT:Secret"),
+      ["AzureOptions:JwtIssuer"] = configValues.GetValueOrDefault("Auth:JWT:Issuer"),
+      ["AzureOptions:JwtAudience"] = configValues.GetValueOrDefault("Auth:JWT:Audience"),
+      ["AzureOptions:TenantId"] = configValues.GetValueOrDefault("Identity:Tenant:Id"),
+      ["AzureOptions:OpenAIEndpoint"] = configValues.GetValueOrDefault("Endpoints:AI:OpenAI"),
+      ["AzureOptions:SqlConnectionString"] = configValues.GetValueOrDefault("Endpoints:Database:SQL"),
+      ["AzureOptions:NoSqlConnectionString"] = configValues.GetValueOrDefault("Endpoints:Database:NoSQL"),
+      ["AzureOptions:StorageAccountEndpoint"] = configValues.GetValueOrDefault("Endpoints:Storage:Blob"),
+      ["AzureOptions:ApplicationInsightsEndpoint"] = configValues.GetValueOrDefault("Endpoints:Observability:Telemetry"),
+      ["AzureOptions:CognitiveServicesEndpoint"] = configValues.GetValueOrDefault("Endpoints:AI:OCR"),
+      ["AzureOptions:CognitiveServicesKey"] = configValues.GetValueOrDefault("Endpoints:AI:OCR:Key"),
+    });
+    services.Configure<AzureOptions>(builder.Configuration.GetSection("AzureOptions"));
+
+    services.AddHostedService<ConfigRefreshHostedService>();
+
+    // Wire dependency health checks using the config values fetched at startup.
+    var cosmosConnStr = configValues.GetValueOrDefault("Endpoints:Database:NoSQL", string.Empty);
+    var cosmosMatch = System.Text.RegularExpressions.Regex.Match(cosmosConnStr, @"AccountEndpoint=([^;]+)");
+
+    var healthBuilder = services.AddHealthChecks()
+      .AddSqlServer(
+        name: "mssql",
+        connectionStringFactory: sp => sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.SqlConnectionString,
+        tags: ["db", "sql"])
+      .AddAzureBlobStorage(
+        clientFactory: sp =>
+        {
+          var endpoint = sp.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue.StorageAccountEndpoint;
+          if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+          {
+            var connStr = $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint={endpoint};";
+            return new Azure.Storage.Blobs.BlobServiceClient(connStr, new Azure.Storage.Blobs.BlobClientOptions(Azure.Storage.Blobs.BlobClientOptions.ServiceVersion.V2025_01_05));
+          }
+          return new Azure.Storage.Blobs.BlobServiceClient(new Uri(endpoint), AzureCredentialFactory.CreateCredential());
+        },
+        configureOptions: (Action<HealthChecks.AzureStorage.AzureBlobStorageHealthCheckOptions>?)null,
+        name: "blob-storage",
+        failureStatus: null,
+        tags: ["storage"])
+      .AddUrlGroup(
+        name: "exp",
+        uri: new Uri($"{baseUrl}/api/health"),
+        tags: ["config"]);
+
+    if (cosmosMatch.Success)
+    {
+      var cosmosEndpoint = cosmosMatch.Groups[1].Value;
+      if (cosmosEndpoint.Contains("documents.azure.com", StringComparison.OrdinalIgnoreCase))
+      {
+        // Azure Cosmos DB — use the already-registered CosmosClient singleton for health checks.
+        healthBuilder.AddCheck("cosmosdb", new CosmosDbHealthCheck(cosmosEndpoint), tags: ["db", "nosql"]);
+      }
+      else
+      {
+        // Local emulator — unauthenticated URL probe is sufficient.
+        healthBuilder.AddUrlGroup(
+          name: "cosmosdb",
+          uri: new Uri(cosmosEndpoint),
+          tags: ["db", "nosql"]);
+      }
+    }
   }
 
   /// <summary>
@@ -210,46 +263,17 @@ internal static class WebApplicationBuilderExtensions
   /// - Environment variables for runtime configuration overrides
   /// - appsettings.json for base application settings
   /// - Environment-specific appsettings files (Development/Production)
-  /// - Azure Key Vault and App Configuration for secure and centralized configuration
+  /// - Centralized config proxy (exp service) for secure configuration and feature flags
   /// </para>
   /// <para>
-  /// <strong>HTTP and Communication Services:</strong>
-  /// - HttpClient for outbound HTTP communications
-  /// - HttpContextAccessor for accessing HTTP context in non-controller classes
-  /// - CORS policy "AllowAllOrigins" for cross-origin requests (development-focused)
-  /// </para>
-  /// <para>
-  /// <strong>API Documentation and Discovery:</strong>
-  /// - API Explorer endpoints for service discovery
-  /// - Swagger/OpenAPI documentation generation with custom configuration
-  /// </para>
-  /// <para>
-  /// <strong>Localization and Internationalization:</strong>
-  /// - Localization services for multi-language support
-  /// </para>
-  /// <para>
-  /// <strong>Monitoring and Health:</strong>
-  /// - Health checks for service availability monitoring
-  /// - OpenTelemetry integration for distributed tracing, logging, and metrics
-  /// </para>
-  /// <para>
-  /// <strong>Authentication and Authorization:</strong>
-  /// - Authentication services through Auth module integration
+  /// <strong>INFRA environment variable:</strong>
+  /// All three recognised values (<c>azure</c>, <c>proxy</c>, <c>local</c>) route through
+  /// <see cref="AddProxyConfiguration"/>. The actual exp endpoint and authentication strategy are
+  /// determined solely by <c>AZURE_CLIENT_ID</c> presence — not by the INFRA value — so local
+  /// Docker environments that set <c>INFRA=local</c> transparently reach <c>http://exp</c>.
+  /// Configuration values are fetched individually via the config endpoint.
   /// </para>
   /// </remarks>
-  /// <example>
-  /// <code>
-  /// // Usage in Program.cs
-  /// WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-  /// builder.AddGeneralDomainConfiguration();
-  ///
-  /// WebApplication app = builder.Build();
-  /// // Configure application pipeline...
-  /// app.Run();
-  /// </code>
-  /// </example>
-  /// <seealso cref="WebApplicationBuilder"/>
-  /// <seealso cref="WebApplicationExtensions.AddGeneralApplicationConfiguration"/>
   public static void AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
   {
     var services = builder.Services;
@@ -265,22 +289,25 @@ internal static class WebApplicationBuilderExtensions
     var infrastructure = Environment.GetEnvironmentVariable("INFRA");
     Console.WriteLine($">>> [arolariu.ro::build] Infrastructure variable: {infrastructure}");
 
+    // All runtime modes route through the exp proxy. Endpoint selection (Azure vs Docker) is
+    // determined by AZURE_CLIENT_ID presence — see AddProxyConfiguration.
     switch (infrastructure)
     {
       case "azure":
-        AddAzureConfiguration(builder);
-        break;
+      case "proxy":
       case "local":
-        AddLocalConfiguration(builder);
+        AddProxyConfiguration(builder);
         break;
       default:
-        throw new ArgumentException("The `INFRA` env. var. is not defined! Aborting...");
+        throw new ArgumentException(
+          "The `INFRA` env. var. must be 'azure', 'proxy', or 'local'. " +
+          "All modes reach the exp proxy service; endpoint selection is based on AZURE_CLIENT_ID presence.");
     }
     #endregion
 
     services.AddHttpClient();
     services.AddHttpContextAccessor();
-    services.AddCors(options => options.AddPolicy("AllowAllOrigins", builder => builder
+    services.AddCors(options => options.AddPolicy("AllowAllOrigins", corsBuilder => corsBuilder
           .AllowAnyOrigin()
           .AllowAnyMethod()
           .AllowAnyHeader()));

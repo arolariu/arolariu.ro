@@ -106,31 +106,6 @@
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
       },
-      "Azure.Data.AppConfiguration": {
-        "type": "Transitive",
-        "resolved": "1.6.1",
-        "contentHash": "Vlc3hlCAsAf7BU8nH91sc6al++SmBfifF7BEol7SlRHxZKO7yC/UvduxHKytSBtdArYgsocaxUKZ8II55UfwTw==",
-        "dependencies": {
-          "Azure.Core": "1.46.0"
-        }
-      },
-      "Azure.Messaging.EventGrid": {
-        "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "/lc0X9Na9v8mb6cY8vRIaMuQEcerHK8msmwmc3nhkY9QX4x4R8w+sDxnHM0eXezzzmEumkfUPnDWIKCEzvsl9A==",
-        "dependencies": {
-          "Azure.Core": "1.46.2",
-          "Azure.Messaging.EventGrid.SystemEvents": "1.0.0"
-        }
-      },
-      "Azure.Messaging.EventGrid.SystemEvents": {
-        "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "sGAZL0Kw3ErcPPdN3+OcMM+fTCeyGtP/No0+D7PP4tCI5VqKB2DxOlu/tdF4UYuk6YXE3XAZ/yHDjmzEaqr59g==",
-        "dependencies": {
-          "Azure.Core": "1.46.2"
-        }
-      },
       "Castle.Core": {
         "type": "Transitive",
         "resolved": "5.2.1",
@@ -138,11 +113,6 @@
         "dependencies": {
           "System.Diagnostics.EventLog": "6.0.0"
         }
-      },
-      "DnsClient": {
-        "type": "Transitive",
-        "resolved": "1.7.0",
-        "contentHash": "2hrXR83b5g6/ZMJOA36hXp4t56yb7G1mF3Hg6IkrHxvtyaoXRn2WVdgDPN3V8+GugOlUBbTWXgPaka4dXw1QIg=="
       },
       "Microsoft.AspNetCore.Cryptography.Internal": {
         "type": "Transitive",
@@ -174,8 +144,8 @@
       },
       "Microsoft.Bcl.HashCode": {
         "type": "Transitive",
-        "resolved": "6.0.0",
-        "contentHash": "GI4jcoi6eC9ZhNOQylIBaWOQjyGaR8T6N3tC1u8p3EXfndLCVNNWa+Zp+ocjvvS3kNBN09Zma2HXL0ezO0dRfw=="
+        "resolved": "1.1.0",
+        "contentHash": "J2G1k+u5unBV+aYcwxo94ip16Rkp65pgWFb0R6zwJipzWNMgvqlWeuI7/+R+e8bob66LnSG+llLJ+z8wI94cHg=="
       },
       "Microsoft.Data.SqlClient": {
         "type": "Transitive",
@@ -306,22 +276,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.2",
           "Microsoft.Extensions.Options": "10.0.2"
         }
-      },
-      "Microsoft.Extensions.Diagnostics.HealthChecks": {
-        "type": "Transitive",
-        "resolved": "8.0.19",
-        "contentHash": "GvB0NtqipGPLfTf+DslLzxwsOQjpobSFxwm1N2hp/KvNwMklGrFWQ9CS/EmYXAS1N5yU0hPP7B1ZtOFNZdqY4A==",
-        "dependencies": {
-          "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": "8.0.19",
-          "Microsoft.Extensions.Hosting.Abstractions": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
-          "Microsoft.Extensions.Options": "8.0.2"
-        }
-      },
-      "Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions": {
-        "type": "Transitive",
-        "resolved": "8.0.19",
-        "contentHash": "GFCKN00eRy9tKrukgfS3pFZU0SujmZuS1ozA0oRFD2KD5gdzwqjmeblSXyBwb4G9Gj2/Ax7VrabNYiaF1Wjr3g=="
       },
       "Microsoft.Extensions.FileProviders.Abstractions": {
         "type": "Transitive",
@@ -565,14 +519,12 @@
           "Azure.Core": "[1.51.1, )",
           "Azure.Identity": "[1.18.0-beta.2, )",
           "Azure.Monitor.OpenTelemetry.Exporter": "[1.6.0, )",
-          "Azure.Security.KeyVault.Secrets": "[4.8.0, )",
           "Microsoft.ApplicationInsights": "[3.0.0, )",
           "Microsoft.ApplicationInsights.AspNetCore": "[3.0.0, )",
           "Microsoft.ApplicationInsights.DependencyCollector": "[2.23.0, )",
           "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "[10.0.2, )",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.2, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.2, )",
-          "Microsoft.Azure.AppConfiguration.AspNetCore": "[8.4.0, )",
           "Microsoft.Azure.Cosmos": "[3.57.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.Abstractions": "[10.0.2, )",
@@ -582,7 +534,6 @@
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.2, )",
           "Microsoft.EntityFrameworkCore.Sqlite.Core": "[10.0.2, )",
-          "Microsoft.Extensions.Configuration.AzureAppConfiguration": "[8.4.0, )",
           "Newtonsoft.Json": "[13.0.4, )",
           "OpenTelemetry": "[1.15.0, )",
           "OpenTelemetry.Api": "[1.15.0, )",
@@ -629,15 +580,6 @@
           "Azure.Core": "1.50.0",
           "OpenTelemetry.Extensions.Hosting": "1.14.0",
           "OpenTelemetry.PersistentStorage.FileSystem": "1.0.2"
-        }
-      },
-      "Azure.Security.KeyVault.Secrets": {
-        "type": "CentralTransitive",
-        "requested": "[4.8.0, )",
-        "resolved": "4.8.0",
-        "contentHash": "tmcIgo+de2K5+PTBRNlnFLQFbmSoyuT9RpDr5MwKS6mIfNxLPQpARkRAP91r3tmeiJ9j/UCO0F+hTlk1Bk7HNQ==",
-        "dependencies": {
-          "Azure.Core": "1.46.2"
         }
       },
       "Microsoft.ApplicationInsights": {
@@ -687,15 +629,6 @@
         "contentHash": "YuEjUNpsoZLs0I5ONt013Z+Udsz3f9sPUh1Xm59LN7+/Z8oVG/swCUYLBbANtfreiunWnoT2uk+5kst4s2jr3Q==",
         "dependencies": {
           "Microsoft.OpenApi": "2.0.0"
-        }
-      },
-      "Microsoft.Azure.AppConfiguration.AspNetCore": {
-        "type": "CentralTransitive",
-        "requested": "[8.4.0, )",
-        "resolved": "8.4.0",
-        "contentHash": "Q48T/fp5anJYK9gp+CRpJ9efAhimn2MRHF6EKUrBsb5X11mczc1+zHYpfy3WTy3vO8yepBhyhSb6CaS2aGmUyA==",
-        "dependencies": {
-          "Microsoft.Extensions.Configuration.AzureAppConfiguration": "8.4.0"
         }
       },
       "Microsoft.EntityFrameworkCore": {
@@ -785,41 +718,6 @@
           "Microsoft.Extensions.Caching.Memory": "10.0.2",
           "Microsoft.Extensions.Configuration.Abstractions": "10.0.2",
           "Microsoft.Extensions.Logging": "10.0.2"
-        }
-      },
-      "Microsoft.Extensions.Azure": {
-        "type": "CentralTransitive",
-        "requested": "[1.13.1, )",
-        "resolved": "1.12.0",
-        "contentHash": "3sIvazPesPdEn5t2yT+pwVWKm1LyN/LB31Wh52giRNf2ckcKmaxW2KOA5uNZHSaqABhMDPAYGMeGBFQreZ7uUg==",
-        "dependencies": {
-          "Azure.Core": "1.46.2",
-          "Azure.Identity": "1.13.1",
-          "Microsoft.Extensions.Configuration": "8.0.0",
-          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
-          "Microsoft.Extensions.Configuration.Binder": "8.0.2",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Logging": "8.0.1",
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
-          "Microsoft.Extensions.Options": "8.0.2"
-        }
-      },
-      "Microsoft.Extensions.Configuration.AzureAppConfiguration": {
-        "type": "CentralTransitive",
-        "requested": "[8.4.0, )",
-        "resolved": "8.4.0",
-        "contentHash": "Gk8TtbewXsgWrYlGTIiyy+VJlv7O7FMWSLdN6xfEr57nqtW+PkQBikCDW2dlG3U9iqPDT1F8pSIR5Uf6UG5W3w==",
-        "dependencies": {
-          "Azure.Data.AppConfiguration": "1.6.1",
-          "Azure.Messaging.EventGrid": "5.0.0",
-          "Azure.Security.KeyVault.Secrets": "4.8.0",
-          "DnsClient": "1.7.0",
-          "Microsoft.Bcl.HashCode": "6.0.0",
-          "Microsoft.Extensions.Azure": "1.12.0",
-          "Microsoft.Extensions.Configuration": "8.0.0",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
-          "Microsoft.Extensions.Diagnostics.HealthChecks": "8.0.19",
-          "Microsoft.Extensions.Logging": "8.0.1"
         }
       },
       "OpenTelemetry": {

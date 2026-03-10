@@ -44,6 +44,9 @@ param resourceGroupLocation string
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()
 
+@description('The Entra ID App Registration client ID for exp.arolariu.ro Easy Auth.')
+param expEntraAppClientId string
+
 resource resourceGroup 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: resourceGroupName
   location: resourceGroupLocation
@@ -60,5 +63,6 @@ module mainDeployment 'facade.bicep' = {
   params: {
     resourceDeploymentDate: resourceDeploymentDate
     resourceLocation: resourceGroupLocation
+    expEntraAppClientId: expEntraAppClientId
   }
 }

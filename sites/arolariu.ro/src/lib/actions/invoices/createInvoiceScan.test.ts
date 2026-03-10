@@ -6,9 +6,24 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {createInvoiceScan} from "./createInvoiceScan";
 
+// Hoist mock functions so they're available in vi.mock factories
+const {mockUploadData, mockGetBlockBlobClient, mockGetContainerClient} = vi.hoisted(() => {
+  const _mockUploadData = vi.fn();
+  const _mockGetBlockBlobClient = vi.fn(() => ({
+    uploadData: _mockUploadData,
+    url: "https://mock-blob-url",
+  }));
+  const _mockGetContainerClient = vi.fn(() => ({
+    getBlockBlobClient: _mockGetBlockBlobClient,
+  }));
+  return {mockUploadData: _mockUploadData, mockGetBlockBlobClient: _mockGetBlockBlobClient, mockGetContainerClient: _mockGetContainerClient};
+});
+
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((_name, fn) => fn()),
+  withSpan: vi.fn((_name: string, fn: () => unknown) => fn()),
+  logWithTrace: vi.fn(),
+  addSpanEvent: vi.fn(),
 }));
 
 vi.mock("@/lib/utils.server", () => ({
@@ -19,15 +34,6 @@ vi.mock("@azure/identity", () => ({
   DefaultAzureCredential: vi.fn(),
 }));
 
-const mockUploadData = vi.fn();
-const mockGetBlockBlobClient = vi.fn(() => ({
-  uploadData: mockUploadData,
-  url: "https://mock-blob-url",
-}));
-const mockGetContainerClient = vi.fn(() => ({
-  getBlockBlobClient: mockGetBlockBlobClient,
-}));
-
 vi.mock("@azure/storage-blob", () => {
   return {
     BlobServiceClient: class {
@@ -35,6 +41,18 @@ vi.mock("@azure/storage-blob", () => {
     },
   };
 });
+
+// Mock storage config — prevent real fetch to config service
+vi.mock("@/lib/actions/storage/fetchConfig", () => ({
+  default: vi.fn().mockResolvedValue("http://mock-storage:10000/devstoreaccount1"),
+}));
+
+// Mock storageClient — delegate to hoisted mock chain
+vi.mock("@/lib/azure/storageClient", () => ({
+  createBlobClient: vi.fn(async () => ({
+    getContainerClient: (...args: unknown[]) => mockGetContainerClient(...args),
+  })),
+}));
 
 import {convertBase64ToBlob} from "@/lib/utils.server";
 

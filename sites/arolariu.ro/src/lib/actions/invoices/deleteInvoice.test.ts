@@ -15,8 +15,8 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
 }));
 
-vi.mock("../../utils.server", () => ({
-  API_URL: "https://mock-api",
+vi.mock("@/lib/config/configProxy", () => ({
+  fetchApiUrl: async () => "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -46,13 +46,16 @@ describe("deleteInvoice", () => {
     await deleteInvoice({invoiceId: mockInvoice.id});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(globalThis.fetch).toHaveBeenCalledWith(`https://mock-api/rest/v1/invoices/${mockInvoice.id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${mockToken}`,
-        "Content-Type": "application/json",
-      },
-    });
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      `https://mock-api/rest/v1/invoices/${mockInvoice.id}`,
+      expect.objectContaining({
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${mockToken}`,
+          "Content-Type": "application/json",
+        },
+      }),
+    );
   });
 
   it("should throw an error if deletion fails", async () => {

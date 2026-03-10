@@ -23,7 +23,7 @@
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
-import {API_URL, createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
+import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -105,7 +105,7 @@ export default async function fetchInvoice({invoiceId}: ServerActionInputType): 
       // Step 2. Make the API request to fetch the invoice (with timeout)
       addSpanEvent("bff.request.fetch-invoice.start");
       logWithTrace("info", "Making API request to fetch invoice", {invoiceId}, "server");
-      const response = await fetchWithTimeout(`${API_URL}/rest/v1/invoices/${invoiceId}`, {
+      const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",

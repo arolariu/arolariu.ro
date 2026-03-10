@@ -7,34 +7,33 @@ networks:
     external: true
 
 services:
-  keycloak:
-    image: quay.io/keycloak/keycloak:25.0.6
-    container_name: keycloak
-    restart: always
-    command: start-dev
-    ports:
-      - "8084:8080"
-    networks:
-      - arolariu-network
-      - default
+  api:
+    build:
+      context: ../../..
+      dockerfile: infra/containers/Dockerfile.backend
+      args:
+        INFRA: local
+        API_NAME: arolariu-backend-api
+        API_URL: http://localhost:5000
+        COMMIT_SHA: local-docker
+        VERSION: 0.0.0-local-docker
+    container_name: api-arolariu-ro
+    restart: unless-stopped
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: qazWSXedcRFV1234!
-      KC_HOSTNAME_URL: "http://localhost:8084"
-      KC_HOSTNAME_ADMIN_URL: "http://localhost:8084"
-      KC_HOSTNAME_DEBUG: true
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_HTTP_ENABLED: true
-      KC_PROXY: edge
-      KC_DB: mssql
-      KC_DB_URL: jdbc:sqlserver://mssql:1433;databaseName=arolariu-sql;encrypt=optional;loginTimeout=30;
-      KC_DB_USERNAME: sa
-      KC_DB_PASSWORD: qazWSXedcRFV1234!
-      KC_LOG_LEVEL: INFO
+      INFRA: local
+      API_NAME: arolariu-backend-api
+      API_URL: http://localhost:5000
+      COMMIT_SHA: local-docker
+    ports:
+      - "5000:8080"
+    networks:
+      arolariu-network:
+        aliases:
+          - api
+      default: {}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.keycloak.rule=Host(`keycloak.localhost`)"
-      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
-      - "traefik.http.routers.keycloak.entrypoints=websecure"
-      - "traefik.http.routers.keycloak.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.services.api.loadbalancer.server.port=8080"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls=true"

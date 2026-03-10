@@ -11,7 +11,7 @@
  * **Storage Configuration**:
  * - Container: `invoices` (shared with invoice scans)
  * - Path prefix: `scans/{userIdentifier}/`
- * - Authentication: Azure DefaultAzureCredential (Managed Identity in prod)
+ * - Authentication: Centralized Azure credential singleton (Managed Identity in prod)
  *
  * **Workflow**:
  * 1. User uploads scan via `/upload-scans` route
@@ -23,10 +23,10 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob} from "@/lib/utils.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
-import {DefaultAzureCredential} from "@azure/identity";
-import {BlobServiceClient} from "@azure/storage-blob";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 /**
@@ -144,15 +144,13 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
 
       // Step 3. Prepare for blob upload
       const containerName = "invoices";
-      const storageCredentials = new DefaultAzureCredential();
-      // todo: fetch from config service.
-      const storageEndpoint = "https://qpfnu3sacc.blob.core.windows.net/";
+      const storageEndpoint = await fetchConfigurationValue("Endpoints:Storage:Blob");
 
       // Step 4. Upload the blob to Azure Storage
       addSpanEvent("azure.blob.upload.start");
       logWithTrace("info", "Uploading scan to Azure Blob Storage", {blobName}, "server");
 
-      const storageClient = new BlobServiceClient(storageEndpoint, storageCredentials);
+      const storageClient = await createBlobClient(storageEndpoint);
       const containerClient = storageClient.getContainerClient(containerName);
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
@@ -188,7 +186,7 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
         id: scanId,
         userIdentifier,
         name: fileName,
-        blobUrl: blockBlobClient.url,
+        blobUrl: rewriteAzuriteUrl(blockBlobClient.url),
         mimeType,
         sizeInBytes: originalFile.size,
         scanType: mimeTypeToScanType(mimeType),

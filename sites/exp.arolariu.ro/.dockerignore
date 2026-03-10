@@ -1,0 +1,13 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.test.py
+conftest.py
+*.pyc
+*.pyo
+*.pyd
+local.settings.json
+config.json
+.git/
+.gitignore

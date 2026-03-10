@@ -44,8 +44,6 @@
   <ItemGroup Label="Azure SDK Packages">
     <PackageVersion Include="Azure.Core" Version="1.51.1" />
     <PackageVersion Include="Azure.Identity" Version="1.18.0-beta.2" />
-    <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
-    <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.27.0" />
   </ItemGroup>
   <ItemGroup Label="Azure AI Packages">
@@ -57,10 +55,6 @@
   <ItemGroup Label="Azure Cognitive Services Packages">
     <PackageVersion Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
   </ItemGroup>
-  <ItemGroup Label="Azure Configuration Packages">
-    <PackageVersion Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="8.4.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="8.4.0" />
-  </ItemGroup>
   <ItemGroup Label="Azure Cosmos DB Packages">
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.57.0" />
   </ItemGroup>
@@ -70,6 +64,7 @@
     <PackageVersion Include="AspNetCore.HealthChecks.CosmosDb" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup Label="OpenTelemetry Packages">
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.6.0" />
