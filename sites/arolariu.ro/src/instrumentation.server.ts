@@ -44,6 +44,7 @@ import {context, Meter, metrics, Span, SpanStatusCode, trace, Tracer} from "@ope
 import {getNodeAutoInstrumentations} from "@opentelemetry/auto-instrumentations-node";
 import {OTLPMetricExporter} from "@opentelemetry/exporter-metrics-otlp-http";
 import {OTLPTraceExporter} from "@opentelemetry/exporter-trace-otlp-http";
+import {Resource} from "@opentelemetry/resources";
 import {PeriodicExportingMetricReader} from "@opentelemetry/sdk-metrics";
 import {NodeSDK} from "@opentelemetry/sdk-node";
 import {BatchSpanProcessor} from "@opentelemetry/sdk-trace-node";
@@ -475,6 +476,20 @@ const {traceExporter, metricExporter} = connectionString
     })();
 
 /**
+ * Service resource with standard OTel semantic conventions.
+ * Used by the NodeSDK to identify this service in traces, metrics, and logs.
+ */
+const serviceResource = new Resource({
+  "service.name": "arolariu-website",
+  "service.namespace": "arolariu.ro",
+  "service.version": process.env["COMMIT_SHA"] ?? "unknown",
+  "service.instance.id": process.env["HOSTNAME"] ?? `node-${process.pid}`,
+  "deployment.environment": process.env["SITE_ENV"] ?? "development",
+  "cloud.role": "website",
+  "cloud.provider": "azure",
+});
+
+/**
  * OpenTelemetry SDK instance.
  *
  * Configures and manages the telemetry pipeline including:
@@ -490,7 +505,7 @@ const {traceExporter, metricExporter} = connectionString
  * @see {@link https://opentelemetry.io/docs/languages/js/getting-started/nodejs/}
  */
 const sdk = new NodeSDK({
-  serviceName: "arolariu-website",
+  resource: serviceResource,
   traceExporter,
   metricReader: new PeriodicExportingMetricReader({
     exporter: metricExporter,
@@ -596,6 +611,29 @@ process.on("SIGINT", async () => {
   // eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGINT
   process.exit(0);
 });
+
+// #endregion
+
+// #region W3C Trace Context Propagation
+
+/**
+ * Returns a W3C traceparent header value from the currently active span context.
+ * Returns an empty string if no active span exists.
+ * @returns W3C traceparent header string (e.g. `00-<traceId>-<spanId>-01`) or empty string
+ * @see {@link https://www.w3.org/TR/trace-context/#traceparent-header}
+ */
+export function getTraceparentHeader(): string {
+  try {
+    const activeSpan = trace.getSpan(context.active());
+    if (!activeSpan) return "";
+    const ctx = activeSpan.spanContext();
+    if (!ctx.traceId || ctx.traceId === "00000000000000000000000000000000") return "";
+    const flags = ctx.traceFlags ? ctx.traceFlags.toString(16).padStart(2, "0") : "01";
+    return `00-${ctx.traceId}-${ctx.spanId}-${flags}`;
+  } catch {
+    return "";
+  }
+}
 
 // #endregion
 

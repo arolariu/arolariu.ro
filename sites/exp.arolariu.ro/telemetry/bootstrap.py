@@ -160,6 +160,8 @@ def _build_resource(dependencies: TelemetryDependencies, settings: TelemetrySett
             "service.instance.id": settings.service_instance_id,
             "deployment.environment": settings.deployment_environment,
             "exp.infra.mode": settings.infra_mode,
+            "cloud.role": "exp",
+            "cloud.provider": "azure",
         }
     )
 

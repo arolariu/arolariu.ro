@@ -19,7 +19,7 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
-import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {addSpanEvent, getTraceparentHeader, logWithTrace, withSpan} from "@/instrumentation.server";
 import {isConfigValueResponse, type ConfigValueResponse} from "@/lib/config/configCatalog.types";
 import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "@/lib/config/configCatalogCache.server";
 
@@ -72,6 +72,8 @@ async function getRequestHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {"X-Exp-Target": WEBSITE_TARGET};
   const bearerToken = await getBearerToken();
   if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
+  const traceparent = getTraceparentHeader();
+  if (traceparent) headers["traceparent"] = traceparent;
   return headers;
 }
 
