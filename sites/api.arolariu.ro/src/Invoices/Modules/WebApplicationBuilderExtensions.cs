@@ -68,10 +68,11 @@ public static class WebApplicationBuilderExtensions
         // Parse endpoint and key from the connection string for explicit constructor.
         var endpointMatch = System.Text.RegularExpressions.Regex.Match(connectionString, @"AccountEndpoint=([^;]+)");
         var keyMatch = System.Text.RegularExpressions.Regex.Match(connectionString, @"AccountKey=([^;]+)");
-        var endpoint = endpointMatch.Success ? endpointMatch.Groups[1].Value : "http://cosmosdb:8081/";
-        var key = keyMatch.Success ? keyMatch.Groups[1].Value : string.Empty;
 
-        return new CosmosClient(endpoint, key, new CosmosClientOptions
+        if (!endpointMatch.Success || !keyMatch.Success)
+          throw new InvalidOperationException("CosmosDB connection string contains AccountKey= but could not parse both AccountEndpoint and AccountKey.");
+
+        return new CosmosClient(endpointMatch.Groups[1].Value, keyMatch.Groups[1].Value, new CosmosClientOptions
         {
           ConnectionMode = ConnectionMode.Gateway,
           LimitToEndpoint = true,

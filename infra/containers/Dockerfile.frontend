@@ -85,6 +85,7 @@ ARG VERSION
 ARG SITE_ENV
 ARG SITE_URL
 ARG SITE_NAME
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 # Make environment variables available during build (Next.js embeds these at build time)
 # NOTE: SITE_ENV / SITE_URL / SITE_NAME are intentionally NOT propagated to the runner
@@ -97,6 +98,7 @@ ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     SITE_ENV=${SITE_ENV} \
     SITE_URL=${SITE_URL} \
     SITE_NAME=${SITE_NAME} \
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production
 

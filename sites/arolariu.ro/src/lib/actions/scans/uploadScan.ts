@@ -24,7 +24,7 @@
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import fetchConfigurationValue from "@/lib/actions/storage/fetchConfig";
-import {createBlobClient} from "@/lib/azure/storageClient";
+import {createBlobClient, rewriteAzuriteUrl} from "@/lib/azure/storageClient";
 import {convertBase64ToBlob} from "@/lib/utils.server";
 import {type Scan, ScanStatus, ScanType} from "@/types/scans";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
@@ -186,7 +186,7 @@ export async function uploadScan({base64Data, fileName, mimeType}: UploadScanInp
         id: scanId,
         userIdentifier,
         name: fileName,
-        blobUrl: blockBlobClient.url.replace("http://azurite:10000", "http://localhost:10000"),
+        blobUrl: rewriteAzuriteUrl(blockBlobClient.url),
         mimeType,
         sizeInBytes: originalFile.size,
         scanType: mimeTypeToScanType(mimeType),

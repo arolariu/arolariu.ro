@@ -36,6 +36,9 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
   "use server";
   try {
     const {isAuthenticated, userId} = await auth();
+    const jwtSecret = await fetchApiJwtSecret();
+    if (!jwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue token.");
+
     if (isAuthenticated) {
       ("use cache");
       const user = await currentUser();
@@ -62,8 +65,6 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
         role: "user",
       };
 
-      const jwtSecret = await fetchApiJwtSecret();
-      if (!jwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue user token.");
       const token = await createJwtToken(jwtPayload, jwtSecret);
 
       const userInformation: UserInformation = {
@@ -88,9 +89,7 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
         userIdentifier: guestIdentifier,
         role: "guest",
       };
-      const guestJwtSecret = await fetchApiJwtSecret();
-      if (!guestJwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue guest token.");
-      const guestToken = await createJwtToken(jwtPayload, guestJwtSecret);
+      const guestToken = await createJwtToken(jwtPayload, jwtSecret);
       const userInformation: UserInformation = {
         user: null,
         userIdentifier: guestIdentifier,

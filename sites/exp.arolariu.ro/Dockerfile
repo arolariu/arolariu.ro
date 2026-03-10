@@ -6,7 +6,7 @@
 #   - Multi-stage build to exclude pip, build tools, and dev artifacts
 #   - Non-root user (app:app, UID/GID 1001)
 #   - Read-only compatible (no runtime writes required)
-#   - Minimal attack surface (no shell in runner, slim base)
+#   - Minimal attack surface (slim base, non-root user)
 #   - Health check for container orchestration
 #   - dumb-init for proper PID 1 signal handling
 ###############################################################################

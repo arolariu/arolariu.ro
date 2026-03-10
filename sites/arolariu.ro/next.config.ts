@@ -13,7 +13,9 @@ import createNextIntlPlugin from "next-intl/plugin";
 import type {RemotePattern} from "next/dist/shared/lib/image-config";
 
 const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
-const localDevSources = process.env["SITE_ENV"] !== "PRODUCTION" ? "http://localhost:* http://127.0.0.1:*" : "";
+const isProduction = process.env["SITE_ENV"] === "PRODUCTION";
+const localDevSources = !isProduction ? "http://localhost:* http://127.0.0.1:*" : "";
+const upgradeInsecure = isProduction ? "upgrade-insecure-requests;" : "";
 const cspHeader = `
     default-src 'self' blob: data: https: ${trustedDomains};
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
@@ -23,6 +25,7 @@ const cspHeader = `
     base-uri 'none';
     object-src 'none';
     frame-ancestors 'self';
+    ${upgradeInsecure}
 `;
 
 const isCdnEnabled = process.env["USE_CDN"] === "true";

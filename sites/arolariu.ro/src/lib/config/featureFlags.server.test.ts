@@ -8,6 +8,7 @@ const mockFetchConfigValue = vi.fn<(key: string) => Promise<string>>();
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/config/configProxy", () => ({
   fetchConfigValue: mockFetchConfigValue,
+  invalidateConfigCache: vi.fn(),
   EXP_BASE_URL: "http://exp",
   EXP_SERVICE_TOKEN_SCOPE: "api://test/.default",
 }));

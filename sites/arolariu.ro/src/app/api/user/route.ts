@@ -146,6 +146,10 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
         const {isAuthenticated, userId} = await auth();
         addSpanEvent("auth.check.complete", {authenticated: Boolean(isAuthenticated)});
 
+        // Fetch JWT secret once before branching (avoids redundant config proxy call)
+        const jwtSecret = await fetchApiJwtSecret();
+        if (!jwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue token.");
+
         // Authenticated user with Clerk
         // eslint-disable-next-line unicorn/prefer-ternary -- no need.
         if (isAuthenticated) {
@@ -185,8 +189,6 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             addSpanEvent("jwt.create.start");
-            const jwtSecret = await fetchApiJwtSecret();
-            if (!jwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue user token.");
             const token = await createJwtToken(jwtPayload, jwtSecret);
             addSpanEvent("jwt.create.complete", {
               token_expiration: expirationTime,
@@ -252,9 +254,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             addSpanEvent("jwt.create.start");
-            const guestJwtSecret = await fetchApiJwtSecret();
-            if (!guestJwtSecret) throw new Error("API JWT secret is empty or unavailable — cannot issue guest token.");
-            const guestToken = await createJwtToken(jwtPayload, guestJwtSecret);
+            const guestToken = await createJwtToken(jwtPayload, jwtSecret);
             addSpanEvent("jwt.create.complete", {
               token_expiration: expirationTime,
             });
