@@ -52,4 +52,40 @@ public static partial class Log
     Level = LogLevel.Information,
     Message = "Feature snapshot cache updated with {FeatureCount} feature flag(s).")]
   public static partial void LogFeatureSnapshotUpdated(this ILogger logger, int featureCount);
+
+  /// <summary>
+  /// Logs a non-success HTTP status code from the exp service for a config key.
+  /// </summary>
+  [LoggerMessage(
+    EventId = 410_201,
+    Level = LogLevel.Warning,
+    Message = "exp returned HTTP {StatusCode} for config key '{Key}'.")]
+  public static partial void LogConfigKeyHttpError(this ILogger logger, int statusCode, string key);
+
+  /// <summary>
+  /// Logs a network-level error when the exp service is unreachable.
+  /// </summary>
+  [LoggerMessage(
+    EventId = 410_202,
+    Level = LogLevel.Error,
+    Message = "Network error fetching config key '{Key}' from exp — service may be unreachable.")]
+  public static partial void LogConfigKeyNetworkError(this ILogger logger, Exception exception, string key);
+
+  /// <summary>
+  /// Logs a timeout when fetching a config key from the exp service.
+  /// </summary>
+  [LoggerMessage(
+    EventId = 410_203,
+    Level = LogLevel.Error,
+    Message = "Timeout fetching config key '{Key}' from exp.")]
+  public static partial void LogConfigKeyTimeout(this ILogger logger, Exception exception, string key);
+
+  /// <summary>
+  /// Logs a JSON deserialization failure for a config key response.
+  /// </summary>
+  [LoggerMessage(
+    EventId = 410_204,
+    Level = LogLevel.Error,
+    Message = "Failed to deserialize exp response for config key '{Key}' — response may be malformed.")]
+  public static partial void LogConfigKeyDeserializationError(this ILogger logger, Exception exception, string key);
 }

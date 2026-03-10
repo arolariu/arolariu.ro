@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
+using System.Threading;
 
 using arolariu.Backend.Common.Azure;
 using arolariu.Backend.Common.Configuration;
@@ -116,7 +117,7 @@ internal static class WebApplicationBuilderExtensions
         new BearerTokenHandler(AzureCredentialFactory.CreateCredential(), ExpScope));
     }
 
-    // Fetch config values at startup.
+    // Fetch config values at startup with retry.
     // Sync-over-async at startup is safe here — no SynchronizationContext exists yet.
     // The host has not started, so there is no deadlock risk.
     using var tempProvider = services.BuildServiceProvider();
@@ -137,22 +138,41 @@ internal static class WebApplicationBuilderExtensions
       "Endpoints:AI:OCR:Key",
     ];
 
+    // Retry up to 3 times with exponential backoff in case exp is still starting.
     var configValues = new Dictionary<string, string>(configKeys.Length);
-    foreach (var key in configKeys)
+    const int maxRetries = 3;
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
     {
-      var response = proxyClient.GetConfigValueAsync(key).GetAwaiter().GetResult();
-      if (response is not null)
+      configValues.Clear();
+      foreach (var key in configKeys)
       {
-        configValues[key] = response.Value;
+        var response = proxyClient.GetConfigValueAsync(key).GetAwaiter().GetResult();
+        if (response is not null)
+        {
+          configValues[key] = response.Value;
+        }
+      }
+
+      if (configValues.Count > 0) break;
+
+      if (attempt < maxRetries)
+      {
+        var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt));
+        Console.WriteLine($"[exp] Startup config fetch attempt {attempt}/{maxRetries} returned 0 keys from {baseUrl}. Retrying in {delay.TotalSeconds}s...");
+        Thread.Sleep(delay);
       }
     }
 
     if (configValues.Count == 0)
     {
       throw new InvalidOperationException(
-            $"Unable to load any API config values from exp service at {baseUrl}. " +
-            "Verify the exp service is reachable and AZURE_CLIENT_ID is set correctly for Azure deployments.");
+            $"Unable to load any API config values from exp service at {baseUrl} after {maxRetries} attempts. " +
+            $"Verify: (1) exp is running and healthy at {baseUrl}/api/health, " +
+            "(2) AZURE_CLIENT_ID is set correctly for Azure deployments, " +
+            "(3) the API's managed identity is in EXP_CALLER_API_IDS on the exp service.");
     }
+
+    Console.WriteLine($"[exp] Loaded {configValues.Count}/{configKeys.Length} config keys from {baseUrl}.");
 
     services.AddSingleton<IOptionsManager, CloudOptionsManager>();
     services.AddSingleton(new FeatureSnapshotCache(
