@@ -22,7 +22,8 @@ from api.common import (
     resolve_target_query,
 )
 from config.catalog import resolve_build_time_config
-from config.loader import get_config
+from config.loader import get_config, get_config_for_label
+from config.settings import get_runtime_infra_mode
 from models import ApiBuildTimeConfigDocumentResponse, WebsiteBuildTimeConfigDocumentResponse
 from runtime.metrics import record_config_delivery
 from security.authz import authorize_target_request
@@ -38,6 +39,7 @@ router = APIRouter(prefix=API_VERSION_PREFIX)
 def get_build_time(
     req: Request,
     for_target: Annotated[str, Query(alias="for")] = "",
+    label: str = "",
 ) -> ApiBuildTimeConfigDocumentResponse | WebsiteBuildTimeConfigDocumentResponse | JSONResponse:
     """Return the build-time configuration document for the requested caller target."""
 
@@ -55,7 +57,11 @@ def get_build_time(
             status_code=authorization_result.status_code,
         )
 
-    config_snapshot = get_config()
+    requested_label = label.strip().upper()
+    if requested_label and get_runtime_infra_mode() == "azure":
+        config_snapshot = get_config_for_label(requested_label)
+    else:
+        config_snapshot = get_config()
     config_resolution = resolve_build_time_config(resolution.index, config_snapshot)
     if config_resolution.missing_required_keys:
         return build_missing_keys_error("Build-time", list(config_resolution.missing_required_keys))
