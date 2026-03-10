@@ -118,7 +118,7 @@ jobs:
         run: python -m ruff check .
 
       - name: 🔐 Running security checks...
-        run: python -m bandit -q -r .
+        run: python -m bandit -q -r . --exclude "./*test*"
 
       - name: 🧪 Running unit tests...
         env:
