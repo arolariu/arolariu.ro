@@ -619,8 +619,9 @@ target-scoped config. The Infrastructure UAMI is merged into both `api` and
 
 ### Excluded paths
 
-`/api/health` and `/api/ready` are excluded from Easy Auth so container
-orchestrators (App Service, Docker) can probe liveness without authentication.
+`/api/health`, `/api/ready`, and `/admin/*` are excluded from Easy Auth so:
+- Container orchestrators can probe liveness without authentication
+- The admin UI handles its own MSAL popup login for human operators
 
 ## Configuration sources
 
@@ -696,18 +697,26 @@ flowchart LR
 
 ## Environment variables
 
+### Application settings (set by exp code)
+
 | Name | Required | Description |
 | --- | --- | --- |
 | `INFRA` | Yes | `azure`, `local`, or `proxy` |
-| `AZURE_APPCONFIG_ENDPOINT` | Azure only | Azure App Configuration endpoint |
-| `AZURE_CLIENT_ID` | Optional | User-assigned managed identity client ID |
-| `EXP_CALLER_API_IDS` | Azure only | Comma-separated principal IDs allowed as `api` |
-| `EXP_CALLER_WEBSITE_IDS` | Azure only | Comma-separated principal IDs allowed as `website` |
-| `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` | Optional | Snapshot refresh interval in seconds |
+| `AZURE_APPCONFIG_ENDPOINT` | Azure only | Azure App Configuration endpoint (e.g., `https://<name>.azconfig.io`) |
+| `AZURE_CLIENT_ID` | Azure only | User-assigned managed identity client ID for App Config + Key Vault access |
+| `EXP_CALLER_API_IDS` | Azure only | Comma-separated principal IDs allowed as `api` target |
+| `EXP_CALLER_WEBSITE_IDS` | Azure only | Comma-separated principal IDs allowed as `website` target |
+| `EXP_CALLER_INFRA_IDS` | Azure only | Comma-separated principal IDs for Infrastructure UAMI (merged into both targets). Alternative: append the infra ID to both `API_IDS` and `WEBSITE_IDS` |
+| `EXP_CONFIG_REFRESH_INTERVAL_SECONDS` | Optional | Snapshot refresh interval in seconds (default: 300, minimum: 60) |
 | `EXP_LOCAL_SHARED_TOKEN` | Optional | Shared token for local/proxy mode |
 | `EXP_LOCAL_CONFIG_PATH` | Optional | Absolute path to alternate local config JSON |
-| `EXP_ENVIRONMENT` | Optional | Azure label selector source |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Azure telemetry | Application Insights connection string used by the Azure Monitor OTel exporters |
+| `EXP_ENVIRONMENT` | Optional | Azure App Configuration label selector (`DEVELOPMENT` or `PRODUCTION`) |
+
+### Telemetry settings
+
+| Name | Required | Description |
+| --- | --- | --- |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Azure telemetry | Application Insights connection string for Azure Monitor OTel exporters |
 | `EXP_OTEL_ENABLED` | Optional | Enables or disables OpenTelemetry bootstrap (defaults to `true`) |
 | `EXP_OTEL_EXCLUDED_URLS` | Optional | Comma-delimited request-path regexes excluded from FastAPI tracing |
 | `EXP_OTEL_TRACE_SAMPLE_RATIO` | Optional | Trace sampling ratio between `0.0` and `1.0` |
@@ -716,6 +725,21 @@ flowchart LR
 | `EXP_OTEL_CONSOLE_TRACE_EXPORT_ENABLED` | Optional | Enables local console trace export; defaults to `true` outside Azure |
 | `EXP_OTEL_CONSOLE_METRIC_EXPORT_ENABLED` | Optional | Enables local console metric export; defaults to `true` outside Azure |
 | `EXP_OTEL_CONSOLE_LOG_EXPORT_ENABLED` | Optional | Enables OTel log export to the local console; defaults to `false` to avoid duplicate local log lines |
+
+### Azure platform settings (managed by App Service / Easy Auth)
+
+These are set automatically by the Azure platform or via portal configuration — **not** consumed by exp code directly:
+
+| Name | Purpose |
+| --- | --- |
+| `DOCKER_REGISTRY_SERVER_URL` | ACR endpoint for container image pull (e.g., `https://<acr>.azurecr.io`) |
+| `DOCKER_REGISTRY_SERVER_USERNAME` | ACR pull credential username |
+| `DOCKER_REGISTRY_SERVER_PASSWORD` | ACR pull credential password |
+| `MICROSOFT_PROVIDER_AUTHENTICATION_SECRET` | Easy Auth v2 app registration client secret |
+| `WEBSITE_AUTH_AAD_ALLOWED_TENANTS` | Entra ID tenant restriction for Easy Auth |
+| `WEBSITES_ENABLE_APP_SERVICE_STORAGE` | Persistent storage mount (`false` — exp is stateless) |
+| `ApplicationInsightsAgent_EXTENSION_VERSION` | App Insights agent version (`~3`) |
+| `XDT_MicrosoftApplicationInsights_Mode` | App Insights instrumentation mode (`Recommended`) |
 
 ## Local development
 

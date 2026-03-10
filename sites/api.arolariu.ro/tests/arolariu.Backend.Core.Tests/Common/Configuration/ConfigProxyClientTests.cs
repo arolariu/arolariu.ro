@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Configuration;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
@@ -30,7 +31,7 @@ public sealed class ConfigProxyClientTests
       """{"name":"Endpoints:Api","value":"https://api.arolariu.ro","availableForTargets":["website"],"availableInDocuments":["website.build-time","website.run-time"],"requiredInDocuments":["website.build-time","website.run-time"],"description":"API endpoint","usage":"Server-only","refreshIntervalSeconds":300,"fetchedAt":"2026-01-01T00:00:00Z"}""",
       out var handler);
 #pragma warning restore CA2000
-    var client = new ConfigProxyClient(httpClient);
+    var client = new ConfigProxyClient(httpClient, NullLogger<ConfigProxyClient>.Instance);
 
     var result = await client.GetConfigValueAsync("Endpoints:Api").ConfigureAwait(false);
 
@@ -45,7 +46,7 @@ public sealed class ConfigProxyClientTests
   public async Task GetConfigValueAsync_NotFound_ReturnsNull()
   {
     using var httpClient = MakeClient(HttpStatusCode.NotFound, "{}", out _);
-    var client = new ConfigProxyClient(httpClient);
+    var client = new ConfigProxyClient(httpClient, NullLogger<ConfigProxyClient>.Instance);
 
     var result = await client.GetConfigValueAsync("Missing:Config").ConfigureAwait(false);
 
@@ -57,7 +58,7 @@ public sealed class ConfigProxyClientTests
   public async Task GetConfigValueAsync_InvalidJson_ReturnsNull()
   {
     using var httpClient = MakeClient(HttpStatusCode.OK, "not-json", out _);
-    var client = new ConfigProxyClient(httpClient);
+    var client = new ConfigProxyClient(httpClient, NullLogger<ConfigProxyClient>.Instance);
 
     var result = await client.GetConfigValueAsync("Some:Key").ConfigureAwait(false);
 
@@ -69,7 +70,7 @@ public sealed class ConfigProxyClientTests
   public async Task GetConfigValueAsync_ServiceUnavailable_ReturnsNull()
   {
     using var httpClient = MakeClient(HttpStatusCode.ServiceUnavailable, "", out _);
-    var client = new ConfigProxyClient(httpClient);
+    var client = new ConfigProxyClient(httpClient, NullLogger<ConfigProxyClient>.Instance);
 
     var result = await client.GetConfigValueAsync("Some:Key").ConfigureAwait(false);
 

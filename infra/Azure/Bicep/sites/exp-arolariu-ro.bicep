@@ -186,6 +186,8 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
       excludedPaths: [
         '/api/health'
         '/api/ready'
+        '/admin'
+        '/admin/*'
       ]
     }
     identityProviders: {
