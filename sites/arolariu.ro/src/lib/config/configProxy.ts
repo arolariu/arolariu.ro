@@ -19,6 +19,7 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {isConfigValueResponse, type ConfigValueResponse} from "@/lib/config/configCatalog.types";
 import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "@/lib/config/configCatalogCache.server";
 
@@ -72,30 +73,39 @@ async function getRequestHeaders(): Promise<Record<string, string>> {
  */
 async function getConfigPayload(key: string): Promise<ConfigValueResponse> {
   const cachedPayload = getCachedConfigValue(key);
-  if (cachedPayload) return cachedPayload;
+  if (cachedPayload) {
+    logWithTrace("debug", "Config cache hit", {key, source: "cache"}, "server");
+    return cachedPayload;
+  }
 
-  const headers = await getRequestHeaders();
-  const response = await fetch(`${EXP_BASE_URL}/api/v1/config?name=${encodeURIComponent(key)}`, {
-    cache: "no-store",
-    headers,
-    signal: AbortSignal.timeout(10_000),
+  return withSpan("http.client.exp.config.fetch", async () => {
+    addSpanEvent("exp.config.fetch.start", {key});
+
+    const headers = await getRequestHeaders();
+    const response = await fetch(`${EXP_BASE_URL}/api/v1/config?name=${encodeURIComponent(key)}`, {
+      cache: "no-store",
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!response.ok) {
+      addSpanEvent("exp.config.fetch.error", {key, status: response.status});
+      logWithTrace("error", "exp returned non-OK status for config key", {key, status: response.status}, "server");
+      throw new Error(`Failed to fetch config '${key}' (status=${response.status}).`);
+    }
+
+    const payload: unknown = await response.json();
+    if (!isConfigValueResponse(payload)) {
+      addSpanEvent("exp.config.fetch.invalid", {key});
+      logWithTrace("error", "Invalid config response payload from exp", {key}, "server");
+      throw new Error(`Invalid config response payload for key '${key}'.`);
+    }
+
+    setCachedConfigValue(key, payload);
+    addSpanEvent("exp.config.fetch.complete", {key, cached: true});
+    logWithTrace("debug", "Config fetched from exp and cached", {key}, "server");
+    return payload;
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch config '${key}' (status=${response.status}).`);
-  }
-
-  const payload: unknown = await response.json();
-  if (!isConfigValueResponse(payload)) {
-    throw new Error(`Invalid config response payload for key '${key}'.`);
-  }
-
-  setCachedConfigValue(key, payload);
-  return payload;
-}
-
-function logProxyError(message: string, error: unknown): void {
-  console.error({error, message: String(message)});
 }
 
 /**
@@ -107,7 +117,7 @@ export async function fetchConfigValue(key: string): Promise<string> {
     const payload = await getConfigPayload(key);
     return payload.value;
   } catch (error) {
-    logProxyError(`[configProxy] Failed to fetch key "${key}".`, error);
+    logWithTrace("error", `Failed to fetch config key "${key}" from exp`, {key, error: String(error)}, "server");
     throw error;
   }
 }
@@ -153,7 +163,7 @@ export async function fetchApiUrl(): Promise<string> {
     const value = await fetchConfigValue(EXP_KEY_API_URL);
     if (value) return value;
   } catch {
-    // Fall through to env fallback.
+    logWithTrace("warn", "Falling back to API_URL env var — exp unavailable", {key: EXP_KEY_API_URL}, "server");
   }
   return process.env["API_URL"] ?? "";
 }
@@ -175,7 +185,7 @@ export async function fetchApiJwtSecret(): Promise<string> {
     const value = await fetchConfigValue(EXP_KEY_API_JWT_SECRET);
     if (value) return value;
   } catch {
-    // Fall through to env fallback.
+    logWithTrace("warn", "Falling back to API_JWT env var — exp unavailable", {key: EXP_KEY_API_JWT_SECRET}, "server");
   }
   return process.env["API_JWT"] ?? "";
 }
@@ -198,7 +208,7 @@ export async function fetchResendApiKey(): Promise<string> {
     const value = await fetchConfigValue(EXP_KEY_RESEND_API_KEY);
     if (value) return value;
   } catch {
-    // Fall through to env fallback.
+    logWithTrace("warn", "Falling back to RESEND_API_KEY env var — exp unavailable", {key: EXP_KEY_RESEND_API_KEY}, "server");
   }
   return process.env["RESEND_API_KEY"] ?? "";
 }
