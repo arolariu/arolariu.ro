@@ -11,7 +11,7 @@
  * - prompts the developer for missing values based on required keys.
  */
 
-import {DefaultAzureCredential} from "@azure/identity";
+import {AzureCliCredential, DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
@@ -45,9 +45,12 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
   // Acquire a bearer token when running with Azure identity.
   if (process.env["AZURE_CLIENT_ID"]) {
     try {
-      const credential = new DefaultAzureCredential();
-      console.log(pc.gray(`🔐 Acquiring token for scope: ${EXP_TOKEN_SCOPE}`));
-      console.log(pc.gray(`   AZURE_CLIENT_ID: ${process.env["AZURE_CLIENT_ID"]?.substring(0, 8)}...`));
+      // In CI (GitHub Actions), azure/login sets up AzureCliCredential via OIDC.
+      // DefaultAzureCredential with AZURE_CLIENT_ID tries ManagedIdentity first,
+      // which doesn't exist in CI. Use AzureCliCredential directly in CI.
+      const isCI = Boolean(process.env["CI"] || process.env["GITHUB_ACTIONS"]);
+      const credential = isCI ? new AzureCliCredential() : new DefaultAzureCredential();
+      console.log(pc.gray(`🔐 Acquiring token for scope: ${EXP_TOKEN_SCOPE} (via ${isCI ? "AzureCliCredential" : "DefaultAzureCredential"})`));
       const token = await credential.getToken(EXP_TOKEN_SCOPE);
       if (token?.token) {
         headers["Authorization"] = `Bearer ${token.token}`;
