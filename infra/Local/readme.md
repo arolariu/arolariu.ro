@@ -36,11 +36,11 @@ the application containers.
 ## Prerequisites
 
 - **Docker** (20.10.0 or higher) with Docker Compose v2
-- **Node.js** ≥ 24 and **npm** ≥ 11 (for `selfhost-start.sh` blob container init)
-- **mkcert** — for local HTTPS certificates ([install guide](https://github.com/FiloSottile/mkcert#installation))
+- **Node.js** ≥ 24 and **npm** ≥ 11 (for Azurite blob container init)
 - **Git** (to clone the repository)
 - 4GB+ RAM available for containers
 - 10GB+ of free disk space
+- _(Optional)_ **mkcert** — auto-installed by startup scripts for local HTTPS; install manually if auto-install fails ([guide](https://github.com/FiloSottile/mkcert#installation))
 
 ## Getting Started
 
@@ -52,20 +52,15 @@ cd arolariu.ro
 npm install
 ```
 
-### 2. Set up local HTTPS certificates (one-time)
+### 2. Set up local HTTPS certificates (automatic)
 
-Traefik terminates TLS for all `*.localhost` subdomains using [mkcert](https://github.com/FiloSottile/mkcert)-generated certificates trusted by your OS/browser.
+The startup scripts automatically install [mkcert](https://github.com/FiloSottile/mkcert) and generate locally-trusted TLS certificates for `*.localhost` on first run. Traefik uses these for HTTPS.
 
-```bash
-# Install mkcert's local CA into your system trust store
-mkcert -install
+- **Linux/macOS**: auto-installs via `brew`, `apt-get`, or `pacman`
+- **Windows**: auto-installs via `winget`
+- **If auto-install fails**: install mkcert manually, then re-run the startup script
 
-# Generate a wildcard certificate
-cd infra/Local/Management/certs
-mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
-```
-
-The `certs/` directory is gitignored — certificates stay local. Without this step, Traefik will still start but browsers will show self-signed certificate warnings.
+Certificates are generated once in `Management/certs/` (gitignored) and reused on subsequent runs.
 
 ### 3. Create local config files
 

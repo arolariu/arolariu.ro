@@ -3,11 +3,8 @@
 # - Healthchecks dashboard;
 # - Network for external use (by other docker-compose files);
 #
-# HTTPS Setup (one-time):
-#   1. Install mkcert: https://github.com/FiloSottile/mkcert#installation
-#   2. Run: mkcert -install
-#   3. Run: cd certs && mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
-#   4. The certs/ directory is gitignored.
+# HTTPS certificates are generated automatically by selfhost-start scripts.
+# To regenerate manually: cd certs && mkcert -key-file local-key.pem -cert-file local-cert.pem "localhost" "*.localhost"
 
 name: "arolariu-management"
 

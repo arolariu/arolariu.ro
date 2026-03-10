@@ -1,5 +1,38 @@
 # This script will start the docker containers that are needed for the selfhost project.
 
+# ── HTTPS: ensure mkcert certificates exist ──────────────────────────────
+CERT_DIR="Management/certs"
+CERT_FILE="$CERT_DIR/local-cert.pem"
+KEY_FILE="$CERT_DIR/local-key.pem"
+
+if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
+  echo "🔐 Setting up local HTTPS certificates..."
+
+  # Install mkcert if not present
+  if ! command -v mkcert >/dev/null 2>&1; then
+    echo "   mkcert not found — attempting install..."
+    if command -v brew >/dev/null 2>&1; then
+      brew install mkcert 2>/dev/null
+    elif command -v apt-get >/dev/null 2>&1; then
+      sudo apt-get update -qq && sudo apt-get install -y -qq mkcert libnss3-tools 2>/dev/null
+    elif command -v pacman >/dev/null 2>&1; then
+      sudo pacman -Sy --noconfirm mkcert nss 2>/dev/null
+    fi
+  fi
+
+  if command -v mkcert >/dev/null 2>&1; then
+    mkcert -install 2>/dev/null
+    mkdir -p "$CERT_DIR"
+    mkcert -key-file "$KEY_FILE" -cert-file "$CERT_FILE" "localhost" "*.localhost"
+    echo "✅ HTTPS certificates generated in $CERT_DIR"
+  else
+    echo "⚠️  mkcert not available — HTTPS will use Traefik's default self-signed cert."
+    echo "   Install mkcert manually: https://github.com/FiloSottile/mkcert#installation"
+  fi
+else
+  echo "✅ HTTPS certificates already exist in $CERT_DIR"
+fi
+
 # Start the Management containers
 echo "📦 Preparing to start the management containers..."
 docker compose -f Management/docker-compose.yml up -d

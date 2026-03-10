@@ -2,6 +2,39 @@
 rem This script will start the docker containers that are needed for the selfhost project.
 rem Windows equivalent of selfhost-start.sh — keeps both scripts in sync.
 
+rem ── HTTPS: ensure mkcert certificates exist ─────────────────────────────
+set "CERT_DIR=Management\certs"
+set "CERT_FILE=%CERT_DIR%\local-cert.pem"
+set "KEY_FILE=%CERT_DIR%\local-key.pem"
+
+if not exist "%CERT_FILE%" (
+  echo 🔐 Setting up local HTTPS certificates...
+
+  where mkcert >nul 2>nul
+  if errorlevel 1 (
+    echo    mkcert not found — attempting install via winget...
+    winget install FiloSottile.mkcert --accept-package-agreements --accept-source-agreements >nul 2>nul
+    rem Refresh PATH so mkcert is found in this session
+    for /f "tokens=*" %%i in ('where mkcert 2^>nul') do set "MKCERT_PATH=%%i"
+  )
+
+  where mkcert >nul 2>nul
+  if errorlevel 1 (
+    echo ⚠️  mkcert not available — HTTPS will use Traefik's default self-signed cert.
+    echo    Install mkcert manually: https://github.com/FiloSottile/mkcert#installation
+    goto :start_containers
+  )
+
+  mkcert -install 2>nul
+  if not exist "%CERT_DIR%" mkdir "%CERT_DIR%"
+  mkcert -key-file "%KEY_FILE%" -cert-file "%CERT_FILE%" "localhost" "*.localhost"
+  echo ✅ HTTPS certificates generated in %CERT_DIR%
+) else (
+  echo ✅ HTTPS certificates already exist in %CERT_DIR%
+)
+
+:start_containers
+
 rem Start the Management containers
 echo 📦 Preparing to start the management containers...
 docker compose -f Management/docker-compose.yml up -d
