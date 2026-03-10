@@ -82,7 +82,7 @@ public sealed class ConfigRefreshHostedService(
         var configValues = new Dictionary<string, string>(ConfigKeys.Length);
         foreach (var key in ConfigKeys)
         {
-          var response = await proxyClient.GetConfigValueAsync(key, stoppingToken).ConfigureAwait(false);
+          var response = await proxyClient.GetConfigValueAsync(key, label: "PRODUCTION", stoppingToken).ConfigureAwait(false);
           if (response is not null)
           {
             configValues[key] = response.Value;

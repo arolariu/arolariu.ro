@@ -43,6 +43,14 @@ const EXP_BASE_URL: string = HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "
 const WEBSITE_TARGET = "website" as const;
 
 /**
+ * Azure App Configuration label derived from `SITE_ENV`.
+ *
+ * When `SITE_ENV` equals `"PRODUCTION"` the PRODUCTION label is requested;
+ * all other values (including absent) resolve to the DEVELOPMENT label.
+ */
+const CONFIG_LABEL: string = process.env["SITE_ENV"] === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+
+/**
  * Acquires a Bearer token for the experiments service.
  * Returns an empty string when `AZURE_CLIENT_ID` is not set (local / Docker).
  */
@@ -82,7 +90,7 @@ async function getConfigPayload(key: string): Promise<ConfigValueResponse> {
     addSpanEvent("exp.config.fetch.start", {key});
 
     const headers = await getRequestHeaders();
-    const response = await fetch(`${EXP_BASE_URL}/api/v1/config?name=${encodeURIComponent(key)}`, {
+    const response = await fetch(`${EXP_BASE_URL}/api/v1/config?name=${encodeURIComponent(key)}&label=${encodeURIComponent(CONFIG_LABEL)}`, {
       cache: "no-store",
       headers,
       signal: AbortSignal.timeout(10_000),

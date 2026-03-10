@@ -14,7 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
 /// Unit tests for <see cref="ConfigProxyClient"/> verifying that the v1 config endpoint is
-/// called and parsed correctly.
+/// called and parsed correctly, including optional label support.
 /// </summary>
 [TestClass]
 public sealed class ConfigProxyClientTests
@@ -39,6 +39,44 @@ public sealed class ConfigProxyClientTests
     Assert.AreEqual("/api/v1/config?name=Endpoints%3AApi", handler.LastRequestUri?.PathAndQuery);
     Assert.AreEqual("Endpoints:Api", result.Name);
     Assert.AreEqual("https://api.arolariu.ro", result.Value);
+  }
+
+  /// <summary>Verifies that the label is appended to the query string when provided.</summary>
+  [TestMethod]
+  public async Task GetConfigValueAsync_WithLabel_AppendsLabelToUri()
+  {
+#pragma warning disable CA2000
+    using var httpClient = MakeClient(
+      HttpStatusCode.OK,
+      """{"name":"Auth:JWT:Secret","value":"secret-value","availableForTargets":["api"],"availableInDocuments":["api.build-time"],"requiredInDocuments":["api.build-time"],"description":"JWT secret","usage":"Server-only","refreshIntervalSeconds":300,"fetchedAt":"2026-01-01T00:00:00Z"}""",
+      out var handler);
+#pragma warning restore CA2000
+    var client = new ConfigProxyClient(httpClient, NullLogger<ConfigProxyClient>.Instance);
+
+    var result = await client.GetConfigValueAsync("Auth:JWT:Secret", label: "PRODUCTION").ConfigureAwait(false);
+
+    Assert.IsNotNull(result);
+    Assert.AreEqual("/api/v1/config?name=Auth%3AJWT%3ASecret&label=PRODUCTION", handler.LastRequestUri?.PathAndQuery);
+    Assert.AreEqual("secret-value", result.Value);
+  }
+
+  /// <summary>Verifies that the label is omitted from the query string when null.</summary>
+  [TestMethod]
+  public async Task GetConfigValueAsync_NullLabel_NoLabelInUri()
+  {
+#pragma warning disable CA2000
+    using var httpClient = MakeClient(
+      HttpStatusCode.OK,
+      """{"name":"Some:Key","value":"val","availableForTargets":["api"],"availableInDocuments":["api.build-time"],"requiredInDocuments":["api.build-time"],"description":"desc","usage":"Server-only","refreshIntervalSeconds":300,"fetchedAt":"2026-01-01T00:00:00Z"}""",
+      out var handler);
+#pragma warning restore CA2000
+    var client = new ConfigProxyClient(httpClient, NullLogger<ConfigProxyClient>.Instance);
+
+    var result = await client.GetConfigValueAsync("Some:Key", label: null).ConfigureAwait(false);
+
+    Assert.IsNotNull(result);
+    Assert.AreEqual("/api/v1/config?name=Some%3AKey", handler.LastRequestUri?.PathAndQuery);
+    Assert.IsFalse(handler.LastRequestUri?.PathAndQuery.Contains("label", StringComparison.Ordinal));
   }
 
   /// <summary>Verifies that a 404 response results in a null return value.</summary>

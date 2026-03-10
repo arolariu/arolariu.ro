@@ -44,6 +44,11 @@ _last_loaded_at_utc: datetime | None = None
 _load_count = 0
 _config_lock = threading.RLock()
 
+# Per-label cache: label -> (snapshot, monotonic timestamp).
+# Used by get_config_for_label() so that consumers can request a specific
+# Azure App Configuration label without disturbing the default snapshot.
+_config_by_label: dict[str, tuple[ConfigSnapshot, float]] = {}
+
 
 def _service_root() -> Path:
     """Return the exp service root regardless of the current module location."""
@@ -126,8 +131,14 @@ def _load_local_config() -> ConfigSnapshot:
     return _normalize_config_snapshot(payload)
 
 
-def _load_azure_config() -> ConfigSnapshot:
-    """Load configuration from Azure App Configuration plus Key Vault references."""
+def _load_azure_config(label: str | None = None) -> ConfigSnapshot:
+    """Load configuration from Azure App Configuration plus Key Vault references.
+
+    Args:
+        label: The Azure App Configuration label to load. When ``None``, the
+            label is resolved automatically from the environment via
+            :func:`_resolve_environment_label`.
+    """
 
     from azure.appconfiguration.provider import AzureAppConfigurationKeyVaultOptions, SettingSelector, load
     from azure.identity import DefaultAzureCredential
@@ -143,13 +154,13 @@ def _load_azure_config() -> ConfigSnapshot:
     if not endpoint:
         raise RuntimeError("AZURE_APPCONFIG_ENDPOINT env var is required in azure mode")
 
-    label = _resolve_environment_label()
-    logger.info("Loading config from Azure App Configuration (endpoint=%s, label=%s)", endpoint, label)
+    resolved_label = label if label is not None else _resolve_environment_label()
+    logger.info("Loading config from Azure App Configuration (endpoint=%s, label=%s)", endpoint, resolved_label)
 
     config = load(
         endpoint=endpoint,
         credential=credential,
-        selects=[SettingSelector(key_filter="*", label_filter=label)],
+        selects=[SettingSelector(key_filter="*", label_filter=resolved_label)],
         key_vault_options=AzureAppConfigurationKeyVaultOptions(credential=credential),
     )
 
@@ -235,6 +246,37 @@ def get_config() -> ConfigSnapshot:
 
         # Return a detached snapshot so callers cannot mutate shared state.
         return dict(_config)
+
+
+def get_config_for_label(label: str) -> ConfigSnapshot:
+    """Return a configuration snapshot for the given Azure App Configuration label.
+
+    The snapshot is cached per-label and refreshed when stale (same interval as
+    the default snapshot).  In local/non-azure mode the label is ignored and the
+    standard :func:`get_config` snapshot is returned, since the local JSON file
+    has no concept of labels.
+    """
+
+    infra = get_runtime_infra_mode()
+    if infra != "azure":
+        return get_config()
+
+    refresh_interval = get_refresh_interval_seconds(allow_zero=True)
+
+    with _config_lock:
+        cached = _config_by_label.get(label)
+        now = time.monotonic()
+
+        if cached is not None:
+            snapshot, loaded_at = cached
+            is_stale = refresh_interval > 0 and (now - loaded_at) >= refresh_interval
+            if not is_stale:
+                return dict(snapshot)
+
+        logger.info("Loading label-specific config (label=%s)", label)
+        snapshot = _load_azure_config(label=label)
+        _config_by_label[label] = (snapshot, now)
+        return dict(snapshot)
 
 
 def get_config_value(key: str) -> str | None:

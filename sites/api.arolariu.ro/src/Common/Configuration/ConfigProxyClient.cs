@@ -23,14 +23,21 @@ using Microsoft.Extensions.Logging;
 public sealed class ConfigProxyClient(HttpClient httpClient, ILogger<ConfigProxyClient> logger) : IConfigProxyClient
 {
   /// <inheritdoc />
-  public async Task<ConfigValueResponse?> GetConfigValueAsync(string name, CancellationToken ct = default)
+  public async Task<ConfigValueResponse?> GetConfigValueAsync(string name, string? label = null, CancellationToken ct = default)
   {
     using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.fetch");
     activity?.SetTag("config.key", name);
+    if (label is not null) activity?.SetTag("config.label", label);
 
     try
     {
-      var requestUri = new Uri($"/api/v1/config?name={Uri.EscapeDataString(name)}", UriKind.Relative);
+      var uri = $"/api/v1/config?name={Uri.EscapeDataString(name)}";
+      if (!string.IsNullOrEmpty(label))
+      {
+        uri += $"&label={Uri.EscapeDataString(label)}";
+      }
+
+      var requestUri = new Uri(uri, UriKind.Relative);
       using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
 
       activity?.SetTag("http.response.status_code", (int)response.StatusCode);
