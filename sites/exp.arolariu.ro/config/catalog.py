@@ -15,13 +15,13 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Final, TypeAlias
+from typing import Final
 
 from config.settings import DEFAULT_REFRESH_INTERVAL_SECONDS, get_refresh_interval_seconds
 
-ConfigKeys: TypeAlias = tuple[str, ...]
-ConfigSnapshot: TypeAlias = Mapping[str, str]
-DocumentNames: TypeAlias = tuple[str, ...]
+type ConfigKeys = tuple[str, ...]
+type ConfigSnapshot = Mapping[str, str]
+type DocumentNames = tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)

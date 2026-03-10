@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Final, TypedDict
 
 from fastapi import Request
@@ -73,7 +73,7 @@ def json_response(body: dict[str, object], status_code: int = 200) -> JSONRespon
 def utcnow_iso() -> str:
     """Return the current UTC time as an ISO 8601 string."""
 
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def error_response(
