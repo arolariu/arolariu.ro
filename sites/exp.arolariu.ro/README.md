@@ -619,8 +619,9 @@ target-scoped config. The Infrastructure UAMI is merged into both `api` and
 
 ### Excluded paths
 
-`/api/health` and `/api/ready` are excluded from Easy Auth so container
-orchestrators (App Service, Docker) can probe liveness without authentication.
+`/api/health`, `/api/ready`, and `/admin/*` are excluded from Easy Auth so:
+- Container orchestrators can probe liveness without authentication
+- The admin UI handles its own MSAL popup login for human operators
 
 ## Configuration sources
 
