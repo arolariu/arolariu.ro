@@ -23,6 +23,10 @@ import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/
 /** exp service URL — same deterministic logic as the runtime consumers. */
 const EXP_BASE_URL = process.env["AZURE_CLIENT_ID"] ? "https://exp.arolariu.ro" : "http://exp";
 
+/** Config label derived from SITE_ENV (matches website configProxy.ts logic). */
+const CONFIG_LABEL: string =
+  (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+
 /** Azure AD token scope for authenticating to the exp service. */
 const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
 
@@ -65,8 +69,8 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
     console.log(pc.gray("ℹ️  No AZURE_CLIENT_ID — skipping bearer token acquisition"));
   }
 
-  const url = `${EXP_BASE_URL}/api/v1/build-time?for=website`;
-  verbose && console.info(`🌐 Fetching: ${url}`);
+  const url = `${EXP_BASE_URL}/api/v1/build-time?for=website&label=${CONFIG_LABEL}`;
+  console.log(pc.gray(`🌐 Fetching: ${url}`));
 
   const response = await fetch(url, {
     headers,

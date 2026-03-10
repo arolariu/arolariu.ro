@@ -260,3 +260,11 @@ jobs:
         with:
           app-name: "exp-arolariu-ro"
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
+
+      - name: 🏷️ Set COMMIT_SHA app setting
+        run: |
+          az webapp config appsettings set \
+            --name exp-arolariu-ro \
+            --resource-group arolariu-rg \
+            --settings COMMIT_SHA=${{ github.sha }} \
+            --output none
