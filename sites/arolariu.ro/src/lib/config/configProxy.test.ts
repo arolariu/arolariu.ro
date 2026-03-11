@@ -5,12 +5,22 @@
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+const instrumentationMocks = vi.hoisted(() => ({
+  injectTraceContextHeaders: vi.fn((headers?: Headers) => {
+    const enrichedHeaders = headers instanceof Headers ? headers : new Headers();
+    enrichedHeaders.set("traceparent", "00-abcdefabcdefabcdefabcdefabcdefab-abcdefabcdefabcd-01");
+    enrichedHeaders.set("X-Request-Id", "abcdefabcdefabcdefabcdefabcdefab");
+    return enrichedHeaders;
+  }),
+}));
+
 // Mock instrumentation — configProxy.ts imports {addSpanEvent, logWithTrace, withSpan}
 vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn((_name: string, fn: () => unknown) => fn()),
   logWithTrace: vi.fn(),
   addSpanEvent: vi.fn(),
   getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: instrumentationMocks.injectTraceContextHeaders,
 }));
 
 function createJsonResponse(body: unknown, status = 200): Response {
@@ -60,6 +70,11 @@ describe("configProxy", () => {
     expect(value).toBe("https://storage.example.test");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("/api/v1/config?name=Endpoints%3AStorage%3ABlob");
+    expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].headers).toMatchObject({
+      "X-Exp-Target": "website",
+      "X-Request-Id": "abcdefabcdefabcdefabcdefabcdefab",
+      traceparent: "00-abcdefabcdefabcdefabcdefabcdefab-abcdefabcdefabcd-01",
+    });
   });
 
   it("returns cached values without an additional network call", async () => {

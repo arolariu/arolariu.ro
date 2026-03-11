@@ -11,6 +11,7 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
   withSpan: vi.fn((_name: string, fn: () => Promise<unknown>) => fn()),
   getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
 }));
 
 // Mock fetchUser

@@ -25,6 +25,7 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
   addSpanEvent: vi.fn(),
   getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
 }));
 
 vi.mock("@/lib/utils.server", () => ({

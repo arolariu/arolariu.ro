@@ -9,6 +9,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/instrumentation.server", () => ({
   setSpanAttributes: vi.fn(),
   getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
 }));
 vi.mock("@/lib/config/configProxy", () => ({
   fetchConfigValue: mockFetchConfigValue,

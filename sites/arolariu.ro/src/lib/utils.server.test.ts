@@ -7,6 +7,15 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
 import {convertBase64ToBlob} from "./utils.server";
 
+const instrumentationMocks = vi.hoisted(() => ({
+  injectTraceContextHeaders: vi.fn((headers?: Headers) => {
+    const enrichedHeaders = headers instanceof Headers ? headers : new Headers();
+    enrichedHeaders.set("traceparent", "00-1234567890abcdef1234567890abcdef-1234567890abcdef-01");
+    enrichedHeaders.set("X-Request-Id", "1234567890abcdef1234567890abcdef");
+    return enrichedHeaders;
+  }),
+}));
+
 // Mock the telemetry module
 vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn(async (_spanName, fn) =>
@@ -20,6 +29,7 @@ vi.mock("@/instrumentation.server", () => ({
   logWithTrace: vi.fn(),
   recordSpanError: vi.fn(),
   getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: instrumentationMocks.injectTraceContextHeaders,
 }));
 
 const mockFetchApiUrl = vi.fn(async () => "https://api.example.com");
@@ -333,6 +343,20 @@ describe("fetchWithTimeout", () => {
     expect(mockFetchApiUrl).toHaveBeenCalledTimes(1);
     const [fetchUrl] = mockFetch.mock.calls[0];
     expect(fetchUrl).toBe("https://api.example.com/rest/v1/invoices");
+  });
+
+  it("should propagate trace context headers on outbound requests", async () => {
+    const {fetchWithTimeout} = await import("./utils.server");
+    const mockFetch = vi.fn().mockResolvedValue(new Response("OK"));
+    globalThis.fetch = mockFetch;
+
+    await fetchWithTimeout("https://api.example.com/data");
+
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(fetchOptions.headers).toMatchObject({
+      "X-Request-Id": "1234567890abcdef1234567890abcdef",
+      traceparent: "00-1234567890abcdef1234567890abcdef-1234567890abcdef-01",
+    });
   });
 
   it("should return response on success", async () => {
