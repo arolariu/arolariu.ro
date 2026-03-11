@@ -117,30 +117,35 @@ public static class WebApplicationBuilderExtensions
       authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     }).AddJwtBearer(jwtOptions =>
     {
-      using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-      var appOptions = optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions();
-
-      var jwtSecret = appOptions.JwtSecret ?? string.Empty;
-      var jwtIssuer = appOptions.JwtIssuer ?? "arolariu.ro";
-      var jwtAudience = appOptions.JwtAudience ?? "arolariu.ro";
-
-      if (string.IsNullOrWhiteSpace(jwtSecret))
-      {
-        // Config hasn't been populated yet (exp unreachable or startup race).
-        // Use a throwaway key so the app can start; requests will fail auth
-        // validation until the config refresh populates the real secret.
-        jwtSecret = "PLACEHOLDER_JWT_SECRET_WILL_BE_REFRESHED";
-      }
-
+      // Use a dynamic key resolver so JWT validation always uses the latest
+      // secret from the refreshed AzureOptions snapshot. The ConfigRefreshHostedService
+      // swaps AzureOptions atomically, so this resolver picks up changes automatically.
       jwtOptions.TokenValidationParameters = new()
       {
-        ValidIssuer = jwtIssuer,
-        ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        ValidIssuer = "arolariu.ro",
+        ValidAudience = "arolariu.ro",
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
+        {
+          using var scope = builder.Services.BuildServiceProvider().CreateScope();
+          var optionsManager = scope.ServiceProvider.GetRequiredService<IOptionsManager>();
+          var appOptions = optionsManager.GetApplicationOptions();
+
+          var secret = appOptions.JwtSecret;
+          if (string.IsNullOrWhiteSpace(secret))
+          {
+            return [];
+          }
+
+          // Also refresh issuer/audience from live config
+          validationParameters.ValidIssuer = appOptions.JwtIssuer ?? "arolariu.ro";
+          validationParameters.ValidAudience = appOptions.JwtAudience ?? "arolariu.ro";
+
+          return [new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))];
+        },
       };
     });
     services.AddAuthorization();

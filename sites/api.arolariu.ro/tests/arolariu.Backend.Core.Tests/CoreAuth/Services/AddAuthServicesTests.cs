@@ -99,7 +99,7 @@ public sealed class AddAuthServicesTests
     Assert.AreEqual(JwtBearerDefaults.AuthenticationScheme, defaultScheme);
   }
 
-  /// <summary>Verifies JWT validation parameters configured from provided options.</summary>
+  /// <summary>Verifies JWT validation uses a dynamic key resolver for config-refresh compatibility.</summary>
   [TestMethod]
   public void AddAuthServices_ConfiguresJwtBearerValidationParameters()
   {
@@ -110,11 +110,13 @@ public sealed class AddAuthServicesTests
     .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
     .Get(JwtBearerDefaults.AuthenticationScheme);
 
-    Assert.AreEqual("issuer", jwtOptions.TokenValidationParameters.ValidIssuer);
-    Assert.AreEqual("aud", jwtOptions.TokenValidationParameters.ValidAudience);
-    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerSigningKey);
+    // Defaults before dynamic resolver kicks in
+    Assert.AreEqual("arolariu.ro", jwtOptions.TokenValidationParameters.ValidIssuer);
+    Assert.AreEqual("arolariu.ro", jwtOptions.TokenValidationParameters.ValidAudience);
     Assert.IsTrue(jwtOptions.TokenValidationParameters.ValidateIssuerSigningKey);
     Assert.IsTrue(jwtOptions.TokenValidationParameters.ValidateLifetime);
+    // IssuerSigningKeyResolver is used instead of a static IssuerSigningKey
+    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerSigningKeyResolver);
   }
 
   /// <summary>Checks application cookie configuration (HttpOnly, sliding expiration, custom name).</summary>
