@@ -3,6 +3,8 @@ namespace arolariu.Backend.Core.Tests.Common.Configuration;
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +39,8 @@ public sealed class ConfigProxyClientTests
 
     Assert.IsNotNull(result);
     Assert.AreEqual("/api/v1/config?name=Endpoints%3AApi", handler.LastRequestUri?.PathAndQuery);
+    Assert.IsTrue(handler.LastRequestHeaders.TryGetValues("X-Request-Id", out var requestIds));
+    Assert.IsTrue(requestIds.Any());
     Assert.AreEqual("Endpoints:Api", result.Name);
     Assert.AreEqual("https://api.arolariu.ro", result.Value);
   }
@@ -57,6 +61,8 @@ public sealed class ConfigProxyClientTests
 
     Assert.IsNotNull(result);
     Assert.AreEqual("/api/v1/config?name=Auth%3AJWT%3ASecret&label=PRODUCTION", handler.LastRequestUri?.PathAndQuery);
+    Assert.IsTrue(handler.LastRequestHeaders.TryGetValues("X-Request-Id", out var requestIds));
+    Assert.IsTrue(requestIds.Any());
     Assert.AreEqual("secret-value", result.Value);
   }
 
@@ -126,12 +132,14 @@ public sealed class ConfigProxyClientTests
   private sealed class FakeHttpHandler(HttpStatusCode status, string body) : HttpMessageHandler
   {
     public Uri? LastRequestUri { get; private set; }
+    public HttpRequestHeaders LastRequestHeaders { get; private set; } = new HttpRequestMessage().Headers;
 
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
       LastRequestUri = request.RequestUri;
+      LastRequestHeaders = request.Headers;
 
       return Task.FromResult(new HttpResponseMessage(status)
       {
