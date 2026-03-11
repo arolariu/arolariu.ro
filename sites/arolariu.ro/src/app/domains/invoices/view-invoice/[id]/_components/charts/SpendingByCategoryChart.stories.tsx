@@ -3,6 +3,8 @@ import type {Meta, StoryObj} from "@storybook/react";
 import type {CategorySpending} from "../../_utils/analytics";
 import {SpendingByCategoryChart} from "./SpendingByCategoryChart";
 
+faker.seed(42);
+
 function generateMockCategorySpending(count: number): CategorySpending[] {
   const categories = ["Dairy", "Fruits", "Meat", "Beverages", "Baked Goods", "Vegetables", "Cleaning", "Fish"];
   return categories.slice(0, count).map((category, index) => ({

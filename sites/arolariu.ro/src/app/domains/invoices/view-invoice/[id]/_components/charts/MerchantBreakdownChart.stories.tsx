@@ -3,6 +3,8 @@ import type {Meta, StoryObj} from "@storybook/react";
 import type {MerchantBreakdown} from "../../_utils/analytics";
 import {MerchantBreakdownChart} from "./MerchantBreakdownChart";
 
+faker.seed(42);
+
 function generateMockMerchantData(count: number): MerchantBreakdown[] {
   return Array.from({length: count}, () => {
     const total = faker.number.float({min: 50, max: 800, fractionDigits: 2});

@@ -1,6 +1,8 @@
 import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
 
+faker.seed(42);
+
 /**
  * TableView renders invoices in a sortable, paginated table with
  * checkboxes, category badges, dates, amounts, and row-level actions.

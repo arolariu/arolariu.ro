@@ -37,10 +37,11 @@
     "start:debug": "cross-env NODE_OPTIONS='--inspect' NODE_ENV=development node --enable-source-maps .next/standalone/sites/arolariu.ro/server.js",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build -o storybook-static",
+    "storybook:build": "npm run build:storybook",
     "test": "npm run test:unit && npm run test:e2e && npm run test:storybook",
     "test:unit": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts",
-    "test:storybook": "storybook test --url http://localhost:6006"
+    "test:storybook": "storybook build -o storybook-static --test"
   },
   "dependencies": {
     "@arolariu/components": "*",

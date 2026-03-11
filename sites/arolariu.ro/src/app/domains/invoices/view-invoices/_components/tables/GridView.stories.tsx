@@ -1,6 +1,8 @@
 import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
 
+faker.seed(42);
+
 /**
  * GridView renders invoices as a responsive card grid with images,
  * titles, dates, amounts, and selection checkboxes.

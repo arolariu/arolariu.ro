@@ -3,6 +3,8 @@ import type {Meta, StoryObj} from "@storybook/react";
 import type {CategoryTrendData} from "../../_utils/analytics";
 import {CategoryComparisonChart} from "./CategoryComparisonChart";
 
+faker.seed(42);
+
 function generateMockCategoryTrendData(count: number): CategoryTrendData[] {
   const categories = ["Dairy", "Fruits", "Meat", "Beverages", "Baked Goods", "Vegetables", "Groceries", "Fish"];
   return categories.slice(0, count).map((category) => ({

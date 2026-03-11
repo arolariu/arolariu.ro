@@ -3,6 +3,8 @@ import type {Meta, StoryObj} from "@storybook/react";
 import type {NodePackagesJSON} from "@/types";
 import PackagesScreen from "./PackagesScreen";
 
+faker.seed(42);
+
 /** Generate a single mock package. */
 function createMockPackage(isProduction: boolean) {
   const name = isProduction

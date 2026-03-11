@@ -3,6 +3,8 @@ import type {Meta, StoryObj} from "@storybook/react";
 import type {SpendingTrendData} from "../../_utils/analytics";
 import {SpendingTrendChart} from "./SpendingTrendChart";
 
+faker.seed(42);
+
 function generateMockSpendingTrend(count: number, currentIndex?: number): SpendingTrendData[] {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return Array.from({length: count}, (_, i) => ({

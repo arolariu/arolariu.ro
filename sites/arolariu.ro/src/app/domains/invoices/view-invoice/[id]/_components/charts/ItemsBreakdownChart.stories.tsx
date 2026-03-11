@@ -3,6 +3,8 @@ import type {Meta, StoryObj} from "@storybook/react";
 import type {QuantityData} from "../../_utils/analytics";
 import {ItemsBreakdownChart} from "./ItemsBreakdownChart";
 
+faker.seed(42);
+
 function generateMockQuantityData(count: number): QuantityData[] {
   const items = ["Milk", "Bread", "Chicken", "Apples", "Rice", "Eggs", "Butter", "Cheese", "Tomatoes", "Pasta"];
   return items.slice(0, count).map((name) => ({
