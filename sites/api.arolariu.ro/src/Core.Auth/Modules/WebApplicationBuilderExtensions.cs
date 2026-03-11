@@ -2,6 +2,7 @@ namespace arolariu.Backend.Core.Auth.Modules;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using arolariu.Backend.Common.Options;
@@ -110,6 +111,10 @@ public static class WebApplicationBuilderExtensions
       options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     });
 
+    // Build the service provider ONCE so the JWT resolver closures can resolve
+    // IOptionsManager without constructing a new DI container per token validation.
+    var resolverProvider = builder.Services.BuildServiceProvider();
+
     services.AddAuthentication(authOptions =>
     {
       authOptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -117,34 +122,57 @@ public static class WebApplicationBuilderExtensions
       authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     }).AddJwtBearer(jwtOptions =>
     {
-      // Use a dynamic key resolver so JWT validation always uses the latest
-      // secret from the refreshed AzureOptions snapshot. The ConfigRefreshHostedService
-      // swaps AzureOptions atomically, so this resolver picks up changes automatically.
+      // Use dynamic delegates so JWT validation always reads the latest
+      // configuration from the refreshed AzureOptions snapshot. The ConfigRefreshHostedService
+      // swaps AzureOptions atomically, so these callbacks pick up changes automatically.
+      // Delegates avoid mutating the shared TokenValidationParameters instance,
+      // which would be a data-race under concurrent token validations.
       jwtOptions.TokenValidationParameters = new()
       {
-        ValidIssuer = "arolariu.ro",
-        ValidAudience = "arolariu.ro",
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+
         IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
         {
-          using var scope = builder.Services.BuildServiceProvider().CreateScope();
-          var optionsManager = scope.ServiceProvider.GetRequiredService<IOptionsManager>();
-          var appOptions = optionsManager.GetApplicationOptions();
+          var optionsManager = resolverProvider.GetRequiredService<IOptionsManager>();
+          var secret = optionsManager.GetApplicationOptions().JwtSecret;
 
-          var secret = appOptions.JwtSecret;
           if (string.IsNullOrWhiteSpace(secret))
           {
             return [];
           }
 
-          // Also refresh issuer/audience from live config
-          validationParameters.ValidIssuer = appOptions.JwtIssuer ?? "arolariu.ro";
-          validationParameters.ValidAudience = appOptions.JwtAudience ?? "arolariu.ro";
-
           return [new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))];
+        },
+
+        IssuerValidator = (issuer, securityToken, validationParameters) =>
+        {
+          var optionsManager = resolverProvider.GetRequiredService<IOptionsManager>();
+          var expectedIssuer = optionsManager.GetApplicationOptions().JwtIssuer;
+
+          if (string.IsNullOrWhiteSpace(expectedIssuer))
+          {
+            expectedIssuer = "arolariu.ro";
+          }
+
+          return string.Equals(issuer, expectedIssuer, StringComparison.Ordinal)
+            ? issuer
+            : throw new SecurityTokenInvalidIssuerException($"Invalid issuer: '{issuer}'.");
+        },
+
+        AudienceValidator = (audiences, securityToken, validationParameters) =>
+        {
+          var optionsManager = resolverProvider.GetRequiredService<IOptionsManager>();
+          var expectedAudience = optionsManager.GetApplicationOptions().JwtAudience;
+
+          if (string.IsNullOrWhiteSpace(expectedAudience))
+          {
+            expectedAudience = "arolariu.ro";
+          }
+
+          return audiences?.Contains(expectedAudience, StringComparer.Ordinal) is true;
         },
       };
     });

@@ -99,7 +99,7 @@ public sealed class AddAuthServicesTests
     Assert.AreEqual(JwtBearerDefaults.AuthenticationScheme, defaultScheme);
   }
 
-  /// <summary>Verifies JWT validation uses a dynamic key resolver for config-refresh compatibility.</summary>
+  /// <summary>Verifies JWT validation uses dynamic delegates for key, issuer, and audience resolution.</summary>
   [TestMethod]
   public void AddAuthServices_ConfiguresJwtBearerValidationParameters()
   {
@@ -110,13 +110,12 @@ public sealed class AddAuthServicesTests
     .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
     .Get(JwtBearerDefaults.AuthenticationScheme);
 
-    // Defaults before dynamic resolver kicks in
-    Assert.AreEqual("arolariu.ro", jwtOptions.TokenValidationParameters.ValidIssuer);
-    Assert.AreEqual("arolariu.ro", jwtOptions.TokenValidationParameters.ValidAudience);
+    // Dynamic delegates are configured for key, issuer, and audience resolution
+    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerSigningKeyResolver);
+    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerValidator);
+    Assert.IsNotNull(jwtOptions.TokenValidationParameters.AudienceValidator);
     Assert.IsTrue(jwtOptions.TokenValidationParameters.ValidateIssuerSigningKey);
     Assert.IsTrue(jwtOptions.TokenValidationParameters.ValidateLifetime);
-    // IssuerSigningKeyResolver is used instead of a static IssuerSigningKey
-    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerSigningKeyResolver);
   }
 
   /// <summary>Checks application cookie configuration (HttpOnly, sliding expiration, custom name).</summary>
