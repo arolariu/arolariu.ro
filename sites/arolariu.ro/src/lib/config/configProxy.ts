@@ -19,7 +19,7 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
-import {addSpanEvent, getTraceparentHeader, logWithTrace, withSpan} from "@/instrumentation.server";
+import {addSpanEvent, injectTraceContextHeaders, logWithTrace, withSpan} from "@/instrumentation.server";
 import {isConfigValueResponse, type ConfigValueResponse} from "@/lib/config/configCatalog.types";
 import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "@/lib/config/configCatalogCache.server";
 
@@ -69,12 +69,19 @@ async function getBearerToken(): Promise<string> {
  * Builds request headers for exp proxy requests.
  */
 async function getRequestHeaders(): Promise<Record<string, string>> {
-  const headers: Record<string, string> = {"X-Exp-Target": WEBSITE_TARGET};
+  const baseHeaders = new Headers({"X-Exp-Target": WEBSITE_TARGET});
+  const injectedHeaders = injectTraceContextHeaders(baseHeaders);
+  const headers = injectedHeaders instanceof Headers ? injectedHeaders : new Headers(baseHeaders);
+
+  if (!(injectedHeaders instanceof Headers)) {
+    for (const [key, value] of new Headers(injectedHeaders).entries()) {
+      headers.set(key, value);
+    }
+  }
+
   const bearerToken = await getBearerToken();
-  if (bearerToken) headers["Authorization"] = `Bearer ${bearerToken}`;
-  const traceparent = getTraceparentHeader();
-  if (traceparent) headers["traceparent"] = traceparent;
-  return headers;
+  if (bearerToken) headers.set("Authorization", `Bearer ${bearerToken}`);
+  return Object.fromEntries(headers.entries());
 }
 
 /**

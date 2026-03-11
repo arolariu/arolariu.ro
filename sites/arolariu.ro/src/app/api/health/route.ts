@@ -13,6 +13,7 @@ import {
   createCounter,
   createHistogram,
   createHttpServerAttributes,
+  injectTraceContextHeaders,
   logWithTrace,
   setSpanAttributes,
   withSpan,
@@ -81,11 +82,19 @@ const startedAtISO = new Date(startedAt).toISOString();
 async function checkDependency(name: string, url: string): Promise<DependencyStatus> {
   const start = performance.now();
   try {
+    const headers = injectTraceContextHeaders(new Headers());
     const response = await fetch(url, {
       cache: "no-store",
+      headers,
       signal: AbortSignal.timeout(10_000),
     });
     const latencyMs = Math.round(performance.now() - start);
+    addSpanEvent("health.dependency.checked", {
+      "dependency.name": name,
+      "dependency.status_code": response.status,
+      "dependency.url": url,
+      "dependency.latency_ms": latencyMs,
+    });
 
     if (response.ok) {
       return {name, status: "Healthy", url, latencyMs, statusCode: response.status};
