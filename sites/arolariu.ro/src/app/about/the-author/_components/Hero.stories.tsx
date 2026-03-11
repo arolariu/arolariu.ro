@@ -33,3 +33,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default hero with author image, typewriter title, and subtitle. */
 export const Default: Story = {};
+
+/** Author hero section at mobile viewport width. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

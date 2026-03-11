@@ -19,3 +19,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default loading skeleton for the view scans page. */
 export const Default: Story = {};
+
+/** View scans loading skeleton in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

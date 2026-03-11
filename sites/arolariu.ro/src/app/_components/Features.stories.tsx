@@ -35,3 +35,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default features grid with six technology cards. */
 export const Default: Story = {};
+
+/** Features grid at mobile viewport width — single-column layout. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

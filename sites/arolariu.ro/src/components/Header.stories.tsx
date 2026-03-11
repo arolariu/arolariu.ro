@@ -99,3 +99,47 @@ export const SkeletonDark: Story = {
     </header>
   ),
 };
+
+/** Header skeleton at mobile viewport width. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+  render: () => (
+    <header className="border-b bg-white px-4 py-3 dark:bg-gray-900">
+      <nav className="mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="h-8 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        </div>
+      </nav>
+    </header>
+  ),
+};
+
+/** Header skeleton simulating a scrolled state with shadow and compact height. */
+export const WithScrolled: Story = {
+  render: () => (
+    <header className="border-b bg-white/95 px-4 py-2 shadow-md backdrop-blur-sm dark:bg-gray-900/95">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        </div>
+        <div className="hidden gap-4 md:flex">
+          <div className="h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="h-3 w-14 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+        </div>
+      </nav>
+    </header>
+  ),
+};

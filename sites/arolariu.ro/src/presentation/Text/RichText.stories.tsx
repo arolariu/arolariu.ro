@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {AbstractIntlMessages} from "next-intl";
 import {NextIntlClientProvider} from "next-intl";
 import {RichText} from "./RichText";
 
@@ -12,7 +13,7 @@ import {RichText} from "./RichText";
  */
 
 /** Inline i18n messages used exclusively by these stories. */
-const storyMessages = {
+const storyMessages: AbstractIntlMessages = {
   StoryDemo: {
     boldText: "This text has <strong>bold formatting</strong> applied.",
     italicText: "This text has <em>italic formatting</em> applied.",

@@ -34,3 +34,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default hero section with title, subtitle, CTA, and 3D sphere. */
 export const Default: Story = {};
+
+/** Hero section at mobile viewport width. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

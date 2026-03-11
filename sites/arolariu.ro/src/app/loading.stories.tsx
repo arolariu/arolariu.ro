@@ -22,3 +22,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default loading skeleton state. */
 export const Default: Story = {};
+
+/** Loading skeleton in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

@@ -1,4 +1,5 @@
 import type {Preview} from "@storybook/react";
+import {withThemeByClassName} from "@storybook/addon-themes";
 
 import "../src/app/globals.scss";
 
@@ -15,23 +16,15 @@ const preview: Preview = {
     },
     layout: "fullscreen",
   },
-  globalTypes: {
-    theme: {
-      description: "Theme for components",
-      toolbar: {
-        title: "Theme",
-        icon: "sun",
-        items: [
-          {value: "light", title: "Light", icon: "sun"},
-          {value: "dark", title: "Dark", icon: "moon"},
-        ],
-        dynamicTitle: true,
+  decorators: [
+    withThemeByClassName({
+      themes: {
+        light: "",
+        dark: "dark",
       },
-    },
-  },
-  initialGlobals: {
-    theme: "light",
-  },
+      defaultTheme: "light",
+    }),
+  ],
 };
 
 export default preview;

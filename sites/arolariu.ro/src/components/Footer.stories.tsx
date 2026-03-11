@@ -59,3 +59,34 @@ export const DarkMode: Story = {
     ),
   ],
 };
+
+/** Footer at mobile viewport width — stacked layout. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};
+
+/** Footer optimised for print media — minimal decoration. */
+export const PrintMedia: Story = {
+  parameters: {
+    backgrounds: {default: "white"},
+  },
+  decorators: [
+    (Story) => (
+      <NextIntlClientProvider
+        locale="en"
+        messages={messages}
+        timeZone="Europe/Bucharest">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}>
+          <div className="print:bg-white print:text-black">
+            <Story />
+          </div>
+        </ThemeProvider>
+      </NextIntlClientProvider>
+    ),
+  ],
+};

@@ -33,3 +33,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default hero section with animated background and CTA buttons. */
 export const Default: Story = {};
+
+/** About hero section at mobile viewport width. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

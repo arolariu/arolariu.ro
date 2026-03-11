@@ -20,3 +20,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default platform page loading skeleton. */
 export const Default: Story = {};
+
+/** Platform page loading skeleton in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

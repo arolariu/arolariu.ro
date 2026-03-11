@@ -19,3 +19,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default loading skeleton for the invoices domain page. */
 export const Default: Story = {};
+
+/** Invoices loading skeleton in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

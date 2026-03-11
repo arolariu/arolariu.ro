@@ -19,3 +19,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default loading skeleton for the domains overview page. */
 export const Default: Story = {};
+
+/** Domains loading skeleton in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
