@@ -7,6 +7,11 @@ import enMessages from "../messages/en.json";
 import frMessages from "../messages/fr.json";
 import roMessages from "../messages/ro.json";
 
+// Component library CSS (Tailwind/shadcn variables) — must load BEFORE app SCSS
+// @ts-ignore -- css file has no typings
+import "@arolariu/components/styles.css";
+
+// App SCSS (7-1 architecture — overrides component library defaults)
 import "../src/app/globals.scss";
 
 const messagesByLocale: Record<string, AbstractIntlMessages> = {
@@ -97,10 +102,30 @@ const preview: Preview = {
         </NextIntlClientProvider>
       );
     },
+    // Font switcher: loads Google Fonts via link elements and applies CSS variable
     (Story, context) => {
       const font = (context.globals["font"] as string) ?? "normal";
+
+      // Inject Google Font links if not already present
+      if (typeof document !== "undefined") {
+        const fontId = "sb-google-fonts";
+        if (!document.getElementById(fontId)) {
+          const link = document.createElement("link");
+          link.id = fontId;
+          link.rel = "stylesheet";
+          link.href =
+            "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caudex:wght@400;700&display=swap";
+          document.head.appendChild(link);
+        }
+      }
+
+      const fontFamily =
+        font === "dyslexic"
+          ? "'Atkinson Hyperlegible', system-ui, sans-serif"
+          : "'Caudex', Georgia, 'Times New Roman', serif";
+
       return (
-        <div className={font === "dyslexic" ? "font-atkinson" : "font-caudex"}>
+        <div style={{"--font-default": fontFamily, "--font-dyslexic": "'Atkinson Hyperlegible', system-ui, sans-serif"} as React.CSSProperties}>
           <Story />
         </div>
       );
