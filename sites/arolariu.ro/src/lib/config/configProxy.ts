@@ -20,8 +20,99 @@
 import "server-only";
 
 import {addSpanEvent, injectTraceContextHeaders, logWithTrace, withSpan} from "@/instrumentation.server";
-import {isConfigValueResponse, type ConfigValueResponse} from "@/lib/config/configCatalog.types";
-import {getCachedConfigValue, invalidateConfigValueCache, setCachedConfigValue} from "@/lib/config/configCatalogCache.server";
+// ─────────────────────────────────────────────────────────────────────────────
+// Types & runtime guards (consolidated from configCatalog.types.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Typed payload returned by `/api/v1/config?name=<config-key>`.
+ */
+type ConfigValueResponse = Readonly<{
+  name: string;
+  value: string;
+  availableForTargets: ReadonlyArray<string>;
+  availableInDocuments: ReadonlyArray<string>;
+  requiredInDocuments: ReadonlyArray<string>;
+  description: string;
+  usage: string;
+  refreshIntervalSeconds: number;
+  fetchedAt: string;
+}>;
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+/**
+ * Runtime type guard for single-key config payloads.
+ * @param value - Unknown payload to validate.
+ * @returns True when payload matches the exp config-value response shape.
+ */
+export function isConfigValueResponse(value: unknown): value is ConfigValueResponse {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<ConfigValueResponse>;
+
+  return (
+    typeof candidate.name === "string"
+    && typeof candidate.value === "string"
+    && isStringArray(candidate.availableForTargets)
+    && isStringArray(candidate.availableInDocuments)
+    && isStringArray(candidate.requiredInDocuments)
+    && typeof candidate.description === "string"
+    && typeof candidate.usage === "string"
+    && typeof candidate.refreshIntervalSeconds === "number"
+    && typeof candidate.fetchedAt === "string"
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Server-side in-memory cache (consolidated from configCatalogCache.server.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ConfigValueCacheEntry = Readonly<{
+  payload: ConfigValueResponse;
+  fetchedAt: number;
+}>;
+
+const configValueCache = new Map<string, ConfigValueCacheEntry>();
+
+/**
+ * Returns a cached config value when its server-declared TTL has not elapsed.
+ * @param key - Canonical config key name used as the cache key.
+ * @returns Cached config payload or null when stale or missing.
+ */
+export function getCachedConfigValue(key: string): ConfigValueResponse | null {
+  const cached = configValueCache.get(key);
+  if (!cached) return null;
+
+  const ttlMs = cached.payload.refreshIntervalSeconds * 1000;
+  if (Date.now() - cached.fetchedAt >= ttlMs) return null;
+
+  return cached.payload;
+}
+
+/**
+ * Stores a resolved config value response in the process-local cache.
+ * @param key - Canonical config key name used as the cache key.
+ * @param payload - Typed single-key config payload returned by exp.
+ */
+export function setCachedConfigValue(key: string, payload: ConfigValueResponse): void {
+  configValueCache.set(key, {payload, fetchedAt: Date.now()});
+}
+
+/**
+ * Invalidates one cached config value or clears the entire cache.
+ * @param key - Optional config key to evict.
+ */
+export function invalidateConfigValueCache(key?: string): void {
+  if (key) {
+    configValueCache.delete(key);
+    return;
+  }
+
+  configValueCache.clear();
+}
 
 /** `true` when running on Azure with a Managed Identity client ID configured. */
 const HAS_AZURE_CLIENT_ID = Boolean(process.env["AZURE_CLIENT_ID"]);
@@ -41,6 +132,13 @@ export const EXP_SERVICE_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8
 // eslint-disable-next-line sonarjs/no-clear-text-protocols -- local Docker communication intentionally uses the exp service DNS name over the internal bridge network
 const EXP_BASE_URL: string = HAS_AZURE_CLIENT_ID ? "https://exp.arolariu.ro" : "http://exp";
 const WEBSITE_TARGET = "website" as const;
+
+/**
+ * Timeout for exp config fetches.
+ * Azure (production): 10 seconds — exp is reliably reachable.
+ * Local dev: 2 seconds — exp may not be running; fail fast to env-var fallback.
+ */
+const CONFIG_FETCH_TIMEOUT_MS = HAS_AZURE_CLIENT_ID ? 10_000 : 2_000;
 
 /**
  * Azure App Configuration label derived from `SITE_ENV`.
@@ -85,6 +183,23 @@ async function getRequestHeaders(): Promise<Record<string, string>> {
 }
 
 /**
+ * Circuit breaker: once exp is unreachable, skip further network calls for this duration.
+ * Prevents 16 concurrent Playwright workers from each stalling on a 2s DNS timeout.
+ */
+let expCircuitOpen = false;
+let expCircuitOpenedAt = 0;
+const CIRCUIT_RESET_MS = 30_000; // retry exp every 30s
+
+function isExpCircuitOpen(): boolean {
+  if (!expCircuitOpen) return false;
+  if (Date.now() - expCircuitOpenedAt > CIRCUIT_RESET_MS) {
+    expCircuitOpen = false;
+    return false;
+  }
+  return true;
+}
+
+/**
  * Fetches one typed config payload from exp, honoring the process-local cache.
  * @param key - Canonical exp config key name.
  * @returns Typed single-key payload.
@@ -96,6 +211,10 @@ async function getConfigPayload(key: string): Promise<ConfigValueResponse> {
     return cachedPayload;
   }
 
+  if (isExpCircuitOpen()) {
+    throw new Error(`exp circuit breaker open — skipping fetch for '${key}'`);
+  }
+
   return withSpan("http.client.exp.config.fetch", async () => {
     addSpanEvent("exp.config.fetch.start", {key});
 
@@ -103,7 +222,7 @@ async function getConfigPayload(key: string): Promise<ConfigValueResponse> {
     const response = await fetch(`${EXP_BASE_URL}/api/v1/config?name=${encodeURIComponent(key)}&label=${encodeURIComponent(CONFIG_LABEL)}`, {
       cache: "no-store",
       headers,
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -135,7 +254,10 @@ export async function fetchConfigValue(key: string): Promise<string> {
     const payload = await getConfigPayload(key);
     return payload.value;
   } catch (error) {
-    logWithTrace("error", `Failed to fetch config key "${key}" from exp`, {key, error: String(error)}, "server");
+    // Trip the circuit breaker so subsequent calls fail fast
+    expCircuitOpen = true;
+    expCircuitOpenedAt = Date.now();
+    logWithTrace("warn", `Failed to fetch config key "${key}" from exp — circuit breaker tripped`, {key, error: String(error)}, "server");
     throw error;
   }
 }
