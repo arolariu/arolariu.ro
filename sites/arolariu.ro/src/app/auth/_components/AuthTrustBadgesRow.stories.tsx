@@ -8,7 +8,6 @@ import AuthTrustBadgesRow from "./AuthTrustBadgesRow";
 const meta = {
   title: "Auth/AuthTrustBadgesRow",
   component: AuthTrustBadgesRow,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },
@@ -35,5 +34,15 @@ export const SingleBadge: Story = {
 export const ManyBadges: Story = {
   args: {
     badges: ["Open Source", "Privacy First", "AI Powered", "Enterprise Ready", "Multi-language", "24/7 Support"],
+  },
+};
+
+/** Trust badges in dark mode. */
+export const DarkMode: Story = {
+  args: {
+    badges: ["256-bit SSL", "GDPR Compliant", "SOC 2"],
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
   },
 };

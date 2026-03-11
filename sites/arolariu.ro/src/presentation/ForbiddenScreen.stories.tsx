@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../messages/en.json";
 import RenderForbiddenScreen from "./ForbiddenScreen";
 
 /**
@@ -13,17 +11,6 @@ import RenderForbiddenScreen from "./ForbiddenScreen";
 const meta = {
   title: "Presentation/ForbiddenScreen",
   component: RenderForbiddenScreen,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },

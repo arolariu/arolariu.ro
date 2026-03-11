@@ -27,14 +27,13 @@ const storyMessages: AbstractIntlMessages = {
 const meta = {
   title: "Presentation/Text/RichText",
   component: RichText,
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
       <NextIntlClientProvider
-        locale="en"
+        locale='en'
         messages={storyMessages}
-        timeZone="Europe/Bucharest">
-        <div className="mx-auto max-w-2xl p-8">
+        timeZone='Europe/Bucharest'>
+        <div className='mx-auto max-w-2xl p-8'>
           <Story />
         </div>
       </NextIntlClientProvider>

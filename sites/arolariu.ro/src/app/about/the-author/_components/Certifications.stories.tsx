@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../messages/en.json";
 import Certifications from "./Certifications";
 
 /**
@@ -12,17 +10,6 @@ import Certifications from "./Certifications";
 const meta = {
   title: "Pages/About/TheAuthor/Certifications",
   component: Certifications,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },

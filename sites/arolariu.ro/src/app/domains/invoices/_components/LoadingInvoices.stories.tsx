@@ -1,5 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
 import messages from "../../../../../messages/en.json";
 
 /**
@@ -16,17 +15,6 @@ const namespace = messages.Invoices.Shared.loadingInvoices;
 
 const meta = {
   title: "Invoices/LoadingInvoices",
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -43,11 +31,26 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <section className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8">
-      <article className="text-center">
-        <h1 className="text-2xl font-bold">{namespace.title}</h1>
-        <p className="mt-2 text-gray-500 dark:text-gray-400">{namespace.description}</p>
+    <section className='flex min-h-[400px] flex-col items-center justify-center gap-4 p-8'>
+      <article className='text-center'>
+        <h1 className='text-2xl font-bold'>{namespace.title}</h1>
+        <p className='mt-2 text-gray-500 dark:text-gray-400'>{namespace.description}</p>
       </article>
     </section>
   ),
+};
+
+/** Loading invoices skeleton in dark mode. */
+export const DarkMode: Story = {
+  render: () => (
+    <section className='flex min-h-[400px] flex-col items-center justify-center gap-4 p-8'>
+      <article className='text-center'>
+        <h1 className='text-2xl font-bold'>{namespace.title}</h1>
+        <p className='mt-2 text-gray-500 dark:text-gray-400'>{namespace.description}</p>
+      </article>
+    </section>
+  ),
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
 };

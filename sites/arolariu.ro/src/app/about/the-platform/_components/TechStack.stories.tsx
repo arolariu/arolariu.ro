@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../messages/en.json";
 import TechStack from "./TechStack";
 
 /**
@@ -13,17 +11,6 @@ import TechStack from "./TechStack";
 const meta = {
   title: "Pages/About/ThePlatform/TechStack",
   component: TechStack,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },

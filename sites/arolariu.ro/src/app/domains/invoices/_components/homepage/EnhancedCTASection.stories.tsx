@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../messages/en.json";
 import EnhancedCTASection from "./EnhancedCTASection";
 
 /**
@@ -12,17 +10,6 @@ import EnhancedCTASection from "./EnhancedCTASection";
 const meta = {
   title: "Invoices/Homepage/EnhancedCTASection",
   component: EnhancedCTASection,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -33,3 +20,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default CTA section with action buttons and trust badges. */
 export const Default: Story = {};
+
+/** Enhanced CTA section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

@@ -12,7 +12,6 @@ import EulaShimmer from "./EULA.shimmers";
 const meta = {
   title: "App/EulaShimmer",
   component: EulaShimmer,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },

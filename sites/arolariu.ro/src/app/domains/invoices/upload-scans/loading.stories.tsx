@@ -8,7 +8,6 @@ import Loading from "./loading";
 const meta = {
   title: "Invoices/UploadScans/Loading",
   component: Loading,
-  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

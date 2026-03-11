@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../messages/en.json";
 import FeaturesSection from "./Features";
 
 /**
@@ -14,17 +12,6 @@ import FeaturesSection from "./Features";
 const meta = {
   title: "Homepage/Features",
   component: FeaturesSection,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },

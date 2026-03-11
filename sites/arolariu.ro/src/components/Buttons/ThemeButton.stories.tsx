@@ -1,7 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
-import messages from "../../../messages/en.json";
 import ThemeButton from "./ThemeButton";
 
 /**
@@ -14,22 +12,16 @@ import ThemeButton from "./ThemeButton";
 const meta = {
   title: "Components/Buttons/ThemeButton",
   component: ThemeButton,
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}>
-          <div className="flex min-h-[100px] items-center justify-center">
-            <Story />
-          </div>
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='light'
+        enableSystem={false}>
+        <div className='flex min-h-[100px] items-center justify-center'>
+          <Story />
+        </div>
+      </ThemeProvider>
     ),
   ],
   parameters: {
@@ -47,19 +39,14 @@ export const Default: Story = {};
 export const DarkMode: Story = {
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}>
-          <div className="flex min-h-[100px] items-center justify-center dark">
-            <Story />
-          </div>
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='dark'
+        enableSystem={false}>
+        <div className='dark flex min-h-[100px] items-center justify-center'>
+          <Story />
+        </div>
+      </ThemeProvider>
     ),
   ],
 };
@@ -68,23 +55,18 @@ export const DarkMode: Story = {
 export const InToolbar: Story = {
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}>
-          <header className="flex h-16 items-center justify-between border-b bg-white px-6 dark:border-gray-700 dark:bg-gray-900">
-            <span className="text-lg font-semibold">arolariu.ro</span>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">Settings</span>
-              <Story />
-            </div>
-          </header>
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='light'
+        enableSystem={false}>
+        <header className='flex h-16 items-center justify-between border-b bg-white px-6 dark:border-gray-700 dark:bg-gray-900'>
+          <span className='text-lg font-semibold'>arolariu.ro</span>
+          <div className='flex items-center gap-4'>
+            <span className='text-sm text-gray-500'>Settings</span>
+            <Story />
+          </div>
+        </header>
+      </ThemeProvider>
     ),
   ],
 };

@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../messages/en.json";
 import Hero from "./Hero";
 
 /**
@@ -13,17 +11,6 @@ import Hero from "./Hero";
 const meta = {
   title: "Pages/About/ThePlatform/Hero",
   component: Hero,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },

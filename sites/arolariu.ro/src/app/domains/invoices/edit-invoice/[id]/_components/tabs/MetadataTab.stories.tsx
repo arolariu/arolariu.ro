@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../../../messages/en.json";
 
 /**
  * MetadataTab displays key-value metadata pairs for an invoice with
@@ -10,17 +8,11 @@ import messages from "../../../../../../../../messages/en.json";
  */
 const meta = {
   title: "Invoices/EditInvoice/MetadataTab",
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <div className="max-w-2xl">
-          <Story />
-        </div>
-      </NextIntlClientProvider>
+      <div className='max-w-2xl'>
+        <Story />
+      </div>
     ),
   ],
   parameters: {
@@ -34,19 +26,19 @@ type Story = StoryObj<typeof meta>;
 /** Preview of metadata tab with sample key-value pairs. */
 export const WithMetadata: Story = {
   render: () => (
-    <div className="rounded-lg border bg-white dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b p-4">
+    <div className='rounded-lg border bg-white dark:bg-gray-900'>
+      <div className='flex items-center justify-between border-b p-4'>
         <div>
-          <h3 className="text-lg font-semibold">Custom Metadata</h3>
-          <p className="text-sm text-gray-500">Additional key-value pairs for this invoice</p>
+          <h3 className='text-lg font-semibold'>Custom Metadata</h3>
+          <p className='text-sm text-gray-500'>Additional key-value pairs for this invoice</p>
         </div>
         <button
-          type="button"
-          className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600">
+          type='button'
+          className='rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
           ➕ Add
         </button>
       </div>
-      <div className="divide-y">
+      <div className='divide-y'>
         {[
           {key: "store_id", value: "KFL-2024-BUC"},
           {key: "receipt_number", value: "INV-2024-001234"},
@@ -54,20 +46,20 @@ export const WithMetadata: Story = {
         ].map((item) => (
           <div
             key={item.key}
-            className="flex items-center justify-between px-4 py-3">
+            className='flex items-center justify-between px-4 py-3'>
             <div>
-              <span className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-gray-800">{item.key}</span>
-              <span className="ml-3 text-sm">{item.value}</span>
+              <span className='rounded-md bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-gray-800'>{item.key}</span>
+              <span className='ml-3 text-sm'>{item.value}</span>
             </div>
-            <div className="flex gap-1">
+            <div className='flex gap-1'>
               <button
-                type="button"
-                className="rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                type='button'
+                className='rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'>
                 ✏️
               </button>
               <button
-                type="button"
-                className="rounded p-1 text-gray-400 hover:text-red-500">
+                type='button'
+                className='rounded p-1 text-gray-400 hover:text-red-500'>
                 🗑
               </button>
             </div>
@@ -81,19 +73,19 @@ export const WithMetadata: Story = {
 /** Empty metadata tab. */
 export const Empty: Story = {
   render: () => (
-    <div className="rounded-lg border bg-white dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b p-4">
+    <div className='rounded-lg border bg-white dark:bg-gray-900'>
+      <div className='flex items-center justify-between border-b p-4'>
         <div>
-          <h3 className="text-lg font-semibold">Custom Metadata</h3>
-          <p className="text-sm text-gray-500">No custom metadata has been added yet</p>
+          <h3 className='text-lg font-semibold'>Custom Metadata</h3>
+          <p className='text-sm text-gray-500'>No custom metadata has been added yet</p>
         </div>
         <button
-          type="button"
-          className="rounded-md border px-3 py-1.5 text-sm dark:border-gray-600">
+          type='button'
+          className='rounded-md border px-3 py-1.5 text-sm dark:border-gray-600'>
           ➕ Add
         </button>
       </div>
-      <div className="p-8 text-center text-sm text-gray-500">No metadata entries.</div>
+      <div className='p-8 text-center text-sm text-gray-500'>No metadata entries.</div>
     </div>
   ),
 };

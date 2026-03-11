@@ -1,7 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
-import messages from "../../messages/en.json";
 import Footer from "./Footer";
 
 /**
@@ -12,20 +10,14 @@ import Footer from "./Footer";
 const meta = {
   title: "Components/Footer",
   component: Footer,
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}>
-          <Story />
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='light'
+        enableSystem={false}>
+        <Story />
+      </ThemeProvider>
     ),
   ],
   parameters: {
@@ -43,19 +35,14 @@ export const Default: Story = {};
 export const DarkMode: Story = {
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}>
-          <div className="dark bg-gray-950">
-            <Story />
-          </div>
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='dark'
+        enableSystem={false}>
+        <div className='dark bg-gray-950'>
+          <Story />
+        </div>
+      </ThemeProvider>
     ),
   ],
 };
@@ -74,19 +61,14 @@ export const PrintMedia: Story = {
   },
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}>
-          <div className="print:bg-white print:text-black">
-            <Story />
-          </div>
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='light'
+        enableSystem={false}>
+        <div className='print:bg-white print:text-black'>
+          <Story />
+        </div>
+      </ThemeProvider>
     ),
   ],
 };

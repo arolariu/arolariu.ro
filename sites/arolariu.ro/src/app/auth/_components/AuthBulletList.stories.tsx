@@ -8,7 +8,6 @@ import AuthBulletList from "./AuthBulletList";
 const meta = {
   title: "Auth/AuthBulletList",
   component: AuthBulletList,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },
@@ -41,5 +40,15 @@ export const ManyBullets: Story = {
       "Secure data encryption",
       "Multi-device synchronization",
     ],
+  },
+};
+
+/** Bullet list in dark mode. */
+export const DarkMode: Story = {
+  args: {
+    bullets: ["Secure authentication with Clerk", "Multi-factor authentication support", "OAuth providers: Google, GitHub"],
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
   },
 };

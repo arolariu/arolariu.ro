@@ -10,7 +10,6 @@ import Loading from "./loading";
 const meta = {
   title: "Pages/About/TheAuthor/Loading",
   component: Loading,
-  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

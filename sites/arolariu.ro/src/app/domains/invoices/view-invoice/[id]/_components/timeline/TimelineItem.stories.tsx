@@ -1,8 +1,6 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
 import {TbCheck, TbFileInvoice, TbRobot, TbShare, TbStar} from "react-icons/tb";
 import {TimelineEventType} from "../../_types/timeline";
-import messages from "../../../../../../../../messages/en.json";
 import {TimelineItem} from "./TimelineItem";
 
 /**
@@ -12,17 +10,11 @@ import {TimelineItem} from "./TimelineItem";
 const meta = {
   title: "Invoices/ViewInvoice/TimelineItem",
   component: TimelineItem,
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <div className="max-w-lg p-4">
-          <Story />
-        </div>
-      </NextIntlClientProvider>
+      <div className='max-w-lg p-4'>
+        <Story />
+      </div>
     ),
   ],
   parameters: {
@@ -42,11 +34,11 @@ export const CreatedEvent: Story = {
       date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       title: "Invoice Created",
       description: "Receipt scanned and invoice created",
-      icon: <TbFileInvoice className="h-3.5 w-3.5" />,
+      icon: <TbFileInvoice className='h-3.5 w-3.5' />,
       completed: true,
       metadata: {method: "camera_scan"},
     },
-    icon: <TbFileInvoice className="h-3.5 w-3.5" />,
+    icon: <TbFileInvoice className='h-3.5 w-3.5' />,
     isLast: false,
   },
 };
@@ -60,11 +52,11 @@ export const AIAnalysisEvent: Story = {
       date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
       title: "AI Analysis Complete",
       description: "12 items detected via AI",
-      icon: <TbRobot className="h-3.5 w-3.5" />,
+      icon: <TbRobot className='h-3.5 w-3.5' />,
       completed: true,
       metadata: {duration: "2.3s", itemCount: 12, confidence: 94},
     },
-    icon: <TbRobot className="h-3.5 w-3.5" />,
+    icon: <TbRobot className='h-3.5 w-3.5' />,
     isLast: false,
   },
 };
@@ -78,11 +70,11 @@ export const SharedEvent: Story = {
       date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       title: "Invoice Shared",
       description: "Shared with 2 users",
-      icon: <TbShare className="h-3.5 w-3.5" />,
+      icon: <TbShare className='h-3.5 w-3.5' />,
       completed: true,
       metadata: {users: ["alice@example.com", "bob@example.com"]},
     },
-    icon: <TbShare className="h-3.5 w-3.5" />,
+    icon: <TbShare className='h-3.5 w-3.5' />,
     isLast: false,
   },
 };
@@ -96,10 +88,10 @@ export const MarkedImportantLast: Story = {
       date: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
       title: "Marked Important",
       description: "Invoice flagged for quick access",
-      icon: <TbStar className="h-3.5 w-3.5" />,
+      icon: <TbStar className='h-3.5 w-3.5' />,
       completed: true,
     },
-    icon: <TbStar className="h-3.5 w-3.5" />,
+    icon: <TbStar className='h-3.5 w-3.5' />,
     isLast: true,
   },
 };
@@ -113,11 +105,11 @@ export const PendingEvent: Story = {
       date: new Date(),
       title: "Generating Recipes",
       description: "AI is generating recipe suggestions",
-      icon: <TbCheck className="h-3.5 w-3.5" />,
+      icon: <TbCheck className='h-3.5 w-3.5' />,
       completed: false,
       metadata: {itemCount: 5},
     },
-    icon: <TbCheck className="h-3.5 w-3.5" />,
+    icon: <TbCheck className='h-3.5 w-3.5' />,
     isLast: true,
   },
 };

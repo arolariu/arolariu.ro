@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../messages/en.json";
 
 /**
  * ScanCard displays an individual scan with preview, selection checkbox,
@@ -10,17 +8,11 @@ import messages from "../../../../../../messages/en.json";
  */
 const meta = {
   title: "Invoices/ViewScans/ScanCard",
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <div className="max-w-xs">
-          <Story />
-        </div>
-      </NextIntlClientProvider>
+      <div className='max-w-xs'>
+        <Story />
+      </div>
     ),
   ],
   parameters: {
@@ -34,26 +26,26 @@ type Story = StoryObj<typeof meta>;
 /** Image scan card with file details. */
 export const ImageScan: Story = {
   render: () => (
-    <div className="overflow-hidden rounded-lg border bg-white shadow-sm hover:shadow-md dark:bg-gray-900">
-      <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-800">
-        <div className="flex h-full items-center justify-center text-gray-400">📷 receipt.jpg</div>
-        <div className="absolute top-2 right-2">
+    <div className='overflow-hidden rounded-lg border bg-white shadow-sm hover:shadow-md dark:bg-gray-900'>
+      <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div className='flex h-full items-center justify-center text-gray-400'>📷 receipt.jpg</div>
+        <div className='absolute top-2 right-2'>
           <input
-            type="checkbox"
-            className="h-5 w-5"
+            type='checkbox'
+            className='h-5 w-5'
           />
         </div>
-        <div className="absolute top-2 left-2">
+        <div className='absolute top-2 left-2'>
           <button
-            type="button"
-            className="rounded-full bg-white/80 p-1 text-xs shadow-sm dark:bg-gray-800/80">
+            type='button'
+            className='rounded-full bg-white/80 p-1 text-xs shadow-sm dark:bg-gray-800/80'>
             ⋮
           </button>
         </div>
       </div>
-      <div className="p-3">
-        <p className="truncate text-sm font-medium">grocery-receipt-2025-01.jpg</p>
-        <div className="flex justify-between text-xs text-gray-500">
+      <div className='p-3'>
+        <p className='truncate text-sm font-medium'>grocery-receipt-2025-01.jpg</p>
+        <div className='flex justify-between text-xs text-gray-500'>
           <span>1.2 MB</span>
           <span>Jan 15, 2025</span>
         </div>
@@ -65,19 +57,19 @@ export const ImageScan: Story = {
 /** PDF scan card. */
 export const PdfScan: Story = {
   render: () => (
-    <div className="overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900">
-      <div className="relative flex aspect-[4/3] items-center justify-center bg-red-50 dark:bg-red-900/20">
-        <span className="text-4xl text-red-400">📄</span>
-        <div className="absolute top-2 right-2">
+    <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
+      <div className='relative flex aspect-[4/3] items-center justify-center bg-red-50 dark:bg-red-900/20'>
+        <span className='text-4xl text-red-400'>📄</span>
+        <div className='absolute top-2 right-2'>
           <input
-            type="checkbox"
-            className="h-5 w-5"
+            type='checkbox'
+            className='h-5 w-5'
           />
         </div>
       </div>
-      <div className="p-3">
-        <p className="truncate text-sm font-medium">invoice-scan.pdf</p>
-        <div className="flex justify-between text-xs text-gray-500">
+      <div className='p-3'>
+        <p className='truncate text-sm font-medium'>invoice-scan.pdf</p>
+        <div className='flex justify-between text-xs text-gray-500'>
           <span>3.4 MB</span>
           <span>Jan 10, 2025</span>
         </div>
@@ -89,21 +81,21 @@ export const PdfScan: Story = {
 /** Selected scan card with ring highlight. */
 export const Selected: Story = {
   render: () => (
-    <div className="overflow-hidden rounded-lg border bg-white shadow-sm ring-2 ring-purple-500 dark:bg-gray-900">
-      <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-800">
-        <div className="flex h-full items-center justify-center text-gray-400">📷 selected.jpg</div>
-        <div className="absolute top-2 right-2">
+    <div className='overflow-hidden rounded-lg border bg-white shadow-sm ring-2 ring-purple-500 dark:bg-gray-900'>
+      <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div className='flex h-full items-center justify-center text-gray-400'>📷 selected.jpg</div>
+        <div className='absolute top-2 right-2'>
           <input
-            type="checkbox"
+            type='checkbox'
             checked
             readOnly
-            className="h-5 w-5 accent-purple-500"
+            className='h-5 w-5 accent-purple-500'
           />
         </div>
       </div>
-      <div className="p-3">
-        <p className="truncate text-sm font-medium">selected-scan.jpg</p>
-        <div className="flex justify-between text-xs text-gray-500">
+      <div className='p-3'>
+        <p className='truncate text-sm font-medium'>selected-scan.jpg</p>
+        <div className='flex justify-between text-xs text-gray-500'>
           <span>800 KB</span>
           <span>Jan 12, 2025</span>
         </div>
@@ -115,18 +107,16 @@ export const Selected: Story = {
 /** Scan linked to an invoice. */
 export const LinkedToInvoice: Story = {
   render: () => (
-    <div className="overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900">
-      <div className="relative aspect-[4/3] bg-gray-100 dark:bg-gray-800">
-        <div className="flex h-full items-center justify-center text-gray-400">📷 linked.jpg</div>
-        <div className="absolute bottom-2 left-2">
-          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            🔗 Linked
-          </span>
+    <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
+      <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div className='flex h-full items-center justify-center text-gray-400'>📷 linked.jpg</div>
+        <div className='absolute bottom-2 left-2'>
+          <span className='rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200'>🔗 Linked</span>
         </div>
       </div>
-      <div className="p-3">
-        <p className="truncate text-sm font-medium">linked-receipt.jpg</p>
-        <div className="flex justify-between text-xs text-gray-500">
+      <div className='p-3'>
+        <p className='truncate text-sm font-medium'>linked-receipt.jpg</p>
+        <div className='flex justify-between text-xs text-gray-500'>
           <span>950 KB</span>
           <span>Jan 8, 2025</span>
         </div>

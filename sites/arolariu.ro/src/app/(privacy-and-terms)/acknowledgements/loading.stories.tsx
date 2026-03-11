@@ -11,7 +11,6 @@ import Loading from "./loading";
 const meta = {
   title: "Pages/Acknowledgements/Loading",
   component: Loading,
-  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

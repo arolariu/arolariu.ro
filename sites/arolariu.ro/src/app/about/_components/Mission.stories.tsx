@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../messages/en.json";
 import Mission from "./Mission";
 
 /**
@@ -11,17 +9,6 @@ import Mission from "./Mission";
 const meta = {
   title: "Pages/About/Mission",
   component: Mission,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -32,3 +19,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default mission section with three core pillars. */
 export const Default: Story = {};
+
+/** Mission section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

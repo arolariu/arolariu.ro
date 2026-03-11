@@ -1,7 +1,5 @@
 import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../../messages/en.json";
 
 /**
  * GridView renders invoices as a responsive card grid with images,
@@ -13,17 +11,6 @@ import messages from "../../../../../../../messages/en.json";
  */
 const meta = {
   title: "Invoices/Views/GridView",
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -49,28 +36,28 @@ export const Preview: Story = {
   render: () => {
     const cards = generateMockCards(6);
     return (
-      <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className='grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3'>
         {cards.map((card) => (
           <div
             key={card.id}
-            className="relative overflow-hidden rounded-lg border bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-            <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700">
-              <div className="absolute top-2 left-2">
+            className='relative overflow-hidden rounded-lg border bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900'>
+            <div className='relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'>
+              <div className='absolute top-2 left-2'>
                 <input
-                  type="checkbox"
-                  className="rounded"
+                  type='checkbox'
+                  className='rounded'
                 />
               </div>
-              <div className="flex h-full items-center justify-center text-4xl">🧾</div>
+              <div className='flex h-full items-center justify-center text-4xl'>🧾</div>
             </div>
-            <div className="p-4">
-              <h4 className="font-semibold">{card.name}</h4>
-              <p className="text-sm text-gray-500">{card.description}</p>
-              <div className="mt-3 flex items-center justify-between text-sm">
-                <span className="text-gray-500">📅 {card.date}</span>
-                <span className="font-bold">{card.amount.toFixed(2)} RON</span>
+            <div className='p-4'>
+              <h4 className='font-semibold'>{card.name}</h4>
+              <p className='text-sm text-gray-500'>{card.description}</p>
+              <div className='mt-3 flex items-center justify-between text-sm'>
+                <span className='text-gray-500'>📅 {card.date}</span>
+                <span className='font-bold'>{card.amount.toFixed(2)} RON</span>
               </div>
-              <div className="mt-2 text-xs text-gray-400">{card.itemCount} items</div>
+              <div className='mt-2 text-xs text-gray-400'>{card.itemCount} items</div>
             </div>
           </div>
         ))}
@@ -82,9 +69,9 @@ export const Preview: Story = {
 /** Empty state — no invoices available. */
 export const EmptyState: Story = {
   render: () => (
-    <div className="flex items-center justify-center p-12">
-      <div className="text-center text-gray-500">
-        <p className="text-lg">No invoices found</p>
+    <div className='flex items-center justify-center p-12'>
+      <div className='text-center text-gray-500'>
+        <p className='text-lg'>No invoices found</p>
       </div>
     </div>
   ),

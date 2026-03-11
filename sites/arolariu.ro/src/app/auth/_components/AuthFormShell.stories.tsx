@@ -8,7 +8,6 @@ import AuthFormShell from "./AuthFormShell";
 const meta = {
   title: "Auth/AuthFormShell",
   component: AuthFormShell,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },
@@ -26,7 +25,7 @@ export const SignUp: Story = {
     secondaryHref: "/auth/sign-in",
     footer: "By creating an account, you agree to our Terms of Service and Privacy Policy.",
     children: (
-      <div className="space-y-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
+      <div className='space-y-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400'>
         [Clerk Sign-Up Form Slot]
       </div>
     ),
@@ -42,9 +41,28 @@ export const SignIn: Story = {
     secondaryHref: "/auth/sign-up",
     footer: "Secured by Clerk authentication.",
     children: (
-      <div className="space-y-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
+      <div className='space-y-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400'>
         [Clerk Sign-In Form Slot]
       </div>
     ),
+  },
+};
+
+/** Form shell in dark mode. */
+export const DarkMode: Story = {
+  args: {
+    kicker: "Create your account",
+    secondaryPrompt: "Already have an account?",
+    secondaryAction: "Sign in",
+    secondaryHref: "/auth/sign-in",
+    footer: "By creating an account, you agree to our Terms of Service and Privacy Policy.",
+    children: (
+      <div className='space-y-4 rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400'>
+        [Clerk Sign-Up Form Slot]
+      </div>
+    ),
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
   },
 };

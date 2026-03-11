@@ -11,7 +11,6 @@ import WorkflowCard from "./WorkflowCard";
 const meta = {
   title: "Invoices/Homepage/WorkflowCard",
   component: WorkflowCard,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },

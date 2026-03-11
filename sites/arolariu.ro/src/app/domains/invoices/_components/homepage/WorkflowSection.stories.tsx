@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../messages/en.json";
 import WorkflowSection from "./WorkflowSection";
 
 /**
@@ -12,17 +10,6 @@ import WorkflowSection from "./WorkflowSection";
 const meta = {
   title: "Invoices/Homepage/WorkflowSection",
   component: WorkflowSection,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -33,3 +20,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default 3-step workflow section. */
 export const Default: Story = {};
+
+/** Workflow section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../messages/en.json";
 import BentoSection from "./BentoSection";
 
 /**
@@ -12,17 +10,6 @@ import BentoSection from "./BentoSection";
 const meta = {
   title: "Invoices/Homepage/BentoSection",
   component: BentoSection,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -33,3 +20,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default bento grid with six capability cards. */
 export const Default: Story = {};
+
+/** Bento section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

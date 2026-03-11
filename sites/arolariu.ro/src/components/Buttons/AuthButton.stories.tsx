@@ -13,7 +13,6 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Components/Buttons/AuthButton",
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },
@@ -27,15 +26,15 @@ type Story = StoryObj<typeof meta>;
  * `AuthButton` output before Clerk finishes initialising.
  */
 export const Loading: Story = {
-  render: () => <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />,
+  render: () => <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />,
 };
 
 /** Multiple skeleton buttons side-by-side (e.g. inside a nav bar). */
 export const LoadingInNavBar: Story = {
   render: () => (
-    <nav className="flex items-center gap-4 rounded-lg border border-gray-200 px-6 py-3 dark:border-gray-700">
-      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Navigation</span>
-      <div className="ml-auto h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+    <nav className='flex items-center gap-4 rounded-lg border border-gray-200 px-6 py-3 dark:border-gray-700'>
+      <span className='text-sm font-medium text-gray-500 dark:text-gray-400'>Navigation</span>
+      <div className='ml-auto h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
     </nav>
   ),
 };

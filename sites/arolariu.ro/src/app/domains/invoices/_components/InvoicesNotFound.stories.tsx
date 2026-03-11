@@ -1,5 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
 import Link from "next/link";
 import messages from "../../../../../messages/en.json";
 
@@ -17,17 +16,6 @@ const namespace = messages.Invoices.Shared.invoicesNotFound;
 
 const meta = {
   title: "Invoices/InvoicesNotFound",
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -44,12 +32,12 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 p-8 text-center">
-      <h1 className="text-2xl font-bold">{namespace.title}</h1>
-      <article className="max-w-md text-gray-500 dark:text-gray-400">{namespace.description}</article>
+    <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8 text-center'>
+      <h1 className='text-2xl font-bold'>{namespace.title}</h1>
+      <article className='max-w-md text-gray-500 dark:text-gray-400'>{namespace.description}</article>
       <Link
-        href="/domains/invoices/create-invoice"
-        className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+        href='/domains/invoices/create-invoice'
+        className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-6 py-3 text-sm font-medium transition-colors'>
         {namespace.cta}
       </Link>
     </div>

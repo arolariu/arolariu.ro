@@ -11,7 +11,6 @@ import Loading from "./loading";
 const meta = {
   title: "App/Loading",
   component: Loading,
-  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

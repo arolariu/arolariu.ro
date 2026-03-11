@@ -1,7 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
-import messages from "../../messages/en.json";
 
 /**
  * The Header component renders the site-wide navigation bar with logo,
@@ -13,20 +11,14 @@ import messages from "../../messages/en.json";
  */
 const meta = {
   title: "Components/Header",
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}>
-          <Story />
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='light'
+        enableSystem={false}>
+        <Story />
+      </ThemeProvider>
     ),
   ],
   parameters: {
@@ -40,20 +32,20 @@ type Story = StoryObj<typeof meta>;
 /** Header loading skeleton — a pulsing bar matching the header layout. */
 export const Skeleton: Story = {
   render: () => (
-    <header className="border-b bg-white px-4 py-3 dark:bg-gray-900">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+    <header className='border-b bg-white px-4 py-3 dark:bg-gray-900'>
+      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
         </div>
-        <div className="hidden gap-6 md:flex">
-          <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div className='hidden gap-6 md:flex'>
+          <div className='h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className='flex items-center gap-3'>
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
         </div>
       </nav>
     </header>
@@ -64,36 +56,31 @@ export const Skeleton: Story = {
 export const SkeletonDark: Story = {
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}>
-          <div className="dark">
-            <Story />
-          </div>
-        </ThemeProvider>
-      </NextIntlClientProvider>
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='dark'
+        enableSystem={false}>
+        <div className='dark'>
+          <Story />
+        </div>
+      </ThemeProvider>
     ),
   ],
   render: () => (
-    <header className="border-b bg-gray-900 px-4 py-3">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 animate-pulse rounded-full bg-gray-700" />
-          <div className="h-5 w-28 animate-pulse rounded bg-gray-700" />
+    <header className='border-b bg-gray-900 px-4 py-3'>
+      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <div className='h-10 w-10 animate-pulse rounded-full bg-gray-700' />
+          <div className='h-5 w-28 animate-pulse rounded bg-gray-700' />
         </div>
-        <div className="hidden gap-6 md:flex">
-          <div className="h-4 w-20 animate-pulse rounded bg-gray-700" />
-          <div className="h-4 w-16 animate-pulse rounded bg-gray-700" />
-          <div className="h-4 w-24 animate-pulse rounded bg-gray-700" />
+        <div className='hidden gap-6 md:flex'>
+          <div className='h-4 w-20 animate-pulse rounded bg-gray-700' />
+          <div className='h-4 w-16 animate-pulse rounded bg-gray-700' />
+          <div className='h-4 w-24 animate-pulse rounded bg-gray-700' />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-700" />
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-700" />
+        <div className='flex items-center gap-3'>
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-700' />
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-700' />
         </div>
       </nav>
     </header>
@@ -106,15 +93,15 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
   render: () => (
-    <header className="border-b bg-white px-4 py-3 dark:bg-gray-900">
-      <nav className="mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+    <header className='border-b bg-white px-4 py-3 dark:bg-gray-900'>
+      <nav className='mx-auto flex items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="h-8 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div className='flex items-center gap-2'>
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-8 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
         </div>
       </nav>
     </header>
@@ -124,20 +111,20 @@ export const MobileViewport: Story = {
 /** Header skeleton simulating a scrolled state with shadow and compact height. */
 export const WithScrolled: Story = {
   render: () => (
-    <header className="border-b bg-white/95 px-4 py-2 shadow-md backdrop-blur-sm dark:bg-gray-900/95">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+    <header className='border-b bg-white/95 px-4 py-2 shadow-md backdrop-blur-sm dark:bg-gray-900/95'>
+      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
+        <div className='flex items-center gap-2'>
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
         </div>
-        <div className="hidden gap-4 md:flex">
-          <div className="h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-14 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div className='hidden gap-4 md:flex'>
+          <div className='h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-3 w-14 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className='flex items-center gap-2'>
+          <div className='h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
         </div>
       </nav>
     </header>

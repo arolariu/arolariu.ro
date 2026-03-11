@@ -1,7 +1,5 @@
 import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../../../messages/en.json";
 import type {CategorySpending} from "../../_utils/analytics";
 import {SpendingByCategoryChart} from "./SpendingByCategoryChart";
 
@@ -23,17 +21,11 @@ function generateMockCategorySpending(count: number): CategorySpending[] {
 const meta = {
   title: "Invoices/Charts/SpendingByCategoryChart",
   component: SpendingByCategoryChart,
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <div className="max-w-lg">
-          <Story />
-        </div>
-      </NextIntlClientProvider>
+      <div className='max-w-lg'>
+        <Story />
+      </div>
     ),
   ],
   parameters: {

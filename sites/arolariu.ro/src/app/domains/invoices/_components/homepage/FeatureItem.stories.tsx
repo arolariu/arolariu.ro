@@ -10,7 +10,6 @@ import FeatureItem from "./FeatureItem";
 const meta = {
   title: "Invoices/Homepage/FeatureItem",
   component: FeatureItem,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },

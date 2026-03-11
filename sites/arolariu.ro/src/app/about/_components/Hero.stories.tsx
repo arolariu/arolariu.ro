@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../messages/en.json";
 import Hero from "./Hero";
 
 /**
@@ -12,17 +10,6 @@ import Hero from "./Hero";
 const meta = {
   title: "Pages/About/Hero",
   component: Hero,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -33,6 +20,13 @@ type Story = StoryObj<typeof meta>;
 
 /** Default hero section with animated background and CTA buttons. */
 export const Default: Story = {};
+
+/** About hero section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
 
 /** About hero section at mobile viewport width. */
 export const MobileViewport: Story = {

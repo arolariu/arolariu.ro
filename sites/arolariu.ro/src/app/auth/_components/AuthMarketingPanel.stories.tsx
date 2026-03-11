@@ -9,7 +9,6 @@ import AuthMarketingPanel from "./AuthMarketingPanel";
 const meta = {
   title: "Auth/AuthMarketingPanel",
   component: AuthMarketingPanel,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },
@@ -50,5 +49,20 @@ export const FullFeatured: Story = {
     illustrationAlt: "Platform illustration",
     bullets: ["Upload & analyze receipts", "Track spending patterns", "Generate meal plans from purchases"] as const,
     trustBadges: ["Open Source", "Enterprise Ready", "Privacy First", "AI Powered"],
+  },
+};
+
+/** Marketing panel in dark mode. */
+export const DarkMode: Story = {
+  args: {
+    title: "Join arolariu.ro",
+    subtitle: "Create your account and start managing your invoices with AI-powered analysis.",
+    illustrationSrc: "https://dummyimage.com/320x320/4f46e5/ffffff&text=Sign+Up",
+    illustrationAlt: "Sign up illustration",
+    bullets: ["AI-powered invoice scanning", "Smart expense categorization", "Recipe suggestions from groceries"] as const,
+    trustBadges: ["256-bit SSL", "GDPR Compliant", "SOC 2"],
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
   },
 };

@@ -11,7 +11,6 @@ import {ProfileSkeleton} from "./ProfileSkeleton";
 const meta = {
   title: "Pages/Profile/ProfileSkeleton",
   component: ProfileSkeleton,
-  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },
@@ -22,3 +21,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default profile loading skeleton. */
 export const Default: Story = {};
+
+/** Profile skeleton in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

@@ -1,7 +1,5 @@
 import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../../messages/en.json";
 
 /**
  * TableView renders invoices in a sortable, paginated table with
@@ -13,17 +11,6 @@ import messages from "../../../../../../../messages/en.json";
  */
 const meta = {
   title: "Invoices/Views/TableView",
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -48,38 +35,38 @@ export const Preview: Story = {
   render: () => {
     const rows = generateMockRows(8);
     return (
-      <div className="p-6">
-        <table className="w-full border-collapse">
+      <div className='p-6'>
+        <table className='w-full border-collapse'>
           <thead>
-            <tr className="border-b text-left text-sm font-medium text-gray-500 dark:border-gray-700">
-              <th className="px-3 py-3">
-                <input type="checkbox" />
+            <tr className='border-b text-left text-sm font-medium text-gray-500 dark:border-gray-700'>
+              <th className='px-3 py-3'>
+                <input type='checkbox' />
               </th>
-              <th className="px-3 py-3">Invoice</th>
-              <th className="px-3 py-3">Category</th>
-              <th className="px-3 py-3">Date ↕</th>
-              <th className="px-3 py-3">Amount ↕</th>
-              <th className="px-3 py-3 text-end">Actions</th>
+              <th className='px-3 py-3'>Invoice</th>
+              <th className='px-3 py-3'>Category</th>
+              <th className='px-3 py-3'>Date ↕</th>
+              <th className='px-3 py-3'>Amount ↕</th>
+              <th className='px-3 py-3 text-end'>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr
                 key={row.id}
-                className="border-b text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
-                <td className="px-3 py-3">
-                  <input type="checkbox" />
+                className='border-b text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'>
+                <td className='px-3 py-3'>
+                  <input type='checkbox' />
                 </td>
-                <td className="px-3 py-3 font-medium">{row.name}</td>
-                <td className="px-3 py-3">
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800">{row.category}</span>
+                <td className='px-3 py-3 font-medium'>{row.name}</td>
+                <td className='px-3 py-3'>
+                  <span className='rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800'>{row.category}</span>
                 </td>
-                <td className="px-3 py-3 text-gray-500">{row.date}</td>
-                <td className="px-3 py-3 font-medium">{row.amount.toFixed(2)} RON</td>
-                <td className="px-3 py-3 text-end">
+                <td className='px-3 py-3 text-gray-500'>{row.date}</td>
+                <td className='px-3 py-3 font-medium'>{row.amount.toFixed(2)} RON</td>
+                <td className='px-3 py-3 text-end'>
                   <button
-                    type="button"
-                    className="text-gray-400 hover:text-gray-600">
+                    type='button'
+                    className='text-gray-400 hover:text-gray-600'>
                     👁 ⋮
                   </button>
                 </td>
@@ -87,23 +74,23 @@ export const Preview: Story = {
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t dark:border-gray-700">
+            <tr className='border-t dark:border-gray-700'>
               <td
                 colSpan={4}
-                className="px-3 py-3 text-sm text-gray-500">
+                className='px-3 py-3 text-sm text-gray-500'>
                 Rows per page: 10 | Page 1 of 1
               </td>
               <td
                 colSpan={2}
-                className="px-3 py-3 text-end">
+                className='px-3 py-3 text-end'>
                 <button
-                  type="button"
-                  className="rounded border px-3 py-1 text-xs dark:border-gray-700">
+                  type='button'
+                  className='rounded border px-3 py-1 text-xs dark:border-gray-700'>
                   Previous
                 </button>
                 <button
-                  type="button"
-                  className="ml-2 rounded border px-3 py-1 text-xs dark:border-gray-700">
+                  type='button'
+                  className='ml-2 rounded border px-3 py-1 text-xs dark:border-gray-700'>
                   Next
                 </button>
               </td>
@@ -118,9 +105,9 @@ export const Preview: Story = {
 /** Empty state — no invoices. */
 export const EmptyState: Story = {
   render: () => (
-    <div className="flex items-center justify-center p-12">
-      <div className="text-center text-gray-500">
-        <p className="text-lg">No invoices found</p>
+    <div className='flex items-center justify-center p-12'>
+      <div className='text-center text-gray-500'>
+        <p className='text-lg'>No invoices found</p>
       </div>
     </div>
   ),

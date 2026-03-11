@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../messages/en.json";
 import EnhancedLegalArticles from "./EnhancedLegalArticles";
 
 /**
@@ -13,17 +11,6 @@ import EnhancedLegalArticles from "./EnhancedLegalArticles";
 const meta = {
   title: "Pages/Legal/EnhancedLegalArticles",
   component: EnhancedLegalArticles,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "padded",
   },

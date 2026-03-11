@@ -8,13 +8,12 @@ import {MessageList} from "./MessageList";
 const meta = {
   title: "Invoices/ViewInvoices/MessageList",
   component: MessageList,
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },
   decorators: [
     (Story) => (
-      <div className="max-w-lg">
+      <div className='max-w-lg'>
         <Story />
       </div>
     ),

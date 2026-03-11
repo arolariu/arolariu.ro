@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../messages/en.json";
 import {QuickStats} from "./QuickStats";
 
 /**
@@ -12,17 +10,6 @@ import {QuickStats} from "./QuickStats";
 const meta = {
   title: "Pages/Profile/QuickStats",
   component: QuickStats,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },
@@ -70,8 +57,8 @@ export const PowerUser: Story = {
       totalInvoices: 1250,
       totalMerchants: 200,
       totalScans: 3400,
-      totalSaved: 45_678.90,
-      monthlyAverage: 2_500.00,
+      totalSaved: 45_678.9,
+      monthlyAverage: 2_500.0,
       aiQueriesUsed: 9800,
       storageUsed: 480_000_000,
       storageLimit: 536_870_912,

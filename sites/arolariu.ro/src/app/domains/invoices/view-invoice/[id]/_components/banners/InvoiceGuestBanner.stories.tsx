@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../../../messages/en.json";
 import {InvoiceGuestBanner} from "./InvoiceGuestBanner";
 
 /**
@@ -10,17 +8,11 @@ import {InvoiceGuestBanner} from "./InvoiceGuestBanner";
 const meta = {
   title: "Invoices/ViewInvoice/InvoiceGuestBanner",
   component: InvoiceGuestBanner,
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <div className="max-w-2xl p-4">
-          <Story />
-        </div>
-      </NextIntlClientProvider>
+      <div className='max-w-2xl p-4'>
+        <Story />
+      </div>
     ),
   ],
   parameters: {

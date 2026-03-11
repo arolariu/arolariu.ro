@@ -1,7 +1,5 @@
 import {generateRandomInvoice} from "@/data/mocks";
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../../../messages/en.json";
 import {InvoiceTimelineCard} from "./InvoiceTimelineCard";
 
 /**
@@ -11,17 +9,11 @@ import {InvoiceTimelineCard} from "./InvoiceTimelineCard";
 const meta = {
   title: "Invoices/ViewInvoice/InvoiceTimelineCard",
   component: InvoiceTimelineCard,
-  tags: ["autodocs"],
   decorators: [
     (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <div className="max-w-lg">
-          <Story />
-        </div>
-      </NextIntlClientProvider>
+      <div className='max-w-lg'>
+        <Story />
+      </div>
     ),
   ],
   parameters: {

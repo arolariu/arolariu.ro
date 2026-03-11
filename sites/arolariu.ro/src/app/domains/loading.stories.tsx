@@ -8,7 +8,6 @@ import Loading from "./loading";
 const meta = {
   title: "Domains/DomainsLoading",
   component: Loading,
-  tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
   },

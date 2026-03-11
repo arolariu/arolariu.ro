@@ -1,6 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {NextIntlClientProvider} from "next-intl";
-import messages from "../../../../../../../messages/en.json";
 import RenderStatisticsView from "./StatisticsView";
 
 /**
@@ -11,17 +9,6 @@ import RenderStatisticsView from "./StatisticsView";
 const meta = {
   title: "Invoices/Views/StatisticsView",
   component: RenderStatisticsView,
-  tags: ["autodocs"],
-  decorators: [
-    (Story) => (
-      <NextIntlClientProvider
-        locale="en"
-        messages={messages}
-        timeZone="Europe/Bucharest">
-        <Story />
-      </NextIntlClientProvider>
-    ),
-  ],
   parameters: {
     layout: "fullscreen",
   },

@@ -9,7 +9,6 @@ import {FontContextProvider, useFontContext} from "./FontContext";
  */
 const meta = {
   title: "Contexts/FontContext",
-  tags: ["autodocs"],
   parameters: {
     layout: "centered",
   },
@@ -23,19 +22,19 @@ function FontSwitcherDemo(): React.JSX.Element {
   const {fontType, fontClassName, setFont} = useFontContext();
 
   return (
-    <div className="space-y-6 rounded-lg border border-gray-200 p-6 dark:border-gray-700">
-      <div className="space-y-2">
-        <h2 className="text-lg font-bold">Font Context Demo</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Current font: <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">{fontType}</code>
+    <div className='space-y-6 rounded-lg border border-gray-200 p-6 dark:border-gray-700'>
+      <div className='space-y-2'>
+        <h2 className='text-lg font-bold'>Font Context Demo</h2>
+        <p className='text-sm text-gray-500 dark:text-gray-400'>
+          Current font: <code className='rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800'>{fontType}</code>
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Class name: <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">{fontClassName}</code>
+        <p className='text-sm text-gray-500 dark:text-gray-400'>
+          Class name: <code className='rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800'>{fontClassName}</code>
         </p>
       </div>
-      <div className="flex gap-3">
+      <div className='flex gap-3'>
         <button
-          type="button"
+          type='button'
           onClick={() => setFont("normal")}
           className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
             fontType === "normal"
@@ -45,7 +44,7 @@ function FontSwitcherDemo(): React.JSX.Element {
           Normal Font
         </button>
         <button
-          type="button"
+          type='button'
           onClick={() => setFont("dyslexic")}
           className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
             fontType === "dyslexic"
@@ -55,7 +54,7 @@ function FontSwitcherDemo(): React.JSX.Element {
           Dyslexic Font
         </button>
       </div>
-      <div className="rounded-md border border-gray-200 p-4 dark:border-gray-700">
+      <div className='rounded-md border border-gray-200 p-4 dark:border-gray-700'>
         <p className={fontClassName}>
           The quick brown fox jumps over the lazy dog. This text changes font based on the selected preference.
         </p>
