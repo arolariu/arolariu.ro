@@ -1,0 +1,80 @@
+import type {Meta, StoryObj} from "@storybook/react";
+import {NextIntlClientProvider} from "next-intl";
+import messages from "../../../../../../../../messages/en.json";
+import {SummaryStatsCard} from "./SummaryStatsCard";
+
+/**
+ * SummaryStatsCard displays key statistics for an invoice including total items,
+ * categories, average price, tax rate, and extreme price items.
+ */
+const meta = {
+  title: "Invoices/ViewInvoice/SummaryStatsCard",
+  component: SummaryStatsCard,
+  tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <NextIntlClientProvider
+        locale="en"
+        messages={messages}
+        timeZone="Europe/Bucharest">
+        <div className="max-w-lg">
+          <Story />
+        </div>
+      </NextIntlClientProvider>
+    ),
+  ],
+  parameters: {
+    layout: "centered",
+  },
+} satisfies Meta<typeof SummaryStatsCard>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/** Default summary stats with typical grocery invoice data. */
+export const Default: Story = {
+  args: {
+    currency: "USD",
+    summary: {
+      totalItems: 12,
+      uniqueCategories: 4,
+      averageItemPrice: 8.75,
+      taxPercentage: 19.0,
+      taxAmount: 15.5,
+      highestItem: {name: "Fresh Salmon Fillet", price: 24.99},
+      lowestItem: {name: "Baguette", price: 1.2},
+    },
+  },
+};
+
+/** Small invoice with few items. */
+export const SmallInvoice: Story = {
+  args: {
+    currency: "EUR",
+    summary: {
+      totalItems: 3,
+      uniqueCategories: 2,
+      averageItemPrice: 4.33,
+      taxPercentage: 9.0,
+      taxAmount: 1.17,
+      highestItem: {name: "Organic Milk", price: 5.99},
+      lowestItem: {name: "Bread Roll", price: 0.89},
+    },
+  },
+};
+
+/** Large invoice with many items and high tax. */
+export const LargeInvoice: Story = {
+  args: {
+    currency: "RON",
+    summary: {
+      totalItems: 45,
+      uniqueCategories: 8,
+      averageItemPrice: 22.5,
+      taxPercentage: 24.0,
+      taxAmount: 195.0,
+      highestItem: {name: "Premium Olive Oil 1L", price: 89.99},
+      lowestItem: {name: "Salt 500g", price: 2.49},
+    },
+  },
+};
