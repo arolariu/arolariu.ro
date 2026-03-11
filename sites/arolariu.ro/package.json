@@ -35,10 +35,12 @@
     "email": "npm run clean && email dev",
     "start": "next start",
     "start:debug": "cross-env NODE_OPTIONS='--inspect' NODE_ENV=development node --enable-source-maps .next/standalone/sites/arolariu.ro/server.js",
+    "storybook": "storybook dev -p 6006",
+    "build:storybook": "storybook build -o storybook-static",
     "test": "npm run test:unit && npm run test:e2e && npm run test:storybook",
     "test:unit": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts",
-    "test:storybook": "Echo 'No storybook tests configured yet.'"
+    "test:storybook": "storybook test --url http://localhost:6006"
   },
   "dependencies": {
     "@arolariu/components": "*",
