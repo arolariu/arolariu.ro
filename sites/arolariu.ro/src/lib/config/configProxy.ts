@@ -184,11 +184,12 @@ async function getRequestHeaders(): Promise<Record<string, string>> {
 
 /**
  * Circuit breaker: once exp is unreachable, skip further network calls for this duration.
- * Prevents 16 concurrent Playwright workers from each stalling on a 2s DNS timeout.
+ * Local dev: 5 minutes — exp is typically not running at all, avoid periodic 2s stalls.
+ * Production: 30 seconds — exp should recover quickly from transient failures.
  */
 let expCircuitOpen = false;
 let expCircuitOpenedAt = 0;
-const CIRCUIT_RESET_MS = 30_000; // retry exp every 30s
+const CIRCUIT_RESET_MS = HAS_AZURE_CLIENT_ID ? 30_000 : 300_000;
 
 function isExpCircuitOpen(): boolean {
   if (!expCircuitOpen) return false;
