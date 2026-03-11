@@ -64,8 +64,8 @@ export const NAVIGATION_DEFAULTS = {
   },
   local: {
     maxAttempts: 3,
-    initialDelay: 1000,
-    maxTotalWait: 25000,
+    initialDelay: 500,
+    maxTotalWait: 15000,
     waitUntil: "domcontentloaded" as const,
     navigationTimeout: 15000,
   },

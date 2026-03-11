@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Common.Configuration;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -26,8 +27,32 @@ public sealed class ConfigProxyClient(HttpClient httpClient, ILogger<ConfigProxy
   public async Task<ConfigValueResponse?> GetConfigValueAsync(string name, string? label = null, CancellationToken ct = default)
   {
     using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.fetch");
+    var requestIdentifier = activity?.TraceId.ToString();
+    if (string.IsNullOrWhiteSpace(requestIdentifier))
+    {
+      requestIdentifier = Activity.Current?.TraceId.ToString();
+    }
+    if (string.IsNullOrWhiteSpace(requestIdentifier))
+    {
+      requestIdentifier = Guid.CreateVersion7().ToString("N");
+    }
+
     activity?.SetTag("config.key", name);
     if (!string.IsNullOrEmpty(label)) activity?.SetTag("config.label", label);
+    activity?.SetTag("exp.target", "api");
+    activity?.SetTag("peer.service", "exp");
+    activity?.SetTag("correlation.request_id", requestIdentifier);
+    activity?
+      .SetLayerContext("Broker", nameof(ConfigProxyClient))
+      .SetOperationType("Config.Read");
+
+    using var logScope = logger.BeginScope(new Dictionary<string, object?>
+    {
+      ["correlation.request_id"] = requestIdentifier,
+      ["peer.service"] = "exp",
+      ["config.key"] = name,
+      ["config.label"] = label
+    });
 
     try
     {
@@ -38,7 +63,13 @@ public sealed class ConfigProxyClient(HttpClient httpClient, ILogger<ConfigProxy
       }
 
       var requestUri = new Uri(uri, UriKind.Relative);
-      using var response = await httpClient.GetAsync(requestUri, ct).ConfigureAwait(false);
+      using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+      if (!string.IsNullOrWhiteSpace(requestIdentifier))
+      {
+        request.Headers.TryAddWithoutValidation("X-Request-Id", requestIdentifier);
+      }
+
+      using var response = await httpClient.SendAsync(request, ct).ConfigureAwait(false);
 
       activity?.SetTag("http.response.status_code", (int)response.StatusCode);
 

@@ -160,6 +160,8 @@ def _build_resource(dependencies: TelemetryDependencies, settings: TelemetrySett
             "service.instance.id": settings.service_instance_id,
             "deployment.environment": settings.deployment_environment,
             "exp.infra.mode": settings.infra_mode,
+            "cloud.role": "exp",
+            "cloud.provider": "azure",
         }
     )
 
@@ -500,10 +502,13 @@ def _server_request_hook(span: Any, scope: Mapping[str, Any]) -> None:
 
     request_id = _read_scope_header(scope, "x-request-id")
     target_hint = _read_scope_header(scope, "x-exp-target")
+    traceparent = _read_scope_header(scope, "traceparent")
     if request_id:
         span.set_attribute("exp.request.id", request_id)
+        span.set_attribute("exp.request.id_source", "upstream")
     if target_hint:
         span.set_attribute("exp.request.target_hint", target_hint)
+    span.set_attribute("exp.traceparent.present", bool(traceparent))
 
 
 def _client_response_hook(span: Any, scope: Mapping[str, Any], message: Mapping[str, Any]) -> None:

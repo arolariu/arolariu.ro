@@ -3,6 +3,15 @@
  */
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+const instrumentationMocks = vi.hoisted(() => ({
+  injectTraceContextHeaders: vi.fn((headers?: Headers) => {
+    const enrichedHeaders = headers instanceof Headers ? headers : new Headers();
+    enrichedHeaders.set("traceparent", "00-feedfacefeedfacefeedfacefeedface-feedfacefeedface-01");
+    enrichedHeaders.set("X-Request-Id", "feedfacefeedfacefeedfacefeedface");
+    return enrichedHeaders;
+  }),
+}));
+
 // Mock server-only and OTel before any imports
 vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn((_name: string, fn: () => unknown) => fn()),
@@ -12,6 +21,8 @@ vi.mock("@/instrumentation.server", () => ({
   createHistogram: vi.fn(() => ({record: vi.fn()})),
   createCounter: vi.fn(() => ({add: vi.fn()})),
   createHttpServerAttributes: vi.fn(() => ({})),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: instrumentationMocks.injectTraceContextHeaders,
 }));
 
 vi.mock("next/package.json", () => ({version: "16.1.6"}));
@@ -49,6 +60,10 @@ describe("/api/health", () => {
     expect(body.dependencies[1]?.status).toBe("Healthy");
     expect(body.dependencies[0]?.latencyMs).toBeTypeOf("number");
     expect(body.dependencies[1]?.latencyMs).toBeTypeOf("number");
+    const [, firstOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const headers = firstOptions.headers as Headers;
+    expect(headers.get("traceparent")).toBe("00-feedfacefeedfacefeedfacefeedface-feedfacefeedface-01");
+    expect(headers.get("X-Request-Id")).toBe("feedfacefeedfacefeedfacefeedface");
   });
 
   it("returns Degraded when a dependency returns non-OK status", async () => {

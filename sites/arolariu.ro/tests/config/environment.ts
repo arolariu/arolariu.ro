@@ -134,8 +134,8 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     local: {
       baseURL,
       reuseExistingServer: true,
-      timeout: 60_000,
-      retries: 1,
+      timeout: 45_000,
+      retries: 0,
       workers: "100%",
       maxFailures: 10,
       video: "off",

@@ -12,6 +12,7 @@
 import "server-only";
 
 import {fetchConfigValue, invalidateConfigCache} from "@/lib/config/configProxy";
+import {setSpanAttributes} from "@/instrumentation.server";
 import {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";
 
 export {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";
@@ -43,10 +44,17 @@ export async function getWebsiteFeatureFlags(): Promise<WebsiteFeatureFlags> {
       fetchConfigValue("website.web-vitals.enabled").catch(() => "false"),
     ]);
 
-    return {
+    const flags: WebsiteFeatureFlags = {
       commanderEnabled: commanderRaw === "true",
       webVitalsEnabled: webVitalsRaw === "true",
     };
+
+    setSpanAttributes({
+      "feature.commander.enabled": flags.commanderEnabled,
+      "feature.webVitals.enabled": flags.webVitalsEnabled,
+    });
+
+    return flags;
   } catch {
     return DEFAULT_FEATURE_FLAGS;
   }

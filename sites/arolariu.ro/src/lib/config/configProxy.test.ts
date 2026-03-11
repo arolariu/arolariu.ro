@@ -5,11 +5,24 @@
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
+import {getCachedConfigValue, invalidateConfigValueCache, isConfigValueResponse, setCachedConfigValue} from "./configProxy";
+
+const instrumentationMocks = vi.hoisted(() => ({
+  injectTraceContextHeaders: vi.fn((headers?: Headers) => {
+    const enrichedHeaders = headers instanceof Headers ? headers : new Headers();
+    enrichedHeaders.set("traceparent", "00-abcdefabcdefabcdefabcdefabcdefab-abcdefabcdefabcd-01");
+    enrichedHeaders.set("X-Request-Id", "abcdefabcdefabcdefabcdefabcdefab");
+    return enrichedHeaders;
+  }),
+}));
+
 // Mock instrumentation — configProxy.ts imports {addSpanEvent, logWithTrace, withSpan}
 vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn((_name: string, fn: () => unknown) => fn()),
   logWithTrace: vi.fn(),
   addSpanEvent: vi.fn(),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: instrumentationMocks.injectTraceContextHeaders,
 }));
 
 function createJsonResponse(body: unknown, status = 200): Response {
@@ -59,6 +72,11 @@ describe("configProxy", () => {
     expect(value).toBe("https://storage.example.test");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect((fetchMock.mock.calls[0] as [string])[0]).toContain("/api/v1/config?name=Endpoints%3AStorage%3ABlob");
+    expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].headers).toMatchObject({
+      "X-Exp-Target": "website",
+      "X-Request-Id": "abcdefabcdefabcdefabcdefabcdefab",
+      traceparent: "00-abcdefabcdefabcdefabcdefabcdefab-abcdefabcdefabcd-01",
+    });
   });
 
   it("returns cached values without an additional network call", async () => {
@@ -342,5 +360,114 @@ describe("configProxy typed helpers", () => {
 
       expect(result).toBe("");
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// isConfigValueResponse guard (consolidated from configCatalog.types.test.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("isConfigValueResponse", () => {
+  it("returns true for a valid single-key config payload", () => {
+    expect(
+      isConfigValueResponse({
+        name: "Endpoints:Service:Api",
+        value: "https://api.example.test",
+        availableForTargets: ["website"],
+        availableInDocuments: ["website.build-time", "website.run-time"],
+        requiredInDocuments: ["website.build-time", "website.run-time"],
+        description: "API endpoint.",
+        usage: "Server-only.",
+        refreshIntervalSeconds: 300,
+        fetchedAt: "2026-01-01T00:00:00Z",
+      }),
+    ).toBe(true);
+  });
+
+  it("returns false for null and non-object payloads", () => {
+    expect(isConfigValueResponse(null)).toBe(false);
+    expect(isConfigValueResponse("invalid")).toBe(false);
+  });
+
+  it("returns false when array metadata contains non-string values", () => {
+    expect(
+      isConfigValueResponse({
+        name: "Endpoints:Service:Api",
+        value: "https://api.example.test",
+        availableForTargets: [42],
+        availableInDocuments: ["website.build-time"],
+        requiredInDocuments: ["website.build-time"],
+        description: "API endpoint.",
+        usage: "Server-only.",
+        refreshIntervalSeconds: 300,
+        fetchedAt: "2026-01-01T00:00:00Z",
+      }),
+    ).toBe(false);
+  });
+
+  it("returns false when refresh interval is not numeric", () => {
+    expect(
+      isConfigValueResponse({
+        name: "Endpoints:Service:Api",
+        value: "https://api.example.test",
+        availableForTargets: ["website"],
+        availableInDocuments: ["website.build-time"],
+        requiredInDocuments: ["website.build-time"],
+        description: "API endpoint.",
+        usage: "Server-only.",
+        refreshIntervalSeconds: "300",
+        fetchedAt: "2026-01-01T00:00:00Z",
+      }),
+    ).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Config cache (consolidated from configCatalogCache.server.test.ts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const samplePayload = {
+  name: "Endpoints:Service:Api",
+  value: "https://api.example.test",
+  availableForTargets: ["website"],
+  availableInDocuments: ["website.build-time", "website.run-time"],
+  requiredInDocuments: ["website.build-time", "website.run-time"],
+  description: "API endpoint.",
+  usage: "Server-only.",
+  refreshIntervalSeconds: 300,
+  fetchedAt: "2026-01-01T00:00:00Z",
+} as const;
+
+describe("configCatalogCache.server", () => {
+  it("stores and retrieves a config value entry", () => {
+    invalidateConfigValueCache();
+    setCachedConfigValue("Endpoints:Service:Api", samplePayload);
+
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toEqual(samplePayload);
+  });
+
+  it("returns null for missing entries", () => {
+    invalidateConfigValueCache();
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toBeNull();
+  });
+
+  it("returns null for stale entries", () => {
+    invalidateConfigValueCache();
+    setCachedConfigValue("Endpoints:Service:Api", {...samplePayload, refreshIntervalSeconds: 0});
+
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toBeNull();
+  });
+
+  it("invalidates by key and globally", () => {
+    invalidateConfigValueCache();
+    setCachedConfigValue("Endpoints:Service:Api", samplePayload);
+    setCachedConfigValue("Auth:JWT:Secret", {...samplePayload, name: "Auth:JWT:Secret"});
+
+    invalidateConfigValueCache("Endpoints:Service:Api");
+    expect(getCachedConfigValue("Endpoints:Service:Api")).toBeNull();
+    expect(getCachedConfigValue("Auth:JWT:Secret")?.name).toBe("Auth:JWT:Secret");
+
+    invalidateConfigValueCache();
+    expect(getCachedConfigValue("Auth:JWT:Secret")).toBeNull();
   });
 });

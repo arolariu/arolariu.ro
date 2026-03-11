@@ -39,13 +39,17 @@ import "server-only";
 // #region Imports
 
 import {DefaultAzureCredential} from "@azure/identity";
-import {AzureMonitorMetricExporter, AzureMonitorTraceExporter} from "@azure/monitor-opentelemetry-exporter";
-import {context, Meter, metrics, Span, SpanStatusCode, trace, Tracer} from "@opentelemetry/api";
+import {AzureMonitorLogExporter, AzureMonitorMetricExporter, AzureMonitorTraceExporter} from "@azure/monitor-opentelemetry-exporter";
+import {context, Meter, metrics, propagation, Span, SpanStatusCode, trace, Tracer, type TextMapSetter} from "@opentelemetry/api";
 import {getNodeAutoInstrumentations} from "@opentelemetry/auto-instrumentations-node";
+import {OTLPLogExporter} from "@opentelemetry/exporter-logs-otlp-http";
 import {OTLPMetricExporter} from "@opentelemetry/exporter-metrics-otlp-http";
 import {OTLPTraceExporter} from "@opentelemetry/exporter-trace-otlp-http";
+import {resourceFromAttributes} from "@opentelemetry/resources";
 import {PeriodicExportingMetricReader} from "@opentelemetry/sdk-metrics";
 import {NodeSDK} from "@opentelemetry/sdk-node";
+// eslint-disable-next-line n/no-extraneous-import -- sdk-logs ships with the pinned OpenTelemetry SDK family used by the website runtime
+import {BatchLogRecordProcessor, LoggerProvider} from "@opentelemetry/sdk-logs";
 import {BatchSpanProcessor} from "@opentelemetry/sdk-trace-node";
 
 // #endregion
@@ -430,10 +434,10 @@ export interface LogEntry {
  * - Custom OTLP receivers
  * @remarks
  * Set via `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
- * Falls back to localhost for local development.
+ * Only used when explicitly set — no default fallback to avoid connection storms.
  * @see {@link https://opentelemetry.io/docs/specs/otel/protocol/exporter/}
  */
-const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://localhost:4318";
+const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"];
 
 /**
  * Azure Application Insights Connection String.
@@ -443,36 +447,84 @@ const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://local
  * Set via `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable.
  */
 const connectionString = process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-const {traceExporter, metricExporter} = connectionString
+
+/**
+ * Exporter selection strategy:
+ * 1. APPLICATIONINSIGHTS_CONNECTION_STRING set → Azure Monitor exporters (production)
+ * 2. OTEL_EXPORTER_OTLP_ENDPOINT explicitly set → OTLP HTTP exporters (local collector)
+ * 3. Neither set → no exporters (SDK still instruments for propagation, logs go to console only)
+ *
+ * Case 3 prevents a feedback loop where OTLP exporters target an unreachable endpoint,
+ * their failed HTTP requests get auto-instrumented, generating more spans/exports, which
+ * starve the dev server of connections (net::ERR_ABORTED in Playwright).
+ */
+const {traceExporter, metricExporter, logExporter} = connectionString
   ? (() => {
       console.log(">>> 📡 Using Azure Monitor exporters for OpenTelemetry");
       const credential = new DefaultAzureCredential({
         managedIdentityClientId: process.env["AZURE_CLIENT_ID"],
       });
       return {
-        traceExporter: new AzureMonitorTraceExporter({
-          connectionString,
-          credential,
-        }),
-        metricExporter: new AzureMonitorMetricExporter({
-          connectionString,
-          credential,
-        }),
+        logExporter: new AzureMonitorLogExporter({connectionString, credential}),
+        traceExporter: new AzureMonitorTraceExporter({connectionString, credential}) as AzureMonitorTraceExporter | OTLPTraceExporter | undefined,
+        metricExporter: new AzureMonitorMetricExporter({connectionString, credential}) as AzureMonitorMetricExporter | OTLPMetricExporter | undefined,
       };
     })()
-  : (() => {
-      console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
-      return {
-        traceExporter: new OTLPTraceExporter({
-          url: `${otlpEndpoint}/v1/traces`,
-          headers: {},
-        }),
-        metricExporter: new OTLPMetricExporter({
-          url: `${otlpEndpoint}/v1/metrics`,
-          headers: {},
-        }),
-      };
-    })();
+  : otlpEndpoint
+    ? (() => {
+        console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
+        return {
+          logExporter: new OTLPLogExporter({url: `${otlpEndpoint}/v1/logs`, headers: {}}),
+          traceExporter: new OTLPTraceExporter({url: `${otlpEndpoint}/v1/traces`, headers: {}}) as OTLPTraceExporter | undefined,
+          metricExporter: new OTLPMetricExporter({url: `${otlpEndpoint}/v1/metrics`, headers: {}}) as OTLPMetricExporter | undefined,
+        };
+      })()
+    : (() => {
+        console.log(">>> 📡 No OTel exporter configured — instrumentation active, export disabled (console logs only)");
+        return {
+          logExporter: null as InstanceType<typeof OTLPLogExporter> | null,
+          traceExporter: undefined as OTLPTraceExporter | undefined,
+          metricExporter: undefined as OTLPMetricExporter | undefined,
+        };
+      })();
+
+/**
+ * Service resource with standard OTel semantic conventions.
+ * Used by the NodeSDK to identify this service in traces, metrics, and logs.
+ * Wrapped in a function to handle environments where @opentelemetry/resources is unavailable.
+ */
+function createServiceResource(): ReturnType<typeof resourceFromAttributes> | undefined {
+  try {
+    return resourceFromAttributes({
+      "service.name": "arolariu-website",
+      "service.namespace": "arolariu.ro",
+      "service.version": process.env["COMMIT_SHA"] ?? "unknown",
+      "service.instance.id": process.env["HOSTNAME"] ?? `node-${process.pid}`,
+      "deployment.environment": process.env["SITE_ENV"] ?? "development",
+      "cloud.role": "website",
+      "cloud.provider": "azure",
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+const serviceResource = createServiceResource();
+
+// Only wire the LoggerProvider when a real exporter destination exists.
+// Without one, websiteLogger is a no-op and logs go to console only.
+const websiteLoggerProvider =
+  logExporter !== null && logExporter !== undefined
+    ? (() => {
+        const provider = new LoggerProvider({
+          ...(serviceResource ? {resource: serviceResource} : {}),
+        });
+        provider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
+        return provider;
+      })()
+    : null;
+
+const websiteLogger = websiteLoggerProvider?.getLogger("arolariu.website.server", process.env["COMMIT_SHA"] ?? "unknown") ?? null;
 
 /**
  * OpenTelemetry SDK instance.
@@ -490,13 +542,19 @@ const {traceExporter, metricExporter} = connectionString
  * @see {@link https://opentelemetry.io/docs/languages/js/getting-started/nodejs/}
  */
 const sdk = new NodeSDK({
-  serviceName: "arolariu-website",
-  traceExporter,
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: metricExporter,
-    exportIntervalMillis: 60_000, // Export every 60 seconds
-  }),
-  spanProcessor: new BatchSpanProcessor(traceExporter),
+  ...(serviceResource ? {resource: serviceResource} : {serviceName: "arolariu-website"}),
+  ...(traceExporter ? {traceExporter} : {}),
+  ...(metricExporter
+    ? {
+        metricReaders: [
+          new PeriodicExportingMetricReader({
+            exporter: metricExporter,
+            exportIntervalMillis: 60_000, // Export every 60 seconds
+          }),
+        ],
+      }
+    : {}),
+  ...(traceExporter ? {spanProcessors: [new BatchSpanProcessor(traceExporter)]} : {}),
   instrumentations: [
     getNodeAutoInstrumentations({
       // Disable instrumentations that aren't needed or cause issues
@@ -567,6 +625,7 @@ export function startTelemetry(): void {
 export async function stopTelemetry(): Promise<void> {
   try {
     await sdk.shutdown();
+    if (websiteLoggerProvider) await websiteLoggerProvider.shutdown();
     console.log("📊 OpenTelemetry SDK shut down successfully");
   } catch (error) {
     console.error("❌ Failed to shut down OpenTelemetry SDK:", error);
@@ -596,6 +655,48 @@ process.on("SIGINT", async () => {
   // eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGINT
   process.exit(0);
 });
+
+// #endregion
+
+// #region W3C Trace Context Propagation
+
+/**
+ * Injects the currently active propagation context into outbound request headers.
+ * Mirrors the active trace identifier to `X-Request-Id` when one is not already present.
+ * @param headers Headers object to enrich with distributed-tracing metadata
+ * @returns The enriched headers instance
+ */
+export function injectTraceContextHeaders(headers: Headers): Headers {
+  try {
+    const setter: TextMapSetter<Headers> = {
+      set(carrier, key, value) {
+        carrier.set(key, value);
+      },
+    };
+
+    propagation.inject(context.active(), headers, setter);
+
+    const activeSpan = trace.getSpan(context.active());
+    const spanContext = activeSpan?.spanContext();
+    if (spanContext?.traceId && spanContext.traceId !== "00000000000000000000000000000000" && !headers.has("X-Request-Id")) {
+      headers.set("X-Request-Id", spanContext.traceId);
+    }
+
+    return headers;
+  } catch {
+    return headers;
+  }
+}
+
+/**
+ * Returns a W3C traceparent header value from the currently active span context.
+ * Retained for compatibility with older call sites; prefer {@link injectTraceContextHeaders}.
+ * @returns W3C traceparent header string (e.g. `00-<traceId>-<spanId>-01`) or empty string
+ */
+export function getTraceparentHeader(): string {
+  const headers = injectTraceContextHeaders(new Headers());
+  return headers.get("traceparent") ?? "";
+}
 
 // #endregion
 
@@ -1214,7 +1315,7 @@ export function createUpDownCounter(name: MetricName, description?: string, unit
  * @see {@link https://opentelemetry.io/docs/specs/otel/logs/}
  * @see {@link https://www.w3.org/TR/trace-context/}
  */
-export function logWithTrace(level: LogLevel, message: string, attributes?: Record<string, unknown>, context?: RenderContext): void {
+export function logWithTrace(level: LogLevel, message: string, attributes?: Record<string, unknown>, renderContext?: RenderContext): void {
   // Skip debug logs in production
   if (level === "debug" && process.env["NODE_ENV"] === "production") {
     return;
@@ -1229,9 +1330,42 @@ export function logWithTrace(level: LogLevel, message: string, attributes?: Reco
     message,
     traceId: spanContext?.traceId,
     spanId: spanContext?.spanId,
-    context,
+    context: renderContext,
     ...attributes,
   };
+
+  const severityNumberByLevel: Record<LogLevel, number> = {
+    debug: 5,
+    info: 9,
+    warn: 13,
+    error: 17,
+  };
+
+  const normalizedAttributes: Record<string, boolean | number | string> = {};
+  for (const [key, value] of Object.entries({
+    ...attributes,
+    "app.log.context": renderContext,
+    "app.log.trace_id": spanContext?.traceId,
+    "app.log.span_id": spanContext?.spanId,
+  })) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Object.entries returns unknown values
+    if ((value as any) instanceof Error && value !== null && value !== undefined) {
+      normalizedAttributes[key] = (value as any).message;
+    } else if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
+      normalizedAttributes[key] = value;
+    } else if (value !== undefined) {
+      normalizedAttributes[key] = JSON.stringify(value);
+    }
+  }
+
+  websiteLogger?.emit({
+    attributes: normalizedAttributes,
+    body: message,
+    context: context.active(),
+    observedTimestamp: Date.now(),
+    severityNumber: severityNumberByLevel[level],
+    severityText: level.toUpperCase(),
+  });
 
   switch (level) {
     case "error":

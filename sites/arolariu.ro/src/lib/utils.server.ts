@@ -6,7 +6,7 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker, not a runtime import
 import "server-only";
 
-import {addSpanEvent, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
+import {addSpanEvent, injectTraceContextHeaders, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
 import {fetchApiUrl} from "@/lib/config/configProxy";
 import {type JWTPayload, SignJWT, jwtVerify} from "jose";
 import {Blob} from "node:buffer";
@@ -170,8 +170,19 @@ export async function fetchWithTimeout(
 
   try {
     const resolvedUrl = await resolveFetchUrl(url);
+    const baseHeaders = options.headers ? new Headers(options.headers) : new Headers();
+    const injectedHeaders = injectTraceContextHeaders(baseHeaders);
+    const headers = injectedHeaders instanceof Headers ? injectedHeaders : new Headers(baseHeaders);
+
+    if (!(injectedHeaders instanceof Headers)) {
+      for (const [key, value] of new Headers(injectedHeaders).entries()) {
+        headers.set(key, value);
+      }
+    }
+
     const response = await fetch(resolvedUrl, {
       ...options,
+      headers: Object.fromEntries(headers.entries()),
       signal: controller.signal,
       cache: "no-store", // Disable caching for authenticated requests
     });

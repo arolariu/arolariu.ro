@@ -364,7 +364,13 @@ Structured logging with:
 OpenTelemetry integration:
 - **Traces**: Distributed tracing across services
 - **Metrics**: Performance and business metrics
-- **Correlation**: Request correlation IDs
+- **Correlation**: W3C trace context plus supplemental request correlation IDs
+
+Runtime contract:
+- Azure export uses `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+- The API propagates distributed tracing through `HttpClient` calls and enriches runtime spans for downstream dependencies.
+- Requests from the website stay in the same trace when they flow through the API into `exp.arolariu.ro`.
+- `X-Request-Id` is forwarded to `exp.arolariu.ro` as an operator-friendly correlation field and does not replace trace context.
 
 ---
 

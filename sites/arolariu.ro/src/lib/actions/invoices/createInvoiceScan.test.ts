@@ -24,6 +24,8 @@ vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn((_name: string, fn: () => unknown) => fn()),
   logWithTrace: vi.fn(),
   addSpanEvent: vi.fn(),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
 }));
 
 vi.mock("@/lib/utils.server", () => ({

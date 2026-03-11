@@ -6,6 +6,11 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 const mockFetchConfigValue = vi.fn<(key: string) => Promise<string>>();
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/instrumentation.server", () => ({
+  setSpanAttributes: vi.fn(),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
+}));
 vi.mock("@/lib/config/configProxy", () => ({
   fetchConfigValue: mockFetchConfigValue,
   invalidateConfigCache: vi.fn(),

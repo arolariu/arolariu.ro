@@ -74,12 +74,14 @@ public static class TracingExtensions
       // Configure service resource information for proper identification in Azure Application Insights
       tracingOptions.SetResourceBuilder(ResourceBuilder.CreateDefault()
         .AddService(
-          serviceName: "arolariu.Backend.API",
-          serviceVersion: Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
+          serviceName: "arolariu-api",
+          serviceVersion: Environment.GetEnvironmentVariable("COMMIT_SHA") ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0",
           serviceInstanceId: Environment.MachineName)
         .AddAttributes([
           new("deployment.environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"),
-          new("service.namespace", "arolariu.ro")
+          new("service.namespace", "arolariu.ro"),
+          new("cloud.role", "api"),
+          new("cloud.provider", "azure")
         ]));
 
       // Register custom ActivitySources for domain-specific tracing

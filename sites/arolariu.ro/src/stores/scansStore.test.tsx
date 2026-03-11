@@ -428,6 +428,58 @@ describe("useScansStore", () => {
     });
   });
 
+  describe("selectAllScans (edge cases)", () => {
+    it("should select no scans when all scans are archived", () => {
+      const archived1 = createTestScan("1", {status: ScanStatus.ARCHIVED});
+      const archived2 = createTestScan("2", {status: ScanStatus.ARCHIVED});
+
+      act(() => {
+        useScansStore.getState().setScans([archived1, archived2]);
+        useScansStore.getState().selectAllScans();
+      });
+
+      expect(useScansStore.getState().selectedScans).toHaveLength(0);
+    });
+
+    it("should select no scans when store is empty", () => {
+      act(() => {
+        useScansStore.getState().selectAllScans();
+      });
+
+      expect(useScansStore.getState().selectedScans).toHaveLength(0);
+    });
+
+    it("should select only READY scans among mixed statuses", () => {
+      const readyScan = createTestScan("1", {status: ScanStatus.READY});
+      const processingScan = createTestScan("2", {status: ScanStatus.PROCESSING});
+      const archivedScan = createTestScan("3", {status: ScanStatus.ARCHIVED});
+
+      act(() => {
+        useScansStore.getState().setScans([readyScan, processingScan, archivedScan]);
+        useScansStore.getState().selectAllScans();
+      });
+
+      expect(useScansStore.getState().selectedScans).toHaveLength(1);
+      expect(useScansStore.getState().selectedScans[0]?.id).toBe("1");
+    });
+  });
+
+  describe("updateScanStatus (non-matching IDs)", () => {
+    it("should not modify scans when scanId does not match any scan", () => {
+      const scan1 = createTestScan("1", {status: ScanStatus.READY});
+      const scan2 = createTestScan("2", {status: ScanStatus.READY});
+
+      act(() => {
+        useScansStore.getState().setScans([scan1, scan2]);
+        useScansStore.getState().updateScanStatus("non-existent", ScanStatus.ARCHIVED);
+      });
+
+      // All scans should remain unchanged
+      expect(useScansStore.getState().scans[0]?.status).toBe(ScanStatus.READY);
+      expect(useScansStore.getState().scans[1]?.status).toBe(ScanStatus.READY);
+    });
+  });
+
   describe("setSelectedScans", () => {
     it("should directly set selectedScans", () => {
       const scan1 = createTestScan("1");

@@ -58,6 +58,8 @@ vi.mock("@/instrumentation.server", () => ({
   createAuthAttributes: vi.fn(() => ({})),
   createHttpServerAttributes: vi.fn(() => ({})),
   createNextJsAttributes: vi.fn(() => ({})),
+  getTraceparentHeader: vi.fn(() => ""),
+  injectTraceContextHeaders: vi.fn(() => ({})),
 }));
 
 describe("GET /api/user", () => {

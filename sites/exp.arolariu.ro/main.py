@@ -71,6 +71,16 @@ def _attach_cache_headers(request_path: str, response: Response) -> None:
         response.headers["Pragma"] = "no-cache"
 
 
+def _resolve_request_id(request: Request) -> tuple[str, str]:
+    """Return the effective request ID and its provenance."""
+
+    request_id = request.headers.get("X-Request-Id", "").strip()
+    if request_id:
+        return request_id, "upstream"
+
+    return str(uuid.uuid4()), "generated"
+
+
 @app.middleware("http")
 async def attach_request_context(
     request: Request,
@@ -78,12 +88,13 @@ async def attach_request_context(
 ) -> Response:
     """Attach request metadata headers and log request execution details."""
 
-    request_id = request.headers.get("X-Request-Id", str(uuid.uuid4()))
+    request_id, request_id_source = _resolve_request_id(request)
     started_at = time.perf_counter()
     record_request(request.url.path)
     set_current_span_attributes(
         {
             "exp.request.id": request_id,
+            "exp.request.id_source": request_id_source,
             "exp.request.path": request.url.path,
         }
     )
@@ -93,7 +104,9 @@ async def attach_request_context(
         trace_context = get_current_trace_context()
         record_current_span_exception(exception)
         logger.exception(
-            "Unhandled request error for %s %s traceContext=%s/%s",
+            "request_id=%s request_id_source=%s method=%s path=%s trace_id=%s span_id=%s",
+            request_id,
+            request_id_source,
             request.method,
             request.url.path,
             trace_context.trace_id if trace_context else "0",
@@ -114,14 +127,15 @@ async def attach_request_context(
     trace_context = get_current_trace_context()
 
     logger.info(
-        "request_id=%s method=%s path=%s status=%s durationMs=%.2f traceContext=%s/%s",
+        "request_id=%s request_id_source=%s trace_id=%s span_id=%s method=%s path=%s status=%s durationMs=%.2f",
         request_id,
+        request_id_source,
+        trace_context.trace_id if trace_context else "0",
+        trace_context.span_id if trace_context else "0",
         request.method,
         request.url.path,
         response.status_code,
         elapsed_ms,
-        trace_context.trace_id if trace_context else "0",
-        trace_context.span_id if trace_context else "0",
     )
     return response
 

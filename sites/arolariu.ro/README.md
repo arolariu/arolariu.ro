@@ -166,6 +166,15 @@ As an administrator, you can access the monitoring platform by navigating to the
 
 On the above platform you'll encountered a Grafana dashboard that provides real-time insights into the performance and availability of the front-end service. The dashboard includes metrics such as response time, error rate, and availability, as well as logs and traces from the front-end service.
 
+### OpenTelemetry runtime
+
+- Server-side traces, metrics, and logs are exported through OpenTelemetry.
+- Azure deployments use `APPLICATIONINSIGHTS_CONNECTION_STRING` for Azure Monitor / Application Insights export.
+- Local runtime falls back to OTLP HTTP exporters when Azure Monitor configuration is not present.
+- Outbound website calls to `api.arolariu.ro` and `exp.arolariu.ro` propagate W3C trace context.
+- `X-Request-Id` is emitted as a supplemental operator correlation field and never replaces `traceparent`.
+- Server logs emitted through `logWithTrace()` stay correlated with the active trace and span.
+
 ## E2E Testing
 
 The frontend service includes a Newman/Postman collection for live route and API contract verification.
