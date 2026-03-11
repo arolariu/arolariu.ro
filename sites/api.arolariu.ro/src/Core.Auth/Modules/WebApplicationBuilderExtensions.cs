@@ -119,18 +119,24 @@ public static class WebApplicationBuilderExtensions
     {
       using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
       var appOptions = optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions();
-      var authOptions = new Dictionary<string, string>
+
+      var jwtSecret = appOptions.JwtSecret ?? string.Empty;
+      var jwtIssuer = appOptions.JwtIssuer ?? "arolariu.ro";
+      var jwtAudience = appOptions.JwtAudience ?? "arolariu.ro";
+
+      if (string.IsNullOrWhiteSpace(jwtSecret))
       {
-        { "Secret", appOptions.JwtSecret },
-        { "Issuer", appOptions.JwtIssuer },
-        { "Audience", appOptions.JwtAudience },
-      };
+        // Config hasn't been populated yet (exp unreachable or startup race).
+        // Use a throwaway key so the app can start; requests will fail auth
+        // validation until the config refresh populates the real secret.
+        jwtSecret = "PLACEHOLDER_JWT_SECRET_WILL_BE_REFRESHED";
+      }
 
       jwtOptions.TokenValidationParameters = new()
       {
-        ValidIssuer = authOptions["Issuer"],
-        ValidAudience = authOptions["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions["Secret"])),
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
