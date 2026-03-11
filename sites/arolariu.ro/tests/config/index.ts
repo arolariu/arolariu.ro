@@ -48,7 +48,7 @@ export {
  * Web server configuration for local development.
  */
 export const WEB_SERVER_CONFIG = {
-  command: "npm run dev",
+  command: "npx next dev --experimental-https",
   url: "https://localhost:3000",
   timeout: 300_000, // 5 minutes
   ignoreHTTPSErrors: true,

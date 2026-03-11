@@ -23,8 +23,6 @@ const CRITICAL_ROUTES = [
   "/domains",
   "/domains/invoices",
   "/auth",
-  "/auth/sign-in",
-  "/auth/sign-up",
   "/privacy-policy",
   "/terms-of-service",
   "/acknowledgements",
@@ -69,7 +67,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     try {
       // Navigate with generous timeout and wait for network idle to ensure compilation completes
       let response = await page.goto(url, {
-        waitUntil: "networkidle",
+        waitUntil: "domcontentloaded",
         timeout: 60000,
       });
 
@@ -81,7 +79,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
         try {
           await page.waitForTimeout(5000);
           response = await page.goto(url, {
-            waitUntil: "networkidle",
+            waitUntil: "domcontentloaded",
             timeout: 60000,
           });
           status = response?.status();
@@ -95,13 +93,6 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     } catch (error) {
       console.log(`[Global Setup] ${route} -> Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-  }
-
-  // Give the server more time to stabilize after warmup
-  try {
-    await page.waitForTimeout(5000);
-  } catch {
-    // Page may have been closed during wait
   }
 
   // Save storage state for other tests to use

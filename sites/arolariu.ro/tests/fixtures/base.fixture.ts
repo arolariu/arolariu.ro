@@ -115,14 +115,15 @@ export const baseTest = base.extend<BaseFixtures>({
    */
   autoScreenshot: [
     async ({page}, use, testInfo) => {
-      // Before test: nothing to do
       await use();
 
-      // After test: capture screenshot
-      try {
-        await captureScreenshot(page, testInfo);
-      } catch {
-        // Ignore screenshot errors (page may be closed)
+      // After test: capture screenshot only on failure
+      if (testInfo.status !== testInfo.expectedStatus) {
+        try {
+          await captureScreenshot(page, testInfo);
+        } catch {
+          // Ignore screenshot errors (page may be closed)
+        }
       }
     },
     {auto: true}, // Automatically use this fixture in all tests

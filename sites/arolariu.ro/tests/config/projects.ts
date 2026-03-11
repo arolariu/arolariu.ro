@@ -219,12 +219,8 @@ export function getProjectsForEnvironment(): PlaywrightTestProject[] {
       if (isCI()) {
         projects = [createProject("chromium-desktop-e2e", "desktop-chrome")];
       } else {
-        // Local development: all browsers available
-        projects = [
-          createProject("chromium-desktop-e2e", "desktop-chrome"),
-          createProject("firefox-desktop-e2e", "desktop-firefox"),
-          createProject("webkit-desktop-e2e", "desktop-safari"),
-        ];
+        // Local development: Chromium only for speed (use TEST_ENV=local-full for all browsers)
+        projects = [createProject("chromium-desktop-e2e", "desktop-chrome")];
       }
       break;
   }
