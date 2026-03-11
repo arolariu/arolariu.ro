@@ -34,3 +34,17 @@ type Story = StoryObj<typeof meta>;
 
 /** Default tech stack with tabbed categories and platform statistics. */
 export const Default: Story = {};
+
+/** Tech stack in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Tech stack on a mobile viewport. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

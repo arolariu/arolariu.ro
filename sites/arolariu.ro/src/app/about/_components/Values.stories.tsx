@@ -33,3 +33,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default values grid with six core value cards. */
 export const Default: Story = {};
+
+/** Values grid on a mobile viewport. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

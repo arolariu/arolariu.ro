@@ -33,3 +33,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default biography section with five animated bio points. */
 export const Default: Story = {};
+
+/** Biography section on a mobile viewport. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

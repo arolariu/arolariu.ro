@@ -78,3 +78,22 @@ export const PowerUser: Story = {
     },
   },
 };
+
+/** Stats dashboard in dark mode. */
+export const DarkMode: Story = {
+  args: {
+    statistics: {
+      totalInvoices: 42,
+      totalMerchants: 15,
+      totalScans: 67,
+      totalSaved: 1234.56,
+      monthlyAverage: 345.67,
+      aiQueriesUsed: 128,
+      storageUsed: 52_428_800,
+      storageLimit: 536_870_912,
+    },
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

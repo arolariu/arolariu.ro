@@ -32,3 +32,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default FAQ section with four collapsible questions. */
 export const Default: Story = {};
+
+/** FAQ section on a mobile viewport. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

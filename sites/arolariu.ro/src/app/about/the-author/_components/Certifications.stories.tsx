@@ -33,3 +33,10 @@ type Story = StoryObj<typeof meta>;
 
 /** Default certifications section with Azure certification cards. */
 export const Default: Story = {};
+
+/** Certifications section on a mobile viewport. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

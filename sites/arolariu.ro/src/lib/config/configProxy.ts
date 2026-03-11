@@ -93,6 +93,16 @@ export function getCachedConfigValue(key: string): ConfigValueResponse | null {
 }
 
 /**
+ * Returns a cached config value regardless of TTL (stale-while-revalidate).
+ * Used when the circuit breaker is open to serve stale data rather than crash.
+ * @param key - Canonical config key name.
+ * @returns Cached payload (possibly stale) or null if never fetched.
+ */
+function getStaleConfigValue(key: string): ConfigValueResponse | null {
+  return configValueCache.get(key)?.payload ?? null;
+}
+
+/**
  * Stores a resolved config value response in the process-local cache.
  * @param key - Canonical config key name used as the cache key.
  * @param payload - Typed single-key config payload returned by exp.
@@ -202,6 +212,8 @@ function isExpCircuitOpen(): boolean {
 
 /**
  * Fetches one typed config payload from exp, honoring the process-local cache.
+ * When the circuit breaker is open, returns stale cached values if available
+ * rather than throwing — this prevents cold-start crashes when exp is down.
  * @param key - Canonical exp config key name.
  * @returns Typed single-key payload.
  */
@@ -213,6 +225,12 @@ async function getConfigPayload(key: string): Promise<ConfigValueResponse> {
   }
 
   if (isExpCircuitOpen()) {
+    // Return stale cache entry if one exists (ignore TTL when circuit is open)
+    const staleEntry = getStaleConfigValue(key);
+    if (staleEntry) {
+      logWithTrace("debug", "Circuit open — returning stale cached value", {key}, "server");
+      return staleEntry;
+    }
     throw new Error(`exp circuit breaker open — skipping fetch for '${key}'`);
   }
 

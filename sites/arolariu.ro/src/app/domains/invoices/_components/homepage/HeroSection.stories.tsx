@@ -45,3 +45,23 @@ export const Unauthenticated: Story = {
     isAuthenticated: false,
   },
 };
+
+/** Authenticated state on a mobile viewport. */
+export const AuthenticatedMobile: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};
+
+/** Unauthenticated state on a mobile viewport. */
+export const UnauthenticatedMobile: Story = {
+  args: {
+    isAuthenticated: false,
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

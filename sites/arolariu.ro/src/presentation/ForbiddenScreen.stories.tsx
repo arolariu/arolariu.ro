@@ -34,3 +34,17 @@ type Story = StoryObj<typeof meta>;
 
 /** Default 403 forbidden screen with English locale. */
 export const Default: Story = {};
+
+/** Forbidden screen in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Forbidden screen on a mobile viewport. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};
