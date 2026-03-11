@@ -355,6 +355,152 @@ describe("fetchScans", () => {
     });
   });
 
+  describe("metadata edge cases", () => {
+    it("should default to READY when status metadata is invalid", async () => {
+      const mockBlobs = [
+        {
+          name: "scans/test-user-guid/scan-001.jpg",
+          metadata: {
+            scanId: "scan-001",
+            status: "INVALID_STATUS_VALUE",
+          },
+          properties: {
+            contentType: "image/jpeg",
+            contentLength: 1024,
+          },
+        },
+      ];
+
+      mockListBlobsFlat.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const blob of mockBlobs) {
+            yield blob;
+          }
+        },
+      });
+
+      const result = await fetchScans();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.status).toBe(ScanStatus.READY);
+    });
+
+    it("should default to application/octet-stream when contentType is null", async () => {
+      const mockBlobs = [
+        {
+          name: "scans/test-user-guid/scan-001.bin",
+          metadata: {
+            scanId: "scan-001",
+          },
+          properties: {
+            contentType: null,
+            contentLength: 2048,
+          },
+        },
+      ];
+
+      mockListBlobsFlat.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const blob of mockBlobs) {
+            yield blob;
+          }
+        },
+      });
+
+      const result = await fetchScans();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.mimeType).toBe("application/octet-stream");
+      expect(result[0]?.scanType).toBe(ScanType.OTHER);
+    });
+
+    it("should fall back to new Date() when both uploadedAt and createdOn are missing", async () => {
+      const beforeTest = new Date();
+
+      const mockBlobs = [
+        {
+          name: "scans/test-user-guid/scan-001.jpg",
+          metadata: {
+            scanId: "scan-001",
+          },
+          properties: {
+            contentType: "image/jpeg",
+            contentLength: 512,
+            createdOn: null,
+          },
+        },
+      ];
+
+      mockListBlobsFlat.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const blob of mockBlobs) {
+            yield blob;
+          }
+        },
+      });
+
+      const result = await fetchScans();
+
+      expect(result).toHaveLength(1);
+      // uploadedAt should be a recent Date (fallback to new Date())
+      expect(result[0]?.uploadedAt.getTime()).toBeGreaterThanOrEqual(beforeTest.getTime());
+    });
+
+    it("should default contentLength to 0 when null", async () => {
+      const mockBlobs = [
+        {
+          name: "scans/test-user-guid/scan-001.jpg",
+          metadata: {
+            scanId: "scan-001",
+          },
+          properties: {
+            contentType: "image/jpeg",
+            contentLength: null,
+          },
+        },
+      ];
+
+      mockListBlobsFlat.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const blob of mockBlobs) {
+            yield blob;
+          }
+        },
+      });
+
+      const result = await fetchScans();
+
+      expect(result).toHaveLength(1);
+      expect(result[0]?.sizeInBytes).toBe(0);
+    });
+
+    it("should handle blob with no metadata object at all", async () => {
+      const mockBlobs = [
+        {
+          name: "scans/test-user-guid/scan-001.jpg",
+          metadata: undefined,
+          properties: {
+            contentType: "image/jpeg",
+            contentLength: 1024,
+          },
+        },
+      ];
+
+      mockListBlobsFlat.mockReturnValue({
+        [Symbol.asyncIterator]: async function* () {
+          for (const blob of mockBlobs) {
+            yield blob;
+          }
+        },
+      });
+
+      const result = await fetchScans();
+
+      // No scanId in metadata, so blob is skipped
+      expect(result).toHaveLength(0);
+    });
+  });
+
   describe("metadata handling", () => {
     it("should use blob createdOn when uploadedAt metadata is missing", async () => {
       const createdDate = new Date("2024-02-15");
