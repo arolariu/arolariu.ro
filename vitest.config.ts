@@ -14,8 +14,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: "jsdom",
-    pool: "forks",
+    environment: "happy-dom",
+    pool: "threads",
     setupFiles: ["./vitest.setup.ts"],
     testTimeout: 10000, // 10 seconds for each test
     hookTimeout: 20000, // 20 seconds for before/after hooks
