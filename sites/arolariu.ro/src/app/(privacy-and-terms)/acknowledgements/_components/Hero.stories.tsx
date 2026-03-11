@@ -1,0 +1,46 @@
+import type {Meta, StoryObj} from "@storybook/react";
+import {NextIntlClientProvider} from "next-intl";
+import messages from "../../../../../messages/en.json";
+import Hero from "./Hero";
+
+/**
+ * Hero section for the Acknowledgements page.
+ * Features animated background blobs, a gradient title, subtitle,
+ * and a "last updated" timestamp badge.
+ * Uses the `Acknowledgements.hero` i18n namespace.
+ */
+const meta = {
+  title: "Pages/Acknowledgements/Hero",
+  component: Hero,
+  tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <NextIntlClientProvider
+        locale="en"
+        messages={messages}
+        timeZone="Europe/Bucharest">
+        <Story />
+      </NextIntlClientProvider>
+    ),
+  ],
+  parameters: {
+    layout: "fullscreen",
+  },
+} satisfies Meta<typeof Hero>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/** Default hero with a recent last-updated date. */
+export const Default: Story = {
+  args: {
+    lastUpdatedDate: "2025-01-21",
+  },
+};
+
+/** Hero with an older update date. */
+export const OlderDate: Story = {
+  args: {
+    lastUpdatedDate: "2024-06-15",
+  },
+};
