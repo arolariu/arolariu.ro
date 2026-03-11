@@ -117,18 +117,19 @@ const preview: Preview = {
             "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caudex:wght@400;700&display=swap";
           document.head.appendChild(link);
         }
+
+        // Set CSS variables on body so the SCSS system picks them up
+        const fontFamily =
+          font === "dyslexic"
+            ? "'Atkinson Hyperlegible', system-ui, sans-serif"
+            : "'Caudex', Georgia, 'Times New Roman', serif";
+
+        document.body.style.setProperty("--font-default", fontFamily);
+        document.body.style.setProperty("--font-dyslexic", "'Atkinson Hyperlegible', system-ui, sans-serif");
+        document.body.style.fontFamily = fontFamily;
       }
 
-      const fontFamily =
-        font === "dyslexic"
-          ? "'Atkinson Hyperlegible', system-ui, sans-serif"
-          : "'Caudex', Georgia, 'Times New Roman', serif";
-
-      return (
-        <div style={{"--font-default": fontFamily, "--font-dyslexic": "'Atkinson Hyperlegible', system-ui, sans-serif"} as React.CSSProperties}>
-          <Story />
-        </div>
-      );
+      return <Story />;
     },
     (Story, context) => {
       const preset = (context.globals["themePreset"] as string) ?? "default";
