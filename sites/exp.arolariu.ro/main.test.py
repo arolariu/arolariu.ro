@@ -120,3 +120,16 @@ class TestLegacyRoutesRemoved:
     def test_returns_404_for_removed_routes(self, client: TestClient, path: str):
         response = client.get(path)
         assert response.status_code == 404
+
+
+class TestRequestCorrelation:
+    def test_preserves_upstream_request_id(self, client: TestClient):
+        upstream_request_id = "trace-request-correlation-id"
+
+        response = client.get(
+            "/api/ready",
+            headers={"X-Request-Id": upstream_request_id},
+        )
+
+        assert response.status_code == 200
+        assert response.headers.get("X-Request-Id") == upstream_request_id
