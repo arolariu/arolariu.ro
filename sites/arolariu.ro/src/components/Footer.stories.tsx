@@ -1,0 +1,61 @@
+import type {Meta, StoryObj} from "@storybook/react";
+import {NextIntlClientProvider} from "next-intl";
+import {ThemeProvider} from "next-themes";
+import messages from "../../messages/en.json";
+import Footer from "./Footer";
+
+/**
+ * The Footer component renders the site-wide footer with navigation links,
+ * social media icons, build metadata, and branding. It uses `useTranslations`
+ * from `next-intl` and requires a `NextIntlClientProvider` wrapper.
+ */
+const meta = {
+  title: "Components/Footer",
+  component: Footer,
+  tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <NextIntlClientProvider
+        locale="en"
+        messages={messages}
+        timeZone="Europe/Bucharest">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}>
+          <Story />
+        </ThemeProvider>
+      </NextIntlClientProvider>
+    ),
+  ],
+  parameters: {
+    layout: "fullscreen",
+  },
+} satisfies Meta<typeof Footer>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/** Default footer rendered in light mode. */
+export const Default: Story = {};
+
+/** Footer rendered with dark mode context. */
+export const DarkMode: Story = {
+  decorators: [
+    (Story) => (
+      <NextIntlClientProvider
+        locale="en"
+        messages={messages}
+        timeZone="Europe/Bucharest">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}>
+          <div className="dark bg-gray-950">
+            <Story />
+          </div>
+        </ThemeProvider>
+      </NextIntlClientProvider>
+    ),
+  ],
+};
