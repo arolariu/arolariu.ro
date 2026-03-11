@@ -31,3 +31,23 @@ export const Unauthenticated: Story = {
     isAuthenticated: false,
   },
 };
+
+/** Features section in dark mode. */
+export const DarkMode: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Features section at mobile viewport width — stacked layout. */
+export const MobileViewport: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

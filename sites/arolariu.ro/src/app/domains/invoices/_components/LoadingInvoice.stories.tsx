@@ -40,3 +40,13 @@ export const DarkMode: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** Loading state at mobile viewport width. */
+export const MobileViewport: Story = {
+  args: {
+    invoiceIdentifier: "INV-2025-001",
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

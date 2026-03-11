@@ -89,3 +89,19 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Empty data — no price ranges available. */
+export const EmptyData: Story = {
+  args: {
+    data: [],
+    currency: "RON",
+  },
+};
+
+/** Single data point — only one price range. */
+export const SingleDataPoint: Story = {
+  args: {
+    data: [{range: "10-25", count: 7, fill: "var(--chart-2)"}],
+    currency: "RON",
+  },
+};

@@ -130,3 +130,55 @@ export const WithScrolled: Story = {
     </header>
   ),
 };
+
+/** Header skeleton in dark mode via theme override. */
+export const DarkMode: Story = {
+  render: () => (
+    <header className='border-b bg-white px-4 py-3 dark:bg-gray-900'>
+      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+        </div>
+        <div className='hidden gap-6 md:flex'>
+          <div className='h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+        </div>
+        <div className='flex items-center gap-3'>
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+        </div>
+      </nav>
+    </header>
+  ),
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Header skeleton at tablet (iPad) viewport width. */
+export const TabletViewport: Story = {
+  render: () => (
+    <header className='border-b bg-white px-4 py-3 dark:bg-gray-900'>
+      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+        </div>
+        <div className='hidden gap-6 md:flex'>
+          <div className='h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+          <div className='h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+        </div>
+        <div className='flex items-center gap-3'>
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+        </div>
+      </nav>
+    </header>
+  ),
+  parameters: {
+    viewport: {defaultViewport: "ipad"},
+  },
+};

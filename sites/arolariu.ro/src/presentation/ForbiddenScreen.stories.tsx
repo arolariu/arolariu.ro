@@ -35,3 +35,10 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Forbidden screen at tablet (iPad) viewport width. */
+export const TabletViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "ipad"},
+  },
+};

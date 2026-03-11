@@ -52,3 +52,13 @@ export const UnauthenticatedMobile: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Authenticated state in dark mode. */
+export const DarkMode: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

@@ -81,3 +81,19 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Empty data — no items available. */
+export const EmptyData: Story = {
+  args: {
+    data: [],
+    currency: "RON",
+  },
+};
+
+/** Single data point — only one item. */
+export const SingleDataPoint: Story = {
+  args: {
+    data: [{name: "Milk", quantity: 2, unit: "L", price: 12.5}],
+    currency: "RON",
+  },
+};

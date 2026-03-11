@@ -22,3 +22,17 @@ type Story = StoryObj<typeof meta>;
 
 /** Default technologies section with architecture code block. */
 export const Default: Story = {};
+
+/** Technologies section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Technologies section at mobile viewport width. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

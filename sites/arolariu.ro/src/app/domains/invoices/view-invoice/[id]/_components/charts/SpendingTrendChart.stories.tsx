@@ -102,3 +102,19 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Empty data — no spending trend available. */
+export const EmptyData: Story = {
+  args: {
+    data: [],
+    currency: "RON",
+  },
+};
+
+/** Single data point — only one spending entry. */
+export const SingleDataPoint: Story = {
+  args: {
+    data: [{date: "Jan 15", amount: 125.5, isCurrent: true, name: "Kaufland Groceries"}],
+    currency: "RON",
+  },
+};

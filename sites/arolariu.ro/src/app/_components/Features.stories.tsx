@@ -29,3 +29,17 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Features grid in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Features grid at tablet (iPad) viewport width. */
+export const TabletViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "ipad"},
+  },
+};

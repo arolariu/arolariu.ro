@@ -28,3 +28,17 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Hero section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Hero section at tablet (iPad) viewport width. */
+export const TabletViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "ipad"},
+  },
+};

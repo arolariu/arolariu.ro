@@ -92,3 +92,21 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Empty data — no merchants available. */
+export const EmptyData: Story = {
+  args: {
+    data: [],
+    currency: "RON",
+    currentMerchant: "",
+  },
+};
+
+/** Single data point — only one merchant. */
+export const SingleDataPoint: Story = {
+  args: {
+    data: [{name: "Kaufland", count: 3, total: 245.5, average: 81.83}],
+    currency: "RON",
+    currentMerchant: "Kaufland",
+  },
+};

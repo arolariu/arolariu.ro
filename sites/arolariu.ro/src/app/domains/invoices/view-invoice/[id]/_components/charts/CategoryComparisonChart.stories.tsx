@@ -88,3 +88,19 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Empty data — no categories available. */
+export const EmptyData: Story = {
+  args: {
+    data: [],
+    currency: "RON",
+  },
+};
+
+/** Single data point — only one category. */
+export const SingleDataPoint: Story = {
+  args: {
+    data: [{category: "Dairy", current: 45.99, average: 38.5}],
+    currency: "RON",
+  },
+};

@@ -72,3 +72,10 @@ export const PrintMedia: Story = {
     ),
   ],
 };
+
+/** Footer at tablet (iPad) viewport width. */
+export const TabletViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "ipad"},
+  },
+};
