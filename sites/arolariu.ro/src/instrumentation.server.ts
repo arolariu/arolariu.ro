@@ -471,10 +471,7 @@ const {traceExporter, metricExporter, logExporter} = connectionString
   : (() => {
       console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
       return {
-        logExporter: new OTLPLogExporter({
-          url: `${otlpEndpoint}/v1/logs`,
-          headers: {},
-        }),
+        logExporter: null as InstanceType<typeof OTLPLogExporter> | null,
         traceExporter: new OTLPTraceExporter({
           url: `${otlpEndpoint}/v1/traces`,
           headers: {},
@@ -508,14 +505,22 @@ function createServiceResource(): ReturnType<typeof resourceFromAttributes> | un
 }
 
 const serviceResource = createServiceResource();
-const websiteLoggerProvider = new LoggerProvider({
-  ...(serviceResource ? {resource: serviceResource} : {}),
-});
-websiteLoggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
-const websiteLogger = websiteLoggerProvider.getLogger(
-  "arolariu.website.server",
-  process.env["COMMIT_SHA"] ?? "unknown",
-);
+
+// Only wire the LoggerProvider when a real exporter destination exists (Azure Monitor).
+// In local dev the OTLP log exporter would target localhost:4318 which is unreachable;
+// each failed export is auto-instrumented by getNodeAutoInstrumentations(), creating a
+// feedback loop that starves the dev server of connections (net::ERR_ABORTED in browsers).
+const websiteLoggerProvider = connectionString
+  ? (() => {
+      const provider = new LoggerProvider({
+        ...(serviceResource ? {resource: serviceResource} : {}),
+      });
+      provider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter!));
+      return provider;
+    })()
+  : null;
+
+const websiteLogger = websiteLoggerProvider?.getLogger("arolariu.website.server", process.env["COMMIT_SHA"] ?? "unknown") ?? null;
 
 /**
  * OpenTelemetry SDK instance.
@@ -612,7 +617,7 @@ export function startTelemetry(): void {
 export async function stopTelemetry(): Promise<void> {
   try {
     await sdk.shutdown();
-    await websiteLoggerProvider.shutdown();
+    if (websiteLoggerProvider) await websiteLoggerProvider.shutdown();
     console.log("📊 OpenTelemetry SDK shut down successfully");
   } catch (error) {
     console.error("❌ Failed to shut down OpenTelemetry SDK:", error);
@@ -1345,7 +1350,7 @@ export function logWithTrace(level: LogLevel, message: string, attributes?: Reco
     }
   }
 
-  websiteLogger.emit({
+  websiteLogger?.emit({
     attributes: normalizedAttributes,
     body: message,
     context: context.active(),
