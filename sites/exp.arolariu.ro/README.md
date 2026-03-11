@@ -737,6 +737,9 @@ flowchart TD
 - Python logs stay correlated with the active trace/span IDs.
 - Azure Monitor offline storage is disabled so telemetry export does not create
   retry files on disk and the microservice remains stateless.
+- `traceparent` remains the primary cross-service correlation mechanism.
+- `X-Request-Id` is preserved when supplied by upstream callers and generated only when missing.
+- Logs and span attributes expose both trace-level identifiers and the supplemental request ID so operators can pivot cleanly between website, API, and exp traffic.
 
 ```mermaid
 flowchart LR
