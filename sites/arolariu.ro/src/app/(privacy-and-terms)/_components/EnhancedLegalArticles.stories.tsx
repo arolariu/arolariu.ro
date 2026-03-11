@@ -32,3 +32,23 @@ export const TermsOfService: Story = {
     pageType: "Legal.TermsOfService",
   },
 };
+
+/** Privacy Policy — dark mode. */
+export const PrivacyPolicyDark: Story = {
+  args: {
+    pageType: "Legal.PrivacyPolicy",
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Terms of Service — dark mode. */
+export const TermsOfServiceDark: Story = {
+  args: {
+    pageType: "Legal.TermsOfService",
+  },
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

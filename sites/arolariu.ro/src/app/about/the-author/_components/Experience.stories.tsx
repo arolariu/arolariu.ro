@@ -21,3 +21,17 @@ type Story = StoryObj<typeof meta>;
 
 /** Default experience timeline with interactive navigation. */
 export const Default: Story = {};
+
+/** Dark mode variant. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Mobile viewport variant. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

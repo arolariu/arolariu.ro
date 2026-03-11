@@ -53,3 +53,35 @@ export const Security: Story = {
     description: "Your data is encrypted at rest and in transit with enterprise-grade security standards.",
   },
 };
+
+/** OCR scanning — dark mode. */
+export const OcrScanningDark: Story = {
+  args: {...OcrScanning.args},
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Analytics — dark mode. */
+export const AnalyticsDark: Story = {
+  args: {...Analytics.args},
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** AI-powered — dark mode. */
+export const AiPoweredDark: Story = {
+  args: {...AiPowered.args},
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Security — dark mode. */
+export const SecurityDark: Story = {
+  args: {...Security.args},
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

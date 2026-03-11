@@ -21,3 +21,17 @@ type Story = StoryObj<typeof meta>;
 
 /** Default contact section with social links and collaboration cards. */
 export const Default: Story = {};
+
+/** Dark mode variant. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Mobile viewport variant. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

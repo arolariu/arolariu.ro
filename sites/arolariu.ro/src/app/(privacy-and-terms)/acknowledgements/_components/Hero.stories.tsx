@@ -31,3 +31,13 @@ export const OlderDate: Story = {
     lastUpdatedDate: "2024-06-15",
   },
 };
+
+/** Default hero on mobile viewport. */
+export const MobileViewport: Story = {
+  args: {
+    lastUpdatedDate: "2025-01-21",
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

@@ -1,24 +1,24 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import Timeline from "./Timeline";
+import LicenseBreakdown from "./LicenseBreakdown";
 
 /**
- * Timeline section displaying the platform's development history.
- * Features an interactive alternating timeline with eight milestone events,
- * expandable detail sections, technology tags, and a future indicator.
- * Uses the `About.Platform.timeline` i18n namespace.
+ * License distribution visualization showing MIT vs Apache breakdown.
+ * Renders two animated license cards with progress bars and
+ * percentage labels inside a section wrapper.
+ * Uses the `Acknowledgements.licenses` i18n namespace.
  */
 const meta = {
-  title: "Pages/About/ThePlatform/Timeline",
-  component: Timeline,
+  title: "Pages/Acknowledgements/LicenseBreakdown",
+  component: LicenseBreakdown,
   parameters: {
     layout: "fullscreen",
   },
-} satisfies Meta<typeof Timeline>;
+} satisfies Meta<typeof LicenseBreakdown>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default timeline with eight expandable milestone events. */
+/** Default license breakdown with MIT and Apache cards. */
 export const Default: Story = {};
 
 /** Dark mode variant. */

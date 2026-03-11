@@ -92,3 +92,19 @@ export const EmptyState: Story = {
     </div>
   ),
 };
+
+/** Dark mode variant. */
+export const DarkMode: Story = {
+  ...Preview,
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Mobile viewport variant. */
+export const MobileViewport: Story = {
+  ...Preview,
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

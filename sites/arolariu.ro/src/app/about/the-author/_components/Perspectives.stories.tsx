@@ -20,3 +20,17 @@ type Story = StoryObj<typeof meta>;
 
 /** Default perspectives grid with nine testimonial cards. */
 export const Default: Story = {};
+
+/** Dark mode variant. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Mobile viewport variant. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

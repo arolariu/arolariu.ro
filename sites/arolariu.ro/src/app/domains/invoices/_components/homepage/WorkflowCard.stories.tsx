@@ -57,3 +57,27 @@ export const ManageStep: Story = {
     delay: 0,
   },
 };
+
+/** Upload step — dark mode. */
+export const UploadStepDark: Story = {
+  args: {...UploadStep.args},
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Review step — dark mode. */
+export const ReviewStepDark: Story = {
+  args: {...ReviewStep.args},
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
+
+/** Manage step — dark mode. */
+export const ManageStepDark: Story = {
+  args: {...ManageStep.args},
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
