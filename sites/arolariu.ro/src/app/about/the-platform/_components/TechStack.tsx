@@ -229,7 +229,7 @@ export default function TechStack(): React.JSX.Element {
           </motion.div>
 
           {/* Tab Content */}
-          <AnimatePresence mode='wait'>
+          <AnimatePresence mode='sync'>
             {categoryConfigs.map((category) => (
               <TabsContent
                 key={category.id}

@@ -14,6 +14,7 @@ import {useRouter} from "next/navigation";
 import React, {useEffect, useState} from "react";
 
 const WebVitals = dynamic(() => import("./web-vitals"));
+const DEFAULT_TIME_ZONE = "Europe/Bucharest";
 
 /**
  * Props for the ContextProviders component defining locale, children, and server-derived
@@ -170,7 +171,8 @@ export default function ContextProviders({locale, messages, featureFlags, childr
   return (
     <TranslationProvider
       locale={locale}
-      messages={resolvedMessages}>
+      messages={resolvedMessages}
+      timeZone={DEFAULT_TIME_ZONE}>
       <AuthProvider localization={localization}>
         <FontProvider>
           <ThemeProvider
