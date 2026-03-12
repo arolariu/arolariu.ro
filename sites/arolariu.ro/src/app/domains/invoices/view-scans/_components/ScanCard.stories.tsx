@@ -22,7 +22,7 @@ export const ImageScan: Story = {
   render: () => (
     <div className='overflow-hidden rounded-lg border bg-white shadow-sm hover:shadow-md dark:bg-gray-900'>
       <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
-        <div className='flex h-full items-center justify-center text-gray-400'>📷 receipt.jpg</div>
+        <img src='https://picsum.photos/seed/scancard/400/300' alt='receipt.jpg scan' className='h-full w-full object-cover' />
         <div className='absolute top-2 right-2'>
           <input
             type='checkbox'
@@ -77,7 +77,7 @@ export const Selected: Story = {
   render: () => (
     <div className='overflow-hidden rounded-lg border bg-white shadow-sm ring-2 ring-purple-500 dark:bg-gray-900'>
       <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
-        <div className='flex h-full items-center justify-center text-gray-400'>📷 selected.jpg</div>
+        <img src='https://picsum.photos/seed/scancard2/400/300' alt='selected.jpg scan' className='h-full w-full object-cover' />
         <div className='absolute top-2 right-2'>
           <input
             type='checkbox'
@@ -103,7 +103,7 @@ export const LinkedToInvoice: Story = {
   render: () => (
     <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
       <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
-        <div className='flex h-full items-center justify-center text-gray-400'>📷 linked.jpg</div>
+        <img src='https://picsum.photos/seed/scancard3/400/300' alt='linked.jpg scan' className='h-full w-full object-cover' />
         <div className='absolute bottom-2 left-2'>
           <span className='rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200'>🔗 Linked</span>
         </div>

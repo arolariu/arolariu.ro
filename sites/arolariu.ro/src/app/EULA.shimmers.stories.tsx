@@ -13,8 +13,15 @@ const meta = {
   title: "Pages/Home/EulaShimmer",
   component: EulaShimmer,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
+  decorators: [
+    (Story: React.ComponentType) => (
+      <div className='mx-auto w-full max-w-4xl px-4 py-20'>
+        <Story />
+      </div>
+    ),
+  ],
 } satisfies Meta<typeof EulaShimmer>;
 
 export default meta;

@@ -31,6 +31,20 @@ export const DarkMode: Story = {
 /** Values grid on a mobile viewport. */
 export const MobileViewport: Story = {
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Values grid at XS viewport. */
+export const XsViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Values grid at MD viewport. */
+export const MdViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

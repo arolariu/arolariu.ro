@@ -59,6 +59,26 @@ export const MobileViewport: Story = {
     pageType: "Legal.PrivacyPolicy",
   },
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Privacy Policy — XS viewport. */
+export const XsViewport: Story = {
+  args: {
+    pageType: "Legal.PrivacyPolicy",
+  },
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Privacy Policy — MD viewport. */
+export const MdViewport: Story = {
+  args: {
+    pageType: "Legal.PrivacyPolicy",
+  },
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

@@ -38,6 +38,26 @@ export const MobileViewport: Story = {
     lastUpdatedDate: "2025-01-21",
   },
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Default hero at XS viewport. */
+export const XsViewport: Story = {
+  args: {
+    lastUpdatedDate: "2025-01-21",
+  },
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Default hero at MD viewport. */
+export const MdViewport: Story = {
+  args: {
+    lastUpdatedDate: "2025-01-21",
+  },
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

@@ -26,7 +26,21 @@ export const Default: Story = {};
 /** Features grid at mobile viewport width — single-column layout. */
 export const MobileViewport: Story = {
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Features grid at XS viewport. */
+export const XsViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Features grid at MD viewport. */
+export const MdViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };
 

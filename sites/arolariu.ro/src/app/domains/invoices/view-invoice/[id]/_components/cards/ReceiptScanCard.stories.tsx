@@ -26,7 +26,7 @@ export const SingleScan: Story = {
       </div>
       <div className='flex justify-center p-4'>
         <div className='h-[250px] w-[170px] cursor-pointer overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
-          <div className='flex h-full w-full items-center justify-center text-sm text-gray-400'>📷 Receipt</div>
+          <img src='https://picsum.photos/seed/receiptscan/340/500' alt='Receipt scan' className='h-full w-full object-cover' />
         </div>
       </div>
       <div className='border-t p-4'>
@@ -49,7 +49,7 @@ export const MultipleScans: Story = {
       </div>
       <div className='flex justify-center p-4'>
         <div className='h-[250px] w-[170px] cursor-pointer overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
-          <div className='flex h-full w-full items-center justify-center text-sm text-gray-400'>📷 Scan 1 of 3</div>
+          <img src='https://picsum.photos/seed/receiptscan2/340/500' alt='Receipt scan 1 of 3' className='h-full w-full object-cover' />
         </div>
       </div>
       <div className='flex flex-col gap-2 border-t p-4'>
@@ -112,7 +112,7 @@ export const MobileViewport: Story = {
       </div>
       <div className='flex justify-center p-4'>
         <div className='h-[250px] w-[170px] cursor-pointer overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
-          <div className='flex h-full w-full items-center justify-center text-sm text-gray-400'>📷 Receipt</div>
+          <img src='https://picsum.photos/seed/receiptscan3/340/500' alt='Receipt scan' className='h-full w-full object-cover' />
         </div>
       </div>
       <div className='border-t p-4'>
@@ -125,6 +125,22 @@ export const MobileViewport: Story = {
     </div>
   ),
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Receipt scan card at XS viewport. */
+export const XsViewport: Story = {
+  ...MobileViewport,
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Receipt scan card at MD viewport. */
+export const MdViewport: Story = {
+  ...MobileViewport,
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

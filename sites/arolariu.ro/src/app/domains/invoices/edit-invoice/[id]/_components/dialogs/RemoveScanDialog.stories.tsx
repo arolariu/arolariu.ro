@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbAlertTriangle, TbPhoto, TbTrash} from "react-icons/tb";
+import {TbAlertTriangle, TbTrash} from "react-icons/tb";
 
 /**
  * Static visual preview of the RemoveScanDialog component.
@@ -37,10 +37,7 @@ export const Default: Story = {
         {/* Scan Preview */}
         <div className='overflow-hidden rounded-lg border'>
           <div className='flex aspect-[4/3] items-center justify-center bg-gray-100 dark:bg-gray-800'>
-            <div className='text-center'>
-              <TbPhoto className='mx-auto h-12 w-12 text-gray-300' />
-              <p className='mt-2 text-sm text-gray-400'>receipt-scan-002.jpg</p>
-            </div>
+            <img src='https://picsum.photos/seed/removescan/400/300' alt='Scan to remove' className='h-full w-full object-cover' />
           </div>
         </div>
         <p className='text-center text-xs text-gray-500'>Scan 2 of 3</p>

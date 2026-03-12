@@ -26,7 +26,7 @@ export const Preview: Story = {
       </div>
       <div className='flex justify-center p-4'>
         <div className='relative h-[300px] w-[200px] overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
-          <div className='flex h-full w-full items-center justify-center text-sm text-gray-400'>📷 Receipt Image</div>
+          <img src='https://picsum.photos/seed/imagecard/400/600' alt='Receipt scan' className='h-full w-full object-cover' />
         </div>
       </div>
       <div className='flex flex-col gap-2 border-t p-4'>
@@ -61,7 +61,7 @@ export const MultipleScans: Story = {
       </div>
       <div className='flex justify-center p-4'>
         <div className='relative h-[300px] w-[200px] overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
-          <div className='flex h-full w-full items-center justify-center text-sm text-gray-400'>📷 Scan 2 of 3</div>
+          <img src='https://picsum.photos/seed/imagecard2/400/600' alt='Receipt scan 2 of 3' className='h-full w-full object-cover' />
         </div>
       </div>
       <div className='flex flex-col gap-2 border-t p-4'>

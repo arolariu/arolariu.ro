@@ -1,5 +1,4 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbPhoto} from "react-icons/tb";
 
 /**
  * Static visual preview of the ImageDialog component.
@@ -27,11 +26,7 @@ export const Default: Story = {
         <h2 className='text-lg font-semibold'>Receipt Image</h2>
       </div>
       <div className='relative flex aspect-[3/4] max-h-[500px] items-center justify-center bg-gray-50 dark:bg-gray-800'>
-        <div className='text-center'>
-          <TbPhoto className='mx-auto h-16 w-16 text-gray-300' />
-          <p className='mt-2 text-sm text-gray-400'>Receipt scan preview</p>
-          <p className='text-xs text-gray-400'>receipt-001.jpg</p>
-        </div>
+        <img src='https://picsum.photos/seed/imagedialog/600/800' alt='Receipt scan preview' className='h-full w-full object-contain' />
       </div>
     </div>
   ),

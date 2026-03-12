@@ -40,7 +40,7 @@ function FontSwitcherDemo(): React.JSX.Element {
           className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
             fontType === "normal"
               ? "bg-blue-600 text-white"
-              : "border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+              : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
           }`}>
           Normal Font
         </button>
@@ -50,7 +50,7 @@ function FontSwitcherDemo(): React.JSX.Element {
           className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
             fontType === "dyslexic"
               ? "bg-blue-600 text-white"
-              : "border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300"
+              : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
           }`}>
           Dyslexic Font
         </button>

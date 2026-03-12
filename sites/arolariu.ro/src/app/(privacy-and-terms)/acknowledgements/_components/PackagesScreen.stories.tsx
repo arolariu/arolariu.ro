@@ -75,6 +75,26 @@ export const MobileViewport: Story = {
     packages: mockPackages,
   },
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** XS viewport variant. */
+export const XsViewport: Story = {
+  args: {
+    packages: mockPackages,
+  },
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** MD viewport variant. */
+export const MdViewport: Story = {
+  args: {
+    packages: mockPackages,
+  },
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

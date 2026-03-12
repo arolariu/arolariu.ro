@@ -30,6 +30,20 @@ export const DarkMode: Story = {
 /** About page loading skeleton at mobile viewport width. */
 export const MobileViewport: Story = {
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** About page loading skeleton at XS viewport. */
+export const XsViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** About page loading skeleton at MD viewport. */
+export const MdViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

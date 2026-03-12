@@ -48,7 +48,7 @@ export const WithUser: Story = {
   args: {
     user: createMockClerkUser({
       id: "user_2abc123",
-      imageUrl: "https://via.placeholder.com/96",
+      imageUrl: "https://i.pravatar.cc/96",
       createdAt: new Date("2023-01-15"),
     }),
     userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -101,7 +101,37 @@ export const MobileViewport: Story = {
     userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   },
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Profile header at XS viewport. */
+export const XsViewport: Story = {
+  args: {
+    user: createMockClerkUser({
+      id: "user_xs",
+      imageUrl: "https://i.pravatar.cc/128?u=xs",
+      createdAt: new Date("2023-01-15"),
+    }),
+    userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  },
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Profile header at MD viewport. */
+export const MdViewport: Story = {
+  args: {
+    user: createMockClerkUser({
+      id: "user_md",
+      imageUrl: "https://i.pravatar.cc/128?u=md",
+      createdAt: new Date("2023-01-15"),
+    }),
+    userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  },
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };
 

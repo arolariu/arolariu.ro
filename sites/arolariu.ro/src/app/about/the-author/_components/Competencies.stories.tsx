@@ -30,6 +30,20 @@ export const DarkMode: Story = {
 /** Competencies section at mobile viewport width. */
 export const MobileViewport: Story = {
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Competencies section at XS viewport. */
+export const XsViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Competencies section at MD viewport. */
+export const MdViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

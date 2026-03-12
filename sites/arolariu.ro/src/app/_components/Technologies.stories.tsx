@@ -33,7 +33,21 @@ export const DarkMode: Story = {
 /** Technologies section at mobile viewport width. */
 export const MobileViewport: Story = {
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Technologies section at XS viewport. */
+export const XsViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** Technologies section at MD viewport. */
+export const MdViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };
 

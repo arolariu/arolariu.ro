@@ -32,7 +32,7 @@ type Story = StoryObj<typeof meta>;
 /** Static representation of the command palette UI. */
 export const Preview: Story = {
   render: () => (
-    <div className='w-[480px] rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'>
+    <div className='w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'>
       <div className='border-b border-gray-200 px-4 py-3 dark:border-gray-700'>
         <input
           type='text'
@@ -41,7 +41,7 @@ export const Preview: Story = {
           readOnly
         />
       </div>
-      <div className='max-h-[300px] overflow-auto p-2'>
+      <div className='overflow-auto p-2'>
         <p className='px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400'>Navigation</p>
         <div className='flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
           <span>🏠</span>
@@ -80,7 +80,7 @@ export const Preview: Story = {
 /** Empty state when no results match the query. */
 export const EmptyState: Story = {
   render: () => (
-    <div className='w-[480px] rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'>
+    <div className='w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'>
       <div className='border-b border-gray-200 px-4 py-3 dark:border-gray-700'>
         <input
           type='text'
@@ -106,6 +106,22 @@ export const DarkMode: Story = {
 export const MobileViewport: Story = {
   ...Preview,
   parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** XS viewport variant. */
+export const XsViewport: Story = {
+  ...Preview,
+  parameters: {
+    viewport: {defaultViewport: "xs"},
+  },
+};
+
+/** MD viewport variant. */
+export const MdViewport: Story = {
+  ...Preview,
+  parameters: {
+    viewport: {defaultViewport: "md"},
   },
 };

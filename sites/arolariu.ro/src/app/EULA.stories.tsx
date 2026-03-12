@@ -1,5 +1,24 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {useState} from "react";
 import {TbCheck, TbCookie, TbGlobe, TbInfoCircleFilled, TbLock, TbShield} from "react-icons/tb";
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Label,
+  Separator,
+  Switch,
+} from "@arolariu/components";
 
 /**
  * Static visual preview of the EULA component.
@@ -7,119 +26,190 @@ import {TbCheck, TbCookie, TbGlobe, TbInfoCircleFilled, TbLock, TbShield} from "
  * @remarks Static preview — component imports "use server" actions (getCookie/setCookie
  * from `@/lib/actions/cookies`) that cannot be bundled by Storybook's Vite/Rollup.
  * The actual component also depends on Zustand preferences store and privacy/terms
- * sub-screens. This story renders a faithful HTML replica of the EULA consent card
- * with language picker, policy links, and cookie toggles.
+ * sub-screens. This story renders a faithful replica of the EULA consent card
+ * using the same Card/Button/Badge/Accordion/Switch components from @arolariu/components.
  */
 const meta = {
   title: "Pages/Home/EULA",
   component: undefined as never,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
 } satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** Interactive EULA consent card demo matching the real component structure. */
+function EulaDemo(): React.JSX.Element {
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
+
+  return (
+    <div className='mx-auto w-full max-w-4xl px-4 py-20'>
+      <Card className='border-2 shadow-lg'>
+        <CardHeader className='flex flex-col gap-2 text-center'>
+          <div className='flex justify-center'>
+            <TbShield className='h-12 w-12 text-purple-600 dark:text-purple-400' />
+          </div>
+          <CardTitle>
+            <h1 className='text-2xl font-bold md:text-3xl'>Welcome to arolariu.ro</h1>
+          </CardTitle>
+          <CardDescription className='text-base'>Please review and accept our terms to continue.</CardDescription>
+
+          <div className='mx-auto flex max-w-xs items-center gap-3'>
+            <Label
+              htmlFor='locale-select-story'
+              className='flex items-center gap-2 text-sm font-medium whitespace-nowrap'>
+              <TbGlobe className='h-4 w-4' />
+              Language
+            </Label>
+            <select
+              id='locale-select-story'
+              defaultValue='en'
+              title='Language'
+              className='w-full cursor-pointer appearance-none rounded-md border bg-transparent px-3 py-2 text-sm'>
+              <option value='en'>English (EN)</option>
+              <option value='ro'>Română (RO)</option>
+              <option value='fr'>Français (FR)</option>
+            </select>
+          </div>
+        </CardHeader>
+
+        <CardContent className='flex flex-col gap-6'>
+          <div className='px-4 text-center text-muted-foreground'>
+            <span>By using this platform, you agree to our Terms of Service and Privacy Policy.</span>
+          </div>
+
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <Card className='h-full transition-colors hover:border-purple-500'>
+              <CardHeader className='pb-2'>
+                <CardTitle className='flex items-center gap-2'>
+                  <TbLock className='h-5 w-5 text-purple-600 dark:text-purple-400' />
+                  Terms of Service
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='text-sm text-muted-foreground'>Rules and guidelines for using the platform.</CardContent>
+              <CardFooter>
+                <Button
+                  variant='outline'
+                  className='w-full cursor-pointer'>
+                  Read Terms
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card className='h-full transition-colors hover:border-purple-500'>
+              <CardHeader className='pb-2'>
+                <CardTitle className='flex items-center gap-2'>
+                  <TbShield className='h-5 w-5 text-purple-600 dark:text-purple-400' />
+                  Privacy Policy
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='text-sm text-muted-foreground'>How we collect, use, and protect your data.</CardContent>
+              <CardFooter>
+                <Button
+                  variant='outline'
+                  className='w-full cursor-pointer'>
+                  Read Policy
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+
+          <Separator />
+
+          <div className='flex flex-col gap-4'>
+            <div className='flex items-center justify-between'>
+              <h3 className='flex items-center gap-2 text-lg font-medium'>
+                <TbCookie className='h-5 w-5 text-purple-600 dark:text-purple-400' />
+                Cookie Preferences
+              </h3>
+            </div>
+
+            <span className='text-sm text-muted-foreground'>Choose which cookies you allow us to use.</span>
+
+            <Accordion
+              type='single'
+              collapsible
+              defaultValue='essential'
+              className='w-full'>
+              <AccordionItem value='essential'>
+                <AccordionTrigger className='hover:no-underline'>
+                  <div className='flex items-center gap-2 text-sm'>
+                    <TbLock className='h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400' />
+                    <span>Essential Cookies</span>
+                    <Badge className='ml-2'>Required</Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className='flex flex-col gap-4 p-2'>
+                    <p className='text-sm text-muted-foreground'>Required for basic site functionality and security.</p>
+                    <div className='flex items-center gap-3'>
+                      <Switch
+                        id='essential-story'
+                        checked
+                        disabled
+                      />
+                      <Label
+                        htmlFor='essential-story'
+                        className='text-sm font-medium'>
+                        Always enabled
+                      </Label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value='analytics'>
+                <AccordionTrigger className='hover:no-underline'>
+                  <div className='flex items-center gap-2 text-sm'>
+                    <TbInfoCircleFilled className='h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400' />
+                    <span>Analytics Cookies</span>
+                    <Badge
+                      className='ml-2'
+                      variant='outline'>
+                      Optional
+                    </Badge>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className='flex flex-col gap-4 p-2'>
+                    <p className='text-sm text-muted-foreground'>Help us understand how users interact with the site.</p>
+                    <div className='flex items-center gap-3'>
+                      <Switch
+                        id='analytics-story'
+                        checked={analyticsEnabled}
+                        onCheckedChange={setAnalyticsEnabled}
+                      />
+                      <Label
+                        htmlFor='analytics-story'
+                        className='text-sm font-medium'>
+                        {analyticsEnabled ? "Enabled" : "Disabled"}
+                      </Label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </CardContent>
+
+        <CardFooter className='flex flex-col gap-4'>
+          <Button
+            size='lg'
+            className='w-full cursor-pointer'>
+            <TbCheck className='mr-2 h-4 w-4' /> Accept &amp; Continue
+          </Button>
+          <p className='text-center text-xs text-muted-foreground'>By using this platform, you agree to our Terms of Service and Privacy Policy.</p>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}
+
 /** Default EULA consent card with all sections. */
 export const Default: Story = {
-  render: () => (
-    <div className='rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
-      {/* Header */}
-      <div className='p-6 text-center'>
-        <div className='mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30'>
-          <TbShield className='h-7 w-7 text-purple-600 dark:text-purple-400' />
-        </div>
-        <h1 className='text-xl font-bold'>Welcome to arolariu.ro</h1>
-        <p className='mt-1 text-sm text-gray-500'>Please review and accept our terms to continue.</p>
-
-        {/* Language Picker */}
-        <div className='mt-3 flex items-center justify-center gap-2'>
-          <TbGlobe className='h-4 w-4 text-gray-400' />
-          <label className='text-xs text-gray-500'>Language</label>
-          <select
-            className='rounded-md border bg-transparent px-2 py-1 text-sm'
-            disabled>
-            <option>English (EN)</option>
-            <option>Română (RO)</option>
-            <option>Français (FR)</option>
-          </select>
-        </div>
-      </div>
-
-      <div className='space-y-4 px-6'>
-        <p className='text-center text-sm text-gray-600 dark:text-gray-400'>
-          By using this platform, you agree to our Terms of Service and Privacy Policy.
-        </p>
-
-        {/* Policy Cards */}
-        <div className='grid grid-cols-2 gap-3'>
-          <div className='rounded-lg border p-4'>
-            <div className='flex items-center gap-2'>
-              <TbLock className='h-4 w-4 text-purple-500' />
-              <h3 className='text-sm font-semibold'>Terms of Service</h3>
-            </div>
-            <p className='mt-1 text-xs text-gray-500'>Rules and guidelines for using the platform.</p>
-            <button className='mt-2 w-full rounded-md border px-3 py-1.5 text-xs'>Read Terms</button>
-          </div>
-          <div className='rounded-lg border p-4'>
-            <div className='flex items-center gap-2'>
-              <TbShield className='h-4 w-4 text-purple-500' />
-              <h3 className='text-sm font-semibold'>Privacy Policy</h3>
-            </div>
-            <p className='mt-1 text-xs text-gray-500'>How we collect, use, and protect your data.</p>
-            <button className='mt-2 w-full rounded-md border px-3 py-1.5 text-xs'>Read Policy</button>
-          </div>
-        </div>
-
-        <hr className='dark:border-gray-700' />
-
-        {/* Cookies Section */}
-        <div className='space-y-3'>
-          <div className='flex items-center gap-2'>
-            <TbCookie className='h-4 w-4 text-amber-500' />
-            <h3 className='text-sm font-semibold'>Cookie Preferences</h3>
-          </div>
-          <p className='text-xs text-gray-500'>Choose which cookies you allow us to use.</p>
-
-          {/* Essential cookies */}
-          <div className='rounded-lg border p-3'>
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-2'>
-                <TbLock className='h-4 w-4 text-gray-400' />
-                <span className='text-sm font-medium'>Essential Cookies</span>
-                <span className='rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800'>Required</span>
-              </div>
-              <div className='h-5 w-9 rounded-full bg-gray-900 dark:bg-gray-100' />
-            </div>
-            <p className='mt-1 text-xs text-gray-500'>Required for basic site functionality and security.</p>
-          </div>
-
-          {/* Analytics cookies */}
-          <div className='rounded-lg border p-3'>
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-2'>
-                <TbInfoCircleFilled className='h-4 w-4 text-gray-400' />
-                <span className='text-sm font-medium'>Analytics Cookies</span>
-                <span className='rounded-full border px-2 py-0.5 text-xs'>Optional</span>
-              </div>
-              <div className='h-5 w-9 rounded-full bg-gray-900 dark:bg-gray-100' />
-            </div>
-            <p className='mt-1 text-xs text-gray-500'>Help us understand how users interact with the site.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className='p-6 text-center'>
-        <button className='flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white dark:bg-gray-100 dark:text-gray-900'>
-          <TbCheck className='h-4 w-4' />
-          Accept &amp; Continue
-        </button>
-        <p className='mt-2 text-xs text-gray-400'>By using this platform, you agree to our Terms of Service and Privacy Policy.</p>
-      </div>
-    </div>
-  ),
+  render: () => <EulaDemo />,
 };
 
 /** Dark mode variant. */
