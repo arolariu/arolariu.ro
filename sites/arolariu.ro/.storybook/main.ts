@@ -9,7 +9,7 @@ const config: StorybookConfig = {
   },
   staticDirs: ["../public"],
   docs: {
-    autodocs: true,
+    docsMode: true,
   },
   features: {
     experimentalRSC: true,
