@@ -118,7 +118,7 @@ npm run dev
 
 # Output (example)
 Using existing cloned repo
-  ▲ Next.js 16.0.0 (turbo)
+  ▲ Next.js 16.1.6 (turbo)
   - Local:        http://localhost:3000
   - Environments: .env
   - Experiments (use with caution):

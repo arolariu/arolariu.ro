@@ -2,6 +2,7 @@ namespace arolariu.Backend.Core.Auth.Modules;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using arolariu.Backend.Common.Options;
@@ -110,6 +111,10 @@ public static class WebApplicationBuilderExtensions
       options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
     });
 
+    // Build the service provider ONCE so the JWT resolver closures can resolve
+    // IOptionsManager without constructing a new DI container per token validation.
+    var resolverProvider = builder.Services.BuildServiceProvider();
+
     services.AddAuthentication(authOptions =>
     {
       authOptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -117,24 +122,58 @@ public static class WebApplicationBuilderExtensions
       authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     }).AddJwtBearer(jwtOptions =>
     {
-      using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-      var appOptions = optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions();
-      var authOptions = new Dictionary<string, string>
-      {
-        { "Secret", appOptions.JwtSecret },
-        { "Issuer", appOptions.JwtIssuer },
-        { "Audience", appOptions.JwtAudience },
-      };
-
+      // Use dynamic delegates so JWT validation always reads the latest
+      // configuration from the refreshed AzureOptions snapshot. The ConfigRefreshHostedService
+      // swaps AzureOptions atomically, so these callbacks pick up changes automatically.
+      // Delegates avoid mutating the shared TokenValidationParameters instance,
+      // which would be a data-race under concurrent token validations.
       jwtOptions.TokenValidationParameters = new()
       {
-        ValidIssuer = authOptions["Issuer"],
-        ValidAudience = authOptions["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions["Secret"])),
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+
+        IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
+        {
+          var optionsManager = resolverProvider.GetRequiredService<IOptionsManager>();
+          var secret = optionsManager.GetApplicationOptions().JwtSecret;
+
+          if (string.IsNullOrWhiteSpace(secret))
+          {
+            return [];
+          }
+
+          return [new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))];
+        },
+
+        IssuerValidator = (issuer, securityToken, validationParameters) =>
+        {
+          var optionsManager = resolverProvider.GetRequiredService<IOptionsManager>();
+          var expectedIssuer = optionsManager.GetApplicationOptions().JwtIssuer;
+
+          if (string.IsNullOrWhiteSpace(expectedIssuer))
+          {
+            expectedIssuer = "arolariu.ro";
+          }
+
+          return string.Equals(issuer, expectedIssuer, StringComparison.Ordinal)
+            ? issuer
+            : throw new SecurityTokenInvalidIssuerException($"Invalid issuer: '{issuer}'.");
+        },
+
+        AudienceValidator = (audiences, securityToken, validationParameters) =>
+        {
+          var optionsManager = resolverProvider.GetRequiredService<IOptionsManager>();
+          var expectedAudience = optionsManager.GetApplicationOptions().JwtAudience;
+
+          if (string.IsNullOrWhiteSpace(expectedAudience))
+          {
+            expectedAudience = "arolariu.ro";
+          }
+
+          return audiences?.Contains(expectedAudience, StringComparer.Ordinal) is true;
+        },
       };
     });
     services.AddAuthorization();

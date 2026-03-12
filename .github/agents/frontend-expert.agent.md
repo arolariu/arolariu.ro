@@ -57,7 +57,7 @@ npm run generate             # Generate env, i18n, GraphQL types
 
 ## Project Knowledge
 
-- **Tech Stack:** Next.js 16.0.0, React 19.2.0, TypeScript 5.9.3, Tailwind CSS 4.x, Zustand 5.x, Clerk, next-intl 4.x
+- **Tech Stack:** Next.js 16.1.6, React 19.2.4, TypeScript 5.9.3, Tailwind CSS 4.1.18, Zustand 5.0.11, Clerk (@clerk/nextjs 6.37.4), next-intl 4.8.3
 - **Node Version:** >=24.x
 - **Package Manager:** npm (not yarn or pnpm)
 

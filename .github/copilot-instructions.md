@@ -279,492 +279,51 @@ When making architectural changes:
 
 ## Code Quality Standards
 
-### ESLint Configuration
-We use an **extremely strict ESLint configuration** with 20+ plugins:
+- **ESLint**: 20+ plugins (typescript-eslint, react, sonarjs, security, jsx-a11y, jsdoc, etc.) — see `eslint.config.ts`
+- **TypeScript**: Strictest settings (`strict`, `noImplicitAny`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)
+- **Prettier**: v3.6.2 with organize-imports, svelte, tailwindcss plugins
 
-#### Enabled Rule Sets
-- `@eslint/js` - all rules
-- `typescript-eslint` - strict type checking
-- `react` - all React rules
-- `react-hooks` - hooks best practices
-- `unicorn` - modern JS patterns
-- `sonarjs` - code complexity and quality
-- `security` - security best practices
-- `functional` - functional programming principles (selective)
-- `perfectionist` - code organization
-- `jsx-a11y` - accessibility (strict mode)
-- `jsdoc` - documentation standards
-
-#### Key Disabled Rules (with rationale)
-```typescript
-// Formatting rules (delegated to Prettier)
-"sort-imports": "off",
-"perfectionist/sort-imports": "off",
-
-// Pragmatic exceptions
-"no-console": "off", // Stripped in production builds
-"max-lines": ["error", {max: 1000}], // Allow up to 1000 lines per file
-"max-params": ["error", {max: 5}], // Max 5 parameters per function
-
-// React-specific
-"react/jsx-props-no-spreading": "off", // shadcn/ui pattern
-"react/function-component-definition": "off", // Allow both arrow and function syntax
-
-// Functional programming (selective)
-"functional/immutable-data": "off", // Allow mutable data where needed
-"functional/no-throw-statements": "off", // Server Actions can throw
-```
-
-### TypeScript Configuration
-**Strictest possible TypeScript settings** are enforced:
-
-```json
-{
-  "strict": true,
-  "noImplicitAny": true,
-  "strictNullChecks": true,
-  "noUncheckedIndexedAccess": true,
-  "exactOptionalPropertyTypes": true,
-  "noPropertyAccessFromIndexSignature": true,
-  "noImplicitReturns": true,
-  "noFallthroughCasesInSwitch": true
-}
-```
-
-### Prettier Configuration
-- **Formatting tool**: Prettier v3.6.2
-- **Plugins**: organize-imports, svelte, tailwindcss
-- Auto-formatting on save is expected
-- Import organization is automated
+> **Details**: See `typescript.instructions.md` for TypeScript configuration and `react.instructions.md` for React/JSX rules.
 
 ---
 
 ## Frontend Development (Next.js)
 
-### App Router Architecture
-```typescript
-// app/layout.tsx - Root layout with providers
-export default async function RootLayout(props: LayoutProps<"/">) {
-  const locale = await getLocale();
+**Core principles**: Server Components by default, `"use client"` only when needed, Island pattern for interactivity, `next-intl` for all user-facing strings, `createMetadata()` for SEO on every page.
 
-  return (
-    <html lang={locale} suppressHydrationWarning>
-      <body>
-        <ContextProviders locale={locale}>
-          <Header />
-          <Suspense fallback={<Loading />}>
-            {props.children}
-          </Suspense>
-          <Footer />
-        </ContextProviders>
-      </body>
-    </html>
-  );
-}
-```
+**Key directories**: `src/app/` (App Router), `src/hooks/` (custom hooks), `src/stores/` (Zustand), `src/lib/actions/` (Server Actions), `src/types/` (TypeScript types), `src/contexts/` (React Contexts).
 
-### Server Components (Default)
-```typescript
-// app/page.tsx - Server Component by default
-export default async function Page() {
-  const data = await fetchData(); // Direct async/await
-
-  return <div>{data.title}</div>;
-}
-```
-
-### Client Components (Explicit)
-```typescript
-"use client"; // Required directive at top of file
-
-import {useState} from "react";
-
-export function InteractiveComponent() {
-  const [count, setCount] = useState(0);
-
-  return <button onClick={() => setCount(count + 1)}>{count}</button>;
-}
-```
-
-### Server Actions
-```typescript
-// lib/actions/myAction.ts
-"use server";
-
-export async function updateData(formData: FormData) {
-  const data = await processData(formData);
-  revalidatePath("/path");
-  return {success: true, data};
-}
-```
-
-### File Organization
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Home page
-│   ├── (routes)/          # Route groups
-│   ├── api/               # API routes
-│   └── providers.tsx      # Context providers
-├── components/            # Shared UI components
-├── contexts/              # React Contexts (Font, Theme, etc.)
-├── hooks/                 # Custom React hooks
-├── lib/                   # Utilities and helpers
-│   ├── actions/          # Server Actions
-│   ├── utils.client.ts   # Client-only utilities
-│   ├── utils.server.ts   # Server-only utilities
-│   └── utils.generic.ts  # Shared utilities
-├── types/                 # TypeScript type definitions
-│   ├── index.ts          # Global types
-│   ├── DDD/              # Domain-Driven Design types
-│   └── invoices/         # Domain-specific types
-└── presentation/          # Presentation components
-```
-
-### Component Patterns
-
-#### Memoization
-```typescript
-import {memo} from "react";
-
-export const ExpensiveComponent = memo(function ExpensiveComponent({data}: Props) {
-  // Component logic
-  return <div>{data}</div>;
-});
-```
-
-#### Custom Hooks Pattern
-```typescript
-// hooks/useInvoice.tsx
-export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
-  const {userInformation} = useUserInformation();
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
-
-  useEffect(() => {
-    // Fetch logic
-  }, [invoiceIdentifier]);
-
-  return {invoice, isLoading, error};
-}
-```
-
-#### Dialog Management Pattern
-```typescript
-// contexts/DialogContext.tsx
-export type DialogType = "INVOICE_SHARE" | "INVOICE_DELETE" | /* ... */;
-export type DialogMode = "view" | "add" | "edit" | "delete" | "share" | null;
-
-export function useDialog(dialogType: DialogType, dialogMode?: DialogMode, payload?: unknown) {
-  const {openDialog, closeDialog} = useDialogs();
-
-  const open = useCallback(() => {
-    openDialog(dialogType, dialogMode, payload);
-  }, [dialogType, dialogMode, payload, openDialog]);
-
-  return {open, close: closeDialog};
-}
-```
-
-### Internationalization
-```typescript
-import {useTranslations} from "next-intl";
-
-export function Component() {
-  const t = useTranslations("namespace");
-
-  return <h1>{t("key")}</h1>;
-}
-```
-
-### Image Optimization
-```typescript
-import Image from "next/image";
-
-<Image
-  src="https://cdn.arolariu.ro/image.jpg"
-  alt="Description"
-  width={800}
-  height={600}
-  quality={75} // Qualities: [50, 75, 100]
-  priority // For above-the-fold images
-/>
-```
-
-### Metadata Generation
-```typescript
-import {createMetadata} from "@/metadata";
-
-export const metadata = createMetadata({
-  title: "Page Title",
-  description: "Page description",
-  openGraph: {
-    title: "OG Title",
-    description: "OG Description",
-  },
-});
-```
+> **Full patterns & examples**: See `frontend.instructions.md` for RSC patterns, i18n, metadata, file organization, and component architecture. See `react.instructions.md` for hooks, memoization, context, and accessibility patterns.
 
 ---
 
 ## Backend Development (.NET)
 
-### Modular Monolith Architecture
-```csharp
-// Program.cs - Application entry point
-namespace arolariu.Backend.Core;
+**Architecture**: Modular Monolith with The Standard (Brokers → Foundation → Orchestration → Processing → Endpoints). Florance Pattern limits dependencies to 2-3 per service.
 
-internal static class Program
-{
-  public static void Main(string[] args)
-  {
-    WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+**Bounded Contexts**: General (infrastructure), Invoices (business logic), Auth (authentication). Each context uses domain extension methods for `WebApplicationBuilder`/`WebApplication` configuration.
 
-    // Domain configuration (extension methods)
-    builder.AddGeneralDomainConfiguration();
-    builder.AddInvoicesDomainConfiguration();
+**Requirements**: XML documentation on all public APIs, `.ConfigureAwait(false)` in library code, TryCatch pattern with OpenTelemetry tracing.
 
-    WebApplication app = builder.Build();
-
-    // Application pipeline configuration
-    app.AddGeneralApplicationConfiguration();
-    app.AddInvoiceDomainConfiguration();
-
-    app.Run();
-  }
-}
-```
-
-### Domain-Driven Design Patterns
-
-#### Entities
-```csharp
-// Base entity with identifier
-public interface BaseEntity<T>
-{
-  T Id { get; }
-}
-
-// Named entity with name property
-public interface NamedEntity<T> : BaseEntity<T>
-{
-  string Name { get; }
-}
-```
-
-#### Domain Extensions
-```csharp
-// Domain/General/Extensions/GeneralDomainExtensions.cs
-public static class GeneralDomainExtensions
-{
-  public static WebApplicationBuilder AddGeneralDomainConfiguration(
-    this WebApplicationBuilder builder)
-  {
-    // Add logging, telemetry, health checks, etc.
-    return builder;
-  }
-
-  public static WebApplication AddGeneralApplicationConfiguration(
-    this WebApplication app)
-  {
-    // Configure middleware, routing, etc.
-    return app;
-  }
-}
-```
-
-### XML Documentation
-All public APIs must have comprehensive XML documentation:
-
-```csharp
-/// <summary>
-/// Represents the main entry point for the arolariu.ro backend API.
-/// This class configures and bootstraps a .NET 9.0 STS modular monolith web application.
-/// </summary>
-/// <remarks>
-/// <para>
-/// The application follows a modular monolith architecture pattern with domains:
-/// - General domain: Core infrastructure and cross-cutting concerns
-/// - Invoices domain: Business logic for invoice management
-/// - Authentication domain: User authentication services
-/// </para>
-/// </remarks>
-[ExcludeFromCodeCoverage]
-internal static class Program { }
-```
+> **Full patterns & examples**: See `backend.instructions.md` for DDD patterns, layer architecture, and project structure. See `csharp.instructions.md` for C# coding standards, naming, and language features.
 
 ---
 
 ## Shared Components Library
 
-### Component Structure
-```typescript
-// packages/components/src/components/ui/button.tsx
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
-import {cn} from "@/lib/utilities";
+**Package**: `@arolariu/components` — Radix UI + shadcn/ui components with Tailwind CSS, exported via barrel in `src/index.ts`. Use `cn()` for class merging, `forwardRef` for DOM refs.
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground",
-        destructive: "bg-destructive text-destructive-foreground",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-);
-
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-}
-
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({className, variant, size, asChild = false, ...props}, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return (
-      <Comp
-        className={cn(buttonVariants({variant, size, className}))}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-Button.displayName = "Button";
-```
-
-### Barrel Exports
-```typescript
-// packages/components/src/index.ts
-export {Button, buttonVariants} from "./components/ui/button";
-export {Card, CardHeader, CardTitle, CardContent} from "./components/ui/card";
-// ... all exports in one file
-```
-
-### Storybook Stories
-```typescript
-// packages/components/stories/Button.stories.tsx
-import type {Meta, StoryObj} from "@storybook/react";
-import {Button} from "../src/components/ui/button";
-
-const meta = {
-  title: "UI/Button",
-  component: Button,
-  tags: ["autodocs"],
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: {
-    children: "Button",
-    variant: "default",
-  },
-};
-```
+> **Full patterns & examples**: See `components.instructions.md` for component creation, Storybook stories, and extension patterns.
 
 ---
 
 ## Type Safety & TypeScript
 
-### Strict Type Definitions
-```typescript
-// types/index.ts - Global type definitions
-export type UserInformation = {
-  user: User | null;
-  isLoading: boolean;
-  isSignedIn: boolean;
-};
+**Zero `any` tolerance.** Use `unknown` + type guards, generics, and discriminated unions. All public APIs need explicit return types. Use `import type` for type-only imports (`verbatimModuleSyntax` enforced).
 
-export type NavigationItem = {
-  label: string;
-  href: Route;
-  icon?: React.ComponentType;
-};
-```
+**Domain types** live in `src/types/` with DDD patterns (`BaseEntity<T>`, `NamedEntity<T>`, `Invoice`, `Product`, etc.).
 
-### Type Guards
-```typescript
-export function isProduct(obj: unknown): obj is Product {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "rawName" in obj &&
-    "category" in obj
-  );
-}
-```
-
-### Typed Environment Variables
-```typescript
-// types/typedEnv.ts
-export type TypedEnvironment<
-  SiteEnv extends "production" | "development",
-  ApiEnv extends "production"
-> = Readonly<
-  SiteEnvironmentVariables<SiteEnv> &
-  ApiEnvironmentVariables<ApiEnv> &
-  AuthEnvironmentVariables
->;
-
-// Usage
-const apiUrl: string = process.env.API_URL!; // Type-safe
-```
-
-### Domain Types (DDD)
-```typescript
-// types/DDD/Entities/BaseEntity.ts
-export interface BaseEntity<T> {
-  id: T;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// types/DDD/Entities/NamedEntity.ts
-export interface NamedEntity<T> extends BaseEntity<T> {
-  name: string;
-}
-
-// types/invoices/Invoice.ts
-export interface Invoice extends NamedEntity<string> {
-  merchantId: string;
-  totalAmount: number;
-  currency: Currency;
-  items: Product[];
-  metadata: InvoiceMetadata;
-}
-```
-
-### Enums
-```typescript
-export enum ProductCategory {
-  NOT_DEFINED = 0,
-  FOOD = 1,
-  BEVERAGES = 2,
-  HOUSEHOLD = 3,
-  PERSONAL_CARE = 4,
-  // ...
-}
-
-export enum InvoiceAnalysisOptions {
-  NoAnalysis,
-  BasicAnalysis,
-  DetailedAnalysis,
-}
-```
+> **Full patterns & examples**: See `typescript.instructions.md` for strict mode implications, type guard patterns, and typed environment variables.
 
 ---
 
@@ -781,418 +340,96 @@ The project has **4 Zustand stores** in `src/stores/`, all using IndexedDB persi
 | `useScansStore` | `scansStore.tsx` | `entities[]` | Uses `createEntityStore` factory |
 | `usePreferencesStore` | `preferencesStore.ts` | `theme`, `font`, `locale`, etc. | UI preferences, separate schema |
 
-### createEntityStore Factory (RFC 1005)
-```typescript
-// src/stores/createEntityStore.ts
-import {createEntityStore} from "@/stores/createEntityStore";
-import type {Scan} from "@/types/scans";
+**Key patterns**: Always import from barrel `@/stores`, use `useShallow` for object selectors, use `ServerActionResult<T>` for server action return types. State hierarchy: Zustand (global) → React Context (scoped) → useState (local).
 
-// Each entity type extends BaseEntity (requires an `id: string` field)
-export const useScansStore = createEntityStore<Scan>({
-  tableName: "scans",
-  storeName: "ScansStore",
-  persistName: "scans-store",
-});
-
-// Generated store interface includes:
-// entities: ReadonlyArray<E>        (persisted to IndexedDB)
-// selectedEntities: E[]             (in-memory only)
-// hasHydrated: boolean              (in-memory only)
-// setEntities / upsertEntity / removeEntity / updateEntity
-// toggleEntitySelection / clearSelectedEntities / clearEntities
-// getEntityById / setHasHydrated
-```
-
-### Importing Stores
-```typescript
-// Always import from the barrel export
-import {useInvoicesStore, useMerchantsStore, useScansStore, usePreferencesStore} from "@/stores";
-
-// Use useShallow for object selectors to prevent unnecessary re-renders
-import {useShallow} from "zustand/react/shallow";
-
-function InvoicesList() {
-  const {invoices, upsertInvoice} = useInvoicesStore(
-    useShallow((state) => ({
-      invoices: state.invoices,
-      upsertInvoice: state.upsertInvoice,
-    })),
-  );
-  // ...
-}
-```
-
-### ServerActionResult<T> Pattern
-```typescript
-// src/lib/utils.server.ts — standardized server action return type
-export type ServerActionErrorCode =
-  | "NETWORK_ERROR" | "TIMEOUT_ERROR" | "AUTH_ERROR"
-  | "NOT_FOUND" | "VALIDATION_ERROR" | "SERVER_ERROR" | "UNKNOWN_ERROR";
-
-export type ServerActionResult<T> =
-  | {success: true; data: T}
-  | {success: false; error: {code: ServerActionErrorCode; message: string; status?: number}};
-
-// Usage in server actions:
-"use server";
-export default async function fetchInvoices(): Promise<ServerActionResult<Invoice[]>> {
-  try {
-    const data = await callApi();
-    return {success: true, data};
-  } catch (error) {
-    return createErrorResult(error, "Failed to fetch invoices");
-  }
-}
-
-// Consuming in client components:
-const result = await fetchInvoices();
-if (result.success) {
-  // result.data is Invoice[]
-} else {
-  // result.error.code, result.error.message, result.error.status?
-}
-```
-
-### React Context Pattern
-```typescript
-// contexts/FontContext.tsx
-"use client";
-
-const FontContext = createContext<FontContextValueType | undefined>(undefined);
-
-export function FontContextProvider({children}: {children: React.ReactNode}) {
-  const [fontType, setFontType] = useState<FontType>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("fontType") as FontType) ?? "sans";
-    }
-    return "sans";
-  });
-
-  return (
-    <FontContext.Provider value={{fontType, setFontType}}>
-      {children}
-    </FontContext.Provider>
-  );
-}
-
-export const useFontContext = () => {
-  const context = use(FontContext);
-  if (!context) {
-    throw new Error("useFontContext must be used within FontContextProvider");
-  }
-  return context;
-};
-```
+> **Full patterns & examples**: See `frontend.instructions.md` for store usage, `createEntityStore` factory, `ServerActionResult<T>`, and Context patterns.
 
 ---
 
 ## Testing Practices
 
-### Unit Tests (Vitest)
-```typescript
-// component.test.tsx  — use .test. suffix (not .spec. — that's reserved for Playwright)
-import {render, screen} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
-import {Button} from "./button";
+| Domain | Framework | Coverage | Command |
+|--------|-----------|----------|---------|
+| Frontend unit | Vitest + Testing Library | 90%+ | `npm run test:website` |
+| Frontend E2E | Playwright | Critical paths | `npm run test:e2e:frontend` |
+| Backend unit | xUnit + MSTest | 85%+ | `dotnet test sites/api.arolariu.ro/tests` |
+| Backend E2E | Newman/Postman | API contracts | `npm run test:e2e:backend` |
 
-describe("Button", () => {
-  it("renders with children", () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByText("Click me")).toBeInTheDocument();
-  });
+**Conventions**: Use `.test.` suffix for Vitest (`.spec.` is reserved for Playwright). Follow AAA pattern (Arrange, Act, Assert). Use mock builders (`InvoiceBuilder`, `ProductBuilder`) and cleanup in `afterEach`.
 
-  it("applies variant classes", () => {
-    render(<Button variant="destructive">Delete</Button>);
-    const button = screen.getByText("Delete");
-    expect(button).toHaveClass("bg-destructive");
-  });
-});
-```
-
-### Running Tests
 ```bash
-# Run all website tests
-npm run test:website
-
-# Run a single test file (Vitest)
+# Single file (Vitest)
 npx vitest run src/lib/utils.generic.test.ts
-
-# Run a single .NET test by method name
+# Single .NET test
 dotnet test --filter "MethodName_Condition_ExpectedResult"
-
-# Run with coverage (90% threshold enforced)
+# Coverage
 npm run test:unit
-```
-
-### E2E Tests (Playwright)
-```typescript
-// tests/e2e/homepage.spec.ts
-import {test, expect} from "@playwright/test";
-
-test("homepage loads successfully", async ({page}) => {
-  await page.goto("/");
-  await expect(page).toHaveTitle(/arolariu.ro/);
-});
-```
-
-### Mock Data
-```typescript
-// data/mocks/invoices.ts
-import {faker} from "@faker-js/faker";
-
-export function generateFakeInvoice(): Invoice {
-  return {
-    id: faker.string.uuid(),
-    name: `Invoice-${faker.number.int({min: 1000, max: 9999})}`,
-    merchantId: faker.string.uuid(),
-    totalAmount: faker.number.float({min: 10, max: 1000}),
-    // ...
-  };
-}
-
-export const FakeInvoice: Invoice = generateFakeInvoice();
-export const FakeInvoiceList: Invoice[] = Array.from(
-  {length: 10},
-  generateFakeInvoice
-);
 ```
 
 ---
 
 ## Infrastructure & Deployment
 
-### Azure Architecture
-- **Hosting**: Azure App Service (containerized)
-- **CDN**: Azure Front Door with CDN
-- **Database**: Azure SQL + Cosmos DB
-- **Storage**: Azure Blob Storage
-- **Secrets**: Azure Key Vault
-- **Config**: Azure App Configuration
-- **Monitoring**: Application Insights
+- **Hosting**: Azure App Service (containerized) with Azure Front Door CDN
+- **Databases**: Azure SQL + Cosmos DB
+- **Storage/Secrets**: Azure Blob Storage, Key Vault, App Configuration
+- **Monitoring**: Application Insights + OpenTelemetry
 - **IaC**: Bicep templates in `infra/Azure/Bicep/`
+- **Containers**: Multi-stage Docker builds (Node 24 / .NET 10)
+- **Environment Variables**: Type-safe via `TypedEnvironment`, secrets in Key Vault, `.env.local` for local dev (gitignored)
 
-### Docker Containerization
-```dockerfile
-# sites/arolariu.ro/Dockerfile
-FROM node:24-alpine AS base
-WORKDIR /app
-
-FROM base AS deps
-COPY package*.json ./
-RUN npm ci
-
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npm run build
-
-FROM base AS runner
-ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
-EXPOSE 3000
-CMD ["node", "server.js"]
-```
-
-### Environment Variables
-```typescript
-// Must be type-safe via TypedEnvironment
-const requiredEnvVars = [
-  "API_URL",
-  "API_JWT",
-  "CLERK_SECRET_KEY",
-  "DATABASE_URL",
-] as const;
-
-// Never commit secrets to version control
-// Use Azure Key Vault for production secrets
-// Use .env.local for local development (gitignored)
-```
+> **Full patterns & examples**: See `bicep.instructions.md` for Azure IaC patterns and `workflows.instructions.md` for CI/CD pipelines.
 
 ---
 
 ## Naming Conventions
 
-### Files & Directories
-- **Components**: PascalCase (e.g., `Button.tsx`, `UserProfile.tsx`)
-- **Utilities**: camelCase (e.g., `utils.client.ts`, `formatDate.ts`)
-- **Types**: PascalCase (e.g., `Invoice.ts`, `Product.ts`)
-- **Hooks**: camelCase with `use` prefix (e.g., `useInvoice.tsx`)
-- **Contexts**: PascalCase with `Context` suffix (e.g., `FontContext.tsx`)
-- **Route folders**: kebab-case (e.g., `view-invoice/`, `create-invoice/`)
+| Context | Convention | Example |
+|---------|-----------|---------|
+| Components | PascalCase | `Button.tsx`, `UserProfile.tsx` |
+| Utilities | camelCase | `utils.client.ts`, `formatDate.ts` |
+| Types | PascalCase | `Invoice.ts`, `Product.ts` |
+| Hooks | camelCase + `use` prefix | `useInvoice.tsx` |
+| Contexts | PascalCase + `Context` suffix | `FontContext.tsx` |
+| Route folders | kebab-case | `view-invoice/`, `create-invoice/` |
+| Variables/functions | camelCase | `invoiceTotal`, `processPayment()` |
+| Types/interfaces/enums | PascalCase | `UserRole`, `PaymentType` |
+| Constants | UPPER_SNAKE_CASE | `MAX_UPLOAD_SIZE`, `API_TIMEOUT_MS` |
+| React exports | Named for components, default for pages | `export function Button()`, `export default function HomePage()` |
 
-### Variables & Functions
-```typescript
-// camelCase for variables and functions
-const invoiceTotal = calculateTotal(items);
-function processPayment(amount: number) { }
-
-// PascalCase for types, interfaces, enums, classes
-type UserRole = "admin" | "user";
-interface Product { }
-enum PaymentType { }
-class InvoiceProcessor { }
-
-// UPPER_SNAKE_CASE for constants
-const MAX_UPLOAD_SIZE = 10_000_000;
-const API_TIMEOUT_MS = 30_000;
-```
-
-### React Components
-```typescript
-// Named exports for components
-export function Button() { }
-export const Card = memo(function Card() { });
-
-// Default exports for pages
-export default function HomePage() { }
-```
+> **Backend naming**: See `csharp.instructions.md` for C#-specific naming (PascalCase classes, `I` prefix interfaces, `Method_Condition_Expected` tests).
 
 ---
 
 ## Performance Considerations
 
-### Code Splitting
-```typescript
-// Use dynamic imports for heavy components
-import dynamic from "next/dynamic";
+- **Code splitting**: Use `dynamic()` imports with `{ssr: false}` for heavy client components
+- **Memoization**: `memo` for expensive renders, `useMemo`/`useCallback` when props are stable
+- **Images**: Always use Next.js `<Image>` with explicit dimensions, `priority` for above-the-fold
+- **Bundle analysis**: `ANALYZE=true npm run build:website`
 
-const HeavyChart = dynamic(
-  () => import("@/components/HeavyChart"),
-  {ssr: false, loading: () => <Skeleton />}
-);
-```
-
-### Memoization
-```typescript
-// Use memo for expensive renders
-import {memo, useMemo, useCallback} from "react";
-
-export const DataTable = memo(function DataTable({data}: Props) {
-  const sortedData = useMemo(
-    () => data.sort((a, b) => a.date - b.date),
-    [data]
-  );
-
-  const handleClick = useCallback(() => {
-    // Handler logic
-  }, []);
-
-  return <div>{/* ... */}</div>;
-});
-```
-
-### Image Optimization
-- Use Next.js `<Image>` component
-- Specify `width` and `height` explicitly
-- Use `priority` for above-the-fold images
-- Configure remote patterns in `next.config.ts`
-
-### Bundle Analysis
-```bash
-# Analyze bundle size
-ANALYZE=true npm run build:website
-```
+> **Full patterns**: See `react.instructions.md` for memoization guidelines and `frontend.instructions.md` for Next.js optimization.
 
 ---
 
 ## Security Guidelines
 
-### Content Security Policy
-```typescript
-// next.config.ts includes strict CSP headers
-const trustedDomains = "*.arolariu.ro arolariu.ro";
-const cspHeader = `
-  default-src 'self' ${trustedDomains};
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' ${trustedDomains};
-  // ... strict CSP rules
-`;
-```
+- **Authentication**: Clerk (`@clerk/nextjs`) — use `auth()` / `currentUser()` server-side, never check in-component
+- **CSP**: Strict Content Security Policy configured in `next.config.ts`
+- **Input validation**: Zod schemas for all form/API inputs — validate before processing
+- **Secrets**: Never commit to VCS; use Azure Key Vault for production, `.env.local` for local dev
+- **Environment variables**: Validate at startup, mark sensitive vars in `SecretEnvironmentVariablesType`
 
-### Authentication
-```typescript
-// Use Clerk for authentication
-import {auth, currentUser} from "@clerk/nextjs/server";
-
-export default async function ProtectedPage() {
-  const {userId} = await auth();
-  if (!userId) redirect("/auth/sign-in");
-
-  const user = await currentUser();
-  return <div>Welcome, {user?.firstName}</div>;
-}
-```
-
-### Input Validation
-```typescript
-// Use Zod for schema validation
-import {z} from "zod";
-
-const invoiceSchema = z.object({
-  merchantId: z.string().uuid(),
-  totalAmount: z.number().positive(),
-  items: z.array(productSchema).min(1),
-});
-
-// Validate before processing
-const result = invoiceSchema.safeParse(input);
-if (!result.success) {
-  throw new Error("Invalid invoice data");
-}
-```
-
-### Environment Variables
-- Never commit secrets to version control
-- Use Azure Key Vault for production secrets
-- Validate environment variables at startup
-- Mark sensitive variables in `SecretEnvironmentVariablesType`
+> **Review standards**: See `code-review.instructions.md` for security review criteria.
 
 ---
 
 ## Additional Guidelines
 
-### Comments & Documentation
-```typescript
-/**
- * Formats a currency amount with the appropriate symbol and locale.
- *
- * @param amount - The numeric amount to format
- * @param currency - Currency code (e.g., "USD") or Currency object
- * @returns Formatted currency string (e.g., "$123.45")
- *
- * @example
- * formatCurrency(123.45, "USD") // Returns "$123.45"
- */
-export function formatCurrency(amount: number, currency?: string | Currency): string {
-  // Implementation
-}
-```
-
-### Error Handling
-```typescript
-// Server Actions error handling
-"use server";
-
-export async function createInvoice(formData: FormData) {
-  try {
-    const data = await processInvoice(formData);
-    revalidatePath("/invoices");
-    return {success: true, data};
-  } catch (error) {
-    console.error("Failed to create invoice:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
-    };
-  }
-}
-```
-
-### Accessibility
-- Use semantic HTML elements
-- Include `alt` text for images
-- Ensure keyboard navigation works
-- Follow WCAG 2.1 AA standards
-- Use `eslint-plugin-jsx-a11y` rules (strict mode enabled)
+- **Documentation**: JSDoc on all public TS APIs (RFC 1002), XML docs on all public C# APIs (RFC 2004)
+- **Error handling**: Use `ServerActionResult<T>` pattern for server actions, TryCatch pattern for .NET services
+- **Accessibility**: Semantic HTML, `alt` text, keyboard navigation, WCAG 2.1 AA, `jsx-a11y` strict mode
+- **Imports**: Group by external → internal (`@/`) → types → relative
 
 ---
 
@@ -1210,30 +447,18 @@ import Link from "next/link";
 import {useState, useEffect, useMemo, useCallback, memo} from "react";
 
 // Components
-import {Button} from "@arolariu/components";
-import {Card, CardContent} from "@arolariu/components";
-
-// Utils
+import {Button, Card, CardContent} from "@arolariu/components";
 import {cn} from "@/lib/utils";
-import {formatCurrency, formatDate} from "@/lib/utils.generic";
 
 // State
 import {useInvoicesStore, useMerchantsStore, useScansStore, usePreferencesStore} from "@/stores";
 ```
 
-### File Header Template
-```typescript
-/**
- * @fileoverview Brief description of the file's purpose
- * @module ModuleName
- */
-
-// Imports grouped by:
-// 1. External dependencies (React, Next.js, etc.)
-// 2. Internal dependencies (@/ imports)
-// 3. Types
-// 4. Relative imports
-```
+### Import Order
+1. External dependencies (React, Next.js, etc.)
+2. Internal dependencies (`@/` imports)
+3. Types
+4. Relative imports
 
 ---
 

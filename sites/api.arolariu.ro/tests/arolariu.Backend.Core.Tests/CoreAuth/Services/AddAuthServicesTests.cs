@@ -99,7 +99,7 @@ public sealed class AddAuthServicesTests
     Assert.AreEqual(JwtBearerDefaults.AuthenticationScheme, defaultScheme);
   }
 
-  /// <summary>Verifies JWT validation parameters configured from provided options.</summary>
+  /// <summary>Verifies JWT validation uses dynamic delegates for key, issuer, and audience resolution.</summary>
   [TestMethod]
   public void AddAuthServices_ConfiguresJwtBearerValidationParameters()
   {
@@ -110,9 +110,10 @@ public sealed class AddAuthServicesTests
     .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
     .Get(JwtBearerDefaults.AuthenticationScheme);
 
-    Assert.AreEqual("issuer", jwtOptions.TokenValidationParameters.ValidIssuer);
-    Assert.AreEqual("aud", jwtOptions.TokenValidationParameters.ValidAudience);
-    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerSigningKey);
+    // Dynamic delegates are configured for key, issuer, and audience resolution
+    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerSigningKeyResolver);
+    Assert.IsNotNull(jwtOptions.TokenValidationParameters.IssuerValidator);
+    Assert.IsNotNull(jwtOptions.TokenValidationParameters.AudienceValidator);
     Assert.IsTrue(jwtOptions.TokenValidationParameters.ValidateIssuerSigningKey);
     Assert.IsTrue(jwtOptions.TokenValidationParameters.ValidateLifetime);
   }

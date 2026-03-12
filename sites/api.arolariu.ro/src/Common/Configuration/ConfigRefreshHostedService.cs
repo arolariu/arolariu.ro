@@ -69,10 +69,11 @@ public sealed class ConfigRefreshHostedService(
   {
     var refreshInterval = TimeSpan.FromSeconds(Math.Max(60, DefaultRefreshIntervalSeconds));
 
+    // Initial short delay to let the DI container finish building before first refresh.
+    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken).ConfigureAwait(false);
+
     while (!stoppingToken.IsCancellationRequested)
     {
-      await Task.Delay(refreshInterval, stoppingToken).ConfigureAwait(false);
-
       try
       {
         using var activity = ActivityGenerators.CommonPackageTracing.StartActivity("exp.config.refresh-cycle");
@@ -130,6 +131,9 @@ public sealed class ConfigRefreshHostedService(
       {
         logger.LogRefreshFailed(ex, refreshInterval);
       }
+
+      // Wait for the configured interval before the next refresh cycle.
+      await Task.Delay(refreshInterval, stoppingToken).ConfigureAwait(false);
     }
   }
 
