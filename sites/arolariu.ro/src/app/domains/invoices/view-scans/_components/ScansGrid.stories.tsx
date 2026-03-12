@@ -44,13 +44,15 @@ export const Default: Story = {
 /** Loading skeleton state. */
 export const Loading: Story = {
   render: () => (
-    <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-      {Array.from({length: 6}, (_, i) => (
-        <div
-          key={`skeleton-${String(i + 1)}`}
-          className='h-64 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700'
-        />
-      ))}
+    <div className='min-h-[400px] p-4'>
+      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+        {Array.from({length: 6}, (_, i) => (
+          <div
+            key={`skeleton-${String(i + 1)}`}
+            className='h-64 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700'
+          />
+        ))}
+      </div>
     </div>
   ),
 };
