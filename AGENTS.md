@@ -6,7 +6,7 @@
 
 **arolariu.ro** is a full-stack pet-project platform for invoice management and personal branding, built as a monorepo:
 
-- **Frontend**: Next.js 16.0.x + React 19.2.x (main website at `sites/arolariu.ro/`)
+- **Frontend**: Next.js 16.1.6 + React 19.2.4 (main website at `sites/arolariu.ro/`)
 - **Backend**: .NET 10 ASP.NET Core Minimal APIs with Domain-Driven Design (at `sites/api.arolariu.ro/`)
 - **Component Library**: `@arolariu/components` — 60+ Radix UI/shadcn components (at `packages/components/`)
 - **CV Site**: SvelteKit 2 (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies)

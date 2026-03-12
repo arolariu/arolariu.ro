@@ -6,11 +6,11 @@ This directory contains technical documentation for the frontend components of t
 
 The frontend is built using:
 
-- **Framework**: Next.js 16.0.0-beta.0 with App Router
+- **Framework**: Next.js 16.1.6 with App Router
 - **Language**: TypeScript 5.9.3 (strict mode)
-- **UI Library**: React 19.2.0 with Server Components
-- **Styling**: Tailwind CSS v4.1.14
-- **State Management**: Zustand v5.0.8
+- **UI Library**: React 19.2.4 with Server Components
+- **Styling**: Tailwind CSS v4.1.18
+- **State Management**: Zustand v5.0.11
 - **Testing**: Jest + Playwright
 
 ## RFCs (Request for Comments)

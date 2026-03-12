@@ -48,13 +48,13 @@ Comprehensive guidelines for the arolariu.ro Next.js frontend application.
 
 | Aspect | Value |
 |--------|-------|
-| **Framework** | Next.js 16.0.0 (App Router) |
-| **React** | 19.2.0 (with RSC) |
+| **Framework** | Next.js 16.1.6 (App Router) |
+| **React** | 19.2.4 (with RSC) |
 | **TypeScript** | 5.9.3 (strict mode) |
-| **Styling** | Tailwind CSS 4.x |
-| **State** | Zustand 5.x + Context API |
-| **Auth** | Clerk |
-| **i18n** | next-intl 4.x |
+| **Styling** | Tailwind CSS 4.1.18 |
+| **State** | Zustand 5.0.11 + Context API |
+| **Auth** | Clerk (@clerk/nextjs 6.37.4) |
+| **i18n** | next-intl 4.8.3 |
 | **Components** | @arolariu/components (shadcn/ui based) |
 | **Node** | ≥24.x |
 
