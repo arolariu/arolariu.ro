@@ -25,3 +25,10 @@ export const DarkMode: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** Upload scans loading skeleton at mobile viewport width. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

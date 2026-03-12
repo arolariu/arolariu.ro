@@ -35,3 +35,10 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Tablet (iPad) viewport variant. */
+export const TabletViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "ipad"},
+  },
+};

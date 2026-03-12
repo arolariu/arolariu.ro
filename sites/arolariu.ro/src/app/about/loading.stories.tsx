@@ -26,3 +26,10 @@ export const DarkMode: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** About page loading skeleton at mobile viewport width. */
+export const MobileViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

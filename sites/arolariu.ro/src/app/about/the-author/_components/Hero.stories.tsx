@@ -27,3 +27,10 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Author hero section in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};

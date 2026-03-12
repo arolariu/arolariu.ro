@@ -52,3 +52,13 @@ export const TermsOfServiceDark: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** Privacy Policy — mobile viewport. */
+export const MobileViewport: Story = {
+  args: {
+    pageType: "Legal.PrivacyPolicy",
+  },
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

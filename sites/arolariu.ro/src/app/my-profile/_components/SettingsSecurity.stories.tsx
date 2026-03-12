@@ -132,3 +132,11 @@ export const DarkMode: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** Mobile viewport variant. */
+export const MobileViewport: Story = {
+  ...Default,
+  parameters: {
+    viewport: {defaultViewport: "mobile1"},
+  },
+};

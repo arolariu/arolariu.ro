@@ -82,3 +82,35 @@ export const Animated: Story = {
     },
   },
 };
+
+/** Theme button constrained inside a narrow 200px-wide container. */
+export const SmallContainer: Story = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='light'
+        enableSystem={false}>
+        <div className='flex min-h-[100px] w-[200px] items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-600'>
+          <Story />
+        </div>
+      </ThemeProvider>
+    ),
+  ],
+};
+
+/** Theme button inside a dark header bar, simulating the site navigation. */
+export const InHeader: Story = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider
+        attribute='class'
+        defaultTheme='light'
+        enableSystem={false}>
+        <header className='flex h-14 items-center justify-end gap-3 bg-gray-900 px-6 text-white'>
+          <Story />
+        </header>
+      </ThemeProvider>
+    ),
+  ],
+};

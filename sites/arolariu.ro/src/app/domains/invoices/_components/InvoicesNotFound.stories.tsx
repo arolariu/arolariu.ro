@@ -79,3 +79,21 @@ export const DarkMode: Story = {
     themes: {themeOverride: "dark"},
   },
 };
+
+/** Empty-list state at tablet (iPad) viewport width. */
+export const TabletViewport: Story = {
+  render: () => (
+    <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8 text-center'>
+      <h1 className='text-2xl font-bold'>{namespace.title}</h1>
+      <article className='max-w-md text-gray-500 dark:text-gray-400'>{namespace.description}</article>
+      <Link
+        href='/domains/invoices/create-invoice'
+        className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-6 py-3 text-sm font-medium transition-colors'>
+        {namespace.cta}
+      </Link>
+    </div>
+  ),
+  parameters: {
+    viewport: {defaultViewport: "ipad"},
+  },
+};

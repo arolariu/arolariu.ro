@@ -42,3 +42,10 @@ export const TabletViewport: Story = {
     viewport: {defaultViewport: "ipad"},
   },
 };
+
+/** Hero section at widescreen responsive viewport. */
+export const WidescreenViewport: Story = {
+  parameters: {
+    viewport: {defaultViewport: "responsive"},
+  },
+};

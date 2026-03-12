@@ -28,3 +28,10 @@ export const MobileViewport: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
 };
+
+/** Architecture diagram in dark mode. */
+export const DarkMode: Story = {
+  parameters: {
+    themes: {themeOverride: "dark"},
+  },
+};
