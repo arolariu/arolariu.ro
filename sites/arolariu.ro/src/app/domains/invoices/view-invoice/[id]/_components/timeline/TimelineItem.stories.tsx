@@ -158,7 +158,7 @@ export const Completed: Story = {
       description: "Invoice successfully exported as PDF",
       icon: <TbCheck className='h-3.5 w-3.5' />,
       completed: true,
-      metadata: {method: "PDF", fileSize: "245KB"},
+      metadata: {method: "PDF"},
     },
     icon: <TbCheck className='h-3.5 w-3.5' />,
     isLast: true,
