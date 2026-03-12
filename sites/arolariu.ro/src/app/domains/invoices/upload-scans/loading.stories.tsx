@@ -18,17 +18,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default loading skeleton for the upload scans page. */
 export const Default: Story = {};
-
-/** Upload scans loading skeleton in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Upload scans loading skeleton at mobile viewport width. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

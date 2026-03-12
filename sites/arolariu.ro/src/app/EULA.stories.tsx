@@ -211,11 +211,3 @@ function EulaDemo(): React.JSX.Element {
 export const Default: Story = {
   render: () => <EulaDemo />,
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  ...Default,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

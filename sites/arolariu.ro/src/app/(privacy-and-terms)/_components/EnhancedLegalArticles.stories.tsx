@@ -52,33 +52,3 @@ export const TermsOfServiceDark: Story = {
     themes: {themeOverride: "dark"},
   },
 };
-
-/** Privacy Policy — mobile viewport. */
-export const MobileViewport: Story = {
-  args: {
-    pageType: "Legal.PrivacyPolicy",
-  },
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Privacy Policy — XS viewport. */
-export const XsViewport: Story = {
-  args: {
-    pageType: "Legal.PrivacyPolicy",
-  },
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Privacy Policy — MD viewport. */
-export const MdViewport: Story = {
-  args: {
-    pageType: "Legal.PrivacyPolicy",
-  },
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};

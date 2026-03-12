@@ -66,29 +66,6 @@ export const DominantCategory: Story = {
     currency: "RON",
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    data: generateMockCategorySpending(5),
-    currency: "RON",
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  args: {
-    data: generateMockCategorySpending(5),
-    currency: "RON",
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
 /** Empty data — no category spending available. */
 export const EmptyData: Story = {
   args: {
@@ -101,6 +78,24 @@ export const EmptyData: Story = {
 export const SingleDataPoint: Story = {
   args: {
     data: [{category: "Groceries", amount: 156.75, count: 8, fill: "var(--chart-1)"}],
+    currency: "RON",
+  },
+};
+
+/** High volume — 20+ categories to stress test donut chart density. */
+export const HighVolume: Story = {
+  args: {
+    data: [
+      ...generateMockCategorySpending(8),
+      ...["Snacks", "Frozen", "Personal Care", "Condiments", "Pasta", "Canned", "Spices", "Baby", "Pet Food", "Bakery", "Deli", "Sweets"].map(
+        (category, index) => ({
+          category,
+          amount: faker.number.float({min: 15, max: 250, fractionDigits: 2}),
+          count: faker.number.int({min: 1, max: 12}),
+          fill: `var(--chart-${((index + 3) % 5) + 1})`,
+        }),
+      ),
+    ],
     currency: "RON",
   },
 };

@@ -19,31 +19,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default stats grid with four metric cards. */
 export const Default: Story = {};
-
-/** Stats grid in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Stats grid on a mobile viewport. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Stats grid at XS viewport. */
-export const XsViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Stats grid at MD viewport. */
-export const MdViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};

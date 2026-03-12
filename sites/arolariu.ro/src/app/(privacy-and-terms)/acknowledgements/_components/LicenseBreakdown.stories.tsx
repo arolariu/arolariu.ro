@@ -20,38 +20,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default license breakdown with MIT and Apache cards. */
 export const Default: Story = {};
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** XS viewport variant. */
-export const XsViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** MD viewport variant. */
-export const MdViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};
-
-/** Tablet (iPad) viewport variant. */
-export const TabletViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "ipad"},
-  },
-};

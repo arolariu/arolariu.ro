@@ -90,62 +90,21 @@ export const LongName: Story = {
   },
 };
 
-/** Profile header at mobile viewport width. */
-export const MobileViewport: Story = {
+/** Profile header for a brand new user — just created, no sign-in history. */
+export const NewUser: Story = {
   args: {
     user: createMockClerkUser({
-      id: "user_mobile",
-      imageUrl: "https://i.pravatar.cc/128?u=mobile",
-      createdAt: new Date("2023-01-15"),
+      id: "user_new",
+      firstName: "New",
+      lastName: "User",
+      fullName: "New User",
+      username: "newuser",
+      imageUrl: "https://i.pravatar.cc/128?u=new",
+      emailAddresses: [{emailAddress: "new.user@example.com"}],
+      primaryEmailAddress: {emailAddress: "new.user@example.com"},
+      createdAt: new Date(),
+      lastSignInAt: null,
     }),
-    userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  },
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Profile header at XS viewport. */
-export const XsViewport: Story = {
-  args: {
-    user: createMockClerkUser({
-      id: "user_xs",
-      imageUrl: "https://i.pravatar.cc/128?u=xs",
-      createdAt: new Date("2023-01-15"),
-    }),
-    userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  },
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Profile header at MD viewport. */
-export const MdViewport: Story = {
-  args: {
-    user: createMockClerkUser({
-      id: "user_md",
-      imageUrl: "https://i.pravatar.cc/128?u=md",
-      createdAt: new Date("2023-01-15"),
-    }),
-    userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  },
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};
-
-/** Profile header in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    user: createMockClerkUser({
-      id: "user_dark",
-      imageUrl: "https://i.pravatar.cc/128?u=dark",
-      createdAt: new Date("2023-01-15"),
-    }),
-    userIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
+    userIdentifier: "d4e5f6a7-b8c9-0123-def0-234567890123",
   },
 };

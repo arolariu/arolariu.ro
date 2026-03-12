@@ -21,6 +21,7 @@ const storyMessages: AbstractIntlMessages = {
     listText: "Key features: <ul><li>Server Components</li><li>TypeScript strict mode</li><li>Tailwind CSS</li></ul>",
     combinedText:
       "The platform uses <strong>Next.js</strong> with <em>React Server Components</em>. <br></br> Run <code>npm run dev</code> to start. <ul><li>Fast builds</li><li>Type safety</li></ul>",
+    emptyText: "",
   },
 };
 
@@ -91,5 +92,13 @@ export const WithCustomClass: Story = {
     sectionKey: "StoryDemo",
     textKey: "boldText",
     className: "text-lg text-blue-600 dark:text-blue-400",
+  },
+};
+
+/** Empty string text key — tests rendering when the i18n value is an empty string. */
+export const Empty: Story = {
+  args: {
+    sectionKey: "StoryDemo",
+    textKey: "emptyText",
   },
 };

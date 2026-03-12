@@ -56,25 +56,3 @@ export const LowValueInvoice: Story = {
     },
   },
 };
-
-/** Trivia tips card in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    merchant: mockMerchant,
-    invoice: mockInvoice,
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Trivia tips card at mobile viewport width. */
-export const MobileViewport: Story = {
-  args: {
-    merchant: mockMerchant,
-    invoice: mockInvoice,
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

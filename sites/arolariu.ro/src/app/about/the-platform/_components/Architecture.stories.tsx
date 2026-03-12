@@ -21,17 +21,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default architecture diagram with eight interactive layer cards. */
 export const Default: Story = {};
-
-/** Architecture diagram on a mobile viewport. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
-/** Architecture diagram in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

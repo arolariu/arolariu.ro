@@ -30,30 +30,6 @@ type Story = StoryObj<typeof meta>;
 
 /** Default footer rendered in light mode. */
 export const Default: Story = {};
-
-/** Footer rendered with dark mode context. */
-export const DarkMode: Story = {
-  decorators: [
-    (Story) => (
-      <ThemeProvider
-        attribute='class'
-        defaultTheme='dark'
-        enableSystem={false}>
-        <div className='dark bg-gray-950'>
-          <Story />
-        </div>
-      </ThemeProvider>
-    ),
-  ],
-};
-
-/** Footer at mobile viewport width — stacked layout. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
 /** Footer optimised for print media — minimal decoration. */
 export const PrintMedia: Story = {
   parameters: {
@@ -71,11 +47,4 @@ export const PrintMedia: Story = {
       </ThemeProvider>
     ),
   ],
-};
-
-/** Footer at tablet (iPad) viewport width. */
-export const TabletViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "ipad"},
-  },
 };

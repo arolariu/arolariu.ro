@@ -36,23 +36,3 @@ export const ImportantAndShared: Story = {
     },
   },
 };
-
-/** Invoice timeline card in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    invoice: mockInvoice,
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Invoice timeline card at mobile viewport width. */
-export const MobileViewport: Story = {
-  args: {
-    invoice: mockInvoice,
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

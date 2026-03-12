@@ -22,10 +22,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default merchant details dialog (closed state — requires `useDialog` to open). */
 export const Default: Story = {};
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

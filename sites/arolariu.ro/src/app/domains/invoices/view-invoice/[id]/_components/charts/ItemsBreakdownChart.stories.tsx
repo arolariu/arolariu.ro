@@ -54,29 +54,6 @@ export const ManyItems: Story = {
     currency: "RON",
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    data: generateMockQuantityData(5),
-    currency: "RON",
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  args: {
-    data: generateMockQuantityData(5),
-    currency: "RON",
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
 /** Empty data — no items available. */
 export const EmptyData: Story = {
   args: {
@@ -89,6 +66,24 @@ export const EmptyData: Story = {
 export const SingleDataPoint: Story = {
   args: {
     data: [{name: "Milk", quantity: 2, unit: "L", price: 12.5}],
+    currency: "RON",
+  },
+};
+
+/** High volume — 20+ items to stress test chart density. */
+export const HighVolume: Story = {
+  args: {
+    data: [
+      ...generateMockQuantityData(10),
+      ...["Yogurt", "Salmon", "Olive Oil", "Honey", "Almonds", "Spinach", "Avocado", "Granola", "Juice", "Chocolate", "Bananas", "Peppers"].map(
+        (name) => ({
+          name,
+          quantity: faker.number.int({min: 1, max: 10}),
+          unit: faker.helpers.arrayElement(["kg", "pcs", "L", "g"]),
+          price: faker.number.float({min: 2, max: 80, fractionDigits: 2}),
+        }),
+      ),
+    ],
     currency: "RON",
   },
 };

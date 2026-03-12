@@ -20,24 +20,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default statistics dashboard with four package metrics. */
 export const Default: Story = {};
-
-/** Statistics on mobile viewport. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Statistics at XS viewport. */
-export const XsViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Statistics at MD viewport. */
-export const MdViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};

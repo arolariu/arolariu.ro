@@ -42,13 +42,3 @@ export const ManyBullets: Story = {
     ],
   },
 };
-
-/** Bullet list in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    bullets: ["Secure authentication with Clerk", "Multi-factor authentication support", "OAuth providers: Google, GitHub"],
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

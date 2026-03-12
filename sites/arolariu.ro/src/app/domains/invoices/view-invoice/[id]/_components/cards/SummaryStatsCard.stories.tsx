@@ -66,3 +66,20 @@ export const LargeInvoice: Story = {
     },
   },
 };
+
+/** Edge case — invoice with zero items. */
+export const ZeroItems: Story = {
+  args: {
+    currency: "USD",
+    summary: {
+      totalItems: 0,
+      uniqueCategories: 0,
+      averageItemPrice: 0,
+      totalAmount: 0,
+      taxPercentage: 0,
+      taxAmount: 0,
+      highestItem: {name: "N/A", price: 0},
+      lowestItem: {name: "N/A", price: 0},
+    },
+  },
+};

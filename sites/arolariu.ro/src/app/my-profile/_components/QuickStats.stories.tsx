@@ -65,45 +65,6 @@ export const PowerUser: Story = {
     },
   },
 };
-
-/** Stats dashboard in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    statistics: {
-      totalInvoices: 42,
-      totalMerchants: 15,
-      totalScans: 67,
-      totalSaved: 1234.56,
-      monthlyAverage: 345.67,
-      aiQueriesUsed: 128,
-      storageUsed: 52_428_800,
-      storageLimit: 536_870_912,
-    },
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Stats dashboard at mobile viewport width — single-column layout. */
-export const MobileViewport: Story = {
-  args: {
-    statistics: {
-      totalInvoices: 42,
-      totalMerchants: 15,
-      totalScans: 67,
-      totalSaved: 1234.56,
-      monthlyAverage: 345.67,
-      aiQueriesUsed: 128,
-      storageUsed: 52_428_800,
-      storageLimit: 536_870_912,
-    },
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
 /** Stats dashboard with all zeroes — brand new user with no activity. */
 export const ZeroStats: Story = {
   args: {

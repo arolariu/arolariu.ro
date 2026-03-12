@@ -19,10 +19,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default loading skeleton for the my-profile page. */
 export const Default: Story = {};
-
-/** My-profile loading skeleton in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

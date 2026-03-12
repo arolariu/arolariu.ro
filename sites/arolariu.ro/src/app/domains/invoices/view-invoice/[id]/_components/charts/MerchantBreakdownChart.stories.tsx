@@ -63,31 +63,6 @@ export const ManyMerchants: Story = {
     currentMerchant: "Other Store",
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    data: mockData,
-    currency: "RON",
-    currentMerchant,
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  args: {
-    data: mockData,
-    currency: "RON",
-    currentMerchant,
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
 /** Empty data — no merchants available. */
 export const EmptyData: Story = {
   args: {
@@ -103,5 +78,14 @@ export const SingleDataPoint: Story = {
     data: [{name: "Kaufland", count: 3, total: 245.5, average: 81.83}],
     currency: "RON",
     currentMerchant: "Kaufland",
+  },
+};
+
+/** High volume — 20+ merchants to stress test chart density. */
+export const HighVolume: Story = {
+  args: {
+    data: generateMockMerchantData(22),
+    currency: "RON",
+    currentMerchant: "Highlighted Store",
   },
 };

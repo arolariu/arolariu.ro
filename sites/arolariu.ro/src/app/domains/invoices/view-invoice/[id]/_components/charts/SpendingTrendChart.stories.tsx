@@ -75,29 +75,6 @@ export const UpwardTrend: Story = {
     currency: "RON",
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    data: generateMockSpendingTrend(10),
-    currency: "RON",
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  args: {
-    data: generateMockSpendingTrend(10),
-    currency: "RON",
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
 /** Empty data — no spending trend available. */
 export const EmptyData: Story = {
   args: {
@@ -110,6 +87,14 @@ export const EmptyData: Story = {
 export const SingleDataPoint: Story = {
   args: {
     data: [{date: "Jan 15", amount: 125.5, isCurrent: true, name: "Kaufland Groceries"}],
+    currency: "RON",
+  },
+};
+
+/** High volume — 24 data points to stress test chart density. */
+export const HighVolume: Story = {
+  args: {
+    data: generateMockSpendingTrend(24),
     currency: "RON",
   },
 };

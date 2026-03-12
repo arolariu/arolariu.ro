@@ -20,17 +20,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default bento grid with six capability cards. */
 export const Default: Story = {};
-
-/** Bento section in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Bento section at mobile viewport width. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

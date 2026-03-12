@@ -59,42 +59,21 @@ export const EmptyPackages: Story = {
   },
 };
 
-/** Dark mode variant. */
-export const DarkMode: Story = {
+/** Single package — minimal list with one production dependency. */
+export const SinglePackage: Story = {
   args: {
-    packages: mockPackages,
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
+    packages: {
+      production: [createMockPackage(true)],
+    },
   },
 };
 
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
+/** Many packages — stress test with 50+ dependencies. */
+export const ManyPackages: Story = {
   args: {
-    packages: mockPackages,
-  },
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** XS viewport variant. */
-export const XsViewport: Story = {
-  args: {
-    packages: mockPackages,
-  },
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** MD viewport variant. */
-export const MdViewport: Story = {
-  args: {
-    packages: mockPackages,
-  },
-  parameters: {
-    viewport: {defaultViewport: "md"},
+    packages: {
+      production: Array.from({length: 30}, () => createMockPackage(true)),
+      development: Array.from({length: 25}, () => createMockPackage(false)),
+    },
   },
 };

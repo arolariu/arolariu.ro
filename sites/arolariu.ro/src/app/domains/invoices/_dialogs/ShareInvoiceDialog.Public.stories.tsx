@@ -30,17 +30,3 @@ export const Default: Story = {
     onCopyQRCode: noop,
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    onBack: noop,
-    shareUrl: "https://arolariu.ro/domains/invoices/view-invoice/a1b2c3d4",
-    copied: false,
-    onCopyLink: noop,
-    onCopyQRCode: noop,
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

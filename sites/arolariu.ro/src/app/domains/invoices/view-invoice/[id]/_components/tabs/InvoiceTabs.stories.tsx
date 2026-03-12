@@ -100,11 +100,3 @@ export const EmptyRecipes: Story = {
     </div>
   ),
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  ...WithRecipes,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

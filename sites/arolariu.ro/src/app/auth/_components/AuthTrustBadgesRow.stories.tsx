@@ -36,13 +36,3 @@ export const ManyBadges: Story = {
     badges: ["Open Source", "Privacy First", "AI Powered", "Enterprise Ready", "Multi-language", "24/7 Support"],
   },
 };
-
-/** Trust badges in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    badges: ["256-bit SSL", "GDPR Compliant", "SOC 2"],
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

@@ -19,10 +19,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default mission section with three core pillars. */
 export const Default: Story = {};
-
-/** Mission section in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

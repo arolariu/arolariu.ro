@@ -177,11 +177,3 @@ export const GeneralExpense: Story = {
     </div>
   ),
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  ...GroceryCategory,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

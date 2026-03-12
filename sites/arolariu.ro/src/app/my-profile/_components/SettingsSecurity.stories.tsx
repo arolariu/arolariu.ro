@@ -118,19 +118,3 @@ export const Default: Story = {
     </section>
   ),
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  ...Default,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  ...Default,
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

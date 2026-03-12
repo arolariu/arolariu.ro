@@ -18,10 +18,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default loading skeleton for the auth page. */
 export const Default: Story = {};
-
-/** Auth page loading skeleton in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

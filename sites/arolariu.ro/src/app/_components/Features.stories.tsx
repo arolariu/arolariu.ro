@@ -22,38 +22,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default features grid with six technology cards. */
 export const Default: Story = {};
-
-/** Features grid at mobile viewport width — single-column layout. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Features grid at XS viewport. */
-export const XsViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Features grid at MD viewport. */
-export const MdViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};
-
-/** Features grid in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Features grid at tablet (iPad) viewport width. */
-export const TabletViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "ipad"},
-  },
-};

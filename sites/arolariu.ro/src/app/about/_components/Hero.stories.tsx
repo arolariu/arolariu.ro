@@ -20,31 +20,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default hero section with animated background and CTA buttons. */
 export const Default: Story = {};
-
-/** About hero section in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** About hero section at mobile viewport width. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** About hero section at XS viewport. */
-export const XsViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** About hero section at MD viewport. */
-export const MdViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};

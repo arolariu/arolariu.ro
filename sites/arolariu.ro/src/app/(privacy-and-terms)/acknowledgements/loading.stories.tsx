@@ -21,31 +21,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default acknowledgements loading skeleton. */
 export const Default: Story = {};
-
-/** Acknowledgements loading skeleton in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Acknowledgements loading skeleton at mobile viewport width. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Acknowledgements loading skeleton at XS viewport. */
-export const XsViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Acknowledgements loading skeleton at MD viewport. */
-export const MdViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};

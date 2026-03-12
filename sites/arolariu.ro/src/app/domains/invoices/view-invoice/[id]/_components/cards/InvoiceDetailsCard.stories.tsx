@@ -233,62 +233,71 @@ export const EmptyItems: Story = {
   ),
 };
 
-/** Invoice details at mobile viewport width. */
-export const MobileViewport: Story = {
+/** Invoice with exactly one item — minimal line item display. */
+export const SingleItem: Story = {
   render: () => (
     <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
       <div className='border-b p-6'>
         <div className='flex items-center gap-2'>
           <h3 className='text-lg font-semibold'>Invoice Details</h3>
-          <span title='Important'>❤️</span>
         </div>
-        <p className='text-sm text-gray-500'>Kaufland • Weekly grocery shopping</p>
+        <p className='text-sm text-gray-500'>Corner Shop • Quick purchase</p>
       </div>
       <div className='space-y-4 p-6'>
-        <div className='grid grid-cols-2 gap-4'>
+        <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
           <div>
-            <p className='flex items-center gap-1 text-xs text-gray-500'>📅 Date</p>
-            <p className='text-sm'>Jan 15, 2025</p>
+            <p className='flex items-center gap-1 text-xs text-gray-500'>📅 Date (UTC)</p>
+            <p className='text-sm'>March 5, 2025, 9:15 AM</p>
           </div>
           <div>
             <p className='text-xs text-gray-500'>Category</p>
-            <span className='rounded-full border px-2 py-0.5 text-xs'>GROCERIES</span>
+            <span className='rounded-full border px-2 py-0.5 text-xs'>BEVERAGES</span>
           </div>
           <div>
             <p className='flex items-center gap-1 text-xs text-gray-500'>💳 Payment</p>
-            <p className='text-sm'>CREDIT CARD</p>
+            <p className='text-sm'>CASH</p>
           </div>
           <div>
-            <p className='text-xs text-gray-500'>Total</p>
-            <p className='text-lg font-bold text-green-600'>$125.50</p>
+            <p className='text-xs text-gray-500'>Total Amount</p>
+            <p className='text-lg font-bold text-green-600'>$2.50</p>
           </div>
         </div>
         <hr />
         <div>
-          <h4 className='mb-2 text-sm font-semibold'>Items (2)</h4>
+          <h4 className='mb-2 text-sm font-semibold'>Items (1)</h4>
           <table className='w-full text-sm'>
             <thead>
               <tr className='border-b text-xs text-gray-500'>
                 <th className='pb-2 text-left'>Item</th>
+                <th className='pb-2 text-right'>Qty</th>
+                <th className='pb-2 text-right'>Unit</th>
+                <th className='pb-2 text-right'>Price</th>
                 <th className='pb-2 text-right'>Total</th>
               </tr>
             </thead>
             <tbody>
               <tr className='border-b'>
-                <td className='py-2'>Organic Milk 2L</td>
-                <td className='py-2 text-right font-medium'>$7.98</td>
-              </tr>
-              <tr className='border-b'>
-                <td className='py-2'>Fresh Salmon</td>
-                <td className='py-2 text-right font-medium'>$12.50</td>
+                <td className='py-2'>Espresso Coffee</td>
+                <td className='py-2 text-right'>1</td>
+                <td className='py-2 text-right'>pcs</td>
+                <td className='py-2 text-right'>$2.50</td>
+                <td className='py-2 text-right font-medium'>$2.50</td>
               </tr>
             </tbody>
+            <tfoot>
+              <tr className='bg-gray-50 font-semibold dark:bg-gray-800'>
+                <td
+                  className='py-2 pl-2'
+                  colSpan={4}>
+                  Grand Total
+                </td>
+                <td className='py-2 pr-2 text-right'>$2.50</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
     </div>
   ),
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
 };
+

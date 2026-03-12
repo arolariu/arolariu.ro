@@ -61,11 +61,3 @@ export const Collapsed: Story = {
     </button>
   ),
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  render: Preview.render,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

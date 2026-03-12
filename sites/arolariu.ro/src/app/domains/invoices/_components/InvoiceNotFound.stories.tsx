@@ -30,23 +30,3 @@ export const WithUuidIdentifier: Story = {
     invoiceIdentifier: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   },
 };
-
-/** Not-found state in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    invoiceIdentifier: "INV-2025-001",
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Not-found state at mobile viewport width. */
-export const MobileViewport: Story = {
-  args: {
-    invoiceIdentifier: "INV-2025-001",
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

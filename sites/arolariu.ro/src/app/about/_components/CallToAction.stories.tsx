@@ -20,10 +20,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default CTA section with GitHub and contact links. */
 export const Default: Story = {};
-
-/** CTA section in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

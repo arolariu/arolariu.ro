@@ -125,11 +125,3 @@ export const Default: Story = {
     </section>
   ),
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  ...Default,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

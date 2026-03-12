@@ -19,10 +19,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default TechSphere with live Three.js rendering. */
 export const Default: Story = {};
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

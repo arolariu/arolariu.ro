@@ -20,24 +20,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default certifications section with Azure certification cards. */
 export const Default: Story = {};
-
-/** Certifications section on a mobile viewport. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Certifications section at XS viewport. */
-export const XsViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "xs"},
-  },
-};
-
-/** Certifications section at MD viewport. */
-export const MdViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "md"},
-  },
-};

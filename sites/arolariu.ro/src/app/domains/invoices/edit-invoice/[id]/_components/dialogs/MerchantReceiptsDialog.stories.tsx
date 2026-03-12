@@ -103,11 +103,3 @@ export const Default: Story = {
     </div>
   ),
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  ...Default,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

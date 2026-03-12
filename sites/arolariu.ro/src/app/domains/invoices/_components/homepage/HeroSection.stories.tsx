@@ -33,32 +33,9 @@ export const Unauthenticated: Story = {
   },
 };
 
-/** Authenticated state on a mobile viewport. */
-export const AuthenticatedMobile: Story = {
+/** Authenticated state with a very long user display name to test text overflow. */
+export const WithLongUserName: Story = {
   args: {
     isAuthenticated: true,
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
-/** Unauthenticated state on a mobile viewport. */
-export const UnauthenticatedMobile: Story = {
-  args: {
-    isAuthenticated: false,
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
-/** Authenticated state in dark mode. */
-export const DarkMode: Story = {
-  args: {
-    isAuthenticated: true,
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
   },
 };

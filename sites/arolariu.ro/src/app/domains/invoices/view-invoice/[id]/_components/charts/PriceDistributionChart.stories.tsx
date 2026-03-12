@@ -60,29 +60,6 @@ export const UsdCurrency: Story = {
     currency: "USD",
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    data: mockPriceRanges,
-    currency: "RON",
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  args: {
-    data: mockPriceRanges,
-    currency: "RON",
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
-
 /** Empty data — no price ranges available. */
 export const EmptyData: Story = {
   args: {
@@ -95,6 +72,27 @@ export const EmptyData: Story = {
 export const SingleDataPoint: Story = {
   args: {
     data: [{range: "10-25", count: 7, fill: "var(--chart-2)"}],
+    currency: "RON",
+  },
+};
+
+/** High volume — many fine-grained price ranges to stress test chart density. */
+export const HighVolume: Story = {
+  args: {
+    data: [
+      {range: "Under 5", count: 12, fill: "var(--chart-1)"},
+      {range: "5-10", count: 18, fill: "var(--chart-2)"},
+      {range: "10-15", count: 14, fill: "var(--chart-3)"},
+      {range: "15-20", count: 9, fill: "var(--chart-4)"},
+      {range: "20-30", count: 7, fill: "var(--chart-5)"},
+      {range: "30-40", count: 5, fill: "var(--chart-1)"},
+      {range: "40-50", count: 3, fill: "var(--chart-2)"},
+      {range: "50-75", count: 4, fill: "var(--chart-3)"},
+      {range: "75-100", count: 2, fill: "var(--chart-4)"},
+      {range: "100-150", count: 1, fill: "var(--chart-5)"},
+      {range: "150-200", count: 1, fill: "var(--chart-1)"},
+      {range: "200+", count: 1, fill: "var(--chart-2)"},
+    ],
     currency: "RON",
   },
 };

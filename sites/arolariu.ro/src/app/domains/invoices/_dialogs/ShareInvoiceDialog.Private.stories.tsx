@@ -29,16 +29,3 @@ export const Default: Story = {
     onSendEmail: noop as unknown as (e: React.SubmitEvent) => void,
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    onBack: noop,
-    email: "",
-    onEmailChange: noop,
-    onSendEmail: noop as unknown as (e: React.SubmitEvent) => void,
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

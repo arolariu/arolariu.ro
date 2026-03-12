@@ -147,23 +147,20 @@ export const ErrorEvent: Story = {
   },
 };
 
-/** Timeline item at mobile viewport width. */
-export const MobileViewport: Story = {
+/** Completed event with checkmark styling — final step in a workflow. */
+export const Completed: Story = {
   args: {
     event: {
-      id: "evt-mobile",
-      type: TimelineEventType.CREATED,
-      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      title: "Invoice Created",
-      description: "Receipt scanned and invoice created",
-      icon: <TbFileInvoice className='h-3.5 w-3.5' />,
+      id: "evt-completed",
+      type: TimelineEventType.EXPORTED,
+      date: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+      title: "Export Completed",
+      description: "Invoice successfully exported as PDF",
+      icon: <TbCheck className='h-3.5 w-3.5' />,
       completed: true,
-      metadata: {method: "camera_scan"},
+      metadata: {method: "PDF", fileSize: "245KB"},
     },
-    icon: <TbFileInvoice className='h-3.5 w-3.5' />,
-    isLast: false,
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
+    icon: <TbCheck className='h-3.5 w-3.5' />,
+    isLast: true,
   },
 };

@@ -29,10 +29,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default EULA skeleton shimmer state. */
 export const Default: Story = {};
-
-/** EULA skeleton shimmer in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

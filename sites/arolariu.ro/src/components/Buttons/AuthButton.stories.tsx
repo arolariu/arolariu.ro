@@ -39,19 +39,3 @@ export const LoadingInNavBar: Story = {
     </nav>
   ),
 };
-
-/** Loading skeleton in dark mode. */
-export const DarkMode: Story = {
-  render: () => <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />,
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Loading skeleton at mobile viewport width. */
-export const MobileViewport: Story = {
-  render: () => <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />,
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

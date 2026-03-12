@@ -19,10 +19,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default navigation cards for Platform and Author sub-pages. */
 export const Default: Story = {};
-
-/** Navigation section in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};

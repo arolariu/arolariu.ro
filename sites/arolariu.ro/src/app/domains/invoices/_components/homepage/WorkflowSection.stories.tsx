@@ -20,17 +20,3 @@ type Story = StoryObj<typeof meta>;
 
 /** Default 3-step workflow section. */
 export const Default: Story = {};
-
-/** Workflow section in dark mode. */
-export const DarkMode: Story = {
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Workflow section at mobile viewport width. */
-export const MobileViewport: Story = {
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};

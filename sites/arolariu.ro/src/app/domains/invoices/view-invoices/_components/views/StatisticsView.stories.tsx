@@ -23,23 +23,3 @@ export const Default: Story = {
     invoices: [],
   },
 };
-
-/** Dark mode variant. */
-export const DarkMode: Story = {
-  args: {
-    invoices: [],
-  },
-  parameters: {
-    themes: {themeOverride: "dark"},
-  },
-};
-
-/** Mobile viewport variant. */
-export const MobileViewport: Story = {
-  args: {
-    invoices: [],
-  },
-  parameters: {
-    viewport: {defaultViewport: "mobile1"},
-  },
-};
