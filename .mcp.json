@@ -15,13 +15,37 @@
     },
     "memory": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"]
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "env": {
+        "MEMORY_FILE_PATH": ".github/memory/memory.json"
+      }
     },
     "github": {
       "command": "cmd",
       "args": ["/c", "npx", "-y", "github-mcp"],
       "env": {
         "GITHUB_ACCESS_TOKEN": "${GITHUB_ACCESS_TOKEN}"
+      }
+    },
+    "context7": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp"]
+    },
+    "filesystem": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-filesystem",
+        "sites/arolariu.ro/src",
+        "sites/api.arolariu.ro/src",
+        "packages/components/src",
+        "docs",
+        "infra/Azure/Bicep"
+      ]
+    },
+    "azure-devops": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@azure-devops/mcp", "${AZURE_DEVOPS_ORG}"],
+      "env": {
+        "AZURE_DEVOPS_ORG": "${AZURE_DEVOPS_ORG}"
       }
     }
   }

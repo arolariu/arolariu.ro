@@ -1,0 +1,125 @@
+{
+  "entities": [
+    {
+      "name": "arolariu.ro Monorepo",
+      "entityType": "Repository",
+      "observations": [
+        "Full-stack monorepo: Next.js 16.1.6 frontend + .NET 10 backend + component library + SvelteKit CV + Python experimental service",
+        "Managed with Nx, npm >=11, Node.js >=24",
+        "5 sites: arolariu.ro (Next.js), api.arolariu.ro (.NET), cv.arolariu.ro (SvelteKit), exp.arolariu.ro (Python/FastAPI), docs.arolariu.ro (DocFX)",
+        "AI customization: 13 instruction files, 6 agents, 11 prompts, 4 skills, 3 CLI extensions, 2 governance protocols",
+        "Infrastructure: Azure Cloud, Bicep IaC, GitHub Actions CI/CD"
+      ]
+    },
+    {
+      "name": "Frontend (arolariu.ro)",
+      "entityType": "Project",
+      "observations": [
+        "Next.js 16.1.6 with App Router, React 19.2.4, TypeScript 5.9.3 strict mode",
+        "Island Pattern: page.tsx (RSC) → island.tsx (Client) → _components/ (local)",
+        "State: Zustand 5.0.11 (4 stores with IndexedDB persistence) → Context (scoped) → useState (local)",
+        "i18n: next-intl 4.8.3 with en.json, ro.json, fr.json",
+        "Auth: Clerk (@clerk/nextjs 6.37.4)",
+        "Styling: Tailwind CSS 4.1.18, NO inline styles",
+        "Testing: Vitest 4.0.18, 90%+ coverage target",
+        "Components: @arolariu/components shared library",
+        "Zero any types — TypeScript strict mode enforced"
+      ]
+    },
+    {
+      "name": "Backend (api.arolariu.ro)",
+      "entityType": "Project",
+      "observations": [
+        ".NET 10.0, C# 13, Modular Monolith with Domain-Driven Design",
+        "Architecture: The Standard (5 layers) — Endpoints → Processing → Orchestration → Foundation → Brokers",
+        "Florance Pattern: max 2-3 dependencies per service",
+        "Bounded Contexts: General (Core), Auth (Core.Auth), Invoices (Domain), Common (Shared)",
+        "TryCatch pattern with OpenTelemetry Activity tracing on all service methods",
+        "Brokers are thin wrappers ONLY — no business logic",
+        "No sideways calls: Foundation↔Foundation forbidden, use Orchestration",
+        "XML docs required on all public APIs, TreatWarningsAsErrors enabled",
+        "85%+ test coverage target, xUnit + MSTest"
+      ]
+    },
+    {
+      "name": "Zustand Stores",
+      "entityType": "StateManagement",
+      "observations": [
+        "4 stores: useInvoicesStore, useMerchantsStore, useScansStore, usePreferencesStore",
+        "All use IndexedDB persistence via Dexie + devtools middleware",
+        "Factory: createEntityStore.ts for entity-pattern stores (used by scansStore)",
+        "Import from barrel: import { useInvoicesStore } from '@/stores'",
+        "Use useShallow for object selectors to prevent unnecessary re-renders",
+        "Zustand version: 5.0.11"
+      ]
+    },
+    {
+      "name": "RFC System",
+      "entityType": "Documentation",
+      "observations": [
+        "RFCs in docs/rfc/ — numbered by domain: 0xxx (infra), 1xxx (frontend), 2xxx (backend)",
+        "RFC 0001: GitHub Actions workflows and caching strategy",
+        "RFC 1001: Frontend OpenTelemetry observability",
+        "RFC 1002: JSDoc/TSDoc documentation standard",
+        "RFC 1003: Internationalization (next-intl)",
+        "RFC 1004: Metadata and SEO system",
+        "RFC 1005: State management (Zustand)",
+        "RFC 1006: Component library architecture",
+        "RFC 1007: Advanced frontend patterns",
+        "RFC 2001: Domain-Driven Design architecture",
+        "RFC 2002: Backend OpenTelemetry observability",
+        "RFC 2003: The Standard implementation",
+        "RFC 2004: XML documentation standard",
+        "Always consult relevant RFCs before architectural changes"
+      ]
+    },
+    {
+      "name": "Component Library",
+      "entityType": "Package",
+      "observations": [
+        "Package: @arolariu/components at packages/components/",
+        "60+ Radix UI + shadcn/ui components with Tailwind CSS",
+        "Built with RSLib + Rsbuild, documented with Storybook",
+        "Barrel export: src/index.ts (MUST update when adding components)",
+        "Domain-agnostic — NO business logic, NO imports from sites/",
+        "Use cn() for class merging, React.forwardRef for DOM refs, cva for variants"
+      ]
+    },
+    {
+      "name": "Experimental Service (exp.arolariu.ro)",
+      "entityType": "Project",
+      "observations": [
+        "Python 3.12 + FastAPI + uvicorn",
+        "Configuration proxy and feature flag service",
+        "Ruff linting: E, F, I, W, UP, B, SIM, RUF with 120-char line length",
+        "Tests: pytest with *.test.py pattern, importlib import mode",
+        "Feature flags: bare names in catalog, FeatureManagement: prefix in storage",
+        "API: /api/v1/config, /api/health, /api/ready"
+      ]
+    },
+    {
+      "name": "The Standard Architecture",
+      "entityType": "Pattern",
+      "observations": [
+        "5 layers: Endpoints → Processing → Orchestration → Foundation → Brokers",
+        "Brokers: thin wrappers over external dependencies, NO business logic",
+        "Foundation: CRUD + domain validation, 1-2 Broker dependencies",
+        "Orchestration: coordinate multiple Foundation services, 2-3 dependencies",
+        "Processing: heavy computation, batch operations, 1-2 Orchestration dependencies",
+        "Endpoints: HTTP protocol mapping, 1 Processing service dependency",
+        "Florance Pattern: max 2-3 dependencies per service layer"
+      ]
+    }
+  ],
+  "relations": [
+    { "from": "arolariu.ro Monorepo", "to": "Frontend (arolariu.ro)", "relationType": "contains" },
+    { "from": "arolariu.ro Monorepo", "to": "Backend (api.arolariu.ro)", "relationType": "contains" },
+    { "from": "arolariu.ro Monorepo", "to": "Component Library", "relationType": "contains" },
+    { "from": "arolariu.ro Monorepo", "to": "Experimental Service (exp.arolariu.ro)", "relationType": "contains" },
+    { "from": "arolariu.ro Monorepo", "to": "RFC System", "relationType": "documents" },
+    { "from": "Frontend (arolariu.ro)", "to": "Zustand Stores", "relationType": "uses" },
+    { "from": "Frontend (arolariu.ro)", "to": "Component Library", "relationType": "imports" },
+    { "from": "Backend (api.arolariu.ro)", "to": "The Standard Architecture", "relationType": "follows" },
+    { "from": "Frontend (arolariu.ro)", "to": "Backend (api.arolariu.ro)", "relationType": "calls API of" }
+  ]
+}
