@@ -32,6 +32,7 @@ type Story = StoryObj<typeof meta>;
 
 /** Header loading skeleton — a pulsing bar matching the header layout. */
 export const Skeleton: Story = {
+  decorators: [(Story) => <div className='min-h-[80px] bg-gray-50 dark:bg-gray-950'><Story /></div>],
   render: () => (
     <header className='border-b bg-white px-4 py-3 dark:bg-gray-900'>
       <nav className='mx-auto flex max-w-7xl items-center justify-between'>

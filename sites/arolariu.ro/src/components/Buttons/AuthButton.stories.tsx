@@ -16,7 +16,9 @@ const meta = {
   component: undefined as never,
   parameters: {
     layout: "centered",
+    backgrounds: {default: "light-gray"},
   },
+  decorators: [(Story) => <div className='rounded bg-gray-100 p-4 dark:bg-gray-800'><Story /></div>],
 } satisfies Meta;
 
 export default meta;
