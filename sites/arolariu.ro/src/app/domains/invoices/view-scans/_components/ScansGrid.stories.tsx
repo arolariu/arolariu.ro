@@ -2,11 +2,10 @@ import type {Meta, StoryObj} from "@storybook/react";
 import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
 
 /**
- * Static visual preview of the ScansGrid component.
- *
- * The actual component depends on `useScans` (Zustand store hook),
- * so this story renders faithful HTML replicas of the grid, loading,
- * and empty states.
+ * @remarks Static preview — component requires `useScans` Zustand store hook
+ * which depends on server-side scan upload infrastructure and `CachedScan` state
+ * unavailable in Storybook. The store requires pre-populated scan blobs from
+ * Azure Blob Storage, making a real render infeasible without a mock store provider.
  */
 const meta = {
   title: "Invoices/Scans/ScansGrid",
