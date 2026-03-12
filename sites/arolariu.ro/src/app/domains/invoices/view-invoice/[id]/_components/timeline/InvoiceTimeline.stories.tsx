@@ -12,7 +12,6 @@ import {TbCalendar, TbFileInvoice, TbRobot, TbShare, TbStar, TbUsers} from "reac
  */
 const meta = {
   title: "Invoices/ViewInvoice/Timeline/InvoiceTimeline",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

@@ -10,7 +10,6 @@ import {TbBolt, TbBrain, TbBuildingStore, TbCheck, TbChartBar, TbClock, TbReceip
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/AnalyzeDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

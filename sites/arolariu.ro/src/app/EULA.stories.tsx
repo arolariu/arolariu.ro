@@ -31,7 +31,6 @@ import {
  */
 const meta = {
   title: "Pages/Home/EULA",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
@@ -76,7 +75,7 @@ function EulaDemo(): React.JSX.Element {
         </CardHeader>
 
         <CardContent className='flex flex-col gap-6'>
-          <div className='px-4 text-center text-muted-foreground'>
+          <div className='text-muted-foreground px-4 text-center'>
             <span>By using this platform, you agree to our Terms of Service and Privacy Policy.</span>
           </div>
 
@@ -88,7 +87,7 @@ function EulaDemo(): React.JSX.Element {
                   Terms of Service
                 </CardTitle>
               </CardHeader>
-              <CardContent className='text-sm text-muted-foreground'>Rules and guidelines for using the platform.</CardContent>
+              <CardContent className='text-muted-foreground text-sm'>Rules and guidelines for using the platform.</CardContent>
               <CardFooter>
                 <Button
                   variant='outline'
@@ -105,7 +104,7 @@ function EulaDemo(): React.JSX.Element {
                   Privacy Policy
                 </CardTitle>
               </CardHeader>
-              <CardContent className='text-sm text-muted-foreground'>How we collect, use, and protect your data.</CardContent>
+              <CardContent className='text-muted-foreground text-sm'>How we collect, use, and protect your data.</CardContent>
               <CardFooter>
                 <Button
                   variant='outline'
@@ -126,7 +125,7 @@ function EulaDemo(): React.JSX.Element {
               </h3>
             </div>
 
-            <span className='text-sm text-muted-foreground'>Choose which cookies you allow us to use.</span>
+            <span className='text-muted-foreground text-sm'>Choose which cookies you allow us to use.</span>
 
             <Accordion
               type='single'
@@ -143,7 +142,7 @@ function EulaDemo(): React.JSX.Element {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className='flex flex-col gap-4 p-2'>
-                    <p className='text-sm text-muted-foreground'>Required for basic site functionality and security.</p>
+                    <p className='text-muted-foreground text-sm'>Required for basic site functionality and security.</p>
                     <div className='flex items-center gap-3'>
                       <Switch
                         id='essential-story'
@@ -174,7 +173,7 @@ function EulaDemo(): React.JSX.Element {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className='flex flex-col gap-4 p-2'>
-                    <p className='text-sm text-muted-foreground'>Help us understand how users interact with the site.</p>
+                    <p className='text-muted-foreground text-sm'>Help us understand how users interact with the site.</p>
                     <div className='flex items-center gap-3'>
                       <Switch
                         id='analytics-story'
@@ -200,7 +199,9 @@ function EulaDemo(): React.JSX.Element {
             className='w-full cursor-pointer'>
             <TbCheck className='mr-2 h-4 w-4' /> Accept &amp; Continue
           </Button>
-          <p className='text-center text-xs text-muted-foreground'>By using this platform, you agree to our Terms of Service and Privacy Policy.</p>
+          <p className='text-muted-foreground text-center text-xs'>
+            By using this platform, you agree to our Terms of Service and Privacy Policy.
+          </p>
         </CardFooter>
       </Card>
     </div>

@@ -24,7 +24,6 @@ import {
  */
 const meta = {
   title: "Invoices/Dialogs/DialogContainer",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },
@@ -56,13 +55,14 @@ export const Default: Story = {
       <div className='border-b p-6'>
         <h2 className='text-lg font-semibold'>Dialog Container</h2>
         <p className='mt-1 text-sm text-gray-500'>
-          Manages visibility of all invoice-related dialogs via <code className='rounded bg-gray-100 px-1 text-xs dark:bg-gray-800'>useDialogs</code>{" "}
-          context. Renders the active dialog based on the current dialog type.
+          Manages visibility of all invoice-related dialogs via{" "}
+          <code className='rounded bg-gray-100 px-1 text-xs dark:bg-gray-800'>useDialogs</code> context. Renders the active dialog based on
+          the current dialog type.
         </p>
       </div>
 
       <div className='p-6'>
-        <p className='mb-3 text-xs font-medium uppercase tracking-wider text-gray-500'>Registered Dialog Types</p>
+        <p className='mb-3 text-xs font-medium tracking-wider text-gray-500 uppercase'>Registered Dialog Types</p>
         <div className='grid gap-2'>
           {dialogTypes.map((d) => (
             <div

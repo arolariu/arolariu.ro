@@ -12,7 +12,6 @@ import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/ViewInvoice/InvoiceTabs",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

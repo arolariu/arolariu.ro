@@ -10,7 +10,6 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Pages/Home/GlobalNotFound",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
@@ -34,9 +33,7 @@ export const Default: Story = {
       <section className='text-center'>
         <h1 className='text-7xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100'>404</h1>
         <p className='mt-4 text-xl text-gray-600 dark:text-gray-400'>Page not found</p>
-        <p className='mt-2 text-sm text-gray-500'>
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
-        </p>
+        <p className='mt-2 text-sm text-gray-500'>The page you&apos;re looking for doesn&apos;t exist or has been moved.</p>
       </section>
 
       {/* QR Section */}

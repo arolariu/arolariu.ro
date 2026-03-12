@@ -9,7 +9,6 @@ import {TbAlertTriangle, TbCloud, TbDatabase, TbDownload, TbShieldCheck, TbTrash
  */
 const meta = {
   title: "Pages/Profile/SettingsData",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

@@ -9,7 +9,6 @@ import {TbBell, TbMail, TbReport, TbShield, TbSparkles, TbWallet} from "react-ic
  */
 const meta = {
   title: "Pages/Profile/SettingsNotifications",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

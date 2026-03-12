@@ -11,7 +11,6 @@ import {TbAlertTriangle, TbTrash} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/RemoveScanDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

@@ -9,7 +9,6 @@ import {usePaginationWithSearch} from "./usePagination";
  */
 const meta = {
   title: "Site/usePagination",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

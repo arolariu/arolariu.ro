@@ -9,7 +9,6 @@ import {FontContextProvider, useFontContext} from "./FontContext";
  */
 const meta = {
   title: "Site/FontContext",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

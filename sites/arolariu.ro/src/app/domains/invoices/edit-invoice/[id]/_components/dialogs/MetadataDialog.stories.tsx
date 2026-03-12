@@ -13,7 +13,6 @@ import {TbDiscFilled} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/MetadataDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

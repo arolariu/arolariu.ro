@@ -12,7 +12,6 @@ import {TbChefHat, TbLeaf, TbShoppingCart, TbToolsKitchen2, TbTruck} from "react
  */
 const meta = {
   title: "Invoices/ViewInvoice/Insights/CategoryInsightsContainer",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

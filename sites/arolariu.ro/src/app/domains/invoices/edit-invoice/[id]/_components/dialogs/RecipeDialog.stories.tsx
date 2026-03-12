@@ -13,7 +13,6 @@ import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbWand, TbX} from "
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/RecipeDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

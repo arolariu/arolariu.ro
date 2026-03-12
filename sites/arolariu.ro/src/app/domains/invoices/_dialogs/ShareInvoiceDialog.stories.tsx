@@ -11,7 +11,6 @@ import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/Dialogs/ShareInvoiceDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

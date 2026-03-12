@@ -10,7 +10,6 @@ import {TbStar} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/FeedbackDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

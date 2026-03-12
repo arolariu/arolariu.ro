@@ -10,7 +10,6 @@ import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/ViewInvoices/Views/GenerativeView",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

@@ -12,7 +12,6 @@ import {TbExternalLink, TbGlobe, TbMail, TbUsers} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/ViewInvoice/Timeline/SharedWithList",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

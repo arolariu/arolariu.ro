@@ -9,7 +9,6 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Invoices/ViewInvoices/Views/TableViewActions",
-  component: undefined as never,
   decorators: [
     (Story) => (
       <div className='flex min-h-[200px] items-start justify-center pt-8'>

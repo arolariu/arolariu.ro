@@ -12,7 +12,6 @@ import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/MerchantReceiptsDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

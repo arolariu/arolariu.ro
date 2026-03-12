@@ -10,7 +10,6 @@ import {TbFile, TbUpload} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/ViewInvoices/Dialogs/ImportDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

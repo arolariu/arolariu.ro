@@ -11,7 +11,6 @@ import {TbAlertTriangle, TbFileX, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, T
  */
 const meta = {
   title: "Invoices/Dialogs/DeleteInvoiceDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },
@@ -30,7 +29,9 @@ export const Default: Story = {
           <TbTrash className='h-5 w-5' />
           Delete Invoice
         </h2>
-        <p className='mt-1 text-sm text-gray-500'>This action cannot be undone. The invoice and all associated data will be permanently removed.</p>
+        <p className='mt-1 text-sm text-gray-500'>
+          This action cannot be undone. The invoice and all associated data will be permanently removed.
+        </p>
       </div>
 
       <div className='space-y-4 p-6'>
@@ -94,7 +95,7 @@ export const Default: Story = {
               readOnly
             />
             <div>
-              <p className='text-sm font-medium leading-none'>I understand this action is irreversible</p>
+              <p className='text-sm leading-none font-medium'>I understand this action is irreversible</p>
               <p className='mt-1 text-xs text-gray-500'>All invoice data, scans, and shared access will be permanently deleted.</p>
             </div>
           </div>

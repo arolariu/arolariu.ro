@@ -8,7 +8,6 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Invoices/EditInvoice/Cards/MerchantCard",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

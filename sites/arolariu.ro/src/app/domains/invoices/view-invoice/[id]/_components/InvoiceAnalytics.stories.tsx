@@ -12,7 +12,6 @@ import {TbChartBar, TbTrendingUp} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/ViewInvoice/InvoiceAnalytics",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

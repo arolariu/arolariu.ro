@@ -9,7 +9,6 @@ import {TbBrain, TbMicrophone, TbRobot, TbSettings, TbSparkles, TbTemperature} f
  */
 const meta = {
   title: "Pages/Profile/SettingsAI",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

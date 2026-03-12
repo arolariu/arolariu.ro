@@ -13,7 +13,6 @@ faker.seed(42);
  */
 const meta = {
   title: "Invoices/ViewInvoices/Views/TableView",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

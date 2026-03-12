@@ -9,7 +9,6 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Invoices/ViewInvoice/Cards/ShoppingCalendar",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

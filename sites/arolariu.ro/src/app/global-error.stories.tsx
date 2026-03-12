@@ -11,7 +11,6 @@ import {TbAlertTriangle, TbClipboard, TbHome, TbRefresh} from "react-icons/tb";
  */
 const meta = {
   title: "Pages/Home/GlobalError",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
@@ -59,7 +58,9 @@ export const Default: Story = {
               <TbAlertTriangle className='h-4 w-4' />
               What happened?
             </h4>
-            <p className='mt-1 text-sm text-red-700 dark:text-red-400'>TypeError: Cannot read properties of undefined (reading &apos;map&apos;)</p>
+            <p className='mt-1 text-sm text-red-700 dark:text-red-400'>
+              TypeError: Cannot read properties of undefined (reading &apos;map&apos;)
+            </p>
           </div>
 
           {/* What to do */}
@@ -121,8 +122,7 @@ export const Default: Story = {
       {/* Support Section */}
       <section className='text-center'>
         <p className='text-sm text-gray-500'>
-          Need help? Contact{" "}
-          <span className='text-purple-600 underline dark:text-purple-400'>admin@arolariu.ro</span> with error ID{" "}
+          Need help? Contact <span className='text-purple-600 underline dark:text-purple-400'>admin@arolariu.ro</span> with error ID{" "}
           <code className='rounded bg-gray-100 px-1 text-xs dark:bg-gray-800'>ERR_A1B2C3D4</code>
         </p>
       </section>

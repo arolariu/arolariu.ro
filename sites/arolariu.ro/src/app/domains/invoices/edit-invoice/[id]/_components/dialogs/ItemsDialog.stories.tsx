@@ -12,7 +12,6 @@ import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/ItemsDialog",
-  component: undefined as never,
   parameters: {
     layout: "centered",
   },

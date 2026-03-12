@@ -9,7 +9,6 @@ import {TbChartBar, TbChartPie, TbClock, TbDatabase, TbDownload, TbTrendingUp} f
  */
 const meta = {
   title: "Pages/Profile/SettingsAnalytics",
-  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
