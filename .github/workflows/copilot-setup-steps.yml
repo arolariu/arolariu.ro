@@ -1,0 +1,39 @@
+# =============================================================================
+# Copilot Coding Agent — Environment Setup
+# =============================================================================
+# Configures the development environment for GitHub's Copilot coding agent.
+# This workflow runs before the agent starts working on assigned issues/PRs.
+#
+# Prerequisites:
+#   - Node.js 24 (LTS)
+#   - .NET 10.0 SDK
+#   - npm dependencies installed
+#   - Generated files (env, i18n, GraphQL types)
+# =============================================================================
+
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: 🚀 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: "24"
+          dotnet-version: "10.0.x"
+          cache-key-prefix: "copilot-agent"
+          generate: "true"
