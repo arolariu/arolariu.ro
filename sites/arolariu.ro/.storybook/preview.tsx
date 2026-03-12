@@ -1,5 +1,5 @@
 import {withThemeByClassName} from "@storybook/addon-themes";
-import type {Preview} from "@storybook/react";
+import type {Decorator, Preview} from "@storybook/react";
 import type {AbstractIntlMessages} from "next-intl";
 import {NextIntlClientProvider} from "next-intl";
 
@@ -14,12 +14,65 @@ import "@arolariu/components/styles.css";
 // App SCSS (7-1 architecture — overrides component library defaults)
 import "../src/app/globals.scss";
 
+// ─── Message catalog ─────────────────────────────────────────────
 const messagesByLocale: Record<string, AbstractIntlMessages> = {
   en: enMessages as AbstractIntlMessages,
   ro: roMessages as AbstractIntlMessages,
   fr: frMessages as AbstractIntlMessages,
 };
 
+// ─── Decorator: i18n ─────────────────────────────────────────────
+const withI18n: Decorator = (Story, context) => {
+  const locale = (context.globals["locale"] as string) ?? "en";
+  const messages = messagesByLocale[locale] ?? enMessages;
+  return (
+    <NextIntlClientProvider
+      locale={locale}
+      messages={messages as AbstractIntlMessages}
+      timeZone='Europe/Bucharest'>
+      <Story />
+    </NextIntlClientProvider>
+  );
+};
+
+// ─── Decorator: Google Fonts + CSS variable ──────────────────────
+const withFontSwitcher: Decorator = (Story, context) => {
+  const font = (context.globals["font"] as string) ?? "normal";
+
+  if (typeof document !== "undefined") {
+    const fontId = "sb-google-fonts";
+    if (!document.getElementById(fontId)) {
+      const link = document.createElement("link");
+      link.id = fontId;
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caudex:wght@400;700&display=swap";
+      document.head.appendChild(link);
+    }
+
+    const fontFamily =
+      font === "dyslexic"
+        ? "'Atkinson Hyperlegible', system-ui, sans-serif"
+        : "'Caudex', Georgia, 'Times New Roman', serif";
+
+    document.body.style.setProperty("--font-default", fontFamily);
+    document.body.style.setProperty("--font-dyslexic", "'Atkinson Hyperlegible', system-ui, sans-serif");
+    document.body.style.fontFamily = fontFamily;
+  }
+
+  return <Story />;
+};
+
+// ─── Decorator: Theme preset ─────────────────────────────────────
+const withThemePreset: Decorator = (Story, context) => {
+  const preset = (context.globals["themePreset"] as string) ?? "default";
+  return (
+    <div data-theme-preset={preset}>
+      <Story />
+    </div>
+  );
+};
+
+// ─── Preview config ──────────────────────────────────────────────
 const preview: Preview = {
   parameters: {
     nextjs: {
@@ -83,62 +136,10 @@ const preview: Preview = {
     themePreset: "default",
   },
   decorators: [
-    withThemeByClassName({
-      themes: {
-        light: "",
-        dark: "dark",
-      },
-      defaultTheme: "light",
-    }),
-    (Story, context) => {
-      const locale = (context.globals["locale"] as string) ?? "en";
-      const messages = messagesByLocale[locale] ?? enMessages;
-      return (
-        <NextIntlClientProvider
-          locale={locale}
-          messages={messages as AbstractIntlMessages}
-          timeZone='Europe/Bucharest'>
-          <Story />
-        </NextIntlClientProvider>
-      );
-    },
-    // Font switcher: loads Google Fonts via link elements and applies CSS variable
-    (Story, context) => {
-      const font = (context.globals["font"] as string) ?? "normal";
-
-      // Inject Google Font links if not already present
-      if (typeof document !== "undefined") {
-        const fontId = "sb-google-fonts";
-        if (!document.getElementById(fontId)) {
-          const link = document.createElement("link");
-          link.id = fontId;
-          link.rel = "stylesheet";
-          link.href =
-            "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caudex:wght@400;700&display=swap";
-          document.head.appendChild(link);
-        }
-
-        // Set CSS variables on body so the SCSS system picks them up
-        const fontFamily =
-          font === "dyslexic"
-            ? "'Atkinson Hyperlegible', system-ui, sans-serif"
-            : "'Caudex', Georgia, 'Times New Roman', serif";
-
-        document.body.style.setProperty("--font-default", fontFamily);
-        document.body.style.setProperty("--font-dyslexic", "'Atkinson Hyperlegible', system-ui, sans-serif");
-        document.body.style.fontFamily = fontFamily;
-      }
-
-      return <Story />;
-    },
-    (Story, context) => {
-      const preset = (context.globals["themePreset"] as string) ?? "default";
-      return (
-        <div data-theme-preset={preset}>
-          <Story />
-        </div>
-      );
-    },
+    withThemeByClassName({themes: {light: "", dark: "dark"}, defaultTheme: "light"}),
+    withI18n,
+    withFontSwitcher,
+    withThemePreset,
   ],
 };
 
