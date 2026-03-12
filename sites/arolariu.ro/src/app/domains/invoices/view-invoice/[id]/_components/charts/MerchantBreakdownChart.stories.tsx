@@ -24,7 +24,7 @@ function generateMockMerchantData(count: number): MerchantBreakdown[] {
  * is highlighted with the primary color.
  */
 const meta = {
-  title: "Invoices/Charts/MerchantBreakdownChart",
+  title: "Invoices/ViewInvoice/Charts/MerchantBreakdownChart",
   component: MerchantBreakdownChart,
   decorators: [
     (Story) => (

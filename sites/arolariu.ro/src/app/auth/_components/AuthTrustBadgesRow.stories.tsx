@@ -6,7 +6,7 @@ import AuthTrustBadgesRow from "./AuthTrustBadgesRow";
  * on authentication pages (e.g., "256-bit SSL", "GDPR Compliant").
  */
 const meta = {
-  title: "Auth/AuthTrustBadgesRow",
+  title: "Pages/Auth/AuthTrustBadgesRow",
   component: AuthTrustBadgesRow,
   parameters: {
     layout: "centered",

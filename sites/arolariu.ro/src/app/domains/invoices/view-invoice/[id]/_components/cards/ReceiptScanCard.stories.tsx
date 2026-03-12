@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the receipt scan card.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/ReceiptScanCard",
+  title: "Invoices/ViewInvoice/Cards/ReceiptScan",
   decorators: [
     (Story) => (
       <div className='max-w-sm'>

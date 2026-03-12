@@ -8,7 +8,7 @@ import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
  * Azure Blob Storage, making a real render infeasible without a mock store provider.
  */
 const meta = {
-  title: "Invoices/Scans/ScansGrid",
+  title: "Invoices/ViewScans/ScansGrid",
   parameters: {
     layout: "fullscreen",
   },

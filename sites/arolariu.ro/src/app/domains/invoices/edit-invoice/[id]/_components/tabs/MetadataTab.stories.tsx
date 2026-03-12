@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the metadata tab layout.
  */
 const meta = {
-  title: "Invoices/EditInvoice/MetadataTab",
+  title: "Invoices/EditInvoice/Tabs/MetadataTab",
   decorators: [
     (Story) => (
       <div className='max-w-2xl'>

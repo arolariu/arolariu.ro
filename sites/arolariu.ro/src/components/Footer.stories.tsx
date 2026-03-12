@@ -8,7 +8,7 @@ import Footer from "./Footer";
  * from `next-intl` and requires a `NextIntlClientProvider` wrapper.
  */
 const meta = {
-  title: "Components/Footer",
+  title: "Site/Footer",
   component: Footer,
   decorators: [
     (Story) => (

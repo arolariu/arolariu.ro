@@ -7,7 +7,7 @@ import Loading from "./loading";
  * and bottom mobile navigation placeholders.
  */
 const meta = {
-  title: "MyProfile/Loading",
+  title: "Pages/Profile/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * a **static preview** of the card layout and image gallery structure.
  */
 const meta = {
-  title: "Invoices/EditInvoice/ImageCard",
+  title: "Invoices/EditInvoice/Cards/ImageCard",
   decorators: [
     (Story) => (
       <div className='max-w-sm'>

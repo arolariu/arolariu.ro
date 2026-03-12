@@ -14,7 +14,7 @@ import messages from "../../../../../messages/en.json";
 const namespace = messages.Invoices.Shared.loadingInvoices;
 
 const meta = {
-  title: "Invoices/LoadingInvoices",
+  title: "Invoices/States/LoadingInvoices",
   parameters: {
     layout: "fullscreen",
   },

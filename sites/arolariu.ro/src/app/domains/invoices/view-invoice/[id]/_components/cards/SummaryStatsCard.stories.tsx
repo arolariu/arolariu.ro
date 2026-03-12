@@ -6,7 +6,7 @@ import {SummaryStatsCard} from "./SummaryStatsCard";
  * categories, average price, tax rate, and extreme price items.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/SummaryStatsCard",
+  title: "Invoices/ViewInvoice/Cards/SummaryStats",
   component: SummaryStatsCard,
   decorators: [
     (Story) => (

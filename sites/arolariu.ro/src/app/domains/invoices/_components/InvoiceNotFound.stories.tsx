@@ -7,7 +7,7 @@ import InvoiceNotFound from "./InvoiceNotFound";
  * interpolating the missing invoice's identifier.
  */
 const meta = {
-  title: "Invoices/InvoiceNotFound",
+  title: "Invoices/States/InvoiceNotFound",
   component: InvoiceNotFound,
   parameters: {
     layout: "fullscreen",

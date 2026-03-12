@@ -7,7 +7,7 @@ import {InvoiceTimelineCard} from "./InvoiceTimelineCard";
  * invoice. It takes an `invoice` prop and generates timeline events from it.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/InvoiceTimelineCard",
+  title: "Invoices/ViewInvoice/Cards/InvoiceTimeline",
   component: InvoiceTimelineCard,
   decorators: [
     (Story) => (

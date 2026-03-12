@@ -6,7 +6,7 @@ import Loading from "./loading";
  * title, description, CTA buttons, and steps timeline placeholders.
  */
 const meta = {
-  title: "Invoices/InvoicesLoading",
+  title: "Invoices/States/InvoicesLoading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

@@ -9,7 +9,7 @@ import Loading from "./loading";
  * This is a pure visual component with no translations or interactivity.
  */
 const meta = {
-  title: "App/Loading",
+  title: "Pages/Home/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

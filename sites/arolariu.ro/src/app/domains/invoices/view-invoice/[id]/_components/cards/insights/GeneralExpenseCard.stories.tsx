@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the general expense card layout.
  */
 const meta = {
-  title: "Invoices/Insights/GeneralExpenseCard",
+  title: "Invoices/ViewInvoice/Insights/GeneralExpenseCard",
   decorators: [
     (Story) => (
       <div className='max-w-md'>

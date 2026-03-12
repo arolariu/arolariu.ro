@@ -6,7 +6,7 @@ import {InvoiceGuestBanner} from "./InvoiceGuestBanner";
  * invoice they don't own. It uses a blue-themed Alert component.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/InvoiceGuestBanner",
+  title: "Invoices/ViewInvoice/Banners/GuestBanner",
   component: InvoiceGuestBanner,
   decorators: [
     (Story) => (

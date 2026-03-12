@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the merchant info card layout.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/MerchantInfoCard",
+  title: "Invoices/ViewInvoice/Cards/MerchantInfo",
   decorators: [
     (Story) => (
       <div className='max-w-sm'>

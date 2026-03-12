@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the actions dropdown.
  */
 const meta = {
-  title: "Invoices/Views/TableViewActions",
+  title: "Invoices/ViewInvoices/Views/TableViewActions",
   decorators: [
     (Story) => (
       <div className='flex min-h-[200px] items-start justify-center pt-8'>

@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the recipe card layout.
  */
 const meta = {
-  title: "Invoices/EditInvoice/RecipeCard",
+  title: "Invoices/EditInvoice/Cards/RecipeCard",
   decorators: [
     (Story) => (
       <div className='max-w-sm'>

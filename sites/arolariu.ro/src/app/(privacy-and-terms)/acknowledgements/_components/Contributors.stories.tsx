@@ -7,7 +7,7 @@ import Contributors from "./Contributors";
  * package count, and description.
  */
 const meta = {
-  title: "Acknowledgements/Contributors",
+  title: "Pages/Acknowledgements/Contributors",
   component: Contributors,
   parameters: {
     layout: "fullscreen",

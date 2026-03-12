@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * **static preview** of the card layout with mock invoice data.
  */
 const meta = {
-  title: "Invoices/EditInvoice/InvoiceCard",
+  title: "Invoices/EditInvoice/Cards/InvoiceCard",
   decorators: [
     (Story) => (
       <div className='max-w-2xl'>

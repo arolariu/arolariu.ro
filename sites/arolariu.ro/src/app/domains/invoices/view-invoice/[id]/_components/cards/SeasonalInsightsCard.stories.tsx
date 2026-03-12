@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the seasonal insights card.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/SeasonalInsightsCard",
+  title: "Invoices/ViewInvoice/Cards/SeasonalInsights",
   decorators: [
     (Story) => (
       <div className='max-w-md'>

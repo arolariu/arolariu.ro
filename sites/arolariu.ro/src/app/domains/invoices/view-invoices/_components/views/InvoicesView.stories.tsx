@@ -10,7 +10,7 @@ import {TbCards, TbCategory, TbClock, TbFilter, TbSearch, TbTable} from "react-i
  * replica of the toolbar and placeholder content area.
  */
 const meta = {
-  title: "Invoices/Views/InvoicesView",
+  title: "Invoices/ViewInvoices/Views/InvoicesView",
   parameters: {
     layout: "fullscreen",
   },

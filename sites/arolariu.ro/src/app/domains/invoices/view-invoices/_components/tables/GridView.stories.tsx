@@ -12,7 +12,7 @@ faker.seed(42);
  * component depends on Zustand store and complex context.
  */
 const meta = {
-  title: "Invoices/Views/GridView",
+  title: "Invoices/ViewInvoices/Views/GridView",
   parameters: {
     layout: "fullscreen",
   },

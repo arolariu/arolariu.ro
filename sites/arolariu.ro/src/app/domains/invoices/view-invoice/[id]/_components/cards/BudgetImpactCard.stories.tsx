@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the budget impact card.
  */
 const meta = {
-  title: "Invoices/ViewInvoice/BudgetImpactCard",
+  title: "Invoices/ViewInvoice/Cards/BudgetImpact",
   decorators: [
     (Story) => (
       <div className='max-w-md'>

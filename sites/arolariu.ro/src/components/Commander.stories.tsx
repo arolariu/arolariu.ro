@@ -9,7 +9,7 @@ import {ThemeProvider} from "next-themes";
  * palette items without requiring all providers.
  */
 const meta = {
-  title: "Components/Commander",
+  title: "Site/Commander",
   decorators: [
     (Story) => (
       <ThemeProvider

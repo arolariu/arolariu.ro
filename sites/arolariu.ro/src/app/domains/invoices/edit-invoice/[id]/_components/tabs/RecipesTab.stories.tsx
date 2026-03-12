@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the recipes tab layout.
  */
 const meta = {
-  title: "Invoices/EditInvoice/RecipesTab",
+  title: "Invoices/EditInvoice/Tabs/RecipesTab",
   decorators: [
     (Story) => (
       <div className='max-w-3xl'>

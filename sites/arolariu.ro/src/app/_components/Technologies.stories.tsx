@@ -10,7 +10,7 @@ import TechnologiesSection from "./Technologies";
  * viewport-triggered entrance transitions.
  */
 const meta = {
-  title: "Homepage/Technologies",
+  title: "Pages/Home/Technologies",
   component: TechnologiesSection,
   parameters: {
     layout: "fullscreen",

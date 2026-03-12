@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the items table layout.
  */
 const meta = {
-  title: "Invoices/EditInvoice/ItemsTable",
+  title: "Invoices/EditInvoice/Tables/ItemsTable",
   decorators: [
     (Story) => (
       <div className='max-w-2xl'>

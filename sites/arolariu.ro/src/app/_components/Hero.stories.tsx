@@ -9,7 +9,7 @@ import HeroSection from "./Hero";
  * All text is internationalised via the `Home` i18n namespace.
  */
 const meta = {
-  title: "Homepage/Hero",
+  title: "Pages/Home/Hero",
   component: HeroSection,
   parameters: {
     layout: "fullscreen",

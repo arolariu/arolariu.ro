@@ -9,7 +9,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the vehicle card layout.
  */
 const meta = {
-  title: "Invoices/Insights/VehicleCard",
+  title: "Invoices/ViewInvoice/Insights/VehicleCard",
   decorators: [
     (Story) => (
       <div className='max-w-md'>

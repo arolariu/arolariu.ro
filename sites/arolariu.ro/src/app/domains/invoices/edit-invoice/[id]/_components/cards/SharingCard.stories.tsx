@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the sharing card layout.
  */
 const meta = {
-  title: "Invoices/EditInvoice/SharingCard",
+  title: "Invoices/EditInvoice/Cards/SharingCard",
   decorators: [
     (Story) => (
       <div className='max-w-md'>

@@ -21,7 +21,7 @@ function generateMockSpendingTrend(count: number, currentIndex?: number): Spendi
  * invoice. Uses Recharts AreaChart with gradient fill.
  */
 const meta = {
-  title: "Invoices/Charts/SpendingTrendChart",
+  title: "Invoices/ViewInvoice/Charts/SpendingTrendChart",
   component: SpendingTrendChart,
   decorators: [
     (Story) => (

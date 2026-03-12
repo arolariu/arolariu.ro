@@ -11,7 +11,7 @@ import {TbCheck, TbCookie, TbGlobe, TbInfoCircleFilled, TbLock, TbShield} from "
  * with language picker, policy links, and cookie toggles.
  */
 const meta = {
-  title: "App/EULA",
+  title: "Pages/Home/EULA",
   parameters: {
     layout: "centered",
   },

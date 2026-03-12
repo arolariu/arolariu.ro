@@ -21,7 +21,7 @@ function generateMockCategorySpending(count: number): CategorySpending[] {
  * total amount label in the center. Uses Recharts PieChart.
  */
 const meta = {
-  title: "Invoices/Charts/SpendingByCategoryChart",
+  title: "Invoices/ViewInvoice/Charts/SpendingByCategoryChart",
   component: SpendingByCategoryChart,
   decorators: [
     (Story) => (

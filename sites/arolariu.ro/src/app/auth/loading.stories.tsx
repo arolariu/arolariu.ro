@@ -6,7 +6,7 @@ import Loading from "../loading";
  * with hero header, trust badges, auth cards, and footer skeletons.
  */
 const meta = {
-  title: "Auth/Loading",
+  title: "Pages/Auth/Loading",
   component: Loading,
   parameters: {
     layout: "fullscreen",

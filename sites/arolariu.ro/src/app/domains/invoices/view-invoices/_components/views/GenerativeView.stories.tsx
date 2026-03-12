@@ -9,7 +9,7 @@ import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
  * faithful HTML replica of the chat UI including tabs and settings panel.
  */
 const meta = {
-  title: "Invoices/Views/GenerativeView",
+  title: "Invoices/ViewInvoices/Views/GenerativeView",
   parameters: {
     layout: "fullscreen",
   },

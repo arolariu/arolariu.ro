@@ -10,7 +10,7 @@ import {TbAlertTriangle, TbClipboard, TbHome, TbRefresh} from "react-icons/tb";
  * full document shell.
  */
 const meta = {
-  title: "App/GlobalError",
+  title: "Pages/Home/GlobalError",
   parameters: {
     layout: "fullscreen",
   },

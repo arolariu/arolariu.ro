@@ -8,7 +8,7 @@ import {FontContextProvider, useFontContext} from "./FontContext";
  * This story demonstrates the font switching functionality via a demo component.
  */
 const meta = {
-  title: "Contexts/FontContext",
+  title: "Site/FontContext",
   parameters: {
     layout: "centered",
   },

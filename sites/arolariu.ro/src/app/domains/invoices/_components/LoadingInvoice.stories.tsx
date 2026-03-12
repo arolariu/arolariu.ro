@@ -7,7 +7,7 @@ import LoadingInvoice from "./LoadingInvoice";
  * identifier being loaded.
  */
 const meta = {
-  title: "Invoices/LoadingInvoice",
+  title: "Invoices/States/LoadingInvoice",
   component: LoadingInvoice,
   parameters: {
     layout: "fullscreen",

@@ -11,7 +11,7 @@ import {TbExternalLink, TbGlobe, TbMail, TbUsers} from "react-icons/tb";
  * with avatars, email actions, and a public access warning.
  */
 const meta = {
-  title: "Invoices/Timeline/TimelineSharedWithList",
+  title: "Invoices/ViewInvoice/Timeline/SharedWithList",
   parameters: {
     layout: "centered",
   },

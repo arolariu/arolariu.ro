@@ -15,7 +15,7 @@ import messages from "../../../../../messages/en.json";
 const namespace = messages.Invoices.Shared.invoicesNotFound;
 
 const meta = {
-  title: "Invoices/InvoicesNotFound",
+  title: "Invoices/States/InvoicesNotFound",
   parameters: {
     layout: "fullscreen",
   },

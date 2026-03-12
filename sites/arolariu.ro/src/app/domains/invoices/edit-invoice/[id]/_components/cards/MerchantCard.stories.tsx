@@ -7,7 +7,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * Because it depends on `useDialog`, this story renders a static preview.
  */
 const meta = {
-  title: "Invoices/EditInvoice/MerchantCard",
+  title: "Invoices/EditInvoice/Cards/MerchantCard",
   decorators: [
     (Story) => (
       <div className='max-w-md'>

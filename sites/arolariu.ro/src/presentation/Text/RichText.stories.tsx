@@ -25,7 +25,7 @@ const storyMessages: AbstractIntlMessages = {
 };
 
 const meta = {
-  title: "Presentation/Text/RichText",
+  title: "Site/RichText",
   component: RichText,
   decorators: [
     (Story) => (

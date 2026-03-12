@@ -8,7 +8,7 @@ import {usePaginationWithSearch} from "./usePagination";
  * showcases pagination behavior with mock data.
  */
 const meta = {
-  title: "Hooks/usePagination",
+  title: "Site/usePagination",
   parameters: {
     layout: "centered",
   },

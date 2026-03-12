@@ -11,7 +11,7 @@ import {TbCalendar, TbFileInvoice, TbRobot, TbShare, TbStar, TbUsers} from "reac
  * data and sharing information.
  */
 const meta = {
-  title: "Invoices/Timeline/InvoiceTimeline",
+  title: "Invoices/ViewInvoice/Timeline/InvoiceTimeline",
   parameters: {
     layout: "centered",
   },

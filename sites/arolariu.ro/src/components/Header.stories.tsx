@@ -10,7 +10,7 @@ import {ThemeProvider} from "next-themes";
  * the **skeleton / loading state** of the header to avoid provider issues.
  */
 const meta = {
-  title: "Components/Header",
+  title: "Site/Header",
   decorators: [
     (Story) => (
       <ThemeProvider

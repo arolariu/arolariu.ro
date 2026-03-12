@@ -23,7 +23,7 @@ import {
  * the container can render.
  */
 const meta = {
-  title: "Invoices/DialogContainer",
+  title: "Invoices/Dialogs/DialogContainer",
   parameters: {
     layout: "centered",
   },

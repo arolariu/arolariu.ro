@@ -20,7 +20,7 @@ function generateMockCategoryTrendData(count: number): CategoryTrendData[] {
  * Uses Recharts BarChart with vertical layout.
  */
 const meta = {
-  title: "Invoices/Charts/CategoryComparisonChart",
+  title: "Invoices/ViewInvoice/Charts/CategoryComparisonChart",
   component: CategoryComparisonChart,
   decorators: [
     (Story) => (

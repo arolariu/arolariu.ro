@@ -8,7 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  * This story renders a static preview of the home inventory card layout.
  */
 const meta = {
-  title: "Invoices/Insights/HomeInventoryCard",
+  title: "Invoices/ViewInvoice/Insights/HomeInventoryCard",
   decorators: [
     (Story) => (
       <div className='max-w-md'>

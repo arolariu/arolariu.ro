@@ -10,7 +10,7 @@ import FeaturesSection from "./Features";
  * link directs users to `/about`.
  */
 const meta = {
-  title: "Homepage/Features",
+  title: "Pages/Home/Features",
   component: FeaturesSection,
   parameters: {
     layout: "fullscreen",

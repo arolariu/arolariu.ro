@@ -7,7 +7,7 @@ import RenderStatisticsView from "./StatisticsView";
  * Uses the `Invoices.ViewInvoices.statisticsView` i18n namespace.
  */
 const meta = {
-  title: "Invoices/Views/StatisticsView",
+  title: "Invoices/ViewInvoices/Views/StatisticsView",
   component: RenderStatisticsView,
   parameters: {
     layout: "fullscreen",

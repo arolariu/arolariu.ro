@@ -7,7 +7,7 @@ import TechSphere from "./TechSphere";
  * Pure visual component — no props required.
  */
 const meta = {
-  title: "Effects/TechSphere",
+  title: "Site/TechSphere",
   component: TechSphere,
   parameters: {
     layout: "centered",
