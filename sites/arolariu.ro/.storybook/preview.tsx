@@ -31,6 +31,12 @@ const preview: Preview = {
       },
     },
     layout: "fullscreen",
+    options: {
+      storySort: {
+        method: "alphabetical",
+        order: ["Site", "Pages", ["Home", "About", "Auth", "Legal", "Acknowledgements", "Profile"], "Invoices"],
+      },
+    },
   },
   globalTypes: {
     locale: {
