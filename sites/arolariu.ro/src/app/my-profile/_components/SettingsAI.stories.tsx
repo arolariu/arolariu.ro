@@ -9,16 +9,10 @@ import {TbBrain, TbMicrophone, TbRobot, TbSettings, TbSparkles, TbTemperature} f
  */
 const meta = {
   title: "Pages/Profile/SettingsAI",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
-  decorators: [
-    (Story) => (
-      <div className='p-6'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

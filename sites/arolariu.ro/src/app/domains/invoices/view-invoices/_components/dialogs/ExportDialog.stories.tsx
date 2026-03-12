@@ -10,16 +10,10 @@ import {TbDownload, TbFileSpreadsheet, TbFileText, TbJson} from "react-icons/tb"
  */
 const meta = {
   title: "Invoices/ViewInvoices/Dialogs/ExportDialog",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-md p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

@@ -15,6 +15,7 @@ const namespace = messages.Invoices.Shared.loadingInvoices;
 
 const meta = {
   title: "Invoices/States/LoadingInvoices",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

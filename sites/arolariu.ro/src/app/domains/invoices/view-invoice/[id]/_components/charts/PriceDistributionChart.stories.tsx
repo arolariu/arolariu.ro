@@ -17,13 +17,6 @@ const mockPriceRanges: PriceRange[] = [
 const meta = {
   title: "Invoices/ViewInvoice/Charts/PriceDistributionChart",
   component: PriceDistributionChart,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

@@ -8,6 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Invoices/ViewScans/ScanSelectionToolbar",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

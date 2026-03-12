@@ -9,16 +9,10 @@ import {TbClock, TbDevices, TbKey, TbLock, TbShieldCheck, TbTrash} from "react-i
  */
 const meta = {
   title: "Pages/Profile/SettingsSecurity",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
-  decorators: [
-    (Story) => (
-      <div className='p-6'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

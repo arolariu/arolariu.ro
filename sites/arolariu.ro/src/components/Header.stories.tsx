@@ -11,6 +11,7 @@ import {ThemeProvider} from "next-themes";
  */
 const meta = {
   title: "Site/Header",
+  component: undefined as never,
   decorators: [
     (Story) => (
       <ThemeProvider

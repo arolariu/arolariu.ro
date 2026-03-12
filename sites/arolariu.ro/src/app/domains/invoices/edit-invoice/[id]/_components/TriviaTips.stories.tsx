@@ -10,13 +10,6 @@ import TriviaTipsCard from "./TriviaTips";
 const meta = {
   title: "Invoices/EditInvoice/TriviaTips",
   component: TriviaTipsCard,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

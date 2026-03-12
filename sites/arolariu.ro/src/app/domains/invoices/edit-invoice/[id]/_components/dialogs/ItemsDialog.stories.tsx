@@ -12,16 +12,10 @@ import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/ItemsDialog",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-4xl p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

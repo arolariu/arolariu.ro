@@ -9,6 +9,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Invoices/ViewInvoices/InvoicesHeader",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

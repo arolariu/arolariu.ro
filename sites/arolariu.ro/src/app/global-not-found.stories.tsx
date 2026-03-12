@@ -10,6 +10,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Pages/Home/GlobalNotFound",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

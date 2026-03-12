@@ -11,16 +11,10 @@ import {TbAlertTriangle, TbFileX, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, T
  */
 const meta = {
   title: "Invoices/Dialogs/DeleteInvoiceDialog",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

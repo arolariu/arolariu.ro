@@ -23,13 +23,6 @@ function generateMockSpendingTrend(count: number, currentIndex?: number): Spendi
 const meta = {
   title: "Invoices/ViewInvoice/Charts/SpendingTrendChart",
   component: SpendingTrendChart,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

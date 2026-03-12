@@ -9,13 +9,6 @@ import {InvoiceTimelineCard} from "./InvoiceTimelineCard";
 const meta = {
   title: "Invoices/ViewInvoice/Cards/InvoiceTimeline",
   component: InvoiceTimelineCard,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

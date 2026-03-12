@@ -11,13 +11,6 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof MessageList>;
 
 export default meta;

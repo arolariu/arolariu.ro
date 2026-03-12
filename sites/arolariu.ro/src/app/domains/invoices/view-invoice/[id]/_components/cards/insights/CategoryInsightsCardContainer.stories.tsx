@@ -12,16 +12,10 @@ import {TbChefHat, TbLeaf, TbShoppingCart, TbToolsKitchen2, TbTruck} from "react
  */
 const meta = {
   title: "Invoices/ViewInvoice/Insights/CategoryInsightsContainer",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-md p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

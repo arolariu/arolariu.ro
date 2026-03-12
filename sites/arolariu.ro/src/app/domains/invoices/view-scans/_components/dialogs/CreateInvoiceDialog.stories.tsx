@@ -11,16 +11,10 @@ import {TbArrowRight, TbFileInvoice, TbPhoto, TbSparkles, TbStack2} from "react-
  */
 const meta = {
   title: "Invoices/ViewScans/Dialogs/CreateInvoiceDialog",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

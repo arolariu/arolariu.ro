@@ -8,13 +8,7 @@ import type {Meta, StoryObj} from "@storybook/react";
  */
 const meta = {
   title: "Invoices/ViewInvoice/Cards/BudgetImpact",
-  decorators: [
-    (Story) => (
-      <div className='max-w-md'>
-        <Story />
-      </div>
-    ),
-  ],
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },

@@ -33,9 +33,7 @@ const meta = {
         locale='en'
         messages={storyMessages}
         timeZone='Europe/Bucharest'>
-        <div className='mx-auto max-w-2xl p-8'>
-          <Story />
-        </div>
+        <Story />
       </NextIntlClientProvider>
     ),
   ],

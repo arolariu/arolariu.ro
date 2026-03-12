@@ -23,13 +23,6 @@ function generateMockCategorySpending(count: number): CategorySpending[] {
 const meta = {
   title: "Invoices/ViewInvoice/Charts/SpendingByCategoryChart",
   component: SpendingByCategoryChart,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

@@ -9,16 +9,10 @@ import {TbArrowRight, TbFileInvoice, TbPhoto, TbUpload} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/ViewScans/ScansGrid",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
-  decorators: [
-    (Story) => (
-      <div className='p-6'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

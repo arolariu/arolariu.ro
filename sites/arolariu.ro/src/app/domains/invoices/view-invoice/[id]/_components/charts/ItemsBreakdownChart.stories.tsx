@@ -23,13 +23,6 @@ function generateMockQuantityData(count: number): QuantityData[] {
 const meta = {
   title: "Invoices/ViewInvoice/Charts/ItemsBreakdownChart",
   component: ItemsBreakdownChart,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

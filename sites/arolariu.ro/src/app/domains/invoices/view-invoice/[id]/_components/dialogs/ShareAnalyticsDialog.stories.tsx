@@ -14,11 +14,6 @@ const meta = {
   },
   decorators: [
     withDialogProvider,
-    (Story) => (
-      <div className='max-w-md p-4'>
-        <Story />
-      </div>
-    ),
   ],
 } satisfies Meta<typeof ShareAnalyticsDialog>;
 

@@ -16,6 +16,7 @@ const namespace = messages.Invoices.Shared.invoicesNotFound;
 
 const meta = {
   title: "Invoices/States/InvoicesNotFound",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

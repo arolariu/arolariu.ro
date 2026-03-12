@@ -11,16 +11,10 @@ import {TbCards, TbCategory, TbClock, TbFilter, TbSearch, TbTable} from "react-i
  */
 const meta = {
   title: "Invoices/ViewInvoices/Views/InvoicesView",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
-  decorators: [
-    (Story) => (
-      <div className='p-6'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

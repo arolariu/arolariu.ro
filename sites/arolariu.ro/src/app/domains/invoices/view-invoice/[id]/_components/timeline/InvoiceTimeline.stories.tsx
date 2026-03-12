@@ -12,16 +12,10 @@ import {TbCalendar, TbFileInvoice, TbRobot, TbShare, TbStar, TbUsers} from "reac
  */
 const meta = {
   title: "Invoices/ViewInvoice/Timeline/InvoiceTimeline",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-md p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

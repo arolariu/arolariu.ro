@@ -10,16 +10,10 @@ import {TbStar} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/FeedbackDialog",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

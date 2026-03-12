@@ -12,16 +12,10 @@ import {TbExternalLink, TbGlobe, TbMail, TbUsers} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/ViewInvoice/Timeline/SharedWithList",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-sm p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

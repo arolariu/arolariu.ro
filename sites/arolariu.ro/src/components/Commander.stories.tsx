@@ -10,6 +10,7 @@ import {ThemeProvider} from "next-themes";
  */
 const meta = {
   title: "Site/Commander",
+  component: undefined as never,
   decorators: [
     (Story) => (
       <ThemeProvider

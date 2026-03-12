@@ -11,16 +11,10 @@ import {TbCloudUpload, TbUpload} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/AddScanDialog",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-md p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

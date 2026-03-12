@@ -8,13 +8,6 @@ import {SummaryStatsCard} from "./SummaryStatsCard";
 const meta = {
   title: "Invoices/ViewInvoice/Cards/SummaryStats",
   component: SummaryStatsCard,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

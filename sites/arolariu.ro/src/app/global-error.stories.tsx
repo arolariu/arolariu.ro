@@ -11,6 +11,7 @@ import {TbAlertTriangle, TbClipboard, TbHome, TbRefresh} from "react-icons/tb";
  */
 const meta = {
   title: "Pages/Home/GlobalError",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },

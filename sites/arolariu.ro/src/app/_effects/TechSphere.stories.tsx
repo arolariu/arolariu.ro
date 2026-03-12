@@ -12,13 +12,6 @@ const meta = {
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-xl p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta<typeof TechSphere>;
 
 export default meta;

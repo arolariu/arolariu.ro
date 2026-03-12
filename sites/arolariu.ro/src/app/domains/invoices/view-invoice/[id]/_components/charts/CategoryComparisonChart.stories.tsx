@@ -22,13 +22,6 @@ function generateMockCategoryTrendData(count: number): CategoryTrendData[] {
 const meta = {
   title: "Invoices/ViewInvoice/Charts/CategoryComparisonChart",
   component: CategoryComparisonChart,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

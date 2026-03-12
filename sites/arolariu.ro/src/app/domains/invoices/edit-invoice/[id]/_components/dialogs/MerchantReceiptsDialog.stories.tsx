@@ -12,16 +12,10 @@ import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
  */
 const meta = {
   title: "Invoices/EditInvoice/Dialogs/MerchantReceiptsDialog",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-4xl p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

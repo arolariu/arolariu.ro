@@ -26,13 +26,6 @@ function generateMockMerchantData(count: number): MerchantBreakdown[] {
 const meta = {
   title: "Invoices/ViewInvoice/Charts/MerchantBreakdownChart",
   component: MerchantBreakdownChart,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

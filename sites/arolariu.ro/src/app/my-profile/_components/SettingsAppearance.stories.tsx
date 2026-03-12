@@ -10,16 +10,10 @@ import {TbBrush, TbGlobe, TbMoon, TbPalette, TbSettings, TbSun, TbTypography} fr
  */
 const meta = {
   title: "Pages/Profile/SettingsAppearance",
+  component: undefined as never,
   parameters: {
     layout: "fullscreen",
   },
-  decorators: [
-    (Story) => (
-      <div className='p-6'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

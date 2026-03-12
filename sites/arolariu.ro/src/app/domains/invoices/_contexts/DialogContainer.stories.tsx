@@ -24,16 +24,10 @@ import {
  */
 const meta = {
   title: "Invoices/Dialogs/DialogContainer",
+  component: undefined as never,
   parameters: {
     layout: "centered",
   },
-  decorators: [
-    (Story) => (
-      <div className='max-w-2xl p-4'>
-        <Story />
-      </div>
-    ),
-  ],
 } satisfies Meta;
 
 export default meta;

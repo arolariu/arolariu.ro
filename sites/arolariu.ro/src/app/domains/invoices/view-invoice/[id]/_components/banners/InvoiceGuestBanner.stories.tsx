@@ -8,13 +8,6 @@ import {InvoiceGuestBanner} from "./InvoiceGuestBanner";
 const meta = {
   title: "Invoices/ViewInvoice/Banners/GuestBanner",
   component: InvoiceGuestBanner,
-  decorators: [
-    (Story) => (
-      <div className='max-w-2xl p-4'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

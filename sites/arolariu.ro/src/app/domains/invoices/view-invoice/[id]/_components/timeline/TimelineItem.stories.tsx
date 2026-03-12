@@ -10,13 +10,6 @@ import {TimelineItem} from "./TimelineItem";
 const meta = {
   title: "Invoices/ViewInvoice/Timeline/TimelineItem",
   component: TimelineItem,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg p-4'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },

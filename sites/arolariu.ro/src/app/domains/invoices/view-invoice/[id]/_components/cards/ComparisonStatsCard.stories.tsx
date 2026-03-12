@@ -8,13 +8,6 @@ import {ComparisonStatsCard} from "./ComparisonStatsCard";
 const meta = {
   title: "Invoices/ViewInvoice/Cards/ComparisonStats",
   component: ComparisonStatsCard,
-  decorators: [
-    (Story) => (
-      <div className='max-w-lg'>
-        <Story />
-      </div>
-    ),
-  ],
   parameters: {
     layout: "centered",
   },
