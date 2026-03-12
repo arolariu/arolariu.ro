@@ -29,21 +29,14 @@ const messagesByLocale: Record<string, AbstractIntlMessages> = {
 
 /**
  * Wraps stories in NextIntlClientProvider with locale from toolbar.
- *
- * @remarks
- * Reads the `locale` global from the Storybook toolbar and provides
- * the corresponding message catalog to all child components via
- * NextIntlClientProvider.
- *
- * @param Story - The story component to render
- * @param context - Storybook context containing globals
- * @returns The story wrapped in NextIntlClientProvider
+ * Uses a React key to force full remount when locale changes.
  */
 export const withI18n: Decorator = (Story, context) => {
   const locale = (context.globals["locale"] as string) ?? "en";
   const messages = messagesByLocale[locale] ?? enMessages;
   return (
     <NextIntlClientProvider
+      key={`i18n-${locale}`}
       locale={locale}
       messages={messages as AbstractIntlMessages}
       timeZone='Europe/Bucharest'>
@@ -54,15 +47,7 @@ export const withI18n: Decorator = (Story, context) => {
 
 /**
  * Loads Google Fonts and sets --font-default CSS variable from toolbar.
- *
- * @remarks
- * Dynamically injects a Google Fonts stylesheet link element on first render,
- * then switches the `--font-default` CSS variable based on the selected
- * font from the Storybook toolbar (`normal` → Caudex, `dyslexic` → Atkinson Hyperlegible).
- *
- * @param Story - The story component to render
- * @param context - Storybook context containing globals
- * @returns The story with font styles applied
+ * Uses a React key to force full remount when font changes.
  */
 export const withFontSwitcher: Decorator = (Story, context) => {
   const font = (context.globals["font"] as string) ?? "normal";
@@ -87,25 +72,17 @@ export const withFontSwitcher: Decorator = (Story, context) => {
     document.body.style.fontFamily = fontFamily;
   }
 
-  return <Story />;
+  return <div key={`font-${font}`}><Story /></div>;
 };
 
 /**
  * Sets data-theme-preset attribute from toolbar.
- *
- * @remarks
- * Reads the `themePreset` global from the Storybook toolbar and wraps
- * the story in a `<div>` with the corresponding `data-theme-preset` attribute.
- * This allows CSS to apply themed color variables based on the preset.
- *
- * @param Story - The story component to render
- * @param context - Storybook context containing globals
- * @returns The story wrapped in a themed container div
+ * Uses a React key to force full remount when preset changes.
  */
 export const withThemePreset: Decorator = (Story, context) => {
   const preset = (context.globals["themePreset"] as string) ?? "default";
   return (
-    <div data-theme-preset={preset}>
+    <div key={`preset-${preset}`} data-theme-preset={preset}>
       <Story />
     </div>
   );
