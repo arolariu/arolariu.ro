@@ -1,0 +1,54 @@
+# =============================================================================
+# .copilotignore — Exclude noise from GitHub Copilot CLI context
+# =============================================================================
+# Reduces context pollution by hiding build artifacts, generated files,
+# secrets, and large non-code assets from AI analysis.
+
+# --- Build artifacts & caches ---
+**/node_modules/
+**/dist/
+**/.next/
+**/build/
+**/.turbo/
+**/.cache/
+storybook-static/
+artifacts/
+coverage/
+code-cov/
+TestResults/
+**/bin/
+**/obj/
+
+# --- Secrets & environment files ---
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+**/appsettings.Development.json
+**/appsettings.Production.json
+
+# --- Generated & lock files ---
+package-lock.json
+tsconfig.tsbuildinfo
+nul
+
+# --- Large assets & non-code ---
+readme/
+logs/
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.svg
+**/*.ico
+**/*.woff
+**/*.woff2
+**/*.ttf
+**/*.eot
+
+# --- IDE & tool configuration ---
+.vscode/
+*.code-workspace
+settings.VisualStudio.json
