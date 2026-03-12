@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {DialogProvider} from "../../../../_contexts/DialogContext";
+import {withDialogProvider} from "../../../../../../../../.storybook/providers";
 import InvoiceMetadataDialog from "./MetadataDialog";
 
 /**
@@ -13,12 +13,11 @@ const meta = {
     layout: "centered",
   },
   decorators: [
+    withDialogProvider,
     (Story) => (
-      <DialogProvider>
-        <div className='max-w-md p-4'>
-          <Story />
-        </div>
-      </DialogProvider>
+      <div className='max-w-md p-4'>
+        <Story />
+      </div>
     ),
   ],
 } satisfies Meta<typeof InvoiceMetadataDialog>;

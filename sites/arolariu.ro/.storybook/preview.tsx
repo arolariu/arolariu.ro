@@ -1,76 +1,22 @@
+/**
+ * @fileoverview Storybook preview configuration for the arolariu.ro website.
+ * @module .storybook/preview
+ *
+ * @remarks
+ * This module configures global parameters, toolbar controls, and decorators
+ * for all stories. Decorators are imported from {@link ./decorators} to keep
+ * this file focused on configuration.
+ */
+
 import {withThemeByClassName} from "@storybook/addon-themes";
-import type {Decorator, Preview} from "@storybook/react";
-import type {AbstractIntlMessages} from "next-intl";
-import {NextIntlClientProvider} from "next-intl";
+import type {Preview} from "@storybook/react";
 
-import enMessages from "../messages/en.json";
-import frMessages from "../messages/fr.json";
-import roMessages from "../messages/ro.json";
-
-// Component library CSS (Tailwind/shadcn variables) — must load BEFORE app SCSS
+// CSS imports — order matters: component library first, then app SCSS
 // @ts-ignore -- css file has no typings
 import "@arolariu/components/styles.css";
-
-// App SCSS (7-1 architecture — overrides component library defaults)
 import "../src/app/globals.scss";
 
-// ─── Message catalog ─────────────────────────────────────────────
-const messagesByLocale: Record<string, AbstractIntlMessages> = {
-  en: enMessages as AbstractIntlMessages,
-  ro: roMessages as AbstractIntlMessages,
-  fr: frMessages as AbstractIntlMessages,
-};
-
-// ─── Decorator: i18n ─────────────────────────────────────────────
-const withI18n: Decorator = (Story, context) => {
-  const locale = (context.globals["locale"] as string) ?? "en";
-  const messages = messagesByLocale[locale] ?? enMessages;
-  return (
-    <NextIntlClientProvider
-      locale={locale}
-      messages={messages as AbstractIntlMessages}
-      timeZone='Europe/Bucharest'>
-      <Story />
-    </NextIntlClientProvider>
-  );
-};
-
-// ─── Decorator: Google Fonts + CSS variable ──────────────────────
-const withFontSwitcher: Decorator = (Story, context) => {
-  const font = (context.globals["font"] as string) ?? "normal";
-
-  if (typeof document !== "undefined") {
-    const fontId = "sb-google-fonts";
-    if (!document.getElementById(fontId)) {
-      const link = document.createElement("link");
-      link.id = fontId;
-      link.rel = "stylesheet";
-      link.href = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caudex:wght@400;700&display=swap";
-      document.head.appendChild(link);
-    }
-
-    const fontFamily =
-      font === "dyslexic"
-        ? "'Atkinson Hyperlegible', system-ui, sans-serif"
-        : "'Caudex', Georgia, 'Times New Roman', serif";
-
-    document.body.style.setProperty("--font-default", fontFamily);
-    document.body.style.setProperty("--font-dyslexic", "'Atkinson Hyperlegible', system-ui, sans-serif");
-    document.body.style.fontFamily = fontFamily;
-  }
-
-  return <Story />;
-};
-
-// ─── Decorator: Theme preset ─────────────────────────────────────
-const withThemePreset: Decorator = (Story, context) => {
-  const preset = (context.globals["themePreset"] as string) ?? "default";
-  return (
-    <div data-theme-preset={preset}>
-      <Story />
-    </div>
-  );
-};
+import {withFontSwitcher, withI18n, withThemePreset} from "./decorators";
 
 // ─── Preview config ──────────────────────────────────────────────
 const preview: Preview = {
