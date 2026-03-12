@@ -288,15 +288,18 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 | Prompts | `.github/prompts/*.prompt.md` | Reusable task templates |
 | Skills | `.github/skills/*/SKILL.md` | Scaffolding with templates |
 
-### MCP Servers (Claude Code)
+### MCP Servers
 
-| Server | Capability |
-|--------|-----------|
-| sequential-thinking | Multi-step reasoning and planning |
-| playwright | Browser automation for E2E testing |
-| eslint | Real-time linting feedback |
-| memory | Persistent context across sessions |
-| github | GitHub PRs, issues, actions, and code search |
+| Server | Package | Capability |
+|--------|---------|-----------|
+| sequential-thinking | `@modelcontextprotocol/server-sequential-thinking` | Multi-step reasoning and planning |
+| playwright | `@playwright/mcp` | Browser automation for E2E testing |
+| eslint | `@eslint/mcp` | Real-time linting feedback |
+| memory | `@modelcontextprotocol/server-memory` | Persistent knowledge graph (→ `.github/memory/memory.json`) |
+| github | `github-mcp` | GitHub PRs, issues, actions, code search |
+| context7 | `@upstash/context7-mcp` | Live library/framework documentation injection |
+| filesystem | `@modelcontextprotocol/server-filesystem` | Structured file operations (scoped to src/) |
+| azure-devops | `@azure-devops/mcp` | Azure DevOps work items, builds, repos |
 
 ### RFCs (Architecture Decisions)
 
