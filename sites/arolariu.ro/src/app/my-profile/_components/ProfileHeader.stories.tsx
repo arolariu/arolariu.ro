@@ -1,8 +1,9 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import type {User} from "@clerk/nextjs/server";
 import {ProfileHeader} from "./ProfileHeader";
 
 /** Creates a minimal Clerk User mock matching the fields ProfileHeader actually reads. */
-function createMockClerkUser(overrides: Record<string, unknown> = {}): unknown {
+function createMockClerkUser(overrides: Record<string, unknown> = {}): User {
   return {
     id: "user_mock_123",
     firstName: "Alexandru",
@@ -15,7 +16,7 @@ function createMockClerkUser(overrides: Record<string, unknown> = {}): unknown {
     createdAt: new Date("2024-01-15"),
     lastSignInAt: new Date("2026-03-11"),
     ...overrides,
-  };
+  } as unknown as User;
 }
 
 /**
