@@ -7,21 +7,47 @@
 ### Installation & Setup
 
 ```bash
-# Install the package
 npm install @arolariu/components
 
-# Install peer dependencies if needed
-npm install react react-dom
+# Peer dependencies (install if not already in your project)
+npm install react react-dom @base-ui/react motion
 ```
 
 ```tsx
-// Add to your app's root (App.tsx, main.tsx, or _app.tsx)
+// Import design tokens only once in your app entry point
 import "@arolariu/components/styles";
+
+// Components auto-load their CSS when imported
+import { Button, Card } from "@arolariu/components";
 ```
+
+`@arolariu/components/styles` provides design tokens only. Component CSS is loaded automatically when components are imported.
 
 ```tsx
 // Use local CSS Modules for application-specific layout and composition
 import styles from "./my-component.module.css";
+```
+
+`tailwindcss` is not a peer dependency in v1.0.0.
+
+### Useful Subpath Imports
+
+```tsx
+import { Button } from "@arolariu/components/button";
+import { useIsMobile } from "@arolariu/components/useIsMobile";
+import { cn } from "@arolariu/components/utilities";
+import { hexToHsl } from "@arolariu/components/color-conversion-utilities";
+```
+
+### Composition with the `render` Prop
+
+```tsx
+import { Button } from "@arolariu/components";
+
+// Use render prop instead of asChild
+<Button render={<a href="/dashboard" />}>
+  Go to Dashboard
+</Button>
 ```
 
 ```css
@@ -39,7 +65,8 @@ import styles from "./my-component.module.css";
 ### Simple Card Layout
 
 ```tsx
- import { Badge } from "@arolariu/components/badge";
+import { Badge } from "@arolariu/components/badge";
+import { Button } from "@arolariu/components/button";
 import {
   Card,
   CardContent,
@@ -928,6 +955,13 @@ export function SettingsDialog() {
 ## 🎨 Theming Examples
 
 ### App Theme with `--ac-*` Tokens
+
+```css
+:root {
+  --ac-primary: oklch(0.6 0.2 250);
+  --ac-radius: 0.5rem;
+}
+```
 
 ```css
 /* app-theme.module.css */

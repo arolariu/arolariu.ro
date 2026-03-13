@@ -14,9 +14,9 @@
 
 **Modern • Accessible • Production Ready**
 
-_A comprehensive collection of 70+ beautifully crafted React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS Modules, and designed for modern applications that demand both beauty and performance._
+_A comprehensive collection of 71+ beautifully crafted React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS Modules, and designed for modern applications that demand both beauty and performance._
 
-[🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • [🎨 Storybook](https://storybook.arolariu.ro) • [💡 Examples](#-usage-examples) • [🤝 Contributing](#-contributing)
+[🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • 🎨 Storybook demos (Coming soon) • [💡 Examples](#-usage-examples) • [🤝 Contributing](#-contributing)
 
 </div>
 
@@ -44,14 +44,10 @@ Get up and running with @arolariu/components in under 2 minutes.
 ### Installation
 
 ```bash
-# npm
 npm install @arolariu/components
 
-# yarn
-yarn add @arolariu/components
-
-# pnpm
-pnpm add @arolariu/components
+# Peer dependencies (install if not already in your project)
+npm install react react-dom @base-ui/react motion
 ```
 
 ### Basic Setup
@@ -95,9 +91,14 @@ export default function MyApp() {
 ### Add Styles (Required)
 
 ```tsx
-// Import the package design tokens and base styles once in your app entry point.
+// Import design tokens only (colors, spacing, radii)
 import "@arolariu/components/styles";
+
+// Components auto-load their CSS when imported
+import { Button, Card } from "@arolariu/components";
 ```
+
+`@arolariu/components/styles` provides design tokens only. Component CSS is loaded automatically when you import components.
 
 ### Optional Theme Overrides
 
@@ -121,7 +122,7 @@ import "@arolariu/components/styles";
 
 ## 📖 Component Catalog
 
-Explore our collection of **70+ components** organized by category.
+Explore our collection of **71+ components** organized by category.
 
 ### 🎨 Layout & Structure
 
@@ -204,7 +205,18 @@ Explore our collection of **70+ components** organized by category.
 | **FireworksBackground** | Particle explosion effects      | `@arolariu/components/fireworks-background` |
 | **GradientBackground**  | Dynamic gradient animations     | `@arolariu/components/gradient-background`  |
 
-[**👀 View All Components**](https://storybook.arolariu.ro) in our interactive Storybook.
+**Storybook demos:** Coming soon.
+
+---
+
+## 🔄 Migrating from v0.x
+
+- `@radix-ui/*` has been replaced internally with `@base-ui/react`; this is automatic and does not require consumer changes.
+- `tailwindcss` is no longer a peer dependency.
+- `asChild` still works for backward compatibility, but the `render` prop is now the preferred composition API.
+- The `sonner` toast API is preserved through the compatibility wrapper exported from `@arolariu/components/sonner`.
+- If you previously used `badgeVariants` or `buttonVariants`, migrate to component props such as `variant` and `size` instead.
+- CSS custom properties now use the `--ac-*` prefix.
 
 ---
 
@@ -240,6 +252,15 @@ Explore our collection of **70+ components** organized by category.
 - Built with **RSLib** using ESM output
 - Tree-shakeable direct imports for components
 - TypeScript declarations and source maps included
+
+### Common Import Paths
+
+```tsx
+import { Button } from "@arolariu/components/button";
+import { useIsMobile } from "@arolariu/components/useIsMobile";
+import { cn } from "@arolariu/components/utilities";
+import { hexToHsl } from "@arolariu/components/color-conversion-utilities";
+```
 
 ---
 
@@ -698,7 +719,7 @@ If **@arolariu/components** helps you build better UIs, please consider giving i
 
 [![GitHub stars](https://img.shields.io/github/stars/arolariu/arolariu.ro?style=social)](https://github.com/arolariu/arolariu.ro)
 
-**[⭐ Star on GitHub](https://github.com/arolariu/arolariu.ro)** • **[📖 View Documentation](https://storybook.arolariu.ro)** • **[🐛 Report Issues](https://github.com/arolariu/arolariu.ro/issues)**
+**[⭐ Star on GitHub](https://github.com/arolariu/arolariu.ro)** • **[📖 View Component Catalog](#-component-catalog)** • **[🐛 Report Issues](https://github.com/arolariu/arolariu.ro/issues)**
 
 ---
 
