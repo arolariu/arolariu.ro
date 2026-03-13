@@ -3,8 +3,16 @@
   max-width: max-content;
 }
 
-.popup {
+/* Positioner uses CSS transform for floating-ui placement, which creates
+   a new stacking context.  An explicit z-index ensures the tooltip paints
+   above page elements that carry their own z-index (e.g. sticky headers,
+   footers with z-index: 10). */
+.positioner {
   z-index: 50;
+}
+
+.popup {
+  position: relative;
   overflow: hidden;
   border-radius: var(--ac-radius-sm);
   background-color: var(--ac-foreground);

@@ -146,6 +146,7 @@ function TooltipContent(props: Readonly<TooltipContent.Props>): React.ReactEleme
   return (
     <BaseTooltip.Portal>
       <BaseTooltip.Positioner
+        className={styles.positioner}
         side={side}
         sideOffset={sideOffset}>
         <BaseTooltip.Popup
