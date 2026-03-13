@@ -47,7 +47,7 @@ Get up and running with @arolariu/components in under 2 minutes.
 npm install @arolariu/components
 
 # Peer dependencies (install if not already in your project)
-npm install react react-dom @base-ui/react motion
+npm install react react-dom @base-ui/react motion react-hook-form recharts
 ```
 
 ### Basic Setup

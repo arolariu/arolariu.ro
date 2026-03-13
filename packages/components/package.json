@@ -91,24 +91,20 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@hookform/resolvers": "*",
     "clsx": "*",
     "embla-carousel-react": "*",
     "input-otp": "*",
     "lucide-react": "*",
-    "next-themes": "*",
     "react-day-picker": "*",
-    "react-hook-form": "*",
-    "react-resizable-panels": "*",
-    "recharts": "*",
-    "shiki": "*",
-    "zod": "*"
+    "react-resizable-panels": "*"
   },
   "peerDependencies": {
     "@base-ui/react": "^1",
     "motion": "^12",
     "react": "^18.2 || ^19",
-    "react-dom": "^18.2 || ^19"
+    "react-dom": "^18.2 || ^19",
+    "react-hook-form": "^7",
+    "recharts": "^2 || ^3"
   },
   "devDependencies": {
     "@base-ui/react": "*",
@@ -123,6 +119,8 @@
     "playwright": "*",
     "react": "*",
     "react-dom": "*",
+    "react-hook-form": "*",
+    "recharts": "*",
     "rimraf": "*",
     "typescript": "*"
   },
