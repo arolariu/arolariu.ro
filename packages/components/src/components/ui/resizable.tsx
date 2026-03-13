@@ -10,6 +10,8 @@ import {cn} from "@/lib/utilities";
 
 import styles from "./resizable.module.css";
 
+export type {ImperativePanelGroupHandle, ImperativePanelHandle} from "react-resizable-panels";
+
 /**
  * Props for the {@link ResizablePanelGroup} component.
  */
@@ -22,9 +24,16 @@ export type ResizablePanelProps = React.ComponentProps<typeof ResizablePrimitive
 
 /**
  * Props for the {@link ResizableHandle} component.
+ *
+ * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
  */
 export interface ResizableHandleProps extends React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> {
-  /** Renders a visible drag grip inside the resize handle. @default false */
+  /**
+   * Renders a visual drag grip inside the resize handle to indicate that adjacent panels can be resized.
+   *
+   * @default false
+   * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+   */
   withHandle?: boolean;
 }
 
@@ -42,6 +51,7 @@ export interface ResizableHandleProps extends React.ComponentProps<typeof Resiza
  *
  * @see {@link ResizablePanelGroupProps} for available props
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+ * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
  */
 function ResizablePanelGroup({className, ...props}: Readonly<ResizablePanelGroupProps>): React.JSX.Element {
   return (
@@ -66,6 +76,7 @@ function ResizablePanelGroup({className, ...props}: Readonly<ResizablePanelGroup
  *
  * @see {@link ResizablePanelProps} for available props
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+ * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
  */
 const ResizablePanel = ResizablePrimitive.Panel;
 
@@ -83,6 +94,7 @@ const ResizablePanel = ResizablePrimitive.Panel;
  *
  * @see {@link ResizableHandleProps} for available props
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+ * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
  */
 function ResizableHandle({withHandle = false, className, ...props}: Readonly<ResizableHandleProps>): React.JSX.Element {
   return (

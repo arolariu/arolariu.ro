@@ -43,15 +43,27 @@ describe("Carousel", () => {
     vi.mocked(emblaMock.useEmblaCarousel).mockClear();
   });
 
-  function renderCarousel(className?: string): void {
-    render(
-      <Carousel className={className}>
+  function renderCarousel({
+    className,
+    nextButtonOnClick,
+    orientation,
+    previousButtonOnClick,
+  }: Readonly<{
+    className?: string;
+    nextButtonOnClick?: () => void;
+    orientation?: "horizontal" | "vertical";
+    previousButtonOnClick?: () => void;
+  }> = {}): ReturnType<typeof render> {
+    return render(
+      <Carousel
+        className={className}
+        orientation={orientation}>
         <CarouselContent>
           <CarouselItem>Slide 1</CarouselItem>
           <CarouselItem>Slide 2</CarouselItem>
         </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
+        <CarouselPrevious onClick={previousButtonOnClick} />
+        <CarouselNext onClick={nextButtonOnClick} />
       </Carousel>,
     );
   }
@@ -79,7 +91,7 @@ describe("Carousel", () => {
 
   it("merges the root className", () => {
     // Arrange
-    renderCarousel("custom-carousel");
+    renderCarousel({className: "custom-carousel"});
 
     // Assert
     expect(screen.getByRole("region")).toHaveClass("custom-carousel");
@@ -92,5 +104,48 @@ describe("Carousel", () => {
     // Assert
     expect(screen.getByText("Slide 1")).toBeInTheDocument();
     expect(screen.getByText("Slide 2")).toBeInTheDocument();
+  });
+
+  it("merges consumer onClick handlers with carousel navigation", () => {
+    // Arrange
+    const previousButtonOnClick = vi.fn();
+    const nextButtonOnClick = vi.fn();
+
+    renderCarousel({nextButtonOnClick, previousButtonOnClick});
+
+    // Act
+    fireEvent.click(screen.getByRole("button", {name: "Previous slide"}));
+    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+
+    // Assert
+    expect(previousButtonOnClick).toHaveBeenCalledTimes(1);
+    expect(nextButtonOnClick).toHaveBeenCalledTimes(1);
+    expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
+    expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("supports vertical keyboard navigation", () => {
+    // Arrange
+    renderCarousel({orientation: "vertical"});
+
+    // Act
+    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowUp"});
+    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowDown"});
+
+    // Assert
+    expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
+    expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("cleans up all Embla event listeners on unmount", () => {
+    // Arrange
+    const {unmount} = renderCarousel();
+
+    // Act
+    unmount();
+
+    // Assert
+    expect(emblaMock.api.off).toHaveBeenCalledWith("reInit", expect.any(Function));
+    expect(emblaMock.api.off).toHaveBeenCalledWith("select", expect.any(Function));
   });
 });

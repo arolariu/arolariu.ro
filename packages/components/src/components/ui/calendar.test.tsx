@@ -36,4 +36,18 @@ describe("Calendar", () => {
     expect(screen.getByRole("grid")).toBeInTheDocument();
     expect(screen.getAllByText("15")[0]).toBeInTheDocument();
   });
+
+  it("preserves unhandled day picker classNames keys", () => {
+    // Arrange
+    render(
+      <Calendar
+        classNames={{
+          month_grid: "custom-month-grid",
+        }}
+      />,
+    );
+
+    // Assert
+    expect(screen.getByRole("grid")).toHaveClass("custom-month-grid");
+  });
 });

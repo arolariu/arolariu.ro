@@ -8,6 +8,11 @@ import {cn} from "@/lib/utilities";
 
 import styles from "./input-otp.module.css";
 
+const DEFAULT_SLOT_PLACEHOLDER_CHARACTER = "·";
+
+export {REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS} from "input-otp";
+export type {OTPInputProps, SlotProps} from "input-otp";
+
 /**
  * Props for the {@link InputOTP} component.
  */
@@ -37,14 +42,23 @@ export type InputOTPSeparatorProps = React.ComponentPropsWithoutRef<"div">;
  * @remarks
  * - Third-party wrapper component
  * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Forwards all supported `input-otp` root props to the underlying primitive
  *
  * @example
  * ```tsx
  * <InputOTP maxLength={6} />
  * ```
  *
+ * @param props.maxLength - Required OTP length used to generate the expected number of slots.
+ * @param props.pattern - Optional validation pattern forwarded to the underlying input, often paired with
+ * `REGEXP_ONLY_DIGITS`, `REGEXP_ONLY_CHARS`, or `REGEXP_ONLY_DIGITS_AND_CHARS`.
+ * @param props.onComplete - Callback invoked after the user fills all slots with a complete value.
+ * @param props.pushPasswordManagerStrategy - Controls how password manager UI is handled inside the input
+ * container.
+ * @param props.textAlign - Sets how typed characters are aligned inside the hidden backing input.
  * @see {@link InputOTPProps} for available props
  * @see {@link https://github.com/guilhermerodz/input-otp | input-otp library docs}
+ * @see {@link https://github.com/guilhermerodz/input-otp | input-otp API reference}
  */
 const InputOTP = React.forwardRef<React.ComponentRef<typeof OTPInput>, InputOTPProps>(
   ({className, containerClassName, ...props}: Readonly<InputOTPProps>, ref): React.JSX.Element => (
@@ -110,14 +124,16 @@ const InputOTPSlot = React.forwardRef<React.ComponentRef<"div">, InputOTPSlotPro
       throw new Error(`InputOTPSlot could not find slot at index ${index}.`);
     }
 
-    const {char, hasFakeCaret, isActive} = slot;
+    const {char, hasFakeCaret, isActive, placeholderChar} = slot;
+    const shouldRenderPlaceholderCharacter = char === null && hasFakeCaret === false;
+    const displayCharacter = shouldRenderPlaceholderCharacter ? (placeholderChar ?? DEFAULT_SLOT_PLACEHOLDER_CHARACTER) : char;
 
     return (
       <div
         ref={ref}
         className={cn(styles.slot, isActive && styles.slotActive, className)}
         {...props}>
-        {char}
+        {displayCharacter}
         {Boolean(hasFakeCaret) && (
           <div className={styles.fakeCaretContainer}>
             <div className={styles.fakeCaret} />

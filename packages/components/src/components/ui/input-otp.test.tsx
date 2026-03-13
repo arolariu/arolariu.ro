@@ -1,7 +1,7 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
 
-import {InputOTP, InputOTPGroup} from "./input-otp";
+import {InputOTP, InputOTPGroup, InputOTPSlot, REGEXP_ONLY_DIGITS} from "./input-otp";
 
 describe("InputOTP", () => {
   it("renders without crashing", () => {
@@ -48,5 +48,42 @@ describe("InputOTP", () => {
 
     // Assert
     expect(screen.getByText("OTP group child")).toBeInTheDocument();
+  });
+
+  it("re-exports the digits-only validation pattern", () => {
+    // Assert
+    expect(REGEXP_ONLY_DIGITS).toBe("^\\d+$");
+  });
+
+  it("renders placeholder characters for inactive empty slots", () => {
+    // Arrange
+    render(
+      <InputOTP maxLength={2}>
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+          <InputOTPSlot index={1} />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+
+    // Assert
+    expect(screen.getAllByText("·").length).toBeGreaterThan(0);
+  });
+
+  it("renders the library placeholder character when provided", () => {
+    // Arrange
+    render(
+      <InputOTP
+        maxLength={2}
+        placeholder='AB'>
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+          <InputOTPSlot index={1} />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+
+    // Assert
+    expect(screen.getByText("B")).toBeInTheDocument();
   });
 });

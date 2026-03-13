@@ -3,7 +3,19 @@
 /* eslint-disable react/prop-types */
 
 import * as React from "react";
-import {Controller, FormProvider, useFormContext, type ControllerProps, type FieldPath, type FieldValues} from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useFormContext,
+  type Control,
+  type ControllerProps,
+  type FieldErrors,
+  type FieldPath,
+  type FieldValues,
+  type Path,
+  type SubmitHandler,
+  type UseFormReturn,
+} from "react-hook-form";
 
 import {cn} from "@/lib/utilities";
 
@@ -336,4 +348,6 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
 FormMessage.displayName = "FormMessage";
 FormField.displayName = "FormField";
 
+export {useController, useFieldArray, useForm, useWatch} from "react-hook-form";
 export {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField};
+export type {Control, FieldErrors, FieldValues, Path, SubmitHandler, UseFormReturn};

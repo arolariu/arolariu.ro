@@ -165,11 +165,34 @@ export {
   FieldTitle,
 } from "./components/ui/field";
 
-export {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField} from "./components/ui/form";
+export {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useController,
+  useFieldArray,
+  useForm,
+  useFormField,
+  useWatch,
+} from "./components/ui/form";
+export type {Control, FieldErrors, FieldValues, Path, SubmitHandler, UseFormReturn} from "./components/ui/form";
 
 export {HoverCard, HoverCardContent, HoverCardTrigger} from "./components/ui/hover-card";
 
-export {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot} from "./components/ui/input-otp";
+export {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+  REGEXP_ONLY_CHARS,
+  REGEXP_ONLY_DIGITS,
+  REGEXP_ONLY_DIGITS_AND_CHARS,
+} from "./components/ui/input-otp";
+export type {OTPInputProps, SlotProps} from "./components/ui/input-otp";
 
 export {Input} from "./components/ui/input";
 
@@ -258,6 +281,7 @@ export {Progress} from "./components/ui/progress";
 export {RadioGroup, RadioGroupItem} from "./components/ui/radio-group";
 
 export {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./components/ui/resizable";
+export type {ImperativePanelGroupHandle, ImperativePanelHandle} from "./components/ui/resizable";
 
 export {ScrollArea, ScrollBar} from "./components/ui/scroll-area";
 
@@ -323,6 +347,7 @@ export {Spinner} from "./components/ui/spinner";
 export {Slider} from "./components/ui/slider";
 
 export {Toaster, toast} from "./components/ui/sonner";
+export type {Toast} from "./components/ui/sonner";
 
 export {Switch} from "./components/ui/switch";
 

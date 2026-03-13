@@ -3,6 +3,7 @@
 /* eslint-disable complexity, react/no-object-type-as-default-prop, react/no-danger, react-dom/no-dangerously-set-innerhtml, unicorn/no-negated-condition */
 
 import * as React from "react";
+import type {LegendPayload, ResponsiveContainerProps} from "recharts";
 import * as RechartsPrimitive from "recharts";
 import type {NameType, ValueType} from "recharts/types/component/DefaultTooltipContent";
 
@@ -15,12 +16,37 @@ const THEMES = {light: "", dark: ".dark"} as const;
 /**
  * Describes per-series chart metadata used by legend and tooltip renderers.
  */
+type ChartConfigItem = {
+  /**
+   * Label rendered by shared legends and tooltips for the series.
+   * @default undefined
+   */
+  label?: React.ReactNode;
+  /**
+   * Optional icon rendered in legends and tooltips instead of the color swatch.
+   * @default undefined
+   */
+  icon?: React.ComponentType;
+  /**
+   * Unit suffix appended to rendered values when the payload does not provide one.
+   * @default undefined
+   */
+  unit?: string;
+  /**
+   * Shared numeric formatter used by helper content renderers when no Recharts tooltip formatter is supplied.
+   * @default undefined
+   */
+  formatter?: (value: number) => string;
+  /**
+   * Recharts stack identifier that consuming chart primitives can read from config.
+   * @default undefined
+   */
+  stackId?: string;
+};
+
 export type ChartConfig = Record<
   string,
-  {
-    label?: React.ReactNode;
-    icon?: React.ComponentType;
-  } & ({color?: string; theme?: never} | {color?: never; theme: Record<keyof typeof THEMES, string>})
+  ChartConfigItem & ({color?: string; theme?: never} | {color?: never; theme: Record<keyof typeof THEMES, string>})
 >;
 
 interface ChartContextProps {
@@ -41,10 +67,21 @@ function useChart(): ChartContextProps {
 
 interface ChartContainerProps
   extends
-    Omit<React.ComponentProps<"div">, "children">,
+    Omit<React.ComponentProps<"div">, "children" | "className" | "id">,
     Pick<
-      React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>,
-      "initialDimension" | "aspect" | "debounce" | "minHeight" | "minWidth" | "maxHeight" | "height" | "width" | "onResize" | "children"
+      ResponsiveContainerProps,
+      | "initialDimension"
+      | "aspect"
+      | "debounce"
+      | "minHeight"
+      | "minWidth"
+      | "maxHeight"
+      | "height"
+      | "width"
+      | "onResize"
+      | "children"
+      | "className"
+      | "id"
     > {
   /**
    * Series configuration used to resolve labels, icons, and colors.
@@ -75,54 +112,62 @@ interface ChartContainerProps
  *
  * @see {@link https://recharts.org/en-US/api/ResponsiveContainer | Recharts ResponsiveContainer Docs}
  */
-function ChartContainer({
-  id,
-  config,
-  initialDimension = {width: 320, height: 200},
-  className,
-  children,
-  innerResponsiveContainerStyle,
-  aspect,
-  debounce,
-  height,
-  maxHeight,
-  minHeight,
-  minWidth,
-  onResize,
-  width,
-  ...props
-}: Readonly<ChartContainerProps>): React.JSX.Element {
-  const uniqueId = React.useId();
-  const chartId = `chart-${id ?? uniqueId.replaceAll(":", "")}`;
+const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
+  (
+    {
+      id,
+      config,
+      initialDimension = {width: 320, height: 200},
+      className,
+      children,
+      innerResponsiveContainerStyle,
+      aspect,
+      debounce,
+      height,
+      maxHeight,
+      minHeight,
+      minWidth,
+      onResize,
+      width,
+      ...props
+    },
+    ref,
+  ) => {
+    const uniqueId = React.useId();
+    const chartId = `chart-${id ?? uniqueId.replaceAll(":", "")}`;
 
-  return (
-    <ChartContext.Provider value={{config}}>
-      <div
-        data-slot='chart'
-        data-chart={chartId}
-        className={cn(styles.container, className)}
-        {...props}>
-        <ChartStyle
-          id={chartId}
-          config={config}
-        />
-        <RechartsPrimitive.ResponsiveContainer
-          initialDimension={initialDimension}
-          aspect={aspect}
-          debounce={debounce}
-          height={height}
-          maxHeight={maxHeight}
-          minHeight={minHeight}
-          minWidth={minWidth}
-          onResize={onResize}
-          style={innerResponsiveContainerStyle}
-          width={width}>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
-      </div>
-    </ChartContext.Provider>
-  );
-}
+    return (
+      <ChartContext.Provider value={{config}}>
+        <div
+          data-slot='chart'
+          data-chart={chartId}
+          className={cn(styles.container, className)}
+          {...props}>
+          <ChartStyle
+            id={chartId}
+            config={config}
+          />
+          <RechartsPrimitive.ResponsiveContainer
+            ref={ref}
+            id={id}
+            className={className}
+            initialDimension={initialDimension}
+            aspect={aspect}
+            debounce={debounce}
+            height={height}
+            maxHeight={maxHeight}
+            minHeight={minHeight}
+            minWidth={minWidth}
+            onResize={onResize}
+            style={innerResponsiveContainerStyle}
+            width={width}>
+            {children}
+          </RechartsPrimitive.ResponsiveContainer>
+        </div>
+      </ChartContext.Provider>
+    );
+  },
+);
 
 /**
  * Emits theme-aware CSS variables for configured chart series colors.
@@ -189,6 +234,10 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
  * @remarks
  * - Renders a `<div>` element when active
  * - Built on `recharts` tooltip payloads and shared chart config context
+ * - Honors `active`, `payload`, `label`, `labelFormatter`, `formatter`, `separator`,
+ *   `className`, `labelClassName`, `color`, `nameKey`, and `labelKey`
+ * - Ignores `wrapperClassName`, `contentStyle`, `itemStyle`, `labelStyle`, and
+ *   `accessibilityLayer` because this helper renders its own DOM structure
  *
  * @example
  * ```tsx
@@ -211,6 +260,7 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
+  separator,
 }: React.ComponentProps<typeof RechartsPrimitive.Tooltip>
   & React.ComponentProps<"div"> & {
     hideLabel?: boolean;
@@ -235,7 +285,7 @@ function ChartTooltipContent({
       return <div className={cn(styles.tooltipLabel, labelClassName)}>{labelFormatter(value, payload)}</div>;
     }
 
-    if (!value) {
+    if (value === null || value === undefined) {
       return null;
     }
 
@@ -255,7 +305,7 @@ function ChartTooltipContent({
         {payload
           .filter((item) => item.type !== "none")
           .map((item, index) => {
-            const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`;
+            const key = `${nameKey ?? item.dataKey ?? item.name ?? "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor = color ?? item.payload?.fill ?? item.color ?? "transparent";
             const indicatorStyle = {
@@ -263,12 +313,21 @@ function ChartTooltipContent({
               "--ac-chart-indicator-border": indicatorColor,
             } as React.CSSProperties & Record<"--ac-chart-indicator-background" | "--ac-chart-indicator-border", string>;
 
+            const itemFormatter = formatter ?? item.formatter;
+            const hasFormatter = typeof itemFormatter === "function" && item.value !== undefined && item.name !== undefined;
+            const formatterResult = hasFormatter ? itemFormatter(item.value, item.name, item, index, payload) : undefined;
+            const formattedEntry = Array.isArray(formatterResult) && formatterResult.length === 2 ? formatterResult : undefined;
+            const resolvedName = formattedEntry?.[1] ?? itemConfig?.label ?? item.name;
+            const resolvedUnit = item.unit ?? itemConfig?.unit;
+            const resolvedValue =
+              formattedEntry?.[0] ?? (item.value !== null && item.value !== undefined ? formatChartValue(item.value, itemConfig) : null);
+
             return (
               <div
                 key={`${key}-${index}`}
                 className={cn(styles.tooltipItem, indicator === "dot" && styles.tooltipItemCenter)}>
-                {formatter && item.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                {formatterResult !== null && formatterResult !== undefined && !formattedEntry ? (
+                  formatterResult
                 ) : (
                   <>
                     {itemConfig?.icon ? (
@@ -290,11 +349,15 @@ function ChartTooltipContent({
                     <div className={cn(styles.tooltipValueRow, nestLabel && styles.tooltipValueRowNested)}>
                       <div className={styles.tooltipNameWrapper}>
                         {nestLabel ? tooltipLabel : null}
-                        <span className={styles.tooltipName}>{itemConfig?.label ?? item.name}</span>
+                        {resolvedName !== null && resolvedName !== undefined && <span className={styles.tooltipName}>{resolvedName}</span>}
                       </div>
-                      {item.value !== null && item.value !== undefined && (
+                      {resolvedValue !== null && resolvedValue !== undefined && (
                         <span className={styles.tooltipValue}>
-                          {typeof item.value === "number" ? item.value.toLocaleString() : String(item.value)}
+                          {resolvedName !== null && resolvedName !== undefined && separator ? (
+                            <span aria-hidden='true'>{separator}</span>
+                          ) : null}
+                          {resolvedValue}
+                          {resolvedUnit !== null && resolvedUnit !== undefined ? <span> {resolvedUnit}</span> : null}
                         </span>
                       )}
                     </div>
@@ -330,6 +393,10 @@ const ChartLegend = RechartsPrimitive.Legend;
  * @remarks
  * - Renders a `<div>` element when legend payload exists
  * - Built on `recharts` legend payloads and shared chart config context
+ * - Honors `payload`, `verticalAlign`, `className`, and the custom `hideIcon`
+ *   and `nameKey` props
+ * - Ignores Recharts presentational props such as `align`, `layout`, `iconSize`,
+ *   `iconType`, `formatter`, and item mouse handlers because it renders custom markup
  *
  * @example
  * ```tsx
@@ -374,12 +441,24 @@ function ChartLegendContent({
                   style={{backgroundColor: item.color}}
                 />
               )}
-              {itemConfig?.label}
+              {itemConfig?.label ?? item.value ?? formatLegendDataKey(item.dataKey)}
             </div>
           );
         })}
     </div>
   );
+}
+
+function formatChartValue(value: ValueType, itemConfig: ChartConfig[string] | undefined): React.ReactNode {
+  if (typeof value === "number") {
+    return itemConfig?.formatter ? itemConfig.formatter(value) : value.toLocaleString();
+  }
+
+  return String(value);
+}
+
+function formatLegendDataKey(dataKey: LegendPayload["dataKey"]): string | null {
+  return typeof dataKey === "number" || typeof dataKey === "string" ? String(dataKey) : null;
 }
 
 function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key: string): ChartConfig[string] | undefined {

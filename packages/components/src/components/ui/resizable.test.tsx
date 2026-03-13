@@ -33,6 +33,14 @@ describe("Resizable", () => {
     expect(screen.getByRole("separator")).toBeInTheDocument();
   });
 
+  it("renders a visual grip when withHandle is enabled", () => {
+    // Arrange
+    const {container} = renderResizable();
+
+    // Assert
+    expect(container.querySelector("svg")).toBeInTheDocument();
+  });
+
   it("merges the group className", () => {
     // Arrange
     const {container} = renderResizable("custom-group");

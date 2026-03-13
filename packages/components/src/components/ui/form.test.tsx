@@ -4,7 +4,7 @@ import {render, screen} from "@testing-library/react";
 import {useForm} from "react-hook-form";
 import {describe, expect, it} from "vitest";
 
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "./form";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage, useController, useFieldArray, useWatch} from "./form";
 
 interface TestFormValues {
   email: string;
@@ -59,5 +59,13 @@ describe("Form", () => {
     expect(message).toHaveClass("form-message-class");
     expect(input).toBeInTheDocument();
     expect(message).toBeInTheDocument();
+  });
+
+  it("re-exports key react-hook-form hooks", () => {
+    // Assert
+    expect(typeof useForm).toBe("function");
+    expect(typeof useController).toBe("function");
+    expect(typeof useWatch).toBe("function");
+    expect(typeof useFieldArray).toBe("function");
   });
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import {mergeProps} from "@base-ui/react/merge-props";
 import useEmblaCarousel, {type UseEmblaCarouselType} from "embla-carousel-react";
 import {ArrowLeft, ArrowRight} from "lucide-react";
 import * as React from "react";
@@ -29,7 +30,9 @@ type CarouselProps = {
    */
   plugins?: CarouselPlugin;
   /**
-   * Axis orientation used for layout and keyboard navigation.
+   * Axis orientation used for layout and keyboard navigation. This prop also
+   * controls Embla's internal `axis` option (`"x"` for horizontal and `"y"`
+   * for vertical).
    * @default "horizontal"
    */
   orientation?: "horizontal" | "vertical";
@@ -114,15 +117,27 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 
     const handleKeyDown = React.useCallback(
       (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "ArrowLeft") {
+        if (orientation === "horizontal") {
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            scrollPrev();
+          } else if (event.key === "ArrowRight") {
+            event.preventDefault();
+            scrollNext();
+          }
+
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
           event.preventDefault();
           scrollPrev();
-        } else if (event.key === "ArrowRight") {
+        } else if (event.key === "ArrowDown") {
           event.preventDefault();
           scrollNext();
         }
       },
-      [scrollNext, scrollPrev],
+      [orientation, scrollNext, scrollPrev],
     );
 
     React.useEffect(() => {
@@ -143,6 +158,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
       api.on("select", onSelect);
 
       return () => {
+        api.off("reInit", onSelect);
         api.off("select", onSelect);
       };
     }, [api, onSelect]);
@@ -260,6 +276,7 @@ CarouselItem.displayName = "CarouselItem";
 const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
   ({className, variant = "outline", size = "icon", ...props}, ref) => {
     const {orientation, scrollPrev, canScrollPrev} = useCarousel();
+    const mergedProps = mergeProps<"button">({onClick: scrollPrev, disabled: !canScrollPrev}, props);
 
     return (
       <Button
@@ -268,9 +285,7 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
         size={size}
         data-orientation={orientation}
         className={cn(styles.navigationButton, styles.previousButton, className)}
-        disabled={!canScrollPrev}
-        onClick={scrollPrev}
-        {...props}>
+        {...mergedProps}>
         <ArrowLeft className={styles.navigationIcon} />
         <span className={styles.srOnly}>Previous slide</span>
       </Button>
@@ -296,6 +311,7 @@ CarouselPrevious.displayName = "CarouselPrevious";
 const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
   ({className, variant = "outline", size = "icon", ...props}, ref) => {
     const {orientation, scrollNext, canScrollNext} = useCarousel();
+    const mergedProps = mergeProps<"button">({onClick: scrollNext, disabled: !canScrollNext}, props);
 
     return (
       <Button
@@ -304,9 +320,7 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
         size={size}
         data-orientation={orientation}
         className={cn(styles.navigationButton, styles.nextButton, className)}
-        disabled={!canScrollNext}
-        onClick={scrollNext}
-        {...props}>
+        {...mergedProps}>
         <ArrowRight className={styles.navigationIcon} />
         <span className={styles.srOnly}>Next slide</span>
       </Button>

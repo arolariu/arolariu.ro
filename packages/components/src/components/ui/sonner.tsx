@@ -128,6 +128,22 @@ interface ToastMetadata {
   customContent?: React.ReactNode;
 }
 
+interface ToastUpdateOptions extends ToastOptions {
+  message?: ToastRenderable;
+  variant?: ToastVariant;
+}
+
+interface ToasterRegistration {
+  closeButton: boolean;
+  toastOptions: ToastOptions;
+}
+
+interface ToastRecord {
+  metadata: ToastMetadata;
+  options: ToastOptions;
+  snapshot: ToastSnapshot;
+}
+
 interface ToastApi {
   (message: ToastRenderable, options?: ToastOptions): string;
   success: (message: ToastRenderable, options?: ToastOptions) => string;
@@ -136,6 +152,7 @@ interface ToastApi {
   warning: (message: ToastRenderable, options?: ToastOptions) => string;
   loading: (message: ToastRenderable, options?: ToastOptions) => string;
   message: (message: ToastRenderable, options?: ToastOptions) => string;
+  update: (toastId: ToastIdentifier, options: ToastUpdateOptions) => string;
   dismiss: (toastId?: ToastIdentifier) => string | undefined;
   promise: <Value>(promise: ToastPromise<Value>, options?: ToastPromiseOptions<Value>) => Promise<Value>;
   custom: (renderer: (toastId: string) => React.ReactElement, options?: ToastOptions) => string;
@@ -163,12 +180,13 @@ const variantStyles: Record<ToastVariant, string> = {
 
 const toastManager = Toast.createToastManager<ToastMetadata>();
 type ToastAddOptions = Parameters<typeof toastManager.add>[0];
+type ToastUpdatePayload = Parameters<typeof toastManager.update>[1];
 const toastHistory: ToastSnapshot[] = [];
 const activeToasts = new Map<string, ToastSnapshot>();
+const toastRecords = new Map<string, ToastRecord>();
+const toasterRegistrations = new Map<string, ToasterRegistration>();
 
 let toastSequence = 0;
-let defaultCloseButton = true;
-let defaultToastOptions: ToastOptions = {};
 
 function createToastIdentifier(identifier?: ToastIdentifier): string {
   if (identifier !== undefined) {
@@ -207,18 +225,47 @@ function registerToast(snapshot: ToastSnapshot): void {
   toastHistory.push(snapshot);
 }
 
+function registerToastRecord(record: ToastRecord): void {
+  toastRecords.set(record.snapshot.id, record);
+  registerToast(record.snapshot);
+}
+
+function replaceToastHistorySnapshot(snapshot: ToastSnapshot): void {
+  for (let index = toastHistory.length - 1; index >= 0; index -= 1) {
+    if (toastHistory[index]?.id === snapshot.id) {
+      toastHistory[index] = snapshot;
+      return;
+    }
+  }
+
+  toastHistory.push(snapshot);
+}
+
+function replaceToastRecord(record: ToastRecord): void {
+  toastRecords.set(record.snapshot.id, record);
+  activeToasts.set(record.snapshot.id, record.snapshot);
+  replaceToastHistorySnapshot(record.snapshot);
+}
+
 function unregisterToast(toastId?: string): void {
   if (!toastId) {
     activeToasts.clear();
+    toastRecords.clear();
     return;
   }
 
   activeToasts.delete(toastId);
+  toastRecords.delete(toastId);
+}
+
+function getActiveToasterRegistration(): ToasterRegistration {
+  const registrations = [...toasterRegistrations.values()];
+  return registrations.at(-1) ?? {closeButton: true, toastOptions: {}};
 }
 
 function mergeToastOptions(options?: ToastOptions): ToastOptions {
   return {
-    ...defaultToastOptions,
+    ...getActiveToasterRegistration().toastOptions,
     ...options,
   };
 }
@@ -227,40 +274,92 @@ function isToastVariant(value: string | undefined): value is ToastVariant {
   return value === "default" || value === "error" || value === "info" || value === "loading" || value === "success" || value === "warning";
 }
 
+function createToastMetadata(
+  variant: ToastVariant,
+  options: ToastOptions,
+  closeButton: boolean,
+  customContent?: React.ReactNode,
+): ToastMetadata {
+  return {
+    action: options.action,
+    cancel: options.cancel,
+    className: options.className,
+    closeButton,
+    closeButtonAriaLabel: options.closeButtonAriaLabel ?? DEFAULT_TOAST_CLOSE_LABEL,
+    customContent,
+    descriptionClassName: options.descriptionClassName,
+    style: options.style,
+    variant,
+  };
+}
+
+function createToastRecord({
+  id,
+  message,
+  options,
+  variant,
+  customContent,
+}: Readonly<{
+  customContent?: React.ReactNode;
+  id: string;
+  message?: ToastRenderable;
+  options: ToastOptions;
+  variant: ToastVariant;
+}>): ToastRecord {
+  const activeRegistration = getActiveToasterRegistration();
+  const closeButton = options.closeButton ?? activeRegistration.closeButton;
+  const title = message === undefined ? undefined : resolveRenderable(message);
+  const description = resolveRenderable(options.description);
+  const snapshot = getSnapshot(id, variant, title, description);
+
+  return {
+    metadata: createToastMetadata(variant, options, closeButton, customContent),
+    options,
+    snapshot,
+  };
+}
+
+function createToastLifecycleHandlers(toastId: string, record: ToastRecord): Pick<ToastAddOptions, "onClose" | "onRemove"> {
+  return {
+    onClose: () => {
+      record.options.onDismiss?.(activeToasts.get(toastId) ?? record.snapshot);
+    },
+    onRemove: () => {
+      const snapshot = activeToasts.get(toastId) ?? record.snapshot;
+      unregisterToast(toastId);
+      record.options.onAutoClose?.(snapshot);
+    },
+  };
+}
+
+function createToastAddPayload(record: ToastRecord): ToastAddOptions {
+  const lifecycleHandlers = createToastLifecycleHandlers(record.snapshot.id, record);
+
+  return {
+    description: record.snapshot.description,
+    id: record.snapshot.id,
+    priority: record.options.priority,
+    timeout: record.options.duration,
+    title: record.snapshot.title,
+    type: record.snapshot.variant,
+    data: record.metadata,
+    ...lifecycleHandlers,
+  };
+}
+
 function buildToastOptions(message: ToastRenderable, variant: ToastVariant, options?: ToastOptions): ToastAddOptions {
   const mergedOptions = mergeToastOptions(options);
   const toastId = createToastIdentifier(mergedOptions.id);
-  const title = resolveRenderable(message);
-  const description = resolveRenderable(mergedOptions.description);
-  const snapshot = getSnapshot(toastId, variant, title, description);
-
-  registerToast(snapshot);
-
-  return {
-    description,
+  const record = createToastRecord({
     id: toastId,
-    onClose: () => {
-      mergedOptions.onDismiss?.(snapshot);
-    },
-    onRemove: () => {
-      unregisterToast(toastId);
-      mergedOptions.onAutoClose?.(snapshot);
-    },
-    priority: mergedOptions.priority,
-    timeout: mergedOptions.duration,
-    title,
-    type: variant,
-    data: {
-      action: mergedOptions.action,
-      cancel: mergedOptions.cancel,
-      className: mergedOptions.className,
-      closeButton: mergedOptions.closeButton ?? defaultCloseButton,
-      closeButtonAriaLabel: mergedOptions.closeButtonAriaLabel ?? DEFAULT_TOAST_CLOSE_LABEL,
-      descriptionClassName: mergedOptions.descriptionClassName,
-      style: mergedOptions.style,
-      variant,
-    },
-  };
+    message,
+    options: mergedOptions,
+    variant,
+  });
+
+  registerToastRecord(record);
+
+  return createToastAddPayload(record);
 }
 
 function showToast(message: ToastRenderable, variant: ToastVariant, options?: ToastOptions): string {
@@ -278,6 +377,45 @@ function dismissToast(toastId?: ToastIdentifier): string | undefined {
   const normalizedToastId = String(toastId);
   unregisterToast(normalizedToastId);
   toastManager.close(normalizedToastId);
+  return normalizedToastId;
+}
+
+function updateToast(toastId: ToastIdentifier, options: ToastUpdateOptions): string {
+  const normalizedToastId = String(toastId);
+  const existingRecord = toastRecords.get(normalizedToastId);
+  const mergedOptions: ToastOptions = {
+    ...(existingRecord?.options ?? {}),
+    ...options,
+  };
+  const variant = options.variant ?? existingRecord?.snapshot.variant ?? "default";
+  const nextMessage = options.message === undefined ? existingRecord?.snapshot.title : resolveRenderable(options.message);
+  const nextDescription = options.description === undefined ? existingRecord?.snapshot.description : resolveRenderable(options.description);
+  const metadata = createToastMetadata(
+    variant,
+    mergedOptions,
+    mergedOptions.closeButton ?? existingRecord?.metadata.closeButton ?? getActiveToasterRegistration().closeButton,
+    existingRecord?.metadata.customContent,
+  );
+  const record: ToastRecord = {
+    metadata,
+    options: mergedOptions,
+    snapshot: getSnapshot(normalizedToastId, variant, nextMessage, nextDescription),
+  };
+
+  replaceToastRecord(record);
+
+  const payload: ToastUpdatePayload = {
+    description: record.snapshot.description,
+    priority: record.options.priority,
+    timeout: record.options.duration,
+    title: record.snapshot.title,
+    type: record.snapshot.variant,
+    data: record.metadata,
+    ...createToastLifecycleHandlers(normalizedToastId, record),
+  };
+
+  toastManager.update(normalizedToastId, payload);
+
   return normalizedToastId;
 }
 
@@ -466,15 +604,18 @@ function Toaster({
   toastOptions,
   visibleToasts = DEFAULT_TOAST_LIMIT,
 }: Readonly<ToasterProps>): React.JSX.Element {
+  const toasterId = React.useId();
+
   React.useEffect(() => {
-    defaultCloseButton = closeButton;
-    defaultToastOptions = toastOptions ?? {};
+    toasterRegistrations.set(toasterId, {
+      closeButton,
+      toastOptions: toastOptions ?? {},
+    });
 
     return () => {
-      defaultCloseButton = true;
-      defaultToastOptions = {};
+      toasterRegistrations.delete(toasterId);
     };
-  }, [closeButton, toastOptions]);
+  }, [closeButton, toastOptions, toasterId]);
 
   return (
     <Toast.Provider
@@ -517,37 +658,21 @@ toast.info = (message: ToastRenderable, options?: ToastOptions): string => showT
 toast.warning = (message: ToastRenderable, options?: ToastOptions): string => showToast(message, "warning", options);
 toast.loading = (message: ToastRenderable, options?: ToastOptions): string => showToast(message, "loading", options);
 toast.message = (message: ToastRenderable, options?: ToastOptions): string => showToast(message, "default", options);
+toast.update = (toastId: ToastIdentifier, options: ToastUpdateOptions): string => updateToast(toastId, options);
 toast.dismiss = (toastId?: ToastIdentifier): string | undefined => dismissToast(toastId);
 toast.custom = (renderer: (toastId: string) => React.ReactElement, options?: ToastOptions): string => {
   const mergedOptions = mergeToastOptions(options);
   const toastId = createToastIdentifier(mergedOptions.id);
-  const snapshot = getSnapshot(toastId, "default");
-
-  registerToast(snapshot);
-
-  toastManager.add({
+  const record = createToastRecord({
+    customContent: renderer(toastId),
     id: toastId,
-    onClose: () => {
-      mergedOptions.onDismiss?.(snapshot);
-    },
-    onRemove: () => {
-      unregisterToast(toastId);
-      mergedOptions.onAutoClose?.(snapshot);
-    },
-    priority: mergedOptions.priority,
-    timeout: mergedOptions.duration,
-    data: {
-      action: mergedOptions.action,
-      cancel: mergedOptions.cancel,
-      className: mergedOptions.className,
-      closeButton: mergedOptions.closeButton ?? defaultCloseButton,
-      closeButtonAriaLabel: mergedOptions.closeButtonAriaLabel ?? DEFAULT_TOAST_CLOSE_LABEL,
-      customContent: renderer(toastId),
-      descriptionClassName: mergedOptions.descriptionClassName,
-      style: mergedOptions.style,
-      variant: "default",
-    },
+    options: mergedOptions,
+    variant: "default",
   });
+
+  registerToastRecord(record);
+
+  toastManager.add(createToastAddPayload(record));
 
   return toastId;
 };
@@ -592,17 +717,34 @@ function getPromiseBaseOptions<Value>(options?: ToastPromiseOptions<Value>): Toa
 }
 
 function showResolvedPromiseToast(
+  loadingToastId: string | undefined,
   variant: Exclude<ToastVariant, "default">,
   resolvedState: ToastRenderable | ToastPromiseResolvedOptions | undefined,
   baseOptions: ToastOptions,
 ): void {
   if (!resolvedState) {
+    if (loadingToastId) {
+      dismissToast(loadingToastId);
+    }
+
     return;
   }
 
   const overrideOptions = isPromiseResolvedOptions(resolvedState) ? resolvedState : undefined;
   const message = isPromiseResolvedOptions(resolvedState) ? resolvedState.message : resolvedState;
-  showToast(message, variant, mergePromiseToastOptions(baseOptions, overrideOptions));
+  const mergedOptions = mergePromiseToastOptions(baseOptions, overrideOptions);
+
+  if (loadingToastId) {
+    toast.update(loadingToastId, {
+      ...mergedOptions,
+      message,
+      variant,
+    });
+
+    return;
+  }
+
+  showToast(message, variant, mergedOptions);
 }
 
 toast.promise = async function promise<Value>(promiseValue: ToastPromise<Value>, options?: ToastPromiseOptions<Value>): Promise<Value> {
@@ -616,18 +758,12 @@ toast.promise = async function promise<Value>(promiseValue: ToastPromise<Value>,
   try {
     const result = await pendingPromise;
     const successState = await resolvePromiseState(options?.success, result);
-    if (loadingToastId) {
-      dismissToast(loadingToastId);
-    }
-    showResolvedPromiseToast("success", successState, baseOptions);
+    showResolvedPromiseToast(loadingToastId, "success", successState, baseOptions);
 
     return result;
   } catch (error: unknown) {
     const errorState = await resolvePromiseState(options?.error, error);
-    if (loadingToastId) {
-      dismissToast(loadingToastId);
-    }
-    showResolvedPromiseToast("error", errorState, baseOptions);
+    showResolvedPromiseToast(loadingToastId, "error", errorState, baseOptions);
 
     throw error;
   } finally {
@@ -640,4 +776,5 @@ toast.promise = async function promise<Value>(promiseValue: ToastPromise<Value>,
 toast.getToasts = (): ReadonlyArray<ToastSnapshot> => [...activeToasts.values()];
 toast.getHistory = (): ReadonlyArray<ToastSnapshot> => [...toastHistory];
 
+export type {Toast} from "@base-ui/react/toast";
 export {toast, Toaster};

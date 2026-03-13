@@ -41,6 +41,8 @@ const calendarButtonVariantStyles: Record<CalendarButtonVariant, string> = {
  * - Renders the `DayPicker` calendar root
  * - Built on `react-day-picker` with shared button styling from the component library
  * - Preserves the V1 public API while aligning visuals with the current design system
+ * - Overrides the default DayPicker `Root`, `Chevron`, `DayButton`, and `WeekNumber`
+ *   components while still allowing consumers to replace them through the `components` prop
  *
  * @example
  * ```tsx
@@ -73,6 +75,7 @@ function Calendar({
         ...formatters,
       }}
       classNames={{
+        ...classNames,
         root: cn(styles.root, classNames?.root),
         months: cn(styles.months, classNames?.months),
         month: cn(styles.month, classNames?.month),
