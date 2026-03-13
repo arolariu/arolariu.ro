@@ -461,7 +461,27 @@ export type {ToggleProps, ToggleSize, ToggleVariant} from "./components/ui/toggl
 
 export {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./components/ui/tooltip";
 
+export {CopyButton, type CopyButtonProps} from "./components/ui/copy-button";
+export {Stepper, type StepperProps} from "./components/ui/stepper";
+export {
+  Timeline,
+  TimelineContent,
+  TimelineDot,
+  TimelineItem,
+  type TimelineContentProps,
+  type TimelineDotProps,
+  type TimelineItemProps,
+  type TimelineProps,
+} from "./components/ui/timeline";
+export {VisuallyHidden, type VisuallyHiddenProps} from "./components/ui/visually-hidden";
+
+export {useBreakpoint, type Breakpoint} from "./hooks/useBreakpoint";
+export {useColorScheme, type ColorScheme} from "./hooks/useColorScheme";
+export {useFocusVisible} from "./hooks/useFocusVisible";
 export {useIsMobile} from "./hooks/useIsMobile";
+export {useMediaQuery} from "./hooks/useMediaQuery";
+export {usePrefersContrast} from "./hooks/usePrefersContrast";
+export {useReducedMotion} from "./hooks/useReducedMotion";
 export {useWindowSize} from "./hooks/useWindowSize";
 
 export {

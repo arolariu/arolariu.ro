@@ -16,7 +16,9 @@
   },
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "source": "src/index.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -242,6 +244,11 @@
       "import": "./dist/components/ui/context-menu.js",
       "default": "./dist/components/ui/context-menu.js"
     },
+    "./copy-button": {
+      "types": "./dist/components/ui/copy-button.d.ts",
+      "import": "./dist/components/ui/copy-button.js",
+      "default": "./dist/components/ui/copy-button.js"
+    },
     "./counting-number": {
       "types": "./dist/components/ui/counting-number.d.ts",
       "import": "./dist/components/ui/counting-number.js",
@@ -452,6 +459,11 @@
       "import": "./dist/components/ui/spinner.js",
       "default": "./dist/components/ui/spinner.js"
     },
+    "./stepper": {
+      "types": "./dist/components/ui/stepper.d.ts",
+      "import": "./dist/components/ui/stepper.js",
+      "default": "./dist/components/ui/stepper.js"
+    },
     "./switch": {
       "types": "./dist/components/ui/switch.d.ts",
       "import": "./dist/components/ui/switch.js",
@@ -471,6 +483,11 @@
       "types": "./dist/components/ui/textarea.d.ts",
       "import": "./dist/components/ui/textarea.js",
       "default": "./dist/components/ui/textarea.js"
+    },
+    "./timeline": {
+      "types": "./dist/components/ui/timeline.d.ts",
+      "import": "./dist/components/ui/timeline.js",
+      "default": "./dist/components/ui/timeline.js"
     },
     "./toggle-group": {
       "types": "./dist/components/ui/toggle-group.d.ts",
@@ -497,10 +514,45 @@
       "import": "./dist/components/ui/typewriter.js",
       "default": "./dist/components/ui/typewriter.js"
     },
+    "./visually-hidden": {
+      "types": "./dist/components/ui/visually-hidden.d.ts",
+      "import": "./dist/components/ui/visually-hidden.js",
+      "default": "./dist/components/ui/visually-hidden.js"
+    },
+    "./useBreakpoint": {
+      "types": "./dist/hooks/useBreakpoint.d.ts",
+      "import": "./dist/hooks/useBreakpoint.js",
+      "default": "./dist/hooks/useBreakpoint.js"
+    },
+    "./useColorScheme": {
+      "types": "./dist/hooks/useColorScheme.d.ts",
+      "import": "./dist/hooks/useColorScheme.js",
+      "default": "./dist/hooks/useColorScheme.js"
+    },
+    "./useFocusVisible": {
+      "types": "./dist/hooks/useFocusVisible.d.ts",
+      "import": "./dist/hooks/useFocusVisible.js",
+      "default": "./dist/hooks/useFocusVisible.js"
+    },
     "./useIsMobile": {
       "types": "./dist/hooks/useIsMobile.d.ts",
       "import": "./dist/hooks/useIsMobile.js",
       "default": "./dist/hooks/useIsMobile.js"
+    },
+    "./useMediaQuery": {
+      "types": "./dist/hooks/useMediaQuery.d.ts",
+      "import": "./dist/hooks/useMediaQuery.js",
+      "default": "./dist/hooks/useMediaQuery.js"
+    },
+    "./usePrefersContrast": {
+      "types": "./dist/hooks/usePrefersContrast.d.ts",
+      "import": "./dist/hooks/usePrefersContrast.js",
+      "default": "./dist/hooks/usePrefersContrast.js"
+    },
+    "./useReducedMotion": {
+      "types": "./dist/hooks/useReducedMotion.d.ts",
+      "import": "./dist/hooks/useReducedMotion.js",
+      "default": "./dist/hooks/useReducedMotion.js"
     },
     "./useWindowSize": {
       "types": "./dist/hooks/useWindowSize.d.ts",
