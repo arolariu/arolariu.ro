@@ -17,7 +17,7 @@
   "license": "MIT",
   "type": "module",
   "sideEffects": [
-    "*.css"
+    "**/*.css"
   ],
   "source": "src/index.ts",
   "main": "dist/index.js",
