@@ -33,13 +33,13 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
  *
  * @see {@link https://base-ui.com/react/overview Base UI documentation}
  */
-function Skeleton({className, ...props}: Readonly<SkeletonProps>): React.JSX.Element {
-  return (
-    <div
-      className={cn(styles.skeleton, className)}
-      {...props}
-    />
-  );
-}
+const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({className, ...props}, ref) => (
+  <div
+    ref={ref}
+    className={cn(styles.skeleton, className)}
+    {...props}
+  />
+));
+Skeleton.displayName = "Skeleton";
 
 export {Skeleton};

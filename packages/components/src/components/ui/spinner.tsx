@@ -6,7 +6,7 @@ import {cn} from "@/lib/utilities";
 import styles from "./spinner.module.css";
 
 const Spinner = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"svg">>, ref): React.JSX.Element => (
+  ({children, className, ...props}: Readonly<React.ComponentPropsWithoutRef<"svg">>, ref): React.JSX.Element => (
     <svg
       ref={ref}
       role='status'
@@ -15,6 +15,7 @@ const Spinner = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"
       fill='none'
       className={cn(styles.spinner, className)}
       {...props}>
+      {children}
       <circle
         className={styles.track}
         cx='12'

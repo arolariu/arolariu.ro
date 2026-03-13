@@ -1,70 +1,116 @@
 "use client";
 
+import {mergeProps} from "@base-ui/react/merge-props";
 import {Meter as BaseMeter} from "@base-ui/react/meter";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./meter.module.css";
 
-type MeterProps = React.ComponentPropsWithoutRef<typeof BaseMeter.Root>;
-type MeterTrackProps = React.ComponentPropsWithoutRef<typeof BaseMeter.Track>;
-type MeterIndicatorProps = React.ComponentPropsWithoutRef<typeof BaseMeter.Indicator>;
-type MeterLabelProps = React.ComponentPropsWithoutRef<typeof BaseMeter.Label>;
+type MeterProps = React.ComponentPropsWithRef<typeof BaseMeter.Root>;
+type MeterTrackProps = React.ComponentPropsWithRef<typeof BaseMeter.Track>;
+type MeterIndicatorProps = React.ComponentPropsWithRef<typeof BaseMeter.Indicator>;
+type MeterLabelProps = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
 
 /**
- * Wraps the Base UI meter root with compact spacing for labels and bars.
+ * Renders the meter root wrapper.
  */
-const Meter = React.forwardRef<HTMLDivElement, MeterProps>(
-  ({className, ...props}: Readonly<MeterProps>, ref): React.JSX.Element => (
+function Meter(props: Readonly<Meter.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseMeter.Root
-      ref={ref}
-      className={cn(styles.root, className)}
-      {...props}
-    />
-  ),
-);
-Meter.displayName = "Meter";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.root, className)}, {}),
+      })}>
+      {children}
+    </BaseMeter.Root>
+  );
+}
 
 /**
- * Renders the meter track for the full value range.
+ * Renders the meter track element.
  */
-const MeterTrack = React.forwardRef<HTMLDivElement, MeterTrackProps>(
-  ({className, ...props}: Readonly<MeterTrackProps>, ref): React.JSX.Element => (
+function MeterTrack(props: Readonly<MeterTrack.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseMeter.Track
-      ref={ref}
-      className={cn(styles.track, className)}
-      {...props}
-    />
-  ),
-);
-MeterTrack.displayName = "MeterTrack";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.track, className)}, {}),
+      })}>
+      {children}
+    </BaseMeter.Track>
+  );
+}
 
 /**
- * Renders the meter indicator that visualizes the current value.
+ * Renders the meter indicator element.
  */
-const MeterIndicator = React.forwardRef<HTMLDivElement, MeterIndicatorProps>(
-  ({className, ...props}: Readonly<MeterIndicatorProps>, ref): React.JSX.Element => (
+function MeterIndicator(props: Readonly<MeterIndicator.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseMeter.Indicator
-      ref={ref}
-      className={cn(styles.indicator, className)}
-      {...props}
-    />
-  ),
-);
-MeterIndicator.displayName = "MeterIndicator";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.indicator, className)}, {}),
+      })}>
+      {children}
+    </BaseMeter.Indicator>
+  );
+}
 
 /**
- * Renders an accessible label for the meter.
+ * Renders the accessible meter label.
  */
-const MeterLabel = React.forwardRef<HTMLSpanElement, MeterLabelProps>(
-  ({className, ...props}: Readonly<MeterLabelProps>, ref): React.JSX.Element => (
+function MeterLabel(props: Readonly<MeterLabel.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseMeter.Label
-      ref={ref}
-      className={cn(styles.label, className)}
-      {...props}
-    />
-  ),
-);
-MeterLabel.displayName = "MeterLabel";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "span",
+        render: render as never,
+        props: mergeProps({className: cn(styles.label, className)}, {}),
+      })}>
+      {children}
+    </BaseMeter.Label>
+  );
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Meter {
+  export type Props = MeterProps;
+  export type State = BaseMeter.Root.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace MeterTrack {
+  export type Props = MeterTrackProps;
+  export type State = BaseMeter.Track.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace MeterIndicator {
+  export type Props = MeterIndicatorProps;
+  export type State = BaseMeter.Indicator.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace MeterLabel {
+  export type Props = MeterLabelProps;
+  export type State = BaseMeter.Label.State;
+}
 
 export {Meter, MeterIndicator, MeterLabel, MeterTrack};

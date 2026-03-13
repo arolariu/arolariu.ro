@@ -4,6 +4,8 @@
 
 import {Drawer as BaseDrawer} from "@base-ui/react/drawer";
 import {Menu as BaseMenu} from "@base-ui/react/menu";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {useRender} from "@base-ui/react/use-render";
 import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
 import {AnimatePresence, motion, type Transition} from "motion/react";
 import * as React from "react";
@@ -35,222 +37,246 @@ const useDropDrawerContext = (): DropDrawerContextValue => {
 const Drawer = BaseDrawer.Root;
 const DrawerPortal = BaseDrawer.Portal;
 
-const DrawerTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<typeof BaseDrawer.Trigger> & {asChild?: boolean}>(
-  ({asChild = false, children, className, ...props}, ref) => {
-    if (asChild && React.isValidElement(children)) {
-      return (
-        <BaseDrawer.Trigger
-          ref={ref}
-          className={className}
-          render={children as React.ReactElement}
-          {...props}
-        />
-      );
-    }
+function DrawerTrigger(props: Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Trigger> & {asChild?: boolean}>): React.ReactElement {
+  const {asChild = false, children, className, render, ...otherProps} = props;
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-    return (
-      <BaseDrawer.Trigger
-        ref={ref}
-        className={className}
-        {...props}>
-        {children}
-      </BaseDrawer.Trigger>
-    );
-  },
-);
-DrawerTrigger.displayName = "DrawerTrigger";
+  return (
+    <BaseDrawer.Trigger
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "button",
+        render: renderProp as never,
+        props: mergeProps({className}, {}),
+      })}>
+      {renderProp ? undefined : children}
+    </BaseDrawer.Trigger>
+  );
+}
 
-const DrawerOverlay = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseDrawer.Backdrop>>(
-  ({className, ...props}, ref) => (
+function DrawerOverlay(props: Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Backdrop>>): React.ReactElement {
+  const {className, render, ...otherProps} = props;
+
+  return (
     <BaseDrawer.Backdrop
-      ref={ref}
-      className={cn(styles.drawerOverlay, className)}
-      {...props}
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.drawerOverlay, className)}, {}),
+      })}
     />
-  ),
-);
-DrawerOverlay.displayName = "DrawerOverlay";
+  );
+}
 
-const DrawerContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof BaseDrawer.Popup> & {children?: React.ReactNode}
->(({className, children, ...props}, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <BaseDrawer.Viewport className={styles.drawerViewport}>
-      <BaseDrawer.Popup
-        ref={ref}
-        className={cn(styles.drawerContent, className)}
-        {...props}>
-        <div className={styles.drawerHandle} />
-        <BaseDrawer.Content className={styles.drawerInnerContent}>{children}</BaseDrawer.Content>
-      </BaseDrawer.Popup>
-    </BaseDrawer.Viewport>
-  </DrawerPortal>
-));
-DrawerContent.displayName = "DrawerContent";
+function DrawerContent(
+  props: Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Popup> & {children?: React.ReactNode}>,
+): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
 
-const DrawerHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.drawerHeader, className)}
-    {...props}
-  />
-));
-DrawerHeader.displayName = "DrawerHeader";
+  return (
+    <DrawerPortal>
+      <DrawerOverlay />
+      <BaseDrawer.Viewport className={styles.drawerViewport}>
+        <BaseDrawer.Popup
+          {...otherProps}
+          render={useRender({
+            defaultTagName: "div",
+            render: render as never,
+            props: mergeProps({className: cn(styles.drawerContent, className)}, {}),
+          })}>
+          <div className={styles.drawerHandle} />
+          <BaseDrawer.Content className={styles.drawerInnerContent}>{children}</BaseDrawer.Content>
+        </BaseDrawer.Popup>
+      </BaseDrawer.Viewport>
+    </DrawerPortal>
+  );
+}
 
-const DrawerFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.drawerFooter, className)}
-    {...props}
-  />
-));
-DrawerFooter.displayName = "DrawerFooter";
+function DrawerHeader(
+  props: Readonly<React.ComponentPropsWithRef<"div"> & {render?: useRender.RenderProp<Record<string, never>>}>,
+): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
 
-const DrawerTitle = React.forwardRef<HTMLHeadingElement, React.ComponentPropsWithoutRef<typeof BaseDrawer.Title>>(
-  ({className, ...props}, ref) => (
+  return useRender({
+    defaultTagName: "div",
+    render: render as never,
+    props: mergeProps({className: cn(styles.drawerHeader, className)}, otherProps, {children}),
+  });
+}
+
+function DrawerFooter(
+  props: Readonly<React.ComponentPropsWithRef<"div"> & {render?: useRender.RenderProp<Record<string, never>>}>,
+): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return useRender({
+    defaultTagName: "div",
+    render: render as never,
+    props: mergeProps({className: cn(styles.drawerFooter, className)}, otherProps, {children}),
+  });
+}
+
+function DrawerTitle(props: Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Title>>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseDrawer.Title
-      ref={ref}
-      className={cn(styles.drawerTitle, className)}
-      {...props}
-    />
-  ),
-);
-DrawerTitle.displayName = "DrawerTitle";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "h2",
+        render: render as never,
+        props: mergeProps({className: cn(styles.drawerTitle, className)}, {}),
+      })}>
+      {children}
+    </BaseDrawer.Title>
+  );
+}
 
 const DropdownMenu = BaseMenu.Root;
 const DropdownMenuSub = BaseMenu.SubmenuRoot;
 
-const DropdownMenuTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentPropsWithoutRef<typeof BaseMenu.Trigger> & {asChild?: boolean}
->(({asChild = false, children, className, ...props}, ref) => {
-  if (asChild && React.isValidElement(children)) {
-    return (
-      <BaseMenu.Trigger
-        ref={ref}
-        className={className}
-        render={children as React.ReactElement}
-        {...props}
-      />
-    );
-  }
+function DropdownMenuTrigger(
+  props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Trigger> & {asChild?: boolean}>,
+): React.ReactElement {
+  const {asChild = false, children, className, render, ...otherProps} = props;
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
 
   return (
     <BaseMenu.Trigger
-      ref={ref}
-      className={className}
-      {...props}>
-      {children}
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "button",
+        render: renderProp as never,
+        props: mergeProps({className}, {}),
+      })}>
+      {renderProp ? undefined : children}
     </BaseMenu.Trigger>
   );
-});
-DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
+}
 
-const DropdownMenuContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof BaseMenu.Positioner> & {children?: React.ReactNode}
->(({className, children, ...props}, ref) => (
-  <BaseMenu.Portal>
-    <BaseMenu.Positioner
-      className={styles.dropdownPositioner}
-      {...props}>
-      <BaseMenu.Popup
-        ref={ref}
-        className={cn(styles.dropdownContent, className)}>
-        {children}
-      </BaseMenu.Popup>
-    </BaseMenu.Positioner>
-  </BaseMenu.Portal>
-));
-DropdownMenuContent.displayName = "DropdownMenuContent";
+function DropdownMenuContent(
+  props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Positioner> & {children?: React.ReactNode}>,
+): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
 
-interface DropdownMenuItemProps extends React.ComponentPropsWithoutRef<typeof BaseMenu.Item> {
+  return (
+    <BaseMenu.Portal>
+      <BaseMenu.Positioner
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          props: mergeProps({className: styles.dropdownPositioner}, {}),
+        })}>
+        <BaseMenu.Popup
+          render={useRender({
+            defaultTagName: "div",
+            render: render as never,
+            props: mergeProps({className: cn(styles.dropdownContent, className)}, {}),
+          })}>
+          {children}
+        </BaseMenu.Popup>
+      </BaseMenu.Positioner>
+    </BaseMenu.Portal>
+  );
+}
+
+interface DropdownMenuItemProps extends React.ComponentPropsWithRef<typeof BaseMenu.Item> {
   /** @deprecated Prefer Base UI's `render` prop. */
-
   asChild?: boolean;
   inset?: boolean;
 }
 
-const DropdownMenuItem = React.forwardRef<HTMLElement, DropdownMenuItemProps>(
-  ({asChild = false, className, inset = false, children, ...props}, ref) => {
-    const composedClassName = cn(styles.desktopItem, inset && styles.inset, className);
+function DropdownMenuItem(props: Readonly<DropdownMenuItemProps>): React.ReactElement {
+  const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-    if (asChild && React.isValidElement(children)) {
-      return (
-        <BaseMenu.Item
-          ref={ref}
-          className={composedClassName}
-          render={children as React.ReactElement}
-          {...props}
-        />
-      );
-    }
+  return (
+    <BaseMenu.Item
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: renderProp as never,
+        props: mergeProps({className: cn(styles.desktopItem, inset && styles.inset, className)}, {}),
+      })}>
+      {renderProp ? undefined : children}
+    </BaseMenu.Item>
+  );
+}
 
-    return (
-      <BaseMenu.Item
-        ref={ref}
-        className={composedClassName}
-        {...props}>
-        {children}
-      </BaseMenu.Item>
-    );
-  },
-);
-DropdownMenuItem.displayName = "DropdownMenuItem";
+function DropdownMenuLabel(props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.GroupLabel>>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
 
-const DropdownMenuLabel = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.GroupLabel>>(
-  ({className, ...props}, ref) => (
+  return (
     <BaseMenu.GroupLabel
-      ref={ref}
-      className={cn(styles.desktopLabel, className)}
-      {...props}
-    />
-  ),
-);
-DropdownMenuLabel.displayName = "DropdownMenuLabel";
-
-const DropdownMenuSeparator = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.Separator>>(
-  ({className, ...props}, ref) => (
-    <BaseMenu.Separator
-      ref={ref}
-      className={cn(styles.desktopSeparator, className)}
-      {...props}
-    />
-  ),
-);
-DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
-
-const DropdownMenuSubTrigger = React.forwardRef<
-  HTMLElement,
-  React.ComponentPropsWithoutRef<typeof BaseMenu.SubmenuTrigger> & {inset?: boolean}
->(({className, inset = false, children, ...props}, ref) => (
-  <BaseMenu.SubmenuTrigger
-    ref={ref}
-    className={cn(styles.desktopSubTrigger, inset && styles.inset, className)}
-    {...props}>
-    {children}
-    <ChevronRightIcon className={styles.chevron} />
-  </BaseMenu.SubmenuTrigger>
-));
-DropdownMenuSubTrigger.displayName = "DropdownMenuSubTrigger";
-
-const DropdownMenuSubContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof BaseMenu.Positioner> & {children?: React.ReactNode}
->(({className, children, ...props}, ref) => (
-  <BaseMenu.Positioner
-    className={styles.dropdownPositioner}
-    {...props}>
-    <BaseMenu.Popup
-      ref={ref}
-      className={cn(styles.dropdownSubContent, className)}>
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.desktopLabel, className)}, {}),
+      })}>
       {children}
-    </BaseMenu.Popup>
-  </BaseMenu.Positioner>
-));
-DropdownMenuSubContent.displayName = "DropdownMenuSubContent";
+    </BaseMenu.GroupLabel>
+  );
+}
+
+function DropdownMenuSeparator(props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Separator>>): React.ReactElement {
+  const {className, render, ...otherProps} = props;
+
+  return (
+    <BaseMenu.Separator
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.desktopSeparator, className)}, {}),
+      })}
+    />
+  );
+}
+
+function DropdownMenuSubTrigger(
+  props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.SubmenuTrigger> & {inset?: boolean}>,
+): React.ReactElement {
+  const {className, children, inset = false, render, ...otherProps} = props;
+
+  return (
+    <BaseMenu.SubmenuTrigger
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.desktopSubTrigger, inset && styles.inset, className)}, {}),
+      })}>
+      {children}
+      <ChevronRightIcon className={styles.chevron} />
+    </BaseMenu.SubmenuTrigger>
+  );
+}
+
+function DropdownMenuSubContent(
+  props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Positioner> & {children?: React.ReactNode}>,
+): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
+    <BaseMenu.Positioner
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        props: mergeProps({className: styles.dropdownPositioner}, {}),
+      })}>
+      <BaseMenu.Popup
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.dropdownSubContent, className)}, {}),
+        })}>
+        {children}
+      </BaseMenu.Popup>
+    </BaseMenu.Positioner>
+  );
+}
 
 type DropDrawerRootProps = React.ComponentProps<typeof Drawer> | React.ComponentProps<typeof DropdownMenu>;
 type DropDrawerTriggerProps =

@@ -1,15 +1,18 @@
 "use client";
 
+import {mergeProps} from "@base-ui/react/merge-props";
 import {Slider as BaseSlider} from "@base-ui/react/slider";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./slider.module.css";
 
 interface SliderProps extends Omit<
-  React.ComponentPropsWithoutRef<typeof BaseSlider.Root>,
-  "defaultValue" | "onValueChange" | "onValueCommitted" | "value"
+  React.ComponentPropsWithRef<typeof BaseSlider.Root>,
+  "defaultValue" | "onValueChange" | "onValueCommitted" | "value" | "className"
 > {
+  className?: string;
   /** V1-compatible controlled slider values. */
   value?: number[];
   /** V1-compatible uncontrolled slider values. */
@@ -20,11 +23,14 @@ interface SliderProps extends Omit<
   onValueCommitted?: (value: number[], eventDetails: unknown) => void;
 }
 
-const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
-  ({className, defaultValue, onValueChange, onValueCommitted, value, ...props}, ref) => (
+/**
+ * Renders a styled multi-thumb slider using canonical render composition.
+ */
+function Slider(props: Readonly<Slider.Props>): React.ReactElement {
+  const {className, defaultValue, onValueChange, onValueCommitted, render, value, ...otherProps} = props;
+
+  return (
     <BaseSlider.Root<readonly number[]>
-      ref={ref}
-      className={cn(styles.root, className)}
       defaultValue={defaultValue}
       onValueChange={(nextValue, eventDetails) => {
         onValueChange?.([...nextValue], eventDetails);
@@ -33,7 +39,12 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
         onValueCommitted?.([...nextValue], eventDetails);
       }}
       value={value}
-      {...props}>
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.root, className)}, {}),
+      })}>
       <BaseSlider.Control className={styles.control}>
         <BaseSlider.Track className={styles.track}>
           <BaseSlider.Indicator className={styles.indicator} />
@@ -41,8 +52,13 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
         <BaseSlider.Thumb className={styles.thumb} />
       </BaseSlider.Control>
     </BaseSlider.Root>
-  ),
-);
-Slider.displayName = "Slider";
+  );
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Slider {
+  export type Props = SliderProps;
+  export type State = BaseSlider.Root.State;
+}
 
 export {Slider};

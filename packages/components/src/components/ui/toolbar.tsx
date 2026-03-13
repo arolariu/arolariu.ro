@@ -1,85 +1,141 @@
 "use client";
 
+import {mergeProps} from "@base-ui/react/merge-props";
 import {Toolbar as BaseToolbar} from "@base-ui/react/toolbar";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./toolbar.module.css";
 
-type ToolbarProps = React.ComponentPropsWithoutRef<typeof BaseToolbar.Root>;
-type ToolbarButtonProps = React.ComponentPropsWithoutRef<typeof BaseToolbar.Button>;
-type ToolbarGroupProps = React.ComponentPropsWithoutRef<typeof BaseToolbar.Group>;
-type ToolbarSeparatorProps = React.ComponentPropsWithoutRef<typeof BaseToolbar.Separator>;
-type ToolbarLinkProps = React.ComponentPropsWithoutRef<typeof BaseToolbar.Link>;
+type ToolbarProps = React.ComponentPropsWithRef<typeof BaseToolbar.Root>;
+type ToolbarButtonProps = React.ComponentPropsWithRef<typeof BaseToolbar.Button>;
+type ToolbarGroupProps = React.ComponentPropsWithRef<typeof BaseToolbar.Group>;
+type ToolbarSeparatorProps = React.ComponentPropsWithRef<typeof BaseToolbar.Separator>;
+type ToolbarLinkProps = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
 
 /**
- * Wraps the Base UI toolbar root with compact Mira spacing and borders.
+ * Renders the toolbar root.
  */
-const Toolbar = React.forwardRef<HTMLDivElement, ToolbarProps>(
-  ({className, ...props}: Readonly<ToolbarProps>, ref): React.JSX.Element => (
+function Toolbar(props: Readonly<Toolbar.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseToolbar.Root
-      ref={ref}
-      className={cn(styles.root, className)}
-      {...props}
-    />
-  ),
-);
-Toolbar.displayName = "Toolbar";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.root, className)}, {}),
+      })}>
+      {children}
+    </BaseToolbar.Root>
+  );
+}
 
 /**
  * Renders a compact interactive toolbar button.
  */
-const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButtonProps>(
-  ({className, ...props}: Readonly<ToolbarButtonProps>, ref): React.JSX.Element => (
+function ToolbarButton(props: Readonly<ToolbarButton.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseToolbar.Button
-      ref={ref}
-      className={cn(styles.item, styles.button, className)}
-      {...props}
-    />
-  ),
-);
-ToolbarButton.displayName = "ToolbarButton";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "button",
+        render: render as never,
+        props: mergeProps({className: cn(styles.item, styles.button, className)}, {}),
+      })}>
+      {children}
+    </BaseToolbar.Button>
+  );
+}
 
 /**
- * Groups toolbar items while preserving Base UI keyboard navigation semantics.
+ * Renders a toolbar item group.
  */
-const ToolbarGroup = React.forwardRef<HTMLDivElement, ToolbarGroupProps>(
-  ({className, ...props}: Readonly<ToolbarGroupProps>, ref): React.JSX.Element => (
+function ToolbarGroup(props: Readonly<ToolbarGroup.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseToolbar.Group
-      ref={ref}
-      className={cn(styles.group, className)}
-      {...props}
-    />
-  ),
-);
-ToolbarGroup.displayName = "ToolbarGroup";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.group, className)}, {}),
+      })}>
+      {children}
+    </BaseToolbar.Group>
+  );
+}
 
 /**
- * Renders a separator between toolbar items or groups.
+ * Renders a separator between toolbar items.
  */
-const ToolbarSeparator = React.forwardRef<HTMLDivElement, ToolbarSeparatorProps>(
-  ({className, ...props}: Readonly<ToolbarSeparatorProps>, ref): React.JSX.Element => (
+function ToolbarSeparator(props: Readonly<ToolbarSeparator.Props>): React.ReactElement {
+  const {className, render, ...otherProps} = props;
+
+  return (
     <BaseToolbar.Separator
-      ref={ref}
-      className={cn(styles.separator, className)}
-      {...props}
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.separator, className)}, {}),
+      })}
     />
-  ),
-);
-ToolbarSeparator.displayName = "ToolbarSeparator";
+  );
+}
 
 /**
- * Renders a compact toolbar link with button-like affordances.
+ * Renders a toolbar link with button-like affordances.
  */
-const ToolbarLink = React.forwardRef<HTMLAnchorElement, ToolbarLinkProps>(
-  ({className, ...props}: Readonly<ToolbarLinkProps>, ref): React.JSX.Element => (
+function ToolbarLink(props: Readonly<ToolbarLink.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseToolbar.Link
-      ref={ref}
-      className={cn(styles.item, styles.link, className)}
-      {...props}
-    />
-  ),
-);
-ToolbarLink.displayName = "ToolbarLink";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "a",
+        render: render as never,
+        props: mergeProps({className: cn(styles.item, styles.link, className)}, {}),
+      })}>
+      {children}
+    </BaseToolbar.Link>
+  );
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Toolbar {
+  export type Props = ToolbarProps;
+  export type State = BaseToolbar.Root.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace ToolbarButton {
+  export type Props = ToolbarButtonProps;
+  export type State = BaseToolbar.Button.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace ToolbarGroup {
+  export type Props = ToolbarGroupProps;
+  export type State = BaseToolbar.Group.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace ToolbarSeparator {
+  export type Props = ToolbarSeparatorProps;
+  export type State = BaseToolbar.Separator.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace ToolbarLink {
+  export type Props = ToolbarLinkProps;
+  export type State = BaseToolbar.Link.State;
+}
 
 export {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator};

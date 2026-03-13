@@ -1,129 +1,109 @@
 "use client";
 
 import {Avatar as BaseAvatar} from "@base-ui/react/avatar";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./avatar.module.css";
 
 /**
- * Represents the configurable props for the Avatar root component.
- *
- * @remarks
- * Extends the Base UI avatar root primitive and exposes a class override for sizing,
- * rings, and layout adjustments.
+ * Props for the shared avatar root.
  */
-interface AvatarProps extends React.ComponentPropsWithoutRef<typeof BaseAvatar.Root> {
-  /**
-   * Additional CSS classes merged with the avatar root styles.
-   */
+interface AvatarProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Root>, "className"> {
+  /** Additional CSS classes merged with the avatar root styles. */
   className?: string;
 }
 
 /**
- * Represents the configurable props for the AvatarImage component.
- *
- * @remarks
- * Extends the Base UI image primitive and exposes a class override for image-specific styling.
+ * Props for the shared avatar image.
  */
-interface AvatarImageProps extends React.ComponentPropsWithoutRef<typeof BaseAvatar.Image> {
-  /**
-   * Additional CSS classes merged with the avatar image styles.
-   */
+interface AvatarImageProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Image>, "className"> {
+  /** Additional CSS classes merged with the avatar image styles. */
   className?: string;
 }
 
 /**
- * Represents the configurable props for the AvatarFallback component.
- *
- * @remarks
- * Extends the Base UI fallback primitive and exposes a class override for fallback content.
+ * Props for the shared avatar fallback.
  */
-interface AvatarFallbackProps extends React.ComponentPropsWithoutRef<typeof BaseAvatar.Fallback> {
-  /**
-   * Additional CSS classes merged with the avatar fallback styles.
-   */
+interface AvatarFallbackProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Fallback>, "className"> {
+  /** Additional CSS classes merged with the avatar fallback styles. */
   className?: string;
 }
 
 /**
- * An avatar root for rendering profile images with accessible fallbacks.
- *
- * @remarks
- * **Rendering Context**: Client Component.
- *
- * Wraps the Base UI avatar root primitive and provides the structural container for
- * {@link AvatarImage} and {@link AvatarFallback}. Use it for users, teams, or brands.
- *
- * @example
- * ```tsx
- * <Avatar>
- *   <AvatarImage src="/users/alex.png" alt="Alex Olariu" />
- *   <AvatarFallback>AO</AvatarFallback>
- * </Avatar>
- * ```
- *
- * @see {@link https://base-ui.com/react/components/avatar Base UI Avatar docs}
+ * Renders the avatar root with shared layout styling.
  */
-const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(({className, ...props}, ref) => (
-  <BaseAvatar.Root
-    ref={ref}
-    className={cn(styles.root, className)}
-    {...props}
-  />
-));
-Avatar.displayName = "Avatar";
+function Avatar(props: Readonly<Avatar.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
+    <BaseAvatar.Root
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "span",
+        render: render as never,
+        props: mergeProps({className: cn(styles.root, className)}, {}),
+      })}>
+      {children}
+    </BaseAvatar.Root>
+  );
+}
 
 /**
- * The image slot displayed when avatar media loads successfully.
- *
- * @remarks
- * **Rendering Context**: Client Component.
- *
- * Wraps the Base UI avatar image primitive and applies object-fit styles so profile
- * imagery fills the avatar frame cleanly.
- *
- * @example
- * ```tsx
- * <AvatarImage src={user.imageUrl} alt={user.name} />
- * ```
- *
- * @see {@link AvatarFallback}
- * @see {@link https://base-ui.com/react/components/avatar Base UI Avatar docs}
+ * Renders the avatar image slot.
  */
-const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(({className, ...props}, ref) => (
-  <BaseAvatar.Image
-    ref={ref}
-    className={cn(styles.image, className)}
-    {...props}
-  />
-));
-AvatarImage.displayName = "AvatarImage";
+function AvatarImage(props: Readonly<AvatarImage.Props>): React.ReactElement {
+  const {className, render, ...otherProps} = props;
+
+  return (
+    <BaseAvatar.Image
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "img",
+        render: render as never,
+        props: mergeProps({className: cn(styles.image, className)}, {}),
+      })}
+    />
+  );
+}
 
 /**
- * The fallback slot shown when avatar media is missing or fails to load.
- *
- * @remarks
- * **Rendering Context**: Client Component.
- *
- * Wraps the Base UI avatar fallback primitive and applies centered typography for
- * initials, icons, or other compact fallback content.
- *
- * @example
- * ```tsx
- * <AvatarFallback>AO</AvatarFallback>
- * ```
- *
- * @see {@link AvatarImage}
- * @see {@link https://base-ui.com/react/components/avatar Base UI Avatar docs}
+ * Renders the avatar fallback slot.
  */
-const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallbackProps>(({className, ...props}, ref) => (
-  <BaseAvatar.Fallback
-    ref={ref}
-    className={cn(styles.fallback, className)}
-    {...props}
-  />
-));
-AvatarFallback.displayName = "AvatarFallback";
+function AvatarFallback(props: Readonly<AvatarFallback.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
+    <BaseAvatar.Fallback
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "span",
+        render: render as never,
+        props: mergeProps({className: cn(styles.fallback, className)}, {}),
+      })}>
+      {children}
+    </BaseAvatar.Fallback>
+  );
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Avatar {
+  export type Props = AvatarProps;
+  export type State = BaseAvatar.Root.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace AvatarImage {
+  export type Props = AvatarImageProps;
+  export type State = BaseAvatar.Image.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace AvatarFallback {
+  export type Props = AvatarFallbackProps;
+  export type State = BaseAvatar.Fallback.State;
+}
 
 export {Avatar, AvatarFallback, AvatarImage};

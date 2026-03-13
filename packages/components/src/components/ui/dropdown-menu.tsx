@@ -1,135 +1,179 @@
 "use client";
 
 import {Menu as BaseMenu} from "@base-ui/react/menu";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {useRender} from "@base-ui/react/use-render";
 import {Check, ChevronRight, Circle} from "lucide-react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
 import styles from "./dropdown-menu.module.css";
 
-const DropdownMenu = BaseMenu.Root;
+interface DropdownMenuProps extends React.ComponentPropsWithRef<typeof BaseMenu.Root> {}
+
+interface DropdownMenuTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Trigger>, "className"> {
+  className?: string;
+  /** @deprecated Prefer Base UI's `render` prop. */
+  asChild?: boolean;
+}
+
+interface DropdownMenuSubTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.SubmenuTrigger>, "className"> {
+  className?: string;
+  inset?: boolean;
+}
+
+interface DropdownMenuContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Positioner>, "className"> {
+  className?: string;
+}
+
+interface DropdownMenuItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Item>, "className"> {
+  className?: string;
+  inset?: boolean;
+  /** @deprecated Prefer Base UI's `render` prop. */
+  asChild?: boolean;
+}
+
+interface DropdownMenuCheckboxItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.CheckboxItem>, "className"> {
+  className?: string;
+}
+
+interface DropdownMenuRadioItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.RadioItem>, "className"> {
+  className?: string;
+}
+
+interface DropdownMenuLabelProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.GroupLabel>, "className"> {
+  className?: string;
+  inset?: boolean;
+}
+
+interface DropdownMenuSeparatorProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Separator>, "className"> {
+  className?: string;
+}
+
+interface DropdownMenuShortcutProps extends React.ComponentPropsWithRef<"span"> {
+  className?: string;
+  render?: useRender.RenderProp<Record<string, never>>;
+  /** @deprecated Prefer the `render` prop. */
+  asChild?: boolean;
+}
+
+function DropdownMenu(props: Readonly<DropdownMenu.Props>): React.ReactElement {
+  return <BaseMenu.Root {...props} />;
+}
+
 const DropdownMenuGroup = BaseMenu.Group;
 const DropdownMenuPortal = BaseMenu.Portal;
 const DropdownMenuRadioGroup = BaseMenu.RadioGroup;
 const DropdownMenuSub = BaseMenu.SubmenuRoot;
 
-interface DropdownMenuItemProps extends React.ComponentPropsWithoutRef<typeof BaseMenu.Item> {
-  /** Adds left inset spacing to match grouped menu items. */
-  inset?: boolean;
-  /**
-   * Renders the first child as the interactive element.
-   * Maps to Base UI's `render` prop.
-   */
-  /** @deprecated Prefer Base UI's `render` prop. */
-
-  asChild?: boolean;
-}
-
-const DropdownMenuTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentPropsWithoutRef<typeof BaseMenu.Trigger> & {asChild?: boolean}
->(({asChild = false, children, className, ...props}, ref) => {
-  if (asChild && React.isValidElement(children)) {
-    return (
-      <BaseMenu.Trigger
-        ref={ref}
-        className={className}
-        render={children as React.ReactElement}
-        {...props}
-      />
-    );
-  }
+function DropdownMenuTrigger(props: Readonly<DropdownMenuTrigger.Props>): React.ReactElement {
+  const {asChild = false, children, className, render, ...otherProps} = props;
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
 
   return (
     <BaseMenu.Trigger
-      ref={ref}
-      className={className}
-      {...props}>
-      {children}
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "button",
+        render: renderProp as never,
+        props: mergeProps({className}, {}),
+      })}>
+      {renderProp ? undefined : children}
     </BaseMenu.Trigger>
   );
-});
-DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
+}
 
-const DropdownMenuSubTrigger = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof BaseMenu.SubmenuTrigger> & {inset?: boolean}
->(({className, inset = false, children, ...props}, ref) => (
-  <BaseMenu.SubmenuTrigger
-    ref={ref}
-    className={cn(styles.item, styles.subTrigger, inset && styles.inset, className)}
-    {...props}>
-    {children}
-    <ChevronRight className={styles.subTriggerIcon} />
-  </BaseMenu.SubmenuTrigger>
-));
-DropdownMenuSubTrigger.displayName = "DropdownMenuSubTrigger";
+function DropdownMenuSubTrigger(props: Readonly<DropdownMenuSubTrigger.Props>): React.ReactElement {
+  const {className, children, inset = false, render, ...otherProps} = props;
 
-const DropdownMenuSubContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.Positioner>>(
-  ({className, children, ...props}, ref) => (
+  return (
+    <BaseMenu.SubmenuTrigger
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.item, styles.subTrigger, inset && styles.inset, className)}, {}),
+      })}>
+      {children}
+      <ChevronRight className={styles.subTriggerIcon} />
+    </BaseMenu.SubmenuTrigger>
+  );
+}
+
+function DropdownMenuSubContent(props: Readonly<DropdownMenuContent.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseMenu.Positioner
-      className={styles.positioner}
-      {...props}>
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        props: mergeProps({className: styles.positioner}, {}),
+      })}>
       <BaseMenu.Popup
-        ref={ref}
-        className={cn(styles.content, className)}>
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.content, className)}, {}),
+        })}>
         {children}
       </BaseMenu.Popup>
     </BaseMenu.Positioner>
-  ),
-);
-DropdownMenuSubContent.displayName = "DropdownMenuSubContent";
+  );
+}
 
-const DropdownMenuContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.Positioner>>(
-  ({className, children, ...props}, ref) => (
+function DropdownMenuContent(props: Readonly<DropdownMenuContent.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <DropdownMenuPortal>
       <BaseMenu.Positioner
-        className={styles.positioner}
-        {...props}>
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          props: mergeProps({className: styles.positioner}, {}),
+        })}>
         <BaseMenu.Popup
-          ref={ref}
-          className={cn(styles.content, className)}>
+          render={useRender({
+            defaultTagName: "div",
+            render: render as never,
+            props: mergeProps({className: cn(styles.content, className)}, {}),
+          })}>
           {children}
         </BaseMenu.Popup>
       </BaseMenu.Positioner>
     </DropdownMenuPortal>
-  ),
-);
-DropdownMenuContent.displayName = "DropdownMenuContent";
+  );
+}
 
-const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuItemProps>(
-  ({asChild = false, className, inset = false, children, ...props}, ref) => {
-    const composedClassName = cn(styles.item, inset && styles.inset, className);
+function DropdownMenuItem(props: Readonly<DropdownMenuItem.Props>): React.ReactElement {
+  const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-    if (asChild && React.isValidElement(children)) {
-      return (
-        <BaseMenu.Item
-          ref={ref}
-          className={composedClassName}
-          render={children as React.ReactElement}
-          {...props}
-        />
-      );
-    }
+  return (
+    <BaseMenu.Item
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: renderProp as never,
+        props: mergeProps({className: cn(styles.item, inset && styles.inset, className)}, {}),
+      })}>
+      {renderProp ? undefined : children}
+    </BaseMenu.Item>
+  );
+}
 
-    return (
-      <BaseMenu.Item
-        ref={ref}
-        className={composedClassName}
-        {...props}>
-        {children}
-      </BaseMenu.Item>
-    );
-  },
-);
-DropdownMenuItem.displayName = "DropdownMenuItem";
+function DropdownMenuCheckboxItem(props: Readonly<DropdownMenuCheckboxItem.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
 
-const DropdownMenuCheckboxItem = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.CheckboxItem>>(
-  ({className, children, ...props}, ref) => (
+  return (
     <BaseMenu.CheckboxItem
-      ref={ref}
-      className={cn(styles.item, styles.indicatorItem, className)}
-      {...props}>
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.item, styles.indicatorItem, className)}, {}),
+      })}>
       <span className={styles.indicatorSlot}>
         <BaseMenu.CheckboxItemIndicator>
           <Check className={styles.indicatorIcon} />
@@ -137,16 +181,20 @@ const DropdownMenuCheckboxItem = React.forwardRef<HTMLDivElement, React.Componen
       </span>
       {children}
     </BaseMenu.CheckboxItem>
-  ),
-);
-DropdownMenuCheckboxItem.displayName = "DropdownMenuCheckboxItem";
+  );
+}
 
-const DropdownMenuRadioItem = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.RadioItem>>(
-  ({className, children, ...props}, ref) => (
+function DropdownMenuRadioItem(props: Readonly<DropdownMenuRadioItem.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseMenu.RadioItem
-      ref={ref}
-      className={cn(styles.item, styles.indicatorItem, className)}
-      {...props}>
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.item, styles.indicatorItem, className)}, {}),
+      })}>
       <span className={styles.indicatorSlot}>
         <BaseMenu.RadioItemIndicator>
           <Circle className={styles.radioIndicatorIcon} />
@@ -154,40 +202,118 @@ const DropdownMenuRadioItem = React.forwardRef<HTMLDivElement, React.ComponentPr
       </span>
       {children}
     </BaseMenu.RadioItem>
-  ),
-);
-DropdownMenuRadioItem.displayName = "DropdownMenuRadioItem";
+  );
+}
 
-const DropdownMenuLabel = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.GroupLabel> & {inset?: boolean}>(
-  ({className, inset = false, ...props}, ref) => (
+function DropdownMenuLabel(props: Readonly<DropdownMenuLabel.Props>): React.ReactElement {
+  const {className, children, inset = false, render, ...otherProps} = props;
+
+  return (
     <BaseMenu.GroupLabel
-      ref={ref}
-      className={cn(styles.label, inset && styles.inset, className)}
-      {...props}
-    />
-  ),
-);
-DropdownMenuLabel.displayName = "DropdownMenuLabel";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.label, inset && styles.inset, className)}, {}),
+      })}>
+      {children}
+    </BaseMenu.GroupLabel>
+  );
+}
 
-const DropdownMenuSeparator = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseMenu.Separator>>(
-  ({className, ...props}, ref) => (
+function DropdownMenuSeparator(props: Readonly<DropdownMenuSeparator.Props>): React.ReactElement {
+  const {className, render, ...otherProps} = props;
+
+  return (
     <BaseMenu.Separator
-      ref={ref}
-      className={cn(styles.separator, className)}
-      {...props}
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.separator, className)}, {}),
+      })}
     />
-  ),
-);
-DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
+  );
+}
 
-const DropdownMenuShortcut = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(({className, ...props}, ref) => (
-  <span
-    ref={ref}
-    className={cn(styles.shortcut, className)}
-    {...props}
-  />
-));
-DropdownMenuShortcut.displayName = "DropdownMenuShortcut";
+function DropdownMenuShortcut(props: Readonly<DropdownMenuShortcut.Props>): React.ReactElement {
+  const {asChild = false, children, className, render, ...otherProps} = props;
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
+
+  return useRender({
+    defaultTagName: "span",
+    render: renderProp as never,
+    props: mergeProps({className: cn(styles.shortcut, className)}, otherProps, {
+      children: renderProp ? undefined : children,
+    }),
+  });
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenu {
+  export type Props = DropdownMenuProps;
+  export type State = BaseMenu.Root.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuTrigger {
+  export type Props = DropdownMenuTriggerProps;
+  export type State = BaseMenu.Trigger.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuSubTrigger {
+  export type Props = DropdownMenuSubTriggerProps;
+  export type State = BaseMenu.SubmenuTrigger.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuContent {
+  export type Props = DropdownMenuContentProps;
+  export type State = BaseMenu.Popup.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuSubContent {
+  export type Props = DropdownMenuContentProps;
+  export type State = BaseMenu.Popup.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuItem {
+  export type Props = DropdownMenuItemProps;
+  export type State = BaseMenu.Item.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuCheckboxItem {
+  export type Props = DropdownMenuCheckboxItemProps;
+  export type State = BaseMenu.CheckboxItem.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuRadioItem {
+  export type Props = DropdownMenuRadioItemProps;
+  export type State = BaseMenu.RadioItem.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuLabel {
+  export type Props = DropdownMenuLabelProps;
+  export type State = BaseMenu.GroupLabel.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuSeparator {
+  export type Props = DropdownMenuSeparatorProps;
+  export type State = BaseMenu.Separator.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace DropdownMenuShortcut {
+  export type Props = DropdownMenuShortcutProps;
+  export type State = Record<string, never>;
+}
 
 export {
   DropdownMenu,

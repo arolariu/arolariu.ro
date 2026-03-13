@@ -1,6 +1,8 @@
 "use client";
 
+import {mergeProps} from "@base-ui/react/merge-props";
 import {NavigationMenu as BaseNavigationMenu} from "@base-ui/react/navigation-menu";
+import {useRender} from "@base-ui/react/use-render";
 import {ChevronDown} from "lucide-react";
 import * as React from "react";
 
@@ -12,97 +14,228 @@ export function navigationMenuTriggerStyle(className?: string): string {
   return cn(styles.trigger, className);
 }
 
-interface NavigationMenuTriggerProps extends Omit<React.ComponentPropsWithoutRef<typeof BaseNavigationMenu.Trigger>, "className"> {
+interface NavigationMenuProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Root>, "className"> {
   className?: string;
 }
 
-const NavigationMenu = React.forwardRef<HTMLElement, React.ComponentPropsWithoutRef<typeof BaseNavigationMenu.Root>>(
-  ({className, children, ...props}, ref) => (
+interface NavigationMenuListProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.List>, "className"> {
+  className?: string;
+}
+
+interface NavigationMenuTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Trigger>, "className"> {
+  className?: string;
+}
+
+interface NavigationMenuContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Content>, "className"> {
+  className?: string;
+}
+
+interface NavigationMenuLinkProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Link>, "className"> {
+  className?: string;
+}
+
+interface NavigationMenuViewportProps extends Omit<React.ComponentPropsWithRef<typeof BaseNavigationMenu.Viewport>, "className"> {
+  className?: string;
+}
+
+interface NavigationMenuIndicatorProps extends React.ComponentPropsWithRef<"div"> {
+  className?: string;
+  render?: useRender.RenderProp<Record<string, never>>;
+  /** @deprecated Prefer the `render` prop. */
+  asChild?: boolean;
+}
+
+/**
+ * Renders the navigation menu root and shared viewport.
+ */
+function NavigationMenu(props: Readonly<NavigationMenu.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseNavigationMenu.Root
-      ref={ref}
-      className={cn(styles.root, className)}
-      {...props}>
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "nav",
+        render: render as never,
+        props: mergeProps({className: cn(styles.root, className)}, {}),
+      })}>
       {children}
       <NavigationMenuViewport />
     </BaseNavigationMenu.Root>
-  ),
-);
-NavigationMenu.displayName = "NavigationMenu";
+  );
+}
 
-const NavigationMenuList = React.forwardRef<HTMLUListElement, React.ComponentPropsWithoutRef<typeof BaseNavigationMenu.List>>(
-  ({className, ...props}, ref) => (
+/**
+ * Renders the navigation menu list.
+ */
+function NavigationMenuList(props: Readonly<NavigationMenuList.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseNavigationMenu.List
-      ref={ref}
-      className={cn(styles.list, className)}
-      {...props}
-    />
-  ),
-);
-NavigationMenuList.displayName = "NavigationMenuList";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "ul",
+        render: render as never,
+        props: mergeProps({className: cn(styles.list, className)}, {}),
+      })}>
+      {children}
+    </BaseNavigationMenu.List>
+  );
+}
 
 const NavigationMenuItem = BaseNavigationMenu.Item;
 
-const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenuTriggerProps>(({className, children, ...props}, ref) => (
-  <BaseNavigationMenu.Trigger
-    ref={ref}
-    className={cn(styles.trigger, className)}
-    {...props}>
-    {children}
-    <ChevronDown className={styles.triggerIcon} />
-  </BaseNavigationMenu.Trigger>
-));
-NavigationMenuTrigger.displayName = "NavigationMenuTrigger";
+/**
+ * Renders a navigation menu trigger with the default chevron affordance.
+ */
+function NavigationMenuTrigger(props: Readonly<NavigationMenuTrigger.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
 
-const NavigationMenuContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseNavigationMenu.Content>>(
-  ({className, ...props}, ref) => (
+  return (
+    <BaseNavigationMenu.Trigger
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "button",
+        render: render as never,
+        props: mergeProps({className: cn(styles.trigger, className)}, {}),
+      })}>
+      {children}
+      <ChevronDown className={styles.triggerIcon} />
+    </BaseNavigationMenu.Trigger>
+  );
+}
+
+/**
+ * Renders the navigation menu content region.
+ */
+function NavigationMenuContent(props: Readonly<NavigationMenuContent.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseNavigationMenu.Content
-      ref={ref}
-      className={cn(styles.content, className)}
-      {...props}
-    />
-  ),
-);
-NavigationMenuContent.displayName = "NavigationMenuContent";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "div",
+        render: render as never,
+        props: mergeProps({className: cn(styles.content, className)}, {}),
+      })}>
+      {children}
+    </BaseNavigationMenu.Content>
+  );
+}
 
-const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, React.ComponentPropsWithoutRef<typeof BaseNavigationMenu.Link>>(
-  ({className, ...props}, ref) => (
+/**
+ * Renders a styled navigation link.
+ */
+function NavigationMenuLink(props: Readonly<NavigationMenuLink.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <BaseNavigationMenu.Link
-      ref={ref}
-      className={cn(styles.link, className)}
-      {...props}
-    />
-  ),
-);
-NavigationMenuLink.displayName = "NavigationMenuLink";
+      {...otherProps}
+      render={useRender({
+        defaultTagName: "a",
+        render: render as never,
+        props: mergeProps({className: cn(styles.link, className)}, {}),
+      })}>
+      {children}
+    </BaseNavigationMenu.Link>
+  );
+}
 
-const NavigationMenuViewport = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseNavigationMenu.Viewport>>(
-  ({className, ...props}, ref) => (
+/**
+ * Renders the shared navigation menu viewport.
+ */
+function NavigationMenuViewport(props: Readonly<NavigationMenuViewport.Props>): React.ReactElement {
+  const {className, children, render, ...otherProps} = props;
+
+  return (
     <div className={styles.viewportWrapper}>
       <BaseNavigationMenu.Portal>
-        <BaseNavigationMenu.Positioner className={styles.positioner}>
-          <BaseNavigationMenu.Popup className={styles.popup}>
+        <BaseNavigationMenu.Positioner
+          render={useRender({
+            defaultTagName: "div",
+            props: mergeProps({className: styles.positioner}, {}),
+          })}>
+          <BaseNavigationMenu.Popup
+            render={useRender({
+              defaultTagName: "div",
+              props: mergeProps({className: styles.popup}, {}),
+            })}>
             <BaseNavigationMenu.Viewport
-              ref={ref}
-              className={cn(styles.viewport, className)}
-              {...props}
-            />
+              {...otherProps}
+              render={useRender({
+                defaultTagName: "div",
+                render: render as never,
+                props: mergeProps({className: cn(styles.viewport, className)}, {}),
+              })}>
+              {children}
+            </BaseNavigationMenu.Viewport>
           </BaseNavigationMenu.Popup>
         </BaseNavigationMenu.Positioner>
       </BaseNavigationMenu.Portal>
     </div>
-  ),
-);
-NavigationMenuViewport.displayName = "NavigationMenuViewport";
+  );
+}
 
-const NavigationMenuIndicator = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => (
-  <div
-    ref={ref}
-    className={cn(styles.indicator, className)}
-    {...props}>
-    <div className={styles.indicatorInner} />
-  </div>
-));
-NavigationMenuIndicator.displayName = "NavigationMenuIndicator";
+/**
+ * Renders the custom navigation menu indicator wrapper.
+ */
+function NavigationMenuIndicator(props: Readonly<NavigationMenuIndicator.Props>): React.ReactElement {
+  const {asChild = false, children, className, render, ...otherProps} = props;
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
+
+  return useRender({
+    defaultTagName: "div",
+    render: renderProp as never,
+    props: mergeProps({className: cn(styles.indicator, className)}, otherProps, {
+      children: renderProp ? undefined : (children ?? <div className={styles.indicatorInner} />),
+    }),
+  });
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace NavigationMenu {
+  export type Props = NavigationMenuProps;
+  export type State = BaseNavigationMenu.Root.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace NavigationMenuList {
+  export type Props = NavigationMenuListProps;
+  export type State = BaseNavigationMenu.List.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace NavigationMenuTrigger {
+  export type Props = NavigationMenuTriggerProps;
+  export type State = BaseNavigationMenu.Trigger.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace NavigationMenuContent {
+  export type Props = NavigationMenuContentProps;
+  export type State = BaseNavigationMenu.Content.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace NavigationMenuLink {
+  export type Props = NavigationMenuLinkProps;
+  export type State = BaseNavigationMenu.Link.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace NavigationMenuViewport {
+  export type Props = NavigationMenuViewportProps;
+  export type State = BaseNavigationMenu.Viewport.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace NavigationMenuIndicator {
+  export type Props = NavigationMenuIndicatorProps;
+  export type State = Record<string, never>;
+}
 
 export {
   NavigationMenu,
