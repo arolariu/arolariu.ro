@@ -1,0 +1,72 @@
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ac-space-2);
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--ac-border);
+  border-radius: 50%;
+  font-size: var(--ac-text-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: background-color var(--ac-transition-fast), border-color var(--ac-transition-fast),
+    color var(--ac-transition-fast);
+}
+
+.step[data-state="completed"] .indicator {
+  background-color: var(--ac-primary);
+  border-color: var(--ac-primary);
+  color: var(--ac-primary-foreground);
+}
+
+.step[data-state="active"] .indicator {
+  border-color: var(--ac-primary);
+  color: var(--ac-primary);
+}
+
+.step[data-state="upcoming"] .indicator {
+  color: var(--ac-muted-foreground);
+}
+
+.connector {
+  flex: 1;
+  min-width: var(--ac-space-4);
+  height: 2px;
+  background-color: var(--ac-border);
+}
+
+.step[data-state="completed"] .connector {
+  background-color: var(--ac-primary);
+}
+
+.vertical .connector {
+  width: 2px;
+  height: var(--ac-space-4);
+  min-width: unset;
+}
+
+.label {
+  font-size: var(--ac-text-sm);
+  color: var(--ac-foreground);
+}
+
+.step[data-state="upcoming"] .label {
+  color: var(--ac-muted-foreground);
+}
