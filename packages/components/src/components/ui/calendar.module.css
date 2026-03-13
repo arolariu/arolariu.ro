@@ -190,7 +190,7 @@
   color: var(--ac-muted-foreground);
 }
 
-.disabled {
+.day[data-disabled="true"] {
   opacity: 0.5;
   color: var(--ac-muted-foreground);
 }

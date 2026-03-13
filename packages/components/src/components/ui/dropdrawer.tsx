@@ -663,7 +663,6 @@ function DropDrawerItem({
           !isInsideGroup && styles.mobileStandaloneItem,
           isInsideGroup && styles.mobileGroupedItem,
           inset && styles.inset,
-          disabled && styles.disabled,
           className,
         )}
         onClick={handleClick}

@@ -86,7 +86,7 @@ function Calendar({
         range_end: cn(styles.rangeEnd, classNames?.range_end),
         today: cn(styles.today, classNames?.today),
         outside: cn(styles.outside, classNames?.outside),
-        disabled: cn(styles.disabled, classNames?.disabled),
+        disabled: classNames?.disabled,
         hidden: cn(styles.hidden, classNames?.hidden),
       }}
       components={{

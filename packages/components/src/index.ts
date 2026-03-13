@@ -1,5 +1,17 @@
-// V2 barrel export — Base UI + CSS Modules (no Tailwind)
-// Components are wrapped to maintain API parity with V1
+// @arolariu/components — Base UI + CSS Modules component library
+// Version 1.0.0 — Built on @base-ui/react primitives
+
+// ============================================================
+// Base UI Utilities (re-exported for consumer convenience)
+// ============================================================
+export {CSPProvider} from "@base-ui/react/csp-provider";
+export {DirectionProvider} from "@base-ui/react/direction-provider";
+export {mergeProps} from "@base-ui/react/merge-props";
+export {useRender} from "@base-ui/react/use-render";
+
+// ============================================================
+// Components
+// ============================================================
 
 export {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./components/ui/accordion";
 
@@ -38,7 +50,7 @@ export {
 } from "./components/ui/breadcrumb";
 
 export {Button, buttonVariants} from "./components/ui/button";
-export type {ButtonProps, ButtonSize, ButtonVariant} from "./components/ui/button";
+export type {ButtonProps, ButtonSize, ButtonState, ButtonVariant} from "./components/ui/button";
 
 export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants} from "./components/ui/button-group";
 

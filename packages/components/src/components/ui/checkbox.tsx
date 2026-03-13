@@ -6,12 +6,45 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./checkbox.module.css";
 
-/** V1 compatibility — Radix used checked: boolean | "indeterminate" */
+/**
+ * Represents the configurable props for the Checkbox component.
+ *
+ * @remarks
+ * This compatibility wrapper preserves the library's historical `"indeterminate"`
+ * checked state API while adapting it to the Base UI checkbox primitive.
+ */
 interface CheckboxProps extends Omit<React.ComponentPropsWithoutRef<typeof BaseCheckbox.Root>, "checked" | "onCheckedChange"> {
+  /**
+   * Additional CSS classes merged with the checkbox control styles.
+   */
+  className?: string;
+  /**
+   * The current checked state, including support for the legacy `"indeterminate"` value.
+   */
   checked?: boolean | "indeterminate";
+  /**
+   * Called whenever the checked state changes.
+   */
   onCheckedChange?: (checked: boolean | "indeterminate") => void;
 }
 
+/**
+ * A checkbox control with support for checked, unchecked, and indeterminate states.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component.
+ *
+ * Wraps the Base UI checkbox primitive and maps the legacy shared-library state model
+ * to Base UI's `checked` plus `indeterminate` props. The indicator icon is rendered
+ * inline to keep the component self-contained and theme-aware.
+ *
+ * @example
+ * ```tsx
+ * <Checkbox checked="indeterminate" aria-label="Select all rows" />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/checkbox Base UI Checkbox docs}
+ */
 const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(({className, checked, onCheckedChange, ...props}, ref) => {
   const baseChecked = checked === "indeterminate" ? true : checked;
   const indeterminate = checked === "indeterminate";

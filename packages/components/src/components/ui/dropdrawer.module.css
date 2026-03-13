@@ -310,7 +310,7 @@
   padding-left: 2rem;
 }
 
-.disabled {
+.mobileItem[data-disabled="true"] {
   pointer-events: none;
   opacity: 0.5;
 }
