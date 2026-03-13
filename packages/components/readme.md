@@ -14,7 +14,7 @@
 
 **Modern • Accessible • Production Ready**
 
-_A comprehensive collection of 60+ beautifully crafted React components built on [Radix UI](https://www.radix-ui.com/) primitives, designed for modern applications that demand both beauty and performance._
+_A comprehensive collection of 70+ beautifully crafted React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS Modules, and designed for modern applications that demand both beauty and performance._
 
 [🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • [🎨 Storybook](https://storybook.arolariu.ro) • [💡 Examples](#-usage-examples) • [🤝 Contributing](#-contributing)
 
@@ -27,17 +27,19 @@ _A comprehensive collection of 60+ beautifully crafted React components built on
 **For Developers Who Care About Quality**
 
 - **🎨 Beautiful by Default** - Carefully designed components that look great out of the box
-- **♿ Accessibility First** - Built on Radix UI primitives with WAI-ARIA compliance
-- **⚡ Performance Optimized** - Tree-shakeable, minimal bundle impact, source maps included
+- **♿ Accessibility First** - Built on Base UI primitives with strong keyboard and screen reader support
+- **🧩 CSS Modules Architecture** - Scoped `.module.css` styling with no Tailwind dependency inside the library
+- **🌈 OKLCH Design Tokens** - Theme every component with `--ac-*` CSS custom properties such as `--ac-primary` and `--ac-radius-md`
+- **⚡ Performance Optimized** - Tree-shakeable exports, minimal bundle impact, and source maps included
 - **🔧 Developer Experience** - Full TypeScript support, comprehensive docs, and debugging tools
-- **🎭 Flexible Styling** - Tailwind CSS integration with easy customization
-- **🚀 Modern Stack** - React 18/19, ESM, SSR compatible
+- **🌙 Flexible Theming** - Light and dark mode via `.dark` or `[data-theme="dark"]`
+- **🚀 Modern Stack** - React 18/19, ESM, SSR compatible, built with RSLib
 
-**Perfect for building modern web applications, design systems, and prototypes.**
+**Version 1.0.0 is the first major release of the new Base UI + CSS Modules architecture.**
 
-## � Quick Start
+## 🚀 Quick Start
 
-Get up and running with @arolariu/components in under 2 minutes!
+Get up and running with @arolariu/components in under 2 minutes.
 
 ### Installation
 
@@ -55,23 +57,22 @@ pnpm add @arolariu/components
 ### Basic Setup
 
 ```tsx
-// 1. Import the component you need
 import { Button } from "@arolariu/components/button";
 import {
   Card,
+  CardContent,
   CardHeader,
   CardTitle,
-  CardContent,
 } from "@arolariu/components/card";
+import styles from "./app-shell.module.css";
 
-// 2. Use it in your React component
 export default function MyApp() {
   return (
-    <Card className="w-96">
+    <Card className={styles.card}>
       <CardHeader>
-        <CardTitle>Welcome to @arolariu/components!</CardTitle>
+        <CardTitle>Welcome to @arolariu/components 1.0.0</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className={styles.content}>
         <Button>Get Started</Button>
       </CardContent>
     </Card>
@@ -79,20 +80,48 @@ export default function MyApp() {
 }
 ```
 
+```css
+/* app-shell.module.css */
+.card {
+  width: min(24rem, 100%);
+}
+
+.content {
+  display: flex;
+  justify-content: flex-start;
+}
+```
+
 ### Add Styles (Required)
 
 ```tsx
-// Import the CSS in your app's entry point (e.g., main.tsx, _app.tsx)
+// Import the package design tokens and base styles once in your app entry point.
 import "@arolariu/components/styles";
 ```
 
-**That's it!** 🎉 You're ready to build beautiful UIs.
+### Optional Theme Overrides
+
+```css
+/* app-theme.css */
+:root {
+  --ac-primary: oklch(0.62 0.21 262);
+  --ac-primary-foreground: oklch(0.99 0.01 260);
+  --ac-radius-md: 0.75rem;
+}
+
+.dark {
+  --ac-background: oklch(0.18 0.01 286);
+  --ac-foreground: oklch(0.98 0 0);
+}
+```
+
+**That's it.** 🎉 You bring your app layout styles with CSS Modules, and the library provides component styling and tokens.
 
 ---
 
 ## 📖 Component Catalog
 
-Explore our comprehensive collection of **60+ components** organized by category:
+Explore our collection of **70+ components** organized by category.
 
 ### 🎨 Layout & Structure
 
@@ -121,8 +150,9 @@ Explore our comprehensive collection of **60+ components** organized by category
 | **Breadcrumb**     | Hierarchical navigation trails | `@arolariu/components/breadcrumb`      |
 | **NavigationMenu** | Complex dropdown navigation    | `@arolariu/components/navigation-menu` |
 | **Sidebar**        | Collapsible side navigation    | `@arolariu/components/sidebar`         |
+| **Menubar**        | Application and editor menus   | `@arolariu/components/menubar`         |
 
-### � Overlays & Dialogs
+### 📦 Overlays & Dialogs
 
 | Component      | Description                        | Import                            |
 | -------------- | ---------------------------------- | --------------------------------- |
@@ -142,6 +172,29 @@ Explore our comprehensive collection of **60+ components** organized by category
 | **Badge**    | Status indicators and labels           | `@arolariu/components/badge`    |
 | **Chart**    | Data visualization components          | `@arolariu/components/chart`    |
 
+### 🎛️ Form Controls
+
+| Component        | Description                               | Import                               |
+| ---------------- | ----------------------------------------- | ------------------------------------ |
+| **Form**         | Form validation and management            | `@arolariu/components/form`          |
+| **Field**        | Form field layout primitives              | `@arolariu/components/field`         |
+| **InputOTP**     | One-time password input fields            | `@arolariu/components/input-otp`     |
+| **InputGroup**   | Grouped text inputs and actions           | `@arolariu/components/input-group`   |
+| **RadioGroup**   | Single-choice option groups               | `@arolariu/components/radio-group`   |
+| **Switch**       | Toggle switches for binary options        | `@arolariu/components/switch`        |
+| **Textarea**     | Multi-line text input areas               | `@arolariu/components/textarea`      |
+| **ToggleGroup**  | Coordinated toggle button groups          | `@arolariu/components/toggle-group`  |
+
+### 💬 Feedback & Status
+
+| Component    | Description                     | Import                          |
+| ------------ | ------------------------------- | ------------------------------- |
+| **Alert**    | Important message notifications | `@arolariu/components/alert`    |
+| **Progress** | Task completion indicators      | `@arolariu/components/progress` |
+| **Skeleton** | Loading state placeholders      | `@arolariu/components/skeleton` |
+| **Toaster**  | Base UI-backed toast system     | `@arolariu/components/sonner`   |
+| **Spinner**  | Loading indicators              | `@arolariu/components/spinner`  |
+
 ### 🎪 Animated Backgrounds
 
 | Component               | Description                     | Import                                      |
@@ -151,26 +204,42 @@ Explore our comprehensive collection of **60+ components** organized by category
 | **FireworksBackground** | Particle explosion effects      | `@arolariu/components/fireworks-background` |
 | **GradientBackground**  | Dynamic gradient animations     | `@arolariu/components/gradient-background`  |
 
-### 🎛️ Form Controls
+[**👀 View All Components**](https://storybook.arolariu.ro) in our interactive Storybook.
 
-| Component      | Description                        | Import                             |
-| -------------- | ---------------------------------- | ---------------------------------- |
-| **Form**       | Form validation and management     | `@arolariu/components/form`        |
-| **InputOTP**   | One-time password input fields     | `@arolariu/components/input-otp`   |
-| **RadioGroup** | Single-choice option groups        | `@arolariu/components/radio-group` |
-| **Switch**     | Toggle switches for binary options | `@arolariu/components/switch`      |
-| **Textarea**   | Multi-line text input areas        | `@arolariu/components/textarea`    |
+---
 
-### � Feedback & Status
+## 🏗️ Architecture
 
-| Component    | Description                     | Import                          |
-| ------------ | ------------------------------- | ------------------------------- |
-| **Alert**    | Important message notifications | `@arolariu/components/alert`    |
-| **Progress** | Task completion indicators      | `@arolariu/components/progress` |
-| **Skeleton** | Loading state placeholders      | `@arolariu/components/skeleton` |
-| **Sonner**   | Toast notification system       | `@arolariu/components/sonner`   |
+### Primitives
 
-[**👀 View All Components**](https://storybook.arolariu.ro) in our interactive Storybook
+- **Base layer**: [`@base-ui/react`](https://base-ui.com/) provides the primitive building blocks
+- **Composition**: Base UI's `render` prop is the preferred composition API
+- **Backward compatibility**: `asChild` is still supported where available as a shim for Radix-era usage
+
+### Styling
+
+- Each component is styled with a colocated **CSS Module** such as `button.module.css`
+- `className` remains the public extension point for consumer overrides
+- Base UI state attributes such as `[data-open]`, `[data-disabled]`, `[data-checked]`, and `[data-selected]` drive stateful styling
+- `cn()` now uses **`clsx` only** for predictable class composition
+
+### Theming
+
+- Design tokens live in `src/index.css`
+- Theme tokens use the `--ac-` prefix, for example:
+  - `--ac-primary`
+  - `--ac-background`
+  - `--ac-radius-md`
+  - `--ac-chart-1`
+- Dark mode is activated with either:
+  - a `.dark` class
+  - or a `[data-theme="dark"]` attribute
+
+### Build & Distribution
+
+- Built with **RSLib** using ESM output
+- Tree-shakeable direct imports for components
+- TypeScript declarations and source maps included
 
 ---
 
@@ -179,37 +248,76 @@ Explore our comprehensive collection of **60+ components** organized by category
 ### Building a Login Form
 
 ```tsx
+import { useState } from "react";
+
+import { Alert, AlertDescription } from "@arolariu/components/alert";
+import { Button } from "@arolariu/components/button";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@arolariu/components/card";
+import { Checkbox } from "@arolariu/components/checkbox";
 import { Input } from "@arolariu/components/input";
-import { Button } from "@arolariu/components/button";
 import { Label } from "@arolariu/components/label";
+import styles from "./login-form.module.css";
 
 export function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+
   return (
-    <Card className="w-96 mx-auto">
-      <CardHeader>
-        <CardTitle>Welcome Back</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="you@example.com" />
-        </div>
-        <div>
-          <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" />
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button className="w-full">Sign In</Button>
-      </CardFooter>
-    </Card>
+    <div className={styles.wrapper}>
+      <Card className={styles.card}>
+        <CardHeader>
+          <CardTitle>Welcome Back</CardTitle>
+        </CardHeader>
+        <CardContent className={styles.content}>
+          {error ? (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className={styles.field}>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </div>
+
+          <div className={styles.checkboxRow}>
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={setRememberMe}
+            />
+            <Label htmlFor="remember">Remember me</Label>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button className={styles.submitButton}>Sign In</Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 ```
@@ -217,39 +325,38 @@ export function LoginForm() {
 ### Data Dashboard
 
 ```tsx
+import { Badge } from "@arolariu/components/badge";
 import {
   Card,
+  CardContent,
   CardHeader,
   CardTitle,
-  CardContent,
 } from "@arolariu/components/card";
 import { Progress } from "@arolariu/components/progress";
-import { Badge } from "@arolariu/components/badge";
-import { Chart } from "@arolariu/components/chart";
+import styles from "./dashboard.module.css";
 
 export function Dashboard() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+    <div className={styles.grid}>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className={styles.titleRow}>
             Sales <Badge variant="secondary">+12%</Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Progress value={75} className="w-full" />
-          <p className="text-sm text-muted-foreground mt-2">
-            75% of monthly goal
-          </p>
+        <CardContent className={styles.stack}>
+          <Progress value={75} />
+          <p className={styles.mutedText}>75% of monthly goal</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Revenue</CardTitle>
+          <CardTitle>Team Health</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Chart data={chartData} type="line" />
+        <CardContent className={styles.stack}>
+          <p className={styles.metric}>24 active contributors</p>
+          <p className={styles.mutedText}>Using `--ac-*` tokens and Base UI primitives across the app</p>
         </CardContent>
       </Card>
     </div>
@@ -263,51 +370,38 @@ export function Dashboard() {
 import {
   NavigationMenu,
   NavigationMenuItem,
+  NavigationMenuLink,
   NavigationMenuList,
 } from "@arolariu/components/navigation-menu";
-import { Button } from "@arolariu/components/button";
 import { Sheet, SheetContent, SheetTrigger } from "@arolariu/components/sheet";
 import { MenuIcon } from "lucide-react";
+import styles from "./app-header.module.css";
 
 export function AppHeader() {
   return (
-    <header className="border-b">
-      <div className="container mx-auto px-4 py-2 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My App</h1>
+    <header className={styles.header}>
+      <div className={styles.container}>
+        <h1 className={styles.brand}>My App</h1>
 
-        {/* Desktop Navigation */}
-        <NavigationMenu className="hidden md:flex">
+        <NavigationMenu className={styles.desktopNav}>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <Button variant="ghost">Home</Button>
+              <NavigationMenuLink href="/">Home</NavigationMenuLink>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Button variant="ghost">About</Button>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Button variant="ghost">Contact</Button>
+              <NavigationMenuLink href="/about">About</NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
 
-        {/* Mobile Navigation */}
         <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <MenuIcon />
-            </Button>
+          <SheetTrigger render={<button type="button" className={styles.mobileTrigger} />}>
+            <MenuIcon />
           </SheetTrigger>
           <SheetContent>
-            <nav className="space-y-4">
-              <Button variant="ghost" className="w-full justify-start">
-                Home
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                About
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                Contact
-              </Button>
+            <nav className={styles.mobileNav}>
+              <a href="/">Home</a>
+              <a href="/about">About</a>
             </nav>
           </SheetContent>
         </Sheet>
@@ -323,44 +417,49 @@ export function AppHeader() {
 
 ### Tree Shaking & Bundle Optimization
 
-**@arolariu/components** is built with bundle optimization in mind:
+**@arolariu/components** is built with bundle optimization in mind.
 
 ```tsx
-// ✅ Optimal: Import only what you need
+// ✅ Optimal: import only what you need
 import { Button } from "@arolariu/components/button";
 import { Card } from "@arolariu/components/card";
 
-// ❌ Avoid: Barrel imports increase bundle size
+// ❌ Avoid when bundle size matters
 import { Button, Card } from "@arolariu/components";
 ```
 
-**Bundle Impact:**
+**Bundle Impact**
 
-- Individual components: ~2-5KB gzipped
-- Full library: ~150KB gzipped
-- With tree shaking: Only pay for what you use
+- Individual components: typically a few KB gzipped
+- Full library: importable as ESM
+- With tree shaking: only pay for what you use
 
 ### TypeScript Integration
 
-Full TypeScript support with intelligent autocomplete:
+Full TypeScript support with intelligent autocomplete.
 
 ```tsx
 import { Button, type ButtonProps } from "@arolariu/components/button";
-import { type VariantProps } from "class-variance-authority";
-
-// Get variant types for custom components
-type ButtonVariant = VariantProps<typeof Button>["variant"];
+import { cn } from "@arolariu/components/utilities";
+import styles from "./custom-button.module.css";
 
 interface CustomButtonProps extends ButtonProps {
   icon?: React.ReactNode;
-  variant?: ButtonVariant;
 }
 
-export function CustomButton({ icon, children, ...props }: CustomButtonProps) {
+export function CustomButton({
+  icon,
+  children,
+  className,
+  ...props
+}: CustomButtonProps) {
   return (
-    <Button {...props}>
-      {icon && <span className="mr-2">{icon}</span>}
-      {children}
+    <Button
+      className={cn(styles.customButton, className)}
+      {...props}
+    >
+      {icon ? <span className={styles.icon}>{icon}</span> : null}
+      <span>{children}</span>
     </Button>
   );
 }
@@ -368,12 +467,12 @@ export function CustomButton({ icon, children, ...props }: CustomButtonProps) {
 
 ### Server-Side Rendering (SSR)
 
-Compatible with **Next.js**, **Remix**, and other SSR frameworks:
+Compatible with **Next.js**, **Remix**, and other SSR frameworks.
 
 ```tsx
-// app/page.tsx (Next.js App Router)
-import { Card, CardContent } from "@arolariu/components/card";
+// app/page.tsx
 import { Button } from "@arolariu/components/button";
+import { Card, CardContent } from "@arolariu/components/card";
 
 export default function HomePage() {
   return (
@@ -384,60 +483,33 @@ export default function HomePage() {
     </Card>
   );
 }
-
-// For client-side interactivity
-("use client");
-import { useState } from "react";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-} from "@arolariu/components/dialog";
-
-export function InteractiveComponent() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>Open Dialog</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <p>This dialog requires client-side JavaScript!</p>
-      </DialogContent>
-    </Dialog>
-  );
-}
 ```
 
 ### Theming & Customization
 
-Built with **Tailwind CSS** for easy customization:
+Built around **OKLCH CSS custom properties** and **CSS Modules**.
+
+```css
+/* theme-overrides.module.css */
+.themeScope {
+  --ac-primary: oklch(0.7 0.19 250);
+  --ac-primary-foreground: oklch(0.99 0.01 250);
+  --ac-muted: oklch(0.96 0.01 286);
+  --ac-radius-md: 0.875rem;
+}
+```
 
 ```tsx
-// Custom theme configuration
 import { Button } from "@arolariu/components/button";
+import styles from "./theme-overrides.module.css";
 
-// Override styles with Tailwind classes
-<Button className="bg-purple-600 hover:bg-purple-700 text-white">
-  Custom Styled Button
-</Button>;
-
-// Or create your own variants
-import { cva } from "class-variance-authority";
-
-const customButtonVariants = cva(
-  "inline-flex items-center justify-center rounded-md font-medium transition-colors",
-  {
-    variants: {
-      variant: {
-        gradient:
-          "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600",
-        neon: "bg-black text-green-400 border border-green-400 hover:bg-green-400 hover:text-black",
-      },
-    },
-  },
-);
+export function ThemedExample() {
+  return (
+    <section className={styles.themeScope}>
+      <Button>Custom themed button</Button>
+    </section>
+  );
+}
 ```
 
 ---
@@ -446,35 +518,32 @@ const customButtonVariants = cva(
 
 ### Complete Source Map Support
 
-**Debug like a pro** with comprehensive development tools:
+**Debug like a pro** with comprehensive development tools.
 
 - ✅ **JavaScript source maps** for accurate debugging
-- ✅ **CSS source maps** for Tailwind debugging
+- ✅ **CSS source maps** for CSS Module debugging
 - ✅ **TypeScript declaration maps** for IDE IntelliSense
 - ✅ **Original source access** via included `src/` directory
 
 ### Browser DevTools Integration
 
 ```tsx
-// Components are easily debuggable in DevTools
 import { Button } from "@arolariu/components/button";
 
 function MyComponent() {
   return <Button onClick={() => console.log("Clicked!")}>Debug Me</Button>;
 }
-
-// Set breakpoints in your original TypeScript code
-// Stack traces point to exact source locations
-// Inspect component props and state easily
 ```
 
-📖 **[Full Debugging Guide](./DEBUGGING.md)** - Learn advanced debugging techniques
+Inspect generated class names, Base UI data attributes, and source-mapped module styles directly in DevTools.
+
+📖 **[Full Debugging Guide](./DEBUGGING.md)** - Learn advanced debugging techniques.
 
 ---
 
 ## 🌐 Browser Support
 
-**Modern browsers only** for optimal performance:
+**Modern browsers only** for optimal performance.
 
 | Browser            | Version     |
 | ------------------ | ----------- |
@@ -482,13 +551,13 @@ function MyComponent() {
 | 🦊 **Firefox**     | 88+ (2021+) |
 | 🧭 **Safari**      | 14+ (2020+) |
 
-**Why modern browsers?** We use latest web standards for smaller bundles and better performance.
+**Why modern browsers?** The library uses modern ESM output, CSS custom properties, and contemporary platform APIs for smaller bundles and better performance.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Help make @arolariu/components even better.
+We welcome contributions. Help make @arolariu/components even better.
 
 ### Quick Start for Contributors
 
@@ -498,31 +567,32 @@ git clone https://github.com/your-username/arolariu.ro.git
 cd arolariu.ro/packages/components
 
 # 2. Install dependencies
-yarn install
+npm install
 
 # 3. Start development environment
-yarn storybook        # Launch Storybook at http://localhost:6006
-yarn build           # Build the library
+npm run build:components
+npm run dev:components
 
 # 4. Make your changes and test
-yarn build           # Ensure everything builds correctly
+npm run build:components
 ```
 
 ### Ways to Contribute
 
 - 🐛 **Report bugs** - Found an issue? [Open an issue](https://github.com/arolariu/arolariu.ro/issues)
-- 💡 **Suggest features** - Have an idea? We'd love to hear it!
+- 💡 **Suggest features** - Have an idea? We'd love to hear it
 - 🔧 **Fix issues** - Browse [open issues](https://github.com/arolariu/arolariu.ro/issues) and submit PRs
 - 📖 **Improve docs** - Help make our documentation clearer
 - 🎨 **Add components** - Contribute new components following our patterns
 
 ### Component Development Guidelines
 
-1. **Follow accessibility standards** - Use Radix UI primitives when possible
+1. **Follow accessibility standards** - Use Base UI primitives when appropriate
 2. **Include TypeScript types** - Full type definitions required
-3. **Add Storybook stories** - Document all variants and use cases
+3. **Add stories or demos** - Document variants and use cases
 4. **Write tests** - Ensure components work correctly
 5. **Follow naming conventions** - Use clear, descriptive names
+6. **Prefer CSS Modules** - Keep component styles colocated and token-driven
 
 **[Read our full contributing guide →](./CONTRIBUTING.md)**
 
@@ -538,23 +608,35 @@ npm install @arolariu/components
 npx bundlephobia @arolariu/components
 ```
 
-**Key Stats:**
+**Key Stats**
 
-- � **Bundle size**: ~150KB (full library, gzipped)
-- 🌲 **Tree-shakeable**: Import only what you need (2-5KB per component)
-- 📝 **TypeScript**: 100% typed with declaration maps
-- ♿ **Accessibility**: WAI-ARIA compliant via Radix UI
-- 🎭 **Styling**: Tailwind CSS integration
-- 📱 **Responsive**: Mobile-first design approach
+- 📦 **Version**: 1.0.0
+- 🌲 **Tree-shakeable**: import only what you need
+- 📝 **TypeScript**: typed package with declaration output
+- ♿ **Accessibility**: Base UI-backed primitives and patterns
+- 🎭 **Styling**: CSS Modules + package-level design tokens
+- 🌙 **Theming**: `--ac-*` tokens with `.dark` and `[data-theme="dark"]` support
 
 ### Dependencies
 
-**Zero runtime dependencies** for end users! Built on top of:
+Core runtime dependencies include:
 
-- **Radix UI** - Accessible component primitives
-- **Tailwind CSS** - Utility-first styling (peer dependency)
-- **Motion** - Animation library (peer dependency)
-- **React 18/19** - Modern React features (peer dependency)
+- **@base-ui/react** - Accessible component primitives in a single package
+- **clsx** - Class name composition used by `cn()`
+- **lucide-react** - Icon set
+- **motion** - Animation library
+- **react-hook-form** and **zod** - Forms and validation helpers
+- **embla-carousel-react**, **recharts**, **react-day-picker**, **input-otp**, **react-resizable-panels**, **shiki** - Specialized UI integrations
+
+Removed from the 1.0.0 architecture:
+
+- `@radix-ui/*`
+- `tailwind-merge`
+- `class-variance-authority`
+- `tailwindcss-animate`
+- `vaul`
+- `sonner`
+- `cmdk`
 
 ---
 
@@ -586,25 +668,25 @@ Senior Software Engineer passionate about creating beautiful, accessible user in
 
 - 🌐 **Website**: [arolariu.ro](https://arolariu.ro)
 - 💻 **GitHub**: [@arolariu](https://github.com/arolariu)
-- � **LinkedIn**: [Alexandru-Razvan Olariu](https://www.linkedin.com/in/olariu-alexandru/)
+- 💼 **LinkedIn**: [Alexandru-Razvan Olariu](https://www.linkedin.com/in/olariu-alexandru/)
 - 📧 **Email**: [admin@arolariu.ro](mailto:admin@arolariu.ro)
 
 ---
 
 ## 🙏 Acknowledgments & Inspiration
 
-This library wouldn't exist without these amazing projects:
+This library wouldn't exist without these amazing projects.
 
-- 🎨 **[Radix UI](https://www.radix-ui.com/)** - Accessible component primitives
+- 🎨 **[Base UI](https://base-ui.com/)** - Accessible component primitives
 - 💫 **[shadcn/ui](https://ui.shadcn.com/)** - Component design patterns and inspiration
-- 🎭 **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- 🎭 **CSS Modules** - Scoped styling model used throughout the library
 - ⚡ **[Motion](https://motion.dev/)** - Animation library for React
 - 🛠️ **[Rslib](https://rslib.dev/)** - Fast, modern bundling with Rsbuild
 - 📖 **[Storybook](https://storybook.js.org/)** - Component development environment
 - 🎪 **[Magic UI](https://magicui.design/)** - Additional component inspiration
 - ✨ **[Aceternity UI](https://ui.aceternity.com/)** - Creative component patterns
 
-**Special thanks** to the open-source community for making all of this possible! 💜
+**Special thanks** to the open-source community for making all of this possible. 💜
 
 ---
 
@@ -612,7 +694,7 @@ This library wouldn't exist without these amazing projects:
 
 ## ⭐ Star the Project
 
-If **@arolariu/components** helps you build better UIs, please consider giving it a star on GitHub!
+If **@arolariu/components** helps you build better UIs, please consider giving it a star on GitHub.
 
 [![GitHub stars](https://img.shields.io/github/stars/arolariu/arolariu.ro?style=social)](https://github.com/arolariu/arolariu.ro)
 
