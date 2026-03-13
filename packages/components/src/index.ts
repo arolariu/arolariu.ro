@@ -1,3 +1,6 @@
+// V2 barrel export — Base UI + CSS Modules (no Tailwind)
+// Components are wrapped to maintain API parity with V1
+
 export {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./components/ui/accordion";
 
 export {
@@ -15,12 +18,14 @@ export {
 } from "./components/ui/alert-dialog";
 
 export {Alert, AlertDescription, AlertTitle} from "./components/ui/alert";
+export type {AlertProps, AlertVariant} from "./components/ui/alert";
 
 export {AspectRatio} from "./components/ui/aspect-ratio";
 
 export {Avatar, AvatarFallback, AvatarImage} from "./components/ui/avatar";
 
 export {Badge, badgeVariants} from "./components/ui/badge";
+export type {BadgeProps, BadgeVariant} from "./components/ui/badge";
 
 export {
   Breadcrumb,
@@ -33,6 +38,7 @@ export {
 } from "./components/ui/breadcrumb";
 
 export {Button, buttonVariants} from "./components/ui/button";
+export type {ButtonProps, ButtonSize, ButtonVariant} from "./components/ui/button";
 
 export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants} from "./components/ui/button-group";
 
@@ -41,6 +47,8 @@ export {Calendar} from "./components/ui/calendar";
 export {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./components/ui/card";
 
 export {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi} from "./components/ui/carousel";
+
+export {CheckboxGroup} from "./components/ui/checkbox-group";
 
 export {
   ChartContainer,
@@ -179,6 +187,8 @@ export {Kbd, KbdGroup} from "./components/ui/kbd";
 
 export {Label} from "./components/ui/label";
 
+export {Meter, MeterIndicator, MeterLabel, MeterTrack} from "./components/ui/meter";
+
 export {
   Menubar,
   MenubarCheckboxItem,
@@ -209,6 +219,15 @@ export {
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from "./components/ui/navigation-menu";
+
+export {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+  NumberFieldScrubArea,
+} from "./components/ui/number-field";
 
 export {
   Pagination,
@@ -301,9 +320,13 @@ export {Tabs, TabsContent, TabsList, TabsTrigger} from "./components/ui/tabs";
 
 export {Textarea} from "./components/ui/textarea";
 
+export {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} from "./components/ui/toolbar";
+
 export {ToggleGroup, ToggleGroupItem} from "./components/ui/toggle-group";
+export type {ToggleGroupItemProps, ToggleGroupProps} from "./components/ui/toggle-group";
 
 export {Toggle, toggleVariants} from "./components/ui/toggle";
+export type {ToggleProps, ToggleSize, ToggleVariant} from "./components/ui/toggle";
 
 export {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./components/ui/tooltip";
 
@@ -311,9 +334,7 @@ export {useIsMobile} from "./hooks/useIsMobile";
 export {useWindowSize} from "./hooks/useWindowSize";
 
 export {
-  // New descriptive names
   adjustHexColorLightness,
-  // Legacy aliases (deprecated)
   adjustLightness,
   calculateComplementaryHexColor,
   convertHexToHslString,
@@ -329,23 +350,15 @@ export {
 export {cn} from "./lib/utilities";
 
 // Animate-UI exports:
-export {FlipButton, type FlipButtonProps, type FlipDirection} from "./components/ui/flip-button";
-
-export {RippleButton, type RippleButtonProps} from "./components/ui/ripple-button";
-
-export {CountingNumber, type CountingNumberProps} from "./components/ui/counting-number";
-
-export {GradientText, type GradientTextProps} from "./components/ui/gradient-text";
-
-export {HighlightText, type HighlightTextProps} from "./components/ui/highlight-text";
-
 export {BubbleBackground, type BubbleBackgroundProps} from "./components/ui/bubble-background";
-
+export {CountingNumber, type CountingNumberProps} from "./components/ui/counting-number";
 export {FireworksBackground, type FireworksBackgroundProps} from "./components/ui/fireworks-background";
-
+export {FlipButton, type FlipButtonProps, type FlipDirection} from "./components/ui/flip-button";
 export {GradientBackground, type GradientBackgroundProps} from "./components/ui/gradient-background";
-
+export {GradientText, type GradientTextProps} from "./components/ui/gradient-text";
+export {HighlightText, type HighlightTextProps} from "./components/ui/highlight-text";
 export {HoleBackground, type HoleBackgroundProps} from "./components/ui/hole-background";
+export {RippleButton, type RippleButtonProps} from "./components/ui/ripple-button";
 
 // Magic UI exports:
 export {DotBackground} from "./components/ui/dot-background";
@@ -355,7 +368,7 @@ export {Scratcher} from "./components/ui/scratcher";
 export {BackgroundBeams} from "./components/ui/background-beams";
 export {TypewriterText, TypewriterTextSmooth} from "./components/ui/typewriter";
 
-// Jia Wei Ng export (https://github.com/jiaweing/DropDrawer):
+// DropDrawer export:
 export {
   DropDrawer,
   DropDrawerContent,
