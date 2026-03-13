@@ -1,4 +1,5 @@
 import {render, screen} from "@testing-library/react";
+import {fr} from "date-fns/locale";
 import {describe, expect, it} from "vitest";
 
 import {Calendar} from "./calendar";
@@ -49,5 +50,32 @@ describe("Calendar", () => {
 
     // Assert
     expect(screen.getByRole("grid")).toHaveClass("custom-month-grid");
+  });
+
+  it("uses the provided locale when formatting the month dropdown", () => {
+    // Arrange
+    render(
+      <Calendar
+        captionLayout='dropdown'
+        defaultMonth={new Date(2024, 0, 1)}
+        locale={fr}
+      />,
+    );
+
+    // Assert
+    expect(screen.getByRole("option", {name: /janv/i})).toBeInTheDocument();
+  });
+
+  it("does not leak the week prop onto the week number table cell", () => {
+    // Arrange
+    const {container} = render(
+      <Calendar
+        defaultMonth={new Date(2024, 0, 1)}
+        showWeekNumber
+      />,
+    );
+
+    // Assert
+    expect(container.querySelector("td[week]")).not.toBeInTheDocument();
   });
 });

@@ -124,6 +124,27 @@ describe("Carousel", () => {
     expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
   });
 
+  it("renders custom navigation children instead of the default arrow icons", () => {
+    // Arrange
+    render(
+      <Carousel>
+        <CarouselContent>
+          <CarouselItem>Slide 1</CarouselItem>
+        </CarouselContent>
+        <CarouselPrevious>
+          <span data-testid='previous-icon'>Previous custom icon</span>
+        </CarouselPrevious>
+        <CarouselNext>
+          <span data-testid='next-icon'>Next custom icon</span>
+        </CarouselNext>
+      </Carousel>,
+    );
+
+    // Assert
+    expect(screen.getByTestId("previous-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("next-icon")).toBeInTheDocument();
+  });
+
   it("supports vertical keyboard navigation", () => {
     // Arrange
     renderCarousel({orientation: "vertical"});
@@ -135,6 +156,22 @@ describe("Carousel", () => {
     // Assert
     expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
     expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes the initialized embla api to setApi", () => {
+    // Arrange
+    const setApi = vi.fn();
+
+    render(
+      <Carousel setApi={setApi}>
+        <CarouselContent>
+          <CarouselItem>Slide 1</CarouselItem>
+        </CarouselContent>
+      </Carousel>,
+    );
+
+    // Assert
+    expect(setApi).toHaveBeenCalledWith(emblaMock.api);
   });
 
   it("cleans up all Embla event listeners on unmount", () => {

@@ -210,11 +210,17 @@ const BreadcrumbPage = React.forwardRef<HTMLSpanElement, BreadcrumbPageProps>(
  * @remarks
  * - Pure CSS component (no Base UI primitive)
  * - Renders an `<li>` element
+ * - Defaults to a `ChevronRight` separator icon when `children` is not provided
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
  * ```tsx
  * <BreadcrumbSeparator />
+ * ```
+ *
+ * @example Custom separator
+ * ```tsx
+ * <BreadcrumbSeparator>/</BreadcrumbSeparator>
  * ```
  *
  * @see {@link BreadcrumbSeparatorProps} for available props

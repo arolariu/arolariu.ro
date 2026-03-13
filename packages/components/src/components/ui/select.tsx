@@ -178,6 +178,7 @@ SelectTrigger.displayName = "SelectTrigger";
  * - Renders a `<div>` element by default
  * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
  * - Supports the `render` prop for element composition
+ * - Pass `children` to override the default `ChevronUp` icon
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example Basic usage
@@ -211,6 +212,7 @@ SelectScrollUpButton.displayName = "SelectScrollUpButton";
  * - Renders a `<div>` element by default
  * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
  * - Supports the `render` prop for element composition
+ * - Pass `children` to override the default `ChevronDown` icon
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example Basic usage

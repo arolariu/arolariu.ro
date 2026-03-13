@@ -55,6 +55,18 @@ export type InputOTPSeparatorProps = React.ComponentPropsWithoutRef<"div">;
  * @param props.onComplete - Callback invoked after the user fills all slots with a complete value.
  * @param props.pushPasswordManagerStrategy - Controls how password manager UI is handled inside the input
  * container.
+ * @param props.render - Custom render function for complete control over OTP input rendering. Receives
+ * slot data array and allows fully custom layouts.
+ * @param props.pasteTransformer - Transform pasted text before it is applied. Useful for stripping
+ * spaces or dashes from pasted codes.
+ * @example
+ * ```tsx
+ * <InputOTP pasteTransformer={(text) => text.replace(/\D/g, "")} />
+ * ```
+ * @param props.value - Controlled OTP value. Use with `onChange` for controlled mode.
+ * @param props.onChange - Callback fired when the OTP value changes in controlled mode.
+ * @param props.containerClassName - Additional CSS class for the outer container element.
+ * @param props.noScriptCSSFallback - CSS string to inject for no-JavaScript fallback styling.
  * @param props.textAlign - Sets how typed characters are aligned inside the hidden backing input.
  * @see {@link InputOTPProps} for available props
  * @see {@link https://github.com/guilhermerodz/input-otp | input-otp library docs}

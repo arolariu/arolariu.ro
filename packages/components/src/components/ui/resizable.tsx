@@ -4,13 +4,14 @@
 
 import {GripVertical} from "lucide-react";
 import * as React from "react";
+import type {ImperativePanelGroupHandle, ImperativePanelHandle} from "react-resizable-panels";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import {cn} from "@/lib/utilities";
 
 import styles from "./resizable.module.css";
 
-export type {ImperativePanelGroupHandle, ImperativePanelHandle} from "react-resizable-panels";
+export type {ImperativePanelGroupHandle, ImperativePanelHandle};
 
 /**
  * Props for the {@link ResizablePanelGroup} component.
@@ -53,14 +54,14 @@ export interface ResizableHandleProps extends React.ComponentProps<typeof Resiza
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
  * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
  */
-function ResizablePanelGroup({className, ...props}: Readonly<ResizablePanelGroupProps>): React.JSX.Element {
-  return (
+const ResizablePanelGroup: React.ForwardRefExoticComponent<ResizablePanelGroupProps & React.RefAttributes<ImperativePanelGroupHandle>> =
+  React.forwardRef<ImperativePanelGroupHandle, ResizablePanelGroupProps>(({className, ...props}, ref) => (
     <ResizablePrimitive.PanelGroup
+      ref={ref}
       className={cn(styles.group, className)}
       {...props}
     />
-  );
-}
+  ));
 
 /**
  * Re-exports the underlying resizable panel primitive for consistent composition.
@@ -96,7 +97,7 @@ const ResizablePanel = ResizablePrimitive.Panel;
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
  * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
  */
-function ResizableHandle({withHandle = false, className, ...props}: Readonly<ResizableHandleProps>): React.JSX.Element {
+function ResizableHandle({withHandle = false, className, children, ...props}: Readonly<ResizableHandleProps>): React.JSX.Element {
   return (
     <ResizablePrimitive.PanelResizeHandle
       className={cn(styles.handle, className)}
@@ -106,6 +107,7 @@ function ResizableHandle({withHandle = false, className, ...props}: Readonly<Res
           <GripVertical className={styles.handleGripIcon} />
         </div>
       )}
+      {children}
     </ResizablePrimitive.PanelResizeHandle>
   );
 }

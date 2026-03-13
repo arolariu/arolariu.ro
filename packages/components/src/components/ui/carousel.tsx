@@ -10,7 +10,7 @@ import {cn} from "@/lib/utilities";
 
 import styles from "./carousel.module.css";
 
-type CarouselApi = UseEmblaCarouselType[1];
+type CarouselApi = NonNullable<UseEmblaCarouselType[1]>;
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
 type CarouselOptions = UseCarouselParameters[0];
 type CarouselPlugin = UseCarouselParameters[1];
@@ -83,6 +83,26 @@ function useCarousel(): CarouselContextProps {
  *   <CarouselNext />
  * </Carousel>
  * ```
+ *
+ * @param props.opts - Embla options forwarded to the carousel instance. Common
+ * options include `loop` for infinite scrolling, `align` for slide alignment,
+ * `slidesToScroll` to control navigation increments, `dragFree` for momentum
+ * dragging, `duration` for transition timing, and `startIndex` for the initial
+ * slide.
+ * @param props.plugins - Embla plugins applied to the carousel instance.
+ *
+ * @example With autoplay
+ * ```tsx
+ * import Autoplay from "embla-carousel-autoplay";
+ *
+ * <Carousel plugins={[Autoplay({delay: 3000})]}>
+ *   <CarouselContent>...</CarouselContent>
+ * </Carousel>
+ * ```
+ *
+ * @param props.setApi - Optional callback for advanced Embla API access after
+ * initialization, useful for custom controls, analytics, or external state
+ * synchronization.
  *
  * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
  */
@@ -265,6 +285,7 @@ CarouselItem.displayName = "CarouselItem";
  * @remarks
  * - Renders the shared `<Button>` component
  * - Built on carousel context state and Embla navigation APIs
+ * - Pass `children` to override the default `ArrowLeft` navigation icon
  *
  * @example
  * ```tsx
@@ -274,7 +295,7 @@ CarouselItem.displayName = "CarouselItem";
  * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
  */
 const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
-  ({className, variant = "outline", size = "icon", ...props}, ref) => {
+  ({children, className, variant = "outline", size = "icon", ...props}, ref) => {
     const {orientation, scrollPrev, canScrollPrev} = useCarousel();
     const mergedProps = mergeProps<"button">({onClick: scrollPrev, disabled: !canScrollPrev}, props);
 
@@ -286,7 +307,7 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
         data-orientation={orientation}
         className={cn(styles.navigationButton, styles.previousButton, className)}
         {...mergedProps}>
-        <ArrowLeft className={styles.navigationIcon} />
+        {children ?? <ArrowLeft className={styles.navigationIcon} />}
         <span className={styles.srOnly}>Previous slide</span>
       </Button>
     );
@@ -300,6 +321,7 @@ CarouselPrevious.displayName = "CarouselPrevious";
  * @remarks
  * - Renders the shared `<Button>` component
  * - Built on carousel context state and Embla navigation APIs
+ * - Pass `children` to override the default `ArrowRight` navigation icon
  *
  * @example
  * ```tsx
@@ -309,7 +331,7 @@ CarouselPrevious.displayName = "CarouselPrevious";
  * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
  */
 const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
-  ({className, variant = "outline", size = "icon", ...props}, ref) => {
+  ({children, className, variant = "outline", size = "icon", ...props}, ref) => {
     const {orientation, scrollNext, canScrollNext} = useCarousel();
     const mergedProps = mergeProps<"button">({onClick: scrollNext, disabled: !canScrollNext}, props);
 
@@ -321,7 +343,7 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
         data-orientation={orientation}
         className={cn(styles.navigationButton, styles.nextButton, className)}
         {...mergedProps}>
-        <ArrowRight className={styles.navigationIcon} />
+        {children ?? <ArrowRight className={styles.navigationIcon} />}
         <span className={styles.srOnly}>Next slide</span>
       </Button>
     );

@@ -1,7 +1,8 @@
 import {render, screen} from "@testing-library/react";
+import * as React from "react";
 import {describe, expect, it} from "vitest";
 
-import {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./resizable";
+import {ImperativePanelGroupHandle, ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./resizable";
 
 describe("Resizable", () => {
   function renderResizable(className?: string): ReturnType<typeof render> {
@@ -56,5 +57,40 @@ describe("Resizable", () => {
     // Assert
     expect(screen.getByText("Left panel")).toBeInTheDocument();
     expect(screen.getByText("Right panel")).toBeInTheDocument();
+  });
+
+  it("forwards the panel group imperative ref", () => {
+    // Arrange
+    const ref = React.createRef<ImperativePanelGroupHandle>();
+
+    render(
+      <ResizablePanelGroup
+        ref={ref}
+        direction='horizontal'>
+        <ResizablePanel defaultSize={50}>Left panel</ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={50}>Right panel</ResizablePanel>
+      </ResizablePanelGroup>,
+    );
+
+    // Assert
+    expect(ref.current).not.toBeNull();
+  });
+
+  it("renders grip content alongside consumer children", () => {
+    // Arrange
+    render(
+      <ResizablePanelGroup direction='horizontal'>
+        <ResizablePanel defaultSize={50}>Left panel</ResizablePanel>
+        <ResizableHandle withHandle>
+          <span>Custom handle content</span>
+        </ResizableHandle>
+        <ResizablePanel defaultSize={50}>Right panel</ResizablePanel>
+      </ResizablePanelGroup>,
+    );
+
+    // Assert
+    expect(screen.getByText("Custom handle content")).toBeInTheDocument();
+    expect(screen.getByRole("separator").querySelector("svg")).not.toBeNull();
   });
 });

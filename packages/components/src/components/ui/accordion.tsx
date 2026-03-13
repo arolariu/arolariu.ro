@@ -183,6 +183,8 @@ AccordionItem.displayName = "AccordionItem";
  * - Renders a `<button>` element by default
  * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
  * - Supports the `render` prop for element composition
+ * - Includes a built-in chevron icon; use the `render` prop for full custom trigger rendering or wrap
+ *   the component when you need a different icon treatment
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example Basic usage

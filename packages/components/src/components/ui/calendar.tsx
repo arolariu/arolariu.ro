@@ -13,6 +13,8 @@ import buttonStyles from "./button.module.css";
 import styles from "./calendar.module.css";
 
 type CalendarButtonVariant = NonNullable<React.ComponentProps<typeof Button>["variant"]>;
+type DayPickerComponents = NonNullable<React.ComponentProps<typeof DayPicker>["components"]>;
+type CalendarWeekNumberProps = React.ComponentProps<NonNullable<DayPickerComponents["WeekNumber"]>>;
 
 /**
  * Props for the shared calendar component.
@@ -43,6 +45,7 @@ const calendarButtonVariantStyles: Record<CalendarButtonVariant, string> = {
  * - Preserves the V1 public API while aligning visuals with the current design system
  * - Overrides the default DayPicker `Root`, `Chevron`, `DayButton`, and `WeekNumber`
  *   components while still allowing consumers to replace them through the `components` prop
+ * - Override the default chevron icons with `components={{Chevron: YourChevronComponent}}`
  *
  * @example
  * ```tsx
@@ -71,7 +74,11 @@ function Calendar({
       className={cn(styles.container, className)}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString("default", {month: "short"}),
+        formatMonthDropdown: (date) => {
+          const locale = props.locale;
+
+          return date.toLocaleString(locale?.code ?? "default", {month: "short"});
+        },
         ...formatters,
       }}
       classNames={{
@@ -151,15 +158,19 @@ function Calendar({
           );
         },
         DayButton: CalendarDayButton,
-        WeekNumber: ({children, ...weekNumberProps}) => (
-          <td {...weekNumberProps}>
-            <div className={styles.weekNumberCell}>{children}</div>
-          </td>
-        ),
+        WeekNumber: CalendarWeekNumber,
         ...components,
       }}
       {...props}
     />
+  );
+}
+
+function CalendarWeekNumber({week, children, ...tdProps}: Readonly<CalendarWeekNumberProps>): React.JSX.Element {
+  return (
+    <td {...tdProps}>
+      <div className={styles.weekNumberCell}>{children}</div>
+    </td>
   );
 }
 
