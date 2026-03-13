@@ -466,8 +466,14 @@ const {traceExporter, metricExporter, logExporter} = connectionString
       });
       return {
         logExporter: new AzureMonitorLogExporter({connectionString, credential}),
-        traceExporter: new AzureMonitorTraceExporter({connectionString, credential}) as AzureMonitorTraceExporter | OTLPTraceExporter | undefined,
-        metricExporter: new AzureMonitorMetricExporter({connectionString, credential}) as AzureMonitorMetricExporter | OTLPMetricExporter | undefined,
+        traceExporter: new AzureMonitorTraceExporter({connectionString, credential}) as
+          | AzureMonitorTraceExporter
+          | OTLPTraceExporter
+          | undefined,
+        metricExporter: new AzureMonitorMetricExporter({connectionString, credential}) as
+          | AzureMonitorMetricExporter
+          | OTLPMetricExporter
+          | undefined,
       };
     })()
   : otlpEndpoint

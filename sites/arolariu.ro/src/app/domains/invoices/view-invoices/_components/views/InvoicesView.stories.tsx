@@ -30,7 +30,7 @@ export const Default: Story = {
           <input
             type='text'
             placeholder='Search invoices...'
-            className='w-full rounded-md border bg-transparent py-2 pl-9 pr-3 text-sm outline-none'
+            className='w-full rounded-md border bg-transparent py-2 pr-3 pl-9 text-sm outline-none'
             readOnly
           />
         </div>

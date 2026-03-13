@@ -213,7 +213,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     toast.promise(copyLinkAction(), {
       loading: isInvoicePublic ? t("toasts.copyLink.loadingPublic") : t("toasts.copyLink.loadingMakePublic"),
       success: isInvoicePublic ? t("toasts.copyLink.successPublic") : t("toasts.copyLink.successMadePublic"),
-      error: (err: Error) => t("toasts.copyLink.error", {message: err.message}),
+      error: (error: unknown) => t("toasts.copyLink.error", {message: error instanceof Error ? error.message : String(error)}),
     });
   }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl, t]);
 
@@ -245,7 +245,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     toast.promise(copyQRCodeAction(), {
       loading: isInvoicePublic ? t("toasts.copyQr.loadingPublic") : t("toasts.copyQr.loadingMakePublic"),
       success: isInvoicePublic ? t("toasts.copyQr.successPublic") : t("toasts.copyQr.successMadePublic"),
-      error: (err: Error) => t("toasts.copyQr.error", {message: err.message}),
+      error: (error: unknown) => t("toasts.copyQr.error", {message: error instanceof Error ? error.message : String(error)}),
     });
   }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, t]);
 
@@ -277,7 +277,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       toast.promise(sendEmailAction(), {
         loading: t("toasts.sendEmail.loading", {email}),
         success: t("toasts.sendEmail.success", {email}),
-        error: (err: Error) => t("toasts.sendEmail.error", {message: err.message}),
+        error: (error: unknown) => t("toasts.sendEmail.error", {message: error instanceof Error ? error.message : String(error)}),
       });
     },
     [email, invoice.id, t],
@@ -313,7 +313,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       {
         loading: t("toasts.revoke.loading"),
         success: t("toasts.revoke.success"),
-        error: (err: Error) => t("toasts.revoke.error", {message: err.message}),
+        error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
       },
     );
   }, [invoice.id, invoice.sharedWith, router, handleClose, t]);

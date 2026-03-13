@@ -11,8 +11,8 @@
 // eslint-disable-next-line n/no-extraneous-import -- server-only is a Next.js build-time marker
 import "server-only";
 
-import {fetchConfigValue, invalidateConfigCache} from "@/lib/config/configProxy";
 import {setSpanAttributes} from "@/instrumentation.server";
+import {fetchConfigValue, invalidateConfigCache} from "@/lib/config/configProxy";
 import {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";
 
 export {DEFAULT_FEATURE_FLAGS, type WebsiteFeatureFlags} from "@/lib/config/featureFlags.types";

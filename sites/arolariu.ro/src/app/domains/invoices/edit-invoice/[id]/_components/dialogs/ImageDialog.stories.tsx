@@ -25,7 +25,11 @@ export const Default: Story = {
         <h2 className='text-lg font-semibold'>Receipt Image</h2>
       </div>
       <div className='relative flex aspect-[3/4] max-h-[500px] items-center justify-center bg-gray-50 dark:bg-gray-800'>
-        <img src='https://picsum.photos/seed/imagedialog/600/800' alt='Receipt scan preview' className='h-full w-full object-contain' />
+        <img
+          src='https://picsum.photos/seed/imagedialog/600/800'
+          alt='Receipt scan preview'
+          className='h-full w-full object-contain'
+        />
       </div>
     </div>
   ),
