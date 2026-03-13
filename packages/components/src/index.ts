@@ -65,84 +65,84 @@ export type {CarouselOptions, CarouselPlugin, CarouselProps} from "./components/
 export {CheckboxGroup} from "./components/ui/checkbox-group";
 
 export {
+  // Recharts series elements
+  Area,
+  // Recharts chart containers
+  AreaChart,
+  Bar,
+  BarChart,
+  BarStack,
+  // Recharts annotations & overlays
+  Brush,
+  // Recharts axis & grid
+  CartesianGrid,
+  // Recharts shapes
+  Cell,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
-  // Recharts chart containers
-  AreaChart,
-  BarChart,
   ComposedChart,
-  FunnelChart,
-  LineChart,
-  PieChart,
-  RadarChart,
-  RadialBarChart,
-  ScatterChart,
-  Sankey,
-  SunburstChart,
-  Treemap,
-  // Recharts series elements
-  Area,
-  Bar,
-  BarStack,
+  Cross,
+  Curve,
+  Customized,
+  DefaultZIndexes,
+  Dot,
+  ErrorBar,
   Funnel,
+  FunnelChart,
+  LabelList,
   Line,
+  LineChart,
   Pie,
-  Radar,
-  RadialBar,
-  Scatter,
-  // Recharts axis & grid
-  CartesianGrid,
+  PieChart,
   PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
-  XAxis,
-  YAxis,
-  ZAxis,
-  // Recharts annotations & overlays
-  Brush,
-  ErrorBar,
+  Polygon,
+  Radar,
+  RadarChart,
+  RadialBar,
+  RadialBarChart,
   RechartsLabel,
-  LabelList,
+  Rectangle,
   ReferenceArea,
   ReferenceDot,
   ReferenceLine,
   // Recharts layout
   ResponsiveContainer,
-  Customized,
-  // Recharts shapes
-  Cell,
-  Cross,
-  Curve,
-  Dot,
-  Polygon,
-  Rectangle,
+  Sankey,
+  Scatter,
+  ScatterChart,
   Sector,
+  SunburstChart,
   Symbols,
   Trapezoid,
+  Treemap,
+  XAxis,
+  YAxis,
+  ZAxis,
   // Recharts z-index (v3.4+)
   ZIndexLayer,
-  DefaultZIndexes,
-  // Recharts hooks (v3+)
-  useChartWidth,
-  useChartHeight,
-  useOffset,
-  usePlotArea,
-  useMargin,
-  useIsTooltipActive,
   useActiveTooltipCoordinate,
   useActiveTooltipDataPoints,
   useActiveTooltipLabel,
+  useChartHeight,
+  // Recharts hooks (v3+)
+  useChartWidth,
+  useIsTooltipActive,
+  useMargin,
+  useOffset,
+  usePlotArea,
   useXAxisDomain,
   useYAxisDomain,
+  type ChartConfig,
+  type DefaultLegendContentProps,
   // Recharts types
   type DefaultTooltipContentProps,
   type TooltipValueType,
-  type DefaultLegendContentProps,
 } from "./components/ui/chart";
 
 export {Checkbox} from "./components/ui/checkbox";
@@ -262,11 +262,11 @@ export type {
   ControllerProps,
   ControllerRenderProps,
   DefaultValues,
-  FieldError as RHFFieldError,
   FieldErrors,
   FieldPath,
   FieldValues,
   Path,
+  FieldError as RHFFieldError,
   RegisterOptions,
   Resolver,
   SubmitHandler,
@@ -286,7 +286,14 @@ export {
   REGEXP_ONLY_DIGITS,
   REGEXP_ONLY_DIGITS_AND_CHARS,
 } from "./components/ui/input-otp";
-export type {InputOTPGroupProps, InputOTPProps, InputOTPSeparatorProps, InputOTPSlotProps, OTPInputProps, SlotProps} from "./components/ui/input-otp";
+export type {
+  InputOTPGroupProps,
+  InputOTPProps,
+  InputOTPSeparatorProps,
+  InputOTPSlotProps,
+  OTPInputProps,
+  SlotProps,
+} from "./components/ui/input-otp";
 
 export {Input} from "./components/ui/input";
 
@@ -375,7 +382,13 @@ export {Progress} from "./components/ui/progress";
 export {RadioGroup, RadioGroupItem} from "./components/ui/radio-group";
 
 export {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./components/ui/resizable";
-export type {ImperativePanelGroupHandle, ImperativePanelHandle, ResizableHandleProps, ResizablePanelGroupProps, ResizablePanelProps} from "./components/ui/resizable";
+export type {
+  ImperativePanelGroupHandle,
+  ImperativePanelHandle,
+  ResizableHandleProps,
+  ResizablePanelGroupProps,
+  ResizablePanelProps,
+} from "./components/ui/resizable";
 
 export {ScrollArea, ScrollBar} from "./components/ui/scroll-area";
 

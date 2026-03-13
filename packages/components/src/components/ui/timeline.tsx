@@ -67,7 +67,7 @@ interface TimelineContentProps extends React.HTMLAttributes<HTMLDivElement> {
 const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(({className, ...props}, ref) => (
   <div
     ref={ref}
-    role="list"
+    role='list'
     className={cn(styles.timeline, className)}
     {...props}
   />
@@ -93,7 +93,7 @@ Timeline.displayName = "Timeline";
 const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(({className, ...props}, ref) => (
   <div
     ref={ref}
-    role="listitem"
+    role='listitem'
     className={cn(styles.item, className)}
     {...props}
   />
@@ -117,7 +117,7 @@ TimelineItem.displayName = "TimelineItem";
 const TimelineDot = React.forwardRef<HTMLDivElement, TimelineDotProps>(({className, ...props}, ref) => (
   <div
     ref={ref}
-    aria-hidden="true"
+    aria-hidden='true'
     className={cn(styles.dot, className)}
     {...props}
   />

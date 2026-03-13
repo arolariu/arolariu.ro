@@ -51,8 +51,8 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
   ({steps, activeStep, orientation = "horizontal", className, ...props}, ref) => (
     <div
       ref={ref}
-      role="list"
-      aria-label="Progress"
+      role='list'
+      aria-label='Progress'
       data-orientation={orientation}
       className={cn(styles.stepper, orientation === "vertical" && styles.vertical, className)}
       {...props}>
@@ -68,18 +68,18 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
         return (
           <div
             key={`${label}-${index}`}
-            role="listitem"
+            role='listitem'
             className={styles.step}
             data-state={state}>
             <div
               className={styles.indicator}
-              aria-hidden="true">
+              aria-hidden='true'>
               {state === "completed" ? "✓" : index + 1}
             </div>
             {index < steps.length - 1 ? (
               <div
                 className={styles.connector}
-                aria-hidden="true"
+                aria-hidden='true'
               />
             ) : null}
             <span className={styles.label}>{label}</span>

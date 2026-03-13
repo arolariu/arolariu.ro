@@ -5,7 +5,12 @@ import {Stepper} from "./stepper";
 
 describe("Stepper", () => {
   it("renders all step labels", () => {
-    render(<Stepper steps={["One", "Two", "Three"]} activeStep={0} />);
+    render(
+      <Stepper
+        steps={["One", "Two", "Three"]}
+        activeStep={0}
+      />,
+    );
 
     expect(screen.getByText("One")).toBeInTheDocument();
     expect(screen.getByText("Two")).toBeInTheDocument();
@@ -13,7 +18,12 @@ describe("Stepper", () => {
   });
 
   it("marks active step correctly", () => {
-    render(<Stepper steps={["One", "Two"]} activeStep={1} />);
+    render(
+      <Stepper
+        steps={["One", "Two"]}
+        activeStep={1}
+      />,
+    );
 
     const items = screen.getAllByRole("listitem");
 
@@ -24,7 +34,13 @@ describe("Stepper", () => {
   it("forwards ref", () => {
     const ref = {current: null as HTMLDivElement | null};
 
-    render(<Stepper ref={ref} steps={["One"]} activeStep={0} />);
+    render(
+      <Stepper
+        ref={ref}
+        steps={["One"]}
+        activeStep={0}
+      />,
+    );
 
     expect(ref.current).toBeInstanceOf(HTMLDivElement);
   });

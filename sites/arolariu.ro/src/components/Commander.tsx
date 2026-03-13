@@ -298,9 +298,7 @@ function Commander(): React.JSX.Element {
         <CommandEmpty>{t("noResults")}</CommandEmpty>
 
         <CommandGroup heading={t("groups.navigation")}>
-          <CommandItem
-            onSelect={onSelectHome}
->
+          <CommandItem onSelect={onSelectHome}>
             <div className={styles["commandItemContent"]}>
               <TbHome className={styles["commandIcon"]} />
               <span>{t("items.homepage")}</span>
@@ -310,27 +308,21 @@ function Commander(): React.JSX.Element {
         </CommandGroup>
 
         <CommandGroup heading={t("groups.theme")}>
-          <CommandItem
-            onSelect={onSelectThemeLight}
->
+          <CommandItem onSelect={onSelectThemeLight}>
             <div className={styles["commandItemContent"]}>
               <TbSun className={styles["commandIcon"]} />
               <span>{t("items.light")}</span>
             </div>
             <CommandShortcut>L</CommandShortcut>
           </CommandItem>
-          <CommandItem
-            onSelect={onSelectThemeDark}
->
+          <CommandItem onSelect={onSelectThemeDark}>
             <div className={styles["commandItemContent"]}>
               <TbMoon className={styles["commandIcon"]} />
               <span>{t("items.dark")}</span>
             </div>
             <CommandShortcut>D</CommandShortcut>
           </CommandItem>
-          <CommandItem
-            onSelect={onSelectThemeSystem}
->
+          <CommandItem onSelect={onSelectThemeSystem}>
             <div className={styles["commandItemContent"]}>
               <TbSettings className={styles["commandIcon"]} />
               <span>{t("items.system")}</span>
@@ -339,27 +331,21 @@ function Commander(): React.JSX.Element {
         </CommandGroup>
 
         <CommandGroup heading={t("groups.language")}>
-          <CommandItem
-            onSelect={onSelectLangEnglish}
->
+          <CommandItem onSelect={onSelectLangEnglish}>
             <div className={styles["commandItemContent"]}>
               <TbLanguage className={styles["commandIcon"]} />
               <span>{t("items.english")}</span>
             </div>
             <CommandShortcut>EN</CommandShortcut>
           </CommandItem>
-          <CommandItem
-            onSelect={onSelectLangRomanian}
->
+          <CommandItem onSelect={onSelectLangRomanian}>
             <div className={styles["commandItemContent"]}>
               <TbLanguage className={styles["commandIcon"]} />
               <span>{t("items.romanian")}</span>
             </div>
             <CommandShortcut>RO</CommandShortcut>
           </CommandItem>
-          <CommandItem
-            onSelect={onSelectLangFrench}
->
+          <CommandItem onSelect={onSelectLangFrench}>
             <div className={styles["commandItemContent"]}>
               <TbLanguage className={styles["commandIcon"]} />
               <span>{t("items.french")}</span>
@@ -369,17 +355,13 @@ function Commander(): React.JSX.Element {
         </CommandGroup>
 
         <CommandGroup heading={t("groups.accessibility")}>
-          <CommandItem
-            onSelect={onSelectFontNormal}
->
+          <CommandItem onSelect={onSelectFontNormal}>
             <div className={styles["commandItemContent"]}>
               <TbTypeface className={styles["commandIcon"]} />
               <span>{t("items.fontNormal")}</span>
             </div>
           </CommandItem>
-          <CommandItem
-            onSelect={onSelectFontDyslexic}
->
+          <CommandItem onSelect={onSelectFontDyslexic}>
             <div className={styles["commandItemContent"]}>
               <TbAccessible className={styles["commandIcon"]} />
               <span>{t("items.fontDyslexic")}</span>
@@ -388,25 +370,19 @@ function Commander(): React.JSX.Element {
         </CommandGroup>
 
         <CommandGroup heading={t("groups.fun")}>
-          <CommandItem
-            onSelect={onSelectRainbow}
->
+          <CommandItem onSelect={onSelectRainbow}>
             <div className={styles["commandItemContent"]}>
               <TbPalette className={styles["commandIcon"]} />
               <span>{t("items.rainbow")}</span>
             </div>
           </CommandItem>
-          <CommandItem
-            onSelect={onSelectDisco}
->
+          <CommandItem onSelect={onSelectDisco}>
             <div className={styles["commandItemContent"]}>
               <TbConfetti className={styles["commandIcon"]} />
               <span>{t("items.disco")}</span>
             </div>
           </CommandItem>
-          <CommandItem
-            onSelect={onSelectMatrix}
->
+          <CommandItem onSelect={onSelectMatrix}>
             <div className={styles["commandItemContent"]}>
               <TbCode className={styles["commandIcon"]} />
               <span>{t("items.matrix")}</span>
@@ -415,9 +391,7 @@ function Commander(): React.JSX.Element {
         </CommandGroup>
 
         <CommandGroup heading={t("groups.links")}>
-          <CommandItem
-            onSelect={onSelectGithub}
->
+          <CommandItem onSelect={onSelectGithub}>
             <div className={styles["commandItemContent"]}>
               <TbBrandGithub className={styles["commandIcon"]} />
               <span>{t("items.github")}</span>

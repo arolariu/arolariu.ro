@@ -11,7 +11,7 @@ describe("VisuallyHidden", () => {
   });
 
   it("applies visually hidden styles", () => {
-    render(<VisuallyHidden data-testid="vh">Hidden</VisuallyHidden>);
+    render(<VisuallyHidden data-testid='vh'>Hidden</VisuallyHidden>);
 
     const element = screen.getByTestId("vh");
 
@@ -19,7 +19,7 @@ describe("VisuallyHidden", () => {
   });
 
   it("merges custom className", () => {
-    render(<VisuallyHidden className="custom">Text</VisuallyHidden>);
+    render(<VisuallyHidden className='custom'>Text</VisuallyHidden>);
 
     const element = screen.getByText("Text");
 

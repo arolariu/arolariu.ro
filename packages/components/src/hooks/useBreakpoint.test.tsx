@@ -42,7 +42,12 @@ describe("useBreakpoint", () => {
   });
 
   it("returns 'lg' when the lg breakpoint matches", () => {
-    mockMatchMedia(new Map([["(min-width: 1024px)", true], ["(min-width: 768px)", true]]));
+    mockMatchMedia(
+      new Map([
+        ["(min-width: 1024px)", true],
+        ["(min-width: 768px)", true],
+      ]),
+    );
 
     const {result} = renderHook(() => useBreakpoint());
 

@@ -70,16 +70,19 @@ export function useFocusVisible(): {
     };
   }, []);
 
-  const focusProps = React.useMemo<FocusVisibleProps>(() => ({
-    onFocus: (_event: React.FocusEvent) => {
-      if (isKeyboardRef.current) {
-        setIsFocusVisible(true);
-      }
-    },
-    onBlur: () => {
-      setIsFocusVisible(false);
-    },
-  }), []);
+  const focusProps = React.useMemo<FocusVisibleProps>(
+    () => ({
+      onFocus: (_event: React.FocusEvent) => {
+        if (isKeyboardRef.current) {
+          setIsFocusVisible(true);
+        }
+      },
+      onBlur: () => {
+        setIsFocusVisible(false);
+      },
+    }),
+    [],
+  );
 
   return {isFocusVisible, focusProps};
 }

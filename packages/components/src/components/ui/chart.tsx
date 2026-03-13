@@ -635,5 +635,4 @@ export const useXAxisDomain = RechartsPrimitive.useXAxisDomain;
 export const useYAxisDomain = RechartsPrimitive.useYAxisDomain;
 
 // -- Type re-exports --------------------------------------------------------
-export type {DefaultTooltipContentProps, TooltipValueType} from "recharts";
-export type {DefaultLegendContentProps} from "recharts";
+export type {DefaultLegendContentProps, DefaultTooltipContentProps, TooltipValueType} from "recharts";

@@ -10,7 +10,7 @@ describe("CopyButton", () => {
       value: {writeText: vi.fn()},
     });
 
-    render(<CopyButton value="test" />);
+    render(<CopyButton value='test' />);
 
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
@@ -21,7 +21,7 @@ describe("CopyButton", () => {
       value: {writeText: vi.fn()},
     });
 
-    render(<CopyButton value="test" />);
+    render(<CopyButton value='test' />);
 
     expect(screen.getByLabelText("Copy to clipboard")).toBeInTheDocument();
   });
@@ -34,7 +34,12 @@ describe("CopyButton", () => {
 
     const ref = {current: null as HTMLButtonElement | null};
 
-    render(<CopyButton ref={ref} value="test" />);
+    render(
+      <CopyButton
+        ref={ref}
+        value='test'
+      />,
+    );
 
     expect(ref.current).toBeInstanceOf(HTMLButtonElement);
   });

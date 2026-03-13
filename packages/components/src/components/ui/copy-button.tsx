@@ -48,42 +48,48 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
     const [copied, setCopied] = React.useState(false);
     const timeoutRef = React.useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
 
-    React.useEffect(() => () => {
-      if (timeoutRef.current !== null) {
-        globalThis.clearTimeout(timeoutRef.current);
-      }
-    }, []);
-
-    const handleCopy = React.useCallback(async (event: React.MouseEvent<HTMLButtonElement>) => {
-      onClick?.(event);
-
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Clipboard access is browser-only and required for this client component.
-      const {clipboard} = globalThis.navigator;
-
-      if (event.defaultPrevented || disabled || !clipboard?.writeText) {
-        return;
-      }
-
-      try {
-        await clipboard.writeText(value);
-        setCopied(true);
-
+    React.useEffect(
+      () => () => {
         if (timeoutRef.current !== null) {
           globalThis.clearTimeout(timeoutRef.current);
         }
+      },
+      [],
+    );
 
-        timeoutRef.current = globalThis.setTimeout(() => {
-          setCopied(false);
-        }, timeout);
-      } catch {
-        // Clipboard access can fail in unsupported or insecure contexts.
-      }
-    }, [disabled, onClick, timeout, value]);
+    const handleCopy = React.useCallback(
+      async (event: React.MouseEvent<HTMLButtonElement>) => {
+        onClick?.(event);
+
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins -- Clipboard access is browser-only and required for this client component.
+        const {clipboard} = globalThis.navigator;
+
+        if (event.defaultPrevented || disabled || !clipboard?.writeText) {
+          return;
+        }
+
+        try {
+          await clipboard.writeText(value);
+          setCopied(true);
+
+          if (timeoutRef.current !== null) {
+            globalThis.clearTimeout(timeoutRef.current);
+          }
+
+          timeoutRef.current = globalThis.setTimeout(() => {
+            setCopied(false);
+          }, timeout);
+        } catch {
+          // Clipboard access can fail in unsupported or insecure contexts.
+        }
+      },
+      [disabled, onClick, timeout, value],
+    );
 
     return (
       <button
         ref={ref}
-        type="button"
+        type='button'
         aria-label={copied ? "Copied" : "Copy to clipboard"}
         className={cn(styles.copyButton, className)}
         disabled={disabled}
@@ -91,12 +97,12 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         {...props}>
         {copied ? (
           <Check
-            aria-hidden="true"
+            aria-hidden='true'
             className={styles.icon}
           />
         ) : (
           <Copy
-            aria-hidden="true"
+            aria-hidden='true'
             className={styles.icon}
           />
         )}
