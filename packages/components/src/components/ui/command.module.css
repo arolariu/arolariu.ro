@@ -123,13 +123,19 @@
   overflow: hidden;
   padding: var(--ac-space-1) 0;
   color: inherit;
+
+  & + .group {
+    border-top: 1px solid var(--ac-border);
+  }
 }
 
 .groupHeading {
-  padding: var(--ac-space-2);
+  padding: var(--ac-space-1) var(--ac-space-2);
   color: var(--ac-muted-foreground);
-  font-size: var(--ac-text-xs);
-  font-weight: 500;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .separator {
@@ -143,9 +149,10 @@
   display: flex;
   align-items: center;
   gap: var(--ac-space-2);
-  padding: 0.375rem var(--ac-space-2);
+  padding: 0.5rem var(--ac-space-2);
   border-radius: var(--ac-radius-sm);
   font-size: var(--ac-text-sm);
+  line-height: 1.25;
   cursor: pointer;
   user-select: none;
   outline: none;
