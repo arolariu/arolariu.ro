@@ -1,21 +1,11 @@
 "use client";
 
-import {cn} from "@/lib/utilities";
 import {motion} from "motion/react";
 import React, {useEffect, useId, useRef, useState} from "react";
 
-/**
- *  DotBackground Component Props
- * @param width The horizontal spacing between dots
- * @param height The vertical spacing between dots
- * @param x The x-offset of the entire pattern
- * @param y The y-offset of the entire pattern
- * @param cx The x-offset of individual dots
- * @param cy The y-offset of individual dots
- * @param cr The radius of each dot
- * @param className Additional CSS classes to apply to the SVG container
- * @param glow Whether dots should have a glowing animation effect
- */
+import {cn} from "@/lib/utilities";
+import styles from "./dot-background.module.css";
+
 interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
   width?: number;
   height?: number;
@@ -29,30 +19,6 @@ interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
   [key: string]: unknown;
 }
 
-/**
- * DotBackground Component
- * A React component that creates an animated or static dot pattern background using SVG.
- * The pattern automatically adjusts to fill its container and can optionally display glowing dots.
- * @see DotBackgroundProps for the props interface.
- * @example
- * // Basic usage
- * <DotBackground />
- *
- * // With glowing effect and custom spacing
- * <DotBackground
- *   width={20}
- *   height={20}
- *   glow={true}
- *   className="opacity-50"
- * />
- *@summary Summary:
- * - The component is client-side only ("use client")
- * - Automatically responds to container size changes
- * - When glow is enabled, dots will animate with random delays and durations
- * - Uses Motion for animations
- * - Dots color can be controlled via the text color utility classes
- */
-
 export function DotBackground({
   width = 16,
   height = 16,
@@ -64,34 +30,38 @@ export function DotBackground({
   className,
   glow = false,
   ...props
-}: DotBackgroundProps) {
+}: DotBackgroundProps): React.JSX.Element {
   const id = useId();
   const containerRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({width: 0, height: 0});
 
   useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const {width, height} = containerRef.current.getBoundingClientRect();
-        setDimensions({width, height});
+    const updateDimensions = (): void => {
+      if (!containerRef.current) {
+        return;
       }
+
+      const rect = containerRef.current.getBoundingClientRect();
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- resize observer style update is the hook's purpose
+      setDimensions({width: rect.width, height: rect.height});
     };
 
     updateDimensions();
-    window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+    globalThis.window.addEventListener("resize", updateDimensions);
+    return () => globalThis.window.removeEventListener("resize", updateDimensions);
   }, []);
 
+  const totalColumns = Math.ceil(dimensions.width / width);
   const dots = Array.from(
     {
-      length: Math.ceil(dimensions.width / width) * Math.ceil(dimensions.height / height),
+      length: totalColumns * Math.ceil(dimensions.height / height),
     },
-    (_, i) => {
-      const col = i % Math.ceil(dimensions.width / width);
-      const row = Math.floor(i / Math.ceil(dimensions.width / width));
+    (_, index) => {
+      const column = index % Math.max(totalColumns, 1);
+      const row = Math.floor(index / Math.max(totalColumns, 1));
       return {
-        x: col * width + cx,
-        y: row * height + cy,
+        x: x + column * width + cx,
+        y: y + row * height + cy,
         delay: Math.random() * 5,
         duration: Math.random() * 3 + 2,
       };
@@ -102,7 +72,7 @@ export function DotBackground({
     <svg
       ref={containerRef}
       aria-hidden='true'
-      className={cn("pointer-events-none absolute inset-0 h-full w-full", className)}
+      className={cn(styles.root, className)}
       {...props}>
       <defs>
         <radialGradient id={`${id}-gradient`}>
@@ -125,7 +95,7 @@ export function DotBackground({
           cy={dot.y}
           r={cr}
           fill={glow ? `url(#${id}-gradient)` : "currentColor"}
-          className='text-neutral-400/80'
+          className={styles.dot}
           initial={glow ? {opacity: 0.4, scale: 1} : {}}
           animate={
             glow

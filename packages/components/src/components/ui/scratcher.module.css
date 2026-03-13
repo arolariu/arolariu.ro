@@ -1,0 +1,9 @@
+.root {
+  position: relative;
+  user-select: none;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}

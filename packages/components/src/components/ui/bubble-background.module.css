@@ -1,0 +1,97 @@
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2e1065 0%, #1d4ed8 100%);
+}
+
+.hiddenSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+.filterLayer {
+  position: absolute;
+  inset: 0;
+  filter: url(#goo) blur(40px);
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 9999px;
+  mix-blend-mode: hard-light;
+}
+
+.bubbleFirst,
+.bubbleFourth {
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 80%;
+}
+
+.bubbleFirst {
+  background: radial-gradient(circle at center, rgb(var(--bubble-first-color) / 0.8) 0%, rgb(var(--bubble-first-color) / 0) 50%);
+}
+
+.rotator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rotatorSecond {
+  transform-origin: calc(50% - 400px) 50%;
+}
+
+.bubbleSecond {
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle at center, rgb(var(--bubble-second-color) / 0.8) 0%, rgb(var(--bubble-second-color) / 0) 50%);
+}
+
+.rotatorThird {
+  transform-origin: calc(50% + 400px) 50%;
+}
+
+.bubbleThird {
+  position: absolute;
+  top: calc(50% + 200px);
+  left: calc(50% - 500px);
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle at center, rgb(var(--bubble-third-color) / 0.8) 0%, rgb(var(--bubble-third-color) / 0) 50%);
+}
+
+.bubbleFourth {
+  opacity: 0.7;
+  background: radial-gradient(circle at center, rgb(var(--bubble-fourth-color) / 0.8) 0%, rgb(var(--bubble-fourth-color) / 0) 50%);
+}
+
+.rotatorFifth {
+  transform-origin: calc(50% - 800px) calc(50% + 200px);
+}
+
+.bubbleFifth {
+  position: absolute;
+  top: calc(50% - 80%);
+  left: calc(50% - 80%);
+  width: 160%;
+  height: 160%;
+  background: radial-gradient(circle at center, rgb(var(--bubble-fifth-color) / 0.8) 0%, rgb(var(--bubble-fifth-color) / 0) 50%);
+}
+
+.bubbleInteractive {
+  width: 100%;
+  height: 100%;
+  opacity: 0.7;
+  background: radial-gradient(circle at center, rgb(var(--bubble-sixth-color) / 0.8) 0%, rgb(var(--bubble-sixth-color) / 0) 50%);
+}

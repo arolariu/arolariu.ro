@@ -1,55 +1,79 @@
 "use client";
 
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
+import {Button as BaseButton} from "@base-ui/react/button";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./button.module.css";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 dark:focus-visible:ring-neutral-300",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/90 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/90",
-        destructive:
-          "bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/90 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/90",
-        outline:
-          "border border-neutral-200 bg-white shadow-sm hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        secondary:
-          "bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
-        ghost: "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50",
-      },
-      size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-);
+const variantStyles: Record<string, string> = {
+  default: styles.default!,
+  destructive: styles.destructive!,
+  outline: styles.outline!,
+  secondary: styles.secondary!,
+  ghost: styles.ghost!,
+  link: styles.link!,
+};
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+const sizeStyles: Record<string, string> = {
+  default: styles.sizeDefault!,
+  sm: styles.sizeSm!,
+  lg: styles.sizeLg!,
+  icon: styles.sizeIcon!,
+};
+
+export type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+export type ButtonSize = "default" | "sm" | "lg" | "icon";
+
+interface ButtonVariantOptions {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+}
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Visual style variant */
+  variant?: ButtonVariant;
+  /** Size preset */
+  size?: ButtonSize;
+  /**
+   * Render as a child element (e.g., an anchor tag).
+   * Maps to Base UI's `render` prop internally.
+   * @deprecated Prefer using Base UI's `render` prop directly for new code.
+   */
   asChild?: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({className, variant, size, asChild = false, ...props}, ref) => {
-  const Comp = asChild ? Slot : "button";
-  return (
-    <Comp
-      className={cn(buttonVariants({variant, size, className}))}
-      ref={ref}
-      {...props}
-    />
-  );
-});
+function buttonVariants({variant = "default", size = "default", className}: Readonly<ButtonVariantOptions> = {}): string {
+  return cn(styles.button, variantStyles[variant], sizeStyles[size], className);
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({className, variant = "default", size = "default", asChild = false, children, ...props}, ref) => {
+    const composedClassName = buttonVariants({variant, size, className});
+
+    if (asChild && React.isValidElement(children)) {
+      return (
+        <BaseButton
+          ref={ref}
+          className={composedClassName}
+          nativeButton={false}
+          render={children as React.ReactElement}
+          {...props}
+        />
+      );
+    }
+
+    return (
+      <BaseButton
+        ref={ref}
+        className={composedClassName}
+        {...props}>
+        {children}
+      </BaseButton>
+    );
+  },
+);
 Button.displayName = "Button";
 
 export {Button, buttonVariants};

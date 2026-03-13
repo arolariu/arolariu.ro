@@ -1,43 +1,34 @@
 "use client";
 
-import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
+import {Radio} from "@base-ui/react/radio";
+import {RadioGroup as BaseRadioGroup} from "@base-ui/react/radio-group";
 import {Circle} from "lucide-react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./radio-group.module.css";
 
-const RadioGroup = React.forwardRef<
-  React.ComponentRef<typeof RadioGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
->(({className, ...props}, ref) => {
-  return (
-    <RadioGroupPrimitive.Root
-      className={cn("grid gap-2", className)}
-      {...props}
-      ref={ref}
-    />
-  );
-});
-RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
+const RadioGroup = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseRadioGroup>>(({className, ...props}, ref) => (
+  <BaseRadioGroup
+    ref={ref}
+    className={cn(styles.group, className)}
+    {...props}
+  />
+));
+RadioGroup.displayName = "RadioGroup";
 
-const RadioGroupItem = React.forwardRef<
-  React.ComponentRef<typeof RadioGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
->(({className, ...props}, ref) => {
-  return (
-    <RadioGroupPrimitive.Item
+const RadioGroupItem = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<typeof Radio.Root>>(
+  ({className, ...props}, ref) => (
+    <Radio.Root
       ref={ref}
-      className={cn(
-        "aspect-square h-4 w-4 rounded-full border border-neutral-200 border-neutral-900 text-neutral-900 shadow focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-50 dark:border-neutral-800 dark:text-neutral-50 dark:focus-visible:ring-neutral-300",
-        className,
-      )}
+      className={cn(styles.item, className)}
       {...props}>
-      <RadioGroupPrimitive.Indicator className='flex items-center justify-center'>
-        <Circle className='fill-primary h-3.5 w-3.5' />
-      </RadioGroupPrimitive.Indicator>
-    </RadioGroupPrimitive.Item>
-  );
-});
-RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
+      <Radio.Indicator className={styles.indicator}>
+        <Circle className={styles.icon} />
+      </Radio.Indicator>
+    </Radio.Root>
+  ),
+);
+RadioGroupItem.displayName = "RadioGroupItem";
 
 export {RadioGroup, RadioGroupItem};

@@ -1,86 +1,85 @@
 "use client";
 
-import {cn} from "@/lib/utilities";
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
-function Empty({className, ...props}: React.ComponentProps<"div">) {
-  return (
+import {cn} from "@/lib/utilities";
+import styles from "./empty.module.css";
+
+interface EmptyMediaProps extends React.ComponentPropsWithoutRef<"div"> {
+  variant?: "default" | "icon";
+}
+
+const Empty = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='empty'
-      className={cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg border-dashed p-6 text-center text-balance md:p-12",
-        className,
-      )}
+      className={cn(styles.empty, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+Empty.displayName = "Empty";
 
-function EmptyHeader({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const EmptyHeader = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='empty-header'
-      className={cn("flex max-w-sm flex-col items-center gap-2 text-center", className)}
+      className={cn(styles.header, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+EmptyHeader.displayName = "EmptyHeader";
 
-const emptyMediaVariants = cva("mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0", {
-  variants: {
-    variant: {
-      default: "bg-transparent",
-      icon: "bg-neutral-100 text-neutral-950 flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-6 dark:bg-neutral-800 dark:text-neutral-50",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
-});
-
-function EmptyMedia({className, variant = "default", ...props}: React.ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>) {
-  return (
+const EmptyMedia = React.forwardRef<HTMLDivElement, EmptyMediaProps>(
+  ({className, variant = "default", ...props}: Readonly<EmptyMediaProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='empty-icon'
       data-variant={variant}
-      className={cn(emptyMediaVariants({variant, className}))}
+      className={cn(styles.media, variant === "icon" && styles.mediaIcon, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+EmptyMedia.displayName = "EmptyMedia";
 
-function EmptyTitle({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const EmptyTitle = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='empty-title'
-      className={cn("text-lg font-medium tracking-tight", className)}
+      className={cn(styles.title, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+EmptyTitle.displayName = "EmptyTitle";
 
-function EmptyDescription({className, ...props}: React.ComponentProps<"p">) {
-  return (
+const EmptyDescription = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='empty-description'
-      className={cn(
-        "text-sm/relaxed text-neutral-500 dark:text-neutral-400 [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-neutral-900 dark:[&>a:hover]:text-neutral-50",
-        className,
-      )}
+      className={cn(styles.description, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+EmptyDescription.displayName = "EmptyDescription";
 
-function EmptyContent({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const EmptyContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='empty-content'
-      className={cn("flex w-full max-w-sm min-w-0 flex-col items-center gap-4 text-sm text-balance", className)}
+      className={cn(styles.content, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+EmptyContent.displayName = "EmptyContent";
 
 export {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle};

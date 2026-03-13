@@ -1,0 +1,14 @@
+.highlight {
+  position: relative;
+  display: inline;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--ac-radius-lg);
+  background-image: linear-gradient(90deg, #dbeafe 0%, #f3e8ff 100%);
+  background-position: left center;
+  background-repeat: no-repeat;
+}
+
+:global(.dark) .highlight,
+:global([data-theme="dark"]) .highlight {
+  background-image: linear-gradient(90deg, color-mix(in oklch, var(--ac-primary), white 35%) 0%, color-mix(in oklch, #a855f7, white 15%) 100%);
+}

@@ -1,18 +1,37 @@
 "use client";
 
-import {cn} from "@/lib/utilities";
-import {Loader2Icon} from "lucide-react";
 import * as React from "react";
 
-function Spinner({className, ...props}: React.ComponentProps<"svg">) {
-  return (
-    <Loader2Icon
+import {cn} from "@/lib/utilities";
+import styles from "./spinner.module.css";
+
+const Spinner = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"svg">>, ref): React.JSX.Element => (
+    <svg
+      ref={ref}
       role='status'
-      aria-label='Loading'
-      className={cn("size-4 animate-spin", className)}
-      {...props}
-    />
-  );
-}
+      aria-label={props["aria-label"] ?? "Loading"}
+      viewBox='0 0 24 24'
+      fill='none'
+      className={cn(styles.spinner, className)}
+      {...props}>
+      <circle
+        className={styles.track}
+        cx='12'
+        cy='12'
+        r='9'
+        stroke='currentColor'
+        strokeWidth='3'
+      />
+      <path
+        className={styles.indicator}
+        d='M21 12a9 9 0 0 0-9-9'
+        stroke='currentColor'
+        strokeWidth='3'
+      />
+    </svg>
+  ),
+);
+Spinner.displayName = "Spinner";
 
 export {Spinner};

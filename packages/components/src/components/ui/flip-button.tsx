@@ -1,13 +1,16 @@
 "use client";
 
-import {type HTMLMotionProps, type Transition, type Variant, motion} from "motion/react";
+import {type HTMLMotionProps, motion, type Transition, type Variant} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./flip-button.module.css";
 
-type FlipDirection = "top" | "bottom" | "left" | "righ";
+/** Supported flip origins for the button animation. */
+export type FlipDirection = "top" | "bottom" | "left" | "righ";
 
-interface FlipButtonProps extends HTMLMotionProps<"button"> {
+/** Props accepted by {@link FlipButton}. */
+export interface FlipButtonProps extends HTMLMotionProps<"button"> {
   frontText: string;
   backText: string;
   transition?: Transition;
@@ -16,8 +19,9 @@ interface FlipButtonProps extends HTMLMotionProps<"button"> {
   from?: FlipDirection;
 }
 
-const defaultSpanClassName = "absolute inset-0 flex items-center justify-center rounded-lg";
-
+/**
+ * Renders a two-sided button that flips between front and back labels on hover.
+ */
 const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
   (
     {
@@ -32,28 +36,39 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
     },
     ref,
   ) => {
+    // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
+    const {key: _ignoredKey, ...restProps} = props;
     const isVertical = from === "top" || from === "bottom";
     const rotateAxis = isVertical ? "rotateX" : "rotateY";
 
     const frontOffset = from === "top" || from === "left" ? "50%" : "-50%";
     const backOffset = from === "top" || from === "left" ? "-50%" : "50%";
 
-    const buildVariant = (opacity: number, rotation: number, offset: string | null = null): Variant => ({
-      opacity,
-      [rotateAxis]: rotation,
-      ...(isVertical && offset !== null ? {y: offset} : {}),
-      ...(!isVertical && offset !== null ? {x: offset} : {}),
-    });
+    const buildVariant = React.useCallback(
+      (opacity: number, rotation: number, offset: string | null = null): Variant => ({
+        opacity,
+        [rotateAxis]: rotation,
+        ...(isVertical && offset !== null ? {y: offset} : {}),
+        ...(!isVertical && offset !== null ? {x: offset} : {}),
+      }),
+      [isVertical, rotateAxis],
+    );
 
-    const frontVariants = {
-      initial: buildVariant(1, 0, "0%"),
-      hover: buildVariant(0, 90, frontOffset),
-    };
+    const frontVariants = React.useMemo(
+      () => ({
+        initial: buildVariant(1, 0, "0%"),
+        hover: buildVariant(0, 90, frontOffset),
+      }),
+      [buildVariant, frontOffset],
+    );
 
-    const backVariants = {
-      initial: buildVariant(0, 90, backOffset),
-      hover: buildVariant(1, 0, "0%"),
-    };
+    const backVariants = React.useMemo(
+      () => ({
+        initial: buildVariant(0, 90, backOffset),
+        hover: buildVariant(1, 0, "0%"),
+      }),
+      [backOffset, buildVariant],
+    );
 
     return (
       <motion.button
@@ -61,24 +76,21 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
         initial='initial'
         whileHover='hover'
         whileTap={{scale: 0.95}}
-        className={cn(
-          "relative inline-block h-10 cursor-pointer px-4 py-2 text-sm font-medium perspective-[1000px] focus:outline-none",
-          className,
-        )}
-        {...props}>
+        className={cn(styles.button, className)}
+        {...restProps}>
         <motion.span
           variants={frontVariants}
           transition={transition}
-          className={cn(defaultSpanClassName, "bg-muted text-black dark:text-white", frontClassName)}>
+          className={cn(styles.face, styles.front, frontClassName)}>
           {frontText}
         </motion.span>
         <motion.span
           variants={backVariants}
           transition={transition}
-          className={cn(defaultSpanClassName, "bg-primary text-primary-foreground", backClassName)}>
+          className={cn(styles.face, styles.back, backClassName)}>
           {backText}
         </motion.span>
-        <span className='invisible'>{frontText}</span>
+        <span className={styles.measure}>{frontText}</span>
       </motion.button>
     );
   },
@@ -86,4 +98,4 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
 
 FlipButton.displayName = "FlipButton";
 
-export {FlipButton, type FlipButtonProps, type FlipDirection};
+export {FlipButton};

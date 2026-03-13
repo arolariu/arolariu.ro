@@ -4,8 +4,10 @@ import {motion, useInView, type HTMLMotionProps, type Transition, type UseInView
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./highlight-text.module.css";
 
-interface HighlightTextProps extends HTMLMotionProps<"span"> {
+/** Props accepted by {@link HighlightText}. */
+export interface HighlightTextProps extends HTMLMotionProps<"span"> {
   text: string;
   inView?: boolean;
   inViewMargin?: UseInViewOptions["margin"];
@@ -15,13 +17,22 @@ interface HighlightTextProps extends HTMLMotionProps<"span"> {
 
 const animation = {backgroundSize: "100% 100%"};
 
+/**
+ * Animates a gradient highlight fill behind inline text content.
+ */
 const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
-  ({text, className, inView = false, inViewMargin = "0px", transition = {duration: 2, ease: "easeInOut"}, ...props}, ref) => {
+  (
+    {text, className, inView = false, inViewMargin = "0px", inViewOnce = true, transition = {duration: 2, ease: "easeInOut"}, ...props},
+    ref,
+  ) => {
+    // eslint-disable-next-line sonarjs/no-unused-vars -- removing React key avoids implicit key spreading
+    const {key: _ignoredKey, ...restProps} = props;
     const localRef = React.useRef<HTMLSpanElement>(null);
-    React.useImperativeHandle(ref, () => localRef.current as HTMLSpanElement);
+
+    React.useImperativeHandle(ref, () => localRef.current!, []);
 
     const inViewResult = useInView(localRef, {
-      once: true,
+      once: inViewOnce,
       margin: inViewMargin,
     });
     const isInView = !inView || inViewResult;
@@ -34,21 +45,14 @@ const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
         }}
         animate={isInView ? animation : undefined}
         transition={transition}
-        style={{
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "left center",
-          display: "inline",
-        }}
-        className={cn(
-          `relative inline-block rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 px-2 py-1 dark:from-blue-500 dark:to-purple-500`,
-          className,
-        )}
-        {...props}>
+        className={cn(styles.highlight, className)}
+        {...restProps}>
         {text}
       </motion.span>
     );
   },
 );
+
 HighlightText.displayName = "HighlightText";
 
-export {HighlightText, type HighlightTextProps};
+export {HighlightText};

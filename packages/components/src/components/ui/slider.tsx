@@ -1,24 +1,48 @@
 "use client";
 
-import * as SliderPrimitive from "@radix-ui/react-slider";
+import {Slider as BaseSlider} from "@base-ui/react/slider";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./slider.module.css";
 
-const Slider = React.forwardRef<
-  React.ComponentRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({className, ...props}, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn("relative flex w-full touch-none items-center select-none", className)}
-    {...props}>
-    <SliderPrimitive.Track className='relative h-1.5 w-full grow overflow-hidden rounded-full bg-neutral-900/20 dark:bg-neutral-50/20'>
-      <SliderPrimitive.Range className='absolute h-full bg-neutral-900 dark:bg-neutral-50' />
-    </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className='block h-4 w-4 rounded-full border border-neutral-200 border-neutral-900/50 bg-white shadow transition-colors focus-visible:ring-1 focus-visible:ring-neutral-950 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 dark:border-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-950 dark:focus-visible:ring-neutral-300' />
-  </SliderPrimitive.Root>
-));
-Slider.displayName = SliderPrimitive.Root.displayName;
+interface SliderProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof BaseSlider.Root>,
+  "defaultValue" | "onValueChange" | "onValueCommitted" | "value"
+> {
+  /** V1-compatible controlled slider values. */
+  value?: number[];
+  /** V1-compatible uncontrolled slider values. */
+  defaultValue?: number[];
+  /** V1-compatible change handler receiving an array of thumb values. */
+  onValueChange?: (value: number[], eventDetails: unknown) => void;
+  /** V1-compatible commit handler receiving an array of thumb values. */
+  onValueCommitted?: (value: number[], eventDetails: unknown) => void;
+}
+
+const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
+  ({className, defaultValue, onValueChange, onValueCommitted, value, ...props}, ref) => (
+    <BaseSlider.Root<readonly number[]>
+      ref={ref}
+      className={cn(styles.root, className)}
+      defaultValue={defaultValue}
+      onValueChange={(nextValue, eventDetails) => {
+        onValueChange?.([...nextValue], eventDetails);
+      }}
+      onValueCommitted={(nextValue, eventDetails) => {
+        onValueCommitted?.([...nextValue], eventDetails);
+      }}
+      value={value}
+      {...props}>
+      <BaseSlider.Control className={styles.control}>
+        <BaseSlider.Track className={styles.track}>
+          <BaseSlider.Indicator className={styles.indicator} />
+        </BaseSlider.Track>
+        <BaseSlider.Thumb className={styles.thumb} />
+      </BaseSlider.Control>
+    </BaseSlider.Root>
+  ),
+);
+Slider.displayName = "Slider";
 
 export {Slider};

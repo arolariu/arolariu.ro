@@ -1,69 +1,84 @@
 "use client";
 
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
 import {cn} from "@/lib/utilities";
+import styles from "./button-group.module.css";
 
-const buttonGroupVariants = cva(
-  "flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 [&>*]:focus-visible:relative [&>*]:focus-visible:z-10 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
-  {
-    variants: {
-      orientation: {
-        horizontal: "[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none",
-        vertical:
-          "flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none",
-      },
-    },
-    defaultVariants: {
-      orientation: "horizontal",
-    },
-  },
-);
+type ButtonGroupOrientation = "horizontal" | "vertical";
 
-function ButtonGroup({className, orientation, ...props}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
-  return (
+interface ButtonGroupVariantOptions {
+  orientation?: ButtonGroupOrientation;
+  className?: string;
+}
+
+interface ButtonGroupProps extends React.ComponentPropsWithoutRef<"div"> {
+  orientation?: ButtonGroupOrientation;
+}
+
+interface ButtonGroupTextProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** @deprecated Prefer Base UI's `render` prop. */
+
+  asChild?: boolean;
+}
+
+function buttonGroupVariants({orientation = "horizontal", className}: Readonly<ButtonGroupVariantOptions> = {}): string {
+  return cn(styles.root, orientation === "vertical" ? styles.vertical : styles.horizontal, className);
+}
+
+const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
+  ({className, orientation = "horizontal", ...props}: Readonly<ButtonGroupProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       role='group'
       data-slot='button-group'
       data-orientation={orientation}
-      className={cn(buttonGroupVariants({orientation}), className)}
+      className={buttonGroupVariants({orientation, className})}
       {...props}
     />
-  );
-}
+  ),
+);
+ButtonGroup.displayName = "ButtonGroup";
 
-function ButtonGroupText({
-  className,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"div"> & {
-  asChild?: boolean;
-}) {
-  const Comp = asChild ? Slot : "div";
+const ButtonGroupText = React.forwardRef<HTMLDivElement, ButtonGroupTextProps>(
+  ({className, asChild = false, children, ...props}: Readonly<ButtonGroupTextProps>, ref): React.JSX.Element => {
+    const mergedClassName = cn(styles.text, className);
 
-  return (
-    <Comp
-      className={cn(
-        "flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-100 px-4 text-sm font-medium shadow-xs dark:border-neutral-800 dark:bg-neutral-800 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+    if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<React.ComponentPropsWithoutRef<"div"> & {ref?: React.Ref<HTMLDivElement>}>;
 
-function ButtonGroupSeparator({className, orientation = "vertical", ...props}: React.ComponentProps<typeof Separator>) {
-  return (
+      // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
+      return React.cloneElement(child, {
+        ...props,
+        ref,
+        className: cn(mergedClassName, child.props.className),
+      });
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={mergedClassName}
+        {...props}>
+        {children}
+      </div>
+    );
+  },
+);
+ButtonGroupText.displayName = "ButtonGroupText";
+
+const ButtonGroupSeparator = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof Separator>>(
+  ({className, orientation = "vertical", ...props}: Readonly<React.ComponentPropsWithoutRef<typeof Separator>>, ref): React.JSX.Element => (
     <Separator
+      ref={ref}
       data-slot='button-group-separator'
       orientation={orientation}
-      className={cn("relative !m-0 self-stretch bg-neutral-200 data-[orientation=vertical]:h-auto dark:bg-neutral-800", className)}
+      className={cn(styles.separator, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ButtonGroupSeparator.displayName = "ButtonGroupSeparator";
 
 export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants};

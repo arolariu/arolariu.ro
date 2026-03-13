@@ -1,11 +1,12 @@
 "use client";
 
-import {motion, type SpringOptions, Transition, useMotionValue, useSpring} from "motion/react";
+import {motion, type SpringOptions, type Transition, useMotionValue, useSpring} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./bubble-background.module.css";
 
-interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
   interactive?: boolean;
   transition?: SpringOptions;
   colors?: {
@@ -17,6 +18,15 @@ interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
     sixth: string;
   };
 }
+
+type BubbleStyleProperties = React.CSSProperties & {
+  "--bubble-first-color": string;
+  "--bubble-second-color": string;
+  "--bubble-third-color": string;
+  "--bubble-fourth-color": string;
+  "--bubble-fifth-color": string;
+  "--bubble-sixth-color": string;
+};
 
 const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>(
   (
@@ -38,7 +48,8 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
     ref,
   ) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
-    React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
+
+    React.useImperativeHandle(ref, () => containerRef.current!, []);
 
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
@@ -46,44 +57,49 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
     const springY = useSpring(mouseY, transition);
 
     React.useEffect(() => {
-      if (!interactive) return;
+      if (!interactive) {
+        return;
+      }
 
       const currentContainer = containerRef.current;
-      if (!currentContainer) return;
+      if (!currentContainer) {
+        return;
+      }
 
-      const handleMouseMove = (e: MouseEvent) => {
+      const handleMouseMove = (event: MouseEvent): void => {
         const rect = currentContainer.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        mouseX.set(e.clientX - centerX);
-        mouseY.set(e.clientY - centerY);
+        mouseX.set(event.clientX - centerX);
+        mouseY.set(event.clientY - centerY);
       };
 
-      currentContainer?.addEventListener("mousemove", handleMouseMove);
-      return () => currentContainer?.removeEventListener("mousemove", handleMouseMove);
+      currentContainer.addEventListener("mousemove", handleMouseMove);
+
+      return () => {
+        currentContainer.removeEventListener("mousemove", handleMouseMove);
+      };
     }, [interactive, mouseX, mouseY]);
+
+    const style: BubbleStyleProperties = {
+      "--bubble-first-color": colors.first,
+      "--bubble-second-color": colors.second,
+      "--bubble-third-color": colors.third,
+      "--bubble-fourth-color": colors.fourth,
+      "--bubble-fifth-color": colors.fifth,
+      "--bubble-sixth-color": colors.sixth,
+    };
 
     return (
       <div
         ref={containerRef}
-        className={cn("relative size-full overflow-hidden bg-gradient-to-br from-violet-900 to-blue-900", className)}
+        className={cn(styles.root, className)}
+        style={style}
         {...props}>
-        <style>
-          {`
-            :root {
-              --first-color: ${colors.first};
-              --second-color: ${colors.second};
-              --third-color: ${colors.third};
-              --fourth-color: ${colors.fourth};
-              --fifth-color: ${colors.fifth};
-              --sixth-color: ${colors.sixth};
-            }
-          `}
-        </style>
-
         <svg
           xmlns='http://www.w3.org/2000/svg'
-          className='absolute top-0 left-0 h-0 w-0'>
+          className={styles.hiddenSvg}
+          aria-hidden='true'>
           <defs>
             <filter id='goo'>
               <feGaussianBlur
@@ -105,17 +121,15 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
           </defs>
         </svg>
 
-        <div
-          className='absolute inset-0'
-          style={{filter: "url(#goo) blur(40px)"}}>
+        <div className={styles.filterLayer}>
           <motion.div
-            className='absolute top-[10%] left-[10%] size-[80%] rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--first-color),0.8)_0%,rgba(var(--first-color),0)_50%)] mix-blend-hard-light'
+            className={cn(styles.bubble, styles.bubbleFirst)}
             animate={{y: [-50, 50, -50]}}
             transition={{duration: 30, ease: "easeInOut", repeat: Infinity}}
           />
 
           <motion.div
-            className='absolute inset-0 flex origin-[calc(50%-400px)] items-center justify-center'
+            className={cn(styles.rotator, styles.rotatorSecond)}
             animate={{rotate: 360}}
             transition={
               {
@@ -125,38 +139,35 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
                 repeatType: "reverse",
               } satisfies Transition
             }>
-            <div className='top-[10%] left-[10%] size-[80%] rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--second-color),0.8)_0%,rgba(var(--second-color),0)_50%)] mix-blend-hard-light' />
+            <div className={cn(styles.bubble, styles.bubbleSecond)} />
           </motion.div>
 
           <motion.div
-            className='absolute inset-0 flex origin-[calc(50%+400px)] items-center justify-center'
+            className={cn(styles.rotator, styles.rotatorThird)}
             animate={{rotate: 360}}
             transition={{duration: 40, ease: "linear", repeat: Infinity}}>
-            <div className='absolute top-[calc(50%+200px)] left-[calc(50%-500px)] size-[80%] rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--third-color),0.8)_0%,rgba(var(--third-color),0)_50%)] mix-blend-hard-light' />
+            <div className={cn(styles.bubble, styles.bubbleThird)} />
           </motion.div>
 
           <motion.div
-            className='absolute top-[10%] left-[10%] size-[80%] rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--fourth-color),0.8)_0%,rgba(var(--fourth-color),0)_50%)] opacity-70 mix-blend-hard-light'
+            className={cn(styles.bubble, styles.bubbleFourth)}
             animate={{x: [-50, 50, -50]}}
             transition={{duration: 40, ease: "easeInOut", repeat: Infinity}}
           />
 
           <motion.div
-            className='absolute inset-0 flex origin-[calc(50%_-_800px)_calc(50%_+_200px)] items-center justify-center'
+            className={cn(styles.rotator, styles.rotatorFifth)}
             animate={{rotate: 360}}
             transition={{duration: 20, ease: "linear", repeat: Infinity}}>
-            <div className='absolute top-[calc(50%-80%)] left-[calc(50%-80%)] size-[160%] rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--fifth-color),0.8)_0%,rgba(var(--fifth-color),0)_50%)] mix-blend-hard-light' />
+            <div className={cn(styles.bubble, styles.bubbleFifth)} />
           </motion.div>
 
-          {Boolean(interactive) && (
+          {interactive ? (
             <motion.div
-              className='absolute size-full rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--sixth-color),0.8)_0%,rgba(var(--sixth-color),0)_50%)] opacity-70 mix-blend-hard-light'
-              style={{
-                x: springX,
-                y: springY,
-              }}
+              className={cn(styles.bubble, styles.bubbleInteractive)}
+              style={{x: springX, y: springY}}
             />
-          )}
+          ) : null}
         </div>
 
         {children}
@@ -167,4 +178,4 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
 
 BubbleBackground.displayName = "BubbleBackground";
 
-export {BubbleBackground, type BubbleBackgroundProps};
+export {BubbleBackground};

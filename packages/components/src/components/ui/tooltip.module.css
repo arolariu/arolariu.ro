@@ -1,0 +1,24 @@
+.trigger {
+  display: inline-flex;
+  max-width: max-content;
+}
+
+.popup {
+  z-index: 50;
+  overflow: hidden;
+  border-radius: var(--ac-radius-sm);
+  background-color: var(--ac-foreground);
+  color: var(--ac-background);
+  padding: var(--ac-space-1) var(--ac-space-2);
+  font-size: var(--ac-text-xs);
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+  transform-origin: var(--transform-origin);
+  transition: opacity var(--ac-transition-fast), transform var(--ac-transition-fast);
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}

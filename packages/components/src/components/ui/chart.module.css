@@ -1,0 +1,164 @@
+.container {
+  display: flex;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-xs);
+}
+
+.container :global(.recharts-cartesian-axis-tick text) {
+  fill: var(--ac-muted-foreground);
+}
+
+.container :global(.recharts-cartesian-grid line[stroke="#ccc"]),
+.container :global(.recharts-reference-line line[stroke="#ccc"]),
+.container :global(.recharts-polar-grid line[stroke="#ccc"]) {
+  stroke: var(--ac-border);
+}
+
+.container :global(.recharts-curve.recharts-tooltip-cursor) {
+  stroke: var(--ac-border);
+}
+
+.container :global(.recharts-radial-bar-background-sector),
+.container :global(.recharts-rectangle.recharts-tooltip-cursor) {
+  fill: var(--ac-muted);
+}
+
+.container :global(.recharts-dot[stroke="#fff"]),
+.container :global(.recharts-sector[stroke="#fff"]) {
+  stroke: transparent;
+}
+
+.container :global(.recharts-layer),
+.container :global(.recharts-sector),
+.container :global(.recharts-surface) {
+  outline: none;
+}
+
+.tooltip {
+  display: grid;
+  min-width: 8rem;
+  gap: var(--ac-space-2);
+  align-items: start;
+  padding: 0.625rem;
+  border: 1px solid color-mix(in oklch, var(--ac-border), transparent 15%);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-background);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.14);
+}
+
+.tooltipLabel {
+  font-weight: 500;
+}
+
+.tooltipBody {
+  display: grid;
+  gap: var(--ac-space-2);
+}
+
+.tooltipItem {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--ac-space-2);
+}
+
+.tooltipItemCenter {
+  align-items: center;
+}
+
+.tooltipValueRow {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  line-height: 1;
+}
+
+.tooltipValueRowNested {
+  align-items: end;
+}
+
+.tooltipNameWrapper {
+  display: grid;
+  gap: var(--ac-space-2);
+}
+
+.tooltipName {
+  color: var(--ac-muted-foreground);
+}
+
+.tooltipValue {
+  color: var(--ac-foreground);
+  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltipIndicator {
+  flex-shrink: 0;
+  border-radius: 2px;
+  background-color: var(--chart-indicator-background);
+  border-color: var(--chart-indicator-border);
+}
+
+.tooltipIndicatorDot {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+.tooltipIndicatorLine {
+  width: 0.25rem;
+  height: auto;
+  min-height: 0.75rem;
+}
+
+.tooltipIndicatorDashed {
+  width: 0;
+  min-height: 0.75rem;
+  background-color: transparent;
+  border-style: dashed;
+  border-width: 1.5px;
+}
+
+.tooltipIndicatorDashedNested {
+  margin-block: 0.125rem;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-4);
+}
+
+.legendTop {
+  padding-bottom: var(--ac-space-3);
+}
+
+.legendBottom {
+  padding-top: var(--ac-space-3);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.legendItem svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--ac-muted-foreground);
+}
+
+.legendColor {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+

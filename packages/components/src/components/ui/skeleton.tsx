@@ -1,12 +1,12 @@
-"use client";
-
-import {cn} from "@/lib/utilities";
 import * as React from "react";
 
-function Skeleton({className, ...props}: Readonly<React.HTMLAttributes<HTMLDivElement>>) {
+import {cn} from "@/lib/utilities";
+import styles from "./skeleton.module.css";
+
+function Skeleton({className, ...props}: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-neutral-900/10 dark:bg-neutral-50/10", className)}
+      className={cn(styles.skeleton, className)}
       {...props}
     />
   );

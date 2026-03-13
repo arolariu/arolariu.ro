@@ -1,163 +1,181 @@
 "use client";
 
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
 import {cn} from "@/lib/utilities";
+import styles from "./item.module.css";
 
-function ItemGroup({className, ...props}: React.ComponentProps<"div">) {
-  return (
+type ItemVariant = "default" | "outline" | "muted";
+type ItemSize = "default" | "sm";
+type ItemMediaVariant = "default" | "icon" | "image";
+type ItemDataAttributes = Record<`data-${string}`, string | boolean | undefined>;
+
+interface ItemProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** @deprecated Prefer Base UI's `render` prop. */
+
+  asChild?: boolean;
+  size?: ItemSize;
+  variant?: ItemVariant;
+}
+
+interface ItemMediaProps extends React.ComponentPropsWithoutRef<"div"> {
+  variant?: ItemMediaVariant;
+}
+
+const ItemGroup = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       role='list'
       data-slot='item-group'
-      className={cn("group/item-group flex flex-col", className)}
+      className={cn(styles.group, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemGroup.displayName = "ItemGroup";
 
-function ItemSeparator({className, ...props}: React.ComponentProps<typeof Separator>) {
-  return (
+const ItemSeparator = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof Separator>>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<typeof Separator>>, ref): React.JSX.Element => (
     <Separator
+      ref={ref}
       data-slot='item-separator'
       orientation='horizontal'
-      className={cn("my-0", className)}
+      className={cn(styles.separator, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemSeparator.displayName = "ItemSeparator";
 
-const itemVariants = cva(
-  "group/item [a]:hover:bg-neutral-100/50 focus-visible:border-neutral-950 focus-visible:ring-neutral-950/50 [a]:transition-colors flex flex-wrap items-center rounded-md border border-neutral-200 border-transparent text-sm outline-none transition-colors duration-100 focus-visible:ring-[3px] dark:[a]:hover:bg-neutral-800/50 dark:focus-visible:border-neutral-300 dark:focus-visible:ring-neutral-300/50 dark:border-neutral-800",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        outline: "border-neutral-200 dark:border-neutral-800",
-        muted: "bg-neutral-100/50 dark:bg-neutral-800/50",
-      },
-      size: {
-        default: "gap-4 p-4",
-        sm: "gap-2.5 px-4 py-3",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+const Item = React.forwardRef<HTMLDivElement, ItemProps>(
+  (
+    {className, variant = "default", size = "default", asChild = false, children, ...props}: Readonly<ItemProps>,
+    ref,
+  ): React.JSX.Element => {
+    const mergedClassName = cn(
+      styles.item,
+      variant === "outline" && styles.outline,
+      variant === "muted" && styles.muted,
+      size === "sm" ? styles.sizeSm : styles.sizeDefault,
+      className,
+    );
+
+    if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<
+        React.ComponentPropsWithoutRef<"div"> & ItemDataAttributes & {ref?: React.Ref<HTMLDivElement>}
+      >;
+
+      // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
+      return React.cloneElement(child, {
+        ...props,
+        ref,
+        "data-size": size,
+        "data-slot": "item",
+        "data-variant": variant,
+        className: cn(mergedClassName, child.props.className),
+      });
+    }
+
+    return (
+      <div
+        ref={ref}
+        data-slot='item'
+        data-size={size}
+        data-variant={variant}
+        className={mergedClassName}
+        {...props}>
+        {children}
+      </div>
+    );
   },
 );
+Item.displayName = "Item";
 
-function Item({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof itemVariants> & {asChild?: boolean}) {
-  const Comp = asChild ? Slot : "div";
-  return (
-    <Comp
-      data-slot='item'
-      data-variant={variant}
-      data-size={size}
-      className={cn(itemVariants({variant, size, className}))}
-      {...props}
-    />
-  );
-}
-
-const itemMediaVariants = cva(
-  "flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        icon: "bg-neutral-100 size-8 rounded-sm border border-neutral-200 [&_svg:not([class*='size-'])]:size-4 dark:bg-neutral-800 dark:border-neutral-800",
-        image: "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
-
-function ItemMedia({className, variant = "default", ...props}: React.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) {
-  return (
+const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
+  ({className, variant = "default", ...props}: Readonly<ItemMediaProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-media'
       data-variant={variant}
-      className={cn(itemMediaVariants({variant, className}))}
+      className={cn(styles.media, variant === "icon" && styles.mediaIcon, variant === "image" && styles.mediaImage, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemMedia.displayName = "ItemMedia";
 
-function ItemContent({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const ItemContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-content'
-      className={cn("flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none", className)}
+      className={cn(styles.content, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemContent.displayName = "ItemContent";
 
-function ItemTitle({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const ItemTitle = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-title'
-      className={cn("flex w-fit items-center gap-2 text-sm leading-snug font-medium", className)}
+      className={cn(styles.title, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemTitle.displayName = "ItemTitle";
 
-function ItemDescription({className, ...props}: React.ComponentProps<"p">) {
-  return (
+const ItemDescription = React.forwardRef<HTMLParagraphElement, React.ComponentPropsWithoutRef<"p">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"p">>, ref): React.JSX.Element => (
     <p
+      ref={ref}
       data-slot='item-description'
-      className={cn(
-        "line-clamp-2 text-sm leading-normal font-normal text-balance text-neutral-500 dark:text-neutral-400",
-        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-neutral-900 dark:[&>a:hover]:text-neutral-50",
-        className,
-      )}
+      className={cn(styles.description, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemDescription.displayName = "ItemDescription";
 
-function ItemActions({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const ItemActions = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-actions'
-      className={cn("flex items-center gap-2", className)}
+      className={cn(styles.actions, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemActions.displayName = "ItemActions";
 
-function ItemHeader({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const ItemHeader = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-header'
-      className={cn("flex basis-full items-center justify-between gap-2", className)}
+      className={cn(styles.header, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemHeader.displayName = "ItemHeader";
 
-function ItemFooter({className, ...props}: React.ComponentProps<"div">) {
-  return (
+const ItemFooter = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-footer'
-      className={cn("flex basis-full items-center justify-between gap-2", className)}
+      className={cn(styles.footer, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+ItemFooter.displayName = "ItemFooter";
 
 export {Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemGroup, ItemHeader, ItemMedia, ItemSeparator, ItemTitle};

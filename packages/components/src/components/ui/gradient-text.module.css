@@ -1,0 +1,23 @@
+.root {
+  position: relative;
+  display: inline-block;
+}
+
+.text,
+.neon {
+  margin: 0;
+  color: transparent;
+  background-image: var(--gradient-text-background);
+  background-position: 0% 0%;
+  background-size: 700% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.neon {
+  position: absolute;
+  inset: 0;
+  filter: blur(8px);
+  mix-blend-mode: plus-lighter;
+  pointer-events: none;
+}

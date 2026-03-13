@@ -1,36 +1,34 @@
-"use client";
-
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./badge.module.css";
 
-const badgeVariants = cva(
-  "inline-flex items-center rounded-md border border-neutral-200 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 dark:border-neutral-800 dark:focus:ring-neutral-300",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-transparent bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/80 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/80",
-        secondary:
-          "border-transparent bg-neutral-100 text-neutral-900 hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
-        destructive:
-          "border-transparent bg-red-500 text-neutral-50 shadow hover:bg-red-500/80 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/80",
-        outline: "text-neutral-950 dark:text-neutral-50",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
+export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
+interface BadgeVariantOptions {
+  variant?: BadgeVariant;
+  className?: string;
+}
 
-function Badge({className, variant, ...props}: BadgeProps) {
+const variantStyles: Record<BadgeVariant, string> = {
+  default: styles.default!,
+  secondary: styles.secondary!,
+  destructive: styles.destructive!,
+  outline: styles.outline!,
+};
+
+export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: BadgeVariant;
+}
+
+function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOptions> = {}): string {
+  return cn(styles.badge, variantStyles[variant], className);
+}
+
+function Badge({className, variant = "default", ...props}: BadgeProps): React.JSX.Element {
   return (
     <div
-      className={cn(badgeVariants({variant}), className)}
+      className={badgeVariants({variant, className})}
       {...props}
     />
   );

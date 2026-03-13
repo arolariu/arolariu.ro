@@ -1,14 +1,50 @@
 "use client";
 
-import * as LabelPrimitive from "@radix-ui/react-label";
-import {Slot} from "@radix-ui/react-slot";
+/* eslint-disable react/prop-types */
+
 import * as React from "react";
 import {Controller, FormProvider, useFormContext, type ControllerProps, type FieldPath, type FieldValues} from "react-hook-form";
 
-import {Label} from "@/components/ui/label";
 import {cn} from "@/lib/utilities";
 
+import styles from "./form.module.css";
+
 const Form = FormProvider;
+
+type FormControlElementProps = React.HTMLAttributes<HTMLElement> & {
+  ref?: React.Ref<HTMLElement>;
+};
+
+interface FormControlProps extends Omit<React.HTMLAttributes<HTMLElement>, "children"> {
+  children: React.ReactNode;
+}
+
+function assignRef<TValue>(ref: React.Ref<TValue> | undefined, value: TValue | null): void {
+  if (typeof ref === "function") {
+    ref(value);
+    return;
+  }
+
+  if (ref) {
+    ref.current = value;
+  }
+}
+
+function composeRefs<TValue>(...refs: Array<React.Ref<TValue> | undefined>): React.RefCallback<TValue> {
+  return (value: TValue | null): void => {
+    for (const ref of refs) {
+      assignRef(ref, value);
+    }
+  };
+}
+
+function mergeAriaDescribedBy(...describedByValues: Array<string | undefined>): string | undefined {
+  const tokens = describedByValues
+    .flatMap((describedByValue) => describedByValue?.split(/\s+/u) ?? [])
+    .filter((token): token is string => token.length > 0);
+
+  return tokens.length > 0 ? [...new Set(tokens)].join(" ") : undefined;
+}
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -21,7 +57,7 @@ const FormFieldContext = React.createContext<FormFieldContextValue | null>(null)
 
 const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({
   ...props
-}: ControllerProps<TFieldValues, TName>) => {
+}: ControllerProps<TFieldValues, TName>): React.JSX.Element => {
   return (
     <FormFieldContext.Provider value={{name: props.name}}>
       <Controller {...props} />
@@ -29,7 +65,23 @@ const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends
   );
 };
 
-const useFormField = () => {
+type UseFormFieldReturn = {
+  id: string;
+  name: FieldPath<FieldValues>;
+  formItemId: string;
+  formDescriptionId: string;
+  formMessageId: string;
+  invalid: boolean;
+  isDirty: boolean;
+  isTouched: boolean;
+  isValidating: boolean;
+  error?: ReturnType<ReturnType<typeof useFormContext>["getFieldState"]>["error"];
+};
+
+/**
+ * Returns the resolved form field metadata for nested form primitives.
+ */
+const useFormField = (): UseFormFieldReturn => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
   const {getFieldState, formState} = useFormContext();
@@ -43,16 +95,19 @@ const useFormField = () => {
   }
 
   const fieldState = getFieldState(fieldContext.name, formState);
-
   const {id} = itemContext;
 
   return {
-    id,
-    name: fieldContext.name,
-    formItemId: `${id}-form-item`,
+    error: fieldState.error,
     formDescriptionId: `${id}-form-item-description`,
+    formItemId: `${id}-form-item`,
     formMessageId: `${id}-form-item-message`,
-    ...fieldState,
+    id,
+    invalid: fieldState.invalid,
+    isDirty: fieldState.isDirty,
+    isTouched: fieldState.isTouched,
+    isValidating: fieldState.isValidating,
+    name: fieldContext.name as FieldPath<FieldValues>,
   };
 };
 
@@ -69,7 +124,7 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     <FormItemContext.Provider value={{id}}>
       <div
         ref={ref}
-        className={cn("space-y-2", className)}
+        className={cn(styles.item, className)}
         {...props}
       />
     </FormItemContext.Provider>
@@ -77,16 +132,13 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 });
 FormItem.displayName = "FormItem";
 
-const FormLabel = React.forwardRef<
-  React.ComponentRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({className, ...props}, ref) => {
+const FormLabel = React.forwardRef<HTMLLabelElement, React.LabelHTMLAttributes<HTMLLabelElement>>(({className, ...props}, ref) => {
   const {error, formItemId} = useFormField();
 
   return (
-    <Label
+    <label
       ref={ref}
-      className={cn(error && "text-red-500 dark:text-red-900", className)}
+      className={cn(error && styles.labelError, className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -94,19 +146,50 @@ const FormLabel = React.forwardRef<
 });
 FormLabel.displayName = "FormLabel";
 
-const FormControl = React.forwardRef<React.ComponentRef<typeof Slot>, React.ComponentPropsWithoutRef<typeof Slot>>(({...props}, ref) => {
-  const {error, formItemId, formDescriptionId, formMessageId} = useFormField();
+/**
+ * Provides react-hook-form field metadata to a single control element.
+ *
+ * @remarks
+ * This replaces the former Radix Slot-based implementation by cloning the
+ * direct child element and merging the accessibility attributes required by the
+ * surrounding form primitives. A fallback wrapper is rendered only when the
+ * child is not a valid React element.
+ */
+const FormControl = React.forwardRef<HTMLElement, FormControlProps>(
+  ({children, ...props}: Readonly<FormControlProps>, ref): React.JSX.Element => {
+    const {error, formDescriptionId, formItemId, formMessageId} = useFormField();
+    const describedBy = mergeAriaDescribedBy(
+      typeof props["aria-describedby"] === "string" ? props["aria-describedby"] : undefined,
+      formDescriptionId,
+      error ? formMessageId : undefined,
+    );
 
-  return (
-    <Slot
-      ref={ref}
-      id={formItemId}
-      aria-describedby={error ? `${formDescriptionId} ${formMessageId}` : `${formDescriptionId}`}
-      aria-invalid={Boolean(error)}
-      {...props}
-    />
-  );
-});
+    if (React.isValidElement(children)) {
+      const child = children as React.ReactElement<FormControlElementProps>;
+      const childDescribedBy = typeof child.props["aria-describedby"] === "string" ? child.props["aria-describedby"] : undefined;
+
+      // eslint-disable-next-line react-x/no-clone-element -- removes Radix Slot while preserving child element semantics
+      return React.cloneElement(child, {
+        ...props,
+        ref: composeRefs(ref, child.props.ref),
+        id: formItemId,
+        "aria-describedby": mergeAriaDescribedBy(childDescribedBy, describedBy),
+        "aria-invalid": Boolean(error),
+      });
+    }
+
+    return (
+      <div
+        ref={ref as React.Ref<HTMLDivElement>}
+        id={formItemId}
+        aria-describedby={describedBy}
+        aria-invalid={Boolean(error)}
+        {...props}>
+        {children}
+      </div>
+    );
+  },
+);
 FormControl.displayName = "FormControl";
 
 const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({className, ...props}, ref) => {
@@ -116,7 +199,7 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-[0.8rem] text-neutral-500 dark:text-neutral-400", className)}
+      className={cn(styles.description, className)}
       {...props}
     />
   );
@@ -126,7 +209,7 @@ FormDescription.displayName = "FormDescription";
 const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({className, children, ...props}, ref) => {
     const {error, formMessageId} = useFormField();
-    const body = error ? String(error?.message ?? "") : children;
+    const body = error ? String(error.message ?? "") : children;
 
     if (!body) {
       return null;
@@ -136,7 +219,7 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
       <p
         ref={ref}
         id={formMessageId}
-        className={cn("text-[0.8rem] font-medium text-red-500 dark:text-red-900", className)}
+        className={cn(styles.message, className)}
         {...props}>
         {body}
       </p>

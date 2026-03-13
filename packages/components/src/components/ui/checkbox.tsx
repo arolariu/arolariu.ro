@@ -1,27 +1,44 @@
 "use client";
 
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import {Check} from "lucide-react";
+import {Checkbox as BaseCheckbox} from "@base-ui/react/checkbox";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./checkbox.module.css";
 
-const Checkbox = React.forwardRef<
-  React.ComponentRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({className, ...props}, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      "peer grid h-4 w-4 shrink-0 place-content-center rounded-sm border border-neutral-200 border-neutral-900 shadow focus-visible:ring-1 focus-visible:ring-neutral-950 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-neutral-900 data-[state=checked]:text-neutral-50 dark:border-neutral-50 dark:border-neutral-800 dark:focus-visible:ring-neutral-300 dark:data-[state=checked]:bg-neutral-50 dark:data-[state=checked]:text-neutral-900",
-      className,
-    )}
-    {...props}>
-    <CheckboxPrimitive.Indicator className={cn("grid place-content-center text-current")}>
-      <Check className='h-4 w-4' />
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-));
-Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+/** V1 compatibility — Radix used checked: boolean | "indeterminate" */
+interface CheckboxProps extends Omit<React.ComponentPropsWithoutRef<typeof BaseCheckbox.Root>, "checked" | "onCheckedChange"> {
+  checked?: boolean | "indeterminate";
+  onCheckedChange?: (checked: boolean | "indeterminate") => void;
+}
+
+const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(({className, checked, onCheckedChange, ...props}, ref) => {
+  const baseChecked = checked === "indeterminate" ? true : checked;
+  const indeterminate = checked === "indeterminate";
+
+  return (
+    <BaseCheckbox.Root
+      ref={ref}
+      className={cn(styles.checkbox, className)}
+      checked={baseChecked}
+      indeterminate={indeterminate}
+      onCheckedChange={onCheckedChange as never}
+      {...props}>
+      <BaseCheckbox.Indicator className={styles.indicator}>
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='3'
+          strokeLinecap='round'
+          strokeLinejoin='round'>
+          <polyline points='20 6 9 17 4 12' />
+        </svg>
+      </BaseCheckbox.Indicator>
+    </BaseCheckbox.Root>
+  );
+});
+Checkbox.displayName = "Checkbox";
 
 export {Checkbox};

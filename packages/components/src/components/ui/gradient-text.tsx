@@ -4,14 +4,23 @@ import {motion, type Transition} from "motion/react";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./gradient-text.module.css";
 
-interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement> {
+/** Props accepted by {@link GradientText}. */
+export interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement> {
   text: string;
   gradient?: string;
   neon?: boolean;
   transition?: Transition;
 }
 
+type GradientStyleProperties = React.CSSProperties & {
+  "--gradient-text-background": string;
+};
+
+/**
+ * Renders animated gradient-filled text with an optional neon glow layer.
+ */
 const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
   (
     {
@@ -24,17 +33,17 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
     },
     ref,
   ) => {
-    const baseStyle: React.CSSProperties = {
-      backgroundImage: gradient,
+    const baseStyle: GradientStyleProperties = {
+      "--gradient-text-background": gradient,
     };
 
     return (
       <span
         ref={ref}
-        className={cn("relative inline-block", className)}
+        className={cn(styles.root, className)}
         {...props}>
         <motion.span
-          className='m-0 bg-[length:700%_100%] bg-clip-text bg-[position:0%_0%] text-transparent'
+          className={styles.text}
           style={baseStyle}
           initial={{backgroundPosition: "0% 0%"}}
           animate={{backgroundPosition: "500% 100%"}}
@@ -42,16 +51,17 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
           {text}
         </motion.span>
 
-        {Boolean(neon) && (
+        {neon ? (
           <motion.span
-            className='absolute top-0 left-0 m-0 bg-[length:700%_100%] bg-clip-text bg-[position:0%_0%] text-transparent mix-blend-plus-lighter blur-[8px]'
+            aria-hidden='true'
+            className={styles.neon}
             style={baseStyle}
             initial={{backgroundPosition: "0% 0%"}}
             animate={{backgroundPosition: "500% 100%"}}
             transition={transition}>
             {text}
           </motion.span>
-        )}
+        ) : null}
       </span>
     );
   },
@@ -59,4 +69,4 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
 
 GradientText.displayName = "GradientText";
 
-export {GradientText, type GradientTextProps};
+export {GradientText};

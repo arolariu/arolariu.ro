@@ -1,54 +1,53 @@
 "use client";
 
-import * as TabsPrimitive from "@radix-ui/react-tabs";
+import {Tabs as BaseTabs} from "@base-ui/react/tabs";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./tabs.module.css";
 
-const Tabs = TabsPrimitive.Root;
+const Tabs = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseTabs.Root>>(({className, ...props}, ref) => (
+  <BaseTabs.Root
+    ref={ref}
+    className={cn(styles.root, className)}
+    {...props}
+  />
+));
+Tabs.displayName = "Tabs";
 
-const TabsList = React.forwardRef<React.ComponentRef<typeof TabsPrimitive.List>, React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>>(
-  ({className, ...props}, ref) => (
-    <TabsPrimitive.List
+const TabsList = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseTabs.List>>(
+  ({className, children, ...props}, ref) => (
+    <BaseTabs.List
       ref={ref}
-      className={cn(
-        "inline-flex h-9 items-center justify-center rounded-lg bg-neutral-100 p-1 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
-        className,
-      )}
+      className={cn(styles.list, className)}
+      {...props}>
+      {children}
+      <BaseTabs.Indicator className={styles.indicator} />
+    </BaseTabs.List>
+  ),
+);
+TabsList.displayName = "TabsList";
+
+const TabsTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<typeof BaseTabs.Tab>>(
+  ({className, ...props}, ref) => (
+    <BaseTabs.Tab
+      ref={ref}
+      className={cn(styles.tab, className)}
       {...props}
     />
   ),
 );
-TabsList.displayName = TabsPrimitive.List.displayName;
+TabsTrigger.displayName = "TabsTrigger";
 
-const TabsTrigger = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({className, ...props}, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium whitespace-nowrap ring-offset-white transition-all focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:shadow dark:ring-offset-neutral-950 dark:focus-visible:ring-neutral-300 dark:data-[state=active]:bg-neutral-950 dark:data-[state=active]:text-neutral-50",
-      className,
-    )}
-    {...props}
-  />
-));
-TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
-
-const TabsContent = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({className, ...props}, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      "mt-2 ring-offset-white focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 focus-visible:outline-none dark:ring-offset-neutral-950 dark:focus-visible:ring-neutral-300",
-      className,
-    )}
-    {...props}
-  />
-));
-TabsContent.displayName = TabsPrimitive.Content.displayName;
+const TabsContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<typeof BaseTabs.Panel>>(
+  ({className, ...props}, ref) => (
+    <BaseTabs.Panel
+      ref={ref}
+      className={cn(styles.panel, className)}
+      {...props}
+    />
+  ),
+);
+TabsContent.displayName = "TabsContent";
 
 export {Tabs, TabsContent, TabsList, TabsTrigger};
