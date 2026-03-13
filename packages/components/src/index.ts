@@ -55,10 +55,12 @@ export type {ButtonProps, ButtonSize, ButtonState, ButtonVariant} from "./compon
 export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants} from "./components/ui/button-group";
 
 export {Calendar} from "./components/ui/calendar";
+export type {CalendarProps, DateRange, DayPickerProps, Matcher} from "./components/ui/calendar";
 
 export {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./components/ui/card";
 
 export {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi} from "./components/ui/carousel";
+export type {CarouselOptions, CarouselPlugin, CarouselProps} from "./components/ui/carousel";
 
 export {CheckboxGroup} from "./components/ui/checkbox-group";
 
@@ -284,7 +286,7 @@ export {
   REGEXP_ONLY_DIGITS,
   REGEXP_ONLY_DIGITS_AND_CHARS,
 } from "./components/ui/input-otp";
-export type {OTPInputProps, SlotProps} from "./components/ui/input-otp";
+export type {InputOTPGroupProps, InputOTPProps, InputOTPSeparatorProps, InputOTPSlotProps, OTPInputProps, SlotProps} from "./components/ui/input-otp";
 
 export {Input} from "./components/ui/input";
 
@@ -373,7 +375,7 @@ export {Progress} from "./components/ui/progress";
 export {RadioGroup, RadioGroupItem} from "./components/ui/radio-group";
 
 export {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./components/ui/resizable";
-export type {ImperativePanelGroupHandle, ImperativePanelHandle} from "./components/ui/resizable";
+export type {ImperativePanelGroupHandle, ImperativePanelHandle, ResizableHandleProps, ResizablePanelGroupProps, ResizablePanelProps} from "./components/ui/resizable";
 
 export {ScrollArea, ScrollBar} from "./components/ui/scroll-area";
 
@@ -477,6 +479,7 @@ export {
   validateHexColorFormat,
 } from "./lib/color-conversion-utilities";
 export {cn} from "./lib/utilities";
+export type {ClassValue} from "./lib/utilities";
 
 // Animate-UI exports:
 export {BubbleBackground, type BubbleBackgroundProps} from "./components/ui/bubble-background";

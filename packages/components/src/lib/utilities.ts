@@ -9,3 +9,5 @@ import {clsx, type ClassValue} from "clsx";
 export function cn(...inputs: ReadonlyArray<ClassValue>): string {
   return clsx(inputs);
 }
+
+export type {ClassValue};

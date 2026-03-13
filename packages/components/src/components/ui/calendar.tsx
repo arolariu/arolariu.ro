@@ -106,8 +106,7 @@ function Calendar({
         dropdown_root: cn(styles.dropdownRoot, classNames?.dropdown_root),
         dropdown: cn(styles.dropdown, classNames?.dropdown),
         caption_label: cn(styles.captionLabel, captionLayout !== "label" && styles.captionLabelDropdown, classNames?.caption_label),
-        // eslint-disable-next-line sonarjs/deprecation -- react-day-picker still supports this key
-        table: cn(styles.table, classNames?.table),
+        month_grid: cn(styles.monthGrid, classNames?.month_grid),
         weekdays: cn(styles.weekdays, classNames?.weekdays),
         weekday: cn(styles.weekday, classNames?.weekday),
         week: cn(styles.week, classNames?.week),
@@ -204,3 +203,6 @@ function CalendarDayButton({className, day, modifiers, ...props}: Readonly<React
 Calendar.displayName = "Calendar";
 
 export {Calendar};
+export type {CalendarProps};
+export type {DateRange, Matcher} from "react-day-picker";
+export type {DayPickerProps} from "react-day-picker";

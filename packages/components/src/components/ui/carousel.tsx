@@ -107,11 +107,15 @@ function useCarousel(): CarouselContextProps {
  * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
  */
 const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & CarouselProps>(
-  ({orientation = "horizontal", opts, setApi, plugins, className, children, ...props}, ref) => {
+  ({orientation, opts, setApi, plugins, className, children, ...props}, ref) => {
+    // Derive axis from orientation, or orientation from opts.axis, defaulting to horizontal.
+    const resolvedOrientation = orientation ?? (opts?.axis === "y" ? "vertical" : "horizontal");
+    const resolvedAxis = resolvedOrientation === "vertical" ? "y" : "x";
+
     const [carouselRef, api] = useEmblaCarousel(
       {
         ...opts,
-        axis: orientation === "horizontal" ? "x" : "y",
+        axis: resolvedAxis,
       },
       plugins,
     );
@@ -182,8 +186,6 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
         api.off("select", onSelect);
       };
     }, [api, onSelect]);
-
-    const resolvedOrientation = orientation || (opts?.axis === "y" ? "vertical" : "horizontal");
 
     return (
       <CarouselContext.Provider
@@ -352,3 +354,4 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
 CarouselNext.displayName = "CarouselNext";
 
 export {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi};
+export type {CarouselOptions, CarouselPlugin, CarouselProps};

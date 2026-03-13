@@ -112,7 +112,7 @@
   border-radius: var(--ac-radius-md);
 }
 
-.table {
+.monthGrid {
   width: 100%;
   border-collapse: collapse;
 }
