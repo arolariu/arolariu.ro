@@ -7,14 +7,9 @@ import {
   Controller,
   FormProvider,
   useFormContext,
-  type Control,
   type ControllerProps,
-  type FieldErrors,
   type FieldPath,
   type FieldValues,
-  type Path,
-  type SubmitHandler,
-  type UseFormReturn,
 } from "react-hook-form";
 
 import {cn} from "@/lib/utilities";
@@ -348,6 +343,24 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
 FormMessage.displayName = "FormMessage";
 FormField.displayName = "FormField";
 
-export {useController, useFieldArray, useForm, useWatch} from "react-hook-form";
+export {Controller, useController, useFieldArray, useForm, useFormContext, useFormState, useWatch} from "react-hook-form";
 export {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField};
-export type {Control, FieldErrors, FieldValues, Path, SubmitHandler, UseFormReturn};
+export type {FormControlProps};
+export type {
+  Control,
+  ControllerFieldState,
+  ControllerProps,
+  ControllerRenderProps,
+  DefaultValues,
+  FieldError,
+  FieldErrors,
+  FieldPath,
+  FieldValues,
+  Path,
+  RegisterOptions,
+  Resolver,
+  SubmitHandler,
+  UseControllerReturn,
+  UseFieldArrayReturn,
+  UseFormReturn,
+} from "react-hook-form";

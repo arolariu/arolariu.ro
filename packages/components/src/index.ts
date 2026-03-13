@@ -70,6 +70,77 @@ export {
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
+  // Recharts chart containers
+  AreaChart,
+  BarChart,
+  ComposedChart,
+  FunnelChart,
+  LineChart,
+  PieChart,
+  RadarChart,
+  RadialBarChart,
+  ScatterChart,
+  Sankey,
+  SunburstChart,
+  Treemap,
+  // Recharts series elements
+  Area,
+  Bar,
+  BarStack,
+  Funnel,
+  Line,
+  Pie,
+  Radar,
+  RadialBar,
+  Scatter,
+  // Recharts axis & grid
+  CartesianGrid,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  XAxis,
+  YAxis,
+  ZAxis,
+  // Recharts annotations & overlays
+  Brush,
+  ErrorBar,
+  RechartsLabel,
+  LabelList,
+  ReferenceArea,
+  ReferenceDot,
+  ReferenceLine,
+  // Recharts layout
+  ResponsiveContainer,
+  Customized,
+  // Recharts shapes
+  Cell,
+  Cross,
+  Curve,
+  Dot,
+  Polygon,
+  Rectangle,
+  Sector,
+  Symbols,
+  Trapezoid,
+  // Recharts z-index (v3.4+)
+  ZIndexLayer,
+  DefaultZIndexes,
+  // Recharts hooks (v3+)
+  useChartWidth,
+  useChartHeight,
+  useOffset,
+  usePlotArea,
+  useMargin,
+  useIsTooltipActive,
+  useActiveTooltipCoordinate,
+  useActiveTooltipDataPoints,
+  useActiveTooltipLabel,
+  useXAxisDomain,
+  useYAxisDomain,
+  // Recharts types
+  type DefaultTooltipContentProps,
+  type TooltipValueType,
+  type DefaultLegendContentProps,
 } from "./components/ui/chart";
 
 export {Checkbox} from "./components/ui/checkbox";
@@ -166,6 +237,7 @@ export {
 } from "./components/ui/field";
 
 export {
+  Controller,
   Form,
   FormControl,
   FormDescription,
@@ -176,10 +248,30 @@ export {
   useController,
   useFieldArray,
   useForm,
+  useFormContext,
   useFormField,
+  useFormState,
   useWatch,
+  type FormControlProps,
 } from "./components/ui/form";
-export type {Control, FieldErrors, FieldValues, Path, SubmitHandler, UseFormReturn} from "./components/ui/form";
+export type {
+  Control,
+  ControllerFieldState,
+  ControllerProps,
+  ControllerRenderProps,
+  DefaultValues,
+  FieldError as RHFFieldError,
+  FieldErrors,
+  FieldPath,
+  FieldValues,
+  Path,
+  RegisterOptions,
+  Resolver,
+  SubmitHandler,
+  UseControllerReturn,
+  UseFieldArrayReturn,
+  UseFormReturn,
+} from "./components/ui/form";
 
 export {HoverCard, HoverCardContent, HoverCardTrigger} from "./components/ui/hover-card";
 

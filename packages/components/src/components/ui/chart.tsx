@@ -3,9 +3,8 @@
 /* eslint-disable complexity, react/no-object-type-as-default-prop, react/no-danger, react-dom/no-dangerously-set-innerhtml, unicorn/no-negated-condition */
 
 import * as React from "react";
-import type {LegendPayload, ResponsiveContainerProps} from "recharts";
+import type {DefaultTooltipContentProps, LegendPayload, ResponsiveContainerProps, TooltipValueType} from "recharts";
 import * as RechartsPrimitive from "recharts";
-import type {NameType, ValueType} from "recharts/types/component/DefaultTooltipContent";
 
 import {cn} from "@/lib/utilities";
 
@@ -268,7 +267,7 @@ function ChartTooltipContent({
     indicator?: "line" | "dot" | "dashed";
     nameKey?: string;
     labelKey?: string;
-  } & Omit<RechartsPrimitive.DefaultTooltipContentProps<ValueType, NameType>, "accessibilityLayer">): React.JSX.Element | null {
+  } & Omit<DefaultTooltipContentProps, "accessibilityLayer">): React.JSX.Element | null {
   const {config} = useChart();
 
   const tooltipLabel = React.useMemo(() => {
@@ -449,7 +448,7 @@ function ChartLegendContent({
   );
 }
 
-function formatChartValue(value: ValueType, itemConfig: ChartConfig[string] | undefined): React.ReactNode {
+function formatChartValue(value: TooltipValueType, itemConfig: ChartConfig[string] | undefined): React.ReactNode {
   if (typeof value === "number") {
     return itemConfig?.formatter ? itemConfig.formatter(value) : value.toLocaleString();
   }
@@ -491,3 +490,150 @@ Object.assign(ChartLegend, {displayName: "ChartLegend"});
 ChartLegendContent.displayName = "ChartLegendContent";
 
 export {ChartContainer, ChartLegend, ChartLegendContent, ChartStyle, ChartTooltip, ChartTooltipContent};
+
+// ---------------------------------------------------------------------------
+// Recharts v3.8+ primitive re-exports
+// Consumers should import chart primitives from "@arolariu/components/chart"
+// instead of importing directly from "recharts".
+// ---------------------------------------------------------------------------
+
+// -- Chart containers -------------------------------------------------------
+/** @see {@link https://recharts.github.io/en-US/api/AreaChart | AreaChart API} */
+export const AreaChart = RechartsPrimitive.AreaChart;
+/** @see {@link https://recharts.github.io/en-US/api/BarChart | BarChart API} */
+export const BarChart = RechartsPrimitive.BarChart;
+/** @see {@link https://recharts.github.io/en-US/api/ComposedChart | ComposedChart API} */
+export const ComposedChart = RechartsPrimitive.ComposedChart;
+/** @see {@link https://recharts.github.io/en-US/api/FunnelChart | FunnelChart API} */
+export const FunnelChart = RechartsPrimitive.FunnelChart;
+/** @see {@link https://recharts.github.io/en-US/api/LineChart | LineChart API} */
+export const LineChart = RechartsPrimitive.LineChart;
+/** @see {@link https://recharts.github.io/en-US/api/PieChart | PieChart API} */
+export const PieChart = RechartsPrimitive.PieChart;
+/** @see {@link https://recharts.github.io/en-US/api/RadarChart | RadarChart API} */
+export const RadarChart = RechartsPrimitive.RadarChart;
+/** @see {@link https://recharts.github.io/en-US/api/RadialBarChart | RadialBarChart API} */
+export const RadialBarChart = RechartsPrimitive.RadialBarChart;
+/** @see {@link https://recharts.github.io/en-US/api/ScatterChart | ScatterChart API} */
+export const ScatterChart = RechartsPrimitive.ScatterChart;
+/** @see {@link https://recharts.github.io/en-US/api/Sankey | Sankey API} */
+export const Sankey = RechartsPrimitive.Sankey;
+/** @see {@link https://recharts.github.io/en-US/api/SunburstChart | SunburstChart API} */
+export const SunburstChart = RechartsPrimitive.SunburstChart;
+/** @see {@link https://recharts.github.io/en-US/api/Treemap | Treemap API} */
+export const Treemap = RechartsPrimitive.Treemap;
+
+// -- Series elements --------------------------------------------------------
+/** @see {@link https://recharts.github.io/en-US/api/Area | Area API} */
+export const Area = RechartsPrimitive.Area;
+/** @see {@link https://recharts.github.io/en-US/api/Bar | Bar API} */
+export const Bar = RechartsPrimitive.Bar;
+/**
+ * Groups stacked bars and configures shared stack properties such as radius.
+ * @since recharts 3.6
+ * @see {@link https://recharts.github.io/en-US/guide/roundedBars | BarStack Guide}
+ */
+export const BarStack = RechartsPrimitive.BarStack;
+/** @see {@link https://recharts.github.io/en-US/api/Funnel | Funnel API} */
+export const Funnel = RechartsPrimitive.Funnel;
+/** @see {@link https://recharts.github.io/en-US/api/Line | Line API} */
+export const Line = RechartsPrimitive.Line;
+/** @see {@link https://recharts.github.io/en-US/api/Pie | Pie API} */
+export const Pie = RechartsPrimitive.Pie;
+/** @see {@link https://recharts.github.io/en-US/api/Radar | Radar API} */
+export const Radar = RechartsPrimitive.Radar;
+/** @see {@link https://recharts.github.io/en-US/api/RadialBar | RadialBar API} */
+export const RadialBar = RechartsPrimitive.RadialBar;
+/** @see {@link https://recharts.github.io/en-US/api/Scatter | Scatter API} */
+export const Scatter = RechartsPrimitive.Scatter;
+
+// -- Axis & grid ------------------------------------------------------------
+/** @see {@link https://recharts.github.io/en-US/api/CartesianGrid | CartesianGrid API} */
+export const CartesianGrid = RechartsPrimitive.CartesianGrid;
+/** @see {@link https://recharts.github.io/en-US/api/PolarAngleAxis | PolarAngleAxis API} */
+export const PolarAngleAxis = RechartsPrimitive.PolarAngleAxis;
+/** @see {@link https://recharts.github.io/en-US/api/PolarGrid | PolarGrid API} */
+export const PolarGrid = RechartsPrimitive.PolarGrid;
+/** @see {@link https://recharts.github.io/en-US/api/PolarRadiusAxis | PolarRadiusAxis API} */
+export const PolarRadiusAxis = RechartsPrimitive.PolarRadiusAxis;
+/** @see {@link https://recharts.github.io/en-US/api/XAxis | XAxis API} – supports `type: "auto"` since v3.7. */
+export const XAxis = RechartsPrimitive.XAxis;
+/** @see {@link https://recharts.github.io/en-US/api/YAxis | YAxis API} – supports `type: "auto"` since v3.7. */
+export const YAxis = RechartsPrimitive.YAxis;
+/** @see {@link https://recharts.github.io/en-US/api/ZAxis | ZAxis API} */
+export const ZAxis = RechartsPrimitive.ZAxis;
+
+// -- Annotations & overlays ------------------------------------------------
+/** @see {@link https://recharts.github.io/en-US/api/Brush | Brush API} */
+export const Brush = RechartsPrimitive.Brush;
+/** @see {@link https://recharts.github.io/en-US/api/ErrorBar | ErrorBar API} */
+export const ErrorBar = RechartsPrimitive.ErrorBar;
+/** @see {@link https://recharts.github.io/en-US/api/Label | Label API} */
+export const RechartsLabel = RechartsPrimitive.Label;
+/** @see {@link https://recharts.github.io/en-US/api/LabelList | LabelList API} */
+export const LabelList = RechartsPrimitive.LabelList;
+/** @see {@link https://recharts.github.io/en-US/api/ReferenceArea | ReferenceArea API} */
+export const ReferenceArea = RechartsPrimitive.ReferenceArea;
+/** @see {@link https://recharts.github.io/en-US/api/ReferenceDot | ReferenceDot API} */
+export const ReferenceDot = RechartsPrimitive.ReferenceDot;
+/** @see {@link https://recharts.github.io/en-US/api/ReferenceLine | ReferenceLine API} */
+export const ReferenceLine = RechartsPrimitive.ReferenceLine;
+
+// -- Layout -----------------------------------------------------------------
+/**
+ * Wraps a chart in a responsive container. Since recharts 3.3+, you can
+ * alternatively use the `responsive` prop directly on chart containers.
+ * @see {@link https://recharts.github.io/en-US/api/ResponsiveContainer | ResponsiveContainer API}
+ */
+export const ResponsiveContainer = RechartsPrimitive.ResponsiveContainer;
+/** @see {@link https://recharts.github.io/en-US/api/Customized | Customized API} */
+export const Customized = RechartsPrimitive.Customized;
+
+// -- Shapes -----------------------------------------------------------------
+/**
+ * @deprecated Since recharts 3.7. Use the `shape` prop on chart series elements instead.
+ * @see {@link https://recharts.github.io/en-US/api/Cell | Cell API}
+ */
+export const Cell = RechartsPrimitive.Cell;
+export const Cross = RechartsPrimitive.Cross;
+export const Curve = RechartsPrimitive.Curve;
+export const Dot = RechartsPrimitive.Dot;
+export const Polygon = RechartsPrimitive.Polygon;
+export const Rectangle = RechartsPrimitive.Rectangle;
+export const Sector = RechartsPrimitive.Sector;
+export const Symbols = RechartsPrimitive.Symbols;
+export const Trapezoid = RechartsPrimitive.Trapezoid;
+
+// -- Z-index (v3.4+) -------------------------------------------------------
+/** @since recharts 3.4 @see {@link https://recharts.github.io/en-US/guide/zIndex | Z-Index Guide} */
+export const ZIndexLayer = RechartsPrimitive.ZIndexLayer;
+/** Default z-index ordering constants. @since recharts 3.4 */
+export const DefaultZIndexes = RechartsPrimitive.DefaultZIndexes;
+
+// -- Hooks (v3+) ------------------------------------------------------------
+/** Returns the current chart width in pixels. */
+export const useChartWidth = RechartsPrimitive.useChartWidth;
+/** Returns the current chart height in pixels. */
+export const useChartHeight = RechartsPrimitive.useChartHeight;
+/** Returns the chart offset (margins, axes). */
+export const useOffset = RechartsPrimitive.useOffset;
+/** Returns the plot area dimensions. */
+export const usePlotArea = RechartsPrimitive.usePlotArea;
+/** Returns the chart margin. */
+export const useMargin = RechartsPrimitive.useMargin;
+/** Returns whether the tooltip is currently active. @since recharts 3.7 */
+export const useIsTooltipActive = RechartsPrimitive.useIsTooltipActive;
+/** Returns the active tooltip coordinate. @since recharts 3.7 */
+export const useActiveTooltipCoordinate = RechartsPrimitive.useActiveTooltipCoordinate;
+/** Returns the active tooltip data points. */
+export const useActiveTooltipDataPoints = RechartsPrimitive.useActiveTooltipDataPoints;
+/** Returns the active tooltip label. */
+export const useActiveTooltipLabel = RechartsPrimitive.useActiveTooltipLabel;
+/** Returns the current X-axis domain. */
+export const useXAxisDomain = RechartsPrimitive.useXAxisDomain;
+/** Returns the current Y-axis domain. */
+export const useYAxisDomain = RechartsPrimitive.useYAxisDomain;
+
+// -- Type re-exports --------------------------------------------------------
+export type {DefaultTooltipContentProps, TooltipValueType} from "recharts";
+export type {DefaultLegendContentProps} from "recharts";
