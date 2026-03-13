@@ -1,8 +1,8 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "0.5.0",
-  "description": "🎨 70+ beautiful, accessible React components built on Radix UI. TypeScript-first, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
+  "version": "1.0.0",
+  "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
     "type": "git",
@@ -57,7 +57,9 @@
     "typescript",
     "tailwindcss",
     "radix-ui",
+    "base-ui",
     "shadcn-ui",
+    "css-modules",
     "accessible",
     "tree-shakeable",
     "modern-ui",
@@ -86,36 +88,9 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@base-ui/react": "*",
     "@hookform/resolvers": "*",
-    "@radix-ui/react-accordion": "*",
-    "@radix-ui/react-alert-dialog": "*",
-    "@radix-ui/react-aspect-ratio": "*",
-    "@radix-ui/react-avatar": "*",
-    "@radix-ui/react-checkbox": "*",
-    "@radix-ui/react-collapsible": "*",
-    "@radix-ui/react-context-menu": "*",
-    "@radix-ui/react-dialog": "*",
-    "@radix-ui/react-dropdown-menu": "*",
-    "@radix-ui/react-hover-card": "*",
-    "@radix-ui/react-label": "*",
-    "@radix-ui/react-menubar": "*",
-    "@radix-ui/react-navigation-menu": "*",
-    "@radix-ui/react-popover": "*",
-    "@radix-ui/react-progress": "*",
-    "@radix-ui/react-radio-group": "*",
-    "@radix-ui/react-scroll-area": "*",
-    "@radix-ui/react-select": "*",
-    "@radix-ui/react-separator": "*",
-    "@radix-ui/react-slider": "*",
-    "@radix-ui/react-slot": "*",
-    "@radix-ui/react-switch": "*",
-    "@radix-ui/react-tabs": "*",
-    "@radix-ui/react-toggle": "*",
-    "@radix-ui/react-toggle-group": "*",
-    "@radix-ui/react-tooltip": "*",
-    "class-variance-authority": "*",
     "clsx": "*",
-    "cmdk": "*",
     "embla-carousel-react": "*",
     "input-otp": "*",
     "lucide-react": "*",
@@ -126,34 +101,25 @@
     "react-resizable-panels": "*",
     "recharts": "*",
     "shiki": "*",
-    "sonner": "*",
-    "tailwind-merge": "*",
-    "tailwindcss-animate": "*",
-    "vaul": "*",
     "zod": "*"
   },
   "peerDependencies": {
     "motion": "^12",
     "react": "^18.2 || ^19",
-    "react-dom": "^18.2 || ^19",
-    "tailwindcss": "^4"
+    "react-dom": "^18.2 || ^19"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "*",
     "@rsbuild/core": "*",
     "@rsbuild/plugin-react": "*",
     "@rslib/core": "*",
-    "@tailwindcss/postcss": "*",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
-    "cssnano": "*",
-    "playwright": "*",
     "postcss": "*",
+    "playwright": "*",
     "react": "*",
     "react-dom": "*",
     "rimraf": "*",
-    "tailwindcss": "*",
     "typescript": "*"
   },
   "publishConfig": {
@@ -248,6 +214,11 @@
       "types": "./dist/components/ui/chart.d.ts",
       "import": "./dist/components/ui/chart.js",
       "default": "./dist/components/ui/chart.js"
+    },
+    "./checkbox-group": {
+      "types": "./dist/components/ui/checkbox-group.d.ts",
+      "import": "./dist/components/ui/checkbox-group.js",
+      "default": "./dist/components/ui/checkbox-group.js"
     },
     "./checkbox": {
       "types": "./dist/components/ui/checkbox.d.ts",
@@ -384,10 +355,20 @@
       "import": "./dist/components/ui/menubar.js",
       "default": "./dist/components/ui/menubar.js"
     },
+    "./meter": {
+      "types": "./dist/components/ui/meter.d.ts",
+      "import": "./dist/components/ui/meter.js",
+      "default": "./dist/components/ui/meter.js"
+    },
     "./navigation-menu": {
       "types": "./dist/components/ui/navigation-menu.d.ts",
       "import": "./dist/components/ui/navigation-menu.js",
       "default": "./dist/components/ui/navigation-menu.js"
+    },
+    "./number-field": {
+      "types": "./dist/components/ui/number-field.d.ts",
+      "import": "./dist/components/ui/number-field.js",
+      "default": "./dist/components/ui/number-field.js"
     },
     "./pagination": {
       "types": "./dist/components/ui/pagination.d.ts",
@@ -498,6 +479,11 @@
       "types": "./dist/components/ui/toggle.d.ts",
       "import": "./dist/components/ui/toggle.js",
       "default": "./dist/components/ui/toggle.js"
+    },
+    "./toolbar": {
+      "types": "./dist/components/ui/toolbar.d.ts",
+      "import": "./dist/components/ui/toolbar.js",
+      "default": "./dist/components/ui/toolbar.js"
     },
     "./tooltip": {
       "types": "./dist/components/ui/tooltip.d.ts",

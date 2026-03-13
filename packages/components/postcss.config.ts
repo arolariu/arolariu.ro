@@ -1,11 +1,11 @@
 /**
- * @fileoverview PostCSS configuration for the shared components package.
- * @module packages/components/postcss.config
+ * @fileoverview PostCSS configuration for the shared components package (V2).
+ * Uses only cssnano for minification — no Tailwind CSS.
+ * @module packages/componentsV2/postcss.config
  */
 
 const config = {
   plugins: {
-    "@tailwindcss/postcss": {},
     cssnano: {},
   },
 };
