@@ -46,7 +46,7 @@
   top: 50%;
   left: 50%;
   width: min(32rem, calc(100vw - 2rem));
-  max-height: min(85vh, var(--available-height, 32rem));
+  max-height: min(85vh, 40rem);
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--ac-border);
@@ -104,10 +104,11 @@
 .list {
   display: flex;
   flex-direction: column;
-  max-height: min(18.75rem, var(--available-height, 18.75rem));
+  max-height: min(25rem, var(--available-height, 25rem));
   overflow-x: hidden;
   overflow-y: auto;
   padding: var(--ac-space-1);
+  scroll-padding-block: var(--ac-space-1);
 }
 
 .empty {

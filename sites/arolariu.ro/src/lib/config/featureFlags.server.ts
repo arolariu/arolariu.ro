@@ -40,7 +40,7 @@ export async function getWebsiteFeatureFlags(): Promise<WebsiteFeatureFlags> {
     }
 
     const [commanderRaw, webVitalsRaw] = await Promise.all([
-      fetchConfigValue("website.commander.enabled").catch(() => "false"),
+      fetchConfigValue("website.commander.enabled").catch(() => "true"),
       fetchConfigValue("website.web-vitals.enabled").catch(() => "false"),
     ]);
 
