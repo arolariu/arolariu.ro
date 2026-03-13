@@ -24,6 +24,13 @@
   transform-origin: var(--transform-origin);
   transition: opacity var(--ac-transition-fast), transform var(--ac-transition-fast);
 
+  /* Force all descendants (e.g. <code>, <strong>) to inherit the
+     tooltip's inverted color scheme so consumer styles don't bleed in. */
+  & * {
+    color: inherit;
+    background-color: transparent;
+  }
+
   &[data-starting-style],
   &[data-ending-style] {
     opacity: 0;

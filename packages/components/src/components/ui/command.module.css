@@ -1,7 +1,7 @@
 .command {
   display: flex;
   width: 100%;
-  height: 100%;
+  flex: 1;
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--ac-radius-md);
@@ -47,6 +47,8 @@
   z-index: 10000;
   top: 50%;
   left: 50%;
+  display: flex;
+  flex-direction: column;
   width: min(32rem, calc(100vw - 2rem));
   max-height: min(85vh, 40rem);
   overflow: hidden;
@@ -58,7 +60,6 @@
   box-shadow: 0 10px 30px -5px rgb(0 0 0 / 0.1), 0 4px 10px -5px rgb(0 0 0 / 0.04);
   transform: translate(-50%, -50%);
   transition: opacity var(--ac-transition-normal), transform var(--ac-transition-normal);
-  touch-action: none;
 
   &[data-starting-style],
   &[data-ending-style] {
@@ -106,11 +107,14 @@
 .list {
   display: flex;
   flex-direction: column;
-  max-height: min(25rem, var(--available-height, 25rem));
+  flex: 1;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--ac-space-1);
   scroll-padding-block: var(--ac-space-1);
+  -webkit-overflow-scrolling: touch;
 }
 
 .empty {
@@ -125,22 +129,23 @@
   color: inherit;
 
   & + .group {
+    margin-top: var(--ac-space-1);
     border-top: 1px solid var(--ac-border);
+    padding-top: var(--ac-space-2);
   }
 }
 
 .groupHeading {
-  padding: var(--ac-space-1) var(--ac-space-2);
+  padding: var(--ac-space-2) var(--ac-space-2);
   color: var(--ac-muted-foreground);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: var(--ac-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .separator {
   height: 1px;
-  margin-inline: var(--ac-space-1);
+  margin: var(--ac-space-1) var(--ac-space-1);
   background-color: var(--ac-border);
 }
 
