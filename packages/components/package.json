@@ -36,6 +36,9 @@
   "files": [
     "dist",
     "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.stories.*",
     "LICENSE.md",
     "README.md",
     "CHANGELOG.md",
