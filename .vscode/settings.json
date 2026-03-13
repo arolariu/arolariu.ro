@@ -432,7 +432,7 @@
     "*.py": "$(capture).*.py",
     "*.cs": "$(capture).*.cs",
     "*.ts": "$(capture).*.ts",
-    "*.tsx": "$(capture).*.tsx, $(capture).*.scss"
+    "*.tsx": "$(capture).*.tsx, $(capture).*.scss, $(capture).*.css"
   },
   "explorer.incrementalNaming": "smart",
   "explorer.openEditors.minVisible": 0,
