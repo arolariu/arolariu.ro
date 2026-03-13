@@ -259,9 +259,9 @@ function ChartTooltipContent({
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor = color ?? item.payload?.fill ?? item.color ?? "transparent";
             const indicatorStyle = {
-              "--chart-indicator-background": indicatorColor,
-              "--chart-indicator-border": indicatorColor,
-            } as React.CSSProperties & Record<"--chart-indicator-background" | "--chart-indicator-border", string>;
+              "--ac-chart-indicator-background": indicatorColor,
+              "--ac-chart-indicator-border": indicatorColor,
+            } as React.CSSProperties & Record<"--ac-chart-indicator-background" | "--ac-chart-indicator-border", string>;
 
             return (
               <div

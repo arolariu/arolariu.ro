@@ -6,12 +6,13 @@
  * Runs build-time steps such as export generation after the primary build completes.
  */
 
-export async function main() {
+export async function main(): Promise<void> {
   console.info("[arolariu.ro::afterBuild] Running after build scripts...");
 
   // 1. Generate new exports using the generate-exports script
   console.info("[arolariu.ro::afterBuild] Generating exports...");
-  await import("./generate-exports.ts").then(() => {
+  await import("./generate-exports.ts").then(({main: generateExports}) => {
+    generateExports();
     console.info("[arolariu.ro::afterBuild] Finished generating exports.");
   });
 
