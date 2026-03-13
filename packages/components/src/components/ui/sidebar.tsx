@@ -126,8 +126,8 @@ const SidebarProvider = React.forwardRef<
           ref={ref}
           style={
             {
-              "--sidebar-width": SIDEBAR_WIDTH,
-              "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+              "--ac-sidebar-width": SIDEBAR_WIDTH,
+              "--ac-sidebar-width-icon": SIDEBAR_WIDTH_ICON,
               ...style,
             } as React.CSSProperties
           }
@@ -252,7 +252,7 @@ function MobileSidebarPortal({
         aria-label='Sidebar'
         data-sidebar='sidebar'
         className={cn(styles.mobilePanel, side === "right" ? styles.mobilePanelRight : styles.mobilePanelLeft, className)}
-        style={{"--sidebar-width": SIDEBAR_WIDTH_MOBILE} as React.CSSProperties}
+        style={{"--ac-sidebar-width": SIDEBAR_WIDTH_MOBILE} as React.CSSProperties}
         {...props}>
         <div className={styles.srOnly}>
           <h2>Sidebar</h2>
@@ -606,7 +606,7 @@ const SidebarMenuSkeleton = React.forwardRef<
       <Skeleton
         className={styles.menuSkeletonText}
         data-sidebar='menu-skeleton-text'
-        style={{"--skeleton-width": width} as React.CSSProperties}
+        style={{"--ac-skeleton-width": width} as React.CSSProperties}
       />
     </div>
   );

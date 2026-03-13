@@ -15,7 +15,7 @@ export interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement>
 }
 
 type GradientStyleProperties = React.CSSProperties & {
-  "--gradient-text-background": string;
+  "--ac-gradient-text-background": string;
 };
 
 /**
@@ -34,7 +34,7 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
     ref,
   ) => {
     const baseStyle: GradientStyleProperties = {
-      "--gradient-text-background": gradient,
+      "--ac-gradient-text-background": gradient,
     };
 
     return (

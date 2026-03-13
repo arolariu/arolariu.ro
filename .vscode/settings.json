@@ -87,7 +87,7 @@
     "cursor-workspace": true,
     "windsurf": true
   },
-  "chat.notifyWindowOnConfirmation": true,
+  "chat.notifyWindowOnConfirmation": "windowNotFocused",
   "chat.promptFiles": true,
   "chat.renderRelatedFiles": false,
   "chat.sendElementsToChat.attachCSS": true,

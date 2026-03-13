@@ -20,12 +20,12 @@ export interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivEleme
 }
 
 type BubbleStyleProperties = React.CSSProperties & {
-  "--bubble-first-color": string;
-  "--bubble-second-color": string;
-  "--bubble-third-color": string;
-  "--bubble-fourth-color": string;
-  "--bubble-fifth-color": string;
-  "--bubble-sixth-color": string;
+  "--ac-bubble-first-color": string;
+  "--ac-bubble-second-color": string;
+  "--ac-bubble-third-color": string;
+  "--ac-bubble-fourth-color": string;
+  "--ac-bubble-fifth-color": string;
+  "--ac-bubble-sixth-color": string;
 };
 
 const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>(
@@ -82,12 +82,12 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
     }, [interactive, mouseX, mouseY]);
 
     const style: BubbleStyleProperties = {
-      "--bubble-first-color": colors.first,
-      "--bubble-second-color": colors.second,
-      "--bubble-third-color": colors.third,
-      "--bubble-fourth-color": colors.fourth,
-      "--bubble-fifth-color": colors.fifth,
-      "--bubble-sixth-color": colors.sixth,
+      "--ac-bubble-first-color": colors.first,
+      "--ac-bubble-second-color": colors.second,
+      "--ac-bubble-third-color": colors.third,
+      "--ac-bubble-fourth-color": colors.fourth,
+      "--ac-bubble-fifth-color": colors.fifth,
+      "--ac-bubble-sixth-color": colors.sixth,
     };
 
     return (

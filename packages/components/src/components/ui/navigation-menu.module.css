@@ -89,8 +89,8 @@
 }
 
 .viewport {
-  width: min(100vw - 2rem, var(--active-content-width, 20rem));
-  height: var(--active-content-height);
+  width: min(100vw - 2rem, var(--ac-nav-content-width, 20rem));
+  height: var(--ac-nav-content-height);
   transition: width var(--ac-transition-normal), height var(--ac-transition-normal);
 }
 

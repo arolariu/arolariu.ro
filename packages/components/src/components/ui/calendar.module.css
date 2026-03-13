@@ -1,5 +1,5 @@
 .container {
-  --cell-size: var(--ac-size-default);
+  --ac-cell-size: var(--ac-size-default);
   width: fit-content;
   padding: var(--ac-space-3);
   background-color: var(--ac-background);
@@ -47,8 +47,8 @@
 }
 
 .navButton {
-  width: var(--cell-size);
-  height: var(--cell-size);
+  width: var(--ac-cell-size);
+  height: var(--ac-cell-size);
   padding: 0;
 
   &[disabled],
@@ -60,16 +60,16 @@
 .monthCaption {
   display: flex;
   width: 100%;
-  height: var(--cell-size);
+  height: var(--ac-cell-size);
   align-items: center;
   justify-content: center;
-  padding-inline: var(--cell-size);
+  padding-inline: var(--ac-cell-size);
 }
 
 .dropdowns {
   display: flex;
   width: 100%;
-  height: var(--cell-size);
+  height: var(--ac-cell-size);
   align-items: center;
   justify-content: center;
   gap: var(--ac-space-2);
@@ -139,7 +139,7 @@
 
 .weekNumberHeader,
 .weekNumber {
-  width: var(--cell-size);
+  width: var(--ac-cell-size);
   color: var(--ac-muted-foreground);
   font-size: 0.8rem;
   text-align: center;
@@ -148,8 +148,8 @@
 
 .weekNumberCell {
   display: flex;
-  width: var(--cell-size);
-  height: var(--cell-size);
+  width: var(--ac-cell-size);
+  height: var(--ac-cell-size);
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -209,7 +209,7 @@
   z-index: 0;
   display: flex;
   width: 100%;
-  min-width: var(--cell-size);
+  min-width: var(--ac-cell-size);
   height: auto;
   aspect-ratio: 1;
   flex-direction: column;

@@ -7,7 +7,7 @@
 .neon {
   margin: 0;
   color: transparent;
-  background-image: var(--gradient-text-background);
+  background-image: var(--ac-gradient-text-background);
   background-position: 0% 0%;
   background-size: 700% 100%;
   -webkit-background-clip: text;

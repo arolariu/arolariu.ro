@@ -7,7 +7,7 @@
 
 .staticSidebar {
   display: flex;
-  width: var(--sidebar-width);
+  width: var(--ac-sidebar-width);
   height: 100%;
   flex-direction: column;
   background-color: var(--ac-sidebar);
@@ -27,7 +27,7 @@
 
 .gap {
   position: relative;
-  width: var(--sidebar-width);
+  width: var(--ac-sidebar-width);
   background-color: transparent;
   transition: width var(--ac-transition-slow);
 }
@@ -37,12 +37,12 @@
 }
 
 .desktopRoot[data-collapsible="icon"] .gap {
-  width: var(--sidebar-width-icon);
+  width: var(--ac-sidebar-width-icon);
 }
 
 .desktopRoot[data-variant="floating"] .gap,
 .desktopRoot[data-variant="inset"] .gap {
-  width: calc(var(--sidebar-width-icon) + var(--ac-space-4));
+  width: calc(var(--ac-sidebar-width-icon) + var(--ac-space-4));
 }
 
 .panelWrap {
@@ -50,7 +50,7 @@
   inset-block: 0;
   z-index: 20;
   display: none;
-  width: var(--sidebar-width);
+  width: var(--ac-sidebar-width);
   transition:
     left var(--ac-transition-slow),
     right var(--ac-transition-slow),
@@ -73,15 +73,15 @@
 }
 
 .desktopRoot[data-side="left"][data-collapsible="offcanvas"] .panelWrap {
-  left: calc(var(--sidebar-width) * -1);
+  left: calc(var(--ac-sidebar-width) * -1);
 }
 
 .desktopRoot[data-side="right"][data-collapsible="offcanvas"] .panelWrap {
-  right: calc(var(--sidebar-width) * -1);
+  right: calc(var(--ac-sidebar-width) * -1);
 }
 
 .desktopRoot[data-collapsible="icon"] .panelWrap {
-  width: var(--sidebar-width-icon);
+  width: var(--ac-sidebar-width-icon);
 }
 
 .desktopRoot[data-variant="floating"] .panelWrap,
@@ -91,7 +91,7 @@
 
 .desktopRoot[data-variant="floating"][data-collapsible="icon"] .panelWrap,
 .desktopRoot[data-variant="inset"][data-collapsible="icon"] .panelWrap {
-  width: calc(var(--sidebar-width-icon) + var(--ac-space-4));
+  width: calc(var(--ac-sidebar-width-icon) + var(--ac-space-4));
 }
 
 .panel {
@@ -135,7 +135,7 @@
 .mobilePanel {
   position: absolute;
   inset-block: 0;
-  width: var(--sidebar-width);
+  width: var(--ac-sidebar-width);
   padding: 0;
   background-color: var(--ac-sidebar);
   color: var(--ac-sidebar-foreground);
@@ -528,8 +528,8 @@
 }
 
 .menuSkeletonText {
-  width: var(--skeleton-width);
-  max-width: var(--skeleton-width);
+  width: var(--ac-skeleton-width);
+  max-width: var(--ac-skeleton-width);
   height: 1rem;
   flex: 1;
 }
