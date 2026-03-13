@@ -43,10 +43,7 @@ export interface ResizableHandleProps extends React.ComponentProps<typeof Resiza
  * @see {@link ResizablePanelGroupProps} for available props
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
  */
-function ResizablePanelGroup({
-  className,
-  ...props
-}: Readonly<ResizablePanelGroupProps>): React.JSX.Element {
+function ResizablePanelGroup({className, ...props}: Readonly<ResizablePanelGroupProps>): React.JSX.Element {
   return (
     <ResizablePrimitive.PanelGroup
       className={cn(styles.group, className)}
@@ -87,11 +84,7 @@ const ResizablePanel = ResizablePrimitive.Panel;
  * @see {@link ResizableHandleProps} for available props
  * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
  */
-function ResizableHandle({
-  withHandle = false,
-  className,
-  ...props
-}: Readonly<ResizableHandleProps>): React.JSX.Element {
+function ResizableHandle({withHandle = false, className, ...props}: Readonly<ResizableHandleProps>): React.JSX.Element {
   return (
     <ResizablePrimitive.PanelResizeHandle
       className={cn(styles.handle, className)}

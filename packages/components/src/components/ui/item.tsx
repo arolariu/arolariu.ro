@@ -149,7 +149,10 @@ const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
  * @see {@link ItemProps} for available props
  */
 const Item = React.forwardRef<HTMLDivElement, ItemProps>(
-  ({className, variant = "default", size = "default", asChild = false, children, ...props}: Readonly<ItemProps>, ref): React.JSX.Element => {
+  (
+    {className, variant = "default", size = "default", asChild = false, children, ...props}: Readonly<ItemProps>,
+    ref,
+  ): React.JSX.Element => {
     const mergedClassName = cn(
       styles.item,
       variant === "outline" && styles.outline,
@@ -159,7 +162,9 @@ const Item = React.forwardRef<HTMLDivElement, ItemProps>(
     );
 
     if (asChild && React.isValidElement(children)) {
-      const child = children as React.ReactElement<React.ComponentPropsWithoutRef<"div"> & ItemDataAttributes & {ref?: React.Ref<HTMLDivElement>}>;
+      const child = children as React.ReactElement<
+        React.ComponentPropsWithoutRef<"div"> & ItemDataAttributes & {ref?: React.Ref<HTMLDivElement>}
+      >;
 
       // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
       return React.cloneElement(child, {

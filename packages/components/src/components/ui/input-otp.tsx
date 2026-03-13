@@ -162,4 +162,3 @@ InputOTPSlot.displayName = "InputOTPSlot";
 InputOTPSeparator.displayName = "InputOTPSeparator";
 
 export {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot};
-
