@@ -6,17 +6,30 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./bubble-background.module.css";
 
+/** Configurable bubble color channels consumed by the CSS module. */
+export interface BubbleBackgroundColors {
+  /** Primary bubble RGB triplet. @default "18,113,255" */
+  first: string;
+  /** Secondary bubble RGB triplet. @default "221,74,255" */
+  second: string;
+  /** Tertiary bubble RGB triplet. @default "0,220,255" */
+  third: string;
+  /** Fourth bubble RGB triplet. @default "200,50,50" */
+  fourth: string;
+  /** Fifth bubble RGB triplet. @default "180,180,50" */
+  fifth: string;
+  /** Sixth bubble RGB triplet used by the interactive layer. @default "140,100,255" */
+  sixth: string;
+}
+
+/** Props accepted by {@link BubbleBackground}. */
 export interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Enables mouse-following motion for the interactive bubble layer. @default false */
   interactive?: boolean;
+  /** Spring configuration applied to the interactive bubble motion. @default {stiffness: 100, damping: 20} */
   transition?: SpringOptions;
-  colors?: {
-    first: string;
-    second: string;
-    third: string;
-    fourth: string;
-    fifth: string;
-    sixth: string;
-  };
+  /** Overrides the CSS custom property color palette for the bubbles. @default {first: "18,113,255", second: "221,74,255", third: "0,220,255", fourth: "200,50,50", fifth: "180,180,50", sixth: "140,100,255"} */
+  colors?: BubbleBackgroundColors;
 }
 
 type BubbleStyleProperties = React.CSSProperties & {
@@ -28,6 +41,22 @@ type BubbleStyleProperties = React.CSSProperties & {
   "--ac-bubble-sixth-color": string;
 };
 
+/**
+ * Renders drifting gradient bubbles with an optional interactive cursor follower.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <BubbleBackground interactive />
+ * ```
+ *
+ * @see {@link BubbleBackgroundProps} for available props
+ */
 const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>(
   (
     {

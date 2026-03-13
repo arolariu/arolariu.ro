@@ -6,19 +6,43 @@ import React, {useEffect, useRef, useState} from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./scratcher.module.css";
 
-interface ScratcherProps {
+/** Props accepted by {@link Scratcher}. */
+export interface ScratcherProps {
+  /** Content revealed after the overlay is scratched away. @default undefined */
   children: React.ReactNode;
+  /** Width of the scratch card surface in pixels. @default undefined */
   width: number;
+  /** Height of the scratch card surface in pixels. @default undefined */
   height: number;
+  /** Percentage of cleared pixels required before completion fires. @default 50 */
   minScratchPercentage?: number;
+  /** Additional CSS classes merged with the scratch card container. @default undefined */
   className?: string;
+  /** Callback invoked once the scratch completion threshold is reached. @default undefined */
   onComplete?: () => void;
+  /** Three-stop gradient used for the scratchable overlay. @default ["#A97CF8", "#F38CB8", "#FDCC92"] */
   gradientColors?: [string, string, string];
 }
 
 const defaultGradientColors: [string, string, string] = ["#A97CF8", "#F38CB8", "#FDCC92"];
 const ignoreAnimationError = (): null => null;
 
+/**
+ * Renders a scratch-card reveal surface with animated completion feedback.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element containing a `<canvas>`
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <Scratcher width={320} height={180}>Prize unlocked</Scratcher>
+ * ```
+ *
+ * @see {@link ScratcherProps} for available props
+ */
 export const Scratcher: React.FC<ScratcherProps> = ({
   width,
   height,
@@ -169,3 +193,5 @@ export const Scratcher: React.FC<ScratcherProps> = ({
     </motion.div>
   );
 };
+
+Scratcher.displayName = "Scratcher";

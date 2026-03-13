@@ -12,16 +12,29 @@ import styles from "./checkbox.module.css";
  * Props for the shared checkbox wrapper.
  */
 interface CheckboxProps extends Omit<React.ComponentPropsWithRef<typeof BaseCheckbox.Root>, "checked" | "className" | "onCheckedChange"> {
-  /** Additional CSS classes merged with the checkbox control styles. */
+  /** Additional CSS classes merged with the checkbox control styles. @default undefined */
   className?: string;
-  /** The current checked state, including support for the legacy `"indeterminate"` value. */
+  /** The current checked state, including support for the legacy `"indeterminate"` value. @default undefined */
   checked?: boolean | "indeterminate";
-  /** Called whenever the checked state changes. */
+  /** Called whenever the checked state changes. @default undefined */
   onCheckedChange?: (checked: boolean | "indeterminate") => void;
 }
 
 /**
- * Renders a checkbox control with checked and indeterminate support.
+ * Renders a selectable checkbox control with checked and indeterminate support.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/checkbox | Base UI Checkbox}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Checkbox checked />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/checkbox | Base UI Documentation}
  */
 function Checkbox(props: Readonly<Checkbox.Props>): React.ReactElement {
   const {checked, className, onCheckedChange, render, ...otherProps} = props;
@@ -54,6 +67,7 @@ function Checkbox(props: Readonly<Checkbox.Props>): React.ReactElement {
     </BaseCheckbox.Root>
   );
 }
+Checkbox.displayName = "Checkbox";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Checkbox {

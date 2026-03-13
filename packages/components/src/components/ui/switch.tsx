@@ -8,10 +8,29 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./switch.module.css";
 
-type SwitchProps = React.ComponentPropsWithRef<typeof BaseSwitch.Root>;
+/**
+ * Props for the shared switch wrapper.
+ */
+interface SwitchProps extends Omit<React.ComponentPropsWithRef<typeof BaseSwitch.Root>, "className"> {
+  /** Additional CSS classes merged with the switch root styles. @default undefined */
+  className?: string;
+}
 
 /**
- * Renders a styled Base UI switch with a composed thumb.
+ * Toggles between on and off states with a styled thumb control.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/switch | Base UI Switch}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Switch defaultChecked />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/switch | Base UI Documentation}
  */
 function Switch(props: Readonly<Switch.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
@@ -28,6 +47,7 @@ function Switch(props: Readonly<Switch.Props>): React.ReactElement {
     </BaseSwitch.Root>
   );
 }
+Switch.displayName = "Switch";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Switch {

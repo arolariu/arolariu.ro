@@ -14,10 +14,29 @@ type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
 type CarouselOptions = UseCarouselParameters[0];
 type CarouselPlugin = UseCarouselParameters[1];
 
+/**
+ * Carousel configuration props.
+ */
 type CarouselProps = {
+  /**
+   * Embla carousel options forwarded to the underlying carousel instance.
+   * @default undefined
+   */
   opts?: CarouselOptions;
+  /**
+   * Embla plugins applied to the carousel instance.
+   * @default undefined
+   */
   plugins?: CarouselPlugin;
+  /**
+   * Axis orientation used for layout and keyboard navigation.
+   * @default "horizontal"
+   */
   orientation?: "horizontal" | "vertical";
+  /**
+   * Callback invoked with the initialized Embla API instance.
+   * @default undefined
+   */
   setApi?: (api: CarouselApi) => void;
 };
 
@@ -42,6 +61,28 @@ function useCarousel(): CarouselContextProps {
   return context;
 }
 
+/**
+ * Provides a compound carousel container powered by Embla.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built on `embla-carousel-react`
+ * - Exposes context for content, items, and navigation controls
+ *
+ * @example
+ * ```tsx
+ * <Carousel>
+ *   <CarouselContent>
+ *     <CarouselItem>Slide 1</CarouselItem>
+ *     <CarouselItem>Slide 2</CarouselItem>
+ *   </CarouselContent>
+ *   <CarouselPrevious />
+ *   <CarouselNext />
+ * </Carousel>
+ * ```
+ *
+ * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
+ */
 const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & CarouselProps>(
   ({orientation = "horizontal", opts, setApi, plugins, className, children, ...props}, ref) => {
     const [carouselRef, api] = useEmblaCarousel(
@@ -138,6 +179,22 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 );
 Carousel.displayName = "Carousel";
 
+/**
+ * Renders the scrollable track that contains carousel slides.
+ *
+ * @remarks
+ * - Renders nested `<div>` elements
+ * - Built on Embla's viewport and track structure
+ *
+ * @example
+ * ```tsx
+ * <CarouselContent>
+ *   <CarouselItem>Slide</CarouselItem>
+ * </CarouselContent>
+ * ```
+ *
+ * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
+ */
 const CarouselContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => {
   const {carouselRef, orientation} = useCarousel();
 
@@ -156,6 +213,20 @@ const CarouselContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
 });
 CarouselContent.displayName = "CarouselContent";
 
+/**
+ * Renders an individual carousel slide.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built on the shared carousel context for orientation-aware styling
+ *
+ * @example
+ * ```tsx
+ * <CarouselItem>Slide content</CarouselItem>
+ * ```
+ *
+ * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
+ */
 const CarouselItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => {
   const {orientation} = useCarousel();
 
@@ -172,6 +243,20 @@ const CarouselItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLD
 });
 CarouselItem.displayName = "CarouselItem";
 
+/**
+ * Renders the previous-slide navigation button.
+ *
+ * @remarks
+ * - Renders the shared `<Button>` component
+ * - Built on carousel context state and Embla navigation APIs
+ *
+ * @example
+ * ```tsx
+ * <CarouselPrevious />
+ * ```
+ *
+ * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
+ */
 const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
   ({className, variant = "outline", size = "icon", ...props}, ref) => {
     const {orientation, scrollPrev, canScrollPrev} = useCarousel();
@@ -194,6 +279,20 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
 );
 CarouselPrevious.displayName = "CarouselPrevious";
 
+/**
+ * Renders the next-slide navigation button.
+ *
+ * @remarks
+ * - Renders the shared `<Button>` component
+ * - Built on carousel context state and Embla navigation APIs
+ *
+ * @example
+ * ```tsx
+ * <CarouselNext />
+ * ```
+ *
+ * @see {@link https://www.embla-carousel.com/get-started/react/ | Embla React Docs}
+ */
 const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
   ({className, variant = "outline", size = "icon", ...props}, ref) => {
     const {orientation, scrollNext, canScrollNext} = useCarousel();

@@ -15,7 +15,22 @@ type ToolbarSeparatorProps = React.ComponentPropsWithRef<typeof BaseToolbar.Sepa
 type ToolbarLinkProps = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
 
 /**
- * Renders the toolbar root.
+ * Arranges related actions into a keyboard-accessible toolbar.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Toolbar primitives
+ * - Supports roving focus and compound toolbar item composition
+ *
+ * @example
+ * ```tsx
+ * <Toolbar aria-label='Text formatting'>
+ *   <ToolbarButton>Bold</ToolbarButton>
+ *   <ToolbarButton>Italic</ToolbarButton>
+ * </Toolbar>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
 function Toolbar(props: Readonly<Toolbar.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -34,7 +49,19 @@ function Toolbar(props: Readonly<Toolbar.Props>): React.ReactElement {
 }
 
 /**
- * Renders a compact interactive toolbar button.
+ * Renders an interactive button within a toolbar.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on Base UI Toolbar button behavior
+ * - Applies shared toolbar item spacing and focus styling
+ *
+ * @example
+ * ```tsx
+ * <ToolbarButton aria-label='Bold'>B</ToolbarButton>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
 function ToolbarButton(props: Readonly<ToolbarButton.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -53,7 +80,21 @@ function ToolbarButton(props: Readonly<ToolbarButton.Props>): React.ReactElement
 }
 
 /**
- * Renders a toolbar item group.
+ * Groups related toolbar controls into a single visual cluster.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Toolbar grouping primitives
+ *
+ * @example
+ * ```tsx
+ * <ToolbarGroup>
+ *   <ToolbarButton>Left</ToolbarButton>
+ *   <ToolbarButton>Center</ToolbarButton>
+ * </ToolbarGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
 function ToolbarGroup(props: Readonly<ToolbarGroup.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -72,7 +113,18 @@ function ToolbarGroup(props: Readonly<ToolbarGroup.Props>): React.ReactElement {
 }
 
 /**
- * Renders a separator between toolbar items.
+ * Renders a visual separator between toolbar items or groups.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Toolbar separator primitives
+ *
+ * @example
+ * ```tsx
+ * <ToolbarSeparator />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
 function ToolbarSeparator(props: Readonly<ToolbarSeparator.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
@@ -90,7 +142,18 @@ function ToolbarSeparator(props: Readonly<ToolbarSeparator.Props>): React.ReactE
 }
 
 /**
- * Renders a toolbar link with button-like affordances.
+ * Renders a link that visually matches toolbar buttons.
+ *
+ * @remarks
+ * - Renders an `<a>` element by default
+ * - Built on Base UI Toolbar link primitives
+ *
+ * @example
+ * ```tsx
+ * <ToolbarLink href='/docs'>Docs</ToolbarLink>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
 function ToolbarLink(props: Readonly<ToolbarLink.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -137,5 +200,11 @@ namespace ToolbarLink {
   export type Props = ToolbarLinkProps;
   export type State = BaseToolbar.Link.State;
 }
+
+Toolbar.displayName = "Toolbar";
+ToolbarButton.displayName = "ToolbarButton";
+ToolbarGroup.displayName = "ToolbarGroup";
+ToolbarSeparator.displayName = "ToolbarSeparator";
+ToolbarLink.displayName = "ToolbarLink";
 
 export {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator};

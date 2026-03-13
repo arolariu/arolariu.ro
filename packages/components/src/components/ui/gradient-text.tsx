@@ -8,9 +8,13 @@ import styles from "./gradient-text.module.css";
 
 /** Props accepted by {@link GradientText}. */
 export interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement> {
+  /** Text content rendered with the animated gradient fill. @default undefined */
   text: string;
+  /** CSS gradient string assigned to the animated text fill. @default "linear-gradient(90deg, #3b82f6 0%, #a855f7 20%, #ec4899 50%, #a855f7 80%, #3b82f6 100%)" */
   gradient?: string;
+  /** Adds a blurred neon duplicate behind the primary text layer. @default false */
   neon?: boolean;
+  /** Motion timing used for the animated gradient background. @default {duration: 50, repeat: Infinity, ease: "linear"} */
   transition?: Transition;
 }
 
@@ -20,6 +24,19 @@ type GradientStyleProperties = React.CSSProperties & {
 
 /**
  * Renders animated gradient-filled text with an optional neon glow layer.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<span>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <GradientText text="Launch ready" />
+ * ```
+ *
+ * @see {@link GradientTextProps} for available props
  */
 const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
   (

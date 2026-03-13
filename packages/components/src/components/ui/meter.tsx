@@ -14,7 +14,23 @@ type MeterIndicatorProps = React.ComponentPropsWithRef<typeof BaseMeter.Indicato
 type MeterLabelProps = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
 
 /**
- * Renders the meter root wrapper.
+ * Displays a scalar measurement within a known range.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Meter primitives
+ * - Intended for values such as storage usage, health, or completion
+ *
+ * @example
+ * ```tsx
+ * <Meter value={72}>
+ *   <MeterTrack>
+ *     <MeterIndicator />
+ *   </MeterTrack>
+ * </Meter>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
 function Meter(props: Readonly<Meter.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -33,7 +49,18 @@ function Meter(props: Readonly<Meter.Props>): React.ReactElement {
 }
 
 /**
- * Renders the meter track element.
+ * Renders the background track for a meter.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Meter track primitives
+ *
+ * @example
+ * ```tsx
+ * <MeterTrack />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
 function MeterTrack(props: Readonly<MeterTrack.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -52,7 +79,18 @@ function MeterTrack(props: Readonly<MeterTrack.Props>): React.ReactElement {
 }
 
 /**
- * Renders the meter indicator element.
+ * Renders the filled indicator that reflects the current meter value.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Meter indicator primitives
+ *
+ * @example
+ * ```tsx
+ * <MeterIndicator />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
 function MeterIndicator(props: Readonly<MeterIndicator.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -71,7 +109,18 @@ function MeterIndicator(props: Readonly<MeterIndicator.Props>): React.ReactEleme
 }
 
 /**
- * Renders the accessible meter label.
+ * Renders the accessible label associated with a meter.
+ *
+ * @remarks
+ * - Renders a `<span>` element by default
+ * - Built on Base UI Meter label primitives
+ *
+ * @example
+ * ```tsx
+ * <MeterLabel>Storage used</MeterLabel>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
 function MeterLabel(props: Readonly<MeterLabel.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -112,5 +161,10 @@ namespace MeterLabel {
   export type Props = MeterLabelProps;
   export type State = BaseMeter.Label.State;
 }
+
+Meter.displayName = "Meter";
+MeterTrack.displayName = "MeterTrack";
+MeterIndicator.displayName = "MeterIndicator";
+MeterLabel.displayName = "MeterLabel";
 
 export {Meter, MeterIndicator, MeterLabel, MeterTrack};

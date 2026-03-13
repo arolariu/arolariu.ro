@@ -12,16 +12,29 @@ import styles from "./separator.module.css";
  * Props for the shared separator wrapper.
  */
 export interface SeparatorProps extends Omit<React.ComponentPropsWithRef<typeof BaseSeparator>, "className"> {
-  /** Additional CSS classes merged with the separator styles. */
+  /** Additional CSS classes merged with the separator styles. @default undefined */
   className?: string;
-  /** The visual axis used when rendering the separator line. */
+  /** The visual axis used when rendering the separator line. @default "horizontal" */
   orientation?: "horizontal" | "vertical";
-  /** Legacy compatibility flag retained by the wrapper but not forwarded to Base UI. */
+  /** Legacy compatibility flag retained by the wrapper but not forwarded to Base UI. @default true */
   decorative?: boolean;
 }
 
 /**
- * Renders a styled separator using Base UI's canonical render composition pattern.
+ * Separates adjacent content areas with a horizontal or vertical rule.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/separator | Base UI Separator}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Separator />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/separator | Base UI Documentation}
  */
 function Separator(props: Readonly<Separator.Props>): React.ReactElement {
   const {className, decorative: _decorative = true, orientation = "horizontal", render, ...otherProps} = props;
@@ -43,6 +56,7 @@ function Separator(props: Readonly<Separator.Props>): React.ReactElement {
     />
   );
 }
+Separator.displayName = "Separator";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Separator {

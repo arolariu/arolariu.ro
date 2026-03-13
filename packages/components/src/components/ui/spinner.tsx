@@ -5,8 +5,28 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./spinner.module.css";
 
-const Spinner = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"svg">>(
-  ({children, className, ...props}: Readonly<React.ComponentPropsWithoutRef<"svg">>, ref): React.JSX.Element => (
+/**
+ * Props for the {@link Spinner} component.
+ */
+export type SpinnerProps = React.ComponentPropsWithoutRef<"svg">;
+
+/**
+ * Renders an animated loading indicator.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders an `<svg>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <Spinner aria-label='Loading data' />
+ * ```
+ *
+ * @see {@link SpinnerProps} for available props
+ */
+const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
+  ({children, className, ...props}: Readonly<SpinnerProps>, ref): React.JSX.Element => (
     <svg
       ref={ref}
       role='status'
@@ -33,6 +53,7 @@ const Spinner = React.forwardRef<SVGSVGElement, React.ComponentPropsWithoutRef<"
     </svg>
   ),
 );
+
 Spinner.displayName = "Spinner";
 
 export {Spinner};

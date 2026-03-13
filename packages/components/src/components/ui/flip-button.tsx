@@ -11,16 +11,35 @@ export type FlipDirection = "top" | "bottom" | "left" | "righ";
 
 /** Props accepted by {@link FlipButton}. */
 export interface FlipButtonProps extends HTMLMotionProps<"button"> {
+  /** Label rendered on the default face of the button. @default undefined */
   frontText: string;
+  /** Label revealed after the flip animation completes. @default undefined */
   backText: string;
+  /** Motion transition applied to both button faces. @default {type: "spring", stiffness: 280, damping: 20} */
   transition?: Transition;
+  /** Additional CSS classes merged with the front face. @default undefined */
   frontClassName?: string;
+  /** Additional CSS classes merged with the back face. @default undefined */
   backClassName?: string;
+  /** Direction from which the back face flips into view. @default "top" */
   from?: FlipDirection;
 }
 
 /**
  * Renders a two-sided button that flips between front and back labels on hover.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<button>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <FlipButton frontText="Learn more" backText="Open" />
+ * ```
+ *
+ * @see {@link FlipButtonProps} for available props
  */
 const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
   (

@@ -10,38 +10,68 @@ import {cn} from "@/lib/utilities";
 import styles from "./select.module.css";
 
 interface SelectProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.Root>, "onValueChange"> {
+  /** Called when the selected value changes and resolves to a string. @default undefined */
   onValueChange?: (value: string) => void;
 }
 
 interface SelectTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.Trigger>, "className"> {
+  /** Additional CSS classes merged with the select trigger styles. @default undefined */
   className?: string;
 }
 
 interface SelectScrollUpButtonProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.ScrollUpArrow>, "className"> {
+  /** Additional CSS classes merged with the scroll-up control styles. @default undefined */
   className?: string;
 }
 
 interface SelectScrollDownButtonProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.ScrollDownArrow>, "className"> {
+  /** Additional CSS classes merged with the scroll-down control styles. @default undefined */
   className?: string;
 }
 
 interface SelectContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.Positioner>, "className"> {
+  /** Additional CSS classes merged with the select popup styles. @default undefined */
   className?: string;
+  /** The offset in pixels between the trigger and the popup. @default 4 */
   sideOffset?: number;
 }
 
 interface SelectLabelProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.GroupLabel>, "className"> {
+  /** Additional CSS classes merged with the group label styles. @default undefined */
   className?: string;
 }
 
 interface SelectItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.Item>, "className"> {
+  /** Additional CSS classes merged with the select item styles. @default undefined */
   className?: string;
 }
 
 interface SelectSeparatorProps extends Omit<React.ComponentPropsWithRef<typeof BaseSelect.Separator>, "className"> {
+  /** Additional CSS classes merged with the separator styles. @default undefined */
   className?: string;
 }
 
+/**
+ * Coordinates select state, keyboard navigation, and value management.
+ *
+ * @remarks
+ * - Renders no DOM element by default and coordinates descendant select parts
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports composition through descendant `render` props
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Select defaultValue="one">
+ *   <SelectTrigger />
+ *   <SelectContent>
+ *     <SelectItem value="one">One</SelectItem>
+ *   </SelectContent>
+ * </Select>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function Select(props: Readonly<Select.Props>): React.ReactElement {
   const {onValueChange, ...otherProps} = props;
 
@@ -61,10 +91,66 @@ function Select(props: Readonly<Select.Props>): React.ReactElement {
     />
   );
 }
+Select.displayName = "Select";
 
+/**
+ * Groups related select items into a shared logical section.
+ *
+ * @remarks
+ * - Renders no DOM element by default beyond the underlying grouped option container
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports composition through descendant `render` props
+ * - Styling via CSS Modules with `--ac-*` custom properties through descendant components
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectGroup>
+ *   <SelectLabel>Team</SelectLabel>
+ *   <SelectItem value="one">One</SelectItem>
+ * </SelectGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 const SelectGroup = BaseSelect.Group;
+SelectGroup.displayName = "SelectGroup";
+/**
+ * Displays the currently selected option inside the trigger.
+ *
+ * @remarks
+ * - Renders no DOM element by default beyond the underlying value slot
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports composition through surrounding select trigger rendering
+ * - Styling via CSS Modules with `--ac-*` custom properties through descendant components
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectValue placeholder="Select an option" />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 const SelectValue = BaseSelect.Value;
+SelectValue.displayName = "SelectValue";
 
+/**
+ * Opens the select popup and displays the current selected value.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectTrigger>
+ *   <SelectValue />
+ * </SelectTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function SelectTrigger(props: Readonly<SelectTrigger.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -83,7 +169,24 @@ function SelectTrigger(props: Readonly<SelectTrigger.Props>): React.ReactElement
     </BaseSelect.Trigger>
   );
 }
+SelectTrigger.displayName = "SelectTrigger";
 
+/**
+ * Scrolls the select list upward when the popup overflows its viewport.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectScrollUpButton />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function SelectScrollUpButton(props: Readonly<SelectScrollUpButton.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -99,7 +202,24 @@ function SelectScrollUpButton(props: Readonly<SelectScrollUpButton.Props>): Reac
     </BaseSelect.ScrollUpArrow>
   );
 }
+SelectScrollUpButton.displayName = "SelectScrollUpButton";
 
+/**
+ * Scrolls the select list downward when the popup overflows its viewport.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectScrollDownButton />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function SelectScrollDownButton(props: Readonly<SelectScrollDownButton.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -115,7 +235,26 @@ function SelectScrollDownButton(props: Readonly<SelectScrollDownButton.Props>): 
     </BaseSelect.ScrollDownArrow>
   );
 }
+SelectScrollDownButton.displayName = "SelectScrollDownButton";
 
+/**
+ * Portals and positions the select popup with scroll affordances.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectContent>
+ *   <SelectItem value="one">One</SelectItem>
+ * </SelectContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function SelectContent(props: Readonly<SelectContent.Props>): React.ReactElement {
   const {className, children, render, sideOffset = 4, ...otherProps} = props;
 
@@ -142,7 +281,24 @@ function SelectContent(props: Readonly<SelectContent.Props>): React.ReactElement
     </BaseSelect.Portal>
   );
 }
+SelectContent.displayName = "SelectContent";
 
+/**
+ * Labels a logical group of options inside the select popup.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectLabel>Team</SelectLabel>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function SelectLabel(props: Readonly<SelectLabel.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -158,7 +314,24 @@ function SelectLabel(props: Readonly<SelectLabel.Props>): React.ReactElement {
     </BaseSelect.GroupLabel>
   );
 }
+SelectLabel.displayName = "SelectLabel";
 
+/**
+ * Renders a selectable option row within the select popup.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectItem value="one">One</SelectItem>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function SelectItem(props: Readonly<SelectItem.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -179,7 +352,24 @@ function SelectItem(props: Readonly<SelectItem.Props>): React.ReactElement {
     </BaseSelect.Item>
   );
 }
+SelectItem.displayName = "SelectItem";
 
+/**
+ * Separates groups of options inside the select popup.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/select | Base UI Select}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <SelectSeparator />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
+ */
 function SelectSeparator(props: Readonly<SelectSeparator.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
 
@@ -194,6 +384,7 @@ function SelectSeparator(props: Readonly<SelectSeparator.Props>): React.ReactEle
     />
   );
 }
+SelectSeparator.displayName = "SelectSeparator";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Select {

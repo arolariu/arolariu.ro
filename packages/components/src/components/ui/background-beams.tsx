@@ -6,8 +6,25 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./background-beams.module.css";
 
-type BackgroundBeamsProps = React.ComponentPropsWithoutRef<"div">;
+/** Props accepted by {@link BackgroundBeams}. */
+export interface BackgroundBeamsProps extends React.ComponentPropsWithoutRef<"div"> {}
 
+/**
+ * Renders animated aurora-style beams that sweep across the background.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element containing animated SVG paths
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <BackgroundBeams />
+ * ```
+ *
+ * @see {@link BackgroundBeamsProps} for available props
+ */
 const BackgroundBeams = React.forwardRef<HTMLDivElement, BackgroundBeamsProps>(
   (props: Readonly<BackgroundBeamsProps>, ref): React.JSX.Element => {
     const {className, ...restProps} = props;

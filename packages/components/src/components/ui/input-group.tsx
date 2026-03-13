@@ -8,16 +8,47 @@ import {Textarea} from "@/components/ui/textarea";
 import {cn} from "@/lib/utilities";
 import styles from "./input-group.module.css";
 
-type InputGroupAddonAlign = "inline-start" | "inline-end" | "block-start" | "block-end";
-type InputGroupButtonSize = "xs" | "sm" | "icon-xs" | "icon-sm";
+/** Supported alignment options for {@link InputGroupAddon}. */
+export type InputGroupAddonAlign = "inline-start" | "inline-end" | "block-start" | "block-end";
 
-interface InputGroupAddonProps extends React.ComponentPropsWithoutRef<"div"> {
+/** Supported compact button sizes for {@link InputGroupButton}. */
+export type InputGroupButtonSize = "xs" | "sm" | "icon-xs" | "icon-sm";
+
+/**
+ * Props for the {@link InputGroup} component.
+ */
+export type InputGroupProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link InputGroupAddon} component.
+ */
+export interface InputGroupAddonProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** Position of the addon relative to the input control. @default "inline-start" */
   align?: InputGroupAddonAlign;
 }
 
-interface InputGroupButtonProps extends Omit<React.ComponentPropsWithoutRef<typeof Button>, "size"> {
+/**
+ * Props for the {@link InputGroupButton} component.
+ */
+export interface InputGroupButtonProps extends Omit<React.ComponentPropsWithoutRef<typeof Button>, "size"> {
+  /** Compact button size used within the group chrome. @default "xs" */
   size?: InputGroupButtonSize;
 }
+
+/**
+ * Props for the {@link InputGroupText} component.
+ */
+export type InputGroupTextProps = React.ComponentPropsWithoutRef<"span">;
+
+/**
+ * Props for the {@link InputGroupInput} component.
+ */
+export type InputGroupInputProps = React.ComponentPropsWithoutRef<"input">;
+
+/**
+ * Props for the {@link InputGroupTextarea} component.
+ */
+export type InputGroupTextareaProps = React.ComponentPropsWithoutRef<"textarea">;
 
 function getAddonAlignClass(align: InputGroupAddonAlign): string {
   switch (align) {
@@ -53,8 +84,25 @@ function getButtonSizeClass(size: InputGroupButtonSize): string {
   }
 }
 
-const InputGroup = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
+/**
+ * Creates a composable shell for grouped text inputs and controls.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroup>
+ *   <InputGroupInput />
+ * </InputGroup>
+ * ```
+ *
+ * @see {@link InputGroupProps} for available props
+ */
+const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
+  ({className, ...props}: Readonly<InputGroupProps>, ref): React.JSX.Element => (
     <div
       ref={ref}
       role='group'
@@ -64,8 +112,22 @@ const InputGroup = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutR
     />
   ),
 );
-InputGroup.displayName = "InputGroup";
 
+/**
+ * Renders supplementary content around an input group control.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupAddon align='inline-end'>.com</InputGroupAddon>
+ * ```
+ *
+ * @see {@link InputGroupAddonProps} for available props
+ */
 const InputGroupAddon = React.forwardRef<HTMLDivElement, InputGroupAddonProps>(
   ({className, align = "inline-start", onClick, ...props}: Readonly<InputGroupAddonProps>, ref): React.JSX.Element => (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- clicking the addon focuses the related control.
@@ -93,8 +155,22 @@ const InputGroupAddon = React.forwardRef<HTMLDivElement, InputGroupAddonProps>(
     />
   ),
 );
-InputGroupAddon.displayName = "InputGroupAddon";
 
+/**
+ * Renders a compact button matched to input group dimensions.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a wrapped `Button` component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupButton size='sm'>Search</InputGroupButton>
+ * ```
+ *
+ * @see {@link InputGroupButtonProps} for available props
+ */
 const InputGroupButton = React.forwardRef<HTMLButtonElement, InputGroupButtonProps>(
   ({className, type = "button", variant = "ghost", size = "xs", ...props}: Readonly<InputGroupButtonProps>, ref): React.JSX.Element => (
     <Button
@@ -107,10 +183,24 @@ const InputGroupButton = React.forwardRef<HTMLButtonElement, InputGroupButtonPro
     />
   ),
 );
-InputGroupButton.displayName = "InputGroupButton";
 
-const InputGroupText = React.forwardRef<HTMLSpanElement, React.ComponentPropsWithoutRef<"span">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"span">>, ref): React.JSX.Element => (
+/**
+ * Displays static inline text within an input group.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<span>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupText>@</InputGroupText>
+ * ```
+ *
+ * @see {@link InputGroupTextProps} for available props
+ */
+const InputGroupText = React.forwardRef<HTMLSpanElement, InputGroupTextProps>(
+  ({className, ...props}: Readonly<InputGroupTextProps>, ref): React.JSX.Element => (
     <span
       ref={ref}
       className={cn(styles.text, className)}
@@ -118,10 +208,24 @@ const InputGroupText = React.forwardRef<HTMLSpanElement, React.ComponentPropsWit
     />
   ),
 );
-InputGroupText.displayName = "InputGroupText";
 
-const InputGroupInput = React.forwardRef<HTMLInputElement, React.ComponentPropsWithoutRef<"input">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"input">>, ref): React.JSX.Element => (
+/**
+ * Renders the primary input control inside an input group.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a wrapped `Input` component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupInput placeholder='Search...' />
+ * ```
+ *
+ * @see {@link InputGroupInputProps} for available props
+ */
+const InputGroupInput = React.forwardRef<HTMLInputElement, InputGroupInputProps>(
+  ({className, ...props}: Readonly<InputGroupInputProps>, ref): React.JSX.Element => (
     <Input
       ref={ref}
       data-slot='input-group-control'
@@ -130,10 +234,24 @@ const InputGroupInput = React.forwardRef<HTMLInputElement, React.ComponentPropsW
     />
   ),
 );
-InputGroupInput.displayName = "InputGroupInput";
 
-const InputGroupTextarea = React.forwardRef<HTMLTextAreaElement, React.ComponentPropsWithoutRef<"textarea">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"textarea">>, ref): React.JSX.Element => (
+/**
+ * Renders a textarea control inside an input group.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a wrapped `Textarea` component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupTextarea rows={4} />
+ * ```
+ *
+ * @see {@link InputGroupTextareaProps} for available props
+ */
+const InputGroupTextarea = React.forwardRef<HTMLTextAreaElement, InputGroupTextareaProps>(
+  ({className, ...props}: Readonly<InputGroupTextareaProps>, ref): React.JSX.Element => (
     <Textarea
       ref={ref}
       data-slot='input-group-control'
@@ -142,6 +260,12 @@ const InputGroupTextarea = React.forwardRef<HTMLTextAreaElement, React.Component
     />
   ),
 );
+
+InputGroup.displayName = "InputGroup";
+InputGroupAddon.displayName = "InputGroupAddon";
+InputGroupButton.displayName = "InputGroupButton";
+InputGroupText.displayName = "InputGroupText";
+InputGroupInput.displayName = "InputGroupInput";
 InputGroupTextarea.displayName = "InputGroupTextarea";
 
 export {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea};

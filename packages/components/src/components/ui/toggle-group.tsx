@@ -17,15 +17,51 @@ interface ToggleGroupContextValue {
 const ToggleGroupContext = React.createContext<ToggleGroupContextValue>({});
 
 export interface ToggleGroupProps extends Omit<React.ComponentPropsWithRef<typeof BaseToggleGroup>, "className"> {
+  /**
+   * Additional CSS classes merged with the toggle-group root styles.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Shared visual variant inherited by descendant toggle items when not explicitly overridden.
+   * @default undefined
+   */
   variant?: ToggleVariant;
+  /**
+   * Shared size inherited by descendant toggle items when not explicitly overridden.
+   * @default undefined
+   */
   size?: ToggleSize;
 }
 
+/**
+ * Props for an individual toggle-group item.
+ *
+ * @remarks
+ * Inherits the shared toggle API except for pressed-state props, which are controlled
+ * by the surrounding {@link ToggleGroup}.
+ */
 export interface ToggleGroupItemProps extends Omit<ToggleProps, "pressed" | "defaultPressed" | "onPressedChange"> {}
 
 /**
- * Renders the toggle-group root and provides shared size and variant context.
+ * Groups related toggles into a single multi-select or single-select control.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Toggle Group primitives
+ * - Provides shared `size` and `variant` values to descendant items
+ *
+ * @example
+ * ```tsx
+ * <ToggleGroup
+ *   defaultValue={["bold"]}
+ *   toggleMultiple>
+ *   <ToggleGroupItem value='bold'>Bold</ToggleGroupItem>
+ *   <ToggleGroupItem value='italic'>Italic</ToggleGroupItem>
+ * </ToggleGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
 function ToggleGroup(props: Readonly<ToggleGroup.Props>): React.ReactElement {
   const {className, children, render, size, variant, ...otherProps} = props;
@@ -44,7 +80,21 @@ function ToggleGroup(props: Readonly<ToggleGroup.Props>): React.ReactElement {
 }
 
 /**
- * Renders a toggle-group item that inherits shared variants from context.
+ * Renders an individual toggle item within a toggle group.
+ *
+ * @remarks
+ * - Renders a styled toggle button
+ * - Built on the shared `Toggle` component and Base UI Toggle Group state
+ * - Inherits `size` and `variant` from the nearest {@link ToggleGroup} when omitted
+ *
+ * @example
+ * ```tsx
+ * <ToggleGroup defaultValue={["left"]}>
+ *   <ToggleGroupItem value='left'>Left</ToggleGroupItem>
+ * </ToggleGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
 function ToggleGroupItem(props: Readonly<ToggleGroupItem.Props>): React.ReactElement {
   const {className, size, variant, ...otherProps} = props;
@@ -77,5 +127,8 @@ namespace ToggleGroupItem {
   export type Props = ToggleGroupItemProps;
   export type State = Toggle.State;
 }
+
+ToggleGroup.displayName = "ToggleGroup";
+ToggleGroupItem.displayName = "ToggleGroupItem";
 
 export {ToggleGroup, ToggleGroupItem};

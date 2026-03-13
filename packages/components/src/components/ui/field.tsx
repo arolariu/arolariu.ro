@@ -8,19 +8,75 @@ import {Separator} from "@/components/ui/separator";
 import {cn} from "@/lib/utilities";
 import styles from "./field.module.css";
 
-type FieldOrientation = "vertical" | "horizontal" | "responsive";
-type FieldLegendVariant = "legend" | "label";
+/** Supported layouts for {@link Field}. */
+export type FieldOrientation = "vertical" | "horizontal" | "responsive";
 
-interface FieldLegendProps extends React.ComponentPropsWithoutRef<"legend"> {
+/** Supported legend render styles for {@link FieldLegend}. */
+export type FieldLegendVariant = "legend" | "label";
+
+/** Shape of error objects accepted by {@link FieldError}. */
+export interface FieldErrorItem {
+  /** Human-readable validation error message. @default undefined */
+  message?: string;
+}
+
+/**
+ * Props for the {@link FieldSet} component.
+ */
+export type FieldSetProps = React.ComponentPropsWithoutRef<"fieldset">;
+
+/**
+ * Props for the {@link FieldLegend} component.
+ */
+export interface FieldLegendProps extends React.ComponentPropsWithoutRef<"legend"> {
+  /** Visual treatment used for the legend content. @default "legend" */
   variant?: FieldLegendVariant;
 }
 
-interface FieldProps extends React.ComponentPropsWithoutRef<"div"> {
+/**
+ * Props for the {@link FieldGroup} component.
+ */
+export type FieldGroupProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link Field} component.
+ */
+export interface FieldProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** Layout used to arrange labels and controls. @default "vertical" */
   orientation?: FieldOrientation;
 }
 
-interface FieldErrorProps extends React.ComponentPropsWithoutRef<"div"> {
-  errors?: Array<{message?: string} | undefined>;
+/**
+ * Props for the {@link FieldContent} component.
+ */
+export type FieldContentProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link FieldLabel} component.
+ */
+export type FieldLabelProps = React.ComponentPropsWithoutRef<"label">;
+
+/**
+ * Props for the {@link FieldTitle} component.
+ */
+export type FieldTitleProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link FieldDescription} component.
+ */
+export type FieldDescriptionProps = React.ComponentPropsWithoutRef<"p">;
+
+/**
+ * Props for the {@link FieldSeparator} component.
+ */
+export type FieldSeparatorProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link FieldError} component.
+ */
+export interface FieldErrorProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** Validation errors rendered when children are not provided. @default undefined */
+  errors?: Array<FieldErrorItem | undefined>;
 }
 
 function getFieldOrientationClass(orientation: FieldOrientation): string {
@@ -37,8 +93,25 @@ function getFieldOrientationClass(orientation: FieldOrientation): string {
   }
 }
 
-const FieldSet = React.forwardRef<HTMLFieldSetElement, React.ComponentPropsWithoutRef<"fieldset">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"fieldset">>, ref): React.JSX.Element => (
+/**
+ * Groups related controls within a semantic fieldset.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<fieldset>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldSet>
+ *   <FieldLegend>Preferences</FieldLegend>
+ * </FieldSet>
+ * ```
+ *
+ * @see {@link FieldSetProps} for available props
+ */
+const FieldSet = React.forwardRef<HTMLFieldSetElement, FieldSetProps>(
+  ({className, ...props}: Readonly<FieldSetProps>, ref): React.JSX.Element => (
     <fieldset
       ref={ref}
       data-slot='field-set'
@@ -47,8 +120,22 @@ const FieldSet = React.forwardRef<HTMLFieldSetElement, React.ComponentPropsWitho
     />
   ),
 );
-FieldSet.displayName = "FieldSet";
 
+/**
+ * Labels a grouped set of controls within {@link FieldSet}.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<legend>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldLegend variant='label'>Billing address</FieldLegend>
+ * ```
+ *
+ * @see {@link FieldLegendProps} for available props
+ */
 const FieldLegend = React.forwardRef<HTMLLegendElement, FieldLegendProps>(
   ({className, variant = "legend", ...props}: Readonly<FieldLegendProps>, ref): React.JSX.Element => (
     <legend
@@ -60,10 +147,26 @@ const FieldLegend = React.forwardRef<HTMLLegendElement, FieldLegendProps>(
     />
   ),
 );
-FieldLegend.displayName = "FieldLegend";
 
-const FieldGroup = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
+/**
+ * Stacks multiple field rows under a shared container.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldGroup>
+ *   <Field />
+ * </FieldGroup>
+ * ```
+ *
+ * @see {@link FieldGroupProps} for available props
+ */
+const FieldGroup = React.forwardRef<HTMLDivElement, FieldGroupProps>(
+  ({className, ...props}: Readonly<FieldGroupProps>, ref): React.JSX.Element => (
     <div
       ref={ref}
       data-slot='field-group'
@@ -72,8 +175,22 @@ const FieldGroup = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutR
     />
   ),
 );
-FieldGroup.displayName = "FieldGroup";
 
+/**
+ * Creates a styled field row for labels, descriptions, and controls.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <Field orientation='responsive'>...</Field>
+ * ```
+ *
+ * @see {@link FieldProps} for available props
+ */
 const Field = React.forwardRef<HTMLDivElement, FieldProps>(
   ({className, orientation = "vertical", ...props}: Readonly<FieldProps>, ref): React.JSX.Element => (
     <div
@@ -86,10 +203,24 @@ const Field = React.forwardRef<HTMLDivElement, FieldProps>(
     />
   ),
 );
-Field.displayName = "Field";
 
-const FieldContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
+/**
+ * Wraps field controls and supporting content.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldContent>{control}</FieldContent>
+ * ```
+ *
+ * @see {@link FieldContentProps} for available props
+ */
+const FieldContent = React.forwardRef<HTMLDivElement, FieldContentProps>(
+  ({className, ...props}: Readonly<FieldContentProps>, ref): React.JSX.Element => (
     <div
       ref={ref}
       data-slot='field-content'
@@ -98,10 +229,24 @@ const FieldContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithou
     />
   ),
 );
-FieldContent.displayName = "FieldContent";
 
-const FieldLabel = React.forwardRef<HTMLLabelElement, React.ComponentPropsWithoutRef<"label">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"label">>, ref): React.JSX.Element => {
+/**
+ * Renders the label associated with a form control.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<label>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldLabel htmlFor='email'>Email</FieldLabel>
+ * ```
+ *
+ * @see {@link FieldLabelProps} for available props
+ */
+const FieldLabel = React.forwardRef<HTMLLabelElement, FieldLabelProps>(
+  ({className, ...props}: Readonly<FieldLabelProps>, ref): React.JSX.Element => {
     return (
       <label
         ref={ref}
@@ -112,10 +257,24 @@ const FieldLabel = React.forwardRef<HTMLLabelElement, React.ComponentPropsWithou
     );
   },
 );
-FieldLabel.displayName = "FieldLabel";
 
-const FieldTitle = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
+/**
+ * Displays the leading title content for a field row.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldTitle>Account</FieldTitle>
+ * ```
+ *
+ * @see {@link FieldTitleProps} for available props
+ */
+const FieldTitle = React.forwardRef<HTMLDivElement, FieldTitleProps>(
+  ({className, ...props}: Readonly<FieldTitleProps>, ref): React.JSX.Element => (
     <div
       ref={ref}
       data-slot='field-label'
@@ -124,10 +283,24 @@ const FieldTitle = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutR
     />
   ),
 );
-FieldTitle.displayName = "FieldTitle";
 
-const FieldDescription = React.forwardRef<HTMLParagraphElement, React.ComponentPropsWithoutRef<"p">>(
-  ({className, ...props}: Readonly<React.ComponentPropsWithoutRef<"p">>, ref): React.JSX.Element => (
+/**
+ * Renders supplementary descriptive text for a field.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<p>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldDescription>Used for account recovery.</FieldDescription>
+ * ```
+ *
+ * @see {@link FieldDescriptionProps} for available props
+ */
+const FieldDescription = React.forwardRef<HTMLParagraphElement, FieldDescriptionProps>(
+  ({className, ...props}: Readonly<FieldDescriptionProps>, ref): React.JSX.Element => (
     <p
       ref={ref}
       data-slot='field-description'
@@ -136,10 +309,24 @@ const FieldDescription = React.forwardRef<HTMLParagraphElement, React.ComponentP
     />
   ),
 );
-FieldDescription.displayName = "FieldDescription";
 
-const FieldSeparator = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
-  ({children, className, ...props}: Readonly<React.ComponentPropsWithoutRef<"div">>, ref): React.JSX.Element => (
+/**
+ * Separates field sections with optional inline content.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldSeparator>or</FieldSeparator>
+ * ```
+ *
+ * @see {@link FieldSeparatorProps} for available props
+ */
+const FieldSeparator = React.forwardRef<HTMLDivElement, FieldSeparatorProps>(
+  ({children, className, ...props}: Readonly<FieldSeparatorProps>, ref): React.JSX.Element => (
     <div
       ref={ref}
       data-slot='field-separator'
@@ -151,8 +338,22 @@ const FieldSeparator = React.forwardRef<HTMLDivElement, React.ComponentPropsWith
     </div>
   ),
 );
-FieldSeparator.displayName = "FieldSeparator";
 
+/**
+ * Presents validation feedback for a field.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element when content exists
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <FieldError errors={[{message: "Required"}]} />
+ * ```
+ *
+ * @see {@link FieldErrorProps} for available props
+ */
 const FieldError = React.forwardRef<HTMLDivElement, FieldErrorProps>(
   ({className, children, errors, ...props}: Readonly<FieldErrorProps>, ref): React.JSX.Element | null => {
     const content = React.useMemo((): React.JSX.Element | null => {
@@ -189,6 +390,16 @@ const FieldError = React.forwardRef<HTMLDivElement, FieldErrorProps>(
     );
   },
 );
+
+FieldSet.displayName = "FieldSet";
+FieldLegend.displayName = "FieldLegend";
+FieldGroup.displayName = "FieldGroup";
+Field.displayName = "Field";
+FieldContent.displayName = "FieldContent";
+FieldLabel.displayName = "FieldLabel";
+FieldTitle.displayName = "FieldTitle";
+FieldDescription.displayName = "FieldDescription";
+FieldSeparator.displayName = "FieldSeparator";
 FieldError.displayName = "FieldError";
 
 export {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle};

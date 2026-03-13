@@ -14,7 +14,19 @@ type RadioGroupProps = React.ComponentPropsWithRef<typeof BaseRadioGroup>;
 type RadioGroupItemProps = React.ComponentPropsWithRef<typeof Radio.Root>;
 
 /**
- * Renders a styled radio group container.
+ * Coordinates radio group state and selection behavior.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/radio-group | Base UI Radio Group}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <RadioGroup>Content</RadioGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/radio-group | Base UI Documentation}
  */
 function RadioGroup(props: Readonly<RadioGroup.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
@@ -32,7 +44,19 @@ function RadioGroup(props: Readonly<RadioGroup.Props>): React.ReactElement {
 }
 
 /**
- * Renders a styled radio item with an indicator icon.
+ * Renders the radio group item.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/radio-group | Base UI Radio Group}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <RadioGroupItem>Content</RadioGroupItem>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/radio-group | Base UI Documentation}
  */
 function RadioGroupItem(props: Readonly<RadioGroupItem.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
@@ -63,5 +87,8 @@ namespace RadioGroupItem {
   export type Props = RadioGroupItemProps;
   export type State = Radio.Root.State;
 }
+
+RadioGroup.displayName = "RadioGroup";
+RadioGroupItem.displayName = "RadioGroupItem";
 
 export {RadioGroup, RadioGroupItem};

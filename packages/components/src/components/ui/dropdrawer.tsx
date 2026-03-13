@@ -184,6 +184,10 @@ function DropdownMenuContent(
 interface DropdownMenuItemProps extends React.ComponentPropsWithRef<typeof BaseMenu.Item> {
   /** @deprecated Prefer Base UI's `render` prop. */
   asChild?: boolean;
+  /**
+   * Whether to apply inset spacing to align with grouped menu content.
+   * @default false
+   */
   inset?: boolean;
 }
 
@@ -294,12 +298,40 @@ interface MobileSubmenuDataAttributes {
 
 interface SharedDropDrawerItemProps
   extends Omit<React.ComponentPropsWithoutRef<typeof BaseMenu.Item>, "children" | "onClick" | "onSelect">, MobileSubmenuDataAttributes {
+  /**
+   * Item contents.
+   * @default undefined
+   */
   children?: React.ReactNode;
+  /**
+   * Additional CSS classes merged with the item styles.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Whether the desktop dropdown should close after the item is activated.
+   * @default undefined
+   */
   closeOnClick?: boolean;
+  /**
+   * Optional trailing icon or affordance rendered alongside the item content.
+   * @default undefined
+   */
   icon?: React.ReactNode;
+  /**
+   * Whether to apply inset spacing to align the item with grouped content.
+   * @default undefined
+   */
   inset?: boolean;
+  /**
+   * Mouse click handler invoked when the item is activated.
+   * @default undefined
+   */
   onClick?: React.MouseEventHandler<HTMLElement>;
+  /**
+   * Selection callback invoked with the native event when the item is activated.
+   * @default undefined
+   */
   onSelect?: (event: Event) => void;
 }
 
@@ -321,6 +353,25 @@ const SubmenuContext = React.createContext<SubmenuContextType>({
   submenuTitle: null,
 });
 
+/**
+ * Provides a responsive dropdown-on-desktop, drawer-on-mobile navigation surface.
+ *
+ * @remarks
+ * - Renders either Base UI `Menu.Root` or `Drawer.Root` depending on viewport size
+ * - Built on Base UI Menu and Drawer primitives
+ *
+ * @example
+ * ```tsx
+ * <DropDrawer>
+ *   <DropDrawerTrigger>Open menu</DropDrawerTrigger>
+ *   <DropDrawerContent>
+ *     <DropDrawerItem>Profile</DropDrawerItem>
+ *   </DropDrawerContent>
+ * </DropDrawer>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawer({children, ...props}: DropDrawerRootProps): React.JSX.Element {
   const isMobile = useIsMobile();
 
@@ -343,6 +394,20 @@ function DropDrawer({children, ...props}: DropDrawerRootProps): React.JSX.Elemen
   );
 }
 
+/**
+ * Renders the control that opens the dropdown or drawer surface.
+ *
+ * @remarks
+ * - Renders either a Base UI menu trigger or drawer trigger
+ * - Built on Base UI Menu and Drawer primitives
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerTrigger>Open menu</DropDrawerTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/drawer | Base UI Drawer Docs}
+ */
 function DropDrawerTrigger({className, children, ...props}: DropDrawerTriggerProps): React.JSX.Element {
   const {isMobile} = useDropDrawerContext();
 
@@ -363,6 +428,22 @@ function DropDrawerTrigger({className, children, ...props}: DropDrawerTriggerPro
   );
 }
 
+/**
+ * Renders the responsive dropdown or drawer content surface.
+ *
+ * @remarks
+ * - Renders a Base UI popup on desktop and drawer content on mobile
+ * - Built on Base UI Menu and Drawer primitives with animated mobile submenu navigation
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerContent>
+ *   <DropDrawerItem>Settings</DropDrawerItem>
+ * </DropDrawerContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawerContent({className, children, ...props}: DropDrawerContentProps): React.JSX.Element {
   const {isMobile} = useDropDrawerContext();
   const [activeSubmenu, setActiveSubmenu] = React.useState<string | null>(null);
@@ -600,6 +681,20 @@ function DropDrawerContent({className, children, ...props}: DropDrawerContentPro
   );
 }
 
+/**
+ * Renders an actionable item inside the drop drawer surface.
+ *
+ * @remarks
+ * - Renders a Base UI menu item on desktop and a keyboard-accessible `<div>` on mobile
+ * - Built on Base UI Menu and Drawer close primitives
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerItem icon={<ChevronRightIcon />}>Account</DropDrawerItem>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawerItem({
   className,
   children,
@@ -741,6 +836,20 @@ function DropDrawerItem({
   );
 }
 
+/**
+ * Renders a visual separator between desktop drop drawer sections.
+ *
+ * @remarks
+ * - Renders a separator only in desktop dropdown mode
+ * - Built on Base UI Menu separator primitives
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerSeparator />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawerSeparator({
   className,
   ...props
@@ -760,6 +869,20 @@ function DropDrawerSeparator({
   );
 }
 
+/**
+ * Renders a section label for the drop drawer surface.
+ *
+ * @remarks
+ * - Renders a drawer title on mobile and a menu label on desktop
+ * - Built on Base UI Drawer and Menu primitives
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerLabel>Actions</DropDrawerLabel>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawerLabel({
   className,
   children,
@@ -786,6 +909,20 @@ function DropDrawerLabel({
   );
 }
 
+/**
+ * Renders footer content aligned to the bottom of the responsive surface.
+ *
+ * @remarks
+ * - Renders a drawer footer on mobile and a styled `<div>` on desktop
+ * - Built on Base UI Drawer primitives for mobile layouts
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerFooter>Signed in as Alex</DropDrawerFooter>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/drawer | Base UI Drawer Docs}
+ */
 function DropDrawerFooter({
   className,
   children,
@@ -810,6 +947,23 @@ function DropDrawerFooter({
   );
 }
 
+/**
+ * Renders a grouped collection of drop drawer items.
+ *
+ * @remarks
+ * - Renders a Base UI menu group on desktop and a `<div role="group">` on mobile
+ * - Inserts mobile-only separators between adjacent children
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerGroup>
+ *   <DropDrawerItem>Profile</DropDrawerItem>
+ *   <DropDrawerItem>Billing</DropDrawerItem>
+ * </DropDrawerGroup>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/group_role | ARIA Group Role}
+ */
 function DropDrawerGroup({className, children, ...props}: React.ComponentProps<"div"> & {children: React.ReactNode}): React.JSX.Element {
   const {isMobile} = useDropDrawerContext();
 
@@ -857,6 +1011,25 @@ function DropDrawerGroup({className, children, ...props}: React.ComponentProps<"
   );
 }
 
+/**
+ * Renders a submenu root within the drop drawer surface.
+ *
+ * @remarks
+ * - Renders a Base UI submenu on desktop and a mobile-aware container on small screens
+ * - Registers submenu content for animated mobile drill-down navigation
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerSub>
+ *   <DropDrawerSubTrigger>More</DropDrawerSubTrigger>
+ *   <DropDrawerSubContent>
+ *     <DropDrawerItem>Sub item</DropDrawerItem>
+ *   </DropDrawerSubContent>
+ * </DropDrawerSub>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawerSub({
   children,
   id,
@@ -928,12 +1101,42 @@ function DropDrawerSub({
 
 interface DropDrawerSubTriggerProps
   extends Omit<React.ComponentPropsWithoutRef<typeof DropdownMenuSubTrigger>, "children" | "onClick">, MobileSubmenuDataAttributes {
+  /**
+   * Trigger contents.
+   * @default undefined
+   */
   children?: React.ReactNode;
+  /**
+   * Additional CSS classes merged with the trigger styles.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Whether to apply inset spacing to align the trigger with grouped content.
+   * @default undefined
+   */
   inset?: boolean;
+  /**
+   * Mouse click handler invoked before submenu navigation occurs.
+   * @default undefined
+   */
   onClick?: React.MouseEventHandler<HTMLElement>;
 }
 
+/**
+ * Renders the trigger that opens a nested submenu.
+ *
+ * @remarks
+ * - Renders a Base UI submenu trigger on desktop and a keyboard-accessible `<div>` on mobile
+ * - Built on Base UI Menu submenu primitives
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerSubTrigger>Advanced</DropDrawerSubTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawerSubTrigger({className, inset, children, onClick, ...props}: DropDrawerSubTriggerProps): React.JSX.Element {
   const {isMobile} = useDropDrawerContext();
   const {navigateToSubmenu} = React.useContext(SubmenuContext);
@@ -1048,6 +1251,22 @@ function DropDrawerSubTrigger({className, inset, children, onClick, ...props}: D
   );
 }
 
+/**
+ * Renders the content region for a nested submenu.
+ *
+ * @remarks
+ * - Renders only in desktop dropdown mode
+ * - Built on Base UI Menu submenu popup primitives
+ *
+ * @example
+ * ```tsx
+ * <DropDrawerSubContent>
+ *   <DropDrawerItem>Details</DropDrawerItem>
+ * </DropDrawerSubContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
+ */
 function DropDrawerSubContent({
   className,
   sideOffset = 4,
@@ -1070,6 +1289,18 @@ function DropDrawerSubContent({
     </DropdownMenuSubContent>
   );
 }
+
+DropDrawer.displayName = "DropDrawer";
+DropDrawerTrigger.displayName = "DropDrawerTrigger";
+DropDrawerContent.displayName = "DropDrawerContent";
+DropDrawerItem.displayName = "DropDrawerItem";
+DropDrawerSeparator.displayName = "DropDrawerSeparator";
+DropDrawerLabel.displayName = "DropDrawerLabel";
+DropDrawerFooter.displayName = "DropDrawerFooter";
+DropDrawerGroup.displayName = "DropDrawerGroup";
+DropDrawerSub.displayName = "DropDrawerSub";
+DropDrawerSubTrigger.displayName = "DropDrawerSubTrigger";
+DropDrawerSubContent.displayName = "DropDrawerSubContent";
 
 export {
   DropDrawer,

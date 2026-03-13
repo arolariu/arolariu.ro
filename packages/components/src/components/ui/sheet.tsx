@@ -14,47 +14,161 @@ export type SheetSide = "top" | "right" | "bottom" | "left";
 interface SheetProps extends React.ComponentPropsWithRef<typeof BaseDialog.Root> {}
 
 interface SheetTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Trigger>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
-  /** @deprecated Prefer Base UI's `render` prop. */
+  /**
+   * Enables child element composition instead of rendering the default wrapper.
+   * @default false
+   * @deprecated Prefer Base UI's `render` prop.
+   */
   asChild?: boolean;
 }
 
 interface SheetOverlayProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Backdrop>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 
 export interface SheetContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Popup>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Controls which side of the viewport the sheet enters from.
+   * @default "right"
+   */
   side?: SheetSide;
 }
 
 interface SheetHeaderProps extends React.ComponentPropsWithRef<"div"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Overrides the default rendered element while preserving component behavior.
+   * @default undefined
+   */
   render?: useRender.RenderProp<Record<string, never>>;
+  /**
+   * Enables child element composition instead of rendering the default wrapper.
+   * @default false
+   * @deprecated Prefer Base UI's `render` prop.
+   */
   asChild?: boolean;
 }
 
 interface SheetFooterProps extends React.ComponentPropsWithRef<"div"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Overrides the default rendered element while preserving component behavior.
+   * @default undefined
+   */
   render?: useRender.RenderProp<Record<string, never>>;
+  /**
+   * Enables child element composition instead of rendering the default wrapper.
+   * @default false
+   * @deprecated Prefer Base UI's `render` prop.
+   */
   asChild?: boolean;
 }
 
 interface SheetTitleProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Title>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 
 interface SheetDescriptionProps extends Omit<React.ComponentPropsWithRef<typeof BaseDialog.Description>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 
+/**
+ * Coordinates sheet state and accessibility behavior.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <Sheet>Content</Sheet>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function Sheet(props: Readonly<Sheet.Props>): React.ReactElement {
   return <BaseDialog.Root {...props} />;
 }
 
+/**
+ * Provides the sheet portal container.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <SheetPortal>Content</SheetPortal>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 const SheetPortal = BaseDialog.Portal;
+/**
+ * Renders the sheet close.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <SheetClose>Content</SheetClose>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 const SheetClose = BaseDialog.Close;
 
+/**
+ * Renders the sheet trigger.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <SheetTrigger>Content</SheetTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetTrigger(props: Readonly<SheetTrigger.Props>): React.ReactElement {
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
@@ -72,6 +186,21 @@ function SheetTrigger(props: Readonly<SheetTrigger.Props>): React.ReactElement {
   );
 }
 
+/**
+ * Renders the sheet overlay.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <SheetOverlay>Content</SheetOverlay>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetOverlay(props: Readonly<SheetOverlay.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
 
@@ -87,6 +216,21 @@ function SheetOverlay(props: Readonly<SheetOverlay.Props>): React.ReactElement {
   );
 }
 
+/**
+ * Renders the sheet content.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <SheetContent>Content</SheetContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetContent(props: Readonly<SheetContent.Props>): React.ReactElement {
   const {className, children, render, side = "right", ...otherProps} = props;
 
@@ -111,6 +255,21 @@ function SheetContent(props: Readonly<SheetContent.Props>): React.ReactElement {
   );
 }
 
+/**
+ * Renders the sheet header.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <SheetHeader>Content</SheetHeader>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetHeader(props: Readonly<SheetHeader.Props>): React.ReactElement {
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
@@ -124,6 +283,21 @@ function SheetHeader(props: Readonly<SheetHeader.Props>): React.ReactElement {
   });
 }
 
+/**
+ * Renders the sheet footer.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <SheetFooter>Content</SheetFooter>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetFooter(props: Readonly<SheetFooter.Props>): React.ReactElement {
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
@@ -137,6 +311,21 @@ function SheetFooter(props: Readonly<SheetFooter.Props>): React.ReactElement {
   });
 }
 
+/**
+ * Renders the sheet title.
+ *
+ * @remarks
+ * - Renders a `<h2>` element by default
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <SheetTitle>Content</SheetTitle>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetTitle(props: Readonly<SheetTitle.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -153,6 +342,21 @@ function SheetTitle(props: Readonly<SheetTitle.Props>): React.ReactElement {
   );
 }
 
+/**
+ * Renders the sheet description.
+ *
+ * @remarks
+ * - Renders a `<p>` element by default
+ * - Built on {@link https://base-ui.com/react/components/dialog | Base UI Dialog}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <SheetDescription>Content</SheetDescription>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
+ */
 function SheetDescription(props: Readonly<SheetDescription.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -216,5 +420,16 @@ namespace SheetDescription {
   export type Props = SheetDescriptionProps;
   export type State = BaseDialog.Description.State;
 }
+
+Sheet.displayName = "Sheet";
+SheetPortal.displayName = "SheetPortal";
+SheetClose.displayName = "SheetClose";
+SheetTrigger.displayName = "SheetTrigger";
+SheetOverlay.displayName = "SheetOverlay";
+SheetContent.displayName = "SheetContent";
+SheetHeader.displayName = "SheetHeader";
+SheetFooter.displayName = "SheetFooter";
+SheetTitle.displayName = "SheetTitle";
+SheetDescription.displayName = "SheetDescription";
 
 export {Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetPortal, SheetTitle, SheetTrigger};

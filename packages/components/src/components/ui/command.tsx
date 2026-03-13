@@ -12,51 +12,163 @@ import styles from "./command.module.css";
 type CommandFilter = (value: string, search: string, keywords?: string[]) => number;
 
 interface CommandProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Command palette content.
+   * @default undefined
+   */
   children?: React.ReactNode;
+  /**
+   * Accessible label announced for the command region.
+   * @default undefined
+   */
   label?: string;
+  /**
+   * Whether items should be filtered automatically as the search value changes.
+   * @default true
+   */
   shouldFilter?: boolean;
+  /**
+   * Custom scoring function used to determine whether an item matches the current search value.
+   * @default undefined
+   */
   filter?: CommandFilter;
+  /**
+   * Deprecated uncontrolled search value placeholder retained for API compatibility.
+   * @default undefined
+   */
   defaultValue?: string;
+  /**
+   * Deprecated controlled search value placeholder retained for API compatibility.
+   * @default undefined
+   */
   value?: string;
+  /**
+   * Deprecated change callback retained for API compatibility.
+   * @default undefined
+   */
   onValueChange?: (value: string) => void;
+  /**
+   * Whether keyboard navigation should wrap from the last item to the first.
+   * @default false
+   */
   loop?: boolean;
+  /**
+   * Whether pointer hover should avoid changing the active item.
+   * @default false
+   */
   disablePointerSelection?: boolean;
+  /**
+   * Deprecated Vim keybinding toggle retained for API compatibility.
+   * @default undefined
+   */
   vimBindings?: boolean;
 }
 
 interface CommandDialogProps extends Omit<React.ComponentPropsWithoutRef<typeof BaseDialog.Root>, "children"> {
+  /**
+   * Command palette content rendered inside the dialog popup.
+   * @default undefined
+   */
   children?: React.ReactNode;
+  /**
+   * Accessible dialog title announced to assistive technologies.
+   * @default "Command menu"
+   */
   title?: React.ReactNode;
 }
 
 interface CommandInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "type" | "value"> {
+  /**
+   * Controlled search value.
+   * @default undefined
+   */
   value?: string;
+  /**
+   * Native input change handler invoked before the command-specific callback.
+   * @default undefined
+   */
   onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  /**
+   * Callback fired when the command search value changes.
+   * @default undefined
+   */
   onValueChange?: (search: string) => void;
 }
 
 interface CommandListProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Command items and groups.
+   * @default undefined
+   */
   children?: React.ReactNode;
+  /**
+   * Accessible label for the listbox container.
+   * @default undefined
+   */
   label?: string;
 }
 
 interface CommandGroupProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "value"> {
+  /**
+   * Group contents.
+   * @default undefined
+   */
   children?: React.ReactNode;
+  /**
+   * Optional visual heading displayed above the group items.
+   * @default undefined
+   */
   heading?: React.ReactNode;
+  /**
+   * Optional stable value retained for API compatibility.
+   * @default undefined
+   */
   value?: string;
+  /**
+   * Whether the group should remain rendered even when it has no visible items.
+   * @default false
+   */
   forceMount?: boolean;
 }
 
 interface CommandSeparatorProps extends React.ComponentPropsWithoutRef<typeof BaseSeparator> {
+  /**
+   * Whether the separator should remain visible while filtering is active.
+   * @default false
+   */
   alwaysRender?: boolean;
 }
 
 interface CommandItemProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onSelect"> {
+  /**
+   * Item contents.
+   * @default undefined
+   */
   children?: React.ReactNode;
+  /**
+   * Whether the item is disabled and should be skipped by selection logic.
+   * @default false
+   */
   disabled?: boolean;
+  /**
+   * Callback invoked when the item is selected.
+   * @default undefined
+   */
   onSelect?: (value: string) => void;
+  /**
+   * Optional value used for filtering and selection callbacks.
+   * @default undefined
+   */
   value?: string;
+  /**
+   * Additional search keywords included in the filter match set.
+   * @default []
+   */
   keywords?: string[];
+  /**
+   * Whether the item should remain rendered even when filtered out.
+   * @default false
+   */
   forceMount?: boolean;
 }
 
@@ -139,6 +251,18 @@ function useCommandContext(componentName: string): CommandContextValue {
  * underlying implementation with a small context-driven registry. It supports
  * text filtering, arrow-key navigation, Enter-to-select, and pointer hover
  * selection for common command palette use cases.
+ *
+ * @example
+ * ```tsx
+ * <Command label='Quick actions'>
+ *   <CommandInput placeholder='Search actions...' />
+ *   <CommandList>
+ *     <CommandItem onSelect={() => console.log("Open")}>Open</CommandItem>
+ *   </CommandList>
+ * </Command>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Dialog Docs}
  */
 const Command = React.forwardRef<HTMLDivElement, CommandProps>(
   (
@@ -425,7 +549,20 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
 Command.displayName = "Command";
 
 /**
- * Renders the command palette inside a Base UI dialog popup.
+ * Renders the command surface inside a modal dialog.
+ *
+ * @remarks
+ * - Renders a Base UI dialog popup
+ * - Built on Base UI Dialog primitives
+ *
+ * @example
+ * ```tsx
+ * <CommandDialog open={open} onOpenChange={setOpen}>
+ *   <CommandInput placeholder='Search...' />
+ * </CommandDialog>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Dialog Docs}
  */
 function CommandDialog({children, open, onOpenChange, title = "Command menu", ...props}: Readonly<CommandDialogProps>): React.JSX.Element {
   return (
@@ -447,6 +584,17 @@ CommandDialog.displayName = "CommandDialog";
 
 /**
  * Provides the searchable input surface for a command palette.
+ *
+ * @remarks
+ * - Renders an `<input>` element inside a wrapper `<div>`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandInput placeholder='Search...' />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/combobox_role | ARIA Combobox Role}
  */
 const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps>(({className, onChange, onValueChange, value, ...props}, ref) => {
   const {activeItemId, listId, search, selectSpecificItem, setSearch} = useCommandContext("CommandInput");
@@ -489,6 +637,22 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps>(({cla
 });
 CommandInput.displayName = "CommandInput";
 
+/**
+ * Renders the listbox container that hosts command items and groups.
+ *
+ * @remarks
+ * - Renders a `<div>` element with `role="listbox"`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandList>
+ *   <CommandItem>Settings</CommandItem>
+ * </CommandList>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/listbox_role | ARIA Listbox Role}
+ */
 const CommandList = React.forwardRef<HTMLDivElement, CommandListProps>(({className, label, ...props}, ref) => {
   const {listId} = useCommandContext("CommandList");
 
@@ -505,6 +669,20 @@ const CommandList = React.forwardRef<HTMLDivElement, CommandListProps>(({classNa
 });
 CommandList.displayName = "CommandList";
 
+/**
+ * Renders a fallback empty-state message when no command items are visible.
+ *
+ * @remarks
+ * - Renders a `<div>` element with `role="status"`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandEmpty>No results found.</CommandEmpty>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/status_role | ARIA Status Role}
+ */
 const CommandEmpty = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => {
   const {getVisibleItemCount} = useCommandContext("CommandEmpty");
 
@@ -523,6 +701,22 @@ const CommandEmpty = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLD
 });
 CommandEmpty.displayName = "CommandEmpty";
 
+/**
+ * Groups related command items under an optional heading.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandGroup heading='Suggestions'>
+ *   <CommandItem>Profile</CommandItem>
+ * </CommandGroup>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/group_role | ARIA Group Role}
+ */
 const CommandGroup = React.forwardRef<HTMLDivElement, CommandGroupProps>(
   ({children, className, forceMount = false, heading, value: _value, ...props}, ref) => {
     const groupId = React.useId();
@@ -548,6 +742,20 @@ const CommandGroup = React.forwardRef<HTMLDivElement, CommandGroupProps>(
 );
 CommandGroup.displayName = "CommandGroup";
 
+/**
+ * Renders a separator between command groups or item sections.
+ *
+ * @remarks
+ * - Renders the shared separator primitive
+ * - Built on Base UI Separator
+ *
+ * @example
+ * ```tsx
+ * <CommandSeparator />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/separator | Base UI Separator Docs}
+ */
 const CommandSeparator = React.forwardRef<HTMLDivElement, CommandSeparatorProps>(
   ({alwaysRender = false, className, orientation = "horizontal", ...props}, ref) => {
     const {isFiltering} = useCommandContext("CommandSeparator");
@@ -570,6 +778,17 @@ CommandSeparator.displayName = "CommandSeparator";
 
 /**
  * Renders a selectable command option with filtering metadata and keyboard support.
+ *
+ * @remarks
+ * - Renders a `<div>` element with `role="option"`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandItem keywords={["preferences"]}>Settings</CommandItem>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/option_role | ARIA Option Role}
  */
 const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
   ({children, className, disabled = false, forceMount = false, keywords = [], onClick, onMouseEnter, onSelect, value, ...props}, ref) => {
@@ -657,6 +876,20 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
 );
 CommandItem.displayName = "CommandItem";
 
+/**
+ * Renders auxiliary shortcut text aligned to the edge of a command item.
+ *
+ * @remarks
+ * - Renders a `<span>` element
+ * - Built as a lightweight presentational helper for command menus
+ *
+ * @example
+ * ```tsx
+ * <CommandShortcut>⌘K</CommandShortcut>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/span | HTML span element}
+ */
 const CommandShortcut = ({className, ...props}: Readonly<React.HTMLAttributes<HTMLSpanElement>>): React.JSX.Element => {
   return (
     <span

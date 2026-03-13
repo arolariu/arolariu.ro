@@ -9,13 +9,33 @@ import {cn} from "@/lib/utilities";
 
 import styles from "./form.module.css";
 
-const Form = FormProvider;
+/**
+ * Provides the `react-hook-form` context to nested form primitives.
+ *
+ * @remarks
+ * - Renders the `FormProvider` component from `react-hook-form`
+ * - Built on `react-hook-form`
+ *
+ * @example
+ * ```tsx
+ * <Form {...form}>
+ *   <form>...</form>
+ * </Form>
+ * ```
+ *
+ * @see {@link https://react-hook-form.com/docs/formprovider | React Hook Form FormProvider Docs}
+ */
+const Form = Object.assign(FormProvider, {displayName: "Form"});
 
 type FormControlElementProps = React.HTMLAttributes<HTMLElement> & {
   ref?: React.Ref<HTMLElement>;
 };
 
 interface FormControlProps extends Omit<React.HTMLAttributes<HTMLElement>, "children"> {
+  /**
+   * Single form control element or fallback content to receive field accessibility attributes.
+   * @default undefined
+   */
   children: React.ReactNode;
 }
 
@@ -55,6 +75,24 @@ type FormFieldContextValue<
 
 const FormFieldContext = React.createContext<FormFieldContextValue | null>(null);
 
+/**
+ * Binds a single field name to the shared form field context.
+ *
+ * @remarks
+ * - Renders the `Controller` component from `react-hook-form`
+ * - Built on `react-hook-form` controller primitives
+ *
+ * @example
+ * ```tsx
+ * <FormField
+ *   control={form.control}
+ *   name='email'
+ *   render={({field}) => <input {...field} />}
+ * />
+ * ```
+ *
+ * @see {@link https://react-hook-form.com/docs/usecontroller/controller | React Hook Form Controller Docs}
+ */
 const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({
   ...props
 }: ControllerProps<TFieldValues, TName>): React.JSX.Element => {
@@ -80,6 +118,17 @@ type UseFormFieldReturn = {
 
 /**
  * Returns the resolved form field metadata for nested form primitives.
+ *
+ * @remarks
+ * Reads the nearest {@link FormField} and {@link FormItem} contexts, then combines them
+ * with `react-hook-form` field state to expose stable IDs and validation metadata.
+ *
+ * @example
+ * ```tsx
+ * const field = useFormField();
+ * ```
+ *
+ * @see {@link https://react-hook-form.com/docs/useformcontext | React Hook Form useFormContext Docs}
  */
 const useFormField = (): UseFormFieldReturn => {
   const fieldContext = React.useContext(FormFieldContext);
@@ -117,6 +166,22 @@ type FormItemContextValue = {
 
 const FormItemContext = React.createContext<FormItemContextValue | null>(null);
 
+/**
+ * Wraps a label, control, description, and message into a single form item.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built on the shared form item context
+ *
+ * @example
+ * ```tsx
+ * <FormItem>
+ *   <FormLabel>Email</FormLabel>
+ * </FormItem>
+ * ```
+ *
+ * @see {@link https://react-hook-form.com/docs/useformcontext | React Hook Form Docs}
+ */
 const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => {
   const id = React.useId();
 
@@ -132,6 +197,20 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 });
 FormItem.displayName = "FormItem";
 
+/**
+ * Renders the accessible label for the current form item.
+ *
+ * @remarks
+ * - Renders a `<label>` element
+ * - Built on the shared form field metadata hook
+ *
+ * @example
+ * ```tsx
+ * <FormLabel>Email</FormLabel>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/label | HTML label element}
+ */
 const FormLabel = React.forwardRef<HTMLLabelElement, React.LabelHTMLAttributes<HTMLLabelElement>>(({className, ...props}, ref) => {
   const {error, formItemId} = useFormField();
 
@@ -192,6 +271,20 @@ const FormControl = React.forwardRef<HTMLElement, FormControlProps>(
 );
 FormControl.displayName = "FormControl";
 
+/**
+ * Renders helper text that describes the current form control.
+ *
+ * @remarks
+ * - Renders a `<p>` element
+ * - Built on the shared form field metadata hook
+ *
+ * @example
+ * ```tsx
+ * <FormDescription>We'll never share your email.</FormDescription>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/p | HTML paragraph element}
+ */
 const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(({className, ...props}, ref) => {
   const {formDescriptionId} = useFormField();
 
@@ -206,6 +299,20 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
 });
 FormDescription.displayName = "FormDescription";
 
+/**
+ * Renders the validation message or fallback message for the current form control.
+ *
+ * @remarks
+ * - Renders a `<p>` element when content is available
+ * - Built on the shared form field metadata hook
+ *
+ * @example
+ * ```tsx
+ * <FormMessage />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-invalid | ARIA invalid state}
+ */
 const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({className, children, ...props}, ref) => {
     const {error, formMessageId} = useFormField();
@@ -227,5 +334,6 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
   },
 );
 FormMessage.displayName = "FormMessage";
+FormField.displayName = "FormField";
 
 export {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField};

@@ -6,10 +6,15 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./hole-background.module.css";
 
+/** Props accepted by {@link HoleBackground}. */
 export interface HoleBackgroundProps extends React.HTMLAttributes<HTMLCanvasElement> {
+  /** Stroke color used for the wireframe discs and line work. @default "#737373" */
   strokeColor?: string;
+  /** Number of radial line groups drawn through the tunnel. @default 50 */
   numberOfLines?: number;
+  /** Number of animated discs used to build the tunnel depth effect. @default 50 */
   numberOfDiscs?: number;
+  /** RGB tuple used to tint the floating particle field. @default [255, 255, 255] */
   particleRGBColor?: [number, number, number];
 }
 
@@ -93,6 +98,22 @@ const createInitialState = (): HoleState => ({
   linesCanvas: null,
 });
 
+/**
+ * Renders a vortex-style tunnel animation with discs, scanlines, and particles.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element containing a `<canvas>`
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <HoleBackground />
+ * ```
+ *
+ * @see {@link HoleBackgroundProps} for available props
+ */
 const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
   (
     {strokeColor = "#737373", numberOfLines = 50, numberOfDiscs = 50, particleRGBColor = [255, 255, 255], className, children, ...props},

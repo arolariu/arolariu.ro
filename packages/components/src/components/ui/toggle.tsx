@@ -12,8 +12,20 @@ export type ToggleVariant = "default" | "outline";
 export type ToggleSize = "default" | "sm" | "lg";
 
 export interface ToggleVariantOptions {
+  /**
+   * Controls the rendered visual variant.
+   * @default "default"
+   */
   variant?: ToggleVariant;
+  /**
+   * Controls the rendered size variant.
+   * @default "default"
+   */
   size?: ToggleSize;
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 
@@ -26,13 +38,37 @@ export function toggleVariants({variant = "default", size = "default", className
 }
 
 export interface ToggleProps extends Omit<React.ComponentPropsWithRef<typeof BaseToggle>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Controls the rendered visual variant.
+   * @default "default"
+   */
   variant?: ToggleVariant;
+  /**
+   * Controls the rendered size variant.
+   * @default "default"
+   */
   size?: ToggleSize;
 }
 
 /**
- * Renders a styled Base UI toggle using the canonical render composition pattern.
+ * Renders the toggle control.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/toggle | Base UI Toggle}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <Toggle>Content</Toggle>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toggle | Base UI Documentation}
  */
 function Toggle(props: Readonly<Toggle.Props>): React.ReactElement {
   const {className, children, render, size, variant, ...otherProps} = props;
@@ -55,5 +91,7 @@ namespace Toggle {
   export type Props = ToggleProps;
   export type State = BaseToggle.State;
 }
+
+Toggle.displayName = "Toggle";
 
 export {Toggle};

@@ -40,6 +40,17 @@ const SidebarContext = React.createContext<SidebarContextProps | null>(null);
 
 /**
  * Returns the active sidebar context and enforces provider usage.
+ *
+ * @remarks
+ * Must be called from within {@link SidebarProvider}. Exposes desktop and mobile
+ * open state along with the shared toggle helper used by sidebar primitives.
+ *
+ * @example
+ * ```tsx
+ * const {open, toggleSidebar} = useSidebar();
+ * ```
+ *
+ * @see {@link https://react.dev/reference/react/useContext | React useContext Docs}
  */
 function useSidebar(): SidebarContextProps {
   const context = React.useContext(SidebarContext);
@@ -51,102 +62,166 @@ function useSidebar(): SidebarContextProps {
   return context;
 }
 
-const SidebarProvider = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    defaultOpen?: boolean;
-    open?: boolean;
-    onOpenChange?: (open: boolean) => void;
-  }
->(({defaultOpen = true, open: openProp, onOpenChange: setOpenProp, className, style, children, ...props}, ref) => {
-  const isMobile = useIsMobile();
-  const [openMobile, setOpenMobile] = React.useState(false);
-  const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
-  const open = openProp ?? internalOpen;
+/**
+ * Props for the sidebar provider.
+ */
+interface SidebarProviderProps extends React.ComponentProps<"div"> {
+  /**
+   * Initial uncontrolled open state for desktop layouts.
+   * @default true
+   */
+  defaultOpen?: boolean;
+  /**
+   * Controlled open state for desktop layouts.
+   * @default undefined
+   */
+  open?: boolean;
+  /**
+   * Callback invoked when the desktop open state changes.
+   * @default undefined
+   */
+  onOpenChange?: (open: boolean) => void;
+}
 
-  const setOpen = React.useCallback(
-    (value: boolean | ((value: boolean) => boolean)) => {
-      const nextValue = typeof value === "function" ? value(open) : value;
+/**
+ * Provides shared sidebar state, keyboard shortcuts, and responsive behavior.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built on shared React context and tooltip primitives
+ * - Persists desktop collapse state to a cookie for cross-page continuity
+ *
+ * @example
+ * ```tsx
+ * <SidebarProvider>
+ *   <Sidebar />
+ * </SidebarProvider>
+ * ```
+ *
+ * @see {@link https://react.dev/reference/react/useContext | React Context Docs}
+ */
+const SidebarProvider = React.forwardRef<HTMLDivElement, SidebarProviderProps>(
+  ({defaultOpen = true, open: openProp, onOpenChange: setOpenProp, className, style, children, ...props}, ref) => {
+    const isMobile = useIsMobile();
+    const [openMobile, setOpenMobile] = React.useState(false);
+    const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
+    const open = openProp ?? internalOpen;
 
-      if (setOpenProp) {
-        setOpenProp(nextValue);
-      } else {
-        setInternalOpen(nextValue);
+    const setOpen = React.useCallback(
+      (value: boolean | ((value: boolean) => boolean)) => {
+        const nextValue = typeof value === "function" ? value(open) : value;
+
+        if (setOpenProp) {
+          setOpenProp(nextValue);
+        } else {
+          setInternalOpen(nextValue);
+        }
+
+        // eslint-disable-next-line unicorn/no-document-cookie -- persistent sidebar state matches V1 behavior
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      },
+      [open, setOpenProp],
+    );
+
+    const toggleSidebar = React.useCallback(() => {
+      if (isMobile) {
+        setOpenMobile((currentOpen) => !currentOpen);
+        return;
       }
 
-      // eslint-disable-next-line unicorn/no-document-cookie -- persistent sidebar state matches V1 behavior
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${nextValue}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-    },
-    [open, setOpenProp],
-  );
+      setOpen((currentOpen) => !currentOpen);
+    }, [isMobile, setOpen]);
 
-  const toggleSidebar = React.useCallback(() => {
-    if (isMobile) {
-      setOpenMobile((currentOpen) => !currentOpen);
-      return;
-    }
+    React.useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          toggleSidebar();
+        }
+      };
 
-    setOpen((currentOpen) => !currentOpen);
-  }, [isMobile, setOpen]);
+      globalThis.window.addEventListener("keydown", handleKeyDown);
 
-  React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        toggleSidebar();
-      }
-    };
+      return () => {
+        globalThis.window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [toggleSidebar]);
 
-    globalThis.window.addEventListener("keydown", handleKeyDown);
+    const state = open ? "expanded" : "collapsed";
 
-    return () => {
-      globalThis.window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [toggleSidebar]);
+    const contextValue = React.useMemo<SidebarContextProps>(
+      () => ({
+        isMobile,
+        open,
+        openMobile,
+        setOpen,
+        setOpenMobile,
+        state,
+        toggleSidebar,
+      }),
+      [isMobile, open, openMobile, setOpen, state, toggleSidebar],
+    );
 
-  const state = open ? "expanded" : "collapsed";
-
-  const contextValue = React.useMemo<SidebarContextProps>(
-    () => ({
-      isMobile,
-      open,
-      openMobile,
-      setOpen,
-      setOpenMobile,
-      state,
-      toggleSidebar,
-    }),
-    [isMobile, open, openMobile, setOpen, state, toggleSidebar],
-  );
-
-  return (
-    <SidebarContext.Provider value={contextValue}>
-      <TooltipProvider>
-        <div
-          ref={ref}
-          style={
-            {
-              "--ac-sidebar-width": SIDEBAR_WIDTH,
-              "--ac-sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-              ...style,
-            } as React.CSSProperties
-          }
-          className={cn(styles.wrapper, className)}
-          {...props}>
-          {children}
-        </div>
-      </TooltipProvider>
-    </SidebarContext.Provider>
-  );
-});
+    return (
+      <SidebarContext.Provider value={contextValue}>
+        <TooltipProvider>
+          <div
+            ref={ref}
+            style={
+              {
+                "--ac-sidebar-width": SIDEBAR_WIDTH,
+                "--ac-sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+                ...style,
+              } as React.CSSProperties
+            }
+            className={cn(styles.wrapper, className)}
+            {...props}>
+            {children}
+          </div>
+        </TooltipProvider>
+      </SidebarContext.Provider>
+    );
+  },
+);
 SidebarProvider.displayName = "SidebarProvider";
 
+/**
+ * Props for the root sidebar panel.
+ */
 type SidebarProps = React.ComponentProps<"div"> & {
+  /**
+   * Edge of the screen where the sidebar is rendered.
+   * @default "left"
+   */
   side?: "left" | "right";
+  /**
+   * Visual presentation style used for desktop rendering.
+   * @default "sidebar"
+   */
   variant?: "sidebar" | "floating" | "inset";
+  /**
+   * Desktop collapse behavior for the sidebar.
+   * @default "offcanvas"
+   */
   collapsible?: "offcanvas" | "icon" | "none";
 };
 
+/**
+ * Renders the responsive sidebar panel for desktop and mobile layouts.
+ *
+ * @remarks
+ * - Renders a `<div>` element on desktop and a dialog portal on mobile
+ * - Built on the shared sidebar context
+ *
+ * @example
+ * ```tsx
+ * <Sidebar>
+ *   <SidebarContent />
+ * </Sidebar>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/dialog_role | ARIA Dialog Role}
+ */
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
   ({side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props}, ref) => {
     const {isMobile, openMobile, setOpenMobile, state} = useSidebar();
@@ -265,6 +340,20 @@ function MobileSidebarPortal({
   );
 }
 
+/**
+ * Renders the primary button used to toggle the sidebar.
+ *
+ * @remarks
+ * - Renders the shared `Button` component
+ * - Built on the shared sidebar context
+ *
+ * @example
+ * ```tsx
+ * <SidebarTrigger />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/button | HTML button element}
+ */
 const SidebarTrigger = React.forwardRef<React.ComponentRef<typeof Button>, React.ComponentProps<typeof Button>>(
   ({className, onClick, ...props}, ref) => {
     const {toggleSidebar} = useSidebar();
@@ -289,6 +378,20 @@ const SidebarTrigger = React.forwardRef<React.ComponentRef<typeof Button>, React
 );
 SidebarTrigger.displayName = "SidebarTrigger";
 
+/**
+ * Renders a slim rail button used to toggle the sidebar collapsed state.
+ *
+ * @remarks
+ * - Renders a `<button>` element
+ * - Built on the shared sidebar context
+ *
+ * @example
+ * ```tsx
+ * <SidebarRail />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/button | HTML button element}
+ */
 const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"button">>(({className, ...props}, ref) => {
   const {toggleSidebar} = useSidebar();
 
@@ -308,6 +411,20 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"bu
 });
 SidebarRail.displayName = "SidebarRail";
 
+/**
+ * Renders the inset main content region adjacent to the sidebar.
+ *
+ * @remarks
+ * - Renders a `<main>` element
+ * - Built as a layout helper for inset sidebar variants
+ *
+ * @example
+ * ```tsx
+ * <SidebarInset>Main content</SidebarInset>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/main | HTML main element}
+ */
 const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<"main">>(({className, ...props}, ref) => (
   <main
     ref={ref}
@@ -317,6 +434,20 @@ const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<"main
 ));
 SidebarInset.displayName = "SidebarInset";
 
+/**
+ * Renders a styled input inside sidebar layouts.
+ *
+ * @remarks
+ * - Renders the shared `Input` component
+ * - Built for sidebar search and filtering affordances
+ *
+ * @example
+ * ```tsx
+ * <SidebarInput placeholder='Search...' />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/input | HTML input element}
+ */
 const SidebarInput = React.forwardRef<React.ComponentRef<typeof Input>, React.ComponentProps<typeof Input>>(
   ({className, ...props}, ref) => (
     <Input
@@ -329,6 +460,20 @@ const SidebarInput = React.forwardRef<React.ComponentRef<typeof Input>, React.Co
 );
 SidebarInput.displayName = "SidebarInput";
 
+/**
+ * Renders the header region of the sidebar.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built as a layout helper for branding or primary controls
+ *
+ * @example
+ * ```tsx
+ * <SidebarHeader>Workspace</SidebarHeader>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
+ */
 const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({className, ...props}, ref) => (
   <div
     ref={ref}
@@ -339,6 +484,20 @@ const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div
 ));
 SidebarHeader.displayName = "SidebarHeader";
 
+/**
+ * Renders the footer region of the sidebar.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built as a layout helper for actions or account controls
+ *
+ * @example
+ * ```tsx
+ * <SidebarFooter>Footer content</SidebarFooter>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
+ */
 const SidebarFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({className, ...props}, ref) => (
   <div
     ref={ref}
@@ -349,6 +508,20 @@ const SidebarFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div
 ));
 SidebarFooter.displayName = "SidebarFooter";
 
+/**
+ * Renders a separator between sidebar regions or menu groups.
+ *
+ * @remarks
+ * - Renders the shared `Separator` component
+ * - Built as a lightweight structural divider
+ *
+ * @example
+ * ```tsx
+ * <SidebarSeparator />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/hr | HTML thematic break}
+ */
 const SidebarSeparator = React.forwardRef<React.ComponentRef<typeof Separator>, React.ComponentProps<typeof Separator>>(
   ({className, ...props}, ref) => (
     <Separator
@@ -361,6 +534,22 @@ const SidebarSeparator = React.forwardRef<React.ComponentRef<typeof Separator>, 
 );
 SidebarSeparator.displayName = "SidebarSeparator";
 
+/**
+ * Renders the scrollable content region of the sidebar.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built as a layout helper for menu groups and custom content
+ *
+ * @example
+ * ```tsx
+ * <SidebarContent>
+ *   <SidebarMenu />
+ * </SidebarContent>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
+ */
 const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({className, ...props}, ref) => (
   <div
     ref={ref}
@@ -371,6 +560,22 @@ const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"di
 ));
 SidebarContent.displayName = "SidebarContent";
 
+/**
+ * Renders a logical grouping container inside the sidebar.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built as a layout helper for related navigation sections
+ *
+ * @example
+ * ```tsx
+ * <SidebarGroup>
+ *   <SidebarGroupLabel>Projects</SidebarGroupLabel>
+ * </SidebarGroup>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
+ */
 const SidebarGroup = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({className, ...props}, ref) => (
   <div
     ref={ref}
@@ -395,7 +600,32 @@ function cloneSidebarChild<TProps extends {className?: string}>(children: React.
   });
 }
 
-const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"> & {asChild?: boolean}>(
+/**
+ * Props for the sidebar group label.
+ */
+interface SidebarGroupLabelProps extends React.ComponentProps<"div"> {
+  /**
+   * Whether to merge props into the single child element instead of rendering a wrapper `<div>`.
+   * @default false
+   */
+  asChild?: boolean;
+}
+
+/**
+ * Renders the heading label for a sidebar group.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Supports `asChild` composition for custom markup
+ *
+ * @example
+ * ```tsx
+ * <SidebarGroupLabel>Projects</SidebarGroupLabel>
+ * ```
+ *
+ * @see {@link https://react.dev/reference/react/cloneElement | React cloneElement Docs}
+ */
+const SidebarGroupLabel = React.forwardRef<HTMLDivElement, SidebarGroupLabelProps>(
   ({className, asChild = false, children, ...props}, ref) => {
     const mergedProps: SidebarCloneableDivProps = {
       ...props,
@@ -418,7 +648,32 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
 );
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
 
-const SidebarGroupAction = React.forwardRef<HTMLButtonElement, React.ComponentProps<"button"> & {asChild?: boolean}>(
+/**
+ * Props for the sidebar group action button.
+ */
+interface SidebarGroupActionProps extends React.ComponentProps<"button"> {
+  /**
+   * Whether to merge props into the single child element instead of rendering a wrapper `<button>`.
+   * @default false
+   */
+  asChild?: boolean;
+}
+
+/**
+ * Renders a secondary action aligned with a sidebar group heading.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Supports `asChild` composition for custom controls
+ *
+ * @example
+ * ```tsx
+ * <SidebarGroupAction aria-label='Add project'>+</SidebarGroupAction>
+ * ```
+ *
+ * @see {@link https://react.dev/reference/react/cloneElement | React cloneElement Docs}
+ */
+const SidebarGroupAction = React.forwardRef<HTMLButtonElement, SidebarGroupActionProps>(
   ({className, asChild = false, children, ...props}, ref) => {
     const mergedProps: SidebarCloneableButtonProps = {
       ...props,
@@ -447,6 +702,22 @@ const SidebarGroupAction = React.forwardRef<HTMLButtonElement, React.ComponentPr
 );
 SidebarGroupAction.displayName = "SidebarGroupAction";
 
+/**
+ * Renders the content container for a sidebar group.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built as a structural wrapper for nested menu items or custom content
+ *
+ * @example
+ * ```tsx
+ * <SidebarGroupContent>
+ *   <SidebarMenu />
+ * </SidebarGroupContent>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
+ */
 const SidebarGroupContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({className, ...props}, ref) => (
   <div
     ref={ref}
@@ -457,6 +728,22 @@ const SidebarGroupContent = React.forwardRef<HTMLDivElement, React.ComponentProp
 ));
 SidebarGroupContent.displayName = "SidebarGroupContent";
 
+/**
+ * Renders the root sidebar navigation list.
+ *
+ * @remarks
+ * - Renders a `<ul>` element
+ * - Built as the primary menu container for sidebar navigation
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenu>
+ *   <SidebarMenuItem />
+ * </SidebarMenu>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/ul | HTML ul element}
+ */
 const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(({className, ...props}, ref) => (
   <ul
     ref={ref}
@@ -467,6 +754,22 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
 ));
 SidebarMenu.displayName = "SidebarMenu";
 
+/**
+ * Renders a single list item within the sidebar menu.
+ *
+ * @remarks
+ * - Renders an `<li>` element
+ * - Built as a structural wrapper for menu buttons and actions
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuItem>
+ *   <SidebarMenuButton>Dashboard</SidebarMenuButton>
+ * </SidebarMenuItem>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/li | HTML li element}
+ */
 const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li">>(({className, ...props}, ref) => (
   <li
     ref={ref}
@@ -488,91 +791,165 @@ const sidebarMenuButtonSizeStyles = {
   lg: styles.menuButtonSizeLg,
 } as const;
 
-const SidebarMenuButton = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentProps<"button"> & {
-    /** @deprecated Prefer Base UI's `render` prop. */
+/**
+ * Props for the sidebar menu button.
+ */
+interface SidebarMenuButtonProps extends React.ComponentProps<"button"> {
+  /**
+   * Whether to merge props into the single child element instead of rendering a wrapper `<button>`.
+   * @default false
+   */
+  asChild?: boolean;
+  /**
+   * Whether the menu item should be styled as active.
+   * @default false
+   */
+  isActive?: boolean;
+  /**
+   * Tooltip content displayed when the sidebar is collapsed on desktop.
+   * @default undefined
+   */
+  tooltip?: string | React.ComponentProps<typeof TooltipContent>;
+  /**
+   * Visual style variant for the menu button.
+   * @default "default"
+   */
+  variant?: keyof typeof sidebarMenuButtonVariantStyles;
+  /**
+   * Size preset for the menu button.
+   * @default "default"
+   */
+  size?: keyof typeof sidebarMenuButtonSizeStyles;
+}
 
-    asChild?: boolean;
-    isActive?: boolean;
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>;
-    variant?: keyof typeof sidebarMenuButtonVariantStyles;
-    size?: keyof typeof sidebarMenuButtonSizeStyles;
-  }
->(({asChild = false, isActive = false, variant = "default", size = "default", tooltip, className, children, ...props}, ref) => {
-  const {isMobile, state} = useSidebar();
-  const mergedProps: SidebarCloneableButtonProps = {
-    ...props,
-    children,
-    className: cn(styles.menuButton, sidebarMenuButtonVariantStyles[variant], sidebarMenuButtonSizeStyles[size], className),
-    "data-active": isActive,
-    "data-sidebar": "menu-button",
-    "data-size": size,
-    ref,
-    type: props.type ?? "button",
-  };
-  const clonedChild = asChild ? cloneSidebarChild(children, mergedProps) : null;
+/**
+ * Renders the primary interactive element for a sidebar menu item.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Supports `asChild` composition and contextual tooltips when collapsed
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuButton isActive>Dashboard</SidebarMenuButton>
+ * ```
+ *
+ * @see {@link https://react.dev/reference/react/cloneElement | React cloneElement Docs}
+ */
+const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenuButtonProps>(
+  ({asChild = false, isActive = false, variant = "default", size = "default", tooltip, className, children, ...props}, ref) => {
+    const {isMobile, state} = useSidebar();
+    const mergedProps: SidebarCloneableButtonProps = {
+      ...props,
+      children,
+      className: cn(styles.menuButton, sidebarMenuButtonVariantStyles[variant], sidebarMenuButtonSizeStyles[size], className),
+      "data-active": isActive,
+      "data-sidebar": "menu-button",
+      "data-size": size,
+      ref,
+      type: props.type ?? "button",
+    };
+    const clonedChild = asChild ? cloneSidebarChild(children, mergedProps) : null;
 
-  const button = clonedChild ?? (
-    <button
-      type={props.type === "submit" ? "submit" : props.type === "reset" ? "reset" : "button"}
-      {...mergedProps}
-    />
-  );
-
-  if (!tooltip) {
-    return button;
-  }
-
-  const resolvedTooltip = typeof tooltip === "string" ? {children: tooltip} : tooltip;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger render={button as React.ReactElement} />
-      <TooltipContent
-        hidden={state !== "collapsed" || isMobile}
-        {...resolvedTooltip}
+    const button = clonedChild ?? (
+      <button
+        type={props.type === "submit" ? "submit" : props.type === "reset" ? "reset" : "button"}
+        {...mergedProps}
       />
-    </Tooltip>
-  );
-});
+    );
+
+    if (!tooltip) {
+      return button;
+    }
+
+    const resolvedTooltip = typeof tooltip === "string" ? {children: tooltip} : tooltip;
+
+    return (
+      <Tooltip>
+        <TooltipTrigger render={button as React.ReactElement} />
+        <TooltipContent
+          hidden={state !== "collapsed" || isMobile}
+          {...resolvedTooltip}
+        />
+      </Tooltip>
+    );
+  },
+);
 SidebarMenuButton.displayName = "SidebarMenuButton";
 
-const SidebarMenuAction = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentProps<"button"> & {
-    /** @deprecated Prefer Base UI's `render` prop. */
+/**
+ * Props for the sidebar menu action button.
+ */
+interface SidebarMenuActionProps extends React.ComponentProps<"button"> {
+  /**
+   * Whether to merge props into the single child element instead of rendering a wrapper `<button>`.
+   * @default false
+   */
+  asChild?: boolean;
+  /**
+   * Whether the action should remain hidden until its parent item is hovered.
+   * @default false
+   */
+  showOnHover?: boolean;
+}
 
-    asChild?: boolean;
-    showOnHover?: boolean;
-  }
->(({className, asChild = false, showOnHover = false, children, ...props}, ref) => {
-  const mergedProps: SidebarCloneableButtonProps = {
-    ...props,
-    children,
-    className: cn(styles.menuAction, showOnHover && styles.menuActionShowOnHover, className),
-    "data-sidebar": "menu-action",
-    ref,
-    type: props.type ?? "button",
-  };
+/**
+ * Renders a secondary action button aligned within a sidebar menu item.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Supports `asChild` composition for custom controls
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuAction showOnHover>⋯</SidebarMenuAction>
+ * ```
+ *
+ * @see {@link https://react.dev/reference/react/cloneElement | React cloneElement Docs}
+ */
+const SidebarMenuAction = React.forwardRef<HTMLButtonElement, SidebarMenuActionProps>(
+  ({className, asChild = false, showOnHover = false, children, ...props}, ref) => {
+    const mergedProps: SidebarCloneableButtonProps = {
+      ...props,
+      children,
+      className: cn(styles.menuAction, showOnHover && styles.menuActionShowOnHover, className),
+      "data-sidebar": "menu-action",
+      ref,
+      type: props.type ?? "button",
+    };
 
-  if (asChild) {
-    const clonedChild = cloneSidebarChild(children, mergedProps);
+    if (asChild) {
+      const clonedChild = cloneSidebarChild(children, mergedProps);
 
-    if (clonedChild) {
-      return clonedChild;
+      if (clonedChild) {
+        return clonedChild;
+      }
     }
-  }
 
-  return (
-    <button
-      type={props.type === "submit" ? "submit" : props.type === "reset" ? "reset" : "button"}
-      {...mergedProps}
-    />
-  );
-});
+    return (
+      <button
+        type={props.type === "submit" ? "submit" : props.type === "reset" ? "reset" : "button"}
+        {...mergedProps}
+      />
+    );
+  },
+);
 SidebarMenuAction.displayName = "SidebarMenuAction";
 
+/**
+ * Renders a badge alongside a sidebar menu item.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built as a lightweight presentational helper for counts and statuses
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuBadge>3</SidebarMenuBadge>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
+ */
 const SidebarMenuBadge = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({className, ...props}, ref) => (
   <div
     ref={ref}
@@ -583,12 +960,32 @@ const SidebarMenuBadge = React.forwardRef<HTMLDivElement, React.ComponentProps<"
 ));
 SidebarMenuBadge.displayName = "SidebarMenuBadge";
 
-const SidebarMenuSkeleton = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    showIcon?: boolean;
-  }
->(({className, showIcon = false, ...props}, ref) => {
+/**
+ * Props for the sidebar menu skeleton.
+ */
+interface SidebarMenuSkeletonProps extends React.ComponentProps<"div"> {
+  /**
+   * Whether to render a leading skeleton icon placeholder.
+   * @default false
+   */
+  showIcon?: boolean;
+}
+
+/**
+ * Renders a loading placeholder for sidebar menu items.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built from shared `Skeleton` primitives
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuSkeleton showIcon />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/div | HTML div element}
+ */
+const SidebarMenuSkeleton = React.forwardRef<HTMLDivElement, SidebarMenuSkeletonProps>(({className, showIcon = false, ...props}, ref) => {
   const width = React.useMemo(() => `${Math.floor(Math.random() * 40) + 50}%`, []);
 
   return (
@@ -613,6 +1010,22 @@ const SidebarMenuSkeleton = React.forwardRef<
 });
 SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton";
 
+/**
+ * Renders a nested menu list within the sidebar.
+ *
+ * @remarks
+ * - Renders a `<ul>` element
+ * - Built for multi-level navigation structures
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuSub>
+ *   <SidebarMenuSubItem />
+ * </SidebarMenuSub>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/ul | HTML ul element}
+ */
 const SidebarMenuSub = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(({className, ...props}, ref) => (
   <ul
     ref={ref}
@@ -623,6 +1036,20 @@ const SidebarMenuSub = React.forwardRef<HTMLUListElement, React.ComponentProps<"
 ));
 SidebarMenuSub.displayName = "SidebarMenuSub";
 
+/**
+ * Renders a single nested sidebar menu list item.
+ *
+ * @remarks
+ * - Renders an `<li>` element
+ * - Built as a structural wrapper for nested menu links
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuSubItem />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/li | HTML li element}
+ */
 const SidebarMenuSubItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li">>((props, ref) => (
   <li
     ref={ref}
@@ -631,36 +1058,64 @@ const SidebarMenuSubItem = React.forwardRef<HTMLLIElement, React.ComponentProps<
 ));
 SidebarMenuSubItem.displayName = "SidebarMenuSubItem";
 
-const SidebarMenuSubButton = React.forwardRef<
-  HTMLAnchorElement,
-  React.ComponentProps<"a"> & {
-    /** @deprecated Prefer Base UI's `render` prop. */
+/**
+ * Props for the sidebar nested menu button.
+ */
+interface SidebarMenuSubButtonProps extends React.ComponentProps<"a"> {
+  /**
+   * Whether to merge props into the single child element instead of rendering a wrapper `<a>`.
+   * @default false
+   */
+  asChild?: boolean;
+  /**
+   * Size preset for the nested menu link.
+   * @default "md"
+   */
+  size?: "sm" | "md";
+  /**
+   * Whether the nested menu item should be styled as active.
+   * @default undefined
+   */
+  isActive?: boolean;
+}
 
-    asChild?: boolean;
-    size?: "sm" | "md";
-    isActive?: boolean;
-  }
->(({asChild = false, size = "md", isActive, className, children, ...props}, ref) => {
-  const mergedProps: SidebarCloneableAnchorProps = {
-    ...props,
-    children,
-    className: cn(styles.menuSubButton, size === "sm" ? styles.menuSubButtonSm : styles.menuSubButtonMd, className),
-    "data-active": isActive,
-    "data-sidebar": "menu-sub-button",
-    "data-size": size,
-    ref,
-  };
+/**
+ * Renders a nested sidebar menu link.
+ *
+ * @remarks
+ * - Renders an `<a>` element by default
+ * - Supports `asChild` composition for custom link components
+ *
+ * @example
+ * ```tsx
+ * <SidebarMenuSubButton href='/settings/profile'>Profile</SidebarMenuSubButton>
+ * ```
+ *
+ * @see {@link https://react.dev/reference/react/cloneElement | React cloneElement Docs}
+ */
+const SidebarMenuSubButton = React.forwardRef<HTMLAnchorElement, SidebarMenuSubButtonProps>(
+  ({asChild = false, size = "md", isActive, className, children, ...props}, ref) => {
+    const mergedProps: SidebarCloneableAnchorProps = {
+      ...props,
+      children,
+      className: cn(styles.menuSubButton, size === "sm" ? styles.menuSubButtonSm : styles.menuSubButtonMd, className),
+      "data-active": isActive,
+      "data-sidebar": "menu-sub-button",
+      "data-size": size,
+      ref,
+    };
 
-  if (asChild) {
-    const clonedChild = cloneSidebarChild(children, mergedProps);
+    if (asChild) {
+      const clonedChild = cloneSidebarChild(children, mergedProps);
 
-    if (clonedChild) {
-      return clonedChild;
+      if (clonedChild) {
+        return clonedChild;
+      }
     }
-  }
 
-  return <a {...mergedProps}>{children}</a>;
-});
+    return <a {...mergedProps}>{children}</a>;
+  },
+);
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton";
 
 export {

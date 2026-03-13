@@ -16,7 +16,24 @@ type NumberFieldDecrementProps = React.ComponentPropsWithRef<typeof BaseNumberFi
 type NumberFieldScrubAreaProps = React.ComponentPropsWithRef<typeof BaseNumberField.ScrubArea>;
 
 /**
- * Renders the number field root.
+ * Provides a styled numeric input with optional steppers and scrub support.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Number Field primitives
+ *
+ * @example
+ * ```tsx
+ * <NumberField defaultValue={2}>
+ *   <NumberFieldGroup>
+ *     <NumberFieldDecrement />
+ *     <NumberFieldInput />
+ *     <NumberFieldIncrement />
+ *   </NumberFieldGroup>
+ * </NumberField>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
 function NumberField(props: Readonly<NumberField.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -35,7 +52,20 @@ function NumberField(props: Readonly<NumberField.Props>): React.ReactElement {
 }
 
 /**
- * Renders the number field group frame.
+ * Wraps the interactive number-field controls in a shared container.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on Base UI Number Field group primitives
+ *
+ * @example
+ * ```tsx
+ * <NumberFieldGroup>
+ *   <NumberFieldInput />
+ * </NumberFieldGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
 function NumberFieldGroup(props: Readonly<NumberFieldGroup.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -54,7 +84,18 @@ function NumberFieldGroup(props: Readonly<NumberFieldGroup.Props>): React.ReactE
 }
 
 /**
- * Renders the numeric text input.
+ * Renders the text input used for numeric entry.
+ *
+ * @remarks
+ * - Renders an `<input>` element by default
+ * - Built on Base UI Number Field input primitives
+ *
+ * @example
+ * ```tsx
+ * <NumberFieldInput aria-label='Quantity' />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
 function NumberFieldInput(props: Readonly<NumberFieldInput.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
@@ -72,7 +113,18 @@ function NumberFieldInput(props: Readonly<NumberFieldInput.Props>): React.ReactE
 }
 
 /**
- * Renders the increment button.
+ * Renders the increment control for a number field.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on Base UI Number Field increment primitives
+ *
+ * @example
+ * ```tsx
+ * <NumberFieldIncrement />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
 function NumberFieldIncrement(props: Readonly<NumberFieldIncrement.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -91,7 +143,18 @@ function NumberFieldIncrement(props: Readonly<NumberFieldIncrement.Props>): Reac
 }
 
 /**
- * Renders the decrement button.
+ * Renders the decrement control for a number field.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on Base UI Number Field decrement primitives
+ *
+ * @example
+ * ```tsx
+ * <NumberFieldDecrement />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
 function NumberFieldDecrement(props: Readonly<NumberFieldDecrement.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -110,7 +173,18 @@ function NumberFieldDecrement(props: Readonly<NumberFieldDecrement.Props>): Reac
 }
 
 /**
- * Renders the scrub-area affordance.
+ * Renders the scrub handle used for drag-to-adjust interactions.
+ *
+ * @remarks
+ * - Renders a `<span>` element by default
+ * - Built on Base UI Number Field scrub-area primitives
+ *
+ * @example
+ * ```tsx
+ * <NumberFieldScrubArea />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
 function NumberFieldScrubArea(props: Readonly<NumberFieldScrubArea.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -163,5 +237,12 @@ namespace NumberFieldScrubArea {
   export type Props = NumberFieldScrubAreaProps;
   export type State = BaseNumberField.ScrubArea.State;
 }
+
+NumberField.displayName = "NumberField";
+NumberFieldGroup.displayName = "NumberFieldGroup";
+NumberFieldInput.displayName = "NumberFieldInput";
+NumberFieldIncrement.displayName = "NumberFieldIncrement";
+NumberFieldDecrement.displayName = "NumberFieldDecrement";
+NumberFieldScrubArea.displayName = "NumberFieldScrubArea";
 
 export {NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput, NumberFieldScrubArea};

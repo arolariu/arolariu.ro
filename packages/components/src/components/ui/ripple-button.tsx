@@ -14,14 +14,31 @@ interface Ripple {
 
 /** Props accepted by {@link RippleButton}. */
 export interface RippleButtonProps extends HTMLMotionProps<"button"> {
+  /** Button contents rendered above the ripple layer. @default undefined */
   children: React.ReactNode;
+  /** Additional CSS classes merged with each generated ripple. @default undefined */
   rippleClassName?: string;
+  /** Final expansion scale applied to each ripple animation. @default 10 */
   scale?: number;
+  /** Motion timing used for each ripple animation. @default {duration: 0.6, ease: "easeOut"} */
   transition?: Transition;
 }
 
 /**
  * Renders a pressable button that emits animated ripples from the click position.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<button>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <RippleButton>Click me</RippleButton>
+ * ```
+ *
+ * @see {@link RippleButtonProps} for available props
  */
 const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
   ({children, onClick, className, rippleClassName, scale = 10, transition = {duration: 0.6, ease: "easeOut"}, ...props}, ref) => {

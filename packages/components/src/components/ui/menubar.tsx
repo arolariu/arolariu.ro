@@ -12,44 +12,191 @@ import styles from "./menubar.module.css";
 
 type MenubarProps = Omit<React.ComponentPropsWithRef<typeof BaseMenubar>, "className"> & {className?: string};
 interface MenubarTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Trigger>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 interface MenubarSubTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.SubmenuTrigger>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Applies inset spacing to align nested content.
+   * @default false
+   */
   inset?: boolean;
 }
 interface MenubarContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Positioner>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 interface MenubarItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Item>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Applies inset spacing to align nested content.
+   * @default false
+   */
   inset?: boolean;
 }
 interface MenubarCheckboxItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.CheckboxItem>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 interface MenubarRadioItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.RadioItem>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 interface MenubarLabelProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.GroupLabel>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Applies inset spacing to align nested content.
+   * @default false
+   */
   inset?: boolean;
 }
 interface MenubarSeparatorProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Separator>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 interface MenubarShortcutProps extends React.ComponentPropsWithRef<"span"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Overrides the default rendered element while preserving component behavior.
+   * @default undefined
+   */
   render?: useRender.RenderProp<Record<string, never>>;
+  /**
+   * Enables child element composition instead of rendering the default wrapper.
+   * @default false
+   * @deprecated Prefer Base UI's `render` prop.
+   */
   asChild?: boolean;
 }
 
-const MenubarMenu = BaseMenu.Root;
+/**
+ * Renders the menubar menu.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarMenu>Content</MenubarMenu>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
+const MenubarMenu: typeof BaseMenu.Root & {displayName?: string} = BaseMenu.Root;
+/**
+ * Renders the menubar group.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarGroup>Content</MenubarGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 const MenubarGroup = BaseMenu.Group;
+/**
+ * Provides the menubar portal container.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarPortal>Content</MenubarPortal>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 const MenubarPortal = BaseMenu.Portal;
+/**
+ * Coordinates the menubar radio group.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarRadioGroup>Content</MenubarRadioGroup>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 const MenubarRadioGroup = BaseMenu.RadioGroup;
-const MenubarSub = BaseMenu.SubmenuRoot;
+/**
+ * Coordinates the menubar sub.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarSub>Content</MenubarSub>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
+const MenubarSub: typeof BaseMenu.SubmenuRoot & {displayName?: string} = BaseMenu.SubmenuRoot;
 
+/**
+ * Coordinates menubar state and accessibility behavior.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <Menubar>Content</Menubar>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function Menubar(props: Readonly<Menubar.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -66,6 +213,21 @@ function Menubar(props: Readonly<Menubar.Props>): React.ReactElement {
   );
 }
 
+/**
+ * Renders the menubar trigger.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarTrigger>Content</MenubarTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarTrigger(props: Readonly<MenubarTrigger.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -82,6 +244,21 @@ function MenubarTrigger(props: Readonly<MenubarTrigger.Props>): React.ReactEleme
   );
 }
 
+/**
+ * Renders the menubar sub trigger.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarSubTrigger>Content</MenubarSubTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarSubTrigger(props: Readonly<MenubarSubTrigger.Props>): React.ReactElement {
   const {className, children, inset = false, render, ...otherProps} = props;
 
@@ -99,6 +276,21 @@ function MenubarSubTrigger(props: Readonly<MenubarSubTrigger.Props>): React.Reac
   );
 }
 
+/**
+ * Renders the menubar sub content.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarSubContent>Content</MenubarSubContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarSubContent(props: Readonly<MenubarContent.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -121,6 +313,21 @@ function MenubarSubContent(props: Readonly<MenubarContent.Props>): React.ReactEl
   );
 }
 
+/**
+ * Renders the menubar content.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarContent>Content</MenubarContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarContent(props: Readonly<MenubarContent.Props>): React.ReactElement {
   const {alignOffset = -4, className, children, render, sideOffset = 8, ...otherProps} = props;
 
@@ -147,6 +354,21 @@ function MenubarContent(props: Readonly<MenubarContent.Props>): React.ReactEleme
   );
 }
 
+/**
+ * Renders the menubar item.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarItem>Content</MenubarItem>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarItem(props: Readonly<MenubarItem.Props>): React.ReactElement {
   const {className, children, inset = false, render, ...otherProps} = props;
 
@@ -163,6 +385,21 @@ function MenubarItem(props: Readonly<MenubarItem.Props>): React.ReactElement {
   );
 }
 
+/**
+ * Renders the menubar checkbox item.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarCheckboxItem>Content</MenubarCheckboxItem>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarCheckboxItem(props: Readonly<MenubarCheckboxItem.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -184,6 +421,21 @@ function MenubarCheckboxItem(props: Readonly<MenubarCheckboxItem.Props>): React.
   );
 }
 
+/**
+ * Renders the menubar radio item.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarRadioItem>Content</MenubarRadioItem>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarRadioItem(props: Readonly<MenubarRadioItem.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -205,6 +457,21 @@ function MenubarRadioItem(props: Readonly<MenubarRadioItem.Props>): React.ReactE
   );
 }
 
+/**
+ * Renders the menubar label.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarLabel>Content</MenubarLabel>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarLabel(props: Readonly<MenubarLabel.Props>): React.ReactElement {
   const {className, children, inset = false, render, ...otherProps} = props;
 
@@ -221,6 +488,21 @@ function MenubarLabel(props: Readonly<MenubarLabel.Props>): React.ReactElement {
   );
 }
 
+/**
+ * Renders the menubar separator.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarSeparator>Content</MenubarSeparator>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarSeparator(props: Readonly<MenubarSeparator.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
 
@@ -236,6 +518,21 @@ function MenubarSeparator(props: Readonly<MenubarSeparator.Props>): React.ReactE
   );
 }
 
+/**
+ * Renders the menubar shortcut.
+ *
+ * @remarks
+ * - Renders a `<span>` element by default
+ * - Built on {@link https://base-ui.com/react/components/menubar | Base UI Menubar}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <MenubarShortcut>Content</MenubarShortcut>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
+ */
 function MenubarShortcut(props: Readonly<MenubarShortcut.Props>): React.ReactElement {
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
@@ -305,6 +602,23 @@ namespace MenubarShortcut {
   export type Props = MenubarShortcutProps;
   export type State = Record<string, never>;
 }
+
+MenubarMenu.displayName = "MenubarMenu";
+MenubarGroup.displayName = "MenubarGroup";
+MenubarPortal.displayName = "MenubarPortal";
+MenubarRadioGroup.displayName = "MenubarRadioGroup";
+MenubarSub.displayName = "MenubarSub";
+Menubar.displayName = "Menubar";
+MenubarTrigger.displayName = "MenubarTrigger";
+MenubarSubTrigger.displayName = "MenubarSubTrigger";
+MenubarSubContent.displayName = "MenubarSubContent";
+MenubarContent.displayName = "MenubarContent";
+MenubarItem.displayName = "MenubarItem";
+MenubarCheckboxItem.displayName = "MenubarCheckboxItem";
+MenubarRadioItem.displayName = "MenubarRadioItem";
+MenubarLabel.displayName = "MenubarLabel";
+MenubarSeparator.displayName = "MenubarSeparator";
+MenubarShortcut.displayName = "MenubarShortcut";
 
 export {
   Menubar,

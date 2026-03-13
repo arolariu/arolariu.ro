@@ -9,23 +9,45 @@ import {cn} from "@/lib/utilities";
 import styles from "./tabs.module.css";
 
 interface TabsProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.Root>, "className"> {
+  /** Additional CSS classes merged with the tabs root styles. @default undefined */
   className?: string;
 }
 
 interface TabsListProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.List>, "className"> {
+  /** Additional CSS classes merged with the tabs list styles. @default undefined */
   className?: string;
 }
 
 interface TabsTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.Tab>, "className"> {
+  /** Additional CSS classes merged with the individual tab trigger styles. @default undefined */
   className?: string;
 }
 
 interface TabsContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseTabs.Panel>, "className"> {
+  /** Additional CSS classes merged with the tab panel styles. @default undefined */
   className?: string;
 }
 
 /**
- * Renders the tabs root using canonical render composition.
+ * Coordinates a tabbed interface for switching between related panels.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/tabs | Base UI Tabs}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Tabs defaultValue="overview">
+ *   <TabsList>
+ *     <TabsTrigger value="overview">Overview</TabsTrigger>
+ *   </TabsList>
+ *   <TabsContent value="overview">Content</TabsContent>
+ * </Tabs>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
 function Tabs(props: Readonly<Tabs.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -42,9 +64,25 @@ function Tabs(props: Readonly<Tabs.Props>): React.ReactElement {
     </BaseTabs.Root>
   );
 }
+Tabs.displayName = "Tabs";
 
 /**
- * Renders the tab list and default indicator.
+ * Renders the tab list along with the shared active indicator.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/tabs | Base UI Tabs}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <TabsList>
+ *   <TabsTrigger value="overview">Overview</TabsTrigger>
+ * </TabsList>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
 function TabsList(props: Readonly<TabsList.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -62,9 +100,23 @@ function TabsList(props: Readonly<TabsList.Props>): React.ReactElement {
     </BaseTabs.List>
   );
 }
+TabsList.displayName = "TabsList";
 
 /**
- * Renders an individual tab trigger.
+ * Activates a specific tab panel within the surrounding tabs root.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/tabs | Base UI Tabs}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <TabsTrigger value="overview">Overview</TabsTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
 function TabsTrigger(props: Readonly<TabsTrigger.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -81,9 +133,23 @@ function TabsTrigger(props: Readonly<TabsTrigger.Props>): React.ReactElement {
     </BaseTabs.Tab>
   );
 }
+TabsTrigger.displayName = "TabsTrigger";
 
 /**
- * Renders a styled tab panel.
+ * Renders the content panel associated with the active tab.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/tabs | Base UI Tabs}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <TabsContent value="overview">Content</TabsContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
 function TabsContent(props: Readonly<TabsContent.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -100,6 +166,7 @@ function TabsContent(props: Readonly<TabsContent.Props>): React.ReactElement {
     </BaseTabs.Panel>
   );
 }
+TabsContent.displayName = "TabsContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Tabs {

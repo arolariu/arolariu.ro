@@ -12,7 +12,7 @@ import styles from "./avatar.module.css";
  * Props for the shared avatar root.
  */
 interface AvatarProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Root>, "className"> {
-  /** Additional CSS classes merged with the avatar root styles. */
+  /** Additional CSS classes merged with the avatar root styles. @default undefined */
   className?: string;
 }
 
@@ -20,7 +20,7 @@ interface AvatarProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar
  * Props for the shared avatar image.
  */
 interface AvatarImageProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Image>, "className"> {
-  /** Additional CSS classes merged with the avatar image styles. */
+  /** Additional CSS classes merged with the avatar image styles. @default undefined */
   className?: string;
 }
 
@@ -28,12 +28,28 @@ interface AvatarImageProps extends Omit<React.ComponentPropsWithRef<typeof BaseA
  * Props for the shared avatar fallback.
  */
 interface AvatarFallbackProps extends Omit<React.ComponentPropsWithRef<typeof BaseAvatar.Fallback>, "className"> {
-  /** Additional CSS classes merged with the avatar fallback styles. */
+  /** Additional CSS classes merged with the avatar fallback styles. @default undefined */
   className?: string;
 }
 
 /**
- * Renders the avatar root with shared layout styling.
+ * Displays a user avatar container with shared sizing and shape styles.
+ *
+ * @remarks
+ * - Renders a `<span>` element by default
+ * - Built on {@link https://base-ui.com/react/components/avatar | Base UI Avatar}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Avatar>
+ *   <AvatarImage src="/profile.png" alt="Profile" />
+ *   <AvatarFallback>AO</AvatarFallback>
+ * </Avatar>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
 function Avatar(props: Readonly<Avatar.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -50,9 +66,23 @@ function Avatar(props: Readonly<Avatar.Props>): React.ReactElement {
     </BaseAvatar.Root>
   );
 }
+Avatar.displayName = "Avatar";
 
 /**
- * Renders the avatar image slot.
+ * Renders the primary avatar image inside the avatar root.
+ *
+ * @remarks
+ * - Renders an `<img>` element by default
+ * - Built on {@link https://base-ui.com/react/components/avatar | Base UI Avatar}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <AvatarImage src="/profile.png" alt="Profile" />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
 function AvatarImage(props: Readonly<AvatarImage.Props>): React.ReactElement {
   const {className, render, ...otherProps} = props;
@@ -68,9 +98,23 @@ function AvatarImage(props: Readonly<AvatarImage.Props>): React.ReactElement {
     />
   );
 }
+AvatarImage.displayName = "AvatarImage";
 
 /**
- * Renders the avatar fallback slot.
+ * Renders fallback content when the avatar image is unavailable.
+ *
+ * @remarks
+ * - Renders a `<span>` element by default
+ * - Built on {@link https://base-ui.com/react/components/avatar | Base UI Avatar}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <AvatarFallback>AO</AvatarFallback>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
 function AvatarFallback(props: Readonly<AvatarFallback.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -87,6 +131,7 @@ function AvatarFallback(props: Readonly<AvatarFallback.Props>): React.ReactEleme
     </BaseAvatar.Fallback>
   );
 }
+AvatarFallback.displayName = "AvatarFallback";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Avatar {

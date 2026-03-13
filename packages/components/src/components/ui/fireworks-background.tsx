@@ -192,16 +192,40 @@ const getColor = (color: string | ReadonlyArray<string> | undefined): string => 
   return randColor();
 };
 
+/** Props accepted by {@link FireworksBackground}. */
 export interface FireworksBackgroundProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "color"> {
+  /** HTML attributes forwarded to the internal `<canvas>` element. @default undefined */
   canvasProps?: React.HTMLAttributes<HTMLCanvasElement>;
+  /** Relative launch frequency multiplier for automatic fireworks. @default 1 */
   population?: number;
+  /** Fixed color or palette used for generated fireworks and particles. @default undefined */
   color?: string | ReadonlyArray<string>;
+  /** Launch velocity or range used for ascending fireworks. @default {min: 4, max: 8} */
   fireworkSpeed?: {min: number; max: number} | number;
+  /** Stroke width or range used for the ascending firework trail. @default {min: 2, max: 5} */
   fireworkSize?: {min: number; max: number} | number;
+  /** Velocity or range used for explosion particles. @default {min: 2, max: 7} */
   particleSpeed?: {min: number; max: number} | number;
+  /** Size or range used for explosion particles. @default {min: 1, max: 5} */
   particleSize?: {min: number; max: number} | number;
 }
 
+/**
+ * Renders an auto-launching fireworks display inside a clickable background canvas.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element containing a `<canvas>`
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <FireworksBackground population={2} />
+ * ```
+ *
+ * @see {@link FireworksBackgroundProps} for available props
+ */
 const FireworksBackground = React.forwardRef<HTMLDivElement, FireworksBackgroundProps>(
   (
     {

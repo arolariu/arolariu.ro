@@ -8,10 +8,15 @@ import styles from "./highlight-text.module.css";
 
 /** Props accepted by {@link HighlightText}. */
 export interface HighlightTextProps extends HTMLMotionProps<"span"> {
+  /** Inline text content that receives the animated highlight sweep. @default undefined */
   text: string;
+  /** Delays the highlight animation until the text enters the viewport. @default false */
   inView?: boolean;
+  /** Margin passed to the in-view observer when `inView` is enabled. @default "0px" */
   inViewMargin?: UseInViewOptions["margin"];
+  /** Prevents the in-view animation from replaying after the first reveal. @default true */
   inViewOnce?: boolean;
+  /** Motion timing used for the highlight fill animation. @default {duration: 2, ease: "easeInOut"} */
   transition?: Transition;
 }
 
@@ -19,6 +24,19 @@ const animation = {backgroundSize: "100% 100%"};
 
 /**
  * Animates a gradient highlight fill behind inline text content.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<span>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <HighlightText text="Highlighted copy" />
+ * ```
+ *
+ * @see {@link HighlightTextProps} for available props
  */
 const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
   (

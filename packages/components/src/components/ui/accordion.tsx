@@ -14,38 +14,89 @@ type AccordionRootBaseProps = Omit<
   "defaultValue" | "multiple" | "onValueChange" | "value" | "className"
 >;
 
+/**
+ * Props for the single-item accordion root wrapper.
+ */
 interface AccordionSingleProps extends AccordionRootBaseProps {
+  /** Controls whether the accordion only allows one item to be expanded at a time. @default "single" */
   type?: "single";
+  /** Legacy compatibility flag accepted by the wrapper but not forwarded to Base UI. @default undefined */
   collapsible?: boolean;
+  /** Additional CSS classes merged with the accordion root styles. @default undefined */
   className?: string;
+  /** The initially expanded item value in uncontrolled single mode. @default undefined */
   defaultValue?: string;
+  /** Called when the expanded item changes in single mode. @default undefined */
   onValueChange?: (value: string | undefined, eventDetails: unknown) => void;
+  /** The controlled expanded item value in single mode. @default undefined */
   value?: string;
 }
 
+/**
+ * Props for the multi-item accordion root wrapper.
+ */
 interface AccordionMultipleProps extends AccordionRootBaseProps {
+  /** Controls whether the accordion allows multiple items to stay expanded. @default "multiple" */
   type: "multiple";
+  /** Legacy compatibility flag accepted by the wrapper but not forwarded to Base UI. @default undefined */
   collapsible?: boolean;
+  /** Additional CSS classes merged with the accordion root styles. @default undefined */
   className?: string;
+  /** The initially expanded item values in uncontrolled multi mode. @default undefined */
   defaultValue?: string[];
+  /** Called when the expanded item values change in multi mode. @default undefined */
   onValueChange?: (value: string[], eventDetails: unknown) => void;
+  /** The controlled expanded item values in multi mode. @default undefined */
   value?: string[];
 }
 
 type AccordionProps = AccordionSingleProps | AccordionMultipleProps;
 
+/**
+ * Props for an accordion item wrapper.
+ */
 interface AccordionItemProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Item>, "className"> {
+  /** Additional CSS classes merged with the accordion item styles. @default undefined */
   className?: string;
 }
 
+/**
+ * Props for an accordion trigger wrapper.
+ */
 interface AccordionTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Trigger>, "className"> {
+  /** Additional CSS classes merged with the accordion trigger styles. @default undefined */
   className?: string;
 }
 
+/**
+ * Props for an accordion content wrapper.
+ */
 interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseAccordion.Panel>, "className"> {
+  /** Additional CSS classes merged with the accordion content styles. @default undefined */
   className?: string;
 }
 
+/**
+ * Groups disclosure items into a styled accordion container.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Accordion>
+ *   <AccordionItem value="item-1">
+ *     <AccordionTrigger>Section</AccordionTrigger>
+ *     <AccordionContent>Content</AccordionContent>
+ *   </AccordionItem>
+ * </Accordion>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
+ */
 function Accordion(props: Readonly<Accordion.Props>): React.ReactElement {
   const {className, collapsible: _collapsible, type = "single"} = props;
 
@@ -87,7 +138,27 @@ function Accordion(props: Readonly<Accordion.Props>): React.ReactElement {
     />
   );
 }
+Accordion.displayName = "Accordion";
 
+/**
+ * Wraps a single accordion item with shared border and spacing styles.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <AccordionItem value="item-1">
+ *   <AccordionTrigger>Section</AccordionTrigger>
+ *   <AccordionContent>Content</AccordionContent>
+ * </AccordionItem>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
+ */
 function AccordionItem(props: Readonly<AccordionItem.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -103,7 +174,24 @@ function AccordionItem(props: Readonly<AccordionItem.Props>): React.ReactElement
     </BaseAccordion.Item>
   );
 }
+AccordionItem.displayName = "AccordionItem";
 
+/**
+ * Toggles an accordion item while rendering the chevron affordance.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <AccordionTrigger>Section</AccordionTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
+ */
 function AccordionTrigger(props: Readonly<AccordionTrigger.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -122,7 +210,24 @@ function AccordionTrigger(props: Readonly<AccordionTrigger.Props>): React.ReactE
     </BaseAccordion.Header>
   );
 }
+AccordionTrigger.displayName = "AccordionTrigger";
 
+/**
+ * Reveals accordion panel content with shared spacing and animation hooks.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/accordion | Base UI Accordion}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <AccordionContent>Content</AccordionContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
+ */
 function AccordionContent(props: Readonly<AccordionContent.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
 
@@ -138,6 +243,7 @@ function AccordionContent(props: Readonly<AccordionContent.Props>): React.ReactE
     </BaseAccordion.Panel>
   );
 }
+AccordionContent.displayName = "AccordionContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Accordion {

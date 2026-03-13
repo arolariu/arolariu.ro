@@ -10,22 +10,58 @@ import styles from "./hover-card.module.css";
 
 interface HoverCardProps extends React.ComponentPropsWithRef<typeof BasePreviewCard.Root> {}
 interface HoverCardTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BasePreviewCard.Trigger>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 interface HoverCardContentProps extends Omit<React.ComponentPropsWithRef<typeof BasePreviewCard.Positioner>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Offsets the floating content from its anchor in pixels.
+   * @default 4
+   */
   sideOffset?: number;
 }
 
 /**
- * Coordinates hover-card state and positioning.
+ * Coordinates hover card state and accessibility behavior.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <HoverCard>Content</HoverCard>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
  */
 function HoverCard(props: Readonly<HoverCard.Props>): React.ReactElement {
   return <BasePreviewCard.Root {...props} />;
 }
 
 /**
- * Renders the hover-card trigger.
+ * Renders the hover card trigger.
+ *
+ * @remarks
+ * - Renders a `<a>` element by default
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <HoverCardTrigger>Content</HoverCardTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
  */
 function HoverCardTrigger(props: Readonly<HoverCardTrigger.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -44,7 +80,19 @@ function HoverCardTrigger(props: Readonly<HoverCardTrigger.Props>): React.ReactE
 }
 
 /**
- * Renders the hover-card popup with composed positioner styling.
+ * Renders the hover card content.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <HoverCardContent>Content</HoverCardContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
  */
 function HoverCardContent(props: Readonly<HoverCardContent.Props>): React.ReactElement {
   const {className, children, render, sideOffset = 4, ...otherProps} = props;
@@ -88,5 +136,9 @@ namespace HoverCardContent {
   export type Props = HoverCardContentProps;
   export type State = BasePreviewCard.Popup.State;
 }
+
+HoverCard.displayName = "HoverCard";
+HoverCardTrigger.displayName = "HoverCardTrigger";
+HoverCardContent.displayName = "HoverCardContent";
 
 export {HoverCard, HoverCardContent, HoverCardTrigger};

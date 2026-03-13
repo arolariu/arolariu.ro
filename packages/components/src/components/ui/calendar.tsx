@@ -14,6 +14,17 @@ import styles from "./calendar.module.css";
 
 type CalendarButtonVariant = NonNullable<React.ComponentProps<typeof Button>["variant"]>;
 
+/**
+ * Props for the shared calendar component.
+ */
+type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  /**
+   * Visual variant applied to the navigation buttons.
+   * @default "ghost"
+   */
+  buttonVariant?: React.ComponentProps<typeof Button>["variant"];
+};
+
 const calendarButtonVariantStyles: Record<CalendarButtonVariant, string> = {
   default: buttonStyles.default,
   destructive: buttonStyles.destructive,
@@ -24,7 +35,23 @@ const calendarButtonVariantStyles: Record<CalendarButtonVariant, string> = {
 };
 
 /**
- * Renders a CSS Module styled `react-day-picker` calendar with V1-compatible props.
+ * Renders a styled calendar built on top of `react-day-picker`.
+ *
+ * @remarks
+ * - Renders the `DayPicker` calendar root
+ * - Built on `react-day-picker` with shared button styling from the component library
+ * - Preserves the V1 public API while aligning visuals with the current design system
+ *
+ * @example
+ * ```tsx
+ * <Calendar
+ *   mode='single'
+ *   selected={new Date()}
+ *   onSelect={(date) => console.log(date)}
+ * />
+ * ```
+ *
+ * @see {@link https://daypicker.dev | React Day Picker Docs}
  */
 function Calendar({
   className,
@@ -35,11 +62,7 @@ function Calendar({
   formatters,
   components,
   ...props
-}: Readonly<
-  React.ComponentProps<typeof DayPicker> & {
-    buttonVariant?: React.ComponentProps<typeof Button>["variant"];
-  }
->): React.JSX.Element {
+}: Readonly<CalendarProps>): React.JSX.Element {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -163,5 +186,7 @@ function CalendarDayButton({className, day, modifiers, ...props}: Readonly<React
     />
   );
 }
+
+Calendar.displayName = "Calendar";
 
 export {Calendar};

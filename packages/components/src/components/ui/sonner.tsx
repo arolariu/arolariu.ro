@@ -67,13 +67,45 @@ interface ToastPromiseOptions<Value> extends ToastOptions {
 }
 
 interface ToasterProps {
+  /**
+   * Screen position used for the toast viewport.
+   * @default "bottom-right"
+   */
   position?: ToastPosition;
+  /**
+   * Default auto-dismiss duration, in milliseconds, for each toast.
+   * @default 5000
+   */
   duration?: number;
+  /**
+   * Maximum number of simultaneously visible toasts.
+   * @default 3
+   */
   visibleToasts?: number;
+  /**
+   * Whether to render a close button for each toast by default.
+   * @default true
+   */
   closeButton?: boolean;
+  /**
+   * Accessible label announced for the toast viewport container.
+   * @default "Notifications"
+   */
   containerAriaLabel?: string;
+  /**
+   * Additional CSS classes merged with the toast viewport.
+   * @default undefined
+   */
   className?: string;
+  /**
+   * Inline styles applied to the toast viewport.
+   * @default undefined
+   */
   style?: React.CSSProperties;
+  /**
+   * Default options merged into each toast created while this toaster is mounted.
+   * @default undefined
+   */
   toastOptions?: ToastOptions;
 }
 
@@ -417,8 +449,12 @@ function ToastViewportContent(): React.JSX.Element {
  * Renders the Base UI provider, portal, and viewport with defaults that preserve the previous
  * shared `Toaster` export behavior used by the website.
  *
- * @param props - Toast container configuration.
- * @returns The toast provider tree and viewport portal.
+ * @example
+ * ```tsx
+ * <Toaster position='top-right' visibleToasts={5} />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toast | Base UI Toast Docs}
  */
 function Toaster({
   className,
@@ -457,6 +493,22 @@ function Toaster({
   );
 }
 
+Toaster.displayName = "Toaster";
+
+/**
+ * Imperative toast API for creating transient notifications outside React render flows.
+ *
+ * @remarks
+ * Built on Base UI's toast manager and preserved as a drop-in replacement for the previous
+ * `sonner` export surface.
+ *
+ * @example
+ * ```tsx
+ * toast.success("Profile updated");
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toast | Base UI Toast Docs}
+ */
 const toast = ((message: ToastRenderable, options?: ToastOptions): string => showToast(message, "default", options)) as ToastApi;
 
 toast.success = (message: ToastRenderable, options?: ToastOptions): string => showToast(message, "success", options);

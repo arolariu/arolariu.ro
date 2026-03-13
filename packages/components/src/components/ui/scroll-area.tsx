@@ -12,7 +12,19 @@ type ScrollAreaProps = React.ComponentPropsWithRef<typeof BaseScrollArea.Root>;
 type ScrollBarProps = React.ComponentPropsWithRef<typeof BaseScrollArea.Scrollbar>;
 
 /**
- * Renders a styled scroll area with a default scrollbar.
+ * Coordinates scroll area layout and scrolling behavior.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/scroll-area | Base UI Scroll Area}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <ScrollArea>Content</ScrollArea>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/scroll-area | Base UI Documentation}
  */
 function ScrollArea(props: Readonly<ScrollArea.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -35,7 +47,19 @@ function ScrollArea(props: Readonly<ScrollArea.Props>): React.ReactElement {
 }
 
 /**
- * Renders a styled scroll bar with an embedded thumb.
+ * Renders the scroll bar.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/scroll-area | Base UI Scroll Area}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <ScrollBar>Content</ScrollBar>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/scroll-area | Base UI Documentation}
  */
 function ScrollBar(props: Readonly<ScrollBar.Props>): React.ReactElement {
   const {className, orientation = "vertical", render, ...otherProps} = props;
@@ -70,5 +94,8 @@ namespace ScrollBar {
   export type Props = ScrollBarProps;
   export type State = BaseScrollArea.Scrollbar.State;
 }
+
+ScrollArea.displayName = "ScrollArea";
+ScrollBar.displayName = "ScrollBar";
 
 export {ScrollArea, ScrollBar};

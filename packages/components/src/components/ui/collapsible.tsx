@@ -11,24 +11,60 @@ import styles from "./collapsible.module.css";
 interface CollapsibleProps extends React.ComponentPropsWithRef<typeof BaseCollapsible.Root> {}
 
 interface CollapsibleTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseCollapsible.Trigger>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
-  /** @deprecated Prefer Base UI's `render` prop. */
+  /**
+   * Enables child element composition instead of rendering the default wrapper.
+   * @default false
+   * @deprecated Prefer Base UI's `render` prop.
+   */
   asChild?: boolean;
 }
 
 interface CollapsibleContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseCollapsible.Panel>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
 }
 
 /**
- * Coordinates collapsible open state and accessibility behavior.
+ * Coordinates collapsible state and accessibility behavior.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/collapsible | Base UI Collapsible}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <Collapsible>Content</Collapsible>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/collapsible | Base UI Documentation}
  */
 function Collapsible(props: Readonly<Collapsible.Props>): React.ReactElement {
   return <BaseCollapsible.Root {...props} />;
 }
 
 /**
- * Renders the collapsible trigger using canonical render composition.
+ * Renders the collapsible trigger.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/collapsible | Base UI Collapsible}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <CollapsibleTrigger>Content</CollapsibleTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/collapsible | Base UI Documentation}
  */
 function CollapsibleTrigger(props: Readonly<CollapsibleTrigger.Props>): React.ReactElement {
   const {asChild = false, children, className, render, ...otherProps} = props;
@@ -48,7 +84,19 @@ function CollapsibleTrigger(props: Readonly<CollapsibleTrigger.Props>): React.Re
 }
 
 /**
- * Renders the collapsible panel with shared styling.
+ * Renders the collapsible content.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/collapsible | Base UI Collapsible}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <CollapsibleContent>Content</CollapsibleContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/collapsible | Base UI Documentation}
  */
 function CollapsibleContent(props: Readonly<CollapsibleContent.Props>): React.ReactElement {
   const {className, children, render, ...otherProps} = props;
@@ -83,5 +131,9 @@ namespace CollapsibleContent {
   export type Props = CollapsibleContentProps;
   export type State = BaseCollapsible.Panel.State;
 }
+
+Collapsible.displayName = "Collapsible";
+CollapsibleTrigger.displayName = "CollapsibleTrigger";
+CollapsibleContent.displayName = "CollapsibleContent";
 
 export {Collapsible, CollapsibleContent, CollapsibleTrigger};

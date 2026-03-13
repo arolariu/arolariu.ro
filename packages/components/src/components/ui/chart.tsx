@@ -46,12 +46,34 @@ interface ChartContainerProps
       React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>,
       "initialDimension" | "aspect" | "debounce" | "minHeight" | "minWidth" | "maxHeight" | "height" | "width" | "onResize" | "children"
     > {
+  /**
+   * Series configuration used to resolve labels, icons, and colors.
+   * @default undefined
+   */
   config: ChartConfig;
+  /**
+   * Inline styles applied to the inner `ResponsiveContainer`.
+   * @default undefined
+   */
   innerResponsiveContainerStyle?: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>["style"];
 }
 
 /**
- * Provides chart config context and shared CSS-variable theming for Recharts content.
+ * Provides responsive chart layout and series config context for Recharts content.
+ *
+ * @remarks
+ * - Renders a wrapping `<div>` element
+ * - Built on `recharts` `ResponsiveContainer`
+ * - Injects CSS variables so legends and tooltips can share theme-aware colors
+ *
+ * @example
+ * ```tsx
+ * <ChartContainer config={{sales: {label: "Sales", color: "#2563eb"}}}>
+ *   <RechartsPrimitive.BarChart data={data}>...</RechartsPrimitive.BarChart>
+ * </ChartContainer>
+ * ```
+ *
+ * @see {@link https://recharts.org/en-US/api/ResponsiveContainer | Recharts ResponsiveContainer Docs}
  */
 function ChartContainer({
   id,
@@ -102,6 +124,20 @@ function ChartContainer({
   );
 }
 
+/**
+ * Emits theme-aware CSS variables for configured chart series colors.
+ *
+ * @remarks
+ * - Renders a `<style>` element
+ * - Built on the shared chart configuration contract
+ *
+ * @example
+ * ```tsx
+ * <ChartStyle id='chart-sales' config={config} />
+ * ```
+ *
+ * @see {@link https://recharts.org | Recharts Docs}
+ */
 const ChartStyle = ({id, config}: Readonly<{id: string; config: ChartConfig}>): React.JSX.Element | null => {
   const colorConfig = Object.entries(config).filter(([, itemConfig]) => itemConfig.theme ?? itemConfig.color);
 
@@ -131,8 +167,36 @@ ${colorConfig
   );
 };
 
+/**
+ * Re-exports the Recharts tooltip primitive for use with shared chart helpers.
+ *
+ * @remarks
+ * - Renders the Recharts tooltip container
+ * - Built on `recharts`
+ *
+ * @example
+ * ```tsx
+ * <ChartTooltip content={<ChartTooltipContent />} />
+ * ```
+ *
+ * @see {@link https://recharts.org/en-US/api/Tooltip | Recharts Tooltip Docs}
+ */
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
+/**
+ * Renders shared tooltip content for charts configured with {@link ChartContainer}.
+ *
+ * @remarks
+ * - Renders a `<div>` element when active
+ * - Built on `recharts` tooltip payloads and shared chart config context
+ *
+ * @example
+ * ```tsx
+ * <ChartTooltip content={<ChartTooltipContent indicator='line' />} />
+ * ```
+ *
+ * @see {@link https://recharts.org/en-US/api/Tooltip | Recharts Tooltip Docs}
+ */
 function ChartTooltipContent({
   active,
   payload,
@@ -244,8 +308,36 @@ function ChartTooltipContent({
   );
 }
 
+/**
+ * Re-exports the Recharts legend primitive for use with shared chart helpers.
+ *
+ * @remarks
+ * - Renders the Recharts legend container
+ * - Built on `recharts`
+ *
+ * @example
+ * ```tsx
+ * <ChartLegend content={<ChartLegendContent />} />
+ * ```
+ *
+ * @see {@link https://recharts.org/en-US/api/Legend | Recharts Legend Docs}
+ */
 const ChartLegend = RechartsPrimitive.Legend;
 
+/**
+ * Renders shared legend content for charts configured with {@link ChartContainer}.
+ *
+ * @remarks
+ * - Renders a `<div>` element when legend payload exists
+ * - Built on `recharts` legend payloads and shared chart config context
+ *
+ * @example
+ * ```tsx
+ * <ChartLegend content={<ChartLegendContent />} />
+ * ```
+ *
+ * @see {@link https://recharts.org/en-US/api/Legend | Recharts Legend Docs}
+ */
 function ChartLegendContent({
   className,
   hideIcon = false,
@@ -311,5 +403,12 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
 
   return config[configLabelKey] ?? config[key];
 }
+
+ChartContainer.displayName = "ChartContainer";
+ChartStyle.displayName = "ChartStyle";
+Object.assign(ChartTooltip, {displayName: "ChartTooltip"});
+ChartTooltipContent.displayName = "ChartTooltipContent";
+Object.assign(ChartLegend, {displayName: "ChartLegend"});
+ChartLegendContent.displayName = "ChartLegendContent";
 
 export {ChartContainer, ChartLegend, ChartLegendContent, ChartStyle, ChartTooltip, ChartTooltipContent};

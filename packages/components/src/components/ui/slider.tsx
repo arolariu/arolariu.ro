@@ -12,19 +12,47 @@ interface SliderProps extends Omit<
   React.ComponentPropsWithRef<typeof BaseSlider.Root>,
   "defaultValue" | "onValueChange" | "onValueCommitted" | "value" | "className"
 > {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
   className?: string;
-  /** V1-compatible controlled slider values. */
+  /**
+   * Controls the current value when the component is used in controlled mode.
+   * @default undefined
+   */
   value?: number[];
-  /** V1-compatible uncontrolled slider values. */
+  /**
+   * Sets the initial value when the component is used in uncontrolled mode.
+   * @default undefined
+   */
   defaultValue?: number[];
-  /** V1-compatible change handler receiving an array of thumb values. */
+  /**
+   * Called whenever the slider value changes.
+   * @default undefined
+   */
   onValueChange?: (value: number[], eventDetails: unknown) => void;
-  /** V1-compatible commit handler receiving an array of thumb values. */
+  /**
+   * Called when a slider interaction is committed.
+   * @default undefined
+   */
   onValueCommitted?: (value: number[], eventDetails: unknown) => void;
 }
 
 /**
- * Renders a styled multi-thumb slider using canonical render composition.
+ * Renders the slider control.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/slider | Base UI Slider}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <Slider>Content</Slider>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/slider | Base UI Documentation}
  */
 function Slider(props: Readonly<Slider.Props>): React.ReactElement {
   const {className, defaultValue, onValueChange, onValueCommitted, render, value, ...otherProps} = props;
@@ -60,5 +88,7 @@ namespace Slider {
   export type Props = SliderProps;
   export type State = BaseSlider.Root.State;
 }
+
+Slider.displayName = "Slider";
 
 export {Slider};

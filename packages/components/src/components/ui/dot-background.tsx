@@ -6,19 +6,45 @@ import React, {useEffect, useId, useRef, useState} from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./dot-background.module.css";
 
-interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
+/** Props accepted by {@link DotBackground}. */
+export interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
+  /** Horizontal spacing between generated dots. @default 16 */
   width?: number;
+  /** Vertical spacing between generated dots. @default 16 */
   height?: number;
+  /** Horizontal offset applied to the dot grid. @default 0 */
   x?: number;
+  /** Vertical offset applied to the dot grid. @default 0 */
   y?: number;
+  /** Horizontal center offset for each generated circle. @default 1 */
   cx?: number;
+  /** Vertical center offset for each generated circle. @default 1 */
   cy?: number;
+  /** Radius used for each generated dot. @default 1 */
   cr?: number;
+  /** Additional CSS classes merged with the root SVG element. @default undefined */
   className?: string;
+  /** Enables pulsing radial glow animation for every dot. @default false */
   glow?: boolean;
   [key: string]: unknown;
 }
 
+/**
+ * Renders an animated dot grid with an optional glowing pulse effect.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders an `<svg>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <DotBackground glow />
+ * ```
+ *
+ * @see {@link DotBackgroundProps} for available props
+ */
 const DotBackground = React.forwardRef<SVGSVGElement, DotBackgroundProps>(
   (
     {width = 16, height = 16, x = 0, y = 0, cx = 1, cy = 1, cr = 1, className, glow = false, ...props}: Readonly<DotBackgroundProps>,
