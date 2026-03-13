@@ -25,6 +25,13 @@ All notable changes to **@arolariu/components** are documented here following [K
 - 🧠 **Simplified class merging**: `cn()` now uses `clsx` only.
 - 🌙 **Documented dark mode activation** with either a `.dark` class or a `[data-theme="dark"]` attribute.
 - 🏗️ **Retained the RSLib build pipeline** for ESM output, typings, and source maps.
+- 🔧 **All 32 Base UI wrappers use `useRender` + `mergeProps`** — canonical Base UI composition pattern for proper event handler merging and ref forwarding.
+- 🏷️ **TypeScript namespace types** — 31 components export `Component.Props` / `Component.State` namespaces for enterprise-grade type consumption.
+- 📦 **Re-exported Base UI utilities**: `CSPProvider`, `DirectionProvider`, `mergeProps`, `useRender` for consumer convenience.
+- 📝 **Enterprise-grade JSDoc** on all 71 components — every exported function has `@remarks`, `@example`, `@see`; every prop has `/** description @default */`.
+- 🪪 **`displayName`** set on all exported components for React DevTools and error stack traces.
+- 🧪 **53 Vitest test files** covering all 71 components with smoke, ref, className, interaction, and accessibility tests.
+- 📦 **Test files excluded from npm publish** — `*.test.*`, `*.spec.*`, `*.stories.*` stripped from published package.
 
 ### [0.5.0](https://www.npmjs.com/package/@arolariu/components/v/0.5.0) - 2026-01-16
 **✨ New Features & Improvements**
