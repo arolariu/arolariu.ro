@@ -1,8 +1,6 @@
 "use client";
 
-import {mergeProps} from "@base-ui/react/merge-props";
 import {Tooltip as BaseTooltip} from "@base-ui/react/tooltip";
-import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
@@ -104,18 +102,23 @@ Tooltip.displayName = "Tooltip";
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
 function TooltipTrigger(props: Readonly<TooltipTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+  const {asChild = false, children, className, ...otherProps} = props;
+
+  if (asChild && React.isValidElement(children)) {
+    return (
+      <BaseTooltip.Trigger
+        className={cn(styles.trigger, className)}
+        render={children as React.ReactElement}
+        {...otherProps}
+      />
+    );
+  }
 
   return (
     <BaseTooltip.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className: cn(styles.trigger, className)}, {}),
-      })}>
-      {renderProp ? undefined : children}
+      className={cn(styles.trigger, className)}
+      {...otherProps}>
+      {children}
     </BaseTooltip.Trigger>
   );
 }
@@ -138,7 +141,7 @@ TooltipTrigger.displayName = "TooltipTrigger";
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
 function TooltipContent(props: Readonly<TooltipContent.Props>): React.ReactElement {
-  const {className, children, render, side = "top", sideOffset = 4, ...otherProps} = props;
+  const {className, children, side = "top", sideOffset = 4, ...otherProps} = props;
 
   return (
     <BaseTooltip.Portal>
@@ -146,12 +149,8 @@ function TooltipContent(props: Readonly<TooltipContent.Props>): React.ReactEleme
         side={side}
         sideOffset={sideOffset}>
         <BaseTooltip.Popup
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.popup, className)}, {}),
-          })}>
+          className={cn(styles.popup, className)}
+          {...otherProps}>
           {children}
         </BaseTooltip.Popup>
       </BaseTooltip.Positioner>
