@@ -25,6 +25,7 @@
 .backdrop {
   position: fixed;
   inset: 0;
+  z-index: 9999;
   min-height: 100dvh;
   background-color: rgb(0 0 0 / 0.5);
   transition: opacity var(--ac-transition-normal);
@@ -43,6 +44,7 @@
 .dialogPopup {
   box-sizing: border-box;
   position: fixed;
+  z-index: 10000;
   top: 50%;
   left: 50%;
   width: min(32rem, calc(100vw - 2rem));
