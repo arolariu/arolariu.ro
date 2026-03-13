@@ -12,7 +12,7 @@ All notable changes to **@arolariu/components** are documented here following [K
 **💥 Breaking Changes**
 - 🔄 **Migrated component primitives from Radix UI to Base UI** using the consolidated `@base-ui/react` package instead of 25+ `@radix-ui/react-*` packages.
 - 🎨 **Migrated styling from Tailwind CSS to CSS Modules**. The component library no longer depends on Tailwind utility classes for internal styling.
-- 🧩 **Removed CVA variant helpers**: `badgeVariants`, `buttonVariants`, and `buttonGroupVariants` are no longer part of the public API.
+- 🧩 **Variant helper functions remain available**: `badgeVariants`, `buttonVariants`, and `buttonGroupVariants` still exist in the public API, but now use CSS Module class-name maps instead of CVA.
 - 🌈 **Renamed design tokens to the `--ac-*` namespace**. CSS custom properties are now prefixed consistently, for example `--ac-primary` and `--ac-radius-md`.
 - 🔁 **Shifted composition toward Base UI's `render` prop**. `asChild` still works as a backward-compatibility shim, but `render` is now the preferred API for new code.
 - 🔔 **Migrated the toast system from `sonner` to a Base UI Toast-backed implementation** while preserving the existing `Toaster` and `toast` exports.

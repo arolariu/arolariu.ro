@@ -21,7 +21,8 @@
     outline-offset: -1px;
   }
 
-  &[data-disabled] {
+  &[data-disabled],
+  &:disabled {
     pointer-events: none;
     opacity: 0.5;
   }

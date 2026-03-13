@@ -32,7 +32,7 @@ export type EmptyTitleProps = React.ComponentPropsWithoutRef<"div">;
 /**
  * Props for the {@link EmptyDescription} component.
  */
-export type EmptyDescriptionProps = React.ComponentPropsWithoutRef<"div">;
+export type EmptyDescriptionProps = React.ComponentPropsWithoutRef<"p">;
 
 /**
  * Props for the {@link EmptyContent} component.
@@ -151,7 +151,7 @@ const EmptyTitle = React.forwardRef<HTMLDivElement, EmptyTitleProps>(
  *
  * @remarks
  * - Pure CSS component (no Base UI primitive)
- * - Renders a `<div>` element
+ * - Renders a `<p>` element
  * - Styling via CSS Modules with `--ac-*` custom properties
  *
  * @example
@@ -161,9 +161,9 @@ const EmptyTitle = React.forwardRef<HTMLDivElement, EmptyTitleProps>(
  *
  * @see {@link EmptyDescriptionProps} for available props
  */
-const EmptyDescription = React.forwardRef<HTMLDivElement, EmptyDescriptionProps>(
+const EmptyDescription = React.forwardRef<HTMLParagraphElement, EmptyDescriptionProps>(
   ({className, ...props}: Readonly<EmptyDescriptionProps>, ref): React.JSX.Element => (
-    <div
+    <p
       ref={ref}
       data-slot='empty-description'
       className={cn(styles.description, className)}

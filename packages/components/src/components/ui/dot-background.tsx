@@ -26,7 +26,6 @@ export interface DotBackgroundProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
   /** Enables pulsing radial glow animation for every dot. @default false */
   glow?: boolean;
-  [key: string]: unknown;
 }
 
 /**
