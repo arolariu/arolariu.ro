@@ -70,21 +70,24 @@ export interface ToggleProps extends Omit<React.ComponentPropsWithRef<typeof Bas
  *
  * @see {@link https://base-ui.com/react/components/toggle | Base UI Documentation}
  */
-function Toggle(props: Readonly<Toggle.Props>): React.ReactElement {
-  const {className, children, render, size, variant, ...otherProps} = props;
+const Toggle = React.forwardRef<React.ComponentRef<typeof BaseToggle>, Toggle.Props>(
+  (props: Readonly<Toggle.Props>, ref): React.ReactElement => {
+    const {className, children, render, size, variant, ...otherProps} = props;
 
-  return (
-    <BaseToggle
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: toggleVariants({variant, size, className})}, {}),
-      })}>
-      {children}
-    </BaseToggle>
-  );
-}
+    return (
+      <BaseToggle
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: toggleVariants({variant, size, className})}, {}),
+        })}>
+        {children}
+      </BaseToggle>
+    );
+  },
+);
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Toggle {

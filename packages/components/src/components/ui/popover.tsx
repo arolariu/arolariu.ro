@@ -90,22 +90,26 @@ function Popover(props: Readonly<Popover.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/popover | Base UI Documentation}
  */
-function PopoverTrigger(props: Readonly<PopoverTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const PopoverTrigger = React.forwardRef<HTMLButtonElement, PopoverTrigger.Props>(
+  (props: Readonly<PopoverTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BasePopover.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BasePopover.Trigger>
-  );
-}
+    return (
+      <BasePopover.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: renderProp as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BasePopover.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the popover anchor.
@@ -123,6 +127,7 @@ function PopoverTrigger(props: Readonly<PopoverTrigger.Props>): React.ReactEleme
  * @see {@link https://base-ui.com/react/components/popover | Base UI Documentation}
  */
 function PopoverAnchor(props: Readonly<PopoverAnchor.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -150,30 +155,33 @@ function PopoverAnchor(props: Readonly<PopoverAnchor.Props>): React.ReactElement
  *
  * @see {@link https://base-ui.com/react/components/popover | Base UI Documentation}
  */
-function PopoverContent(props: Readonly<PopoverContent.Props>): React.ReactElement {
-  const {className, children, render, sideOffset = 4, ...otherProps} = props;
+const PopoverContent = React.forwardRef<React.ComponentRef<typeof BasePopover.Popup>, PopoverContent.Props>(
+  (props: Readonly<PopoverContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, sideOffset = 4, ...otherProps} = props;
 
-  return (
-    <BasePopover.Portal>
-      <BasePopover.Positioner
-        sideOffset={sideOffset}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          props: mergeProps({className: styles.positioner}, {}),
-        })}>
-        <BasePopover.Popup
+    return (
+      <BasePopover.Portal>
+        <BasePopover.Positioner
+          sideOffset={sideOffset}
+          {...otherProps}
           render={useRender({
             defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.popup, className)}, {}),
+            props: mergeProps({className: styles.positioner}, {}),
           })}>
-          {children}
-        </BasePopover.Popup>
-      </BasePopover.Positioner>
-    </BasePopover.Portal>
-  );
-}
+          <BasePopover.Popup
+            ref={ref}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.popup, className)}, {}),
+            })}>
+            {children}
+          </BasePopover.Popup>
+        </BasePopover.Positioner>
+      </BasePopover.Portal>
+    );
+  },
+);
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Popover {

@@ -101,27 +101,32 @@ Tooltip.displayName = "Tooltip";
  *
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
-function TooltipTrigger(props: Readonly<TooltipTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, ...otherProps} = props;
+const TooltipTrigger = React.forwardRef<HTMLButtonElement, TooltipTrigger.Props>(
+  (props: Readonly<TooltipTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
+    const {asChild = false, children, className, ...otherProps} = props;
 
-  if (asChild && React.isValidElement(children)) {
+    if (asChild && React.isValidElement(children)) {
+      return (
+        <BaseTooltip.Trigger
+          ref={ref}
+          className={cn(styles.trigger, className)}
+          render={children as React.ReactElement}
+          {...otherProps}
+        />
+      );
+    }
+
     return (
       <BaseTooltip.Trigger
+        ref={ref}
         className={cn(styles.trigger, className)}
-        render={children as React.ReactElement}
-        {...otherProps}
-      />
+        {...otherProps}>
+        {children}
+      </BaseTooltip.Trigger>
     );
-  }
-
-  return (
-    <BaseTooltip.Trigger
-      className={cn(styles.trigger, className)}
-      {...otherProps}>
-      {children}
-    </BaseTooltip.Trigger>
-  );
-}
+  },
+);
 TooltipTrigger.displayName = "TooltipTrigger";
 
 /**
@@ -140,24 +145,27 @@ TooltipTrigger.displayName = "TooltipTrigger";
  *
  * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
  */
-function TooltipContent(props: Readonly<TooltipContent.Props>): React.ReactElement {
-  const {className, children, side = "top", sideOffset = 4, ...otherProps} = props;
+const TooltipContent = React.forwardRef<React.ComponentRef<typeof BaseTooltip.Popup>, TooltipContent.Props>(
+  (props: Readonly<TooltipContent.Props>, ref): React.ReactElement => {
+    const {className, children, side = "top", sideOffset = 4, ...otherProps} = props;
 
-  return (
-    <BaseTooltip.Portal>
-      <BaseTooltip.Positioner
-        className={styles.positioner}
-        side={side}
-        sideOffset={sideOffset}>
-        <BaseTooltip.Popup
-          className={cn(styles.popup, className)}
-          {...otherProps}>
-          {children}
-        </BaseTooltip.Popup>
-      </BaseTooltip.Positioner>
-    </BaseTooltip.Portal>
-  );
-}
+    return (
+      <BaseTooltip.Portal>
+        <BaseTooltip.Positioner
+          className={styles.positioner}
+          side={side}
+          sideOffset={sideOffset}>
+          <BaseTooltip.Popup
+            ref={ref}
+            className={cn(styles.popup, className)}
+            {...otherProps}>
+            {children}
+          </BaseTooltip.Popup>
+        </BaseTooltip.Positioner>
+      </BaseTooltip.Portal>
+    );
+  },
+);
 TooltipContent.displayName = "TooltipContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

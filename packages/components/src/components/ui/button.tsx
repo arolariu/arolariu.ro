@@ -142,7 +142,7 @@ function createNonNativeInteractionProps(disabled: boolean): React.HTMLAttribute
  *
  * @see {@link https://base-ui.com/react/components/button | Base UI Button}
  */
-function Button(props: Readonly<Button.Props>): React.ReactElement {
+const Button = React.forwardRef<HTMLButtonElement, Button.Props>((props: Readonly<Button.Props>, ref): React.ReactElement => {
   const {render, asChild = false, variant = "default", size = "default", disabled = false, className, children, ...otherProps} = props;
 
   const state: Button.State = {variant, size, disabled};
@@ -152,15 +152,17 @@ function Button(props: Readonly<Button.Props>): React.ReactElement {
   const typeProps: Pick<React.ButtonHTMLAttributes<HTMLButtonElement>, "type"> = shouldRenderNativeButton ? {type: "button"} : {};
   const interactionProps = shouldRenderNativeButton ? {disabled} : createNonNativeInteractionProps(disabled);
 
-  return useRender<Button.State, HTMLElement>({
+  return useRender<Button.State, HTMLButtonElement>({
     defaultTagName: "button",
+    ref,
     render: renderProp,
     state,
     props: mergeProps<"button">({className: composedClassName}, typeProps, otherProps, interactionProps, {
       children: renderProp ? undefined : children,
     }),
   });
-}
+});
+Button.displayName = "Button";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Button {

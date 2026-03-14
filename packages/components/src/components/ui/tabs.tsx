@@ -118,21 +118,24 @@ TabsList.displayName = "TabsList";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-function TabsTrigger(props: Readonly<TabsTrigger.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const TabsTrigger = React.forwardRef<React.ComponentRef<typeof BaseTabs.Tab>, TabsTrigger.Props>(
+  (props: Readonly<TabsTrigger.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseTabs.Tab
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.tab, className)}, {}),
-      })}>
-      {children}
-    </BaseTabs.Tab>
-  );
-}
+    return (
+      <BaseTabs.Tab
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: cn(styles.tab, className)}, {}),
+        })}>
+        {children}
+      </BaseTabs.Tab>
+    );
+  },
+);
 TabsTrigger.displayName = "TabsTrigger";
 
 /**
@@ -151,21 +154,24 @@ TabsTrigger.displayName = "TabsTrigger";
  *
  * @see {@link https://base-ui.com/react/components/tabs | Base UI Documentation}
  */
-function TabsContent(props: Readonly<TabsContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const TabsContent = React.forwardRef<React.ComponentRef<typeof BaseTabs.Panel>, TabsContent.Props>(
+  (props: Readonly<TabsContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseTabs.Panel
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.panel, className)}, {}),
-      })}>
-      {children}
-    </BaseTabs.Panel>
-  );
-}
+    return (
+      <BaseTabs.Panel
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.panel, className)}, {}),
+        })}>
+        {children}
+      </BaseTabs.Panel>
+    );
+  },
+);
 TabsContent.displayName = "TabsContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

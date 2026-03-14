@@ -36,37 +36,40 @@ interface CheckboxProps extends Omit<React.ComponentPropsWithRef<typeof BaseChec
  *
  * @see {@link https://base-ui.com/react/components/checkbox | Base UI Documentation}
  */
-function Checkbox(props: Readonly<Checkbox.Props>): React.ReactElement {
-  const {checked, className, onCheckedChange, render, ...otherProps} = props;
-  const baseChecked = checked === "indeterminate" ? true : checked;
-  const indeterminate = checked === "indeterminate";
+const Checkbox = React.forwardRef<React.ComponentRef<typeof BaseCheckbox.Root>, Checkbox.Props>(
+  (props: Readonly<Checkbox.Props>, ref): React.ReactElement => {
+    const {checked, className, onCheckedChange, render, ...otherProps} = props;
+    const baseChecked = checked === "indeterminate" ? true : checked;
+    const indeterminate = checked === "indeterminate";
 
-  return (
-    <BaseCheckbox.Root
-      checked={baseChecked}
-      indeterminate={indeterminate}
-      onCheckedChange={onCheckedChange as React.ComponentPropsWithRef<typeof BaseCheckbox.Root>["onCheckedChange"]}
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.checkbox, className)}, {}),
-      })}>
-      <BaseCheckbox.Indicator className={styles.indicator}>
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='3'
-          strokeLinecap='round'
-          strokeLinejoin='round'>
-          <polyline points='20 6 9 17 4 12' />
-        </svg>
-      </BaseCheckbox.Indicator>
-    </BaseCheckbox.Root>
-  );
-}
+    return (
+      <BaseCheckbox.Root
+        ref={ref}
+        checked={baseChecked}
+        indeterminate={indeterminate}
+        onCheckedChange={onCheckedChange as React.ComponentPropsWithRef<typeof BaseCheckbox.Root>["onCheckedChange"]}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: cn(styles.checkbox, className)}, {}),
+        })}>
+        <BaseCheckbox.Indicator className={styles.indicator}>
+          <svg
+            xmlns='http://www.w3.org/2000/svg'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='3'
+            strokeLinecap='round'
+            strokeLinejoin='round'>
+            <polyline points='20 6 9 17 4 12' />
+          </svg>
+        </BaseCheckbox.Indicator>
+      </BaseCheckbox.Root>
+    );
+  },
+);
 Checkbox.displayName = "Checkbox";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

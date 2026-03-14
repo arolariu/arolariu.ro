@@ -50,7 +50,8 @@ interface AccordionMultipleProps extends AccordionRootBaseProps {
   value?: string[];
 }
 
-type AccordionProps = AccordionSingleProps | AccordionMultipleProps;
+type AccordionSingleRootProps = Omit<AccordionSingleProps, "className" | "collapsible" | "render" | "type">;
+type AccordionMultipleRootProps = Omit<AccordionMultipleProps, "className" | "collapsible" | "render" | "type">;
 
 /**
  * Props for an accordion item wrapper.
@@ -98,10 +99,15 @@ interface AccordionContentProps extends Omit<React.ComponentPropsWithRef<typeof 
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
 function Accordion(props: Readonly<Accordion.Props>): React.ReactElement {
-  const {className, collapsible: _collapsible, type = "single"} = props;
+  const {className, render, type = "single"} = props;
+  const accordionRender = useRender({
+    defaultTagName: "div",
+    render: render as never,
+    props: mergeProps({className: cn(className)}, {}),
+  });
 
   if (type === "multiple") {
-    const {defaultValue, onValueChange, render, value, ...otherProps} = props as AccordionMultipleProps;
+    const {defaultValue, onValueChange, value, ...otherProps} = omitAccordionWrapperProps(props) as AccordionMultipleRootProps;
 
     return (
       <BaseAccordion.Root
@@ -110,16 +116,12 @@ function Accordion(props: Readonly<Accordion.Props>): React.ReactElement {
         onValueChange={onValueChange}
         value={value}
         {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(className)}, {}),
-        })}
+        render={accordionRender}
       />
     );
   }
 
-  const {defaultValue, onValueChange, render, value, ...otherProps} = props as AccordionSingleProps;
+  const {defaultValue, onValueChange, value, ...otherProps} = omitAccordionWrapperProps(props) as AccordionSingleRootProps;
 
   return (
     <BaseAccordion.Root
@@ -130,15 +132,22 @@ function Accordion(props: Readonly<Accordion.Props>): React.ReactElement {
       }}
       value={value ? [value] : undefined}
       {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(className)}, {}),
-      })}
+      render={accordionRender}
     />
   );
 }
 Accordion.displayName = "Accordion";
+
+function omitAccordionWrapperProps(props: Accordion.Props): AccordionSingleRootProps | AccordionMultipleRootProps {
+  const rootProps: Partial<Accordion.Props> = {...props};
+
+  Reflect.deleteProperty(rootProps, "className");
+  Reflect.deleteProperty(rootProps, "collapsible");
+  Reflect.deleteProperty(rootProps, "render");
+  Reflect.deleteProperty(rootProps, "type");
+
+  return rootProps as AccordionSingleRootProps | AccordionMultipleRootProps;
+}
 
 /**
  * Wraps a single accordion item with shared border and spacing styles.
@@ -194,24 +203,27 @@ AccordionItem.displayName = "AccordionItem";
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-function AccordionTrigger(props: Readonly<AccordionTrigger.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const AccordionTrigger = React.forwardRef<React.ComponentRef<typeof BaseAccordion.Trigger>, AccordionTrigger.Props>(
+  (props: Readonly<AccordionTrigger.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseAccordion.Header className={styles.header}>
-      <BaseAccordion.Trigger
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "button",
-          render: render as never,
-          props: mergeProps({className: cn(styles.trigger, className)}, {}),
-        })}>
-        <span>{children}</span>
-        <ChevronDown className={styles.icon} />
-      </BaseAccordion.Trigger>
-    </BaseAccordion.Header>
-  );
-}
+    return (
+      <BaseAccordion.Header className={styles.header}>
+        <BaseAccordion.Trigger
+          ref={ref}
+          {...otherProps}
+          render={useRender({
+            defaultTagName: "button",
+            render: render as never,
+            props: mergeProps({className: cn(styles.trigger, className)}, {}),
+          })}>
+          <span>{children}</span>
+          <ChevronDown className={styles.icon} />
+        </BaseAccordion.Trigger>
+      </BaseAccordion.Header>
+    );
+  },
+);
 AccordionTrigger.displayName = "AccordionTrigger";
 
 /**
@@ -230,26 +242,29 @@ AccordionTrigger.displayName = "AccordionTrigger";
  *
  * @see {@link https://base-ui.com/react/components/accordion | Base UI Documentation}
  */
-function AccordionContent(props: Readonly<AccordionContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const AccordionContent = React.forwardRef<React.ComponentRef<typeof BaseAccordion.Panel>, AccordionContent.Props>(
+  (props: Readonly<AccordionContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseAccordion.Panel
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: styles.panel}, {}),
-      })}>
-      <div className={cn(styles.content, className)}>{children}</div>
-    </BaseAccordion.Panel>
-  );
-}
+    return (
+      <BaseAccordion.Panel
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: styles.panel}, {}),
+        })}>
+        <div className={cn(styles.panelInner, className)}>{children}</div>
+      </BaseAccordion.Panel>
+    );
+  },
+);
 AccordionContent.displayName = "AccordionContent";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Accordion {
-  export type Props = AccordionProps;
+  export type Props = AccordionSingleProps | AccordionMultipleProps;
   export type State = BaseAccordion.Root.State<string>;
 }
 

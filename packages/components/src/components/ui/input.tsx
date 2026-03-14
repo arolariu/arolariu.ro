@@ -34,21 +34,24 @@ export interface InputProps extends Omit<React.ComponentPropsWithRef<typeof Base
  *
  * @see {@link https://base-ui.com/react/components/input | Base UI Documentation}
  */
-function Input(props: Readonly<Input.Props>): React.ReactElement {
-  const {className, render, type, ...otherProps} = props;
+const Input = React.forwardRef<React.ComponentRef<typeof BaseInput>, Input.Props>(
+  (props: Readonly<Input.Props>, ref): React.ReactElement => {
+    const {className, render, type, ...otherProps} = props;
 
-  return (
-    <BaseInput
-      type={type}
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "input",
-        render: render as never,
-        props: mergeProps({className: cn(styles.input, className)}, {}),
-      })}
-    />
-  );
-}
+    return (
+      <BaseInput
+        ref={ref}
+        type={type}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "input",
+          render: render as never,
+          props: mergeProps({className: cn(styles.input, className)}, {}),
+        })}
+      />
+    );
+  },
+);
 Input.displayName = "Input";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

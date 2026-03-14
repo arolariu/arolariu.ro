@@ -102,22 +102,26 @@ Dialog.displayName = "Dialog";
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogTrigger(props: Readonly<DialogTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const DialogTrigger = React.forwardRef<HTMLButtonElement, DialogTrigger.Props>(
+  (props: Readonly<DialogTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BaseDialog.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseDialog.Trigger>
-  );
-}
+    return (
+      <BaseDialog.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: renderProp as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BaseDialog.Trigger>
+    );
+  },
+);
 DialogTrigger.displayName = "DialogTrigger";
 
 /**
@@ -225,24 +229,27 @@ DialogOverlay.displayName = "DialogOverlay";
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function DialogContent(props: Readonly<DialogContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const DialogContent = React.forwardRef<React.ComponentRef<typeof BaseDialog.Popup>, DialogContent.Props>(
+  (props: Readonly<DialogContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <DialogPortal>
-      <DialogOverlay />
-      <BaseDialog.Popup
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.popup, className)}, {}),
-        })}>
-        {children}
-      </BaseDialog.Popup>
-    </DialogPortal>
-  );
-}
+    return (
+      <DialogPortal>
+        <DialogOverlay />
+        <BaseDialog.Popup
+          ref={ref}
+          {...otherProps}
+          render={useRender({
+            defaultTagName: "div",
+            render: render as never,
+            props: mergeProps({className: cn(styles.popup, className)}, {}),
+          })}>
+          {children}
+        </BaseDialog.Popup>
+      </DialogPortal>
+    );
+  },
+);
 DialogContent.displayName = "DialogContent";
 
 /**
@@ -264,6 +271,7 @@ DialogContent.displayName = "DialogContent";
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
 function DialogHeader(props: Readonly<DialogHeader.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -296,6 +304,7 @@ DialogHeader.displayName = "DialogHeader";
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
 function DialogFooter(props: Readonly<DialogFooter.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

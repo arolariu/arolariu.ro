@@ -32,21 +32,24 @@ interface SwitchProps extends Omit<React.ComponentPropsWithRef<typeof BaseSwitch
  *
  * @see {@link https://base-ui.com/react/components/switch | Base UI Documentation}
  */
-function Switch(props: Readonly<Switch.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
+const Switch = React.forwardRef<React.ComponentRef<typeof BaseSwitch.Root>, Switch.Props>(
+  (props: Readonly<Switch.Props>, ref): React.ReactElement => {
+    const {className, render, ...otherProps} = props;
 
-  return (
-    <BaseSwitch.Root
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.root, className)}, {}),
-      })}>
-      <BaseSwitch.Thumb className={styles.thumb} />
-    </BaseSwitch.Root>
-  );
-}
+    return (
+      <BaseSwitch.Root
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: cn(styles.root, className)}, {}),
+        })}>
+        <BaseSwitch.Thumb className={styles.thumb} />
+      </BaseSwitch.Root>
+    );
+  },
+);
 Switch.displayName = "Switch";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

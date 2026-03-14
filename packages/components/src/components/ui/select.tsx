@@ -151,24 +151,27 @@ SelectValue.displayName = "SelectValue";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-function SelectTrigger(props: Readonly<SelectTrigger.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const SelectTrigger = React.forwardRef<React.ComponentRef<typeof BaseSelect.Trigger>, SelectTrigger.Props>(
+  (props: Readonly<SelectTrigger.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseSelect.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.trigger, className)}, {}),
-      })}>
-      {children}
-      <BaseSelect.Icon className={styles.icon}>
-        <ChevronDown className={styles.iconSvg} />
-      </BaseSelect.Icon>
-    </BaseSelect.Trigger>
-  );
-}
+    return (
+      <BaseSelect.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: cn(styles.trigger, className)}, {}),
+        })}>
+        {children}
+        <BaseSelect.Icon className={styles.icon}>
+          <ChevronDown className={styles.iconSvg} />
+        </BaseSelect.Icon>
+      </BaseSelect.Trigger>
+    );
+  },
+);
 SelectTrigger.displayName = "SelectTrigger";
 
 /**
@@ -257,32 +260,35 @@ SelectScrollDownButton.displayName = "SelectScrollDownButton";
  *
  * @see {@link https://base-ui.com/react/components/select | Base UI Documentation}
  */
-function SelectContent(props: Readonly<SelectContent.Props>): React.ReactElement {
-  const {className, children, render, sideOffset = 4, ...otherProps} = props;
+const SelectContent = React.forwardRef<React.ComponentRef<typeof BaseSelect.Popup>, SelectContent.Props>(
+  (props: Readonly<SelectContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, sideOffset = 4, ...otherProps} = props;
 
-  return (
-    <BaseSelect.Portal>
-      <BaseSelect.Positioner
-        sideOffset={sideOffset}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          props: mergeProps({className: styles.positioner}, {}),
-        })}>
-        <BaseSelect.Popup
+    return (
+      <BaseSelect.Portal>
+        <BaseSelect.Positioner
+          sideOffset={sideOffset}
+          {...otherProps}
           render={useRender({
             defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.popup, className)}, {}),
+            props: mergeProps({className: styles.positioner}, {}),
           })}>
-          <SelectScrollUpButton />
-          <BaseSelect.List className={styles.list}>{children}</BaseSelect.List>
-          <SelectScrollDownButton />
-        </BaseSelect.Popup>
-      </BaseSelect.Positioner>
-    </BaseSelect.Portal>
-  );
-}
+          <BaseSelect.Popup
+            ref={ref}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.popup, className)}, {}),
+            })}>
+            <SelectScrollUpButton />
+            <BaseSelect.List className={styles.list}>{children}</BaseSelect.List>
+            <SelectScrollDownButton />
+          </BaseSelect.Popup>
+        </BaseSelect.Positioner>
+      </BaseSelect.Portal>
+    );
+  },
+);
 SelectContent.displayName = "SelectContent";
 
 /**

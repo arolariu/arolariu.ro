@@ -54,34 +54,37 @@ interface SliderProps extends Omit<
  *
  * @see {@link https://base-ui.com/react/components/slider | Base UI Documentation}
  */
-function Slider(props: Readonly<Slider.Props>): React.ReactElement {
-  const {className, defaultValue, onValueChange, onValueCommitted, render, value, ...otherProps} = props;
+const Slider = React.forwardRef<React.ComponentRef<typeof BaseSlider.Root>, Slider.Props>(
+  (props: Readonly<Slider.Props>, ref): React.ReactElement => {
+    const {className, defaultValue, onValueChange, onValueCommitted, render, value, ...otherProps} = props;
 
-  return (
-    <BaseSlider.Root<readonly number[]>
-      defaultValue={defaultValue}
-      onValueChange={(nextValue, eventDetails) => {
-        onValueChange?.([...nextValue], eventDetails);
-      }}
-      onValueCommitted={(nextValue, eventDetails) => {
-        onValueCommitted?.([...nextValue], eventDetails);
-      }}
-      value={value}
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.root, className)}, {}),
-      })}>
-      <BaseSlider.Control className={styles.control}>
-        <BaseSlider.Track className={styles.track}>
-          <BaseSlider.Indicator className={styles.indicator} />
-        </BaseSlider.Track>
-        <BaseSlider.Thumb className={styles.thumb} />
-      </BaseSlider.Control>
-    </BaseSlider.Root>
-  );
-}
+    return (
+      <BaseSlider.Root<readonly number[]>
+        ref={ref}
+        defaultValue={defaultValue}
+        onValueChange={(nextValue, eventDetails) => {
+          onValueChange?.([...nextValue], eventDetails);
+        }}
+        onValueCommitted={(nextValue, eventDetails) => {
+          onValueCommitted?.([...nextValue], eventDetails);
+        }}
+        value={value}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.root, className)}, {}),
+        })}>
+        <BaseSlider.Control className={styles.control}>
+          <BaseSlider.Track className={styles.track}>
+            <BaseSlider.Indicator className={styles.indicator} />
+          </BaseSlider.Track>
+          <BaseSlider.Thumb className={styles.thumb} />
+        </BaseSlider.Control>
+      </BaseSlider.Root>
+    );
+  },
+);
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Slider {
