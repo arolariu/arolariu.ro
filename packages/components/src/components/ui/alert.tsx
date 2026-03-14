@@ -1,57 +1,150 @@
-"use client";
-
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./alert.module.css";
 
-const alertVariants = cva(
-  "relative w-full rounded-lg border border-neutral-200 px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-neutral-950 [&>svg~*]:pl-7 dark:border-neutral-800 dark:[&>svg]:text-neutral-50",
-  {
-    variants: {
-      variant: {
-        default: "bg-white text-neutral-950 dark:bg-neutral-950 dark:text-neutral-50",
-        destructive:
-          "border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500 dark:border-red-900/50 dark:text-red-900 dark:dark:border-red-900 dark:[&>svg]:text-red-900",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
+/**
+ * Defines the supported visual treatments for the Alert component.
+ */
+export type AlertVariant = "default" | "destructive";
 
-const Alert = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>>(
-  ({className, variant, ...props}, ref) => (
-    <div
-      ref={ref}
-      role='alert'
-      className={cn(alertVariants({variant}), className)}
-      {...props}
-    />
-  ),
-);
-Alert.displayName = "Alert";
+const variantStyles: Record<AlertVariant, string> = {
+  default: styles.default!,
+  destructive: styles.destructive!,
+};
 
-const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(({className, ...props}, ref) => (
-  // eslint-disable-next-line jsx-a11y/heading-has-content -- this will be filled with children.
-  <h5
+/**
+ * Represents the configurable props for the Alert component.
+ *
+ * @remarks
+ * Extends native `<div>` attributes so alerts can expose ARIA relationships,
+ * data attributes, and custom event handlers while selecting a visual variant.
+ *
+ * @default variant `"default"`
+ */
+export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Additional CSS classes merged with the base alert surface styles.
+   */
+  className?: string;
+  /**
+   * The visual tone used to communicate neutral or destructive feedback.
+   *
+   * @default "default"
+   */
+  variant?: AlertVariant;
+}
+
+/**
+ * A bordered feedback container for inline status, warning, or error messaging.
+ *
+ * @remarks
+ * **Rendering Context**: Server- and client-compatible presentational component.
+ *
+ * Renders a `<div>` with `role="alert"` so assistive technologies announce urgent
+ * content. Use {@link AlertTitle} and {@link AlertDescription} to build a clear,
+ * accessible message structure.
+ *
+ * @example
+ * ```tsx
+ * <Alert variant="destructive">
+ *   <AlertTitle>Payment failed</AlertTitle>
+ *   <AlertDescription>Verify your card details and try again.</AlertDescription>
+ * </Alert>
+ * ```
+ *
+ * @see {@link AlertTitle}
+ * @see {@link AlertDescription}
+ * @see {@link https://base-ui.com/react/overview Base UI documentation}
+ */
+const Alert = React.forwardRef<HTMLDivElement, AlertProps>(({className, variant = "default", ...props}, ref) => (
+  <div
     ref={ref}
-    className={cn("mb-1 leading-none font-medium tracking-tight", className)}
+    role='alert'
+    className={cn(styles.alert, variantStyles[variant], className)}
     {...props}
   />
 ));
+Alert.displayName = "Alert";
+
+/**
+ * Represents the configurable props for the AlertTitle component.
+ *
+ * @remarks
+ * Extends native heading attributes and exposes a class override for styling.
+ */
+interface AlertTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  /**
+   * Additional CSS classes merged with the alert title styles.
+   */
+  className?: string;
+}
+
+/**
+ * The heading slot for the primary alert message.
+ *
+ * @remarks
+ * **Rendering Context**: Server- and client-compatible presentational component.
+ *
+ * Renders an `<h5>` element styled for compact but prominent messaging. Pair it with
+ * {@link AlertDescription} when the alert needs supporting explanatory text.
+ *
+ * @example
+ * ```tsx
+ * <AlertTitle>Heads up</AlertTitle>
+ * ```
+ *
+ * @see {@link AlertDescription}
+ * @see {@link https://base-ui.com/react/overview Base UI documentation}
+ */
+const AlertTitle = React.forwardRef<HTMLHeadingElement, AlertTitleProps>(({children, className, ...props}, ref) => (
+  <h5
+    ref={ref}
+    className={cn(styles.title, className)}
+    {...props}>
+    {children}
+  </h5>
+));
 AlertTitle.displayName = "AlertTitle";
 
-const AlertDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({className, ...props}, ref) => (
-    <div
-      ref={ref}
-      className={cn("text-sm [&_p]:leading-relaxed", className)}
-      {...props}
-    />
-  ),
-);
+/**
+ * Represents the configurable props for the AlertDescription component.
+ *
+ * @remarks
+ * Extends native `<div>` attributes so rich supporting content can be rendered inside
+ * an alert body while preserving the component's spacing and typography.
+ */
+interface AlertDescriptionProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Additional CSS classes merged with the alert description styles.
+   */
+  className?: string;
+}
+
+/**
+ * A supporting content slot for additional alert details.
+ *
+ * @remarks
+ * **Rendering Context**: Server- and client-compatible presentational component.
+ *
+ * Renders a styled `<div>` so the alert body can contain paragraphs, lists, links,
+ * or other rich inline content beneath the title.
+ *
+ * @example
+ * ```tsx
+ * <AlertDescription>API access will be restored after the billing issue is resolved.</AlertDescription>
+ * ```
+ *
+ * @see {@link AlertTitle}
+ * @see {@link https://base-ui.com/react/overview Base UI documentation}
+ */
+const AlertDescription = React.forwardRef<HTMLDivElement, AlertDescriptionProps>(({className, ...props}, ref) => (
+  <div
+    ref={ref}
+    className={cn(styles.description, className)}
+    {...props}
+  />
+));
 AlertDescription.displayName = "AlertDescription";
 
 export {Alert, AlertDescription, AlertTitle};

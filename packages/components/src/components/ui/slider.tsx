@@ -1,24 +1,97 @@
 "use client";
 
-import * as SliderPrimitive from "@radix-ui/react-slider";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {Slider as BaseSlider} from "@base-ui/react/slider";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./slider.module.css";
 
-const Slider = React.forwardRef<
-  React.ComponentRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({className, ...props}, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn("relative flex w-full touch-none items-center select-none", className)}
-    {...props}>
-    <SliderPrimitive.Track className='relative h-1.5 w-full grow overflow-hidden rounded-full bg-neutral-900/20 dark:bg-neutral-50/20'>
-      <SliderPrimitive.Range className='absolute h-full bg-neutral-900 dark:bg-neutral-50' />
-    </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className='block h-4 w-4 rounded-full border border-neutral-200 border-neutral-900/50 bg-white shadow transition-colors focus-visible:ring-1 focus-visible:ring-neutral-950 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 dark:border-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-950 dark:focus-visible:ring-neutral-300' />
-  </SliderPrimitive.Root>
-));
-Slider.displayName = SliderPrimitive.Root.displayName;
+interface SliderProps extends Omit<
+  React.ComponentPropsWithRef<typeof BaseSlider.Root>,
+  "defaultValue" | "onValueChange" | "onValueCommitted" | "value" | "className"
+> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
+  className?: string;
+  /**
+   * Controls the current value when the component is used in controlled mode.
+   * @default undefined
+   */
+  value?: number[];
+  /**
+   * Sets the initial value when the component is used in uncontrolled mode.
+   * @default undefined
+   */
+  defaultValue?: number[];
+  /**
+   * Called whenever the slider value changes.
+   * @default undefined
+   */
+  onValueChange?: (value: number[], eventDetails: unknown) => void;
+  /**
+   * Called when a slider interaction is committed.
+   * @default undefined
+   */
+  onValueCommitted?: (value: number[], eventDetails: unknown) => void;
+}
+
+/**
+ * Renders the slider control.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/slider | Base UI Slider}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <Slider>Content</Slider>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/slider | Base UI Documentation}
+ */
+const Slider = React.forwardRef<React.ComponentRef<typeof BaseSlider.Root>, Slider.Props>(
+  (props: Readonly<Slider.Props>, ref): React.ReactElement => {
+    const {className, defaultValue, onValueChange, onValueCommitted, render, value, ...otherProps} = props;
+
+    return (
+      <BaseSlider.Root<readonly number[]>
+        ref={ref}
+        defaultValue={defaultValue}
+        onValueChange={(nextValue, eventDetails) => {
+          onValueChange?.([...nextValue], eventDetails);
+        }}
+        onValueCommitted={(nextValue, eventDetails) => {
+          onValueCommitted?.([...nextValue], eventDetails);
+        }}
+        value={value}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.root, className)}, {}),
+        })}>
+        <BaseSlider.Control className={styles.control}>
+          <BaseSlider.Track className={styles.track}>
+            <BaseSlider.Indicator className={styles.indicator} />
+          </BaseSlider.Track>
+          <BaseSlider.Thumb className={styles.thumb} />
+        </BaseSlider.Control>
+      </BaseSlider.Root>
+    );
+  },
+);
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Slider {
+  export type Props = SliderProps;
+  export type State = BaseSlider.Root.State;
+}
+
+Slider.displayName = "Slider";
 
 export {Slider};

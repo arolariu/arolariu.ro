@@ -1,0 +1,60 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ac-radius-md);
+  padding: 0.125rem var(--ac-space-2);
+  font-size: var(--ac-text-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast);
+
+  & svg {
+    pointer-events: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    flex-shrink: 0;
+  }
+}
+
+.default {
+  background-color: var(--ac-primary);
+  color: var(--ac-primary-foreground);
+  border: 1px solid transparent;
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: color-mix(in oklch, var(--ac-primary), transparent 20%);
+    }
+  }
+}
+
+.secondary {
+  background-color: var(--ac-secondary);
+  color: var(--ac-secondary-foreground);
+  border: 1px solid transparent;
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: color-mix(in oklch, var(--ac-secondary), transparent 20%);
+    }
+  }
+}
+
+.destructive {
+  background-color: var(--ac-destructive);
+  color: var(--ac-background);
+  border: 1px solid transparent;
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: color-mix(in oklch, var(--ac-destructive), transparent 20%);
+    }
+  }
+}
+
+.outline {
+  background-color: transparent;
+  color: var(--ac-foreground);
+  border: 1px solid var(--ac-border);
+}

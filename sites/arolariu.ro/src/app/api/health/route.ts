@@ -18,8 +18,8 @@ import {
   setSpanAttributes,
   withSpan,
 } from "@/instrumentation.server";
-import {NextResponse} from "next/server";
 import {version as nextVersion} from "next/package.json";
+import {NextResponse} from "next/server";
 
 export const dynamic = "force-dynamic";
 

@@ -1,0 +1,8 @@
+.group {
+  display: grid;
+  gap: var(--ac-space-2);
+
+  &[data-disabled] {
+    opacity: 0.6;
+  }
+}

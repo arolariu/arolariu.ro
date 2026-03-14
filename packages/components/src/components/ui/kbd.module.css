@@ -1,0 +1,31 @@
+.kbd {
+  pointer-events: none;
+  display: inline-flex;
+  width: fit-content;
+  min-width: var(--ac-size-xs);
+  height: var(--ac-size-xs);
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-1);
+  padding: 0 var(--ac-space-1);
+  border: 1px solid var(--ac-border);
+  border-bottom-width: 2px;
+  border-radius: var(--ac-radius-sm);
+  background-color: var(--ac-muted);
+  color: var(--ac-muted-foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: var(--ac-text-xs);
+  font-weight: 600;
+  user-select: none;
+}
+
+.kbd svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+}

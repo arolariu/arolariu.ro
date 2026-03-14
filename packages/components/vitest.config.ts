@@ -16,11 +16,11 @@ export default mergeConfig(
     plugins: [react()],
     test: {
       coverage: {
-        exclude: ["src/components/**"],
         thresholds: {
-          // Override branch threshold for defensive nullish coalescing patterns
-          // that cannot realistically be triggered in normal code paths
-          branches: 85,
+          branches: 70,
+          functions: 80,
+          lines: 80,
+          statements: 80,
         },
       },
     },

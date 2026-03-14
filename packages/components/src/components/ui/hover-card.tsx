@@ -1,29 +1,150 @@
 "use client";
 
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {PreviewCard as BasePreviewCard} from "@base-ui/react/preview-card";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./hover-card.module.css";
 
-const HoverCard = HoverCardPrimitive.Root;
+interface HoverCardProps extends React.ComponentPropsWithRef<typeof BasePreviewCard.Root> {}
+interface HoverCardTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BasePreviewCard.Trigger>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
+  className?: string;
+}
+interface HoverCardContentProps extends Omit<React.ComponentPropsWithRef<typeof BasePreviewCard.Positioner>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
+  className?: string;
+  /**
+   * Offsets the floating content from its anchor in pixels.
+   * @default 4
+   */
+  sideOffset?: number;
+}
 
-const HoverCardTrigger = HoverCardPrimitive.Trigger;
+/**
+ * Coordinates hover card state and accessibility behavior.
+ *
+ * @remarks
+ * - Delegates structure and state to the underlying Base UI primitive
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
+ * - Preserves the underlying primitive API for advanced composition
+ *
+ * @example
+ * ```tsx
+ * <HoverCard>Content</HoverCard>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
+ */
+function HoverCard(props: Readonly<HoverCard.Props>): React.ReactElement {
+  return <BasePreviewCard.Root {...props} />;
+}
 
-const HoverCardContent = React.forwardRef<
-  React.ComponentRef<typeof HoverCardPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof HoverCardPrimitive.Content>
->(({className, align = "center", sideOffset = 4, ...props}, ref) => (
-  <HoverCardPrimitive.Content
-    ref={ref}
-    align={align}
-    sideOffset={sideOffset}
-    className={cn(
-      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-64 origin-[--radix-hover-card-content-transform-origin] rounded-md border border-neutral-200 bg-white p-4 text-neutral-950 shadow-md outline-none dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50",
-      className,
-    )}
-    {...props}
-  />
-));
-HoverCardContent.displayName = HoverCardPrimitive.Content.displayName;
+/**
+ * Renders the hover card trigger.
+ *
+ * @remarks
+ * - Renders a `<a>` element by default
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <HoverCardTrigger>Content</HoverCardTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
+ */
+const HoverCardTrigger = React.forwardRef<HTMLAnchorElement, HoverCardTrigger.Props>(
+  (props: Readonly<HoverCardTrigger.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
+
+    return (
+      <BasePreviewCard.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "a",
+          render: render as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {children}
+      </BasePreviewCard.Trigger>
+    );
+  },
+);
+
+/**
+ * Renders the hover card content.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/preview-card | Base UI Preview Card}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <HoverCardContent>Content</HoverCardContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
+ */
+const HoverCardContent = React.forwardRef<React.ComponentRef<typeof BasePreviewCard.Popup>, HoverCardContent.Props>(
+  (props: Readonly<HoverCardContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, sideOffset = 4, ...otherProps} = props;
+
+    return (
+      <BasePreviewCard.Portal>
+        <BasePreviewCard.Positioner
+          sideOffset={sideOffset}
+          {...otherProps}
+          render={useRender({
+            defaultTagName: "div",
+            props: mergeProps({className: styles.positioner}, {}),
+          })}>
+          <BasePreviewCard.Popup
+            ref={ref}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.popup, className)}, {}),
+            })}>
+            {children}
+          </BasePreviewCard.Popup>
+        </BasePreviewCard.Positioner>
+      </BasePreviewCard.Portal>
+    );
+  },
+);
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace HoverCard {
+  export type Props = HoverCardProps;
+  export type State = BasePreviewCard.Root.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace HoverCardTrigger {
+  export type Props = HoverCardTriggerProps;
+  export type State = BasePreviewCard.Trigger.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace HoverCardContent {
+  export type Props = HoverCardContentProps;
+  export type State = BasePreviewCard.Popup.State;
+}
+
+HoverCard.displayName = "HoverCard";
+HoverCardTrigger.displayName = "HoverCardTrigger";
+HoverCardContent.displayName = "HoverCardContent";
 
 export {HoverCard, HoverCardContent, HoverCardTrigger};

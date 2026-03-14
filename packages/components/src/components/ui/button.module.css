@@ -1,0 +1,138 @@
+.button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-2);
+  white-space: nowrap;
+  border-radius: var(--ac-radius-md);
+  font-size: var(--ac-text-xs);
+  line-height: 1.6;
+  font-weight: 500;
+  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast),
+    border-color var(--ac-transition-fast), box-shadow var(--ac-transition-fast);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  border: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--ac-ring);
+    outline-offset: -1px;
+  }
+
+  &[data-disabled],
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* Icon children */
+  & svg {
+    pointer-events: none;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+/* Variants */
+.default {
+  background-color: var(--ac-primary);
+  color: var(--ac-primary-foreground);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled]) {
+      background-color: color-mix(in oklch, var(--ac-primary), transparent 10%);
+    }
+  }
+}
+
+.destructive {
+  background-color: var(--ac-destructive);
+  color: var(--ac-background);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled]) {
+      background-color: color-mix(in oklch, var(--ac-destructive), transparent 10%);
+    }
+  }
+}
+
+.outline {
+  border: 1px solid var(--ac-border);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled]) {
+      background-color: var(--ac-accent);
+      color: var(--ac-accent-foreground);
+    }
+  }
+}
+
+.secondary {
+  background-color: var(--ac-secondary);
+  color: var(--ac-secondary-foreground);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled]) {
+      background-color: color-mix(in oklch, var(--ac-secondary), transparent 20%);
+    }
+  }
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--ac-foreground);
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled]) {
+      background-color: var(--ac-accent);
+      color: var(--ac-accent-foreground);
+    }
+  }
+}
+
+.link {
+  background-color: transparent;
+  color: var(--ac-foreground);
+  text-underline-offset: 4px;
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled]) {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* Sizes — Mira compact */
+.sizeDefault {
+  height: var(--ac-size-default);
+  padding: var(--ac-space-1) var(--ac-space-3);
+}
+
+.sizeSm {
+  height: var(--ac-size-md);
+  padding: var(--ac-space-1) var(--ac-space-2);
+  font-size: var(--ac-text-xs);
+  border-radius: var(--ac-radius-sm);
+}
+
+.sizeLg {
+  height: var(--ac-size-lg);
+  padding: var(--ac-space-1) var(--ac-space-4);
+  font-size: var(--ac-text-sm);
+  border-radius: var(--ac-radius-md);
+}
+
+.sizeIcon {
+  width: var(--ac-size-default);
+  height: var(--ac-size-default);
+  padding: 0;
+}

@@ -1,31 +1,74 @@
-"use client";
-
-import {cn} from "@/lib/utilities";
 import * as React from "react";
 
-function Kbd({className, ...props}: React.ComponentProps<"kbd">) {
-  return (
-    <kbd
-      data-slot='kbd'
-      className={cn(
-        "pointer-events-none inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 rounded-sm bg-neutral-100 px-1 font-sans text-xs font-medium text-neutral-500 select-none dark:bg-neutral-800 dark:text-neutral-400",
-        "[&_svg:not([class*='size-'])]:size-3",
-        "[[data-slot=tooltip-content]_&]:bg-white/20 [[data-slot=tooltip-content]_&]:text-white dark:[[data-slot=tooltip-content]_&]:bg-neutral-950/20 dark:[[data-slot=tooltip-content]_&]:bg-white/10 dark:dark:[[data-slot=tooltip-content]_&]:bg-neutral-950/10 dark:[[data-slot=tooltip-content]_&]:text-neutral-950",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+import {cn} from "@/lib/utilities";
+import styles from "./kbd.module.css";
 
-function KbdGroup({className, ...props}: React.ComponentProps<"div">) {
-  return (
+/**
+ * Props for the {@link Kbd} component.
+ */
+export type KbdProps = React.ComponentPropsWithoutRef<"kbd">;
+
+/**
+ * Props for the {@link KbdGroup} component.
+ */
+export type KbdGroupProps = React.ComponentPropsWithoutRef<"kbd">;
+
+/**
+ * Renders an inline keyboard keycap label.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<kbd>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <Kbd>⌘K</Kbd>
+ * ```
+ *
+ * @see {@link KbdProps} for available props
+ */
+const Kbd = React.forwardRef<HTMLElement, KbdProps>(
+  ({className, ...props}: Readonly<KbdProps>, ref): React.JSX.Element => (
     <kbd
-      data-slot='kbd-group'
-      className={cn("inline-flex items-center gap-1", className)}
+      ref={ref}
+      data-slot='kbd'
+      className={cn(styles.kbd, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+
+/**
+ * Groups multiple keyboard keycap labels into a shared visual cluster.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<kbd>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <KbdGroup>
+ *   <Kbd>⌘</Kbd>
+ *   <Kbd>K</Kbd>
+ * </KbdGroup>
+ * ```
+ *
+ * @see {@link KbdGroupProps} for available props
+ */
+const KbdGroup = React.forwardRef<HTMLElement, KbdGroupProps>(
+  ({className, ...props}: Readonly<KbdGroupProps>, ref): React.JSX.Element => (
+    <kbd
+      ref={ref}
+      data-slot='kbd-group'
+      className={cn(styles.group, className)}
+      {...props}
+    />
+  ),
+);
+
+Kbd.displayName = "Kbd";
+KbdGroup.displayName = "KbdGroup";
 
 export {Kbd, KbdGroup};

@@ -10,7 +10,7 @@
 
 /** Default feature flag values used when exp is unavailable. */
 export const DEFAULT_FEATURE_FLAGS: WebsiteFeatureFlags = {
-  commanderEnabled: false,
+  commanderEnabled: true,
   webVitalsEnabled: false,
 };
 

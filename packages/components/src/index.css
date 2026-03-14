@@ -1,73 +1,135 @@
-@import "tailwindcss";
-@config '../tailwind.config.ts';
-@custom-variant dark (&:is(.dark *));
-
 /*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
-}
+ * @arolariu/components — Design Tokens
+ * Base UI + Mira-inspired style + Blue theme + Large radius (0.875rem)
+ *
+ * This file defines the CSS custom properties used across all component modules.
+ * Consumers can override any token by redefining the custom property in their own CSS.
+ */
 
 :root {
-  --sidebar: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
-}
-.dark {
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  /* Radius scale */
+  --ac-radius: 0.875rem;
+  --ac-radius-xs: calc(var(--ac-radius) * 0.4);
+  --ac-radius-sm: calc(var(--ac-radius) * 0.6);
+  --ac-radius-md: calc(var(--ac-radius) * 0.8);
+  --ac-radius-lg: var(--ac-radius);
+  --ac-radius-xl: calc(var(--ac-radius) * 1.4);
+
+  /* Core semantic tokens — Light mode */
+  --ac-background: oklch(1 0 0);
+  --ac-foreground: oklch(0.145 0.004 285.823);
+  --ac-card: oklch(1 0 0);
+  --ac-card-foreground: oklch(0.145 0.004 285.823);
+  --ac-popover: oklch(1 0 0);
+  --ac-popover-foreground: oklch(0.145 0.004 285.823);
+  --ac-primary: oklch(0.488 0.243 264.376);
+  --ac-primary-foreground: oklch(0.97 0.014 254.604);
+  --ac-secondary: oklch(0.967 0.001 286.375);
+  --ac-secondary-foreground: oklch(0.21 0.006 285.885);
+  --ac-muted: oklch(0.967 0.001 286.375);
+  --ac-muted-foreground: oklch(0.556 0.002 285.938);
+  --ac-accent: oklch(0.967 0.001 286.375);
+  --ac-accent-foreground: oklch(0.21 0.006 285.885);
+  --ac-destructive: oklch(0.577 0.245 27.325);
+  --ac-destructive-foreground: oklch(0.577 0.245 27.325);
+  --ac-success: oklch(0.627 0.194 149.214);
+  --ac-success-foreground: oklch(0.985 0 0);
+  --ac-warning: oklch(0.769 0.188 70.08);
+  --ac-warning-foreground: oklch(0.145 0.004 285.823);
+  --ac-info: oklch(0.488 0.243 264.376);
+  --ac-info-foreground: oklch(0.97 0.014 254.604);
+  --ac-border: oklch(0.922 0.004 286.32);
+  --ac-input: oklch(0.922 0.004 286.32);
+  --ac-ring: oklch(0.488 0.243 264.376);
+
+  /* Chart tokens */
+  --ac-chart-1: oklch(0.646 0.222 41.116);
+  --ac-chart-2: oklch(0.6 0.118 184.714);
+  --ac-chart-3: oklch(0.398 0.07 227.392);
+  --ac-chart-4: oklch(0.828 0.189 84.429);
+  --ac-chart-5: oklch(0.769 0.188 70.08);
+
+  /* Sidebar tokens */
+  --ac-sidebar: oklch(0.985 0 0);
+  --ac-sidebar-foreground: oklch(0.145 0.004 285.823);
+  --ac-sidebar-primary: oklch(0.488 0.243 264.376);
+  --ac-sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  --ac-sidebar-accent: oklch(0.967 0.001 286.375);
+  --ac-sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --ac-sidebar-border: oklch(0.922 0.004 286.32);
+  --ac-sidebar-ring: oklch(0.488 0.243 264.376);
+
+  /* Mira sizing scale — compact density */
+  --ac-size-xs: 1.25rem;   /* 20px — h-5 */
+  --ac-size-sm: 1.5rem;    /* 24px — h-6 */
+  --ac-size-md: 1.75rem;   /* 28px — h-7 */
+  --ac-size-default: 2rem; /* 32px — h-8 */
+  --ac-size-lg: 2.25rem;   /* 36px */
+
+  /* Typography scale — Mira compact */
+  --ac-text-xs: 0.75rem;
+  --ac-text-sm: 0.8125rem;
+  --ac-text-base: 0.875rem;
+  --ac-text-lg: 1rem;
+  --ac-text-xl: 1.125rem;
+
+  /* Spacing scale */
+  --ac-space-1: 0.25rem;
+  --ac-space-2: 0.5rem;
+  --ac-space-3: 0.75rem;
+  --ac-space-4: 1rem;
+  --ac-space-6: 1.5rem;
+  --ac-space-8: 2rem;
+
+  /* Transitions */
+  --ac-transition-fast: 100ms ease;
+  --ac-transition-normal: 150ms ease;
+  --ac-transition-slow: 200ms ease-in-out;
 }
 
-@theme inline {
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
+/* Dark mode tokens */
+.dark,
+[data-theme="dark"] {
+  --ac-background: oklch(0.145 0.004 285.823);
+  --ac-foreground: oklch(0.985 0 0);
+  --ac-card: oklch(0.145 0.004 285.823);
+  --ac-card-foreground: oklch(0.985 0 0);
+  --ac-popover: oklch(0.145 0.004 285.823);
+  --ac-popover-foreground: oklch(0.985 0 0);
+  --ac-primary: oklch(0.424 0.199 265.638);
+  --ac-primary-foreground: oklch(0.97 0.014 254.604);
+  --ac-secondary: oklch(0.269 0.006 285.885);
+  --ac-secondary-foreground: oklch(0.985 0 0);
+  --ac-muted: oklch(0.269 0.006 285.885);
+  --ac-muted-foreground: oklch(0.708 0.002 286.067);
+  --ac-accent: oklch(0.269 0.006 285.885);
+  --ac-accent-foreground: oklch(0.985 0 0);
+  --ac-destructive: oklch(0.704 0.191 22.216);
+  --ac-destructive-foreground: oklch(0.704 0.191 22.216);
+  --ac-success: oklch(0.527 0.164 149.214);
+  --ac-success-foreground: oklch(0.985 0 0);
+  --ac-warning: oklch(0.669 0.158 70.08);
+  --ac-warning-foreground: oklch(0.145 0.004 285.823);
+  --ac-info: oklch(0.424 0.199 265.638);
+  --ac-info-foreground: oklch(0.97 0.014 254.604);
+  --ac-border: oklch(0.269 0.006 285.885);
+  --ac-input: oklch(0.269 0.006 285.885);
+  --ac-ring: oklch(0.424 0.199 265.638);
 
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
-  }
+  --ac-chart-1: oklch(0.488 0.243 264.376);
+  --ac-chart-2: oklch(0.696 0.17 162.48);
+  --ac-chart-3: oklch(0.769 0.188 70.08);
+  --ac-chart-4: oklch(0.627 0.265 303.9);
+  --ac-chart-5: oklch(0.645 0.246 16.439);
 
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
-  }
+  --ac-sidebar: oklch(0.205 0.006 285.885);
+  --ac-sidebar-foreground: oklch(0.985 0 0);
+  --ac-sidebar-primary: oklch(0.424 0.199 265.638);
+  --ac-sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  --ac-sidebar-accent: oklch(0.269 0.006 285.885);
+  --ac-sidebar-accent-foreground: oklch(0.985 0 0);
+  --ac-sidebar-border: oklch(0.269 0.006 285.885);
+  --ac-sidebar-ring: oklch(0.424 0.199 265.638);
 }
+
+/* Note: No global * reset — consumers manage their own border/box-sizing defaults */

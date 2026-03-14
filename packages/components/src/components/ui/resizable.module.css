@@ -1,0 +1,67 @@
+.group {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.group[data-panel-group-direction="vertical"] {
+  flex-direction: column;
+}
+
+.handle {
+  position: relative;
+  display: flex;
+  width: 1px;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--ac-border);
+  outline: none;
+}
+
+.handle::after {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 0.25rem;
+  content: "";
+  transform: translateX(-50%);
+}
+
+.handle:focus-visible {
+  box-shadow: 0 0 0 1px var(--ac-ring), 0 0 0 2px var(--ac-background);
+}
+
+.handle[data-panel-group-direction="vertical"] {
+  width: 100%;
+  height: 1px;
+}
+
+.handle[data-panel-group-direction="vertical"]::after {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0.25rem;
+  transform: translateY(-50%);
+}
+
+.handleGrip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 0.75rem;
+  height: 1rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background-color: var(--ac-background);
+}
+
+.handle[data-panel-group-direction="vertical"] .handleGrip {
+  transform: rotate(90deg);
+}
+
+.handleGripIcon {
+  width: 0.625rem;
+  height: 0.625rem;
+}

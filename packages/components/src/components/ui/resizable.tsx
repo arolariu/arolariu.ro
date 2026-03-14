@@ -1,39 +1,119 @@
 "use client";
 
+/* eslint-disable react/jsx-handler-names */
+
 import {GripVertical} from "lucide-react";
 import * as React from "react";
+import type {ImperativePanelGroupHandle, ImperativePanelHandle} from "react-resizable-panels";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import {cn} from "@/lib/utilities";
 
-const ResizablePanelGroup = ({className, ...props}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => (
-  <ResizablePrimitive.PanelGroup
-    className={cn("flex h-full w-full data-[panel-group-direction=vertical]:flex-col", className)}
-    {...props}
-  />
-);
+import styles from "./resizable.module.css";
 
+export type {ImperativePanelGroupHandle, ImperativePanelHandle};
+
+/**
+ * Props for the {@link ResizablePanelGroup} component.
+ */
+export type ResizablePanelGroupProps = React.ComponentProps<typeof ResizablePrimitive.PanelGroup>;
+
+/**
+ * Props for the {@link ResizablePanel} component.
+ */
+export type ResizablePanelProps = React.ComponentProps<typeof ResizablePrimitive.Panel>;
+
+/**
+ * Props for the {@link ResizableHandle} component.
+ *
+ * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+ */
+export interface ResizableHandleProps extends React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> {
+  /**
+   * Renders a visual drag grip inside the resize handle to indicate that adjacent panels can be resized.
+   *
+   * @default false
+   * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+   */
+  withHandle?: boolean;
+}
+
+/**
+ * Wraps `react-resizable-panels` panel groups with shared styles.
+ *
+ * @remarks
+ * - Third-party wrapper component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ResizablePanelGroup direction='horizontal'>...</ResizablePanelGroup>
+ * ```
+ *
+ * @see {@link ResizablePanelGroupProps} for available props
+ * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+ * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
+ */
+const ResizablePanelGroup: React.ForwardRefExoticComponent<ResizablePanelGroupProps & React.RefAttributes<ImperativePanelGroupHandle>> =
+  React.forwardRef<ImperativePanelGroupHandle, ResizablePanelGroupProps>(({className, ...props}, ref) => (
+    <ResizablePrimitive.PanelGroup
+      ref={ref}
+      className={cn(styles.group, className)}
+      {...props}
+    />
+  ));
+
+/**
+ * Re-exports the underlying resizable panel primitive for consistent composition.
+ *
+ * @remarks
+ * - Third-party wrapper component
+ * - Styling is applied by parent panel group and handles
+ *
+ * @example
+ * ```tsx
+ * <ResizablePanel defaultSize={50}>Content</ResizablePanel>
+ * ```
+ *
+ * @see {@link ResizablePanelProps} for available props
+ * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+ * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
+ */
 const ResizablePanel = ResizablePrimitive.Panel;
 
-const ResizableHandle = ({
-  withHandle,
-  className,
-  ...props
-}: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
-  withHandle?: boolean;
-}) => (
-  <ResizablePrimitive.PanelResizeHandle
-    className={cn(
-      "relative flex w-px items-center justify-center bg-neutral-200 after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-neutral-950 focus-visible:ring-offset-1 focus-visible:outline-none data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0 data-[panel-group-direction=vertical]:after:-translate-y-1/2 dark:bg-neutral-800 dark:focus-visible:ring-neutral-300 [&[data-panel-group-direction=vertical]>div]:rotate-90",
-      className,
-    )}
-    {...props}>
-    {Boolean(withHandle) && (
-      <div className='z-10 flex h-4 w-3 items-center justify-center rounded-sm border border-neutral-200 bg-neutral-200 dark:border-neutral-800 dark:bg-neutral-800'>
-        <GripVertical className='h-2.5 w-2.5' />
-      </div>
-    )}
-  </ResizablePrimitive.PanelResizeHandle>
-);
+/**
+ * Renders a draggable resize handle between resizable panels.
+ *
+ * @remarks
+ * - Third-party wrapper component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ResizableHandle withHandle />
+ * ```
+ *
+ * @see {@link ResizableHandleProps} for available props
+ * @see {@link https://github.com/bvaughn/react-resizable-panels | react-resizable-panels docs}
+ * @see {@link https://github.com/bvaughn/react-resizable-panels/tree/main/packages/react-resizable-panels#readme | react-resizable-panels API reference}
+ */
+function ResizableHandle({withHandle = false, className, children, ...props}: Readonly<ResizableHandleProps>): React.JSX.Element {
+  return (
+    <ResizablePrimitive.PanelResizeHandle
+      className={cn(styles.handle, className)}
+      {...props}>
+      {Boolean(withHandle) && (
+        <div className={styles.handleGrip}>
+          <GripVertical className={styles.handleGripIcon} />
+        </div>
+      )}
+      {children}
+    </ResizablePrimitive.PanelResizeHandle>
+  );
+}
+
+ResizablePanelGroup.displayName = "ResizablePanelGroup";
+ResizablePanel.displayName = "ResizablePanel";
+ResizableHandle.displayName = "ResizableHandle";
 
 export {ResizableHandle, ResizablePanel, ResizablePanelGroup};

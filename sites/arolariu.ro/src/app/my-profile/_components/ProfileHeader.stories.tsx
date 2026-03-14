@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "@storybook/react";
 import type {User} from "@clerk/nextjs/server";
+import type {Meta, StoryObj} from "@storybook/react";
 import {ProfileHeader} from "./ProfileHeader";
 
 /** Creates a minimal Clerk User mock matching the fields ProfileHeader actually reads. */

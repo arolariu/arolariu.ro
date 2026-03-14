@@ -1,55 +1,173 @@
 "use client";
 
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./button.module.css";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 dark:focus-visible:ring-neutral-300",
-  {
-    variants: {
-      variant: {
-        default:
-          "bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/90 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/90",
-        destructive:
-          "bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/90 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/90",
-        outline:
-          "border border-neutral-200 bg-white shadow-sm hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        secondary:
-          "bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
-        ghost: "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-        link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50",
-      },
-      size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-);
+const variantStyles: Record<ButtonVariant, string> = {
+  default: styles.default!,
+  destructive: styles.destructive!,
+  outline: styles.outline!,
+  secondary: styles.secondary!,
+  ghost: styles.ghost!,
+  link: styles.link!,
+};
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+const sizeStyles: Record<ButtonSize, string> = {
+  default: styles.sizeDefault!,
+  sm: styles.sizeSm!,
+  lg: styles.sizeLg!,
+  icon: styles.sizeIcon!,
+};
+
+export type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+export type ButtonSize = "default" | "sm" | "lg" | "icon";
+
+/**
+ * Serializable button state exposed to Base UI render callbacks.
+ */
+export interface ButtonState extends Record<string, unknown> {
+  variant: ButtonVariant;
+  size: ButtonSize;
+  disabled: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({className, variant, size, asChild = false, ...props}, ref) => {
-  const Comp = asChild ? Slot : "button";
-  return (
-    <Comp
-      className={cn(buttonVariants({variant, size, className}))}
-      ref={ref}
-      {...props}
-    />
-  );
+interface ButtonVariantOptions {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+}
+
+/**
+ * Props for the shared button component.
+ */
+export interface ButtonProps extends Omit<React.ComponentPropsWithRef<"button">, "children" | "className" | "disabled"> {
+  /**
+   * Visual style variant.
+   * @default "default"
+   */
+  variant?: ButtonVariant;
+  /**
+   * Size preset.
+   * @default "default"
+   */
+  size?: ButtonSize;
+  /**
+   * Whether the button should ignore user interaction.
+   * @default false
+   */
+  disabled?: boolean;
+  /**
+   * Additional CSS classes merged with the button styles.
+   * @default undefined
+   */
+  className?: string;
+  /**
+   * Custom element or render callback used to replace the default `<button>`.
+   * @default undefined
+   */
+  render?: useRender.RenderProp<ButtonState>;
+  /**
+   * Backward-compatible child-slot API.
+   * Converts the single child element to the `render` prop internally.
+   * @default false
+   */
+  asChild?: boolean;
+  /**
+   * Button contents when `render` is not provided.
+   * @default undefined
+   */
+  children?: React.ReactNode;
+}
+
+/**
+ * Builds the composed class list for the shared button component.
+ */
+function buttonVariants({variant = "default", size = "default", className}: Readonly<ButtonVariantOptions> = {}): string {
+  return cn(styles.button, variantStyles[variant], sizeStyles[size], className);
+}
+
+function isIntrinsicButtonElement(renderProp: ButtonProps["render"]): boolean {
+  return React.isValidElement(renderProp) && typeof renderProp.type === "string" && renderProp.type === "button";
+}
+
+function createNonNativeInteractionProps(disabled: boolean): React.HTMLAttributes<HTMLElement> {
+  return {
+    "aria-disabled": disabled || undefined,
+    role: "button",
+    tabIndex: disabled ? -1 : undefined,
+    onClick(event) {
+      if (!disabled) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+        event.preventBaseUIHandler();
+      }
+    },
+    onKeyDown(event) {
+      if (!disabled || (event.key !== "Enter" && event.key !== " ")) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if ("preventBaseUIHandler" in event && typeof event.preventBaseUIHandler === "function") {
+        event.preventBaseUIHandler();
+      }
+    },
+  };
+}
+
+/**
+ * A button component that triggers actions.
+ * Built with Base UI's canonical `useRender` + `mergeProps` composition pattern.
+ *
+ * @remarks
+ * Renders a native `<button>` by default. Use the `render` prop to compose the
+ * button styles and shared behavior with other elements or components. The
+ * deprecated `asChild` prop is still supported and internally converted to
+ * `render` for backward compatibility.
+ *
+ * @example
+ * ```tsx
+ * <Button variant="default" size="sm">Click me</Button>
+ * <Button render={<a href="/dashboard" />}>Go to dashboard</Button>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/button | Base UI Button}
+ */
+const Button = React.forwardRef<HTMLButtonElement, Button.Props>((props: Readonly<Button.Props>, ref): React.ReactElement => {
+  const {render, asChild = false, variant = "default", size = "default", disabled = false, className, children, ...otherProps} = props;
+
+  const state: Button.State = {variant, size, disabled};
+  const composedClassName = buttonVariants({variant, size, className});
+  const renderProp = asChild && React.isValidElement(children) ? children : render;
+  const shouldRenderNativeButton = !renderProp || isIntrinsicButtonElement(renderProp);
+  const typeProps: Pick<React.ButtonHTMLAttributes<HTMLButtonElement>, "type"> = shouldRenderNativeButton ? {type: "button"} : {};
+  const interactionProps = shouldRenderNativeButton ? {disabled} : createNonNativeInteractionProps(disabled);
+
+  return useRender<Button.State, HTMLButtonElement>({
+    defaultTagName: "button",
+    ref,
+    render: renderProp,
+    state,
+    props: mergeProps<"button">({className: composedClassName}, typeProps, otherProps, interactionProps, {
+      children: renderProp ? undefined : children,
+    }),
+  });
 });
 Button.displayName = "Button";
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Button {
+  export type State = ButtonState;
+  export type Props = ButtonProps;
+}
 
 export {Button, buttonVariants};

@@ -1,136 +1,899 @@
 "use client";
 
-import type {DialogProps} from "@radix-ui/react-dialog";
-import {Command as CommandPrimitive} from "cmdk";
+import {Dialog as BaseDialog} from "@base-ui/react/dialog";
+import {Separator as BaseSeparator} from "@base-ui/react/separator";
 import {Search} from "lucide-react";
 import * as React from "react";
 
-import {Dialog, DialogContent, DialogTitle} from "@/components/ui/dialog";
 import {cn} from "@/lib/utilities";
 
-const Command = React.forwardRef<React.ComponentRef<typeof CommandPrimitive>, React.ComponentPropsWithoutRef<typeof CommandPrimitive>>(
-  ({className, ...props}, ref) => (
-    <CommandPrimitive
-      ref={ref}
-      className={cn(
-        "flex h-full w-full flex-col overflow-hidden rounded-md bg-white text-neutral-950 dark:bg-neutral-950 dark:text-neutral-50",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
-Command.displayName = CommandPrimitive.displayName;
+import styles from "./command.module.css";
 
-const CommandDialog = ({children, ...props}: DialogProps) => {
-  return (
-    <Dialog {...props}>
-      <DialogContent className='overflow-hidden p-0'>
-        <DialogTitle className='sr-only' />
-        <Command className='[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-neutral-500 dark:[&_[cmdk-group-heading]]:text-neutral-400 [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5'>
+type CommandFilter = (value: string, search: string, keywords?: string[]) => number;
+
+interface CommandProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Command palette content.
+   * @default undefined
+   */
+  children?: React.ReactNode;
+  /**
+   * Accessible label announced for the command region.
+   * @default undefined
+   */
+  label?: string;
+  /**
+   * Whether items should be filtered automatically as the search value changes.
+   * @default true
+   */
+  shouldFilter?: boolean;
+  /**
+   * Custom scoring function used to determine whether an item matches the current search value.
+   * @default undefined
+   */
+  filter?: CommandFilter;
+  /**
+   * Deprecated uncontrolled search value placeholder retained for API compatibility.
+   * @default undefined
+   */
+  defaultValue?: string;
+  /**
+   * Deprecated controlled search value placeholder retained for API compatibility.
+   * @default undefined
+   */
+  value?: string;
+  /**
+   * Deprecated change callback retained for API compatibility.
+   * @default undefined
+   */
+  onValueChange?: (value: string) => void;
+  /**
+   * Whether keyboard navigation should wrap from the last item to the first.
+   * @default false
+   */
+  loop?: boolean;
+  /**
+   * Whether pointer hover should avoid changing the active item.
+   * @default false
+   */
+  disablePointerSelection?: boolean;
+  /**
+   * Deprecated Vim keybinding toggle retained for API compatibility.
+   * @default undefined
+   */
+  vimBindings?: boolean;
+}
+
+interface CommandDialogProps extends Omit<React.ComponentPropsWithoutRef<typeof BaseDialog.Root>, "children"> {
+  /**
+   * Command palette content rendered inside the dialog popup.
+   * @default undefined
+   */
+  children?: React.ReactNode;
+  /**
+   * Accessible dialog title announced to assistive technologies.
+   * @default "Command menu"
+   */
+  title?: React.ReactNode;
+}
+
+interface CommandInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "type" | "value"> {
+  /**
+   * Controlled search value.
+   * @default undefined
+   */
+  value?: string;
+  /**
+   * Native input change handler invoked before the command-specific callback.
+   * @default undefined
+   */
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  /**
+   * Callback fired when the command search value changes.
+   * @default undefined
+   */
+  onValueChange?: (search: string) => void;
+}
+
+interface CommandListProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Command items and groups.
+   * @default undefined
+   */
+  children?: React.ReactNode;
+  /**
+   * Accessible label for the listbox container.
+   * @default undefined
+   */
+  label?: string;
+}
+
+interface CommandGroupProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "value"> {
+  /**
+   * Group contents.
+   * @default undefined
+   */
+  children?: React.ReactNode;
+  /**
+   * Optional visual heading displayed above the group items.
+   * @default undefined
+   */
+  heading?: React.ReactNode;
+  /**
+   * Optional stable value retained for API compatibility.
+   * @default undefined
+   */
+  value?: string;
+  /**
+   * Whether the group should remain rendered even when it has no visible items.
+   * @default false
+   */
+  forceMount?: boolean;
+}
+
+interface CommandSeparatorProps extends React.ComponentPropsWithoutRef<typeof BaseSeparator> {
+  /**
+   * Whether the separator should remain visible while filtering is active.
+   * @default false
+   */
+  alwaysRender?: boolean;
+}
+
+interface CommandItemProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onSelect"> {
+  /**
+   * Item contents.
+   * @default undefined
+   */
+  children?: React.ReactNode;
+  /**
+   * Whether the item is disabled and should be skipped by selection logic.
+   * @default false
+   */
+  disabled?: boolean;
+  /**
+   * Callback invoked when the item is selected.
+   * @default undefined
+   */
+  onSelect?: (value: string) => void;
+  /**
+   * Optional value used for filtering and selection callbacks.
+   * @default undefined
+   */
+  value?: string;
+  /**
+   * Additional search keywords included in the filter match set.
+   * @default []
+   */
+  keywords?: string[];
+  /**
+   * Whether the item should remain rendered even when filtered out.
+   * @default false
+   */
+  forceMount?: boolean;
+}
+
+interface CommandRegisteredItem {
+  disabled: boolean;
+  forceMount: boolean;
+  groupId: string | null;
+  id: string;
+  keywords: string[];
+  order: number;
+  ref: React.RefObject<HTMLDivElement | null>;
+  textValue: string;
+  value?: string;
+}
+
+interface CommandContextValue {
+  activeItemId: string | null;
+  disablePointerSelection: boolean;
+  getVisibleItemCount: () => number;
+  hasVisibleItemsInGroup: (groupId: string) => boolean;
+  isFiltering: boolean;
+  isItemVisible: (itemId: string) => boolean;
+  listId: string;
+  loop: boolean;
+  registerItem: (item: Omit<CommandRegisteredItem, "order">) => void;
+  search: string;
+  setSearch: (value: string) => void;
+  selectNextItem: () => void;
+  selectPreviousItem: () => void;
+  selectSpecificItem: (itemId: string | null) => void;
+  shouldFilter: boolean;
+  triggerActiveItem: () => void;
+  unregisterItem: (itemId: string) => void;
+}
+
+const CommandContext = React.createContext<CommandContextValue | null>(null);
+const CommandGroupContext = React.createContext<string | null>(null);
+
+function assignRef<TValue>(ref: React.ForwardedRef<TValue>, value: TValue): void {
+  if (typeof ref === "function") {
+    ref(value);
+    return;
+  }
+
+  if (ref) {
+    ref.current = value;
+  }
+}
+
+function normalizeCommandValue(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function defaultCommandFilter(value: string, search: string, keywords: string[] = []): number {
+  if (search.length === 0) {
+    return 1;
+  }
+
+  const normalizedSearch = normalizeCommandValue(search);
+  const normalizedValue = normalizeCommandValue([value, ...keywords].join(" "));
+
+  return normalizedValue.includes(normalizedSearch) ? 1 : 0;
+}
+
+function useCommandContext(componentName: string): CommandContextValue {
+  const context = React.useContext(CommandContext);
+
+  if (!context) {
+    throw new Error(`${componentName} must be used within Command.`);
+  }
+
+  return context;
+}
+
+/**
+ * Provides a lightweight, filterable command surface without depending on cmdk.
+ *
+ * @remarks
+ * This wrapper preserves the existing compound-component API while replacing the
+ * underlying implementation with a small context-driven registry. It supports
+ * text filtering, arrow-key navigation, Enter-to-select, and pointer hover
+ * selection for common command palette use cases.
+ *
+ * @example
+ * ```tsx
+ * <Command label='Quick actions'>
+ *   <CommandInput placeholder='Search actions...' />
+ *   <CommandList>
+ *     <CommandItem onSelect={() => console.log("Open")}>Open</CommandItem>
+ *   </CommandList>
+ * </Command>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Dialog Docs}
+ */
+const Command = React.forwardRef<HTMLDivElement, CommandProps>(
+  (
+    {
+      children,
+      className,
+      defaultValue: _defaultValue,
+      disablePointerSelection = false,
+      filter,
+      label,
+      loop = false,
+      onKeyDown,
+      onValueChange: _onValueChange,
+      shouldFilter = true,
+      value: _value,
+      vimBindings: _vimBindings,
+      ...props
+    },
+    ref,
+  ) => {
+    const [activeItemId, setActiveItemId] = React.useState<string | null>(null);
+    const [search, setSearch] = React.useState("");
+    const itemOrderReference = React.useRef(0);
+    const itemsReference = React.useRef(new Map<string, CommandRegisteredItem>());
+    const [itemsVersion, setItemsVersion] = React.useState(0);
+    const listId = React.useId();
+
+    const registerItem = React.useCallback((item: Omit<CommandRegisteredItem, "order">): void => {
+      const existingItem = itemsReference.current.get(item.id);
+      const nextItem: CommandRegisteredItem = {
+        ...item,
+        order: existingItem?.order ?? itemOrderReference.current++,
+      };
+
+      const hasChanged =
+        !existingItem
+        || existingItem.disabled !== nextItem.disabled
+        || existingItem.forceMount !== nextItem.forceMount
+        || existingItem.groupId !== nextItem.groupId
+        || existingItem.keywords.join("\u0000") !== nextItem.keywords.join("\u0000")
+        || existingItem.ref !== nextItem.ref
+        || existingItem.textValue !== nextItem.textValue
+        || existingItem.value !== nextItem.value;
+
+      if (!hasChanged) {
+        return;
+      }
+
+      itemsReference.current.set(item.id, nextItem);
+      setItemsVersion((currentVersion) => currentVersion + 1);
+    }, []);
+
+    const unregisterItem = React.useCallback((itemId: string): void => {
+      if (!itemsReference.current.delete(itemId)) {
+        return;
+      }
+
+      setItemsVersion((currentVersion) => currentVersion + 1);
+    }, []);
+
+    const items = React.useMemo(() => {
+      return [...itemsReference.current.values()].sort((firstItem, secondItem) => firstItem.order - secondItem.order);
+    }, [itemsVersion]);
+
+    const isFiltering = shouldFilter && search.trim().length > 0;
+
+    const isItemVisible = React.useCallback(
+      (itemId: string): boolean => {
+        const item = itemsReference.current.get(itemId);
+
+        if (!item) {
+          return false;
+        }
+
+        if (item.forceMount || !shouldFilter || search.trim().length === 0) {
+          return true;
+        }
+
+        const itemValue = item.value ?? item.textValue;
+        const itemFilter = filter ?? defaultCommandFilter;
+
+        return itemFilter(itemValue, search, item.keywords) > 0;
+      },
+      [filter, search, shouldFilter],
+    );
+
+    const visibleItems = React.useMemo(() => items.filter((item) => isItemVisible(item.id)), [isItemVisible, items]);
+
+    const selectableItems = React.useMemo(() => visibleItems.filter((item) => !item.disabled), [visibleItems]);
+
+    React.useEffect(() => {
+      if (selectableItems.length === 0) {
+        setActiveItemId(null);
+        return;
+      }
+
+      if (!activeItemId || !selectableItems.some((item) => item.id === activeItemId)) {
+        setActiveItemId(selectableItems[0].id);
+      }
+    }, [activeItemId, selectableItems]);
+
+    React.useEffect(() => {
+      if (!activeItemId) {
+        return;
+      }
+
+      itemsReference.current.get(activeItemId)?.ref.current?.scrollIntoView({
+        block: "nearest",
+      });
+    }, [activeItemId]);
+
+    const selectSpecificItem = React.useCallback((itemId: string | null): void => {
+      setActiveItemId(itemId);
+    }, []);
+
+    const selectNextItem = React.useCallback((): void => {
+      if (selectableItems.length === 0) {
+        return;
+      }
+
+      const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
+
+      if (currentIndex === -1) {
+        setActiveItemId(selectableItems[0].id);
+        return;
+      }
+
+      const nextIndex = currentIndex + 1;
+
+      if (nextIndex >= selectableItems.length) {
+        setActiveItemId(loop ? selectableItems[0].id : selectableItems[currentIndex].id);
+        return;
+      }
+
+      setActiveItemId(selectableItems[nextIndex].id);
+    }, [activeItemId, loop, selectableItems]);
+
+    const selectPreviousItem = React.useCallback((): void => {
+      if (selectableItems.length === 0) {
+        return;
+      }
+
+      const currentIndex = selectableItems.findIndex((item) => item.id === activeItemId);
+
+      if (currentIndex === -1) {
+        setActiveItemId(selectableItems[0].id);
+        return;
+      }
+
+      const previousIndex = currentIndex - 1;
+
+      if (previousIndex < 0) {
+        setActiveItemId(loop ? (selectableItems.at(-1)?.id ?? selectableItems[0].id) : selectableItems[currentIndex].id);
+        return;
+      }
+
+      setActiveItemId(selectableItems[previousIndex].id);
+    }, [activeItemId, loop, selectableItems]);
+
+    const triggerActiveItem = React.useCallback((): void => {
+      if (!activeItemId) {
+        return;
+      }
+
+      itemsReference.current.get(activeItemId)?.ref.current?.click();
+    }, [activeItemId]);
+
+    const hasVisibleItemsInGroup = React.useCallback(
+      (groupId: string): boolean => visibleItems.some((item) => item.groupId === groupId),
+      [visibleItems],
+    );
+
+    const getVisibleItemCount = React.useCallback((): number => visibleItems.length, [visibleItems.length]);
+
+    const contextValue = React.useMemo<CommandContextValue>(
+      () => ({
+        activeItemId,
+        disablePointerSelection,
+        getVisibleItemCount,
+        hasVisibleItemsInGroup,
+        isFiltering,
+        isItemVisible,
+        listId,
+        loop,
+        registerItem,
+        search,
+        setSearch,
+        selectNextItem,
+        selectPreviousItem,
+        selectSpecificItem,
+        shouldFilter,
+        triggerActiveItem,
+        unregisterItem,
+      }),
+      [
+        activeItemId,
+        disablePointerSelection,
+        getVisibleItemCount,
+        hasVisibleItemsInGroup,
+        isFiltering,
+        isItemVisible,
+        listId,
+        loop,
+        registerItem,
+        search,
+        setSearch,
+        selectNextItem,
+        selectPreviousItem,
+        selectSpecificItem,
+        shouldFilter,
+        triggerActiveItem,
+        unregisterItem,
+      ],
+    );
+
+    return (
+      <CommandContext.Provider value={contextValue}>
+        <div
+          ref={ref}
+          aria-label={label}
+          className={cn(styles.command, className)}
+          onKeyDown={(event) => {
+            onKeyDown?.(event);
+
+            if (event.defaultPrevented) {
+              return;
+            }
+
+            switch (event.key) {
+              case "ArrowDown": {
+                event.preventDefault();
+                selectNextItem();
+                break;
+              }
+
+              case "ArrowUp": {
+                event.preventDefault();
+                selectPreviousItem();
+                break;
+              }
+
+              case "Home": {
+                if (selectableItems.length === 0) {
+                  return;
+                }
+
+                event.preventDefault();
+                setActiveItemId(selectableItems[0].id);
+                break;
+              }
+
+              case "End": {
+                if (selectableItems.length === 0) {
+                  return;
+                }
+
+                event.preventDefault();
+                setActiveItemId(selectableItems.at(-1)?.id ?? selectableItems[0].id);
+                break;
+              }
+
+              case "Enter": {
+                if (event.nativeEvent.isComposing) {
+                  return;
+                }
+
+                event.preventDefault();
+                triggerActiveItem();
+                break;
+              }
+
+              default: {
+                break;
+              }
+            }
+          }}
+          {...props}>
           {children}
-        </Command>
-      </DialogContent>
-    </Dialog>
-  );
-};
+        </div>
+      </CommandContext.Provider>
+    );
+  },
+);
+Command.displayName = "Command";
 
-const CommandInput = React.forwardRef<
-  React.ComponentRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({className, ...props}, ref) => (
-  <div
-    className='flex items-center border-b px-3'
-    // eslint-disable-next-line react/no-unknown-property -- cmdk specific attribute
-    cmdk-input-wrapper=''>
-    <Search className='mr-2 h-4 w-4 shrink-0 opacity-50' />
-    <CommandPrimitive.Input
+/**
+ * Renders the command surface inside a modal dialog.
+ *
+ * @remarks
+ * - Renders a Base UI dialog popup
+ * - Built on Base UI Dialog primitives
+ *
+ * @example
+ * ```tsx
+ * <CommandDialog open={open} onOpenChange={setOpen}>
+ *   <CommandInput placeholder='Search...' />
+ * </CommandDialog>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/dialog | Base UI Dialog Docs}
+ */
+function CommandDialog({children, open, onOpenChange, title = "Command menu", ...props}: Readonly<CommandDialogProps>): React.JSX.Element {
+  return (
+    <BaseDialog.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      {...props}>
+      <BaseDialog.Portal>
+        <BaseDialog.Backdrop className={styles.backdrop} />
+        <BaseDialog.Popup className={styles.dialogPopup}>
+          <BaseDialog.Title className={styles.srOnly}>{title}</BaseDialog.Title>
+          <Command>{children}</Command>
+        </BaseDialog.Popup>
+      </BaseDialog.Portal>
+    </BaseDialog.Root>
+  );
+}
+CommandDialog.displayName = "CommandDialog";
+
+/**
+ * Provides the searchable input surface for a command palette.
+ *
+ * @remarks
+ * - Renders an `<input>` element inside a wrapper `<div>`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandInput placeholder='Search...' />
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/combobox_role | ARIA Combobox Role}
+ */
+const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps>(({className, onChange, onValueChange, value, ...props}, ref) => {
+  const {activeItemId, listId, search, selectSpecificItem, setSearch} = useCommandContext("CommandInput");
+  const isControlled = value !== undefined;
+  const inputValue = isControlled ? value : search;
+
+  React.useEffect(() => {
+    if (!isControlled) {
+      return;
+    }
+
+    setSearch(value ?? "");
+  }, [isControlled, setSearch, value]);
+
+  return (
+    <div className={styles.inputWrapper}>
+      <Search className={styles.searchIcon} />
+      <input
+        ref={ref}
+        aria-activedescendant={activeItemId ?? undefined}
+        aria-autocomplete='list'
+        aria-controls={listId}
+        aria-expanded='true'
+        className={cn(styles.input, className)}
+        onChange={(event) => {
+          onChange?.(event);
+
+          const nextSearchValue = event.currentTarget.value;
+          setSearch(nextSearchValue);
+          onValueChange?.(nextSearchValue);
+          selectSpecificItem(null);
+        }}
+        role='combobox'
+        type='text'
+        value={inputValue}
+        {...props}
+      />
+    </div>
+  );
+});
+CommandInput.displayName = "CommandInput";
+
+/**
+ * Renders the listbox container that hosts command items and groups.
+ *
+ * @remarks
+ * - Renders a `<div>` element with `role="listbox"`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandList>
+ *   <CommandItem>Settings</CommandItem>
+ * </CommandList>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/listbox_role | ARIA Listbox Role}
+ */
+const CommandList = React.forwardRef<HTMLDivElement, CommandListProps>(({className, label, ...props}, ref) => {
+  const {listId} = useCommandContext("CommandList");
+
+  return (
+    <div
+      aria-label={label}
       ref={ref}
-      className={cn(
-        "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-neutral-500 disabled:cursor-not-allowed disabled:opacity-50 dark:placeholder:text-neutral-400",
-        className,
-      )}
+      className={cn(styles.list, className)}
+      id={listId}
+      role='listbox'
       {...props}
     />
-  </div>
-));
+  );
+});
+CommandList.displayName = "CommandList";
 
-CommandInput.displayName = CommandPrimitive.Input.displayName;
+/**
+ * Renders a fallback empty-state message when no command items are visible.
+ *
+ * @remarks
+ * - Renders a `<div>` element with `role="status"`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandEmpty>No results found.</CommandEmpty>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/status_role | ARIA Status Role}
+ */
+const CommandEmpty = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({className, ...props}, ref) => {
+  const {getVisibleItemCount} = useCommandContext("CommandEmpty");
 
-const CommandList = React.forwardRef<
-  React.ComponentRef<typeof CommandPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({className, ...props}, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn("max-h-[300px] overflow-x-hidden overflow-y-auto", className)}
-    {...props}
-  />
-));
+  if (getVisibleItemCount() > 0) {
+    return null;
+  }
 
-CommandList.displayName = CommandPrimitive.List.displayName;
+  return (
+    <div
+      ref={ref}
+      className={cn(styles.empty, className)}
+      role='status'
+      {...props}
+    />
+  );
+});
+CommandEmpty.displayName = "CommandEmpty";
 
-const CommandEmpty = React.forwardRef<
-  React.ComponentRef<typeof CommandPrimitive.Empty>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
->((props, ref) => (
-  <CommandPrimitive.Empty
-    ref={ref}
-    className='py-6 text-center text-sm'
-    {...props}
-  />
-));
+/**
+ * Groups related command items under an optional heading.
+ *
+ * @remarks
+ * - Renders a `<div>` element
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandGroup heading='Suggestions'>
+ *   <CommandItem>Profile</CommandItem>
+ * </CommandGroup>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/group_role | ARIA Group Role}
+ */
+const CommandGroup = React.forwardRef<HTMLDivElement, CommandGroupProps>(
+  ({children, className, forceMount = false, heading, value: _value, ...props}, ref) => {
+    const groupId = React.useId();
+    const {hasVisibleItemsInGroup, isFiltering} = useCommandContext("CommandGroup");
 
-CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
+    if (!forceMount && isFiltering && !hasVisibleItemsInGroup(groupId)) {
+      return null;
+    }
 
-const CommandGroup = React.forwardRef<
-  React.ComponentRef<typeof CommandPrimitive.Group>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({className, ...props}, ref) => (
-  <CommandPrimitive.Group
-    ref={ref}
-    className={cn(
-      "overflow-hidden p-1 text-neutral-950 dark:text-neutral-50 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-neutral-500 dark:[&_[cmdk-group-heading]]:text-neutral-400",
-      className,
-    )}
-    {...props}
-  />
-));
+    return (
+      <CommandGroupContext.Provider value={groupId}>
+        <div
+          ref={ref}
+          className={cn(styles.group, className)}
+          data-command-group=''
+          {...props}>
+          {heading ? <div className={styles.groupHeading}>{heading}</div> : null}
+          {children}
+        </div>
+      </CommandGroupContext.Provider>
+    );
+  },
+);
+CommandGroup.displayName = "CommandGroup";
 
-CommandGroup.displayName = CommandPrimitive.Group.displayName;
+/**
+ * Renders a separator between command groups or item sections.
+ *
+ * @remarks
+ * - Renders the shared separator primitive
+ * - Built on Base UI Separator
+ *
+ * @example
+ * ```tsx
+ * <CommandSeparator />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/separator | Base UI Separator Docs}
+ */
+const CommandSeparator = React.forwardRef<HTMLDivElement, CommandSeparatorProps>(
+  ({alwaysRender = false, className, orientation = "horizontal", ...props}, ref) => {
+    const {isFiltering} = useCommandContext("CommandSeparator");
 
-const CommandSeparator = React.forwardRef<
-  React.ComponentRef<typeof CommandPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
->(({className, ...props}, ref) => (
-  <CommandPrimitive.Separator
-    ref={ref}
-    className={cn("-mx-1 h-px bg-neutral-200 dark:bg-neutral-800", className)}
-    {...props}
-  />
-));
-CommandSeparator.displayName = CommandPrimitive.Separator.displayName;
+    if (isFiltering && !alwaysRender) {
+      return null;
+    }
 
-const CommandItem = React.forwardRef<
-  React.ComponentRef<typeof CommandPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({className, ...props}, ref) => (
-  <CommandPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-neutral-100 data-[selected=true]:text-neutral-900 dark:data-[selected=true]:bg-neutral-800 dark:data-[selected=true]:text-neutral-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-      className,
-    )}
-    {...props}
-  />
-));
+    return (
+      <BaseSeparator
+        ref={ref}
+        className={cn(styles.separator, className)}
+        orientation={orientation}
+        {...props}
+      />
+    );
+  },
+);
+CommandSeparator.displayName = "CommandSeparator";
 
-CommandItem.displayName = CommandPrimitive.Item.displayName;
+/**
+ * Renders a selectable command option with filtering metadata and keyboard support.
+ *
+ * @remarks
+ * - Renders a `<div>` element with `role="option"`
+ * - Built on the shared command registry context
+ *
+ * @example
+ * ```tsx
+ * <CommandItem keywords={["preferences"]}>Settings</CommandItem>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/option_role | ARIA Option Role}
+ */
+const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
+  ({children, className, disabled = false, forceMount = false, keywords = [], onClick, onMouseEnter, onSelect, value, ...props}, ref) => {
+    const {activeItemId, disablePointerSelection, isFiltering, isItemVisible, registerItem, selectSpecificItem, unregisterItem} =
+      useCommandContext("CommandItem");
+    const groupId = React.useContext(CommandGroupContext);
+    const generatedId = React.useId();
+    const itemReference = React.useRef<HTMLDivElement | null>(null);
+    const keywordSignature = React.useMemo(() => keywords.join("\u0000"), [keywords]);
 
-const CommandShortcut = ({className, ...props}: React.HTMLAttributes<HTMLSpanElement>) => {
+    React.useLayoutEffect(() => {
+      const textValue = value ?? itemReference.current?.textContent?.trim() ?? "";
+
+      registerItem({
+        disabled,
+        forceMount,
+        groupId,
+        id: generatedId,
+        keywords,
+        ref: itemReference,
+        textValue,
+        value,
+      });
+    }, [children, disabled, forceMount, generatedId, groupId, keywordSignature, keywords, registerItem, value]);
+
+    React.useEffect(() => {
+      return () => {
+        unregisterItem(generatedId);
+      };
+    }, [generatedId, unregisterItem]);
+
+    const isVisible = forceMount || !isFiltering || isItemVisible(generatedId);
+
+    if (!isVisible) {
+      return null;
+    }
+
+    const isSelected = activeItemId === generatedId;
+
+    return (
+      <div
+        {...props}
+        ref={(node) => {
+          itemReference.current = node;
+          assignRef(ref, node);
+        }}
+        aria-disabled={disabled || undefined}
+        aria-selected={isSelected}
+        className={cn(styles.item, className)}
+        data-disabled={disabled ? "true" : undefined}
+        data-selected={isSelected ? "true" : undefined}
+        id={generatedId}
+        onClick={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            return;
+          }
+
+          selectSpecificItem(generatedId);
+          onSelect?.(value ?? itemReference.current?.textContent?.trim() ?? "");
+          onClick?.(event);
+        }}
+        onFocus={() => {
+          if (disabled) {
+            return;
+          }
+
+          selectSpecificItem(generatedId);
+        }}
+        onMouseEnter={(event) => {
+          onMouseEnter?.(event);
+
+          if (disabled || disablePointerSelection) {
+            return;
+          }
+
+          selectSpecificItem(generatedId);
+        }}
+        role='option'
+        tabIndex={disabled ? -1 : 0}>
+        {children}
+      </div>
+    );
+  },
+);
+CommandItem.displayName = "CommandItem";
+
+/**
+ * Renders auxiliary shortcut text aligned to the edge of a command item.
+ *
+ * @remarks
+ * - Renders a `<span>` element
+ * - Built as a lightweight presentational helper for command menus
+ *
+ * @example
+ * ```tsx
+ * <CommandShortcut>⌘K</CommandShortcut>
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/docs/Web/HTML/Element/span | HTML span element}
+ */
+const CommandShortcut = ({className, ...props}: Readonly<React.HTMLAttributes<HTMLSpanElement>>): React.JSX.Element => {
   return (
     <span
-      className={cn("ml-auto text-xs tracking-widest text-neutral-500 dark:text-neutral-400", className)}
+      className={cn(styles.shortcut, className)}
       {...props}
     />
   );

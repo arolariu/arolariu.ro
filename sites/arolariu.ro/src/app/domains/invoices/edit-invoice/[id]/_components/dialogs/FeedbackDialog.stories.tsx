@@ -76,9 +76,7 @@ export const Default: Story = {
 
       <div className='flex justify-end gap-2 border-t p-4'>
         <button className='rounded-md border px-4 py-2 text-sm'>Cancel</button>
-        <button className='rounded-md bg-gray-900 px-4 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900'>
-          Submit Feedback
-        </button>
+        <button className='rounded-md bg-gray-900 px-4 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900'>Submit Feedback</button>
       </div>
     </div>
   ),
@@ -108,9 +106,7 @@ export const HighRating: Story = {
       </div>
       <div className='flex justify-end gap-2 border-t p-4'>
         <button className='rounded-md border px-4 py-2 text-sm'>Cancel</button>
-        <button className='rounded-md bg-gray-900 px-4 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900'>
-          Submit Feedback
-        </button>
+        <button className='rounded-md bg-gray-900 px-4 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900'>Submit Feedback</button>
       </div>
     </div>
   ),

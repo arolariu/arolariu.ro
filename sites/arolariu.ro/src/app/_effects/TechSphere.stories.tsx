@@ -20,10 +20,10 @@ const meta = {
     docs: {
       description: {
         component:
-          "3D wireframe icosahedron with floating particles rendered via Three.js WebGL. " +
-          "**Requires a GPU-accelerated browser** — renders blank in headless/CI environments " +
-          "(Playwright, Puppeteer) where no WebGL context is available. " +
-          "View this story in an interactive browser for the full visual effect.",
+          "3D wireframe icosahedron with floating particles rendered via Three.js WebGL. "
+          + "**Requires a GPU-accelerated browser** — renders blank in headless/CI environments "
+          + "(Playwright, Puppeteer) where no WebGL context is available. "
+          + "View this story in an interactive browser for the full visual effect.",
       },
     },
   },

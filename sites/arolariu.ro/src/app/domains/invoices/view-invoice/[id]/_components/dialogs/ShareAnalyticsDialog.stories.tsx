@@ -20,15 +20,13 @@ type Story = StoryObj<typeof meta>;
 /** Static preview of the share analytics dialog layout. */
 export const Default: Story = {
   render: () => (
-    <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-lg dark:bg-gray-900">
-      <h2 className="mb-4 text-lg font-semibold">Share Analytics</h2>
-      <div className="mb-4 flex gap-2">
-        <button className="rounded-md bg-primary px-4 py-2 text-sm text-white">Image</button>
-        <button className="rounded-md bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">Email</button>
+    <div className='w-full max-w-md rounded-lg border bg-white p-6 shadow-lg dark:bg-gray-900'>
+      <h2 className='mb-4 text-lg font-semibold'>Share Analytics</h2>
+      <div className='mb-4 flex gap-2'>
+        <button className='bg-primary rounded-md px-4 py-2 text-sm text-white'>Image</button>
+        <button className='rounded-md bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800'>Email</button>
       </div>
-      <div className="rounded border p-4 text-center text-sm text-gray-500">
-        Analytics snapshot will be generated here
-      </div>
+      <div className='rounded border p-4 text-center text-sm text-gray-500'>Analytics snapshot will be generated here</div>
     </div>
   ),
 };

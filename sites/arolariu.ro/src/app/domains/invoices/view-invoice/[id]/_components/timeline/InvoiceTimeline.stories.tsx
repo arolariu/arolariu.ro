@@ -101,7 +101,9 @@ export const Default: Story = {
               </div>
             </div>
             <div className='flex items-center gap-2'>
-              <div className='flex h-7 w-7 items-center justify-center rounded-full bg-green-100 text-xs font-medium text-green-600'>BC</div>
+              <div className='flex h-7 w-7 items-center justify-center rounded-full bg-green-100 text-xs font-medium text-green-600'>
+                BC
+              </div>
               <div>
                 <p className='text-sm font-medium'>bob@example.com</p>
               </div>

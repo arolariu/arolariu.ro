@@ -1,93 +1,271 @@
 "use client";
 
+/* eslint-disable jsx-a11y/anchor-has-content */
+
 import {ChevronLeft, ChevronRight, MoreHorizontal} from "lucide-react";
 import * as React from "react";
 
-import {ButtonProps, buttonVariants} from "@/components/ui/button";
+import type {ButtonProps} from "@/components/ui/button";
 import {cn} from "@/lib/utilities";
+import buttonStyles from "./button.module.css";
+import styles from "./pagination.module.css";
 
-const Pagination = ({className, ...props}: React.ComponentProps<"nav">) => (
-  <nav
-    role='navigation'
-    aria-label='pagination'
-    className={cn("mx-auto flex w-full justify-center", className)}
-    {...props}
-  />
-);
-Pagination.displayName = "Pagination";
+/**
+ * Props for the {@link Pagination} component.
+ */
+export type PaginationProps = React.ComponentPropsWithoutRef<"nav">;
 
-const PaginationContent = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(({className, ...props}, ref) => (
-  <ul
-    ref={ref}
-    className={cn("flex flex-row items-center gap-1", className)}
-    {...props}
-  />
-));
-PaginationContent.displayName = "PaginationContent";
+/**
+ * Props for the {@link PaginationContent} component.
+ */
+export type PaginationContentProps = React.ComponentPropsWithoutRef<"ul">;
 
-const PaginationItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li">>(({className, ...props}, ref) => (
-  <li
-    ref={ref}
-    className={cn("", className)}
-    {...props}
-  />
-));
-PaginationItem.displayName = "PaginationItem";
+/**
+ * Props for the {@link PaginationItem} component.
+ */
+export type PaginationItemProps = React.ComponentPropsWithoutRef<"li">;
 
-type PaginationLinkProps = {
+/**
+ * Props for the {@link PaginationLink} component.
+ */
+export interface PaginationLinkProps extends Pick<ButtonProps, "size">, React.ComponentPropsWithoutRef<"a"> {
+  /** Marks the link as the current active page. @default false */
   isActive?: boolean;
-} & Pick<ButtonProps, "size">
-  & React.ComponentProps<"a">;
+}
 
-const PaginationLink = ({className, isActive, size = "icon", ...props}: PaginationLinkProps) => (
-  // eslint-disable-next-line jsx-a11y/anchor-has-content -- the link will have children.
-  <a
-    aria-current={isActive ? "page" : undefined}
-    className={cn(
-      buttonVariants({
-        variant: isActive ? "outline" : "ghost",
-        size,
-      }),
-      className,
-    )}
-    {...props}
-  />
+/**
+ * Props for the {@link PaginationPrevious} component.
+ */
+export type PaginationPreviousProps = React.ComponentPropsWithoutRef<typeof PaginationLink>;
+
+/**
+ * Props for the {@link PaginationNext} component.
+ */
+export type PaginationNextProps = React.ComponentPropsWithoutRef<typeof PaginationLink>;
+
+/**
+ * Props for the {@link PaginationEllipsis} component.
+ */
+export type PaginationEllipsisProps = React.ComponentPropsWithoutRef<"span">;
+
+const buttonSizeStyles: Record<NonNullable<ButtonProps["size"]>, string> = {
+  default: buttonStyles.sizeDefault,
+  icon: buttonStyles.sizeIcon,
+  lg: buttonStyles.sizeLg,
+  sm: buttonStyles.sizeSm,
+};
+
+/**
+ * Provides semantic navigation for paginated content.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<nav>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <Pagination>
+ *   <PaginationContent />
+ * </Pagination>
+ * ```
+ *
+ * @see {@link PaginationProps} for available props
+ */
+const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
+  ({className, ...props}: Readonly<PaginationProps>, ref): React.JSX.Element => (
+    <nav
+      ref={ref}
+      role='navigation'
+      aria-label='pagination'
+      className={cn(styles.root, className)}
+      {...props}
+    />
+  ),
 );
+
+/**
+ * Wraps pagination items in a flex-based list container.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<ul>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <PaginationContent>
+ *   <PaginationItem />
+ * </PaginationContent>
+ * ```
+ *
+ * @see {@link PaginationContentProps} for available props
+ */
+const PaginationContent = React.forwardRef<HTMLUListElement, PaginationContentProps>(
+  ({className, ...props}: Readonly<PaginationContentProps>, ref): React.JSX.Element => (
+    <ul
+      ref={ref}
+      className={cn(styles.content, className)}
+      {...props}
+    />
+  ),
+);
+
+/**
+ * Wraps an individual pagination control.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders an `<li>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <PaginationItem>
+ *   <PaginationLink href='?page=1'>1</PaginationLink>
+ * </PaginationItem>
+ * ```
+ *
+ * @see {@link PaginationItemProps} for available props
+ */
+const PaginationItem = React.forwardRef<HTMLLIElement, PaginationItemProps>(
+  ({className, ...props}: Readonly<PaginationItemProps>, ref): React.JSX.Element => (
+    <li
+      ref={ref}
+      className={cn(styles.item, className)}
+      {...props}
+    />
+  ),
+);
+
+/**
+ * Renders an anchor styled to match pagination controls.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders an `<a>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <PaginationLink href='?page=2' isActive>
+ *   2
+ * </PaginationLink>
+ * ```
+ *
+ * @see {@link PaginationLinkProps} for available props
+ */
+const PaginationLink = React.forwardRef<HTMLAnchorElement, PaginationLinkProps>(
+  ({className, isActive = false, size = "icon", ...props}: Readonly<PaginationLinkProps>, ref): React.JSX.Element => {
+    return (
+      <a
+        ref={ref}
+        aria-current={isActive ? "page" : undefined}
+        className={cn(
+          buttonStyles.button,
+          isActive ? buttonStyles.outline : buttonStyles.ghost,
+          buttonSizeStyles[size],
+          styles.link,
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
+
+/**
+ * Renders the pagination control for navigating to the previous page.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders an `<a>` element through {@link PaginationLink}
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <PaginationPrevious href='?page=1' />
+ * ```
+ *
+ * @see {@link PaginationPreviousProps} for available props
+ */
+const PaginationPrevious = React.forwardRef<HTMLAnchorElement, PaginationPreviousProps>(
+  ({className, ...props}: Readonly<PaginationPreviousProps>, ref): React.JSX.Element => (
+    <PaginationLink
+      ref={ref}
+      aria-label='Go to previous page'
+      size='default'
+      className={cn(styles.previous, className)}
+      {...props}>
+      <ChevronLeft />
+      <span>Previous</span>
+    </PaginationLink>
+  ),
+);
+
+/**
+ * Renders the pagination control for navigating to the next page.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders an `<a>` element through {@link PaginationLink}
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <PaginationNext href='?page=3' />
+ * ```
+ *
+ * @see {@link PaginationNextProps} for available props
+ */
+const PaginationNext = React.forwardRef<HTMLAnchorElement, PaginationNextProps>(
+  ({className, ...props}: Readonly<PaginationNextProps>, ref): React.JSX.Element => (
+    <PaginationLink
+      ref={ref}
+      aria-label='Go to next page'
+      size='default'
+      className={cn(styles.next, className)}
+      {...props}>
+      <span>Next</span>
+      <ChevronRight />
+    </PaginationLink>
+  ),
+);
+
+/**
+ * Indicates truncated page ranges within pagination.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<span>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <PaginationEllipsis />
+ * ```
+ *
+ * @see {@link PaginationEllipsisProps} for available props
+ */
+const PaginationEllipsis = React.forwardRef<HTMLSpanElement, PaginationEllipsisProps>(
+  ({className, ...props}: Readonly<PaginationEllipsisProps>, ref): React.JSX.Element => (
+    <span
+      ref={ref}
+      aria-hidden='true'
+      className={cn(styles.ellipsis, className)}
+      {...props}>
+      <MoreHorizontal />
+      <span className={styles.srOnly}>More pages</span>
+    </span>
+  ),
+);
+
+Pagination.displayName = "Pagination";
+PaginationContent.displayName = "PaginationContent";
+PaginationItem.displayName = "PaginationItem";
 PaginationLink.displayName = "PaginationLink";
-
-const PaginationPrevious = ({className, ...props}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink
-    aria-label='Go to previous page'
-    size='default'
-    className={cn("gap-1 pl-2.5", className)}
-    {...props}>
-    <ChevronLeft className='h-4 w-4' />
-    <span>Previous</span>
-  </PaginationLink>
-);
 PaginationPrevious.displayName = "PaginationPrevious";
-
-const PaginationNext = ({className, ...props}: React.ComponentProps<typeof PaginationLink>) => (
-  <PaginationLink
-    aria-label='Go to next page'
-    size='default'
-    className={cn("gap-1 pr-2.5", className)}
-    {...props}>
-    <span>Next</span>
-    <ChevronRight className='h-4 w-4' />
-  </PaginationLink>
-);
 PaginationNext.displayName = "PaginationNext";
-
-const PaginationEllipsis = ({className, ...props}: React.ComponentProps<"span">) => (
-  <span
-    aria-hidden
-    className={cn("flex h-9 w-9 items-center justify-center", className)}
-    {...props}>
-    <MoreHorizontal className='h-4 w-4' />
-    <span className='sr-only'>More pages</span>
-  </span>
-);
 PaginationEllipsis.displayName = "PaginationEllipsis";
 
 export {Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious};

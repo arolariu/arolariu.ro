@@ -75,14 +75,25 @@ export const HighVolume: Story = {
   args: {
     data: [
       ...generateMockQuantityData(10),
-      ...["Yogurt", "Salmon", "Olive Oil", "Honey", "Almonds", "Spinach", "Avocado", "Granola", "Juice", "Chocolate", "Bananas", "Peppers"].map(
-        (name) => ({
-          name,
-          quantity: faker.number.int({min: 1, max: 10}),
-          unit: faker.helpers.arrayElement(["kg", "pcs", "L", "g"]),
-          price: faker.number.float({min: 2, max: 80, fractionDigits: 2}),
-        }),
-      ),
+      ...[
+        "Yogurt",
+        "Salmon",
+        "Olive Oil",
+        "Honey",
+        "Almonds",
+        "Spinach",
+        "Avocado",
+        "Granola",
+        "Juice",
+        "Chocolate",
+        "Bananas",
+        "Peppers",
+      ].map((name) => ({
+        name,
+        quantity: faker.number.int({min: 1, max: 10}),
+        unit: faker.helpers.arrayElement(["kg", "pcs", "L", "g"]),
+        price: faker.number.float({min: 2, max: 80, fractionDigits: 2}),
+      })),
     ],
     currency: "RON",
   },

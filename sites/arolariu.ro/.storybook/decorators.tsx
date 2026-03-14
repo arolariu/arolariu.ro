@@ -63,16 +63,18 @@ export const withFontSwitcher: Decorator = (Story, context) => {
     }
 
     const fontFamily =
-      font === "dyslexic"
-        ? "'Atkinson Hyperlegible', system-ui, sans-serif"
-        : "'Caudex', Georgia, 'Times New Roman', serif";
+      font === "dyslexic" ? "'Atkinson Hyperlegible', system-ui, sans-serif" : "'Caudex', Georgia, 'Times New Roman', serif";
 
     document.body.style.setProperty("--font-default", fontFamily);
     document.body.style.setProperty("--font-dyslexic", "'Atkinson Hyperlegible', system-ui, sans-serif");
     document.body.style.fontFamily = fontFamily;
   }
 
-  return <div key={`font-${font}`}><Story /></div>;
+  return (
+    <div key={`font-${font}`}>
+      <Story />
+    </div>
+  );
 };
 
 /**
@@ -82,7 +84,9 @@ export const withFontSwitcher: Decorator = (Story, context) => {
 export const withThemePreset: Decorator = (Story, context) => {
   const preset = (context.globals["themePreset"] as string) ?? "default";
   return (
-    <div key={`preset-${preset}`} data-theme-preset={preset}>
+    <div
+      key={`preset-${preset}`}
+      data-theme-preset={preset}>
       <Story />
     </div>
   );

@@ -1,6 +1,6 @@
 # 🔍 Debugging Guide for @arolariu/components
 
-This guide provides comprehensive information on debugging and troubleshooting the `@arolariu/components` package in your projects.
+This guide provides practical information for debugging and troubleshooting the `@arolariu/components` package in consumer applications.
 
 ## 📋 Table of Contents
 
@@ -15,11 +15,11 @@ This guide provides comprehensive information on debugging and troubleshooting t
 
 ## 🗺️ Source Maps
 
-All distribution files include source maps for optimal debugging experience:
+All distribution files include source maps for a strong debugging experience.
 
 ### JavaScript Source Maps
 
-```
+```text
 dist/
 ├── button.js
 ├── button.js.map      ✅ ESM source map
@@ -30,16 +30,16 @@ dist/
 
 - **Accurate stack traces** pointing to original TypeScript source
 - **Breakpoint debugging** in original source files
-- **CSS debugging** with original Tailwind source locations
+- **CSS debugging** with original CSS Module source locations
 - **Better error messages** with precise line numbers
 
 ## 📝 TypeScript Support
 
 ### Declaration Files
 
-Every component includes comprehensive TypeScript declarations:
+Every component includes comprehensive TypeScript declarations.
 
-```
+```text
 dist/types/
 ├── button.d.ts           ✅ Type definitions
 ├── card.d.ts             ✅ Component props
@@ -49,19 +49,20 @@ dist/types/
 
 ### Source Access
 
-Original TypeScript source is included for reference:
+Original TypeScript source is included for reference.
 
-```
+```text
 src/
 ├── components/ui/
 │   ├── button.tsx        ✅ Original source
+│   ├── button.module.css ✅ Component styles
 │   ├── card.tsx          ✅ Implementation details
 │   └── ...
 ├── hooks/
-│   ├── use-mobile.ts     ✅ Custom hooks
+│   ├── useIsMobile.ts    ✅ Custom hooks
 │   └── ...
 └── lib/
-    ├── utils.ts          ✅ Utility functions
+    ├── utilities.ts      ✅ cn() helper
     └── ...
 ```
 
@@ -69,25 +70,33 @@ src/
 
 ### Chrome DevTools
 
-1. Open DevTools (F12)
+1. Open DevTools (`F12`)
 2. Go to **Settings** (⚙️)
 3. Navigate to **Preferences** → **Sources**
-4. Enable **"Enable JavaScript source maps"**
-5. Enable **"Enable CSS source maps"**
+4. Enable **Enable JavaScript source maps**
+5. Enable **Enable CSS source maps**
 
 ### Firefox DevTools
 
-1. Open DevTools (F12)
+1. Open DevTools (`F12`)
 2. Go to **Settings** (⚙️)
 3. Navigate to **Advanced Settings**
-4. Check **"Enable Source Maps"**
+4. Check **Enable Source Maps**
 
 ### Safari DevTools
 
-1. Open Web Inspector (⌘⌥I)
+1. Open Web Inspector (`⌘⌥I`)
 2. Go to **Web Inspector** → **Preferences**
 3. Navigate to **Sources**
-4. Enable **"Enable source maps"**
+4. Enable **Enable source maps**
+
+### CSS Modules in DevTools
+
+When inspecting components:
+
+- Expect **scoped class names** such as `button_button__abc12`
+- Use the **Styles** panel source links to jump back to the original `.module.css` file
+- Inspect **Base UI data attributes** like `[data-open]`, `[data-disabled]`, and `[data-checked]` to understand state-driven styling
 
 ## 🛠️ IDE Configuration
 
@@ -127,7 +136,7 @@ Create `.vscode/launch.json`:
 {
   "recommendations": [
     "ms-vscode.vscode-typescript-next",
-    "bradlc.vscode-tailwindcss",
+    "clinyong.vscode-css-modules",
     "ms-vscode.vscode-json",
     "esbenp.prettier-vscode",
     "wix.vscode-import-cost"
@@ -138,45 +147,43 @@ Create `.vscode/launch.json`:
 ### JetBrains IDEs (WebStorm, IntelliJ)
 
 1. Go to **Settings** → **Build, Execution, Deployment** → **Debugger**
-2. Enable **"Use JavaScript source maps"**
+2. Enable **Use JavaScript source maps**
 3. Configure **Source Maps** section:
-   - Check **"Process TypeScript files"**
+   - Check **Process TypeScript files**
    - Set source map search locations
 
 ## 🐛 Common Issues
 
 ### Issue: Components Not Rendering
 
-**Symptoms:**
+**Symptoms**
 
-- Components appear as empty divs
+- Components appear as empty elements
 - No styling applied
 - TypeScript errors about missing props
 
-**Debugging Steps:**
+**Debugging Steps**
 
 ```tsx
 // 1. Check component import
 import { Button } from "@arolariu/components/button";
 
-// 2. Verify component props
-<Button variant="default" size="md">
-  Click me
-</Button>;
+// 2. Verify required package styles are loaded once
+import "@arolariu/components/styles";
 
 // 3. Inspect with React DevTools
-// Look for component in React tree
+// Look for the component in the React tree
 ```
 
-**Solution:**
+**Solution**
 
 ```tsx
-// ✅ Correct import and usage
+import "@arolariu/components/styles";
 import { Button } from "@arolariu/components/button";
 
 export function MyComponent() {
   return (
-    <Button variant="default" onClick={() => console.log("Clicked!")}>
+    <Button onClick={() => console.log("Clicked!")}>
       My Button
     </Button>
   );
@@ -185,58 +192,149 @@ export function MyComponent() {
 
 ### Issue: Styling Conflicts
 
-**Symptoms:**
+**Symptoms**
 
 - Components look different than expected
-- CSS classes being overridden
-- Tailwind styles not applying
+- Consumer styles override component styles unintentionally
+- CSS Module classes are hard to locate in DevTools
 
-**Debugging Steps:**
+**Debugging Steps**
 
 1. Open browser DevTools
-2. Inspect component element
-3. Check CSS cascade in **Styles** panel
-4. Look for conflicting CSS rules
+2. Inspect the rendered element
+3. Check generated class names and the CSS cascade in the **Styles** panel
+4. Look for scoped module classes and Base UI state attributes
+5. Verify token values such as `--ac-primary` and `--ac-radius-md`
 
-**Solutions:**
+**Solutions**
 
 ```css
-/* Option 1: Use CSS specificity */
-.my-custom-button {
-  @apply bg-blue-500 hover:bg-blue-600 !important;
+/* Scope theme changes intentionally */
+.themeScope {
+  --ac-primary: oklch(0.65 0.2 255);
+  --ac-radius-md: 0.75rem;
 }
 
-/* Option 2: Use CSS layers */
-@layer components {
-  .my-button-override {
-    background-color: theme("colors.blue.500");
-  }
+/* Target Base UI state attributes from your own module */
+.menuTrigger :global([data-open]) {
+  outline: 2px solid var(--ac-ring);
 }
 ```
 
+### Issue: `FieldRootContext is missing`
+
+**Symptoms**
+
+- Runtime error mentioning `FieldRootContext`
+- Label primitives fail when nested in the wrong Base UI field structure
+
+**Cause**
+
+Base UI field-aware labels expect the matching field context. In this package, the standalone `Label` component is independent and should be used when you do not need Base UI field context.
+
+**Solution**
+
+```tsx
+import { Input } from "@arolariu/components/input";
+import { Label } from "@arolariu/components/label";
+
+export function StandaloneField() {
+  return (
+    <>
+      <Label htmlFor="email">Email</Label>
+      <Input id="email" />
+    </>
+  );
+}
+```
+
+Use the package `Form*` or `Field*` primitives when you need grouped field semantics.
+
+### Issue: `nativeButton` Warning
+
+**Symptoms**
+
+- Console warning when rendering a non-`button` element through a trigger or button primitive
+- Events or semantics behave unexpectedly when using links or custom elements
+
+**Cause**
+
+Base UI button-like primitives assume a native `<button>` unless told otherwise.
+
+**Solution**
+
+When rendering a non-button element, ensure `nativeButton={false}` is set on the underlying primitive. The package already handles this for some compatibility shims such as `Button asChild`.
+
+```tsx
+import { BaseButton } from "@base-ui/react/button";
+
+export function DocsLink() {
+  return (
+    <BaseButton
+      nativeButton={false}
+      render={<a href="/docs" />}
+    >
+      Documentation
+    </BaseButton>
+  );
+}
+```
+
+If you build your own wrapper around Base UI directly, set `nativeButton={false}` whenever the rendered element is not a real `<button>`.
+
+### Issue: `asChild` Compatibility
+
+**Symptoms**
+
+- Legacy Radix-style examples still work, but new composition patterns feel inconsistent
+- Some wrappers behave differently than old Radix implementations
+
+**Cause**
+
+`asChild` is maintained as a compatibility shim, but Base UI uses `render` as the native composition API.
+
+**Solution**
+
+Prefer `render` for new code:
+
+```tsx
+import { Dialog, DialogContent, DialogTrigger } from "@arolariu/components/dialog";
+
+export function Example() {
+  return (
+    <Dialog>
+      <DialogTrigger render={<button type="button" />}>
+        Open dialog
+      </DialogTrigger>
+      <DialogContent>Dialog content</DialogContent>
+    </Dialog>
+  );
+}
+```
+
+Use `asChild` only when maintaining older consumers.
+
 ### Issue: TypeScript Errors
 
-**Symptoms:**
+**Symptoms**
 
-- Red squiggly lines in IDE
+- Red squiggly lines in the IDE
 - Type checking failures
 - Missing prop definitions
 
-**Debugging Steps:**
+**Debugging Steps**
 
 ```tsx
-// 1. Hover over component in IDE to see type info
 import { Button } from "@arolariu/components/button";
 
-// 2. Check available props
-const buttonProps: React.ComponentProps<typeof Button> = {
-  variant: "default",
-  size: "md",
-  // ... other props
-};
+// 1. Hover over the component in your IDE to inspect the prop type
+type ButtonProps = React.ComponentProps<typeof Button>;
 
-// 3. Use TypeScript utility types
-type ButtonVariant = React.ComponentProps<typeof Button>["variant"];
+// 2. Build a typed props object
+const buttonProps: ButtonProps = {
+  variant: "default",
+  size: "sm",
+};
 ```
 
 ## ⚡ Performance Debugging
@@ -246,31 +344,28 @@ type ButtonVariant = React.ComponentProps<typeof Button>["variant"];
 #### Webpack Bundle Analyzer
 
 ```bash
-# Install analyzer
 npm install --save-dev webpack-bundle-analyzer
-
-# Analyze your bundle
 npx webpack-bundle-analyzer build/static/js/*.js
 ```
 
 #### Import Cost Analysis
 
-Install the "Import Cost" VS Code extension to see real-time import sizes:
+Install the **Import Cost** VS Code extension to see real-time import sizes:
 
 ```tsx
-import { Button } from "@arolariu/components/button"; // ~3.2KB
-import { Dialog } from "@arolariu/components/dialog"; // ~6.1KB
-import { Chart } from "@arolariu/components/chart"; // ~12.4KB
+import { Button } from "@arolariu/components/button";
+import { Dialog } from "@arolariu/components/dialog";
+import { ChartContainer } from "@arolariu/components/chart";
 ```
 
 ### Tree Shaking Verification
 
 ```tsx
-// ✅ Good: Tree-shakeable imports
+// ✅ Good: tree-shakeable imports
 import { Button } from "@arolariu/components/button";
 import { Card } from "@arolariu/components/card";
 
-// ❌ Avoid: Imports entire library
+// ❌ Avoid: imports the entire library surface
 import { Button, Card } from "@arolariu/components";
 ```
 
@@ -286,7 +381,10 @@ function onRenderCallback(id, phase, actualDuration) {
 
 function App() {
   return (
-    <Profiler id="Button" onRender={onRenderCallback}>
+    <Profiler
+      id="Button"
+      onRender={onRenderCallback}
+    >
       <Button>Click me</Button>
     </Profiler>
   );
@@ -300,33 +398,23 @@ function App() {
 ```tsx
 import { Button } from "@arolariu/components/button";
 
-// Check component display name
 console.log(Button.displayName); // "Button"
-
-// Access default props (if any)
-console.log(Button.defaultProps);
-
-// Check if component is forwardRef
 console.log(Button.$$typeof); // Symbol(react.forward_ref)
 ```
 
-### Variant Inspection
+### State Attribute Inspection
 
 ```tsx
-import { buttonVariants } from "@arolariu/components/button";
+import { Checkbox } from "@arolariu/components/checkbox";
 
-// Inspect available variants
-console.log("Button variants:", {
-  variant: Object.keys(buttonVariants.variants.variant),
-  size: Object.keys(buttonVariants.variants.size),
-});
+export function Example() {
+  return <Checkbox checked />;
+}
 
-// Get computed classes for specific variant
-const classes = buttonVariants({
-  variant: "destructive",
-  size: "lg",
-});
-console.log("Button classes:", classes);
+// Inspect the DOM for attributes such as:
+// [data-checked]
+// [data-disabled]
+// [data-focus-visible]
 ```
 
 ### Props Validation
@@ -335,15 +423,12 @@ console.log("Button classes:", classes);
 import { Button } from "@arolariu/components/button";
 import type { ButtonProps } from "@arolariu/components/button";
 
-// Create type-safe props object
 const buttonProps: ButtonProps = {
   variant: "default",
   size: "md",
   disabled: false,
-  // TypeScript will validate these props
 };
 
-// Use props with component
 <Button {...buttonProps}>My Button</Button>;
 ```
 
@@ -352,21 +437,17 @@ const buttonProps: ButtonProps = {
 ### Development Build Analysis
 
 ```bash
-# Build with analysis
-npm run build -- --analyze
-
-# Or use webpack-bundle-analyzer directly
-npx webpack-bundle-analyzer build/static/js/*.js
+# Build with your app's analyzer settings
+npm run build
 ```
 
 ### Production Optimization Check
 
 ```tsx
-// Check if components are properly optimized
 import { Button } from "@arolariu/components/button";
 
-// This should only include Button-related code
-// Use browser DevTools Network tab to verify
+// Verify only Button-related code is pulled into the bundle
+// with your framework's analyzer or browser network tooling.
 ```
 
 ### Source Map Validation
@@ -376,7 +457,7 @@ import { Button } from "@arolariu/components/button";
 ls node_modules/@arolariu/components/dist/**/*.map
 
 # Validate source map content
-cat node_modules/@arolariu/components/dist/esm/button.js.map
+cat node_modules/@arolariu/components/dist/components/ui/button.js.map
 ```
 
 ## 🆘 Getting Help
@@ -385,12 +466,13 @@ If you encounter issues not covered in this guide:
 
 1. **Check the source code**: Browse `node_modules/@arolariu/components/src/`
 2. **Inspect the built files**: Look at `node_modules/@arolariu/components/dist/`
-3. **Use browser DevTools**: Leverage source maps for debugging
+3. **Use browser DevTools**: Leverage source maps and inspect CSS Module class mappings
 4. **Create an issue**: [GitHub Issues](https://github.com/arolariu/arolariu.ro/issues)
 
 ## 📚 Additional Resources
 
-- [React DevTools](https://reactjs.org/blog/2019/08/15/new-react-devtools.html)
+- [Base UI Documentation](https://base-ui.com/)
+- [React DevTools](https://react.dev/learn/react-developer-tools)
 - [Chrome DevTools Source Maps](https://developer.chrome.com/docs/devtools/javascript/source-maps/)
 - [TypeScript Debugging](https://code.visualstudio.com/docs/typescript/typescript-debugging)
 - [Webpack Bundle Analyzer](https://github.com/webpack-contrib/webpack-bundle-analyzer)

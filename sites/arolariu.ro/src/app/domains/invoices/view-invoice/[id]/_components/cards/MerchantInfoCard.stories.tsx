@@ -144,9 +144,7 @@ export const LongMerchantName: Story = {
       <div className='space-y-3 p-4'>
         <div className='flex items-start gap-2 text-sm'>
           <span className='mt-0.5 text-gray-400'>📍</span>
-          <span>
-            Bulevardul Decebal Nr. 123, Bloc A4, Scara 2, Etaj 1, Apartament 42, Sector 3, Bucharest, 030167, Romania
-          </span>
+          <span>Bulevardul Decebal Nr. 123, Bloc A4, Scara 2, Etaj 1, Apartament 42, Sector 3, Bucharest, 030167, Romania</span>
         </div>
         <div className='flex items-center gap-2 text-sm'>
           <span className='text-gray-400'>📞</span>

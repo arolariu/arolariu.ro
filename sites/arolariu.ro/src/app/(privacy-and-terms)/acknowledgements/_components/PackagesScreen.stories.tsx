@@ -1,6 +1,6 @@
+import type {NodePackagesJSON} from "@/types";
 import {faker} from "@faker-js/faker";
 import type {Meta, StoryObj} from "@storybook/react";
-import type {NodePackagesJSON} from "@/types";
 import PackagesScreen from "./PackagesScreen";
 
 faker.seed(42);

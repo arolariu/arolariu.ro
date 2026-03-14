@@ -1,0 +1,41 @@
+.card {
+  border-radius: var(--ac-radius-lg);
+  border: 1px solid var(--ac-border);
+  background-color: var(--ac-card);
+  color: var(--ac-card-foreground);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1);
+  padding: var(--ac-space-6);
+}
+
+.title {
+  font-size: var(--ac-text-lg);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.description {
+  font-size: var(--ac-text-sm);
+  color: var(--ac-muted-foreground);
+}
+
+.action {
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+.content {
+  padding: 0 var(--ac-space-6) var(--ac-space-6);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--ac-space-6) var(--ac-space-6);
+}
