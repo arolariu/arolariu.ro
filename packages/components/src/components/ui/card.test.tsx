@@ -2,7 +2,7 @@ import {render, screen} from "@testing-library/react";
 import {createRef} from "react";
 import {describe, expect, it} from "vitest";
 
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
+import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
 
 describe("Card", () => {
   it("renders without crashing", () => {
@@ -56,5 +56,56 @@ describe("Card", () => {
     );
 
     expect(screen.getByRole("region", {name: "Billing summary"})).toBeInTheDocument();
+  });
+
+  it("renders CardAction component", () => {
+    // Arrange
+    render(
+      <Card>
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Account details</p>
+        </CardContent>
+        <CardAction data-testid='card-action'>
+          <button type='button'>Manage</button>
+        </CardAction>
+      </Card>,
+    );
+
+    // Assert
+    expect(screen.getByTestId("card-action")).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Manage"})).toBeInTheDocument();
+  });
+
+  it("forwards ref to CardAction", () => {
+    // Arrange
+    const ref = createRef<HTMLDivElement>();
+
+    render(
+      <Card>
+        <CardAction ref={ref}>Action content</CardAction>
+      </Card>,
+    );
+
+    // Assert
+    expect(ref.current).toBeInstanceOf(HTMLDivElement);
+  });
+
+  it("applies custom className to CardAction", () => {
+    // Arrange
+    render(
+      <Card>
+        <CardAction
+          className='custom-action'
+          data-testid='card-action-custom'>
+          Action content
+        </CardAction>
+      </Card>,
+    );
+
+    // Assert
+    expect(screen.getByTestId("card-action-custom")).toHaveClass("custom-action");
   });
 });

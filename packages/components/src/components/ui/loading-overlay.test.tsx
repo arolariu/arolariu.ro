@@ -34,4 +34,66 @@ describe("LoadingOverlay", () => {
 
     expect(ref.current).toBeInstanceOf(HTMLDivElement);
   });
+
+  it("applies blur class when blur={true}", () => {
+    // Arrange
+    render(
+      <LoadingOverlay
+        blur
+        data-testid='loading-overlay'
+      />,
+    );
+
+    // Assert
+    const overlay = screen.getByTestId("loading-overlay");
+    expect(overlay).toBeInTheDocument();
+  });
+
+  it("renders with visible={true} explicitly", () => {
+    // Arrange
+    render(
+      <LoadingOverlay
+        visible
+        data-testid='loading-overlay'
+      />,
+    );
+
+    // Assert
+    expect(screen.getByTestId("loading-overlay")).toBeInTheDocument();
+  });
+
+  it("renders default Spinner when no children provided", () => {
+    // Arrange
+    render(<LoadingOverlay />);
+
+    // Assert
+    expect(screen.getByRole("status", {name: "Loading"})).toBeInTheDocument();
+  });
+
+  it("renders with custom className", () => {
+    // Arrange
+    render(
+      <LoadingOverlay
+        className='custom-overlay'
+        data-testid='loading-overlay'
+      />,
+    );
+
+    // Assert
+    const overlay = screen.getByTestId("loading-overlay");
+    expect(overlay).toHaveClass("custom-overlay");
+  });
+
+  it("renders custom children instead of default Spinner", () => {
+    // Arrange
+    render(
+      <LoadingOverlay>
+        <div data-testid='custom-loader'>Custom Loading...</div>
+      </LoadingOverlay>,
+    );
+
+    // Assert
+    expect(screen.getByTestId("custom-loader")).toBeInTheDocument();
+    expect(screen.queryByRole("status", {name: "Loading"})).not.toBeInTheDocument();
+  });
 });

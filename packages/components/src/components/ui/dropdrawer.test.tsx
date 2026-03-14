@@ -234,6 +234,32 @@ describe("DropDrawer", () => {
         expect(screen.getByText("Passkeys")).toBeVisible();
       });
     });
+
+    it("opens submenu on desktop hover", async () => {
+      // Arrange
+      renderDropDrawer({defaultOpen: true});
+
+      // Act - hover over submenu trigger
+      await waitFor(() => screen.getByText("Security"));
+      const securityTrigger = screen.getByText("Security");
+      fireEvent.mouseEnter(securityTrigger);
+
+      // Assert - submenu content should become visible
+      await waitFor(() => {
+        expect(screen.getByText("Passkeys")).toBeInTheDocument();
+      });
+    });
+
+    it("renders chevron icon in submenu trigger on desktop", async () => {
+      // Arrange
+      renderDropDrawer({defaultOpen: true});
+
+      // Assert - should have chevron icon
+      await waitFor(() => {
+        const securityTrigger = screen.getByText("Security").parentElement;
+        expect(securityTrigger).toBeInTheDocument();
+      });
+    });
   });
 
   describe("DropDrawerSeparator", () => {
@@ -539,6 +565,393 @@ describe("DropDrawer", () => {
         const item = screen.getByTestId("inset-item");
         expect(item).toHaveAttribute("data-inset", "true");
       });
+    });
+  });
+});
+
+describe("DropDrawerItem - onSelect callback", () => {
+  beforeEach(() => {
+    mockedUseIsMobile.mockReturnValue(false);
+  });
+
+  it("calls onSelect when desktop item is clicked", async () => {
+    const mockOnSelect = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            onSelect={mockOnSelect}
+            data-testid='item-with-select'>
+            Item
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByTestId("item-with-select"));
+    fireEvent.click(screen.getByTestId("item-with-select"));
+
+    expect(mockOnSelect).toHaveBeenCalled();
+  });
+
+  it("calls onSelect when mobile item is clicked", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+    const mockOnSelect = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            onSelect={mockOnSelect}
+            data-testid='item-with-select'>
+            Item
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByTestId("item-with-select"));
+    fireEvent.click(screen.getByTestId("item-with-select"));
+
+    expect(mockOnSelect).toHaveBeenCalled();
+  });
+});
+
+describe("DropDrawerCheckboxItem and DropDrawerRadioGroup", () => {
+  it("renders checkbox items on desktop", async () => {
+    mockedUseIsMobile.mockReturnValue(false);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem data-testid='checkbox-item'>Checkbox Item</DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("checkbox-item")).toBeInTheDocument();
+    });
+  });
+});
+
+describe("DropDrawerSubTrigger with onClick", () => {
+  it("calls onClick handler when desktop subtrigger is clicked", async () => {
+    mockedUseIsMobile.mockReturnValue(false);
+    const mockOnClick = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub id='test-submenu'>
+            <DropDrawerSubTrigger onClick={mockOnClick}>Sub</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Sub Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByText("Sub"));
+    fireEvent.click(screen.getByText("Sub"));
+
+    expect(mockOnClick).toHaveBeenCalled();
+  });
+
+  it("calls onClick handler and navigates when mobile subtrigger is clicked", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+    const mockOnClick = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub id='test-submenu'>
+            <DropDrawerSubTrigger onClick={mockOnClick}>Sub</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Sub Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByText("Sub"));
+    fireEvent.click(screen.getByText("Sub"));
+
+    expect(mockOnClick).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByText("Sub Item")).toBeVisible();
+    });
+  });
+});
+
+describe("DropDrawerSubTrigger keyboard navigation", () => {
+  it("navigates on Enter key press on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub id='keyboard-submenu'>
+            <DropDrawerSubTrigger>Keyboard Sub</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Keyboard Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByText("Keyboard Sub"));
+    const trigger = screen.getByText("Keyboard Sub");
+
+    fireEvent.keyDown(trigger, {key: "Enter"});
+
+    await waitFor(() => {
+      expect(screen.getByText("Keyboard Item")).toBeVisible();
+    });
+  });
+
+  it("navigates on Space key press on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub id='space-submenu'>
+            <DropDrawerSubTrigger>Space Sub</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Space Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByText("Space Sub"));
+    const trigger = screen.getByText("Space Sub");
+
+    fireEvent.keyDown(trigger, {key: " "});
+
+    await waitFor(() => {
+      expect(screen.getByText("Space Item")).toBeVisible();
+    });
+  });
+});
+
+describe("DropDrawerItem keyboard navigation", () => {
+  it("triggers click on Enter key press on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+    const mockOnClick = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            onClick={mockOnClick}
+            data-testid='keyboard-item'>
+            Keyboard Item
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByTestId("keyboard-item"));
+    const item = screen.getByTestId("keyboard-item");
+
+    fireEvent.keyDown(item, {key: "Enter"});
+
+    expect(mockOnClick).toHaveBeenCalled();
+  });
+
+  it("triggers click on Space key press on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+    const mockOnClick = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            onClick={mockOnClick}
+            data-testid='space-item'>
+            Space Item
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => screen.getByTestId("space-item"));
+    const item = screen.getByTestId("space-item");
+
+    fireEvent.keyDown(item, {key: " "});
+
+    expect(mockOnClick).toHaveBeenCalled();
+  });
+});
+
+describe("DropDrawer back navigation", () => {
+  it("navigates back from nested submenu on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem>Main Item</DropDrawerItem>
+          <DropDrawerSub id='nested-submenu'>
+            <DropDrawerSubTrigger>Nested</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Nested Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    // Navigate into submenu
+    await waitFor(() => screen.getByText("Nested"));
+    fireEvent.click(screen.getByText("Nested"));
+
+    await waitFor(() => screen.getByText("Nested Item"));
+
+    // Navigate back
+    const backButton = screen.getByRole("button", {name: "Go back"});
+    fireEvent.click(backButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("Main Item")).toBeVisible();
+    });
+  });
+});
+
+describe("DropDrawerFooter on desktop", () => {
+  it("renders footer content on desktop", async () => {
+    mockedUseIsMobile.mockReturnValue(false);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem>Item</DropDrawerItem>
+          <DropDrawerFooter data-testid='desktop-footer'>Desktop Footer</DropDrawerFooter>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("desktop-footer")).toBeInTheDocument();
+      expect(screen.getByText("Desktop Footer")).toBeVisible();
+    });
+  });
+});
+
+describe("DropDrawerTrigger with asChild", () => {
+  it("renders trigger with asChild on desktop", () => {
+    mockedUseIsMobile.mockReturnValue(false);
+
+    render(
+      <DropDrawer>
+        <DropDrawerTrigger asChild>
+          <button
+            type='button'
+            data-testid='custom-trigger'>
+            Custom Trigger
+          </button>
+        </DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem>Item</DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    expect(screen.getByTestId("custom-trigger")).toBeInTheDocument();
+  });
+
+  it("renders trigger with asChild on mobile", () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer>
+        <DropDrawerTrigger asChild>
+          <button
+            type='button'
+            data-testid='custom-mobile-trigger'>
+            Custom Mobile Trigger
+          </button>
+        </DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem>Item</DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    expect(screen.getByTestId("custom-mobile-trigger")).toBeInTheDocument();
+  });
+});
+
+describe("DropDrawerSubTrigger with inset", () => {
+  it("applies inset styling to subtrigger on desktop", async () => {
+    mockedUseIsMobile.mockReturnValue(false);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub id='inset-submenu'>
+            <DropDrawerSubTrigger
+              inset
+              data-testid='inset-trigger'>
+              Inset Sub
+            </DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Sub Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => {
+      const trigger = screen.getByTestId("inset-trigger");
+      expect(trigger).toHaveAttribute("data-inset", "true");
+    });
+  });
+
+  it("applies inset styling to subtrigger on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub id='mobile-inset-submenu'>
+            <DropDrawerSubTrigger
+              inset
+              data-testid='mobile-inset-trigger'>
+              Mobile Inset Sub
+            </DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Sub Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => {
+      const trigger = screen.getByTestId("mobile-inset-trigger");
+      expect(trigger).toHaveAttribute("data-inset", "true");
     });
   });
 });

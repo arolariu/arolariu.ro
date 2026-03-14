@@ -12,6 +12,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -703,5 +704,605 @@ describe("Sidebar", () => {
     const action = screen.getByTestId("sidebar-menu-action");
     expect(action).toBeInTheDocument();
     expect(action).toHaveAttribute("data-sidebar", "menu-action");
+  });
+
+  it("renders controlled SidebarProvider with open={true}", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider open={true}>
+        <Sidebar>
+          <SidebarContent data-testid='sidebar-content'>Controlled Open Content</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const content = screen.getByTestId("sidebar-content");
+    const sidebarRoot = content.closest("[data-state]");
+    expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
+  });
+
+  it("renders controlled SidebarProvider with open={false}", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider open={false}>
+        <Sidebar>
+          <SidebarContent data-testid='sidebar-content'>Controlled Closed Content</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const content = screen.getByTestId("sidebar-content");
+    const sidebarRoot = content.closest("[data-state]");
+    expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
+  });
+
+  it("calls onOpenChange when sidebar is toggled in controlled mode", async () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+    const mockOnOpenChange = vi.fn();
+
+    render(
+      <SidebarProvider
+        open={true}
+        onOpenChange={mockOnOpenChange}>
+        <Sidebar>
+          <SidebarContent>Content</SidebarContent>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+
+    expect(mockOnOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("renders mobile sidebar when isMobile is true", async () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>Mobile Content</SidebarContent>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Toggle Sidebar"});
+    fireEvent.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mobile Content")).toBeInTheDocument();
+    });
+  });
+
+  it("renders Sidebar with side='right'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar side='right'>
+          <SidebarContent data-testid='sidebar-content'>Right Sidebar</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const content = screen.getByTestId("sidebar-content");
+    const sidebarRoot = content.closest("[data-side]");
+    expect(sidebarRoot).toHaveAttribute("data-side", "right");
+  });
+
+  it("renders Sidebar with variant='inset'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar variant='inset'>
+          <SidebarContent data-testid='sidebar-content'>Inset Sidebar</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const content = screen.getByTestId("sidebar-content");
+    const sidebarRoot = content.closest("[data-variant]");
+    expect(sidebarRoot).toHaveAttribute("data-variant", "inset");
+  });
+
+  it("renders Sidebar with variant='floating'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar variant='floating'>
+          <SidebarContent data-testid='sidebar-content'>Floating Sidebar</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const content = screen.getByTestId("sidebar-content");
+    const sidebarRoot = content.closest("[data-variant]");
+    expect(sidebarRoot).toHaveAttribute("data-variant", "floating");
+  });
+
+  it("renders SidebarMenuButton with isActive prop", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive
+                  data-testid='active-button'>
+                  Active Item
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const button = screen.getByTestId("active-button");
+    expect(button).toHaveAttribute("data-active", "true");
+  });
+
+  it("renders SidebarMenuButton with asChild pattern", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a
+                    href='/dashboard'
+                    data-testid='menu-button-link'>
+                    Dashboard Link
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const links = screen.getAllByTestId("menu-button-link");
+    // asChild clones props, so we may get duplicates - just check the first one
+    expect(links[0]).toHaveAttribute("href", "/dashboard");
+    expect(links[0]).toHaveAttribute("data-sidebar", "menu-button");
+  });
+
+  it("renders SidebarMenuButton with size='sm'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  size='sm'
+                  data-testid='sm-button'>
+                  Small Button
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const button = screen.getByTestId("sm-button");
+    expect(button).toHaveAttribute("data-size", "sm");
+  });
+
+  it("renders SidebarMenuButton with size='lg'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  size='lg'
+                  data-testid='lg-button'>
+                  Large Button
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const button = screen.getByTestId("lg-button");
+    expect(button).toHaveAttribute("data-size", "lg");
+  });
+
+  it("renders SidebarMenuButton with variant='outline'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton variant='outline'>Outline Button</SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByRole("button", {name: "Outline Button"})).toBeInTheDocument();
+  });
+
+  it("renders SidebarMenuButton with tooltip when collapsed on desktop", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider defaultOpen={false}>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip='Dashboard tooltip'>Dashboard</SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByRole("button", {name: "Dashboard"})).toBeInTheDocument();
+  });
+
+  it("renders SidebarMenuButton with object tooltip", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider defaultOpen={false}>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={{children: "Custom tooltip content"}}>Settings</SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByRole("button", {name: "Settings"})).toBeInTheDocument();
+  });
+
+  it("toggles sidebar on mobile when trigger is clicked", async () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>Mobile Sidebar Content</SidebarContent>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Toggle Sidebar"});
+
+    // Open sidebar
+    fireEvent.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByText("Mobile Sidebar Content")).toBeInTheDocument();
+    });
+  });
+
+  it("renders SidebarGroupLabel with asChild pattern", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <h3 data-testid='group-label-heading'>Custom Heading</h3>
+              </SidebarGroupLabel>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const labels = screen.getAllByTestId("group-label-heading");
+    expect(labels[0].tagName).toBe("H3");
+    expect(labels[0]).toHaveAttribute("data-sidebar", "group-label");
+  });
+
+  it("renders SidebarGroupAction with asChild pattern", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Projects</SidebarGroupLabel>
+              <SidebarGroupAction asChild>
+                <a
+                  href='/add-project'
+                  data-testid='add-project-link'>
+                  +
+                </a>
+              </SidebarGroupAction>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const actions = screen.getAllByTestId("add-project-link");
+    expect(actions[0].tagName).toBe("A");
+    expect(actions[0]).toHaveAttribute("href", "/add-project");
+  });
+
+  it("renders SidebarGroupAction with type='submit'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupAction
+                type='submit'
+                data-testid='submit-action'>
+                Submit
+              </SidebarGroupAction>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const action = screen.getByTestId("submit-action");
+    expect(action).toHaveAttribute("type", "submit");
+  });
+
+  it("renders SidebarMenuAction with asChild pattern", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton>Item</SidebarMenuButton>
+                <SidebarMenuAction asChild>
+                  <a
+                    href='/more'
+                    data-testid='menu-action-link'>
+                    More
+                  </a>
+                </SidebarMenuAction>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const actions = screen.getAllByTestId("menu-action-link");
+    expect(actions[0].tagName).toBe("A");
+    expect(actions[0]).toHaveAttribute("href", "/more");
+  });
+
+  it("renders SidebarMenuSubButton with isActive prop", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      href='/active-sub'
+                      isActive
+                      data-testid='active-sub-button'>
+                      Active Sub
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const button = screen.getByTestId("active-sub-button");
+    expect(button).toHaveAttribute("data-active", "true");
+  });
+
+  it("renders SidebarMenuSubButton with size='sm'", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      href='/small-sub'
+                      size='sm'
+                      data-testid='small-sub-button'>
+                      Small Sub
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const button = screen.getByTestId("small-sub-button");
+    expect(button).toHaveAttribute("data-size", "sm");
+  });
+
+  it("renders SidebarMenuSubButton with asChild pattern", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild>
+                      <a
+                        href='/custom-sub'
+                        data-testid='custom-sub-link'>
+                        Custom Sub Link
+                      </a>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const links = screen.getAllByTestId("custom-sub-link");
+    expect(links[0].tagName).toBe("A");
+    expect(links[0]).toHaveAttribute("href", "/custom-sub");
+  });
+
+  it("handles keyboard shortcut (Ctrl+B) to toggle sidebar", async () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent data-testid='sidebar-content'>Content</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const content = screen.getByTestId("sidebar-content");
+    const sidebarRoot = content.closest("[data-state]");
+
+    expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
+
+    fireEvent.keyDown(globalThis.window, {key: "b", ctrlKey: true});
+
+    await waitFor(() => {
+      expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
+    });
+  });
+
+  it("handles keyboard shortcut (Cmd+B) to toggle sidebar on Mac", async () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent data-testid='sidebar-content'>Content</SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    const content = screen.getByTestId("sidebar-content");
+    const sidebarRoot = content.closest("[data-state]");
+
+    expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
+
+    fireEvent.keyDown(globalThis.window, {key: "b", metaKey: true});
+
+    await waitFor(() => {
+      expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
+    });
+  });
+
+  it("closes mobile sidebar with Escape key", async () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>Mobile Content</SidebarContent>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+
+    // Open sidebar
+    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+
+    await waitFor(() => {
+      expect(screen.getByText("Mobile Content")).toBeInTheDocument();
+    });
+
+    // Close with Escape
+    fireEvent.keyDown(globalThis.window, {key: "Escape"});
+
+    await waitFor(() => {
+      expect(screen.queryByText("Mobile Content")).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes mobile sidebar by clicking overlay", async () => {
+    vi.mocked(useIsMobile).mockReturnValue(true);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>Mobile Content</SidebarContent>
+        </Sidebar>
+        <SidebarTrigger />
+      </SidebarProvider>,
+    );
+
+    // Open sidebar
+    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+
+    await waitFor(() => {
+      expect(screen.getByText("Mobile Content")).toBeInTheDocument();
+    });
+
+    // Click overlay (the button with aria-label "Close sidebar")
+    const overlay = screen.getByLabelText("Close sidebar");
+    fireEvent.click(overlay);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Mobile Content")).not.toBeInTheDocument();
+    });
   });
 });

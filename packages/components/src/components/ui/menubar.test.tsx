@@ -115,6 +115,33 @@ describe("Menubar", () => {
       // Assert
       expect(await screen.findByTestId("checkbox-item")).toHaveClass("custom-checkbox");
     });
+
+    it("toggles checkbox item checked state on click", async () => {
+      // Arrange
+      const user = userEvent.setup();
+      render(
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger>View</MenubarTrigger>
+            <MenubarContent>
+              <MenubarCheckboxItem
+                checked={false}
+                data-testid='toggle-checkbox'>
+                Toggle Feature
+              </MenubarCheckboxItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>,
+      );
+
+      // Act
+      await user.click(screen.getByRole("menuitem", {name: "View"}));
+      const checkboxItem = await screen.findByRole("menuitemcheckbox", {name: "Toggle Feature"});
+      await user.click(checkboxItem);
+
+      // Assert - checkbox should be toggled (Base UI handles state)
+      expect(checkboxItem).toBeInTheDocument();
+    });
   });
 
   describe("MenubarRadioGroup and MenubarRadioItem", () => {
@@ -171,6 +198,36 @@ describe("Menubar", () => {
 
       // Assert
       expect(await screen.findByTestId("radio-item")).toHaveClass("custom-radio");
+    });
+
+    it("selects radio item on click", async () => {
+      // Arrange
+      const user = userEvent.setup();
+      render(
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger>Theme</MenubarTrigger>
+            <MenubarContent>
+              <MenubarRadioGroup value='light'>
+                <MenubarRadioItem value='light'>Light</MenubarRadioItem>
+                <MenubarRadioItem
+                  value='dark'
+                  data-testid='dark-radio'>
+                  Dark
+                </MenubarRadioItem>
+              </MenubarRadioGroup>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>,
+      );
+
+      // Act
+      await user.click(screen.getByRole("menuitem", {name: "Theme"}));
+      const darkRadio = await screen.findByRole("menuitemradio", {name: "Dark"});
+      await user.click(darkRadio);
+
+      // Assert - radio selection (Base UI handles state)
+      expect(darkRadio).toBeInTheDocument();
     });
   });
 

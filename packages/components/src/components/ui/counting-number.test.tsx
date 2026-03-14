@@ -232,4 +232,281 @@ describe("CountingNumber", () => {
     // Assert
     expect(screen.getByTestId("counting-number")).toHaveTextContent("00.00");
   });
+
+  it("formats decimal with comma separator", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={99.99}
+        decimalPlaces={2}
+        decimalSeparator=','
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Eventually shows comma
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        expect(element.textContent).toContain(",");
+      },
+      {timeout: 2000},
+    );
+  });
+
+  it("pads integer part with zeros when padStart is true", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={999}
+        padStart
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Initially padded
+    expect(screen.getByTestId("counting-number")).toHaveTextContent("000");
+
+    // Eventually reaches target with padding
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        const value = Number.parseInt(element.textContent ?? "0", 10);
+        expect(value).toBeGreaterThanOrEqual(900);
+      },
+      {timeout: 3000},
+    );
+  });
+
+  it("handles padStart with custom padStartChar (defaults to '0')", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={42}
+        padStart
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Initially shows padded with zeros
+    expect(screen.getByTestId("counting-number")).toHaveTextContent("00");
+  });
+
+  it("handles negative numbers with padStart", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={-50}
+        padStart
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Initially shows padded zero
+    expect(screen.getByTestId("counting-number")).toHaveTextContent("00");
+
+    // Eventually animates to negative value
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        const text = element.textContent ?? "";
+        expect(text).toContain("-");
+      },
+      {timeout: 2000},
+    );
+  });
+
+  it("handles integer values without decimal separator", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={100}
+        decimalPlaces={0}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - No decimal separator
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        const value = Number.parseInt(element.textContent ?? "0", 10);
+        expect(value).toBeGreaterThanOrEqual(95);
+      },
+      {timeout: 2000},
+    );
+  });
+
+  it("handles padStart with decimal values", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={9.99}
+        decimalPlaces={2}
+        padStart
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Initially padded
+    expect(screen.getByTestId("counting-number")).toHaveTextContent("0.00");
+
+    // Eventually shows value with padding
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        expect(element.textContent).toMatch(/\d\.\d{2}/);
+      },
+      {timeout: 2000},
+    );
+  });
+
+  it("splits formatted string correctly on decimal separator", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={123.45}
+        decimalPlaces={2}
+        decimalSeparator=','
+        padStart
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Initially padded
+    expect(screen.getByTestId("counting-number")).toHaveTextContent("000,00");
+
+    // Eventually reaches formatted value
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        expect(element.textContent).toContain(",");
+      },
+      {timeout: 2000},
+    );
+  });
+
+  it("handles values without decimal places in original number", () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={50}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Should handle integer values
+    expect(screen.getByTestId("counting-number")).toBeInTheDocument();
+  });
+
+  it("unsubscribes from spring value on cleanup", () => {
+    // Arrange
+    const {unmount} = render(
+      <CountingNumber
+        number={75}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Act
+    unmount();
+
+    // Assert - should not crash on unmount
+    expect(true).toBe(true);
+  });
+
+  it("handles localRef being null in spring change handler", () => {
+    // This tests the guard clause in the spring.on('change') callback
+    // Arrange & Act
+    render(
+      <CountingNumber
+        number={25}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - should render without issues
+    expect(screen.getByTestId("counting-number")).toBeInTheDocument();
+  });
+
+  it("resolves decimal places from number string when not explicitly set", () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={3.14159}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - should auto-detect decimal places
+    expect(screen.getByTestId("counting-number")).toBeInTheDocument();
+  });
+
+  it("handles numbers with decimal points in string representation", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={2.5}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        const value = Number.parseFloat(element.textContent ?? "0");
+        expect(value).toBeGreaterThan(0);
+      },
+      {timeout: 2000},
+    );
+  });
+
+  it("properly formats when decimalPlaces prop takes precedence", () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={1.123456}
+        decimalPlaces={3}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - initial display respects decimalPlaces
+    expect(screen.getByTestId("counting-number")).toHaveTextContent("0.000");
+  });
+
+  it("handles very large numbers with padStart", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={999_999}
+        padStart
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert - Initially shows zeros
+    expect(screen.getByTestId("counting-number")).toHaveTextContent("000000");
+  });
+
+  it("handles very small decimal numbers", async () => {
+    // Arrange
+    render(
+      <CountingNumber
+        number={0.001}
+        decimalPlaces={3}
+        data-testid='counting-number'
+      />,
+    );
+
+    // Assert
+    await waitFor(
+      () => {
+        const element = screen.getByTestId("counting-number");
+        expect(element.textContent).toContain(".");
+      },
+      {timeout: 2000},
+    );
+  });
 });

@@ -90,4 +90,114 @@ describe("FlipButton", () => {
     expect(flipButton).toHaveClass("flip-button-class");
     expect(flipButtonRef.current).toBe(flipButton);
   });
+
+  it("renders FlipButton with from='bottom' direction", () => {
+    // Arrange
+    render(
+      <FlipButton
+        backText='Back'
+        from='bottom'
+        frontText='Front'
+        data-testid='flip-button-bottom'
+      />,
+    );
+
+    // Assert
+    const button = screen.getByTestId("flip-button-bottom");
+    expect(button).toBeInTheDocument();
+  });
+
+  it("renders FlipButton with from='left' direction", () => {
+    // Arrange
+    render(
+      <FlipButton
+        backText='Back'
+        from='left'
+        frontText='Front'
+        data-testid='flip-button-left'
+      />,
+    );
+
+    // Assert
+    const button = screen.getByTestId("flip-button-left");
+    expect(button).toBeInTheDocument();
+  });
+
+  it("renders FlipButton with from='righ' direction", () => {
+    // Arrange
+    render(
+      <FlipButton
+        backText='Back'
+        from='righ'
+        frontText='Front'
+        data-testid='flip-button-right'
+      />,
+    );
+
+    // Assert
+    const button = screen.getByTestId("flip-button-right");
+    expect(button).toBeInTheDocument();
+  });
+
+  it("renders FlipButton with custom front and back class names", () => {
+    // Arrange
+    const {container} = render(
+      <FlipButton
+        backClassName='custom-back'
+        backText='Back'
+        frontClassName='custom-front'
+        frontText='Front'
+        data-testid='flip-button-custom'
+      />,
+    );
+
+    // Assert
+    const button = screen.getByTestId("flip-button-custom");
+    expect(button).toBeInTheDocument();
+
+    // Check for custom classes in the rendered output
+    const frontFace = container.querySelector(".custom-front");
+    const backFace = container.querySelector(".custom-back");
+    expect(frontFace).toBeInTheDocument();
+    expect(backFace).toBeInTheDocument();
+  });
+
+  it("handles onClick event", () => {
+    // Arrange
+    const handleClick = vi.fn();
+
+    render(
+      <FlipButton
+        backText='Back'
+        frontText='Front'
+        onClick={handleClick}
+        data-testid='flip-button-click'
+      />,
+    );
+
+    // Act
+    const button = screen.getByTestId("flip-button-click");
+    button.click();
+
+    // Assert
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders FlipButton with custom transition", () => {
+    // Arrange
+    const customTransition = {type: "tween" as const, duration: 0.5};
+
+    render(
+      <FlipButton
+        backText='Back'
+        frontText='Front'
+        transition={customTransition}
+        data-testid='flip-button-transition'
+      />,
+    );
+
+    // Assert
+    const button = screen.getByTestId("flip-button-transition");
+    expect(button).toBeInTheDocument();
+  });
 });

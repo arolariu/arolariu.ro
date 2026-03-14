@@ -261,4 +261,33 @@ describe("InputGroup", () => {
     // Assert
     expect(buttonClickHandler).toHaveBeenCalledTimes(1);
   });
+
+  it("renders InputGroupAddon with default onClick that prevents default when event is prevented", () => {
+    // Arrange
+    const onClickMock = vitest.fn((e) => e.preventDefault());
+
+    render(
+      <InputGroup>
+        <InputGroupAddon
+          data-testid='addon'
+          onClick={onClickMock}>
+          <InputGroupText>@</InputGroupText>
+        </InputGroupAddon>
+        <InputGroupInput
+          aria-label='Username'
+          data-testid='input'
+        />
+      </InputGroup>,
+    );
+
+    // Act
+    const addon = screen.getByTestId("addon");
+    const input = screen.getByTestId("input");
+
+    fireEvent.click(addon);
+
+    // Assert
+    expect(onClickMock).toHaveBeenCalledTimes(1);
+    expect(input).not.toHaveFocus();
+  });
 });

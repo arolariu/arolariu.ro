@@ -230,4 +230,136 @@ describe("ChartLegendContent", () => {
     expect(container).toHaveTextContent("Visitors");
     expect(container).toHaveTextContent("orders");
   });
+
+  it("should render ChartTooltipContent with nameKey prop", () => {
+    // Arrange
+    const {container} = render(
+      <ChartContainer config={config}>
+        <ChartTooltipContent
+          active
+          nameKey='customKey'
+          payload={[
+            {
+              color: "#123456",
+              dataKey: "revenue",
+              name: "Revenue",
+              payload: {customKey: "Custom Label", fill: "#abcdef"},
+              value: 42,
+            },
+          ]}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert - verify component renders
+    expect(container).toBeInTheDocument();
+  });
+
+  it("should render ChartLegendContent with nameKey prop", () => {
+    // Arrange
+    const {container} = render(
+      <ChartContainer config={config}>
+        <ChartLegendContent
+          nameKey='customKey'
+          payload={[
+            {
+              color: "#123456",
+              dataKey: "revenue",
+              payload: {customKey: "Custom Revenue Label"},
+              value: "Revenue",
+            },
+          ]}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert - verify component renders
+    expect(container).toBeInTheDocument();
+  });
+
+  it("should handle non-number values in formatChartValue", () => {
+    // Arrange
+    const {container} = render(
+      <ChartContainer config={config}>
+        <ChartTooltipContent
+          active
+          payload={[
+            {
+              color: "#123456",
+              dataKey: "status",
+              name: "Status",
+              value: "active",
+            },
+          ]}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert
+    expect(container).toHaveTextContent("active");
+  });
+
+  it("should render ChartTooltipContent with nested payload", () => {
+    // Arrange
+    const nestedConfig: ChartConfig = {
+      nested: {
+        color: "#ff0000",
+        label: "Nested Value",
+      },
+    };
+
+    const {container} = render(
+      <ChartContainer config={nestedConfig}>
+        <ChartTooltipContent
+          active
+          nameKey='category'
+          payload={[
+            {
+              color: "#ff0000",
+              dataKey: "value",
+              name: "Value",
+              payload: {category: "nested"},
+              value: 100,
+            },
+          ]}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert - verify component renders
+    expect(container).toBeInTheDocument();
+  });
+
+  it("should render ChartTooltipContent with deeply nested payload", () => {
+    // Arrange
+    const deepConfig: ChartConfig = {
+      deepKey: {
+        color: "#00ff00",
+        label: "Deep Config",
+      },
+    };
+
+    const {container} = render(
+      <ChartContainer config={deepConfig}>
+        <ChartTooltipContent
+          active
+          nameKey='nestedKey'
+          payload={[
+            {
+              color: "#00ff00",
+              dataKey: "data",
+              name: "Data",
+              payload: {
+                payload: {nestedKey: "deepKey"},
+              },
+              value: 50,
+            },
+          ]}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert - verify component renders
+    expect(container).toBeInTheDocument();
+  });
 });

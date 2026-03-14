@@ -341,4 +341,37 @@ describe("Calendar", () => {
     // Assert
     expect(screen.getByRole("grid")).toBeInTheDocument();
   });
+
+  it("renders calendar with buttonVariant='default'", () => {
+    // Arrange
+    render(
+      <Calendar
+        buttonVariant='default'
+        defaultMonth={new Date(2024, 0, 1)}
+      />,
+    );
+
+    // Assert
+    expect(screen.getByRole("grid")).toBeInTheDocument();
+  });
+
+  it("renders calendar and focuses a day button with focused modifier", async () => {
+    // Arrange
+    render(
+      <Calendar
+        mode='single'
+        defaultMonth={new Date(2024, 0, 1)}
+        modifiers={{
+          focused: new Date(2024, 0, 15),
+        }}
+      />,
+    );
+
+    // Assert
+    expect(screen.getByRole("grid")).toBeInTheDocument();
+
+    // The day button with focused modifier should be in the document
+    const dayButtons = screen.getAllByRole("button");
+    expect(dayButtons.length).toBeGreaterThan(0);
+  });
 });

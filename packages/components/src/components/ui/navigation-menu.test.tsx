@@ -157,4 +157,21 @@ describe("NavigationMenu", () => {
     expect(indicator).toBeInTheDocument();
     expect(screen.getByText("Custom indicator content")).toBeInTheDocument();
   });
+
+  it("renders NavigationMenuIndicator with custom render prop", () => {
+    // Arrange
+    render(
+      <div>
+        <NavigationMenuIndicator
+          data-testid='nav-indicator'
+          render={<div>Custom render</div>}
+        />
+      </div>,
+    );
+
+    // Assert
+    const indicator = screen.getByTestId("nav-indicator");
+    expect(indicator).toBeInTheDocument();
+    expect(screen.getByText("Custom render")).toBeInTheDocument();
+  });
 });

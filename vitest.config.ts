@@ -86,6 +86,10 @@ export default defineConfig({
         "**/*.config.{js,ts,mjs,mts}",
         "**/*.setup.{js,ts,mjs,mts}",
 
+        // CSS files (not testable via unit tests)
+        "**/*.css",
+        "**/*.module.css",
+
         // Infrastructure files with module-level side effects
         "**/telemetry.ts",
         "**/instrumentation.ts",

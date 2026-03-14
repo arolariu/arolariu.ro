@@ -194,4 +194,33 @@ describe("Popover", () => {
     const anchor = screen.getByTestId("custom-anchor");
     expect(anchor).toHaveClass("custom-anchor-class");
   });
+
+  it("renders PopoverAnchor with asChild prop", async () => {
+    // Arrange
+    const user = userEvent.setup();
+
+    render(
+      <Popover>
+        <PopoverAnchor asChild>
+          <button
+            type='button'
+            data-testid='anchor-button'>
+            Anchor Button
+          </button>
+        </PopoverAnchor>
+        <PopoverTrigger>Open popover</PopoverTrigger>
+        <PopoverContent>Popover content</PopoverContent>
+      </Popover>,
+    );
+
+    // Assert
+    expect(screen.getByTestId("anchor-button")).toBeInTheDocument();
+    expect(screen.getByText("Anchor Button")).toBeInTheDocument();
+
+    // Act
+    await user.click(screen.getByRole("button", {name: "Open popover"}));
+
+    // Assert
+    expect(await screen.findByRole("dialog")).toBeVisible();
+  });
 });

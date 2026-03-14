@@ -252,4 +252,243 @@ describe("Sonner", () => {
       expect(screen.getByText("Simple message")).toBeInTheDocument();
     });
   });
+
+  it("renders toast with cancel button", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("Item deleted", {
+        cancel: {
+          label: "Cancel",
+          onClick: () => {
+            /* noop */
+          },
+        },
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Item deleted")).toBeInTheDocument();
+      expect(screen.getByRole("button", {name: "Cancel"})).toBeInTheDocument();
+    });
+  });
+
+  it("renders Toaster with different theme props", () => {
+    // Arrange & Act
+    const {unmount} = render(<Toaster duration={10_000} />);
+    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
+    unmount();
+  });
+
+  it("renders toast with custom duration", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("Custom duration", {
+        duration: 10_000,
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Custom duration")).toBeInTheDocument();
+    });
+  });
+
+  it("renders Toaster with custom visibleToasts limit", () => {
+    // Arrange
+    const {unmount} = render(<Toaster visibleToasts={5} />);
+    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
+    unmount();
+  });
+
+  it("renders Toaster with closeButton={false}", () => {
+    // Arrange
+    const {unmount} = render(<Toaster closeButton={false} />);
+    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
+    unmount();
+  });
+
+  it("renders Toaster with custom containerAriaLabel", () => {
+    // Arrange
+    render(<Toaster containerAriaLabel='Custom Notifications' />);
+
+    // Assert
+    expect(screen.getByLabelText("Custom Notifications")).toBeInTheDocument();
+  });
+
+  it("renders loading toast with correct variant", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast.loading("Loading operation", {
+        description: "Please wait...",
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Loading operation")).toBeInTheDocument();
+      expect(screen.getByText("Please wait...")).toBeInTheDocument();
+      expect(toast.getToasts()[0]?.variant).toBe("loading");
+    });
+  });
+
+  it("dismisses specific toast by id", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    let toastId = "";
+    act(() => {
+      toastId = toast("First toast");
+      toast("Second toast");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("First toast")).toBeInTheDocument();
+      expect(screen.getByText("Second toast")).toBeInTheDocument();
+    });
+
+    act(() => {
+      toast.dismiss(toastId);
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByText("First toast")).not.toBeInTheDocument();
+      expect(screen.getByText("Second toast")).toBeInTheDocument();
+    });
+  });
+
+  it("returns toast history via getHistory", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("Toast 1");
+      toast("Toast 2");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Toast 1")).toBeInTheDocument();
+    });
+
+    // Assert
+    const history = toast.getHistory();
+    expect(history.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders Toaster with custom toastOptions", async () => {
+    // Arrange
+    render(
+      <Toaster
+        toastOptions={{
+          className: "custom-toast-class",
+        }}
+      />,
+    );
+
+    // Act
+    act(() => {
+      toast("Toast with options");
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Toast with options")).toBeInTheDocument();
+    });
+  });
+
+  it("renders toast with custom style", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("Styled toast", {
+        style: {backgroundColor: "red"},
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Styled toast")).toBeInTheDocument();
+    });
+  });
+
+  it("renders toast with priority prop", () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act - Just verify it doesn't throw
+    act(() => {
+      toast("High priority", {
+        priority: "high",
+      });
+    });
+
+    // Assert - Basic check that toast was created
+    expect(toast.getToasts().length).toBeGreaterThan(0);
+  });
+
+  it("renders toast with closeButton and custom closeButtonAriaLabel", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("Closeable toast", {
+        closeButton: true,
+        closeButtonAriaLabel: "Custom close",
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Closeable toast")).toBeInTheDocument();
+      expect(screen.getByLabelText("Custom close")).toBeInTheDocument();
+    });
+  });
+
+  it("handles toast.message as alias for toast", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast.message("Message toast");
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Message toast")).toBeInTheDocument();
+    });
+  });
+
+  it("renders toast with cancel as ReactNode", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("Toast with node cancel", {
+        cancel: <button type='button'>Custom Cancel</button>,
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Toast with node cancel")).toBeInTheDocument();
+      expect(screen.getByRole("button", {name: "Custom Cancel"})).toBeInTheDocument();
+    });
+  });
 });

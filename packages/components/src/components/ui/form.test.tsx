@@ -14,6 +14,7 @@ import {
   FormMessage,
   useController,
   useFieldArray,
+  useFormField,
   useWatch,
 } from "./form";
 
@@ -284,5 +285,206 @@ describe("Form", () => {
     expect(typeof useController).toBe("function");
     expect(typeof useWatch).toBe("function");
     expect(typeof useFieldArray).toBe("function");
+  });
+
+  it("should render FormControl with non-element children using fallback div", () => {
+    // Arrange
+    function TestComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({
+        defaultValues: {
+          email: "",
+        },
+      });
+
+      return (
+        <Form {...methods}>
+          <form>
+            <FormField
+              control={methods.control}
+              name='email'
+              render={() => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>
+                    <div data-testid='fallback-div'>Custom non-element content</div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      );
+    }
+
+    render(<TestComponent />);
+
+    // Assert
+    const fallbackDiv = screen.getByTestId("fallback-div");
+    expect(fallbackDiv).toBeInTheDocument();
+    // The fallback div wrapper is the parent
+    expect(fallbackDiv.parentElement).toBeInTheDocument();
+  });
+
+  it("should merge refs in FormControl when child has ref", () => {
+    // Arrange
+    const childRef = React.createRef<HTMLInputElement>();
+    const parentRef = React.createRef<HTMLInputElement>();
+
+    function TestComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({
+        defaultValues: {
+          email: "",
+        },
+      });
+
+      return (
+        <Form {...methods}>
+          <form>
+            <FormField
+              control={methods.control}
+              name='email'
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl ref={parentRef}>
+                    <input
+                      {...field}
+                      ref={childRef}
+                      aria-label='Email with ref'
+                      data-testid='input-with-ref'
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      );
+    }
+
+    render(<TestComponent />);
+
+    // Assert
+    const input = screen.getByTestId("input-with-ref");
+    expect(childRef.current).toBe(input);
+  });
+
+  it("should render FormLabel with error state styling", async () => {
+    // Arrange
+    function TestComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({
+        defaultValues: {
+          email: "",
+        },
+      });
+
+      React.useEffect(() => {
+        methods.setError("email", {
+          type: "manual",
+          message: "Email is invalid",
+        });
+      }, [methods]);
+
+      return (
+        <Form {...methods}>
+          <form>
+            <FormField
+              control={methods.control}
+              name='email'
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel data-testid='error-label'>Email address</FormLabel>
+                  <FormControl>
+                    <input
+                      {...field}
+                      aria-label='Email'
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      );
+    }
+
+    render(<TestComponent />);
+
+    // Assert
+    await waitFor(() => {
+      const label = screen.getByTestId("error-label");
+      expect(label).toBeInTheDocument();
+      // Error styling is applied via CSS modules, verify the label exists
+      expect(label).toHaveTextContent("Email address");
+    });
+  });
+
+  it("should throw error when useFormField is used outside FormField context", () => {
+    // Arrange
+    function InvalidComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({
+        defaultValues: {
+          email: "",
+        },
+      });
+
+      return (
+        <Form {...methods}>
+          <form>
+            {/* useFormField called outside FormField - this will throw */}
+            <InvalidInnerComponent />
+          </form>
+        </Form>
+      );
+    }
+
+    function InvalidInnerComponent(): React.JSX.Element {
+      // This will throw because we're not inside a FormField
+      const {error} = useFormField();
+      return <div>{error?.message}</div>;
+    }
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Act & Assert
+    expect(() => render(<InvalidComponent />)).toThrow("useFormField should be used within <FormField>");
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should throw error when useFormField is used outside FormItem context", () => {
+    // Arrange
+    function InvalidComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({
+        defaultValues: {
+          email: "",
+        },
+      });
+
+      return (
+        <Form {...methods}>
+          <FormField
+            control={methods.control}
+            name='email'
+            render={() => {
+              // This will throw because we're not inside FormItem
+              return <InvalidInnerComponent />;
+            }}
+          />
+        </Form>
+      );
+    }
+
+    function InvalidInnerComponent(): React.JSX.Element {
+      const {error} = useFormField();
+      return <div>{error?.message}</div>;
+    }
+
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Act & Assert
+    expect(() => render(<InvalidComponent />)).toThrow("useFormField should be used within <FormItem>");
+
+    consoleErrorSpy.mockRestore();
   });
 });

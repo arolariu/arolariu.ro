@@ -113,4 +113,116 @@ describe("GradientBackground", () => {
 
     expect(gradientBackground).toBeInTheDocument();
   });
+
+  it("renders with children content", () => {
+    // Act
+    render(
+      <GradientBackground data-testid='gradient-with-children'>
+        <div>Gradient children</div>
+      </GradientBackground>,
+    );
+
+    // Assert
+    expect(screen.getByText("Gradient children")).toBeInTheDocument();
+  });
+
+  it("filters out React key prop from spreading", () => {
+    // Act
+    render(
+      <GradientBackground
+        key='test-key'
+        data-testid='gradient-with-key'
+      />,
+    );
+
+    // Assert
+    const gradientBackground = screen.getByTestId("gradient-with-key");
+
+    expect(gradientBackground).toBeInTheDocument();
+    expect(gradientBackground).not.toHaveAttribute("key");
+  });
+
+  it("forwards all valid HTML props", () => {
+    // Act
+    render(
+      <GradientBackground
+        data-testid='gradient-html-props'
+        title='Gradient title'
+        id='gradient-id'
+        aria-label='Gradient label'
+      />,
+    );
+
+    // Assert
+    const gradientBackground = screen.getByTestId("gradient-html-props");
+
+    expect(gradientBackground).toHaveAttribute("title", "Gradient title");
+    expect(gradientBackground).toHaveAttribute("id", "gradient-id");
+    expect(gradientBackground).toHaveAttribute("aria-label", "Gradient label");
+  });
+
+  it("applies animate prop with background position values", () => {
+    // Act
+    render(<GradientBackground data-testid='gradient-animate' />);
+
+    // Assert
+    const gradientBackground = screen.getByTestId("gradient-animate");
+
+    expect(gradientBackground).toBeInTheDocument();
+  });
+
+  it("renders with custom style prop", () => {
+    // Act
+    render(
+      <GradientBackground
+        data-testid='gradient-custom-style'
+        style={{opacity: 0.5}}
+      />,
+    );
+
+    // Assert
+    const gradientBackground = screen.getByTestId("gradient-custom-style");
+
+    expect(gradientBackground).toBeInTheDocument();
+  });
+
+  it("handles transition with different ease functions", () => {
+    // Act
+    render(
+      <GradientBackground
+        transition={{duration: 10, ease: "linear", repeat: 5}}
+        data-testid='gradient-ease-linear'
+      />,
+    );
+
+    // Assert
+    expect(screen.getByTestId("gradient-ease-linear")).toBeInTheDocument();
+  });
+
+  it("handles transition with repeat type", () => {
+    // Act
+    render(
+      <GradientBackground
+        transition={{duration: 10, ease: "easeInOut", repeat: Infinity, repeatType: "reverse"}}
+        data-testid='gradient-repeat-type'
+      />,
+    );
+
+    // Assert
+    expect(screen.getByTestId("gradient-repeat-type")).toBeInTheDocument();
+  });
+
+  it("spreads all HTMLMotionProps correctly", () => {
+    // Act
+    render(
+      <GradientBackground
+        data-testid='gradient-motion-props'
+        onAnimationStart={() => {}}
+        onAnimationComplete={() => {}}
+      />,
+    );
+
+    // Assert
+    expect(screen.getByTestId("gradient-motion-props")).toBeInTheDocument();
+  });
 });

@@ -263,4 +263,85 @@ describe("Sheet", () => {
       expect(await screen.findByTestId("sheet-description")).toHaveClass("custom-description");
     });
   });
+
+  it("renders SheetContent with side='top' positioning", async () => {
+    // Arrange
+    renderSheet({defaultOpen: true, side: "top"});
+
+    // Assert
+    expect(await screen.findByTestId("sheet-content")).toHaveClass(styles.top);
+  });
+
+  it("renders SheetContent with side='bottom' positioning", async () => {
+    // Arrange
+    renderSheet({defaultOpen: true, side: "bottom"});
+
+    // Assert
+    expect(await screen.findByTestId("sheet-content")).toHaveClass(styles.bottom);
+  });
+
+  it("renders SheetContent with side='right' positioning by default", async () => {
+    // Arrange
+    renderSheet({defaultOpen: true, side: "right"});
+
+    // Assert
+    expect(await screen.findByTestId("sheet-content")).toHaveClass(styles.right);
+  });
+
+  it("renders SheetOverlay with custom className", async () => {
+    // Arrange
+    render(
+      <Sheet defaultOpen>
+        <SheetTrigger>Open</SheetTrigger>
+        <SheetContent>
+          <SheetTitle>Title</SheetTitle>
+        </SheetContent>
+      </Sheet>,
+    );
+
+    // Assert
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toBeVisible();
+  });
+
+  it("renders SheetHeader with asChild prop", async () => {
+    // Arrange
+    render(
+      <Sheet defaultOpen>
+        <SheetTrigger>Open sheet</SheetTrigger>
+        <SheetContent>
+          <SheetHeader asChild>
+            <header data-testid='custom-header-element'>
+              <SheetTitle>Title</SheetTitle>
+            </header>
+          </SheetHeader>
+        </SheetContent>
+      </Sheet>,
+    );
+
+    // Assert
+    expect(await screen.findByTestId("custom-header-element")).toBeInTheDocument();
+    expect(screen.getByText("Title")).toBeInTheDocument();
+  });
+
+  it("renders SheetFooter with asChild prop", async () => {
+    // Arrange
+    render(
+      <Sheet defaultOpen>
+        <SheetTrigger>Open sheet</SheetTrigger>
+        <SheetContent>
+          <SheetTitle>Title</SheetTitle>
+          <SheetFooter asChild>
+            <footer data-testid='custom-footer-element'>
+              <button type='button'>Action</button>
+            </footer>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>,
+    );
+
+    // Assert
+    expect(await screen.findByTestId("custom-footer-element")).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Action"})).toBeInTheDocument();
+  });
 });

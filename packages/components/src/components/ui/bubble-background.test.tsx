@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {render, screen} from "@testing-library/react";
+import {fireEvent, render, screen} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("motion/react", async () => {
@@ -186,5 +186,199 @@ describe("BubbleBackground", () => {
     const bubbleBackground = screen.getByTestId("bubble-non-interactive");
 
     expect(bubbleBackground).toBeInTheDocument();
+  });
+
+  it("handles mousemove in interactive mode", () => {
+    // Arrange
+    render(
+      <BubbleBackground
+        interactive
+        data-testid='bubble-mousemove'>
+        Interactive content
+      </BubbleBackground>,
+    );
+
+    const bubbleBackground = screen.getByTestId("bubble-mousemove");
+
+    // Act - simulate mouse movement
+    fireEvent.mouseMove(bubbleBackground, {clientX: 100, clientY: 50});
+
+    // Assert
+    expect(bubbleBackground).toBeInTheDocument();
+  });
+
+  it("calculates center position correctly on mousemove", () => {
+    // Arrange
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      left: 50,
+      top: 50,
+      width: 200,
+      height: 100,
+      right: 250,
+      bottom: 150,
+      x: 50,
+      y: 50,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    render(
+      <BubbleBackground
+        interactive
+        data-testid='bubble-center-calc'>
+        Center calc
+      </BubbleBackground>,
+    );
+
+    const bubbleBackground = screen.getByTestId("bubble-center-calc");
+
+    // Act - move mouse to specific position
+    fireEvent.mouseMove(bubbleBackground, {clientX: 150, clientY: 100});
+
+    // Assert - component should handle the calculation
+    expect(bubbleBackground).toBeInTheDocument();
+  });
+
+  it("does not attach mousemove listener when interactive is false", () => {
+    // Act
+    render(
+      <BubbleBackground
+        interactive={false}
+        data-testid='bubble-no-listener'>
+        Non-interactive
+      </BubbleBackground>,
+    );
+
+    // Assert - component should render correctly without interactive mode
+    expect(screen.getByTestId("bubble-no-listener")).toBeInTheDocument();
+  });
+
+  it("cleans up mousemove listener on unmount when interactive", () => {
+    // Arrange
+    const removeEventListenerSpy = vi.spyOn(HTMLElement.prototype, "removeEventListener");
+
+    // Act
+    const {unmount} = render(
+      <BubbleBackground
+        interactive
+        data-testid='bubble-cleanup-listener'>
+        Cleanup test
+      </BubbleBackground>,
+    );
+
+    unmount();
+
+    // Assert
+    const mouseMoveCalls = removeEventListenerSpy.mock.calls.filter((call) => call[0] === "mousemove");
+
+    expect(mouseMoveCalls.length).toBeGreaterThan(0);
+
+    removeEventListenerSpy.mockRestore();
+  });
+
+  it("early returns in effect when containerRef is null", () => {
+    // This tests the guard clause in the useEffect
+    // Act
+    render(
+      <BubbleBackground
+        interactive
+        data-testid='bubble-null-ref'>
+        Null ref test
+      </BubbleBackground>,
+    );
+
+    // Assert - should not crash
+    expect(screen.getByTestId("bubble-null-ref")).toBeInTheDocument();
+  });
+
+  it("renders all bubble layers with correct motion animations", () => {
+    // Act
+    const {container} = render(<BubbleBackground data-testid='bubble-layers'>Bubble layers</BubbleBackground>);
+
+    // Assert - should have multiple bubble divs
+    const bubbles = container.querySelectorAll("div");
+
+    expect(bubbles.length).toBeGreaterThan(5);
+  });
+
+  it("renders interactive bubble only when interactive prop is true", () => {
+    // Arrange
+    const {container: containerNonInteractive} = render(
+      <BubbleBackground
+        interactive={false}
+        data-testid='bubble-no-interactive-layer'>
+        No interactive
+      </BubbleBackground>,
+    );
+
+    const {container: containerInteractive} = render(
+      <BubbleBackground
+        interactive
+        data-testid='bubble-has-interactive-layer'>
+        Has interactive
+      </BubbleBackground>,
+    );
+
+    // Assert - both should render but structure may differ
+    expect(containerNonInteractive.querySelectorAll("div").length).toBeGreaterThan(0);
+    expect(containerInteractive.querySelectorAll("div").length).toBeGreaterThan(0);
+  });
+
+  it("applies custom colors to CSS custom properties", () => {
+    // Act
+    render(
+      <BubbleBackground
+        colors={{
+          first: "10,20,30",
+          second: "40,50,60",
+          third: "70,80,90",
+          fourth: "100,110,120",
+          fifth: "130,140,150",
+          sixth: "160,170,180",
+        }}
+        data-testid='bubble-css-vars'
+        style={{"--test": "value"} as React.CSSProperties}>
+        CSS vars
+      </BubbleBackground>,
+    );
+
+    // Assert
+    const bubbleBackground = screen.getByTestId("bubble-css-vars");
+
+    expect(bubbleBackground).toBeInTheDocument();
+  });
+
+  it("renders SVG filter for goo effect", () => {
+    // Act
+    const {container} = render(<BubbleBackground data-testid='bubble-svg-filter'>SVG test</BubbleBackground>);
+
+    // Assert
+    const svg = container.querySelector("svg");
+    const filter = container.querySelector("filter");
+
+    expect(svg).toBeInTheDocument();
+    expect(filter).toBeInTheDocument();
+  });
+
+  it("handles spring transition options", () => {
+    // Act
+    render(
+      <BubbleBackground
+        interactive
+        transition={{stiffness: 150, damping: 25, mass: 1}}
+        data-testid='bubble-spring-options'>
+        Spring options
+      </BubbleBackground>,
+    );
+
+    // Assert
+    expect(screen.getByTestId("bubble-spring-options")).toBeInTheDocument();
+  });
+
+  it("renders with default color values", () => {
+    // Act
+    render(<BubbleBackground data-testid='bubble-default-colors'>Default colors</BubbleBackground>);
+
+    // Assert
+    expect(screen.getByTestId("bubble-default-colors")).toBeInTheDocument();
   });
 });

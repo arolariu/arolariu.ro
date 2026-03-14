@@ -248,6 +248,168 @@ describe("Button", () => {
     expect(button.className).toContain("sizeLg");
   });
 
+  it("renders with intrinsic button element via render prop", () => {
+    // Arrange - passing a <button> element directly
+    render(
+      <Button
+        render={<button data-testid='intrinsic-button'>Custom Button</button>}
+        variant='outline'
+      />,
+    );
+
+    // Assert - should detect intrinsic button and add type="button"
+    const button = screen.getByTestId("intrinsic-button");
+    expect(button).toHaveAttribute("type", "button");
+    expect(button.className).toContain("outline");
+  });
+
+  it("prevents Enter key on disabled non-native elements", () => {
+    // Arrange
+    const handleClick = vi.fn();
+
+    render(
+      <Button
+        asChild
+        disabled
+        onClick={handleClick}>
+        <a
+          href='/dashboard'
+          data-testid='disabled-enter'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    // Act
+    const link = screen.getByTestId("disabled-enter");
+    fireEvent.keyDown(link, {key: "Enter"});
+
+    // Assert - Enter should be prevented
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it("prevents Space key on disabled non-native elements", () => {
+    // Arrange
+    const handleClick = vi.fn();
+
+    render(
+      <Button
+        asChild
+        disabled
+        onClick={handleClick}>
+        <a
+          href='/dashboard'
+          data-testid='disabled-space'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    // Act
+    const link = screen.getByTestId("disabled-space");
+    fireEvent.keyDown(link, {key: " "});
+
+    // Assert - Space should be prevented
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it("allows key events on disabled non-native elements for other keys", () => {
+    // Arrange
+    render(
+      <Button
+        asChild
+        disabled>
+        <a
+          href='/dashboard'
+          data-testid='disabled-other-key'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    // Act
+    const link = screen.getByTestId("disabled-other-key");
+    fireEvent.keyDown(link, {key: "Tab"});
+
+    // Assert - should not throw or crash
+    expect(link).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("sets tabIndex to -1 for disabled non-native elements", () => {
+    // Arrange
+    render(
+      <Button
+        asChild
+        disabled>
+        <a
+          href='/dashboard'
+          data-testid='disabled-tabindex'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    // Assert - tabIndex should be -1
+    const link = screen.getByTestId("disabled-tabindex");
+    expect(link).toHaveAttribute("tabIndex", "-1");
+  });
+
+  it("does not set tabIndex for non-disabled non-native elements", () => {
+    // Arrange
+    render(
+      <Button asChild>
+        <a
+          href='/dashboard'
+          data-testid='enabled-tabindex'>
+          Enabled Link
+        </a>
+      </Button>,
+    );
+
+    // Assert - tabIndex should not be set
+    const link = screen.getByTestId("enabled-tabindex");
+    expect(link).not.toHaveAttribute("tabIndex");
+  });
+
+  it("renders button as non-button element without type attribute", () => {
+    // Arrange
+    render(
+      <Button
+        asChild
+        data-testid='div-button'>
+        <div>Div Button</div>
+      </Button>,
+    );
+
+    // Assert - should have button role but no type attribute
+    const divButton = screen.getByRole("button", {name: "Div Button"});
+    expect(divButton.tagName).toBe("DIV");
+    expect(divButton).not.toHaveAttribute("type");
+  });
+
+  it("allows click on enabled non-native elements", () => {
+    // Arrange
+    const handleClick = vi.fn();
+
+    render(
+      <Button
+        asChild
+        onClick={handleClick}>
+        <a
+          href='/dashboard'
+          data-testid='enabled-link'>
+          Enabled Link
+        </a>
+      </Button>,
+    );
+
+    // Act
+    fireEvent.click(screen.getByTestId("enabled-link"));
+
+    // Assert - click should work
+    expect(handleClick).toHaveBeenCalled();
+  });
+
   it("applies custom className along with variant styles", () => {
     render(
       <Button
@@ -277,5 +439,184 @@ describe("Button", () => {
     const button = screen.getByTestId("ref-button");
     expect(ref.current).toBe(button);
     expect(ref.current).toBeInstanceOf(HTMLButtonElement);
+  });
+
+  it("renders with render prop returning non-button element", () => {
+    render(
+      <Button
+        render={<div data-testid='custom-div' />}
+        variant='outline'
+        size='lg'>
+        Custom Element
+      </Button>,
+    );
+
+    const element = screen.getByTestId("custom-div");
+    expect(element.tagName).toBe("DIV");
+    expect(element).toHaveAttribute("role", "button");
+    expect(element.className).toContain("outline");
+    expect(element.className).toContain("sizeLg");
+  });
+
+  it("renders with render prop returning intrinsic button element", () => {
+    render(
+      <Button
+        render={<button data-testid='custom-button' />}
+        variant='secondary'>
+        Intrinsic Button
+      </Button>,
+    );
+
+    const button = screen.getByTestId("custom-button");
+    expect(button.tagName).toBe("BUTTON");
+    expect(button).toHaveAttribute("type", "button");
+    expect(button).not.toHaveAttribute("role");
+    expect(button.className).toContain("secondary");
+  });
+
+  it("prevents keyDown (Enter) on disabled non-native button", () => {
+    const mockPreventDefault = vi.fn();
+
+    render(
+      <Button
+        asChild
+        disabled>
+        <a
+          href='/dashboard'
+          data-testid='disabled-link'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    const link = screen.getByTestId("disabled-link");
+    const event = new KeyboardEvent("keydown", {key: "Enter", bubbles: true});
+    Object.defineProperty(event, "preventDefault", {value: mockPreventDefault});
+    link.dispatchEvent(event);
+
+    expect(mockPreventDefault).toHaveBeenCalled();
+  });
+
+  it("prevents keyDown (Space) on disabled non-native button", () => {
+    const mockPreventDefault = vi.fn();
+
+    render(
+      <Button
+        asChild
+        disabled>
+        <a
+          href='/dashboard'
+          data-testid='disabled-link'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    const link = screen.getByTestId("disabled-link");
+    const event = new KeyboardEvent("keydown", {key: " ", bubbles: true});
+    Object.defineProperty(event, "preventDefault", {value: mockPreventDefault});
+    link.dispatchEvent(event);
+
+    expect(mockPreventDefault).toHaveBeenCalled();
+  });
+
+  it("allows keyDown (other keys) on disabled non-native button", () => {
+    const handleKeyDown = vi.fn();
+
+    render(
+      <Button
+        asChild
+        disabled
+        onKeyDown={handleKeyDown}>
+        <a
+          href='/dashboard'
+          data-testid='disabled-link'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    const link = screen.getByTestId("disabled-link");
+    fireEvent.keyDown(link, {key: "Tab"});
+
+    expect(handleKeyDown).toHaveBeenCalled();
+  });
+
+  it("renders with all variant and size combinations", () => {
+    const variants = ["default", "destructive", "outline", "secondary", "ghost", "link"] as const;
+    const sizes = ["default", "sm", "lg", "icon"] as const;
+
+    variants.forEach((variant) => {
+      sizes.forEach((size) => {
+        const {unmount} = render(
+          <Button
+            variant={variant}
+            size={size}
+            data-testid={`button-${variant}-${size}`}>
+            {variant}-{size}
+          </Button>,
+        );
+
+        const button = screen.getByTestId(`button-${variant}-${size}`);
+        expect(button).toBeInTheDocument();
+        unmount();
+      });
+    });
+  });
+
+  it("renders with render prop that is a callback function", () => {
+    render(
+      <Button
+        variant='destructive'
+        size='sm'
+        disabled
+        render={(props, state) => (
+          <a
+            {...props}
+            href='/delete'
+            data-testid='render-callback'>
+            {state.variant}-{state.size}-{String(state.disabled)}
+          </a>
+        )}>
+        Fallback
+      </Button>,
+    );
+
+    const link = screen.getByTestId("render-callback");
+    expect(link.tagName).toBe("A");
+    expect(link).toHaveTextContent("destructive-sm-true");
+    expect(link).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("sets tabIndex to -1 on disabled non-native button", () => {
+    render(
+      <Button
+        asChild
+        disabled>
+        <a
+          href='/dashboard'
+          data-testid='disabled-link'>
+          Disabled Link
+        </a>
+      </Button>,
+    );
+
+    const link = screen.getByTestId("disabled-link");
+    expect(link).toHaveAttribute("tabIndex", "-1");
+  });
+
+  it("does not set tabIndex on enabled non-native button", () => {
+    render(
+      <Button asChild>
+        <a
+          href='/dashboard'
+          data-testid='enabled-link'>
+          Enabled Link
+        </a>
+      </Button>,
+    );
+
+    const link = screen.getByTestId("enabled-link");
+    expect(link).not.toHaveAttribute("tabIndex");
   });
 });

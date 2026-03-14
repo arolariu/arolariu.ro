@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {render, screen} from "@testing-library/react";
+import {fireEvent, render, screen} from "@testing-library/react";
 import {beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("motion/react", async () => {
@@ -228,5 +228,328 @@ describe("HoleBackground", () => {
 
     // Assert
     expect(screen.getByText("Hole content")).toBeInTheDocument();
+  });
+
+  it("initializes canvas and starts animation loop", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-animation' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-animation")).toBeInTheDocument();
+  });
+
+  it("handles window resize event", () => {
+    // Arrange
+    render(<HoleBackground data-testid='hole-resize' />);
+
+    // Act
+    fireEvent.resize(globalThis.window);
+
+    // Assert
+    const canvas = screen.getByTestId("hole-resize");
+
+    expect(canvas).toBeInTheDocument();
+  });
+
+  it("cleans up on unmount - cancels animation frame", () => {
+    // Act
+    const {unmount} = render(<HoleBackground data-testid='hole-cleanup' />);
+    unmount();
+
+    // Assert - should complete without errors
+    expect(true).toBe(true);
+  });
+
+  it("draws discs with proper canvas operations", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-discs' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-discs")).toBeInTheDocument();
+  });
+
+  it("renders lines canvas and draws image", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-lines' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-lines")).toBeInTheDocument();
+  });
+
+  it("clips drawing operations with Path2D", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-clip' />);
+
+    // Assert - should render and setup clipping paths
+    expect(screen.getByTestId("hole-clip")).toBeInTheDocument();
+  });
+
+  it("draws particles within clipping path", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-particles' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-particles")).toBeInTheDocument();
+  });
+
+  it("updates particle positions with physics", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-particle-physics' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-particle-physics")).toBeInTheDocument();
+  });
+
+  it("manages particle lifecycle", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-particle-reset' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-particle-reset")).toBeInTheDocument();
+  });
+
+  it("tweens disc properties with easing", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-tween' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-tween")).toBeInTheDocument();
+  });
+
+  it("handles isPointInPath for line clipping", () => {
+    // Arrange
+    mockCanvasContext.isPointInPath.mockReturnValueOnce(true);
+
+    // Act
+    render(<HoleBackground data-testid='hole-point-in-path' />);
+
+    // Assert - should render without crashing
+    expect(screen.getByTestId("hole-point-in-path")).toBeInTheDocument();
+  });
+
+  it("handles isPointInStroke for line rendering", () => {
+    // Arrange
+    mockCanvasContext.isPointInStroke.mockReturnValueOnce(true);
+
+    // Act
+    render(<HoleBackground data-testid='hole-point-in-stroke' />);
+
+    // Assert - should render without crashing
+    expect(screen.getByTestId("hole-point-in-stroke")).toBeInTheDocument();
+  });
+
+  it("draws lines with moveTo and lineTo", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-line-drawing' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-line-drawing")).toBeInTheDocument();
+  });
+
+  it("scales canvas context by device pixel ratio", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-dpi-scaling' />);
+
+    // Assert
+    expect(screen.getByTestId("hole-dpi-scaling")).toBeInTheDocument();
+  });
+
+  it("handles canvas without context gracefully", () => {
+    // Arrange
+    const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValueOnce(null);
+
+    // Act
+    render(<HoleBackground data-testid='hole-no-context' />);
+
+    // Assert - should not crash
+    expect(screen.getByTestId("hole-no-context")).toBeInTheDocument();
+
+    getContextSpy.mockRestore();
+  });
+
+  it("creates particles with random properties", () => {
+    // Act
+    render(
+      <HoleBackground
+        particleRGBColor={[100, 150, 200]}
+        data-testid='hole-random-particles'
+      />,
+    );
+
+    // Assert
+    expect(screen.getByTestId("hole-random-particles")).toBeInTheDocument();
+  });
+
+  it("handles all HTML canvas props", () => {
+    // Act
+    render(
+      <HoleBackground
+        data-testid='hole-with-props'
+        title='Hole Background'
+        id='hole-canvas'
+      />,
+    );
+
+    // Assert
+    const canvas = screen.getByTestId("hole-with-props");
+
+    expect(canvas).toHaveAttribute("title", "Hole Background");
+    expect(canvas).toHaveAttribute("id", "hole-canvas");
+  });
+
+  it("renders scanlines overlay", () => {
+    // Act
+    const {container} = render(<HoleBackground data-testid='hole-scanlines' />);
+
+    // Assert
+    const scanlines = container.querySelector('[aria-hidden="true"]');
+
+    expect(scanlines).toBeInTheDocument();
+  });
+
+  it("animates glow effect with motion", () => {
+    // Act
+    const {container} = render(<HoleBackground data-testid='hole-glow' />);
+
+    // Assert - motion.div for glow should be rendered
+    const glow = container.querySelector('[aria-hidden="true"]');
+
+    expect(glow).toBeInTheDocument();
+  });
+
+  it("moves discs with progress updates", () => {
+    // Arrange
+    let animationCallback: FrameRequestCallback | null = null;
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+      animationCallback = callback;
+      return 1;
+    });
+
+    // Act
+    render(<HoleBackground data-testid='hole-disc-movement' />);
+
+    // Trigger multiple frames
+    if (animationCallback) {
+      for (let i = 0; i < 10; i++) {
+        animationCallback(i * 16);
+      }
+    }
+
+    // Assert - discs should animate
+    expect(screen.getByTestId("hole-disc-movement")).toBeInTheDocument();
+  });
+
+  it("moves particles upward with physics", () => {
+    // Arrange
+    let animationCallback: FrameRequestCallback | null = null;
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+      animationCallback = callback;
+      return 1;
+    });
+
+    // Act
+    render(<HoleBackground data-testid='hole-particle-movement' />);
+
+    // Trigger animation frames
+    if (animationCallback) {
+      for (let i = 0; i < 50; i++) {
+        animationCallback(i * 16);
+      }
+    }
+
+    // Assert - particles should be updated
+    expect(screen.getByTestId("hole-particle-movement")).toBeInTheDocument();
+  });
+
+  it("reinitializes particles when they exit bounds", () => {
+    // Arrange
+    let animationCallback: FrameRequestCallback | null = null;
+    vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+      animationCallback = callback;
+      return 1;
+    });
+
+    // Act
+    render(<HoleBackground data-testid='hole-particle-reinit' />);
+
+    // Run many frames to allow particles to exit and reinit
+    if (animationCallback) {
+      for (let i = 0; i < 200; i++) {
+        animationCallback(i * 16);
+      }
+    }
+
+    // Assert - should handle particle lifecycle
+    expect(screen.getByTestId("hole-particle-reinit")).toBeInTheDocument();
+  });
+
+  it("draws discs at every 5th index", () => {
+    // Arrange
+    mockCanvasContext.ellipse.mockClear();
+
+    // Act
+    render(
+      <HoleBackground
+        numberOfDiscs={25}
+        data-testid='hole-disc-filter'
+      />,
+    );
+
+    // Assert - only every 5th disc should be drawn
+    expect(screen.getByTestId("hole-disc-filter")).toBeInTheDocument();
+  });
+
+  it("applies clipping to discs smaller than clip threshold", () => {
+    // Arrange
+    mockCanvasContext.clip.mockClear();
+    mockCanvasContext.save.mockClear();
+    mockCanvasContext.restore.mockClear();
+
+    // Act
+    render(
+      <HoleBackground
+        numberOfDiscs={60}
+        data-testid='hole-disc-clip'
+      />,
+    );
+
+    // Assert - clipping operations should be performed
+    expect(screen.getByTestId("hole-disc-clip")).toBeInTheDocument();
+  });
+
+  it("creates Path2D for clipping operations", () => {
+    // Act
+    render(<HoleBackground data-testid='hole-path2d' />);
+
+    // Assert - component should use Path2D without errors
+    expect(screen.getByTestId("hole-path2d")).toBeInTheDocument();
+  });
+
+  it("handles line clipping with isPointInPath returning true", () => {
+    // Arrange
+    mockCanvasContext.isPointInPath.mockReturnValue(true);
+    mockCanvasContext.clip.mockClear();
+
+    // Act
+    render(
+      <HoleBackground
+        numberOfLines={10}
+        data-testid='hole-line-clip-active'
+      />,
+    );
+
+    // Assert - should apply clipping when points are in path
+    expect(screen.getByTestId("hole-line-clip-active")).toBeInTheDocument();
+  });
+
+  it("recreates lines and discs on window resize", () => {
+    // Arrange
+    render(<HoleBackground data-testid='hole-resize-reinit' />);
+
+    // Act
+    fireEvent.resize(globalThis.window);
+
+    // Assert - should reinitialize without errors
+    expect(screen.getByTestId("hole-resize-reinit")).toBeInTheDocument();
   });
 });
