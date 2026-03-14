@@ -1,6 +1,6 @@
 /**
- * Vitest configuration for @arolariu/components library
- * Extends the base monorepo config with component library specific settings
+ * Vitest configuration for @arolariu/components library.
+ * Extends the base monorepo config with component-library-specific settings.
  *
  * @see https://vitest.dev/config/
  */
@@ -17,7 +17,7 @@ export default mergeConfig(
     test: {
       coverage: {
         exclude: [
-          // Inherit base excludes
+          // ── Base config exclusions (mergeConfig replaces arrays) ──
           "**/node_modules/**",
           "**/dist/**",
           "**/.next/**",
@@ -36,13 +36,19 @@ export default mergeConfig(
           "**/*.spec.{ts,tsx,js,jsx}",
           "**/*.config.{js,ts,mjs,mts}",
           "**/*.setup.{js,ts,mjs,mts}",
-          "**/*.css",
           "**/telemetry.ts",
           "**/instrumentation.ts",
           "**/proxy.ts",
-          // Component library specific
+
+          // ── Component library specific ──
+          // CSS Modules — not instrumentable via v8
+          "**/*.css",
+          // Barrel re-export files — no logic to cover
           "**/index.ts",
+          // Build scripts — not runtime code
           "**/scripts/**",
+          // Pure re-export hooks — no local logic
+          "**/useReducedMotion.tsx",
         ],
         thresholds: {
           branches: 70,

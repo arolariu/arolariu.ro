@@ -369,4 +369,176 @@ describe("DropDrawer", () => {
       expect(screen.getByText("Open Mobile")).toBeVisible();
     });
   });
+
+  describe("DropDrawerItem with disabled prop", () => {
+    it("renders disabled item on desktop", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(false);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem
+              disabled
+              data-testid='disabled-item'>
+              Disabled Item
+            </DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        const item = screen.getByTestId("disabled-item");
+        expect(item).toHaveAttribute("data-disabled");
+        expect(item).toHaveAttribute("aria-disabled", "true");
+      });
+    });
+
+    it("renders disabled item on mobile", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem
+              disabled
+              data-testid='disabled-item'>
+              Disabled Item
+            </DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        const item = screen.getByTestId("disabled-item");
+        expect(item).toHaveAttribute("data-disabled", "true");
+        expect(item).toHaveAttribute("aria-disabled", "true");
+      });
+    });
+
+    it("does not trigger onClick when item is disabled on mobile", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      const mockOnClick = vi.fn();
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem
+              disabled
+              onClick={mockOnClick}
+              data-testid='disabled-item'>
+              Disabled Item
+            </DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Act
+      await waitFor(() => screen.getByTestId("disabled-item"));
+      fireEvent.click(screen.getByTestId("disabled-item"));
+
+      // Assert
+      expect(mockOnClick).not.toHaveBeenCalled();
+    });
+
+    it("does not trigger onSelect when item is disabled on desktop", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(false);
+      const mockOnSelect = vi.fn();
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem
+              disabled
+              onSelect={mockOnSelect}
+              data-testid='disabled-item'>
+              Disabled Item
+            </DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Act
+      await waitFor(() => screen.getByTestId("disabled-item"));
+      fireEvent.click(screen.getByTestId("disabled-item"));
+
+      // Assert
+      expect(mockOnSelect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("DropDrawerItem with closeOnClick", () => {
+    it("closes dropdown when closeOnClick is true on desktop", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(false);
+      render(
+        <DropDrawer>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem closeOnClick>Close on click</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Act
+      fireEvent.click(screen.getByRole("button", {name: "Open"}));
+      await waitFor(() => screen.getByText("Close on click"));
+
+      // Assert - Item rendered
+      expect(screen.getByText("Close on click")).toBeVisible();
+    });
+  });
+
+  describe("DropDrawerItem with inset prop", () => {
+    it("applies inset styling on desktop", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(false);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem
+              inset
+              data-testid='inset-item'>
+              Inset Item
+            </DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        const item = screen.getByTestId("inset-item");
+        expect(item).toHaveAttribute("data-inset", "true");
+      });
+    });
+
+    it("applies inset styling on mobile", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem
+              inset
+              data-testid='inset-item'>
+              Inset Item
+            </DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        const item = screen.getByTestId("inset-item");
+        expect(item).toHaveAttribute("data-inset", "true");
+      });
+    });
+  });
 });

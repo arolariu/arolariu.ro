@@ -1,7 +1,7 @@
 import {fireEvent, render, screen} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
-import {InputOTP, InputOTPGroup, InputOTPSlot, REGEXP_ONLY_DIGITS} from "./input-otp";
+import {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot, REGEXP_ONLY_DIGITS} from "./input-otp";
 
 describe("InputOTP", () => {
   it("renders without crashing", () => {
@@ -85,5 +85,102 @@ describe("InputOTP", () => {
 
     // Assert
     expect(screen.getByText("B")).toBeInTheDocument();
+  });
+
+  it("renders InputOTPSeparator component", () => {
+    // Arrange
+    render(
+      <InputOTP maxLength={6}>
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+          <InputOTPSlot index={1} />
+          <InputOTPSlot index={2} />
+        </InputOTPGroup>
+        <InputOTPSeparator data-testid='otp-separator' />
+        <InputOTPGroup>
+          <InputOTPSlot index={3} />
+          <InputOTPSlot index={4} />
+          <InputOTPSlot index={5} />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+
+    // Assert
+    const separator = screen.getByTestId("otp-separator");
+    expect(separator).toBeInTheDocument();
+    expect(separator).toHaveAttribute("role", "separator");
+  });
+
+  it("renders active slot with fake caret when focused", () => {
+    // Arrange
+    render(
+      <InputOTP
+        maxLength={3}
+        autoFocus>
+        <InputOTPGroup>
+          <InputOTPSlot
+            index={0}
+            data-testid='slot-0'
+          />
+          <InputOTPSlot
+            index={1}
+            data-testid='slot-1'
+          />
+          <InputOTPSlot
+            index={2}
+            data-testid='slot-2'
+          />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+
+    // Assert - First slot should be active when focused
+    const slot0 = screen.getByTestId("slot-0");
+    expect(slot0).toBeInTheDocument();
+  });
+
+  it("renders character in slot when value is entered", () => {
+    // Arrange
+    render(
+      <InputOTP maxLength={3}>
+        <InputOTPGroup>
+          <InputOTPSlot
+            index={0}
+            data-testid='slot-0'
+          />
+          <InputOTPSlot
+            index={1}
+            data-testid='slot-1'
+          />
+        </InputOTPGroup>
+      </InputOTP>,
+    );
+
+    // Act
+    fireEvent.input(screen.getByRole("textbox"), {target: {value: "12"}});
+
+    // Assert
+    const slot0 = screen.getByTestId("slot-0");
+    const slot1 = screen.getByTestId("slot-1");
+    expect(slot0).toHaveTextContent("1");
+    expect(slot1).toHaveTextContent("2");
+  });
+
+  it("throws error when InputOTPSlot cannot find slot at index", () => {
+    // Arrange
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Act & Assert
+    expect(() =>
+      render(
+        <InputOTP maxLength={2}>
+          <InputOTPGroup>
+            <InputOTPSlot index={5} />
+          </InputOTPGroup>
+        </InputOTP>,
+      ),
+    ).toThrow("InputOTPSlot could not find slot at index 5.");
+
+    consoleErrorSpy.mockRestore();
   });
 });

@@ -1,5 +1,5 @@
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import {Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue} from "./select";
 
@@ -244,6 +244,56 @@ describe("Select", () => {
     await waitFor(() => {
       const separator = screen.getByTestId("separator");
       expect(separator).toHaveClass("custom-separator");
+    });
+  });
+
+  it("calls onValueChange when selection changes", async () => {
+    // Arrange
+    const mockOnValueChange = vi.fn();
+    render(
+      <Select onValueChange={mockOnValueChange}>
+        <SelectTrigger aria-label='Framework'>
+          <SelectValue placeholder='Choose a framework' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value='react'>React</SelectItem>
+          <SelectItem value='vue'>Vue</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+
+    // Act
+    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await waitFor(() => screen.getByRole("option", {name: "React"}));
+    fireEvent.click(screen.getByRole("option", {name: "React"}));
+
+    // Assert
+    await waitFor(() => {
+      expect(mockOnValueChange).toHaveBeenCalledWith("react");
+    });
+  });
+
+  it("does not call onValueChange when callback is undefined", async () => {
+    // Arrange - No callback provided, just ensure no crash
+    render(
+      <Select>
+        <SelectTrigger aria-label='Framework'>
+          <SelectValue placeholder='Choose a framework' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value='react'>React</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+
+    // Act
+    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await waitFor(() => screen.getByRole("option", {name: "React"}));
+    fireEvent.click(screen.getByRole("option", {name: "React"}));
+
+    // Assert - No crash, selection works (verify the select processed the event)
+    await waitFor(() => {
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
   });
 });

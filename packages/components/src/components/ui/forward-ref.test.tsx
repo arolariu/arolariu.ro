@@ -1,5 +1,12 @@
 import {act, render} from "@testing-library/react";
-import {describe, expect, it} from "vitest";
+import {beforeAll, describe, expect, it} from "vitest";
+
+// Polyfill for Base UI ScrollArea which calls getAnimations() in happy-dom
+beforeAll(() => {
+  if (!Element.prototype.getAnimations) {
+    Element.prototype.getAnimations = () => [];
+  }
+});
 
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
 import {BackgroundBeams} from "./background-beams";

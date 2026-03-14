@@ -1,7 +1,14 @@
 import {fireEvent, render, screen} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
 
-import {NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput} from "./number-field";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+  NumberFieldScrubArea,
+} from "./number-field";
 
 describe("NumberField", () => {
   function renderNumberField(className?: string): ReturnType<typeof render> {
@@ -65,5 +72,80 @@ describe("NumberField", () => {
 
     // Assert
     expect(screen.getByRole("button", {name: "Increase"})).toBeInTheDocument();
+  });
+
+  it("renders default increment symbol when no children provided", () => {
+    // Arrange
+    renderNumberField();
+
+    // Assert
+    const incrementButton = screen.getByRole("button", {name: "Increase"});
+    expect(incrementButton).toHaveTextContent("+");
+  });
+
+  it("renders default decrement symbol when no children provided", () => {
+    // Arrange
+    renderNumberField();
+
+    // Assert
+    const decrementButton = screen.getByRole("button", {name: "Decrease"});
+    expect(decrementButton).toHaveTextContent("−");
+  });
+
+  it("renders custom decrement children", () => {
+    // Arrange
+    render(
+      <NumberField
+        aria-label='Quantity'
+        defaultValue={5}>
+        <NumberFieldGroup>
+          <NumberFieldDecrement>Decrement</NumberFieldDecrement>
+          <NumberFieldInput />
+          <NumberFieldIncrement />
+        </NumberFieldGroup>
+      </NumberField>,
+    );
+
+    // Assert
+    expect(screen.getByRole("button", {name: "Decrease"})).toHaveTextContent("Decrement");
+  });
+
+  it("renders NumberFieldScrubArea with default scrub handle", () => {
+    // Arrange
+    render(
+      <NumberField
+        aria-label='Quantity'
+        defaultValue={10}>
+        <NumberFieldGroup>
+          <NumberFieldScrubArea data-testid='scrub-area' />
+          <NumberFieldInput />
+        </NumberFieldGroup>
+      </NumberField>,
+    );
+
+    // Assert
+    const scrubArea = screen.getByTestId("scrub-area");
+    expect(scrubArea).toBeInTheDocument();
+    expect(scrubArea).toHaveTextContent("⋮⋮");
+  });
+
+  it("renders NumberFieldScrubArea with custom children", () => {
+    // Arrange
+    render(
+      <NumberField
+        aria-label='Quantity'
+        defaultValue={10}>
+        <NumberFieldGroup>
+          <NumberFieldScrubArea data-testid='scrub-area'>
+            <span>Custom Scrub</span>
+          </NumberFieldScrubArea>
+          <NumberFieldInput />
+        </NumberFieldGroup>
+      </NumberField>,
+    );
+
+    // Assert
+    const scrubArea = screen.getByTestId("scrub-area");
+    expect(scrubArea).toHaveTextContent("Custom Scrub");
   });
 });
