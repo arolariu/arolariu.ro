@@ -26,25 +26,28 @@ type ScrollBarProps = React.ComponentPropsWithRef<typeof BaseScrollArea.Scrollba
  *
  * @see {@link https://base-ui.com/react/components/scroll-area | Base UI Documentation}
  */
-function ScrollArea(props: Readonly<ScrollArea.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const ScrollArea = React.forwardRef<React.ComponentRef<typeof BaseScrollArea.Root>, ScrollArea.Props>(
+  (props: Readonly<ScrollArea.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseScrollArea.Root
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.root, className)}, {}),
-      })}>
-      <BaseScrollArea.Viewport className={styles.viewport}>
-        <BaseScrollArea.Content className={styles.content}>{children}</BaseScrollArea.Content>
-      </BaseScrollArea.Viewport>
-      <ScrollBar />
-      <BaseScrollArea.Corner className={styles.corner} />
-    </BaseScrollArea.Root>
-  );
-}
+    return (
+      <BaseScrollArea.Root
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.root, className)}, {}),
+        })}>
+        <BaseScrollArea.Viewport className={styles.viewport}>
+          <BaseScrollArea.Content className={styles.content}>{children}</BaseScrollArea.Content>
+        </BaseScrollArea.Viewport>
+        <ScrollBar />
+        <BaseScrollArea.Corner className={styles.corner} />
+      </BaseScrollArea.Root>
+    );
+  },
+);
 
 /**
  * Renders the scroll bar.

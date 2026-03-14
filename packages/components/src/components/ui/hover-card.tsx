@@ -63,21 +63,24 @@ function HoverCard(props: Readonly<HoverCard.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
  */
-function HoverCardTrigger(props: Readonly<HoverCardTrigger.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const HoverCardTrigger = React.forwardRef<HTMLAnchorElement, HoverCardTrigger.Props>(
+  (props: Readonly<HoverCardTrigger.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BasePreviewCard.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "a",
-        render: render as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {children}
-    </BasePreviewCard.Trigger>
-  );
-}
+    return (
+      <BasePreviewCard.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "a",
+          render: render as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {children}
+      </BasePreviewCard.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the hover card content.
@@ -94,30 +97,33 @@ function HoverCardTrigger(props: Readonly<HoverCardTrigger.Props>): React.ReactE
  *
  * @see {@link https://base-ui.com/react/components/preview-card | Base UI Documentation}
  */
-function HoverCardContent(props: Readonly<HoverCardContent.Props>): React.ReactElement {
-  const {className, children, render, sideOffset = 4, ...otherProps} = props;
+const HoverCardContent = React.forwardRef<React.ComponentRef<typeof BasePreviewCard.Popup>, HoverCardContent.Props>(
+  (props: Readonly<HoverCardContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, sideOffset = 4, ...otherProps} = props;
 
-  return (
-    <BasePreviewCard.Portal>
-      <BasePreviewCard.Positioner
-        sideOffset={sideOffset}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          props: mergeProps({className: styles.positioner}, {}),
-        })}>
-        <BasePreviewCard.Popup
+    return (
+      <BasePreviewCard.Portal>
+        <BasePreviewCard.Positioner
+          sideOffset={sideOffset}
+          {...otherProps}
           render={useRender({
             defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.popup, className)}, {}),
+            props: mergeProps({className: styles.positioner}, {}),
           })}>
-          {children}
-        </BasePreviewCard.Popup>
-      </BasePreviewCard.Positioner>
-    </BasePreviewCard.Portal>
-  );
-}
+          <BasePreviewCard.Popup
+            ref={ref}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.popup, className)}, {}),
+            })}>
+            {children}
+          </BasePreviewCard.Popup>
+        </BasePreviewCard.Positioner>
+      </BasePreviewCard.Portal>
+    );
+  },
+);
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace HoverCard {

@@ -66,22 +66,25 @@ function Collapsible(props: Readonly<Collapsible.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/collapsible | Base UI Documentation}
  */
-function CollapsibleTrigger(props: Readonly<CollapsibleTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const CollapsibleTrigger = React.forwardRef<React.ComponentRef<typeof BaseCollapsible.Trigger>, CollapsibleTrigger.Props>(
+  (props: Readonly<CollapsibleTrigger.Props>, ref): React.ReactElement => {
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BaseCollapsible.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className: cn(styles.trigger, className)}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseCollapsible.Trigger>
-  );
-}
+    return (
+      <BaseCollapsible.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: renderProp as never,
+          props: mergeProps({className: cn(styles.trigger, className)}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BaseCollapsible.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the collapsible content.
@@ -98,21 +101,24 @@ function CollapsibleTrigger(props: Readonly<CollapsibleTrigger.Props>): React.Re
  *
  * @see {@link https://base-ui.com/react/components/collapsible | Base UI Documentation}
  */
-function CollapsibleContent(props: Readonly<CollapsibleContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const CollapsibleContent = React.forwardRef<React.ComponentRef<typeof BaseCollapsible.Panel>, CollapsibleContent.Props>(
+  (props: Readonly<CollapsibleContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseCollapsible.Panel
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.panel, className)}, {}),
-      })}>
-      {children}
-    </BaseCollapsible.Panel>
-  );
-}
+    return (
+      <BaseCollapsible.Panel
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.panel, className)}, {}),
+        })}>
+        {children}
+      </BaseCollapsible.Panel>
+    );
+  },
+);
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Collapsible {

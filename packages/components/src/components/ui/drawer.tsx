@@ -122,21 +122,24 @@ function Drawer(props: Readonly<Drawer.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
-function DrawerTrigger(props: Readonly<DrawerTrigger.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const DrawerTrigger = React.forwardRef<HTMLButtonElement, DrawerTrigger.Props>(
+  (props: Readonly<DrawerTrigger.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseDrawer.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {children}
-    </BaseDrawer.Trigger>
-  );
-}
+    return (
+      <BaseDrawer.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {children}
+      </BaseDrawer.Trigger>
+    );
+  },
+);
 
 /**
  * Provides the drawer portal container.
@@ -216,25 +219,28 @@ function DrawerOverlay(props: Readonly<DrawerOverlay.Props>): React.ReactElement
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
-function DrawerContent(props: Readonly<DrawerContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const DrawerContent = React.forwardRef<React.ComponentRef<typeof BaseDrawer.Popup>, DrawerContent.Props>(
+  (props: Readonly<DrawerContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <DrawerPortal>
-      <DrawerOverlay />
-      <BaseDrawer.Popup
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.popup, className)}, {}),
-        })}>
-        <div className={styles.handle} />
-        <BaseDrawer.Content className={styles.content}>{children}</BaseDrawer.Content>
-      </BaseDrawer.Popup>
-    </DrawerPortal>
-  );
-}
+    return (
+      <DrawerPortal>
+        <DrawerOverlay />
+        <BaseDrawer.Popup
+          ref={ref}
+          {...otherProps}
+          render={useRender({
+            defaultTagName: "div",
+            render: render as never,
+            props: mergeProps({className: cn(styles.popup, className)}, {}),
+          })}>
+          <div className={styles.handle} />
+          <BaseDrawer.Content className={styles.content}>{children}</BaseDrawer.Content>
+        </BaseDrawer.Popup>
+      </DrawerPortal>
+    );
+  },
+);
 
 /**
  * Renders the drawer header.

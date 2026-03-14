@@ -220,22 +220,25 @@ const DropdownMenuSub: typeof BaseMenu.SubmenuRoot & {displayName?: string} = Ba
  *
  * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
  */
-function DropdownMenuTrigger(props: Readonly<DropdownMenuTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuTrigger.Props>(
+  (props: Readonly<DropdownMenuTrigger.Props>, ref): React.ReactElement => {
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BaseMenu.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseMenu.Trigger>
-  );
-}
+    return (
+      <BaseMenu.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: renderProp as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BaseMenu.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the dropdown menu sub trigger.
@@ -321,29 +324,32 @@ function DropdownMenuSubContent(props: Readonly<DropdownMenuContent.Props>): Rea
  *
  * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
  */
-function DropdownMenuContent(props: Readonly<DropdownMenuContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const DropdownMenuContent = React.forwardRef<React.ComponentRef<typeof BaseMenu.Popup>, DropdownMenuContent.Props>(
+  (props: Readonly<DropdownMenuContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <DropdownMenuPortal>
-      <BaseMenu.Positioner
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          props: mergeProps({className: styles.positioner}, {}),
-        })}>
-        <BaseMenu.Popup
+    return (
+      <DropdownMenuPortal>
+        <BaseMenu.Positioner
+          {...otherProps}
           render={useRender({
             defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.content, className)}, {}),
+            props: mergeProps({className: styles.positioner}, {}),
           })}>
-          {children}
-        </BaseMenu.Popup>
-      </BaseMenu.Positioner>
-    </DropdownMenuPortal>
-  );
-}
+          <BaseMenu.Popup
+            ref={ref}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.content, className)}, {}),
+            })}>
+            {children}
+          </BaseMenu.Popup>
+        </BaseMenu.Positioner>
+      </DropdownMenuPortal>
+    );
+  },
+);
 
 /**
  * Renders the dropdown menu item.

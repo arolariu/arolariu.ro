@@ -220,22 +220,25 @@ const ContextMenuSub: typeof BaseContextMenu.SubmenuRoot & {displayName?: string
  *
  * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
  */
-function ContextMenuTrigger(props: Readonly<ContextMenuTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const ContextMenuTrigger = React.forwardRef<React.ComponentRef<typeof BaseContextMenu.Trigger>, ContextMenuTrigger.Props>(
+  (props: Readonly<ContextMenuTrigger.Props>, ref): React.ReactElement => {
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BaseContextMenu.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseContextMenu.Trigger>
-  );
-}
+    return (
+      <BaseContextMenu.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: renderProp as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BaseContextMenu.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the context menu sub trigger.
@@ -321,29 +324,32 @@ function ContextMenuSubContent(props: Readonly<ContextMenuContent.Props>): React
  *
  * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
  */
-function ContextMenuContent(props: Readonly<ContextMenuContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const ContextMenuContent = React.forwardRef<React.ComponentRef<typeof BaseContextMenu.Popup>, ContextMenuContent.Props>(
+  (props: Readonly<ContextMenuContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <ContextMenuPortal>
-      <BaseContextMenu.Positioner
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          props: mergeProps({className: styles.positioner}, {}),
-        })}>
-        <BaseContextMenu.Popup
+    return (
+      <ContextMenuPortal>
+        <BaseContextMenu.Positioner
+          {...otherProps}
           render={useRender({
             defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.content, className)}, {}),
+            props: mergeProps({className: styles.positioner}, {}),
           })}>
-          {children}
-        </BaseContextMenu.Popup>
-      </BaseContextMenu.Positioner>
-    </ContextMenuPortal>
-  );
-}
+          <BaseContextMenu.Popup
+            ref={ref}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.content, className)}, {}),
+            })}>
+            {children}
+          </BaseContextMenu.Popup>
+        </BaseContextMenu.Positioner>
+      </ContextMenuPortal>
+    );
+  },
+);
 
 /**
  * Renders the context menu item.

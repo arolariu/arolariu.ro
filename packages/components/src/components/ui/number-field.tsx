@@ -67,21 +67,24 @@ function NumberField(props: Readonly<NumberField.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-function NumberFieldGroup(props: Readonly<NumberFieldGroup.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const NumberFieldGroup = React.forwardRef<React.ComponentRef<typeof BaseNumberField.Group>, NumberFieldGroup.Props>(
+  (props: Readonly<NumberFieldGroup.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseNumberField.Group
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.group, className)}, {}),
-      })}>
-      {children}
-    </BaseNumberField.Group>
-  );
-}
+    return (
+      <BaseNumberField.Group
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.group, className)}, {}),
+        })}>
+        {children}
+      </BaseNumberField.Group>
+    );
+  },
+);
 
 /**
  * Renders the text input used for numeric entry.
@@ -97,20 +100,23 @@ function NumberFieldGroup(props: Readonly<NumberFieldGroup.Props>): React.ReactE
  *
  * @see {@link https://base-ui.com/react/components/number-field | Base UI Number Field Docs}
  */
-function NumberFieldInput(props: Readonly<NumberFieldInput.Props>): React.ReactElement {
-  const {className, render, ...otherProps} = props;
+const NumberFieldInput = React.forwardRef<React.ComponentRef<typeof BaseNumberField.Input>, NumberFieldInput.Props>(
+  (props: Readonly<NumberFieldInput.Props>, ref): React.ReactElement => {
+    const {className, render, ...otherProps} = props;
 
-  return (
-    <BaseNumberField.Input
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "input",
-        render: render as never,
-        props: mergeProps({className: cn(styles.input, className)}, {}),
-      })}
-    />
-  );
-}
+    return (
+      <BaseNumberField.Input
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "input",
+          render: render as never,
+          props: mergeProps({className: cn(styles.input, className)}, {}),
+        })}
+      />
+    );
+  },
+);
 
 /**
  * Renders the increment control for a number field.

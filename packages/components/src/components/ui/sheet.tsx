@@ -169,22 +169,25 @@ const SheetClose = BaseDialog.Close;
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function SheetTrigger(props: Readonly<SheetTrigger.Props>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const SheetTrigger = React.forwardRef<HTMLButtonElement, SheetTrigger.Props>(
+  (props: Readonly<SheetTrigger.Props>, ref): React.ReactElement => {
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BaseDialog.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseDialog.Trigger>
-  );
-}
+    return (
+      <BaseDialog.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: renderProp as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BaseDialog.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the sheet overlay.
@@ -231,29 +234,32 @@ function SheetOverlay(props: Readonly<SheetOverlay.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
-function SheetContent(props: Readonly<SheetContent.Props>): React.ReactElement {
-  const {className, children, render, side = "right", ...otherProps} = props;
+const SheetContent = React.forwardRef<React.ComponentRef<typeof BaseDialog.Popup>, SheetContent.Props>(
+  (props: Readonly<SheetContent.Props>, ref): React.ReactElement => {
+    const {className, children, render, side = "right", ...otherProps} = props;
 
-  return (
-    <SheetPortal>
-      <SheetOverlay />
-      <BaseDialog.Popup
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          render: render as never,
-          props: mergeProps({className: cn(styles.popup, styles[side], className)}, {}),
-        })}>
-        <BaseDialog.Close
-          aria-label='Close'
-          className={styles.close}>
-          <X className={styles.closeIcon} />
-        </BaseDialog.Close>
-        {children}
-      </BaseDialog.Popup>
-    </SheetPortal>
-  );
-}
+    return (
+      <SheetPortal>
+        <SheetOverlay />
+        <BaseDialog.Popup
+          ref={ref}
+          {...otherProps}
+          render={useRender({
+            defaultTagName: "div",
+            render: render as never,
+            props: mergeProps({className: cn(styles.popup, styles[side], className)}, {}),
+          })}>
+          <BaseDialog.Close
+            aria-label='Close'
+            className={styles.close}>
+            <X className={styles.closeIcon} />
+          </BaseDialog.Close>
+          {children}
+        </BaseDialog.Popup>
+      </SheetPortal>
+    );
+  },
+);
 
 /**
  * Renders the sheet header.

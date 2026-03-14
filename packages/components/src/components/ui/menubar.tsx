@@ -228,21 +228,24 @@ function Menubar(props: Readonly<Menubar.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
  */
-function MenubarTrigger(props: Readonly<MenubarTrigger.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const MenubarTrigger = React.forwardRef<HTMLButtonElement, MenubarTrigger.Props>(
+  (props: Readonly<MenubarTrigger.Props>, ref): React.ReactElement => {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseMenu.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.trigger, className)}, {}),
-      })}>
-      {children}
-    </BaseMenu.Trigger>
-  );
-}
+    return (
+      <BaseMenu.Trigger
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: cn(styles.trigger, className)}, {}),
+        })}>
+        {children}
+      </BaseMenu.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the menubar sub trigger.
@@ -328,31 +331,34 @@ function MenubarSubContent(props: Readonly<MenubarContent.Props>): React.ReactEl
  *
  * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
  */
-function MenubarContent(props: Readonly<MenubarContent.Props>): React.ReactElement {
-  const {alignOffset = -4, className, children, render, sideOffset = 8, ...otherProps} = props;
+const MenubarContent = React.forwardRef<React.ComponentRef<typeof BaseMenu.Popup>, MenubarContent.Props>(
+  (props: Readonly<MenubarContent.Props>, ref): React.ReactElement => {
+    const {alignOffset = -4, className, children, render, sideOffset = 8, ...otherProps} = props;
 
-  return (
-    <MenubarPortal>
-      <BaseMenu.Positioner
-        alignOffset={alignOffset}
-        sideOffset={sideOffset}
-        {...otherProps}
-        render={useRender({
-          defaultTagName: "div",
-          props: mergeProps({className: styles.positioner}, {}),
-        })}>
-        <BaseMenu.Popup
+    return (
+      <MenubarPortal>
+        <BaseMenu.Positioner
+          alignOffset={alignOffset}
+          sideOffset={sideOffset}
+          {...otherProps}
           render={useRender({
             defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.content, className)}, {}),
+            props: mergeProps({className: styles.positioner}, {}),
           })}>
-          {children}
-        </BaseMenu.Popup>
-      </BaseMenu.Positioner>
-    </MenubarPortal>
-  );
-}
+          <BaseMenu.Popup
+            ref={ref}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.content, className)}, {}),
+            })}>
+            {children}
+          </BaseMenu.Popup>
+        </BaseMenu.Positioner>
+      </MenubarPortal>
+    );
+  },
+);
 
 /**
  * Renders the menubar item.

@@ -1,4 +1,4 @@
-import {act, render} from "@testing-library/react";
+import {act, fireEvent, render} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
 
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
@@ -6,11 +6,21 @@ import {BackgroundBeams} from "./background-beams";
 import {Badge} from "./badge";
 import {Button} from "./button";
 import {Checkbox} from "./checkbox";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "./collapsible";
+import {ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger} from "./context-menu";
 import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTrigger} from "./dialog";
 import {DotBackground} from "./dot-background";
+import {Drawer, DrawerContent, DrawerTrigger} from "./drawer";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "./dropdown-menu";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "./hover-card";
 import {Input} from "./input";
+import {Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger} from "./menubar";
+import {NumberField, NumberFieldGroup, NumberFieldInput} from "./number-field";
 import {Popover, PopoverContent, PopoverTrigger} from "./popover";
+import {RadioGroup, RadioGroupItem} from "./radio-group";
+import {ScrollArea} from "./scroll-area";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "./select";
+import {Sheet, SheetContent, SheetTrigger} from "./sheet";
 import {Slider} from "./slider";
 import {Switch} from "./switch";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
@@ -173,5 +183,120 @@ describe("DOM wrapper ref forwarding", () => {
     expect(tabsContentRef.current).toBeInstanceOf(HTMLDivElement);
     expect(accordionTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
     expect(accordionContentRef.current).toBeInstanceOf(HTMLDivElement);
+  });
+
+  it("forwards refs for tier 2 Base UI wrappers", async () => {
+    // Arrange
+    const radioGroupRef = {current: null as HTMLDivElement | null};
+    const radioGroupItemRef = {current: null as HTMLButtonElement | null};
+    const numberFieldGroupRef = {current: null as HTMLDivElement | null};
+    const numberFieldInputRef = {current: null as HTMLElement | null};
+    const contextMenuTriggerRef = {current: null as HTMLDivElement | null};
+    const contextMenuContentRef = {current: null as HTMLDivElement | null};
+    const dropdownMenuTriggerRef = {current: null as HTMLButtonElement | null};
+    const dropdownMenuContentRef = {current: null as HTMLDivElement | null};
+    const menubarTriggerRef = {current: null as HTMLButtonElement | null};
+    const menubarContentRef = {current: null as HTMLDivElement | null};
+    const sheetTriggerRef = {current: null as HTMLButtonElement | null};
+    const sheetContentRef = {current: null as HTMLDivElement | null};
+    const drawerTriggerRef = {current: null as HTMLButtonElement | null};
+    const drawerContentRef = {current: null as HTMLDivElement | null};
+    const hoverCardTriggerRef = {current: null as HTMLAnchorElement | null};
+    const hoverCardContentRef = {current: null as HTMLDivElement | null};
+    const scrollAreaRef = {current: null as HTMLDivElement | null};
+    const collapsibleTriggerRef = {current: null as HTMLButtonElement | null};
+    const collapsibleContentRef = {current: null as HTMLDivElement | null};
+
+    // Act
+    await act(async () => {
+      const {getByText, getByRole} = render(
+        <>
+          <RadioGroup
+            ref={radioGroupRef}
+            aria-label='Plans'>
+            <RadioGroupItem
+              ref={radioGroupItemRef}
+              value='starter'
+              aria-label='Starter'
+            />
+          </RadioGroup>
+          <NumberField
+            aria-label='Quantity'
+            defaultValue={2}>
+            <NumberFieldGroup ref={numberFieldGroupRef}>
+              <NumberFieldInput ref={numberFieldInputRef} />
+            </NumberFieldGroup>
+          </NumberField>
+          <ContextMenu>
+            <ContextMenuTrigger ref={contextMenuTriggerRef}>Open context menu</ContextMenuTrigger>
+            <ContextMenuContent ref={contextMenuContentRef}>
+              <ContextMenuItem>Rename</ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger ref={dropdownMenuTriggerRef}>Open dropdown menu</DropdownMenuTrigger>
+            <DropdownMenuContent ref={dropdownMenuContentRef}>
+              <DropdownMenuItem>Profile</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Menubar>
+            <MenubarMenu>
+              <MenubarTrigger ref={menubarTriggerRef}>File</MenubarTrigger>
+              <MenubarContent ref={menubarContentRef}>
+                <MenubarItem>New tab</MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>
+          <Sheet defaultOpen>
+            <SheetTrigger ref={sheetTriggerRef}>Open sheet</SheetTrigger>
+            <SheetContent ref={sheetContentRef}>Sheet content</SheetContent>
+          </Sheet>
+          <Drawer defaultOpen>
+            <DrawerTrigger ref={drawerTriggerRef}>Open drawer</DrawerTrigger>
+            <DrawerContent ref={drawerContentRef}>Drawer content</DrawerContent>
+          </Drawer>
+          <HoverCard defaultOpen>
+            <HoverCardTrigger
+              ref={hoverCardTriggerRef}
+              href='/profile'>
+              Hover card link
+            </HoverCardTrigger>
+            <HoverCardContent ref={hoverCardContentRef}>Hover card content</HoverCardContent>
+          </HoverCard>
+          <ScrollArea ref={scrollAreaRef}>Scrollable content</ScrollArea>
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger ref={collapsibleTriggerRef}>Toggle details</CollapsibleTrigger>
+            <CollapsibleContent ref={collapsibleContentRef}>Hidden details content</CollapsibleContent>
+          </Collapsible>
+        </>,
+      );
+
+      fireEvent.contextMenu(getByText("Open context menu"));
+      fireEvent.click(getByRole("button", {name: "Open dropdown menu"}));
+      fireEvent.click(getByRole("menuitem", {name: "File"}));
+
+      await Promise.resolve();
+    });
+
+    // Assert
+    expect(radioGroupRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(radioGroupItemRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(numberFieldGroupRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(numberFieldInputRef.current).toBeInstanceOf(HTMLInputElement);
+    expect(contextMenuTriggerRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(contextMenuContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(dropdownMenuTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(dropdownMenuContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(menubarTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(menubarContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(sheetTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(sheetContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(drawerTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(drawerContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(hoverCardTriggerRef.current).toBeInstanceOf(HTMLAnchorElement);
+    expect(hoverCardContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(scrollAreaRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(collapsibleTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(collapsibleContentRef.current).toBeInstanceOf(HTMLDivElement);
   });
 });
