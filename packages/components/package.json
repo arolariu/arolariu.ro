@@ -161,6 +161,11 @@
       "import": "./dist/components/ui/aspect-ratio.js",
       "default": "./dist/components/ui/aspect-ratio.js"
     },
+    "./async-boundary": {
+      "types": "./dist/components/ui/async-boundary.d.ts",
+      "import": "./dist/components/ui/async-boundary.js",
+      "default": "./dist/components/ui/async-boundary.js"
+    },
     "./avatar": {
       "types": "./dist/components/ui/avatar.d.ts",
       "import": "./dist/components/ui/avatar.js",
@@ -200,6 +205,11 @@
       "types": "./dist/components/ui/calendar.d.ts",
       "import": "./dist/components/ui/calendar.js",
       "default": "./dist/components/ui/calendar.js"
+    },
+    "./card-skeleton": {
+      "types": "./dist/components/ui/card-skeleton.d.ts",
+      "import": "./dist/components/ui/card-skeleton.js",
+      "default": "./dist/components/ui/card-skeleton.js"
     },
     "./card": {
       "types": "./dist/components/ui/card.d.ts",
@@ -281,6 +291,11 @@
       "import": "./dist/components/ui/empty.js",
       "default": "./dist/components/ui/empty.js"
     },
+    "./error-boundary": {
+      "types": "./dist/components/ui/error-boundary.d.ts",
+      "import": "./dist/components/ui/error-boundary.js",
+      "default": "./dist/components/ui/error-boundary.js"
+    },
     "./field": {
       "types": "./dist/components/ui/field.d.ts",
       "import": "./dist/components/ui/field.js",
@@ -295,6 +310,16 @@
       "types": "./dist/components/ui/flip-button.d.ts",
       "import": "./dist/components/ui/flip-button.js",
       "default": "./dist/components/ui/flip-button.js"
+    },
+    "./focus-scope": {
+      "types": "./dist/components/ui/focus-scope.d.ts",
+      "import": "./dist/components/ui/focus-scope.js",
+      "default": "./dist/components/ui/focus-scope.js"
+    },
+    "./form-skeleton": {
+      "types": "./dist/components/ui/form-skeleton.d.ts",
+      "import": "./dist/components/ui/form-skeleton.js",
+      "default": "./dist/components/ui/form-skeleton.js"
     },
     "./form": {
       "types": "./dist/components/ui/form.d.ts",
@@ -355,6 +380,16 @@
       "types": "./dist/components/ui/label.d.ts",
       "import": "./dist/components/ui/label.js",
       "default": "./dist/components/ui/label.js"
+    },
+    "./list-skeleton": {
+      "types": "./dist/components/ui/list-skeleton.d.ts",
+      "import": "./dist/components/ui/list-skeleton.js",
+      "default": "./dist/components/ui/list-skeleton.js"
+    },
+    "./loading-overlay": {
+      "types": "./dist/components/ui/loading-overlay.d.ts",
+      "import": "./dist/components/ui/loading-overlay.js",
+      "default": "./dist/components/ui/loading-overlay.js"
     },
     "./menubar": {
       "types": "./dist/components/ui/menubar.d.ts",
@@ -466,6 +501,11 @@
       "import": "./dist/components/ui/switch.js",
       "default": "./dist/components/ui/switch.js"
     },
+    "./table-skeleton": {
+      "types": "./dist/components/ui/table-skeleton.d.ts",
+      "import": "./dist/components/ui/table-skeleton.js",
+      "default": "./dist/components/ui/table-skeleton.js"
+    },
     "./table": {
       "types": "./dist/components/ui/table.d.ts",
       "import": "./dist/components/ui/table.js",
@@ -516,6 +556,11 @@
       "import": "./dist/components/ui/visually-hidden.js",
       "default": "./dist/components/ui/visually-hidden.js"
     },
+    "./useAnnounce": {
+      "types": "./dist/hooks/useAnnounce.d.ts",
+      "import": "./dist/hooks/useAnnounce.js",
+      "default": "./dist/hooks/useAnnounce.js"
+    },
     "./useBreakpoint": {
       "types": "./dist/hooks/useBreakpoint.d.ts",
       "import": "./dist/hooks/useBreakpoint.js",
@@ -525,6 +570,11 @@
       "types": "./dist/hooks/useColorScheme.d.ts",
       "import": "./dist/hooks/useColorScheme.js",
       "default": "./dist/hooks/useColorScheme.js"
+    },
+    "./useFocusManager": {
+      "types": "./dist/hooks/useFocusManager.d.ts",
+      "import": "./dist/hooks/useFocusManager.js",
+      "default": "./dist/hooks/useFocusManager.js"
     },
     "./useFocusVisible": {
       "types": "./dist/hooks/useFocusVisible.d.ts",
