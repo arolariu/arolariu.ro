@@ -487,6 +487,18 @@ export {
   type TimelineProps,
 } from "./components/ui/timeline";
 export {VisuallyHidden, type VisuallyHiddenProps} from "./components/ui/visually-hidden";
+export {
+  isConformant,
+  pressArrowDown,
+  pressArrowLeft,
+  pressArrowRight,
+  pressArrowUp,
+  pressEnter,
+  pressEscape,
+  pressSpace,
+  pressTab,
+  renderWithProviders,
+} from "./testing";
 
 export {useBreakpoint, type Breakpoint} from "./hooks/useBreakpoint";
 export {useColorScheme, type ColorScheme} from "./hooks/useColorScheme";
