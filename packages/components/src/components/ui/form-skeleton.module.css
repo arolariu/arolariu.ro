@@ -1,0 +1,28 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-1);
+}
+
+.label {
+  width: 30%;
+  height: 0.875rem;
+}
+
+.input {
+  height: 2.5rem;
+  border-radius: var(--ac-radius-md);
+}
+
+.submit {
+  align-self: flex-end;
+  width: 8rem;
+  height: 2.5rem;
+  border-radius: var(--ac-radius-md);
+}

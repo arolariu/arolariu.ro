@@ -1,0 +1,19 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background-color: rgb(from var(--ac-background) r g b / 0.7);
+}
+
+.blur {
+  backdrop-filter: blur(4px);
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+}
