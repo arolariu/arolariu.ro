@@ -2,7 +2,7 @@ import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {describe, expect, it} from "vitest";
 
-import {Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger} from "./sheet";
+import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger} from "./sheet";
 import styles from "./sheet.module.css";
 
 function renderSheet({
@@ -106,5 +106,161 @@ describe("Sheet", () => {
     expect(sheet).toHaveAccessibleDescription("Sheet description");
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
     expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  describe("SheetHeader", () => {
+    it("renders header inside sheet content", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetHeader data-testid='sheet-header'>
+              <SheetTitle>Header Title</SheetTitle>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-header")).toBeInTheDocument();
+      expect(screen.getByText("Header Title")).toBeInTheDocument();
+    });
+
+    it("applies custom className to header", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetHeader
+              className='custom-header'
+              data-testid='sheet-header'>
+              <SheetTitle>Title</SheetTitle>
+            </SheetHeader>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-header")).toHaveClass("custom-header");
+    });
+  });
+
+  describe("SheetFooter", () => {
+    it("renders footer inside sheet content", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetTitle>Title</SheetTitle>
+            <SheetFooter data-testid='sheet-footer'>
+              <button type='button'>Cancel</button>
+              <button type='button'>Save</button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-footer")).toBeInTheDocument();
+      expect(screen.getByRole("button", {name: "Cancel"})).toBeInTheDocument();
+      expect(screen.getByRole("button", {name: "Save"})).toBeInTheDocument();
+    });
+
+    it("applies custom className to footer", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetTitle>Title</SheetTitle>
+            <SheetFooter
+              className='custom-footer'
+              data-testid='sheet-footer'>
+              Footer content
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-footer")).toHaveClass("custom-footer");
+    });
+  });
+
+  describe("SheetTitle", () => {
+    it("renders title inside sheet content", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetTitle data-testid='sheet-title'>Custom Title</SheetTitle>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-title")).toHaveTextContent("Custom Title");
+    });
+
+    it("applies custom className to title", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetTitle
+              className='custom-title'
+              data-testid='sheet-title'>
+              Title
+            </SheetTitle>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-title")).toHaveClass("custom-title");
+    });
+  });
+
+  describe("SheetDescription", () => {
+    it("renders description inside sheet content", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetTitle>Title</SheetTitle>
+            <SheetDescription data-testid='sheet-description'>This is a detailed description</SheetDescription>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-description")).toHaveTextContent("This is a detailed description");
+    });
+
+    it("applies custom className to description", async () => {
+      // Arrange
+      render(
+        <Sheet defaultOpen>
+          <SheetTrigger>Open sheet</SheetTrigger>
+          <SheetContent>
+            <SheetTitle>Title</SheetTitle>
+            <SheetDescription
+              className='custom-description'
+              data-testid='sheet-description'>
+              Description
+            </SheetDescription>
+          </SheetContent>
+        </Sheet>,
+      );
+
+      // Assert
+      expect(await screen.findByTestId("sheet-description")).toHaveClass("custom-description");
+    });
   });
 });

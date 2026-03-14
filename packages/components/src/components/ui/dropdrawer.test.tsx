@@ -6,9 +6,11 @@ import {useIsMobile} from "@/hooks/useIsMobile";
 import {
   DropDrawer,
   DropDrawerContent,
+  DropDrawerFooter,
   DropDrawerGroup,
   DropDrawerItem,
   DropDrawerLabel,
+  DropDrawerSeparator,
   DropDrawerSub,
   DropDrawerSubContent,
   DropDrawerSubTrigger,
@@ -86,6 +88,285 @@ describe("DropDrawer", () => {
     await waitFor(() => {
       expect(screen.getByText("Passkeys")).toBeVisible();
       expect(screen.getByRole("button", {name: "Go back"})).toBeVisible();
+    });
+  });
+
+  describe("DropDrawerGroup", () => {
+    it("renders group on desktop without crashing", async () => {
+      // Arrange
+      renderDropDrawer({defaultOpen: true});
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Account")).toBeVisible();
+        expect(screen.getByText("Profile")).toBeVisible();
+      });
+    });
+
+    it("renders group on mobile without crashing", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+
+      // Act
+      renderDropDrawer({defaultOpen: true});
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Account")).toBeVisible();
+        expect(screen.getByText("Profile")).toBeVisible();
+      });
+    });
+  });
+
+  describe("DropDrawerLabel", () => {
+    it("renders label inside menu content", async () => {
+      // Arrange
+      renderDropDrawer({defaultOpen: true});
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Account")).toBeVisible();
+      });
+    });
+
+    it("renders label on mobile", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      renderDropDrawer({defaultOpen: true});
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Account")).toBeVisible();
+      });
+    });
+
+    it("renders label with custom className on desktop", async () => {
+      // Arrange
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerGroup>
+              <DropDrawerLabel className='custom-label'>Custom Label</DropDrawerLabel>
+            </DropDrawerGroup>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        const label = screen.getByText("Custom Label");
+        expect(label).toHaveClass("custom-label");
+      });
+    });
+  });
+
+  describe("DropDrawerFooter", () => {
+    it("renders footer on mobile drawer", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Item 1</DropDrawerItem>
+            <DropDrawerFooter data-testid='drawer-footer'>
+              <button type='button'>Close</button>
+            </DropDrawerFooter>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId("drawer-footer")).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: "Close"})).toBeInTheDocument();
+      });
+    });
+
+    it("renders footer content with custom className", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Item 1</DropDrawerItem>
+            <DropDrawerFooter
+              className='custom-footer'
+              data-testid='custom-footer'>
+              Footer content
+            </DropDrawerFooter>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        const footer = screen.getByTestId("custom-footer");
+        expect(footer).toHaveClass("custom-footer");
+        expect(footer).toHaveTextContent("Footer content");
+      });
+    });
+  });
+
+  describe("DropDrawerSub, DropDrawerSubTrigger, and DropDrawerSubContent", () => {
+    it("renders submenu structure on desktop", async () => {
+      // Arrange
+      renderDropDrawer({defaultOpen: true});
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Security")).toBeVisible();
+      });
+    });
+
+    it("renders submenu structure on mobile and allows navigation", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      renderDropDrawer({defaultOpen: true});
+
+      // Act
+      fireEvent.click(screen.getByText("Security"));
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Passkeys")).toBeVisible();
+      });
+    });
+  });
+
+  describe("DropDrawerSeparator", () => {
+    it("renders separator in menu", async () => {
+      // Arrange
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Item 1</DropDrawerItem>
+            <DropDrawerSeparator data-testid='separator' />
+            <DropDrawerItem>Item 2</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId("separator")).toBeInTheDocument();
+      });
+    });
+
+    it("renders separator on mobile without crashing", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Item 1</DropDrawerItem>
+            <DropDrawerSeparator />
+            <DropDrawerItem>Item 2</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert - check that the component renders without crashing
+      await waitFor(() => {
+        expect(screen.getByText("Item 1")).toBeVisible();
+        expect(screen.getByText("Item 2")).toBeVisible();
+      });
+    });
+  });
+
+  describe("DropDrawerItem", () => {
+    it("renders items on desktop", async () => {
+      // Arrange
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem data-testid='desktop-item'>Desktop Item</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId("desktop-item")).toBeInTheDocument();
+        expect(screen.getByText("Desktop Item")).toBeVisible();
+      });
+    });
+
+    it("renders items on mobile", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem data-testid='mobile-item'>Mobile Item</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId("mobile-item")).toBeInTheDocument();
+        expect(screen.getByText("Mobile Item")).toBeVisible();
+      });
+    });
+
+    it("renders item with icon prop", async () => {
+      // Arrange
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem icon={<span data-testid='item-icon'>→</span>}>Item with icon</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId("item-icon")).toBeInTheDocument();
+        expect(screen.getByText("Item with icon")).toBeVisible();
+      });
+    });
+  });
+
+  describe("DropDrawerTrigger", () => {
+    it("renders trigger button on desktop", () => {
+      // Arrange
+      render(
+        <DropDrawer>
+          <DropDrawerTrigger data-testid='desktop-trigger'>Open Desktop</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Item</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      expect(screen.getByTestId("desktop-trigger")).toBeInTheDocument();
+      expect(screen.getByText("Open Desktop")).toBeVisible();
+    });
+
+    it("renders trigger button on mobile", () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer>
+          <DropDrawerTrigger data-testid='mobile-trigger'>Open Mobile</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Item</DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      expect(screen.getByTestId("mobile-trigger")).toBeInTheDocument();
+      expect(screen.getByText("Open Mobile")).toBeVisible();
     });
   });
 });

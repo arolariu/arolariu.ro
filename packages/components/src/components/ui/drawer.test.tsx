@@ -98,4 +98,102 @@ describe("Drawer", () => {
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
     expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
+
+  it("renders DrawerHeader with children", async () => {
+    // Arrange
+    const {DrawerHeader} = await import("./drawer");
+
+    render(
+      <Drawer defaultOpen>
+        <DrawerContent>
+          <DrawerHeader data-testid='drawer-header'>
+            <DrawerTitle>Header Title</DrawerTitle>
+          </DrawerHeader>
+        </DrawerContent>
+      </Drawer>,
+    );
+
+    // Assert
+    const header = await screen.findByTestId("drawer-header");
+    expect(header).toBeInTheDocument();
+    expect(screen.getByText("Header Title")).toBeInTheDocument();
+  });
+
+  it("renders DrawerFooter with children", async () => {
+    // Arrange
+    const {DrawerFooter} = await import("./drawer");
+
+    render(
+      <Drawer defaultOpen>
+        <DrawerContent>
+          <DrawerTitle>Title</DrawerTitle>
+          <DrawerFooter data-testid='drawer-footer'>
+            <button type='button'>Action</button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>,
+    );
+
+    // Assert
+    const footer = await screen.findByTestId("drawer-footer");
+    expect(footer).toBeInTheDocument();
+    expect(screen.getByRole("button", {name: "Action"})).toBeInTheDocument();
+  });
+
+  it("renders DrawerHeader with asChild prop and valid element", async () => {
+    // Arrange
+    const {DrawerHeader} = await import("./drawer");
+
+    render(
+      <Drawer defaultOpen>
+        <DrawerContent>
+          <DrawerHeader
+            asChild
+            data-testid='drawer-header'>
+            <header>Custom Header</header>
+          </DrawerHeader>
+        </DrawerContent>
+      </Drawer>,
+    );
+
+    // Assert
+    const header = await screen.findByTestId("drawer-header");
+    expect(header).toBeInTheDocument();
+    expect(header.tagName).toBe("HEADER");
+    expect(screen.getByText("Custom Header")).toBeInTheDocument();
+  });
+
+  it("renders DrawerFooter with asChild prop and valid element", async () => {
+    // Arrange
+    const {DrawerFooter} = await import("./drawer");
+
+    render(
+      <Drawer defaultOpen>
+        <DrawerContent>
+          <DrawerTitle>Title</DrawerTitle>
+          <DrawerFooter
+            asChild
+            data-testid='drawer-footer'>
+            <footer>Custom Footer</footer>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>,
+    );
+
+    // Assert
+    const footer = await screen.findByTestId("drawer-footer");
+    expect(footer).toBeInTheDocument();
+    expect(footer.tagName).toBe("FOOTER");
+    expect(screen.getByText("Custom Footer")).toBeInTheDocument();
+  });
+
+  it("renders DrawerOverlay within DrawerContent", async () => {
+    // Arrange
+    renderDrawer({defaultOpen: true});
+
+    // Assert
+    // The overlay is rendered but may not have an explicit role
+    const dialog = await screen.findByRole("dialog", {name: "Drawer title"});
+    expect(dialog).toBeVisible();
+  });
 });

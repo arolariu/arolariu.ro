@@ -1,10 +1,21 @@
 import * as React from "react";
 
-import {render, screen} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
 import {useForm} from "react-hook-form";
 import {describe, expect, it} from "vitest";
 
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage, useController, useFieldArray, useWatch} from "./form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useController,
+  useFieldArray,
+  useWatch,
+} from "./form";
 
 interface TestFormValues {
   email: string;
@@ -43,6 +54,102 @@ function RenderTestForm(): React.JSX.Element {
   );
 }
 
+function RenderFormWithError(): React.JSX.Element {
+  const methods = useForm<TestFormValues>({
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  React.useEffect(() => {
+    methods.setError("email", {
+      type: "manual",
+      message: "Email is required",
+    });
+  }, [methods]);
+
+  return (
+    <Form {...methods}>
+      <form>
+        <FormField
+          control={methods.control}
+          name='email'
+          render={({field}) => (
+            <FormItem data-testid='form-item-error'>
+              <FormLabel data-testid='form-label-error'>Email address</FormLabel>
+              <FormControl>
+                <input
+                  {...field}
+                  aria-label='Email address with error'
+                />
+              </FormControl>
+              <FormMessage data-testid='form-message-error' />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
+
+function RenderFormWithDescription(): React.JSX.Element {
+  const methods = useForm<TestFormValues>({
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  return (
+    <Form {...methods}>
+      <form>
+        <FormField
+          control={methods.control}
+          name='email'
+          render={({field}) => (
+            <FormItem>
+              <FormLabel>Email address</FormLabel>
+              <FormControl>
+                <input
+                  {...field}
+                  aria-label='Email with description'
+                />
+              </FormControl>
+              <FormDescription data-testid='form-description'>We'll never share your email.</FormDescription>
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
+
+function RenderFormWithFallbackChildren(): React.JSX.Element {
+  const methods = useForm<TestFormValues>({
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  return (
+    <Form {...methods}>
+      <form>
+        <FormField
+          control={methods.control}
+          name='email'
+          render={() => (
+            <FormItem>
+              <FormLabel>Email address</FormLabel>
+              <FormControl>
+                <div data-testid='fallback-content'>Custom non-element content</div>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
+
 describe("Form", () => {
   it("renders FormField, FormItem, FormLabel, and FormMessage", () => {
     // Act
@@ -59,6 +166,116 @@ describe("Form", () => {
     expect(message).toHaveClass("form-message-class");
     expect(input).toBeInTheDocument();
     expect(message).toBeInTheDocument();
+  });
+
+  it("shows error message from react-hook-form context", async () => {
+    // Arrange & Act
+    render(<RenderFormWithError />);
+
+    // Assert
+    await waitFor(() => {
+      const errorMessage = screen.getByTestId("form-message-error");
+      expect(errorMessage).toHaveTextContent("Email is required");
+    });
+  });
+
+  it("applies error styling to FormLabel when field has error", async () => {
+    // Arrange & Act
+    render(<RenderFormWithError />);
+
+    // Assert
+    await waitFor(() => {
+      const label = screen.getByTestId("form-label-error");
+      expect(label).toBeInTheDocument();
+    });
+  });
+
+  it("shows children in FormMessage when no error exists", () => {
+    // Arrange & Act
+    render(<RenderTestForm />);
+
+    // Assert
+    const message = screen.getByText("Required for account updates.");
+    expect(message).toBeInTheDocument();
+  });
+
+  it("does not render FormMessage when no children and no error", () => {
+    // Arrange
+    function TestComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({
+        defaultValues: {
+          email: "",
+        },
+      });
+
+      return (
+        <Form {...methods}>
+          <form>
+            <FormField
+              control={methods.control}
+              name='email'
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>
+                    <input
+                      {...field}
+                      aria-label='Email no message'
+                    />
+                  </FormControl>
+                  <FormMessage data-testid='empty-message' />
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      );
+    }
+
+    render(<TestComponent />);
+
+    // Assert
+    expect(screen.queryByTestId("empty-message")).not.toBeInTheDocument();
+  });
+
+  it("renders FormDescription with proper id", () => {
+    // Arrange & Act
+    render(<RenderFormWithDescription />);
+
+    // Assert
+    const description = screen.getByTestId("form-description");
+    expect(description).toHaveTextContent("We'll never share your email.");
+    expect(description.id).toMatch(/-form-item-description$/);
+  });
+
+  it("injects aria attributes into FormControl element", async () => {
+    // Arrange & Act
+    render(<RenderFormWithDescription />);
+
+    // Assert
+    const input = screen.getByLabelText("Email with description");
+    expect(input).toHaveAttribute("aria-describedby");
+    expect(input).toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("injects aria-invalid=true when field has error", async () => {
+    // Arrange & Act
+    render(<RenderFormWithError />);
+
+    // Assert
+    await waitFor(() => {
+      const input = screen.getByLabelText("Email address with error");
+      expect(input).toHaveAttribute("aria-invalid", "true");
+    });
+  });
+
+  it("renders fallback wrapper when FormControl children is not a valid element", () => {
+    // Arrange & Act
+    render(<RenderFormWithFallbackChildren />);
+
+    // Assert
+    const fallback = screen.getByTestId("fallback-content");
+    expect(fallback).toBeInTheDocument();
   });
 
   it("re-exports key react-hook-form hooks", () => {

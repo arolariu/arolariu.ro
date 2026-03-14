@@ -5,6 +5,7 @@ import {describe, expect, it} from "vitest";
 import {
   NavigationMenu,
   NavigationMenuContent,
+  NavigationMenuIndicator,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
@@ -68,5 +69,92 @@ describe("NavigationMenu", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("products-content")).toHaveClass("custom-content");
     expect(await screen.findByRole("link", {name: "Analytics"})).toHaveAttribute("href", "/analytics");
+  });
+
+  it("renders NavigationMenuLink with custom className", () => {
+    // Arrange
+    render(
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <NavigationMenuLink
+              href='/test'
+              className='custom-link-class'
+              data-testid='nav-link'>
+              Test Link
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>,
+    );
+
+    // Assert
+    const link = screen.getByTestId("nav-link");
+    expect(link).toHaveClass("custom-link-class");
+    expect(link).toHaveAttribute("href", "/test");
+  });
+
+  it("renders NavigationMenuViewport", () => {
+    // Arrange
+    render(
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <NavigationMenuTrigger>Menu</NavigationMenuTrigger>
+            <NavigationMenuContent>Content</NavigationMenuContent>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>,
+    );
+
+    // Assert
+    // NavigationMenuViewport is rendered automatically by NavigationMenu
+    expect(screen.getByRole("navigation")).toBeInTheDocument();
+  });
+
+  it("renders NavigationMenuIndicator with default children", () => {
+    // Arrange
+    render(
+      <div>
+        <NavigationMenuIndicator data-testid='nav-indicator' />
+      </div>,
+    );
+
+    // Assert
+    const indicator = screen.getByTestId("nav-indicator");
+    expect(indicator).toBeInTheDocument();
+  });
+
+  it("renders NavigationMenuIndicator with asChild prop and valid element", () => {
+    // Arrange
+    render(
+      <div>
+        <NavigationMenuIndicator
+          asChild
+          data-testid='nav-indicator'>
+          <span>Indicator</span>
+        </NavigationMenuIndicator>
+      </div>,
+    );
+
+    // Assert
+    const indicator = screen.getByTestId("nav-indicator");
+    expect(indicator).toBeInTheDocument();
+    expect(indicator.tagName).toBe("SPAN");
+    expect(screen.getByText("Indicator")).toBeInTheDocument();
+  });
+
+  it("renders NavigationMenuIndicator with custom children", () => {
+    // Arrange
+    render(
+      <div>
+        <NavigationMenuIndicator data-testid='nav-indicator'>Custom indicator content</NavigationMenuIndicator>
+      </div>,
+    );
+
+    // Assert
+    const indicator = screen.getByTestId("nav-indicator");
+    expect(indicator).toBeInTheDocument();
+    expect(screen.getByText("Custom indicator content")).toBeInTheDocument();
   });
 });

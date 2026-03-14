@@ -16,6 +16,34 @@ export default mergeConfig(
     plugins: [react()],
     test: {
       coverage: {
+        exclude: [
+          // Inherit base excludes
+          "**/node_modules/**",
+          "**/dist/**",
+          "**/.next/**",
+          "**/.rslib/**",
+          "**/build/**",
+          "**/out/**",
+          "**/coverage/**",
+          "**/storybook-static/**",
+          "**/*.stories.{ts,tsx,js,jsx}",
+          "**/.storybook/**",
+          "**/*.d.ts",
+          "**/types/**/*.ts",
+          "**/{generated,__generated__}/**",
+          "**/*.generated.{ts,tsx,js,jsx}",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/*.spec.{ts,tsx,js,jsx}",
+          "**/*.config.{js,ts,mjs,mts}",
+          "**/*.setup.{js,ts,mjs,mts}",
+          "**/*.css",
+          "**/telemetry.ts",
+          "**/instrumentation.ts",
+          "**/proxy.ts",
+          // Component library specific
+          "**/index.ts",
+          "**/scripts/**",
+        ],
         thresholds: {
           branches: 70,
           functions: 80,

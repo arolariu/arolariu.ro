@@ -4,18 +4,26 @@ import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {describe, expect, it} from "vitest";
 
-import {Popover, PopoverContent, PopoverTrigger} from "./popover";
+import {Popover, PopoverAnchor, PopoverContent, PopoverTrigger} from "./popover";
 
 interface PopoverTestHarnessProps {
   className?: string;
   defaultOpen?: boolean;
   triggerAsChild?: boolean;
+  withAnchor?: boolean;
+  side?: "top" | "right" | "bottom" | "left";
+  align?: "start" | "center" | "end";
+  sideOffset?: number;
 }
 
 function PopoverTestHarness({
   className,
   defaultOpen = false,
   triggerAsChild = false,
+  withAnchor = false,
+  side,
+  align,
+  sideOffset,
 }: Readonly<PopoverTestHarnessProps>): React.JSX.Element {
   const [open, setOpen] = React.useState(defaultOpen);
 
@@ -23,12 +31,16 @@ function PopoverTestHarness({
     <Popover
       open={open}
       onOpenChange={setOpen}>
+      {withAnchor && <PopoverAnchor data-testid='popover-anchor'>Anchor element</PopoverAnchor>}
       <PopoverTrigger asChild={triggerAsChild}>
         {triggerAsChild ? <button type='button'>Open popover</button> : "Open popover"}
       </PopoverTrigger>
       <PopoverContent
         className={className}
-        data-testid='popover-content'>
+        data-testid='popover-content'
+        side={side}
+        align={align}
+        sideOffset={sideOffset}>
         <span>Popover body</span>
         <button
           type='button'
@@ -117,5 +129,69 @@ describe("Popover", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
     expect(popover).toBeVisible();
+  });
+
+  it("renders PopoverAnchor when provided", () => {
+    // Arrange & Act
+    render(<PopoverTestHarness withAnchor />);
+
+    // Assert
+    expect(screen.getByTestId("popover-anchor")).toBeInTheDocument();
+    expect(screen.getByText("Anchor element")).toBeInTheDocument();
+  });
+
+  it("renders PopoverContent with different side prop", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(<PopoverTestHarness side='top' />);
+
+    // Act
+    await user.click(screen.getByRole("button", {name: "Open popover"}));
+
+    // Assert
+    expect(await screen.findByRole("dialog")).toBeVisible();
+  });
+
+  it("renders PopoverContent with different align prop", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(<PopoverTestHarness align='start' />);
+
+    // Act
+    await user.click(screen.getByRole("button", {name: "Open popover"}));
+
+    // Assert
+    expect(await screen.findByRole("dialog")).toBeVisible();
+  });
+
+  it("renders PopoverContent with custom sideOffset", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(<PopoverTestHarness sideOffset={10} />);
+
+    // Act
+    await user.click(screen.getByRole("button", {name: "Open popover"}));
+
+    // Assert
+    expect(await screen.findByRole("dialog")).toBeVisible();
+  });
+
+  it("renders PopoverAnchor with custom className", () => {
+    // Arrange & Act
+    render(
+      <Popover>
+        <PopoverAnchor
+          className='custom-anchor-class'
+          data-testid='custom-anchor'>
+          Anchor
+        </PopoverAnchor>
+        <PopoverTrigger>Open</PopoverTrigger>
+        <PopoverContent>Content</PopoverContent>
+      </Popover>,
+    );
+
+    // Assert
+    const anchor = screen.getByTestId("custom-anchor");
+    expect(anchor).toHaveClass("custom-anchor-class");
   });
 });
