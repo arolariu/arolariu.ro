@@ -2,7 +2,7 @@ import * as React from "react";
 
 import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 
 import {Popover, PopoverAnchor, PopoverContent, PopoverTrigger} from "./popover";
 
@@ -14,6 +14,7 @@ interface PopoverTestHarnessProps {
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function PopoverTestHarness({
@@ -24,13 +25,17 @@ function PopoverTestHarness({
   side,
   align,
   sideOffset,
+  onOpenChange,
 }: Readonly<PopoverTestHarnessProps>): React.JSX.Element {
   const [open, setOpen] = React.useState(defaultOpen);
 
   return (
     <Popover
       open={open}
-      onOpenChange={setOpen}>
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        onOpenChange?.(nextOpen);
+      }}>
       {withAnchor && <PopoverAnchor data-testid='popover-anchor'>Anchor element</PopoverAnchor>}
       <PopoverTrigger asChild={triggerAsChild}>
         {triggerAsChild ? <button type='button'>Open popover</button> : "Open popover"}
@@ -131,6 +136,23 @@ describe("Popover", () => {
     expect(popover).toBeVisible();
   });
 
+  it("closes the popover when Escape is pressed", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(<PopoverTestHarness />);
+    await user.click(screen.getByRole("button", {name: "Open popover"}));
+    expect(await screen.findByRole("dialog")).toBeVisible();
+
+    // Act — Base UI Popover calls onOpenChange(false) on Escape; the controlled
+    // harness reflects that change and removes the popup from the DOM
+    await user.keyboard("{Escape}");
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
   it("renders PopoverAnchor when provided", () => {
     // Arrange & Act
     render(<PopoverTestHarness withAnchor />);
@@ -222,5 +244,25 @@ describe("Popover", () => {
 
     // Assert
     expect(await screen.findByRole("dialog")).toBeVisible();
+  });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleOpenChange = vi.fn<(open: boolean) => void>();
+
+    render(<PopoverTestHarness onOpenChange={handleOpenChange} />);
+
+    const trigger = screen.getByRole("button", {name: "Open popover"});
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    // Act
+    await user.click(trigger);
+
+    // Assert
+    expect(handleOpenChange).toHaveBeenCalledWith(true);
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 });

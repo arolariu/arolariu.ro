@@ -86,6 +86,22 @@ describe("Drawer", () => {
     expect(await screen.findByRole("dialog", {name: "Drawer title"})).toBeVisible();
   });
 
+  it("closes the drawer when Escape is pressed", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderDrawer({defaultOpen: false});
+    await user.click(screen.getByRole("button", {name: "Open drawer"}));
+    expect(await screen.findByRole("dialog", {name: "Drawer title"})).toBeVisible();
+
+    // Act — Base UI Drawer supports Escape to dismiss, same as the Dialog primitive
+    await user.keyboard("{Escape}");
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", {name: "Drawer title"})).not.toBeInTheDocument();
+    });
+  });
+
   it("exposes modal drawer accessibility semantics", async () => {
     // Arrange
     renderDrawer({defaultOpen: true});

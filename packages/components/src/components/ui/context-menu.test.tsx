@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it} from "vitest";
 
 import {
@@ -47,11 +48,35 @@ describe("ContextMenu", () => {
     );
 
     // Act
-    fireEvent.contextMenu(screen.getByText("Open context menu"));
+    const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
     // Assert
     expect(await screen.findByRole("menuitem", {name: "Rename"})).toBeInTheDocument();
     expect(screen.getByRole("menuitem", {name: "Delete"})).toBeInTheDocument();
+  });
+
+  it("closes the menu when Escape is pressed", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger>Open context menu</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem>Rename</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+    expect(await screen.findByRole("menu")).toBeInTheDocument();
+
+    // Act — Base UI Menu closes on Escape by default
+    await user.keyboard("{Escape}");
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
   });
 
   it("merges the content className", async () => {
@@ -66,7 +91,8 @@ describe("ContextMenu", () => {
     );
 
     // Act
-    fireEvent.contextMenu(screen.getByText("Open context menu"));
+    const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
     // Assert
     expect(await screen.findByRole("menu")).toHaveClass("custom-content");
@@ -84,10 +110,42 @@ describe("ContextMenu", () => {
     );
 
     // Act
-    fireEvent.contextMenu(screen.getByText("Open context menu"));
+    const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
     // Assert
     expect(await screen.findByText("Child item content")).toBeInTheDocument();
+  });
+
+  it("supports rendering trigger, items, and shortcuts as child elements", async () => {
+    // Arrange
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <button type='button'>Open context menu</button>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem asChild>
+            <span data-testid='child-item'>Child action</span>
+          </ContextMenuItem>
+          <ContextMenuItem>
+            Copy
+            <ContextMenuShortcut asChild>
+              <span data-testid='shortcut-child'>⌘K</span>
+            </ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>,
+    );
+
+    // Act
+    const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByRole("button", {name: "Open context menu"})});
+
+    // Assert
+    expect(await screen.findByTestId("child-item")).toBeVisible();
+    expect(screen.getByTestId("child-item").tagName).toBe("SPAN");
+    expect(screen.getByTestId("shortcut-child")).toBeVisible();
   });
 
   describe("ContextMenuCheckboxItem", () => {
@@ -104,8 +162,8 @@ describe("ContextMenu", () => {
       );
 
       // Assert
-      expect(await screen.findByRole("menuitemcheckbox", {name: "Enabled"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemcheckbox", {name: "Disabled"})).toBeInTheDocument();
+      expect(await screen.findByRole("menuitemcheckbox", {name: "Enabled"})).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("menuitemcheckbox", {name: "Disabled"})).toHaveAttribute("aria-checked", "false");
     });
 
     it("applies custom className to checkbox items", async () => {
@@ -144,8 +202,8 @@ describe("ContextMenu", () => {
       );
 
       // Assert
-      expect(await screen.findByRole("menuitemradio", {name: "Option 1"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemradio", {name: "Option 2"})).toBeInTheDocument();
+      expect(await screen.findByRole("menuitemradio", {name: "Option 1"})).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("menuitemradio", {name: "Option 2"})).toHaveAttribute("aria-checked", "false");
     });
 
     it("applies custom className to radio items", async () => {
@@ -190,7 +248,8 @@ describe("ContextMenu", () => {
       );
 
       // Act
-      fireEvent.contextMenu(screen.getByText("Open context menu"));
+      const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByText("Top level")).toBeInTheDocument();
@@ -218,7 +277,8 @@ describe("ContextMenu", () => {
       );
 
       // Act
-      fireEvent.contextMenu(screen.getByText("Open context menu"));
+      const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByTestId("sub-trigger")).toHaveClass("custom-sub-trigger");
@@ -241,7 +301,8 @@ describe("ContextMenu", () => {
       );
 
       // Act
-      fireEvent.contextMenu(screen.getByText("Open context menu"));
+      const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByText("Actions")).toBeInTheDocument();
@@ -265,10 +326,61 @@ describe("ContextMenu", () => {
       );
 
       // Act
-      fireEvent.contextMenu(screen.getByText("Open context menu"));
+      const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByTestId("menu-label")).toHaveClass("custom-label");
+    });
+
+    it("applies inset variants to labels, items, and submenu triggers", async () => {
+      // Arrange
+      render(
+        <ContextMenu>
+          <ContextMenuTrigger>Open context menu</ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuGroup>
+              <ContextMenuLabel data-testid='plain-label'>Plain label</ContextMenuLabel>
+              <ContextMenuLabel
+                inset
+                data-testid='inset-label'>
+                Inset label
+              </ContextMenuLabel>
+            </ContextMenuGroup>
+            <ContextMenuItem data-testid='plain-item'>Plain item</ContextMenuItem>
+            <ContextMenuItem
+              inset
+              data-testid='inset-item'>
+              Inset item
+            </ContextMenuItem>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger data-testid='plain-sub-trigger'>Plain submenu</ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuItem>Plain submenu item</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger
+                inset
+                data-testid='inset-sub-trigger'>
+                Inset submenu
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuItem>Inset submenu item</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          </ContextMenuContent>
+        </ContextMenu>,
+      );
+
+      // Act
+      const user = userEvent.setup();
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+
+      // Assert
+      expect((await screen.findByTestId("inset-label")).className).not.toBe(screen.getByTestId("plain-label").className);
+      expect(screen.getByTestId("inset-item").className).not.toBe(screen.getByTestId("plain-item").className);
+      expect(screen.getByTestId("inset-sub-trigger").className).not.toBe(screen.getByTestId("plain-sub-trigger").className);
     });
   });
 
@@ -280,18 +392,23 @@ describe("ContextMenu", () => {
           <ContextMenuTrigger>Open context menu</ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuItem>Item 1</ContextMenuItem>
-            <ContextMenuSeparator data-testid='menu-separator' />
+            <ContextMenuSeparator
+              className='custom-separator'
+              data-testid='menu-separator'
+            />
             <ContextMenuItem>Item 2</ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>,
       );
 
       // Act
-      fireEvent.contextMenu(screen.getByText("Open context menu"));
+      const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
       await screen.findByText("Item 1");
 
       // Assert
       expect(screen.getByTestId("menu-separator")).toBeInTheDocument();
+      expect(screen.getByTestId("menu-separator")).toHaveClass("custom-separator");
     });
   });
 
@@ -311,7 +428,8 @@ describe("ContextMenu", () => {
       );
 
       // Act
-      fireEvent.contextMenu(screen.getByText("Open context menu"));
+      const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByText("⌘C")).toBeInTheDocument();
@@ -336,7 +454,8 @@ describe("ContextMenu", () => {
       );
 
       // Act
-      fireEvent.contextMenu(screen.getByText("Open context menu"));
+      const user = userEvent.setup();
+    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");

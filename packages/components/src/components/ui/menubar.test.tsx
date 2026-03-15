@@ -87,8 +87,8 @@ describe("Menubar", () => {
       await user.click(screen.getByRole("menuitem", {name: "View"}));
 
       // Assert
-      expect(await screen.findByRole("menuitemcheckbox", {name: "Show sidebar"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemcheckbox", {name: "Show toolbar"})).toBeInTheDocument();
+      expect(await screen.findByRole("menuitemcheckbox", {name: "Show sidebar"})).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("menuitemcheckbox", {name: "Show toolbar"})).toHaveAttribute("aria-checked", "false");
     });
 
     it("applies custom className to checkbox items", async () => {
@@ -167,9 +167,9 @@ describe("Menubar", () => {
       await user.click(screen.getByRole("menuitem", {name: "Theme"}));
 
       // Assert
-      expect(await screen.findByRole("menuitemradio", {name: "Light"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemradio", {name: "Dark"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemradio", {name: "System"})).toBeInTheDocument();
+      expect(await screen.findByRole("menuitemradio", {name: "Light"})).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("menuitemradio", {name: "Dark"})).toHaveAttribute("aria-checked", "false");
+      expect(screen.getByRole("menuitemradio", {name: "System"})).toHaveAttribute("aria-checked", "false");
     });
 
     it("applies custom className to radio items", async () => {
@@ -342,6 +342,58 @@ describe("Menubar", () => {
       // Assert
       expect(await screen.findByTestId("menu-label")).toHaveClass("custom-label");
     });
+
+    it("applies inset variants to labels, items, and submenu triggers", async () => {
+      // Arrange
+      const user = userEvent.setup();
+      render(
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger>Format</MenubarTrigger>
+            <MenubarContent>
+              <MenubarGroup>
+                <MenubarLabel data-testid='plain-label'>Plain label</MenubarLabel>
+                <MenubarLabel
+                  inset
+                  data-testid='inset-label'>
+                  Inset label
+                </MenubarLabel>
+              </MenubarGroup>
+              <MenubarItem data-testid='plain-item'>Plain item</MenubarItem>
+              <MenubarItem
+                inset
+                data-testid='inset-item'>
+                Inset item
+              </MenubarItem>
+              <MenubarSub>
+                <MenubarSubTrigger data-testid='plain-sub-trigger'>Plain submenu</MenubarSubTrigger>
+                <MenubarSubContent>
+                  <MenubarItem>Plain submenu item</MenubarItem>
+                </MenubarSubContent>
+              </MenubarSub>
+              <MenubarSub>
+                <MenubarSubTrigger
+                  inset
+                  data-testid='inset-sub-trigger'>
+                  Inset submenu
+                </MenubarSubTrigger>
+                <MenubarSubContent>
+                  <MenubarItem>Inset submenu item</MenubarItem>
+                </MenubarSubContent>
+              </MenubarSub>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>,
+      );
+
+      // Act
+      await user.click(screen.getByRole("menuitem", {name: "Format"}));
+
+      // Assert
+      expect((await screen.findByTestId("inset-label")).className).not.toBe(screen.getByTestId("plain-label").className);
+      expect(screen.getByTestId("inset-item").className).not.toBe(screen.getByTestId("plain-item").className);
+      expect(screen.getByTestId("inset-sub-trigger").className).not.toBe(screen.getByTestId("plain-sub-trigger").className);
+    });
   });
 
   describe("MenubarSeparator", () => {
@@ -421,6 +473,33 @@ describe("Menubar", () => {
 
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");
+    });
+
+    it("supports rendering shortcuts as child elements", async () => {
+      // Arrange
+      const user = userEvent.setup();
+      render(
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger>View</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>
+                Zoom in
+                <MenubarShortcut asChild>
+                  <span data-testid='shortcut-child'>⌘+</span>
+                </MenubarShortcut>
+              </MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>,
+      );
+
+      // Act
+      await user.click(screen.getByRole("menuitem", {name: "View"}));
+
+      // Assert
+      expect(await screen.findByTestId("shortcut-child")).toBeVisible();
+      expect(screen.getByTestId("shortcut-child").querySelector("span")).toBeNull();
     });
   });
 });

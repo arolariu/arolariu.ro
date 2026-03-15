@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it} from "vitest";
 
 import {
@@ -47,11 +48,35 @@ describe("DropdownMenu", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
     // Assert
     expect(await screen.findByRole("menuitem", {name: "Profile"})).toBeInTheDocument();
     expect(screen.getByRole("menuitem", {name: "Billing"})).toBeInTheDocument();
+  });
+
+  it("closes the menu when Escape is pressed", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open menu</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem>Profile</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
+    expect(await screen.findByRole("menu")).toBeInTheDocument();
+
+    // Act — Base UI Menu closes on Escape by default
+    await user.keyboard("{Escape}");
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    });
   });
 
   it("merges the content className", async () => {
@@ -66,7 +91,8 @@ describe("DropdownMenu", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
     // Assert
     expect(await screen.findByRole("menu")).toHaveClass("custom-content");
@@ -84,10 +110,42 @@ describe("DropdownMenu", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
     // Assert
     expect(await screen.findByText("Nested child content")).toBeInTheDocument();
+  });
+
+  it("supports rendering trigger, items, and shortcuts as child elements", async () => {
+    // Arrange
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type='button'>Open menu</button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem asChild>
+            <span data-testid='child-item'>Child action</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            Copy
+            <DropdownMenuShortcut asChild>
+              <span data-testid='shortcut-child'>⌘K</span>
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>,
+    );
+
+    // Act
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
+
+    // Assert
+    expect(await screen.findByTestId("child-item")).toBeVisible();
+    expect(screen.getByTestId("child-item").tagName).toBe("SPAN");
+    expect(screen.getByTestId("shortcut-child")).toBeVisible();
   });
 
   describe("DropdownMenuCheckboxItem", () => {
@@ -104,8 +162,8 @@ describe("DropdownMenu", () => {
       );
 
       // Assert
-      expect(await screen.findByRole("menuitemcheckbox", {name: "Show toolbar"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemcheckbox", {name: "Show sidebar"})).toBeInTheDocument();
+      expect(await screen.findByRole("menuitemcheckbox", {name: "Show toolbar"})).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("menuitemcheckbox", {name: "Show sidebar"})).toHaveAttribute("aria-checked", "false");
     });
 
     it("applies custom className to checkbox items", async () => {
@@ -145,9 +203,9 @@ describe("DropdownMenu", () => {
       );
 
       // Assert
-      expect(await screen.findByRole("menuitemradio", {name: "Light"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemradio", {name: "Dark"})).toBeInTheDocument();
-      expect(screen.getByRole("menuitemradio", {name: "System"})).toBeInTheDocument();
+      expect(await screen.findByRole("menuitemradio", {name: "Light"})).toHaveAttribute("aria-checked", "true");
+      expect(screen.getByRole("menuitemradio", {name: "Dark"})).toHaveAttribute("aria-checked", "false");
+      expect(screen.getByRole("menuitemradio", {name: "System"})).toHaveAttribute("aria-checked", "false");
     });
 
     it("applies custom className to radio items", async () => {
@@ -192,7 +250,8 @@ describe("DropdownMenu", () => {
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByText("Settings")).toBeInTheDocument();
@@ -220,7 +279,8 @@ describe("DropdownMenu", () => {
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByTestId("sub-trigger")).toHaveClass("custom-sub-trigger");
@@ -243,7 +303,8 @@ describe("DropdownMenu", () => {
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByText("My Account")).toBeInTheDocument();
@@ -267,10 +328,61 @@ describe("DropdownMenu", () => {
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByTestId("menu-label")).toHaveClass("custom-label");
+    });
+
+    it("applies inset variants to labels, items, and submenu triggers", async () => {
+      // Arrange
+      render(
+        <DropdownMenu>
+          <DropdownMenuTrigger>Open menu</DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel data-testid='plain-label'>Plain label</DropdownMenuLabel>
+              <DropdownMenuLabel
+                inset
+                data-testid='inset-label'>
+                Inset label
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuItem data-testid='plain-item'>Plain item</DropdownMenuItem>
+            <DropdownMenuItem
+              inset
+              data-testid='inset-item'>
+              Inset item
+            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger data-testid='plain-sub-trigger'>Plain submenu</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem>Plain submenu item</DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger
+                inset
+                data-testid='inset-sub-trigger'>
+                Inset submenu
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem>Inset submenu item</DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </DropdownMenuContent>
+        </DropdownMenu>,
+      );
+
+      // Act
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
+
+      // Assert
+      expect((await screen.findByTestId("inset-label")).className).not.toBe(screen.getByTestId("plain-label").className);
+      expect(screen.getByTestId("inset-item").className).not.toBe(screen.getByTestId("plain-item").className);
+      expect(screen.getByTestId("inset-sub-trigger").className).not.toBe(screen.getByTestId("plain-sub-trigger").className);
     });
   });
 
@@ -282,18 +394,23 @@ describe("DropdownMenu", () => {
           <DropdownMenuTrigger>Open menu</DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem>Item 1</DropdownMenuItem>
-            <DropdownMenuSeparator data-testid='menu-separator' />
+            <DropdownMenuSeparator
+              className='custom-separator'
+              data-testid='menu-separator'
+            />
             <DropdownMenuItem>Item 2</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>,
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
       await screen.findByText("Item 1");
 
       // Assert
       expect(screen.getByTestId("menu-separator")).toBeInTheDocument();
+      expect(screen.getByTestId("menu-separator")).toHaveClass("custom-separator");
     });
   });
 
@@ -313,7 +430,8 @@ describe("DropdownMenu", () => {
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByText("⌘S")).toBeInTheDocument();
@@ -338,7 +456,8 @@ describe("DropdownMenu", () => {
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");

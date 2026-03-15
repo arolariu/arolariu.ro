@@ -87,6 +87,22 @@ describe("Sheet", () => {
     expect(await screen.findByRole("dialog", {name: "Sheet title"})).toBeVisible();
   });
 
+  it("closes the sheet when Escape is pressed", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderSheet({defaultOpen: false});
+    await user.click(screen.getByRole("button", {name: "Open sheet"}));
+    expect(await screen.findByRole("dialog", {name: "Sheet title"})).toBeVisible();
+
+    // Act — Sheet is built on the Dialog primitive; Escape closes it the same way
+    await user.keyboard("{Escape}");
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", {name: "Sheet title"})).not.toBeInTheDocument();
+    });
+  });
+
   it("applies the requested side positioning class", async () => {
     // Arrange
     renderSheet({defaultOpen: true, side: "left"});

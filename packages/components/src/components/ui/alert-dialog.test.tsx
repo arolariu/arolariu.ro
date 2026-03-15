@@ -205,6 +205,12 @@ describe("AlertDialog", () => {
     expect(alertDialog).toBeVisible();
   });
 
+  // AlertDialog uses role="alertdialog" which, per the WAI-ARIA spec, is intentionally
+  // non-dismissible via Escape — the user must make a deliberate choice through an action
+  // or cancel button. Base UI enforces this contract by not wiring the Escape key to the
+  // close handler on its AlertDialog primitive.
+  it.todo("stays open when Escape is pressed — alertdialog is modal and non-dismissible by design");
+
   it("renders AlertDialogAction with click handler", async () => {
     // Arrange
     const user = userEvent.setup();
