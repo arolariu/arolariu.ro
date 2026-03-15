@@ -3,61 +3,45 @@ import * as React from "react";
 import {render, screen} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
+const {useInViewMock} = vi.hoisted(() => ({
+  useInViewMock: vi.fn(() => true),
+}));
+
 vi.mock("motion/react", async () => {
   const ReactModule = await import("react");
 
-  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
+  function serializeProp(value: unknown): string {
+    return value === undefined ? "undefined" : JSON.stringify(value);
+  }
 
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
+  function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
+    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & {
+      animate?: unknown;
+      initial?: unknown;
+      transition?: unknown;
+    }>(({animate, children, initial, transition, ...props}, ref) => ReactModule.createElement(tag, {
+      ...props,
+      ref,
+      "data-motion-animate": serializeProp(animate),
+      "data-motion-initial": serializeProp(initial),
+      "data-motion-transition": serializeProp(transition),
+    }, children));
   }
 
   return {
     motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
       span: createMotionPrimitive("span"),
     },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
+    useInView: useInViewMock,
   };
 });
 
 import {HighlightText} from "./highlight-text";
 
 beforeEach(() => {
+  useInViewMock.mockReset();
+  useInViewMock.mockReturnValue(true);
+
   Object.defineProperty(globalThis.HTMLElement.prototype, "offsetHeight", {
     configurable: true,
     value: 120,
@@ -70,10 +54,8 @@ beforeEach(() => {
 
 describe("HighlightText", () => {
   it("renders HighlightText with custom classes and forwarded refs", () => {
-    // Arrange
     const highlightTextRef = {current: null as HTMLSpanElement | null};
 
-    // Act
     render(
       <HighlightText
         ref={highlightTextRef}
@@ -82,10 +64,61 @@ describe("HighlightText", () => {
       />,
     );
 
-    // Assert
     const highlightText = screen.getByText("Highlighted copy");
 
     expect(highlightText).toHaveClass("highlight-text-class");
     expect(highlightTextRef.current).toBe(highlightText);
+  });
+
+  it("keeps the initial highlight state until the text is in view", () => {
+    useInViewMock.mockReturnValue(false);
+
+    render(
+      <HighlightText
+        inView
+        data-testid='highlight-text'
+        text='Deferred highlight'
+      />,
+    );
+
+    const highlightText = screen.getByTestId("highlight-text");
+
+    expect(highlightText).toHaveAttribute("data-motion-initial", JSON.stringify({backgroundSize: "0% 100%"}));
+    expect(highlightText).toHaveAttribute("data-motion-animate", "undefined");
+  });
+
+  it("passes the in-view margin through to useInView", () => {
+    render(
+      <HighlightText
+        inView
+        inViewMargin='-20% 0px'
+        text='Observed highlight'
+      />,
+    );
+
+    expect(useInViewMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        margin: "-20% 0px",
+        once: true,
+      }),
+    );
+  });
+
+  it("forwards the transition prop to the motion span", () => {
+    const transition = {duration: 4, ease: "linear"} as const;
+
+    render(
+      <HighlightText
+        transition={transition}
+        data-testid='highlight-transition'
+        text='Transition highlight'
+      />,
+    );
+
+    expect(screen.getByTestId("highlight-transition")).toHaveAttribute(
+      "data-motion-transition",
+      JSON.stringify(transition),
+    );
   });
 });

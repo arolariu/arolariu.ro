@@ -6,84 +6,14 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 vi.mock("motion/react", async () => {
   const ReactModule = await import("react");
 
-  type MotionValue = {
-    get: () => number;
-    on: (event: "change", listener: (latest: number) => void) => () => void;
-    set: (value: number) => void;
-  };
-
-  function createMotionValue(initialValue: number): MotionValue {
-    let currentValue = initialValue;
-    const listeners = new Set<(latest: number) => void>();
-
-    return {
-      get: () => currentValue,
-      on: (_event, listener) => {
-        listeners.add(listener);
-        listener(currentValue);
-
-        return () => {
-          listeners.delete(listener);
-        };
-      },
-      set: (value) => {
-        currentValue = value;
-
-        for (const listener of listeners) {
-          listener(value);
-        }
-      },
-    };
-  }
-
   function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
-      const {
-        animate: _animate,
-        initial: _initial,
-        transition: _transition,
-        variants: _variants,
-        whileHover: _whileHover,
-        whileInView: _whileInView,
-        whileTap: _whileTap,
-        ...domProps
-      } = props as React.HTMLAttributes<HTMLElement>
-        & React.SVGProps<SVGElement> & {
-          animate?: unknown;
-          initial?: unknown;
-          transition?: unknown;
-          variants?: unknown;
-          whileHover?: unknown;
-          whileInView?: unknown;
-          whileTap?: unknown;
-        };
-
-      return ReactModule.createElement(tag, {...domProps, ref}, children);
-    });
+    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement>>(({children, ...props}, ref) => ReactModule.createElement(tag, {...props, ref}, children));
   }
 
   return {
     motion: {
-      button: createMotionPrimitive("button"),
-      circle: createMotionPrimitive("circle"),
-      div: createMotionPrimitive("div"),
-      linearGradient: createMotionPrimitive("linearGradient"),
-      path: createMotionPrimitive("path"),
       span: createMotionPrimitive("span"),
     },
-    stagger: vi.fn(() => 0),
-    useAnimate: () => {
-      const scope = ReactModule.useRef<HTMLDivElement | null>(null);
-      const animate = vi.fn(async () => undefined);
-
-      return [scope, animate] as const;
-    },
-    useAnimation: () => ({
-      start: vi.fn(async () => undefined),
-    }),
-    useInView: vi.fn(() => true),
-    useMotionValue: (initialValue: number) => ReactModule.useMemo(() => createMotionValue(initialValue), [initialValue]),
-    useSpring: <TValue,>(value: TValue) => value,
   };
 });
 
@@ -102,10 +32,8 @@ beforeEach(() => {
 
 describe("GradientText", () => {
   it("renders GradientText with custom classes and forwarded refs", () => {
-    // Arrange
     const gradientTextRef = {current: null as HTMLSpanElement | null};
 
-    // Act
     render(
       <GradientText
         ref={gradientTextRef}
@@ -114,10 +42,48 @@ describe("GradientText", () => {
       />,
     );
 
-    // Assert
     const gradientText = screen.getByText("Gradient title").parentElement;
 
     expect(gradientText).toHaveClass("gradient-text-class");
     expect(gradientTextRef.current).toBe(gradientText);
+  });
+
+  it("applies the gradient prop to the animated text style", () => {
+    const gradient = "linear-gradient(90deg, rgb(10 20 30) 0%, rgb(40 50 60) 100%)";
+
+    render(
+      <GradientText
+        gradient={gradient}
+        text='Styled gradient'
+      />,
+    );
+
+    expect(screen.getByText("Styled gradient").style.getPropertyValue("--ac-gradient-text-background")).toBe(gradient);
+  });
+
+  it("does not render the neon overlay when neon is disabled", () => {
+    const {container} = render(
+      <GradientText
+        neon={false}
+        text='No glow'
+      />,
+    );
+
+    expect(container.querySelector('[aria-hidden="true"]')).not.toBeInTheDocument();
+  });
+
+  it("renders an aria-hidden neon overlay when neon is enabled", () => {
+    const {container} = render(
+      <GradientText
+        neon
+        text='Glow copy'
+      />,
+    );
+
+    const neonLayer = container.querySelector('[aria-hidden="true"]');
+
+    expect(neonLayer).toBeInTheDocument();
+    expect(neonLayer).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getAllByText("Glow copy")).toHaveLength(2);
   });
 });
