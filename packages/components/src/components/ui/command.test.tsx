@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {fireEvent, render, screen} from "@testing-library/react";
+import {act, fireEvent, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 
@@ -862,5 +862,190 @@ describe("Command", () => {
 
     // Assert
     expect(onSelectLast).toHaveBeenCalledWith("Third");
+  });
+
+  it("should ignore ArrowDown when no selectable items exist", async () => {
+    // Arrange
+    render(
+      <Command>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+        </CommandList>
+      </Command>,
+    );
+
+    // Act
+    const user = userEvent.setup();
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{ArrowDown}");
+
+    // Assert
+    expect(screen.getByText("No results")).toBeInTheDocument();
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+  });
+
+  it("should ignore ArrowUp when no selectable items exist", async () => {
+    // Arrange
+    render(
+      <Command>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+        </CommandList>
+      </Command>,
+    );
+
+    // Act
+    const user = userEvent.setup();
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{ArrowUp}");
+
+    // Assert
+    expect(screen.getByText("No results")).toBeInTheDocument();
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+  });
+
+  it("should recover when ArrowDown is pressed after filtering removes the active item", async () => {
+    // Arrange
+    render(
+      <Command>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandItem>First</CommandItem>
+          <CommandItem>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+
+    const input = screen.getByRole("combobox") as HTMLInputElement;
+    const user = userEvent.setup();
+
+    await user.click(input);
+
+    // Act
+    act(() => {
+      fireEvent.change(input, {target: {value: "Second"}});
+      fireEvent.keyDown(input, {key: "ArrowDown"});
+    });
+
+    // Assert
+    expect(screen.getByText("Second")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("should recover when ArrowUp is pressed after filtering removes the active item", async () => {
+    // Arrange
+    render(
+      <Command>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandItem>First</CommandItem>
+          <CommandItem>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+
+    const input = screen.getByRole("combobox") as HTMLInputElement;
+    const user = userEvent.setup();
+
+    await user.click(input);
+
+    // Act
+    act(() => {
+      fireEvent.change(input, {target: {value: "Second"}});
+      fireEvent.keyDown(input, {key: "ArrowUp"});
+    });
+
+    // Assert
+    expect(screen.getByText("Second")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("should ignore Enter when there is no active item", async () => {
+    // Arrange
+    render(
+      <Command>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandEmpty>No results</CommandEmpty>
+        </CommandList>
+      </Command>,
+    );
+
+    // Act
+    const user = userEvent.setup();
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{Enter}");
+
+    // Assert
+    expect(screen.getByText("No results")).toBeInTheDocument();
+  });
+
+  it("should skip built-in key handling when the custom keydown handler prevents default", async () => {
+    // Arrange
+    const onSelectFirst = vi.fn();
+    const onSelectSecond = vi.fn();
+
+    render(
+      <Command onKeyDown={(event) => {
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+        }
+      }}>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandItem onSelect={onSelectFirst}>First</CommandItem>
+          <CommandItem onSelect={onSelectSecond}>Second</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+
+    // Act
+    const user = userEvent.setup();
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{Enter}");
+
+    // Assert
+    expect(onSelectFirst).toHaveBeenCalledWith("First");
+    expect(onSelectSecond).not.toHaveBeenCalled();
+  });
+
+  it("should forward an object ref to CommandItem", () => {
+    // Arrange
+    const itemRef = React.createRef<HTMLDivElement>();
+
+    // Act
+    render(
+      <Command>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandItem ref={itemRef}>First</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+
+    // Assert
+    expect(itemRef.current).toBe(screen.getByText("First"));
+  });
+
+  it("should forward a callback ref to CommandItem", () => {
+    // Arrange
+    const callbackRef = vi.fn();
+
+    // Act
+    render(
+      <Command>
+        <CommandInput placeholder='Search' />
+        <CommandList>
+          <CommandItem ref={callbackRef}>First</CommandItem>
+        </CommandList>
+      </Command>,
+    );
+
+    // Assert
+    expect(callbackRef).toHaveBeenCalledWith(screen.getByText("First"));
   });
 });

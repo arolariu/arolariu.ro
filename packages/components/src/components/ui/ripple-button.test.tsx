@@ -1,14 +1,21 @@
 import * as React from "react";
 
-import {render, screen} from "@testing-library/react";
+import {act, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("motion/react", async () => {
   const ReactModule = await import("react");
+  const motionState: {
+    buttonProps?: React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>;
+  } = {};
 
   function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
     return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & React.SVGProps<SVGElement>>(({children, ...props}, ref) => {
+      if (tag === "button") {
+        motionState.buttonProps = props;
+      }
+
       const {
         animate: _animate,
         initial: _initial,
@@ -34,6 +41,7 @@ vi.mock("motion/react", async () => {
   }
 
   return {
+    __motionState: motionState,
     motion: {
       button: createMotionPrimitive("button"),
       circle: createMotionPrimitive("circle"),
@@ -55,6 +63,8 @@ vi.mock("motion/react", async () => {
     useInView: vi.fn(() => true),
   };
 });
+
+import {__motionState} from "motion/react";
 
 import {RippleButton} from "./ripple-button";
 
@@ -258,24 +268,26 @@ describe("RippleButton", () => {
     expect(button).toBeInTheDocument();
   });
 
-  it("handles click when buttonRef is not available", async () => {
+  it("skips ripple creation when the internal button ref is unavailable", () => {
     // Arrange
-    const user = userEvent.setup();
-    render(<RippleButton data-testid='ripple-button'>No Ref</RippleButton>);
-    const button = screen.getByTestId("ripple-button");
+    const handleRippleClick = vi.fn();
+    const {unmount} = render(
+      <RippleButton onClick={handleRippleClick}>
+        No Ref
+      </RippleButton>,
+    );
 
-    // Override button ref to simulate null case
-    const originalGetElementById = document.getElementById;
-    document.getElementById = vi.fn(() => null);
+    const clickHandler = __motionState.buttonProps?.onClick as ((event: React.MouseEvent<HTMLButtonElement>) => void) | undefined;
 
-    // Act - click should not crash even if ref is not available
-    await user.click(button);
+    unmount();
+
+    // Act
+    act(() => {
+      clickHandler?.({clientX: 12, clientY: 18} as React.MouseEvent<HTMLButtonElement>);
+    });
 
     // Assert
-    expect(button).toBeInTheDocument();
-
-    // Restore
-    document.getElementById = originalGetElementById;
+    expect(handleRippleClick).toHaveBeenCalledTimes(1);
   });
 
   it("cleans up timeouts on unmount", async () => {

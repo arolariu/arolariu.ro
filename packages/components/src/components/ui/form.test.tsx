@@ -151,6 +151,75 @@ function RenderFormWithFallbackChildren(): React.JSX.Element {
   );
 }
 
+function RenderFormWithMergedDescriptions(): React.JSX.Element {
+  const methods = useForm<TestFormValues>({
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  return (
+    <Form {...methods}>
+      <form>
+        <FormField
+          control={methods.control}
+          name='email'
+          render={({field}) => (
+            <FormItem>
+              <FormLabel>Email address</FormLabel>
+              <FormControl aria-describedby='wrapper-description   shared-description'>
+                <input
+                  {...field}
+                  aria-describedby='child-description   shared-description'
+                  aria-label='Email with merged descriptions'
+                />
+              </FormControl>
+              <FormDescription data-testid='merged-description'>We'll never share your email.</FormDescription>
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
+
+function RenderFormWithErrorWithoutMessage(): React.JSX.Element {
+  const methods = useForm<TestFormValues>({
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  React.useEffect(() => {
+    methods.setError("email", {
+      type: "manual",
+    });
+  }, [methods]);
+
+  return (
+    <Form {...methods}>
+      <form>
+        <FormField
+          control={methods.control}
+          name='email'
+          render={({field}) => (
+            <FormItem>
+              <FormLabel>Email address</FormLabel>
+              <FormControl>
+                <input
+                  {...field}
+                  aria-label='Email without error message'
+                />
+              </FormControl>
+              <FormMessage data-testid='missing-error-message' />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
+
 describe("Form", () => {
   it("renders FormField, FormItem, FormLabel, and FormMessage", () => {
     // Act
@@ -267,6 +336,32 @@ describe("Form", () => {
     await waitFor(() => {
       const input = screen.getByLabelText("Email address with error");
       expect(input).toHaveAttribute("aria-invalid", "true");
+    });
+  });
+
+  it("merges aria-describedby values from the control and child element without duplicates", () => {
+    // Arrange & Act
+    render(<RenderFormWithMergedDescriptions />);
+
+    // Assert
+    const input = screen.getByLabelText("Email with merged descriptions");
+    const describedBy = input.getAttribute("aria-describedby");
+    const tokens = describedBy?.split(/\s+/u) ?? [];
+
+    expect(tokens).toContain("wrapper-description");
+    expect(tokens).toContain("child-description");
+    expect(tokens).toContain("shared-description");
+    expect(tokens.filter((token) => token === "shared-description")).toHaveLength(1);
+    expect(tokens.some((token) => token.endsWith("-form-item-description"))).toBe(true);
+  });
+
+  it("does not render FormMessage when an error exists without a message", async () => {
+    // Arrange & Act
+    render(<RenderFormWithErrorWithoutMessage />);
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByTestId("missing-error-message")).not.toBeInTheDocument();
     });
   });
 

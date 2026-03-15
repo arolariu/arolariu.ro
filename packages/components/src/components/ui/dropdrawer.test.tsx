@@ -1,4 +1,4 @@
-import {render, screen, waitFor} from "@testing-library/react";
+import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -288,6 +288,64 @@ describe("DropDrawer", () => {
         expect(securityTrigger).toBeInTheDocument();
       });
     });
+
+    it("falls back to the default mobile submenu title when a wrapped submenu has no cached content", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <div>
+              Introductory copy
+              <DropDrawerSub id='wrapped-empty-submenu'>
+                <DropDrawerSubTrigger>
+                  <span>Wrapped Empty Submenu</span>
+                </DropDrawerSubTrigger>
+                <DropDrawerSubContent />
+              </DropDrawerSub>
+            </div>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Act
+      const user = userEvent.setup();
+      await user.click(await screen.findByText("Wrapped Empty Submenu"));
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByRole("button", {name: "Go back"})).toBeVisible();
+        expect(screen.getByText("Submenu")).toBeVisible();
+      });
+    });
+
+    it("preserves non-trigger children when processing mobile submenu children", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(true);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerSub id='mixed-children-submenu'>
+              Supporting copy
+              <span data-testid='mobile-submenu-extra-child'>Extra child</span>
+              <DropDrawerSubTrigger>Mixed Children Submenu</DropDrawerSubTrigger>
+              <DropDrawerSubContent>
+                <DropDrawerItem>Mixed Child Item</DropDrawerItem>
+              </DropDrawerSubContent>
+            </DropDrawerSub>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Supporting copy")).toBeVisible();
+        expect(screen.getByTestId("mobile-submenu-extra-child")).toBeVisible();
+        expect(screen.getByText("Mixed Children Submenu")).toBeVisible();
+      });
+    });
   });
 
   describe("DropDrawerSeparator", () => {
@@ -426,6 +484,35 @@ describe("DropDrawer", () => {
   });
 
   describe("DropDrawerItem with disabled prop", () => {
+    it("short-circuits disabled desktop item clicks", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(false);
+      const mockOnClick = vi.fn();
+      const mockOnSelect = vi.fn();
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem
+              disabled
+              onClick={mockOnClick}
+              onSelect={mockOnSelect}
+              data-testid='disabled-desktop-item'>
+              Disabled desktop item
+            </DropDrawerItem>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Act
+      const item = await screen.findByTestId("disabled-desktop-item");
+      fireEvent.click(item);
+
+      // Assert
+      expect(mockOnClick).not.toHaveBeenCalled();
+      expect(mockOnSelect).not.toHaveBeenCalled();
+    });
+
     it("renders disabled item on desktop", async () => {
       // Arrange
       mockedUseIsMobile.mockReturnValue(false);
@@ -858,6 +945,32 @@ describe("DropDrawerSubTrigger keyboard navigation", () => {
 });
 
 describe("DropDrawerItem keyboard navigation", () => {
+  it("ignores non-activation keys on mobile items", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+    const mockOnClick = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            onClick={mockOnClick}
+            data-testid='ignored-key-item'>
+            Ignored Key Item
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    const item = await screen.findByTestId("ignored-key-item");
+    const user = userEvent.setup();
+
+    item.focus();
+    await user.keyboard("{ArrowDown}");
+
+    expect(mockOnClick).not.toHaveBeenCalled();
+  });
+
   it("triggers click on Enter key press on mobile", async () => {
     mockedUseIsMobile.mockReturnValue(true);
     const mockOnClick = vi.fn();
@@ -945,6 +1058,57 @@ describe("DropDrawer back navigation", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Main Item")).toBeVisible();
+    });
+  });
+});
+
+describe("DropDrawer mobile conditional branches", () => {
+  it("keeps parent submenu items open on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+    const mockOnClick = vi.fn();
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerItem
+            data-parent-submenu-id='mobile-parent-submenu'
+            data-testid='parent-submenu-item'
+            onClick={mockOnClick}>
+            Parent submenu item
+          </DropDrawerItem>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId("parent-submenu-item"));
+
+    expect(mockOnClick).toHaveBeenCalledOnce();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("renders standalone mobile submenus without submenu registration context", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerSub id='standalone-submenu'>
+          Standalone copy
+          <span data-testid='standalone-submenu-extra'>Extra standalone child</span>
+          <DropDrawerSubTrigger>Standalone Submenu</DropDrawerSubTrigger>
+          <DropDrawerSubContent>
+            <DropDrawerItem>Standalone Item</DropDrawerItem>
+          </DropDrawerSubContent>
+        </DropDrawerSub>
+      </DropDrawer>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Standalone copy")).toBeVisible();
+      expect(screen.getByTestId("standalone-submenu-extra")).toBeVisible();
+      expect(screen.getByText("Standalone Submenu")).toBeVisible();
     });
   });
 });

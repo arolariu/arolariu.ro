@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {render, screen} from "@testing-library/react";
+import {act, render, screen, waitFor} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("motion/react", async () => {
@@ -101,8 +101,21 @@ beforeEach(() => {
 });
 
 describe("DotBackground", () => {
-  it("renders DotBackground with a custom class and a forwarded ref", () => {
+  it("renders DotBackground with a custom class, forwarded ref, and generated dots", async () => {
     // Arrange
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 16,
+      height: 16,
+      left: 0,
+      right: 32,
+      top: 0,
+      width: 32,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
     const ref = {current: null as SVGSVGElement | null};
 
     // Act
@@ -117,7 +130,65 @@ describe("DotBackground", () => {
     // Assert
     const dotBackground = screen.getByTestId("dot-background");
 
+    await waitFor(() => {
+      expect(dotBackground.querySelectorAll("circle")).toHaveLength(2);
+    });
+
     expect(dotBackground).toHaveClass("dot-background-class");
     expect(ref.current).toBe(dotBackground);
+    for (const circle of dotBackground.querySelectorAll("circle")) {
+      expect(circle).toHaveAttribute("fill", "currentColor");
+    }
+  });
+
+  it("renders glowing dots, forwards callback refs, and updates on resize", async () => {
+    // Arrange
+    vi.spyOn(Math, "random").mockReturnValue(0.25);
+
+    let currentWidth = 16;
+    const callbackRef = vi.fn();
+
+    vi.spyOn(SVGElement.prototype, "getBoundingClientRect").mockImplementation(() => ({
+      bottom: 16,
+      height: 16,
+      left: 0,
+      right: currentWidth,
+      top: 0,
+      width: currentWidth,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }));
+
+    render(
+      <DotBackground
+        glow
+        ref={callbackRef}
+        data-testid='glowing-dot-background'
+      />,
+    );
+
+    const dotBackground = screen.getByTestId("glowing-dot-background");
+
+    await waitFor(() => {
+      expect(dotBackground.querySelectorAll("circle")).toHaveLength(1);
+    });
+
+    currentWidth = 32;
+
+    // Act
+    act(() => {
+      globalThis.window.dispatchEvent(new Event("resize"));
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(dotBackground.querySelectorAll("circle")).toHaveLength(2);
+    });
+
+    expect(callbackRef).toHaveBeenCalledWith(dotBackground);
+    for (const circle of dotBackground.querySelectorAll("circle")) {
+      expect(circle.getAttribute("fill")).toMatch(/^url\(#.+-gradient\)$/u);
+    }
   });
 });
