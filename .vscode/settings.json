@@ -87,7 +87,7 @@
     "cursor-workspace": true,
     "windsurf": true
   },
-  "chat.notifyWindowOnConfirmation": true,
+  "chat.notifyWindowOnConfirmation": "windowNotFocused",
   "chat.promptFiles": true,
   "chat.renderRelatedFiles": false,
   "chat.sendElementsToChat.attachCSS": true,
@@ -432,7 +432,7 @@
     "*.py": "$(capture).*.py",
     "*.cs": "$(capture).*.cs",
     "*.ts": "$(capture).*.ts",
-    "*.tsx": "$(capture).*.tsx, $(capture).*.scss"
+    "*.tsx": "$(capture).*.tsx, $(capture).*.scss, $(capture).*.css"
   },
   "explorer.incrementalNaming": "smart",
   "explorer.openEditors.minVisible": 0,

@@ -18,6 +18,7 @@
     "rootDir": "src",
     "sourceMap": true,
     "noImplicitReturns": false,
+    "noPropertyAccessFromIndexSignature": false,
     "strictPropertyInitialization": false,
     "strictNullChecks": false,
     "types": [

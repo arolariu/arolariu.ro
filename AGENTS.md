@@ -8,7 +8,7 @@
 
 - **Frontend**: Next.js 16.1.6 + React 19.2.4 (main website at `sites/arolariu.ro/`)
 - **Backend**: .NET 10 ASP.NET Core Minimal APIs with Domain-Driven Design (at `sites/api.arolariu.ro/`)
-- **Component Library**: `@arolariu/components` — 60+ Radix UI/shadcn components (at `packages/components/`)
+- **Component Library**: `@arolariu/components` — 70+ Base UI components with CSS Modules styling (at `packages/components/`)
 - **CV Site**: SvelteKit 2 (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies)
 - **Infrastructure**: Azure Cloud, Bicep IaC (at `infra/Azure/Bicep/`)
 - **Tooling**: Nx monorepo, npm >=11, Node.js >=24, .NET 10 SDK
@@ -94,7 +94,7 @@ Always disclose assumptions, confidence level, risk flags, and validation eviden
 
 ```
 packages/
-  components/              # @arolariu/components — shared UI library (Radix UI)
+  components/              # @arolariu/components — shared UI library (Base UI + CSS Modules)
 sites/
   arolariu.ro/             # Next.js 16 main website
     src/app/               #   App Router pages (RSC by default)
@@ -259,7 +259,7 @@ sites/cv.arolariu.ro (SvelteKit — standalone)
 - Make sideways calls (Foundation→Foundation) — use Orchestration
 - Exceed 2-3 dependencies per service (Florance Pattern)
 - Skip tests for new code
-- Use inline styles instead of Tailwind CSS
+- Use inline styles instead of CSS Modules
 - Use sync-over-async patterns (`.Result`, `.Wait()`) in .NET
 - Auto-create or delete files without user confirmation
 - Force-push to main/preview branches

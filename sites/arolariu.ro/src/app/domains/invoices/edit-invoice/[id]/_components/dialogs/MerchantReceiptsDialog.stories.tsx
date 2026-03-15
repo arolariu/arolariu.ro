@@ -64,10 +64,10 @@ export const Default: Story = {
           <table className='min-w-full divide-y dark:divide-gray-700'>
             <thead>
               <tr className='bg-gray-50 dark:bg-gray-800/50'>
-                <th className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'>Receipt</th>
-                <th className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'>Date</th>
-                <th className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500'>Items</th>
-                <th className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500'>Actions</th>
+                <th className='px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>Receipt</th>
+                <th className='px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>Date</th>
+                <th className='px-4 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase'>Items</th>
+                <th className='px-4 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase'>Actions</th>
               </tr>
             </thead>
             <tbody className='divide-y bg-white dark:divide-gray-700 dark:bg-gray-900'>

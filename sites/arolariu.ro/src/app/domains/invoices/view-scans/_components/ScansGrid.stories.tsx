@@ -71,7 +71,12 @@ export const EmptyState: Story = {
           {[
             {step: 1, icon: <TbUpload className='h-4 w-4 text-blue-500' />, title: "Upload Scans", desc: "Take a photo or upload an image"},
             {step: 2, icon: <TbPhoto className='h-4 w-4 text-purple-500' />, title: "Review", desc: "Check extracted data"},
-            {step: 3, icon: <TbFileInvoice className='h-4 w-4 text-green-500' />, title: "Create Invoice", desc: "Generate invoice from scan"},
+            {
+              step: 3,
+              icon: <TbFileInvoice className='h-4 w-4 text-green-500' />,
+              title: "Create Invoice",
+              desc: "Generate invoice from scan",
+            },
           ].map((s) => (
             <div
               key={s.step}

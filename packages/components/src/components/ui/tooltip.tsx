@@ -1,32 +1,189 @@
 "use client";
 
-import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import {Tooltip as BaseTooltip} from "@base-ui/react/tooltip";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./tooltip.module.css";
 
-const TooltipProvider = TooltipPrimitive.Provider;
+interface TooltipProviderProps {
+  /** Tooltip content and triggers managed by the provider. @default undefined */
+  children: React.ReactNode;
+  /** Delay in milliseconds before tooltip content becomes visible. @default undefined */
+  delayDuration?: number;
+}
 
-const Tooltip = TooltipPrimitive.Root;
+interface TooltipProps extends Omit<React.ComponentPropsWithRef<typeof BaseTooltip.Root>, "delay"> {
+  /** Delay in milliseconds before tooltip content becomes visible. @default undefined */
+  delayDuration?: number;
+}
 
-const TooltipTrigger = TooltipPrimitive.Trigger;
+interface TooltipTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseTooltip.Trigger>, "className"> {
+  /** Additional CSS classes merged with the tooltip trigger styles. @default undefined */
+  className?: string;
+  /** Backward-compatible child-slot API that maps the child element to `render`. @default false @deprecated Prefer Base UI's `render` prop. */
+  asChild?: boolean;
+}
 
-const TooltipContent = React.forwardRef<
-  React.ComponentRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({className, sideOffset = 4, ...props}, ref) => (
-  <TooltipPrimitive.Portal>
-    <TooltipPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 origin-[--radix-tooltip-content-transform-origin] overflow-hidden rounded-md bg-neutral-900 px-3 py-1.5 text-xs text-neutral-50 dark:bg-neutral-50 dark:text-neutral-900",
-        className,
-      )}
-      {...props}
-    />
-  </TooltipPrimitive.Portal>
-));
-TooltipContent.displayName = TooltipPrimitive.Content.displayName;
+interface TooltipContentProps extends Omit<React.ComponentPropsWithRef<typeof BaseTooltip.Popup>, "className"> {
+  /** Additional CSS classes merged with the tooltip popup styles. @default undefined */
+  className?: string;
+  /** The offset in pixels between the trigger and the tooltip popup. @default 4 */
+  sideOffset?: number;
+  /** Preferred side on which the tooltip should appear. @default "top" */
+  side?: "top" | "right" | "bottom" | "left";
+}
+
+/**
+ * Provides a compatibility wrapper for grouping tooltip triggers and content.
+ *
+ * @remarks
+ * - Renders no DOM element by default and returns its children directly
+ * - Built on {@link https://base-ui.com/react/components/tooltip | Base UI Tooltip}
+ * - Does not expose a `render` prop because it is a pass-through provider shim
+ * - Styling via CSS Modules with `--ac-*` custom properties through descendant components
+ *
+ * @example Basic usage
+ * ```tsx
+ * <TooltipProvider>
+ *   <Tooltip>
+ *     <TooltipTrigger>Hover</TooltipTrigger>
+ *     <TooltipContent>Details</TooltipContent>
+ *   </Tooltip>
+ * </TooltipProvider>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
+ */
+const TooltipProvider = ({children}: Readonly<TooltipProviderProps>): React.ReactNode => children;
+TooltipProvider.displayName = "TooltipProvider";
+
+/**
+ * Coordinates tooltip timing, open state, and accessibility semantics.
+ *
+ * @remarks
+ * - Renders no DOM element by default and coordinates descendant tooltip parts
+ * - Built on {@link https://base-ui.com/react/components/tooltip | Base UI Tooltip}
+ * - Supports composition through descendant `render` props
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Tooltip>
+ *   <TooltipTrigger>Hover</TooltipTrigger>
+ *   <TooltipContent>Details</TooltipContent>
+ * </Tooltip>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
+ */
+function Tooltip(props: Readonly<Tooltip.Props>): React.ReactElement {
+  const {delayDuration, ...otherProps} = props;
+  const tooltipProps = delayDuration === undefined ? otherProps : {...otherProps, delay: delayDuration};
+
+  return <BaseTooltip.Root {...tooltipProps} />;
+}
+Tooltip.displayName = "Tooltip";
+
+/**
+ * Anchors tooltip behavior to an interactive trigger element.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/tooltip | Base UI Tooltip}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <TooltipTrigger>Hover</TooltipTrigger>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
+ */
+const TooltipTrigger = React.forwardRef<HTMLButtonElement, TooltipTrigger.Props>(
+  (props: Readonly<TooltipTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild support is part of the public API.
+    const {asChild = false, children, className, ...otherProps} = props;
+
+    if (asChild && React.isValidElement(children)) {
+      return (
+        <BaseTooltip.Trigger
+          ref={ref}
+          className={cn(styles.trigger, className)}
+          render={children as React.ReactElement}
+          {...otherProps}
+        />
+      );
+    }
+
+    return (
+      <BaseTooltip.Trigger
+        ref={ref}
+        className={cn(styles.trigger, className)}
+        {...otherProps}>
+        {children}
+      </BaseTooltip.Trigger>
+    );
+  },
+);
+TooltipTrigger.displayName = "TooltipTrigger";
+
+/**
+ * Renders positioned tooltip content inside a portal.
+ *
+ * @remarks
+ * - Renders a `<div>` element by default
+ * - Built on {@link https://base-ui.com/react/components/tooltip | Base UI Tooltip}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <TooltipContent>Details</TooltipContent>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/tooltip | Base UI Documentation}
+ */
+const TooltipContent = React.forwardRef<React.ComponentRef<typeof BaseTooltip.Popup>, TooltipContent.Props>(
+  (props: Readonly<TooltipContent.Props>, ref): React.ReactElement => {
+    const {className, children, side = "top", sideOffset = 4, ...otherProps} = props;
+
+    return (
+      <BaseTooltip.Portal>
+        <BaseTooltip.Positioner
+          className={styles.positioner}
+          side={side}
+          sideOffset={sideOffset}>
+          <BaseTooltip.Popup
+            ref={ref}
+            className={cn(styles.popup, className)}
+            {...otherProps}>
+            {children}
+          </BaseTooltip.Popup>
+        </BaseTooltip.Positioner>
+      </BaseTooltip.Portal>
+    );
+  },
+);
+TooltipContent.displayName = "TooltipContent";
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Tooltip {
+  export type Props = TooltipProps;
+  export type State = BaseTooltip.Root.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace TooltipTrigger {
+  export type Props = TooltipTriggerProps;
+  export type State = BaseTooltip.Trigger.State;
+}
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace TooltipContent {
+  export type Props = TooltipContentProps;
+  export type State = BaseTooltip.Popup.State;
+}
 
 export {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger};

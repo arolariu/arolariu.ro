@@ -1,22 +1,61 @@
 # 💡 Usage Examples for @arolariu/components
 
-> **Real-world examples to get you building faster!** Copy, paste, and customize these patterns for your projects.
+> **Real-world examples to get you building faster.** Copy, paste, and customize these patterns for your projects.
 
 ## 🚀 Getting Started
 
 ### Installation & Setup
 
 ```bash
-# Install the package
 npm install @arolariu/components
 
-# Install peer dependencies if needed
-npm install react react-dom tailwindcss
+# Peer dependencies (install if not already in your project)
+npm install react react-dom @base-ui/react motion
 ```
 
 ```tsx
-// Add to your app's root (App.tsx, main.tsx, or _app.tsx)
+// Import design tokens only once in your app entry point
 import "@arolariu/components/styles";
+
+// Components auto-load their CSS when imported
+import { Button, Card } from "@arolariu/components";
+```
+
+`@arolariu/components/styles` provides design tokens only. Component CSS is loaded automatically when components are imported.
+
+```tsx
+// Use local CSS Modules for application-specific layout and composition
+import styles from "./my-component.module.css";
+```
+
+`tailwindcss` is not a peer dependency in v1.0.0.
+
+### Useful Subpath Imports
+
+```tsx
+import { Button } from "@arolariu/components/button";
+import { useIsMobile } from "@arolariu/components/useIsMobile";
+import { cn } from "@arolariu/components/utilities";
+import { hexToHsl } from "@arolariu/components/color-conversion-utilities";
+```
+
+### Composition with the `render` Prop
+
+```tsx
+import { Button } from "@arolariu/components";
+
+// Use render prop instead of asChild
+<Button render={<a href="/dashboard" />}>
+  Go to Dashboard
+</Button>
+```
+
+```css
+/* my-component.module.css */
+.page {
+  min-height: 100vh;
+  padding: 2rem;
+}
 ```
 
 ---
@@ -26,40 +65,80 @@ import "@arolariu/components/styles";
 ### Simple Card Layout
 
 ```tsx
+import { Badge } from "@arolariu/components/badge";
+import { Button } from "@arolariu/components/button";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@arolariu/components/card";
-import { Button } from "@arolariu/components/button";
-import { Badge } from "@arolariu/components/badge";
+import styles from "./product-card.module.css";
 
 export function ProductCard() {
   return (
-    <Card className="w-96">
+    <Card className={styles.card}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className={styles.headerRow}>
           <CardTitle>Premium Plan</CardTitle>
           <Badge variant="secondary">Popular</Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <p className="text-3xl font-bold">
-          $29<span className="text-sm font-normal">/month</span>
+      <CardContent className={styles.content}>
+        <p className={styles.price}>
+          $29<span className={styles.priceSuffix}>/month</span>
         </p>
-        <ul className="mt-4 space-y-2">
+        <ul className={styles.featureList}>
           <li>✅ Unlimited projects</li>
           <li>✅ Priority support</li>
           <li>✅ Advanced analytics</li>
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className="w-full">Subscribe Now</Button>
+        <Button className={styles.primaryAction}>Subscribe Now</Button>
       </CardFooter>
     </Card>
   );
+}
+```
+
+```css
+/* product-card.module.css */
+.card {
+  width: 24rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.content {
+  display: grid;
+  gap: 1rem;
+}
+
+.price {
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+
+.priceSuffix {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.featureList {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.primaryAction {
+  width: 100%;
 }
 ```
 
@@ -67,10 +146,10 @@ export function ProductCard() {
 
 ```tsx
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarMenuItem,
-} from "@arolariu/components/sidebar";
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@arolariu/components/avatar";
 import {
   Card,
   CardContent,
@@ -79,61 +158,73 @@ import {
 } from "@arolariu/components/card";
 import { Progress } from "@arolariu/components/progress";
 import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@arolariu/components/avatar";
+  Sidebar,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from "@arolariu/components/sidebar";
+import styles from "./dashboard.module.css";
 
 export function Dashboard() {
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <Sidebar>
-        <SidebarContent>
-          <SidebarMenuItem href="/dashboard">Dashboard</SidebarMenuItem>
-          <SidebarMenuItem href="/projects">Projects</SidebarMenuItem>
-          <SidebarMenuItem href="/settings">Settings</SidebarMenuItem>
-        </SidebarContent>
-      </Sidebar>
+    <SidebarProvider>
+      <div className={styles.layout}>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive>Dashboard</SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>Projects</SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton>Settings</SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 overflow-auto">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+        <main className={styles.main}>
+          <h1 className={styles.title}>Dashboard</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Progress value={75} className="w-full" />
-              <p className="text-sm text-muted-foreground mt-2">75% complete</p>
-            </CardContent>
-          </Card>
+          <div className={styles.cardGrid}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Progress</CardTitle>
+              </CardHeader>
+              <CardContent className={styles.stack}>
+                <Progress value={75} />
+                <p className={styles.mutedText}>75% complete</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex -space-x-2">
-                <Avatar className="border-2 border-background">
-                  <AvatarImage src="/avatar1.jpg" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
-                <Avatar className="border-2 border-background">
-                  <AvatarImage src="/avatar2.jpg" />
-                  <AvatarFallback>SM</AvatarFallback>
-                </Avatar>
-                <Avatar className="border-2 border-background">
-                  <AvatarFallback>+3</AvatarFallback>
-                </Avatar>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Team Members</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={styles.avatarRow}>
+                  <Avatar className={styles.avatar}>
+                    <AvatarImage src="/avatar1.jpg" />
+                    <AvatarFallback>JD</AvatarFallback>
+                  </Avatar>
+                  <Avatar className={styles.avatar}>
+                    <AvatarImage src="/avatar2.jpg" />
+                    <AvatarFallback>SM</AvatarFallback>
+                  </Avatar>
+                  <Avatar className={styles.avatar}>
+                    <AvatarFallback>+3</AvatarFallback>
+                  </Avatar>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 }
 ```
@@ -145,19 +236,21 @@ export function Dashboard() {
 ### Complete Login Form
 
 ```tsx
+import { useState } from "react";
+
+import { Alert, AlertDescription } from "@arolariu/components/alert";
+import { Button } from "@arolariu/components/button";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@arolariu/components/card";
-import { Input } from "@arolariu/components/input";
-import { Button } from "@arolariu/components/button";
-import { Label } from "@arolariu/components/label";
 import { Checkbox } from "@arolariu/components/checkbox";
-import { Alert, AlertDescription } from "@arolariu/components/alert";
-import { useState } from "react";
+import { Input } from "@arolariu/components/input";
+import { Label } from "@arolariu/components/label";
+import styles from "./login-form.module.css";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -166,16 +259,15 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // Your login logic here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
-      console.log("Login successful!");
-    } catch (err) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log("Login successful");
+    } catch {
       setError("Invalid email or password");
     } finally {
       setLoading(false);
@@ -183,43 +275,43 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md">
+    <div className={styles.page}>
+      <Card className={styles.card}>
         <CardHeader>
-          <CardTitle className="text-center">Welcome Back</CardTitle>
+          <CardTitle className={styles.centeredTitle}>Welcome Back</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
+          <CardContent className={styles.content}>
+            {error ? (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
-            )}
+            ) : null}
 
-            <div className="space-y-2">
+            <div className={styles.field}>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 required
               />
             </div>
 
-            <div className="space-y-2">
+            <div className={styles.field}>
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) => setPassword(event.target.value)}
                 required
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className={styles.checkboxRow}>
               <Checkbox
                 id="remember"
                 checked={rememberMe}
@@ -229,13 +321,20 @@ export function LoginForm() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-2">
-            <Button type="submit" className="w-full" disabled={loading}>
+          <CardFooter className={styles.footer}>
+            <Button
+              type="submit"
+              className={styles.submitButton}
+              disabled={loading}
+            >
               {loading ? "Signing in..." : "Sign In"}
             </Button>
-            <Button variant="link" size="sm">
+            <a
+              className={styles.link}
+              href="/forgot-password"
+            >
               Forgot your password?
-            </Button>
+            </a>
           </CardFooter>
         </form>
       </Card>
@@ -247,9 +346,11 @@ export function LoginForm() {
 ### Advanced Form with Validation
 
 ```tsx
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
+
+import { Button } from "@arolariu/components/button";
 import {
   Form,
   FormControl,
@@ -260,7 +361,6 @@ import {
   FormMessage,
 } from "@arolariu/components/form";
 import { Input } from "@arolariu/components/input";
-import { Button } from "@arolariu/components/button";
 import {
   Select,
   SelectContent,
@@ -269,6 +369,7 @@ import {
   SelectValue,
 } from "@arolariu/components/select";
 import { Textarea } from "@arolariu/components/textarea";
+import styles from "./profile-form.module.css";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -298,9 +399,9 @@ export function ProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6 max-w-md"
+        className={styles.form}
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className={styles.twoColumnGrid}>
           <FormField
             control={form.control}
             name="firstName"
@@ -308,7 +409,10 @@ export function ProfileForm() {
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John" {...field} />
+                  <Input
+                    placeholder="John"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -322,7 +426,10 @@ export function ProfileForm() {
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Doe" {...field} />
+                  <Input
+                    placeholder="Doe"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -337,10 +444,13 @@ export function ProfileForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="john.doe@example.com" {...field} />
+                <Input
+                  placeholder="john.doe@example.com"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
-                We'll never share your email with anyone else.
+                We&apos;ll never share your email with anyone else.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -353,7 +463,10 @@ export function ProfileForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                defaultValue={field.value}
+                onValueChange={field.onChange}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a role" />
@@ -379,7 +492,7 @@ export function ProfileForm() {
               <FormControl>
                 <Textarea
                   placeholder="Tell us about yourself"
-                  className="min-h-[100px]"
+                  className={styles.textarea}
                   {...field}
                 />
               </FormControl>
@@ -403,16 +516,9 @@ export function ProfileForm() {
 
 ```tsx
 import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuList,
-} from "@arolariu/components/navigation-menu";
-import { Button } from "@arolariu/components/button";
-import { Sheet, SheetContent, SheetTrigger } from "@arolariu/components/sheet";
-import {
   Avatar,
-  AvatarImage,
   AvatarFallback,
+  AvatarImage,
 } from "@arolariu/components/avatar";
 import {
   DropdownMenu,
@@ -420,101 +526,82 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@arolariu/components/dropdown-menu";
-import { MenuIcon, User, Settings, LogOut } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "@arolariu/components/navigation-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@arolariu/components/sheet";
+import { LogOut, MenuIcon, Settings, User } from "lucide-react";
+import styles from "./app-header.module.css";
 
 export function AppHeader() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="mr-4 hidden md:flex">
-          <a className="mr-6 flex items-center space-x-2" href="/">
-            <span className="hidden font-bold sm:inline-block">MyApp</span>
+    <header className={styles.header}>
+      <div className={styles.headerInner}>
+        <div className={styles.desktopArea}>
+          <a
+            className={styles.brandLink}
+            href="/"
+          >
+            <span className={styles.brandName}>MyApp</span>
           </a>
 
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <Button variant="ghost" href="/dashboard">
-                  Dashboard
-                </Button>
+                <NavigationMenuLink href="/dashboard">Dashboard</NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Button variant="ghost" href="/projects">
-                  Projects
-                </Button>
+                <NavigationMenuLink href="/projects">Projects</NavigationMenuLink>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Button variant="ghost" href="/analytics">
-                  Analytics
-                </Button>
+                <NavigationMenuLink href="/analytics">Analytics</NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
 
-        {/* Mobile Navigation */}
         <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              className="mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-            >
-              <MenuIcon className="h-5 w-5" />
-            </Button>
+          <SheetTrigger
+            render={<button type="button" className={styles.mobileMenuButton} />}
+          >
+            <MenuIcon />
           </SheetTrigger>
           <SheetContent side="left">
-            <nav className="flex flex-col space-y-3">
-              <Button
-                variant="ghost"
-                className="justify-start"
-                href="/dashboard"
-              >
-                Dashboard
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start"
-                href="/projects"
-              >
-                Projects
-              </Button>
-              <Button
-                variant="ghost"
-                className="justify-start"
-                href="/analytics"
-              >
-                Analytics
-              </Button>
+            <nav className={styles.mobileNav}>
+              <a href="/dashboard">Dashboard</a>
+              <a href="/projects">Projects</a>
+              <a href="/analytics">Analytics</a>
             </nav>
           </SheetContent>
         </Sheet>
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            {/* Search or other content can go here */}
-          </div>
-
-          {/* User Menu */}
+        <div className={styles.actions}>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/01.png" alt="User" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
-              </Button>
+            <DropdownMenuTrigger
+              render={<button type="button" className={styles.avatarButton} />}
+            >
+              <Avatar>
+                <AvatarImage
+                  src="/avatars/01.png"
+                  alt="User"
+                />
+                <AvatarFallback>JD</AvatarFallback>
+              </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent align="end">
               <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
+                <User />
                 <span>Profile</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
+                <Settings />
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut />
                 <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -533,6 +620,13 @@ export function AppHeader() {
 ### Interactive Data Table
 
 ```tsx
+import { Badge } from "@arolariu/components/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@arolariu/components/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -542,15 +636,8 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components/table";
-import { Badge } from "@arolariu/components/badge";
-import { Button } from "@arolariu/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@arolariu/components/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash } from "lucide-react";
+import { Edit, Eye, MoreHorizontal, Trash } from "lucide-react";
+import styles from "./users-table.module.css";
 
 interface User {
   id: string;
@@ -600,8 +687,8 @@ export function UsersTable() {
   };
 
   return (
-    <div className="w-full">
-      <div className="rounded-md border">
+    <div className={styles.wrapper}>
+      <div className={styles.tableShell}>
         <Table>
           <TableCaption>A list of your team members.</TableCaption>
           <TableHeader>
@@ -611,35 +698,35 @@ export function UsersTable() {
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Login</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className={styles.actionsColumn}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell className={styles.emphasisCell}>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell>{getStatusBadge(user.status)}</TableCell>
                 <TableCell>{user.lastLogin}</TableCell>
                 <TableCell>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                    <DropdownMenuTrigger
+                      render={<button type="button" className={styles.iconButton} />}
+                    >
+                      <MoreHorizontal />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>
-                        <Eye className="mr-2 h-4 w-4" />
+                        <Eye />
                         View
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
+                        <Edit />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash className="mr-2 h-4 w-4" />
+                      <DropdownMenuItem className={styles.dangerItem}>
+                        <Trash />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -673,8 +760,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@arolariu/components/alert-dialog";
-import { Button } from "@arolariu/components/button";
 import { Trash } from "lucide-react";
+import styles from "./delete-confirmation.module.css";
 
 export function DeleteConfirmation({
   itemName,
@@ -685,26 +772,26 @@ export function DeleteConfirmation({
 }) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm">
-          <Trash className="mr-2 h-4 w-4" />
-          Delete
-        </Button>
+      <AlertDialogTrigger
+        render={<button type="button" className={styles.triggerButton} />}
+      >
+        <Trash />
+        Delete
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete "
-            {itemName}" and remove all associated data from our servers.
+            This action cannot be undone. This will permanently delete
+            {" "}
+            {itemName}
+            {" "}
+            and remove all associated data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
+          <AlertDialogAction onClick={onConfirm}>
             Yes, delete it
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -717,6 +804,7 @@ export function DeleteConfirmation({
 ### Settings Modal
 
 ```tsx
+import { Button } from "@arolariu/components/button";
 import {
   Dialog,
   DialogContent,
@@ -726,10 +814,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@arolariu/components/dialog";
-import { Button } from "@arolariu/components/button";
 import { Input } from "@arolariu/components/input";
 import { Label } from "@arolariu/components/label";
-import { Switch } from "@arolariu/components/switch";
 import {
   Select,
   SelectContent,
@@ -737,24 +823,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@arolariu/components/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@arolariu/components/tabs";
+import { Switch } from "@arolariu/components/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@arolariu/components/tabs";
 import { Settings } from "lucide-react";
+import styles from "./settings-dialog.module.css";
 
 export function SettingsDialog() {
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Settings className="mr-2 h-4 w-4" />
-          Settings
-        </Button>
+      <DialogTrigger
+        render={<button type="button" className={styles.trigger} />}
+      >
+        <Settings />
+        Settings
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className={styles.dialogContent}>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
@@ -762,23 +845,35 @@ export function SettingsDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs
+          defaultValue="general"
+          className={styles.tabs}
+        >
+          <TabsList className={styles.tabsList}>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="space-y-4">
-            <div className="space-y-2">
+          <TabsContent
+            value="general"
+            className={styles.panel}
+          >
+            <div className={styles.field}>
               <Label htmlFor="name">Display Name</Label>
-              <Input id="name" defaultValue="John Doe" />
+              <Input
+                id="name"
+                defaultValue="John Doe"
+              />
             </div>
-            <div className="space-y-2">
+            <div className={styles.field}>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" defaultValue="john@example.com" />
+              <Input
+                id="email"
+                defaultValue="john@example.com"
+              />
             </div>
-            <div className="space-y-2">
+            <div className={styles.field}>
               <Label htmlFor="timezone">Timezone</Label>
               <Select defaultValue="utc">
                 <SelectTrigger>
@@ -793,20 +888,23 @@ export function SettingsDialog() {
             </div>
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+          <TabsContent
+            value="notifications"
+            className={styles.panel}
+          >
+            <div className={styles.switchRow}>
+              <div className={styles.switchText}>
                 <Label>Email Notifications</Label>
-                <div className="text-sm text-muted-foreground">
+                <div className={styles.mutedText}>
                   Receive emails about your account activity.
                 </div>
               </div>
               <Switch />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className={styles.switchRow}>
+              <div className={styles.switchText}>
                 <Label>Push Notifications</Label>
-                <div className="text-sm text-muted-foreground">
+                <div className={styles.mutedText}>
                   Receive push notifications on your devices.
                 </div>
               </div>
@@ -814,18 +912,30 @@ export function SettingsDialog() {
             </div>
           </TabsContent>
 
-          <TabsContent value="security" className="space-y-4">
-            <div className="space-y-2">
+          <TabsContent
+            value="security"
+            className={styles.panel}
+          >
+            <div className={styles.field}>
               <Label htmlFor="current-password">Current Password</Label>
-              <Input id="current-password" type="password" />
+              <Input
+                id="current-password"
+                type="password"
+              />
             </div>
-            <div className="space-y-2">
+            <div className={styles.field}>
               <Label htmlFor="new-password">New Password</Label>
-              <Input id="new-password" type="password" />
+              <Input
+                id="new-password"
+                type="password"
+              />
             </div>
-            <div className="space-y-2">
+            <div className={styles.field}>
               <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input id="confirm-password" type="password" />
+              <Input
+                id="confirm-password"
+                type="password"
+              />
             </div>
           </TabsContent>
         </Tabs>
@@ -842,81 +952,75 @@ export function SettingsDialog() {
 
 ---
 
-## 🎨 Background Effects Examples
+## 🎨 Theming Examples
 
-### Animated Landing Page
+### App Theme with `--ac-*` Tokens
+
+```css
+:root {
+  --ac-primary: oklch(0.6 0.2 250);
+  --ac-radius: 0.5rem;
+}
+```
+
+```css
+/* app-theme.module.css */
+.themeScope {
+  --ac-primary: oklch(0.68 0.2 258);
+  --ac-primary-foreground: oklch(0.98 0.01 258);
+  --ac-secondary: oklch(0.95 0.02 286);
+  --ac-background: oklch(0.99 0 0);
+  --ac-radius-md: 0.75rem;
+  --ac-radius-lg: 1rem;
+}
+
+.themeScope[data-theme="dark"] {
+  --ac-background: oklch(0.17 0.01 286);
+  --ac-foreground: oklch(0.98 0 0);
+  --ac-card: oklch(0.2 0.01 286);
+}
+```
 
 ```tsx
-import { DotBackground } from "@arolariu/components/dot-background";
-import { BubbleBackground } from "@arolariu/components/bubble-background";
-import { GradientBackground } from "@arolariu/components/gradient-background";
 import { Button } from "@arolariu/components/button";
-import { Card, CardContent } from "@arolariu/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@arolariu/components/card";
+import styles from "./app-theme.module.css";
 
-export function LandingPage() {
+export function ThemePreview() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Animated Background */}
-      <DotBackground className="absolute inset-0" />
-      <GradientBackground className="absolute inset-0" />
-
-      {/* Content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 text-center">
-        <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-6xl">
-          Build Beautiful Apps
-          <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            {" "}
-            Faster
-          </span>
-        </h1>
-
-        <p className="mb-8 max-w-2xl text-lg text-muted-foreground">
-          Create stunning user interfaces with our comprehensive React component
-          library. Built with accessibility, performance, and developer
-          experience in mind.
-        </p>
-
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <Button size="lg" className="px-8">
-            Get Started
-          </Button>
-          <Button variant="outline" size="lg" className="px-8">
-            View Components
-          </Button>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="mt-16 grid gap-6 sm:grid-cols-3">
-          <Card className="bg-card/50 backdrop-blur">
-            <CardContent className="p-6 text-center">
-              <h3 className="mb-2 text-lg font-semibold">60+ Components</h3>
-              <p className="text-sm text-muted-foreground">
-                Comprehensive set of UI components for any project
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/50 backdrop-blur">
-            <CardContent className="p-6 text-center">
-              <h3 className="mb-2 text-lg font-semibold">TypeScript First</h3>
-              <p className="text-sm text-muted-foreground">
-                Full type safety and excellent developer experience
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card/50 backdrop-blur">
-            <CardContent className="p-6 text-center">
-              <h3 className="mb-2 text-lg font-semibold">Accessible</h3>
-              <p className="text-sm text-muted-foreground">
-                Built on Radix UI with WAI-ARIA compliance
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+    <section
+      className={styles.themeScope}
+      data-theme="dark"
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom theme scope</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button>Token-driven button</Button>
+        </CardContent>
+      </Card>
+    </section>
   );
+}
+```
+
+### Styling Base UI State Attributes
+
+```css
+/* checkbox-demo.module.css */
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checkboxRow :global([data-checked]) {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ac-primary) 25%, transparent);
+}
+
+.checkboxRow :global([data-disabled]) {
+  opacity: 0.5;
 }
 ```
 
@@ -927,6 +1031,9 @@ export function LandingPage() {
 ### Mobile-Optimized Form
 
 ```tsx
+import { Button } from "@arolariu/components/button";
+import { Input } from "@arolariu/components/input";
+import { Label } from "@arolariu/components/label";
 import {
   Sheet,
   SheetContent,
@@ -935,21 +1042,22 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@arolariu/components/sheet";
-import { Button } from "@arolariu/components/button";
-import { Input } from "@arolariu/components/input";
-import { Label } from "@arolariu/components/label";
 import { Textarea } from "@arolariu/components/textarea";
 import { Plus } from "lucide-react";
+import styles from "./mobile-add-form.module.css";
 
 export function MobileAddForm() {
   return (
     <Sheet>
-      <SheetTrigger asChild>
-        <Button className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg md:hidden">
-          <Plus className="h-6 w-6" />
-        </Button>
+      <SheetTrigger
+        render={<button type="button" className={styles.fab} />}
+      >
+        <Plus />
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-[80vh]">
+      <SheetContent
+        side="bottom"
+        className={styles.sheetContent}
+      >
         <SheetHeader>
           <SheetTitle>Add New Item</SheetTitle>
           <SheetDescription>
@@ -957,24 +1065,30 @@ export function MobileAddForm() {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-4">
-          <div className="space-y-2">
+        <div className={styles.formStack}>
+          <div className={styles.field}>
             <Label htmlFor="title">Title</Label>
-            <Input id="title" placeholder="Enter title" />
+            <Input
+              id="title"
+              placeholder="Enter title"
+            />
           </div>
 
-          <div className="space-y-2">
+          <div className={styles.field}>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               placeholder="Enter description"
-              className="min-h-[100px]"
+              className={styles.textarea}
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button className="flex-1">Save</Button>
-            <Button variant="outline" className="flex-1">
+          <div className={styles.actionRow}>
+            <Button className={styles.flexButton}>Save</Button>
+            <Button
+              variant="outline"
+              className={styles.flexButton}
+            >
               Cancel
             </Button>
           </div>
@@ -996,7 +1110,7 @@ export function MobileAddForm() {
 import { Button } from "@arolariu/components/button";
 import { Card } from "@arolariu/components/card";
 
-// ❌ Avoid barrel imports
+// ❌ Avoid barrel imports when bundle size matters
 import { Button, Card } from "@arolariu/components";
 ```
 
@@ -1004,8 +1118,11 @@ import { Button, Card } from "@arolariu/components";
 
 ```tsx
 // ✅ Always include proper labels and ARIA attributes
-<Button aria-label="Close dialog" onClick={handleClose}>
-  <X className="h-4 w-4" />
+<Button
+  aria-label="Close dialog"
+  onClick={handleClose}
+>
+  <X />
 </Button>
 
 // ✅ Use semantic HTML structure
@@ -1019,17 +1136,25 @@ import { Button, Card } from "@arolariu/components";
 
 ### Responsive Design
 
-```tsx
-// ✅ Use Tailwind's responsive utilities
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-  {/* components */}
-</div>
+```css
+/* responsive-layout.module.css */
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
 
-// ✅ Hide/show components based on screen size
-<div className="block md:hidden">Mobile only content</div>
-<div className="hidden md:block">Desktop only content</div>
+@media (min-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 ```
-
----
 
 Ready to build something amazing? **[🚀 Start with our Quick Start Guide](./README.md#-quick-start)**

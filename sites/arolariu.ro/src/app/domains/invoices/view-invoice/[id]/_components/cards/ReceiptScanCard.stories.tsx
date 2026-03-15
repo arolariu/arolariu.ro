@@ -25,7 +25,11 @@ export const SingleScan: Story = {
       </div>
       <div className='flex justify-center p-4'>
         <div className='h-[250px] w-[170px] cursor-pointer overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
-          <img src='https://picsum.photos/seed/receiptscan/340/500' alt='Receipt scan' className='h-full w-full object-cover' />
+          <img
+            src='https://picsum.photos/seed/receiptscan/340/500'
+            alt='Receipt scan'
+            className='h-full w-full object-cover'
+          />
         </div>
       </div>
       <div className='border-t p-4'>
@@ -48,7 +52,11 @@ export const MultipleScans: Story = {
       </div>
       <div className='flex justify-center p-4'>
         <div className='h-[250px] w-[170px] cursor-pointer overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
-          <img src='https://picsum.photos/seed/receiptscan2/340/500' alt='Receipt scan 1 of 3' className='h-full w-full object-cover' />
+          <img
+            src='https://picsum.photos/seed/receiptscan2/340/500'
+            alt='Receipt scan 1 of 3'
+            className='h-full w-full object-cover'
+          />
         </div>
       </div>
       <div className='flex flex-col gap-2 border-t p-4'>

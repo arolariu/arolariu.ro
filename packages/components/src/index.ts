@@ -1,3 +1,18 @@
+// @arolariu/components — Base UI + CSS Modules component library
+// Version 1.0.0 — Built on @base-ui/react primitives
+
+// ============================================================
+// Base UI Utilities (re-exported for consumer convenience)
+// ============================================================
+export {CSPProvider} from "@base-ui/react/csp-provider";
+export {DirectionProvider} from "@base-ui/react/direction-provider";
+export {mergeProps} from "@base-ui/react/merge-props";
+export {useRender} from "@base-ui/react/use-render";
+
+// ============================================================
+// Components
+// ============================================================
+
 export {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./components/ui/accordion";
 
 export {
@@ -15,12 +30,14 @@ export {
 } from "./components/ui/alert-dialog";
 
 export {Alert, AlertDescription, AlertTitle} from "./components/ui/alert";
+export type {AlertProps, AlertVariant} from "./components/ui/alert";
 
 export {AspectRatio} from "./components/ui/aspect-ratio";
 
 export {Avatar, AvatarFallback, AvatarImage} from "./components/ui/avatar";
 
 export {Badge, badgeVariants} from "./components/ui/badge";
+export type {BadgeProps, BadgeVariant} from "./components/ui/badge";
 
 export {
   Breadcrumb,
@@ -33,23 +50,99 @@ export {
 } from "./components/ui/breadcrumb";
 
 export {Button, buttonVariants} from "./components/ui/button";
+export type {ButtonProps, ButtonSize, ButtonState, ButtonVariant} from "./components/ui/button";
 
 export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants} from "./components/ui/button-group";
 
 export {Calendar} from "./components/ui/calendar";
+export type {CalendarProps, DateRange, DayPickerProps, Matcher} from "./components/ui/calendar";
 
 export {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./components/ui/card";
 
 export {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi} from "./components/ui/carousel";
+export type {CarouselOptions, CarouselPlugin, CarouselProps} from "./components/ui/carousel";
+
+export {CheckboxGroup} from "./components/ui/checkbox-group";
 
 export {
+  // Recharts series elements
+  Area,
+  // Recharts chart containers
+  AreaChart,
+  Bar,
+  BarChart,
+  BarStack,
+  // Recharts annotations & overlays
+  Brush,
+  // Recharts axis & grid
+  CartesianGrid,
+  // Recharts shapes
+  Cell,
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
   ChartTooltip,
   ChartTooltipContent,
+  ComposedChart,
+  Cross,
+  Curve,
+  Customized,
+  DefaultZIndexes,
+  Dot,
+  ErrorBar,
+  Funnel,
+  FunnelChart,
+  LabelList,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Polygon,
+  Radar,
+  RadarChart,
+  RadialBar,
+  RadialBarChart,
+  RechartsLabel,
+  Rectangle,
+  ReferenceArea,
+  ReferenceDot,
+  ReferenceLine,
+  // Recharts layout
+  ResponsiveContainer,
+  Sankey,
+  Scatter,
+  ScatterChart,
+  Sector,
+  SunburstChart,
+  Symbols,
+  Trapezoid,
+  Treemap,
+  XAxis,
+  YAxis,
+  ZAxis,
+  // Recharts z-index (v3.4+)
+  ZIndexLayer,
+  useActiveTooltipCoordinate,
+  useActiveTooltipDataPoints,
+  useActiveTooltipLabel,
+  useChartHeight,
+  // Recharts hooks (v3+)
+  useChartWidth,
+  useIsTooltipActive,
+  useMargin,
+  useOffset,
+  usePlotArea,
+  useXAxisDomain,
+  useYAxisDomain,
   type ChartConfig,
+  type DefaultLegendContentProps,
+  // Recharts types
+  type DefaultTooltipContentProps,
+  type TooltipValueType,
 } from "./components/ui/chart";
 
 export {Checkbox} from "./components/ui/checkbox";
@@ -145,11 +238,62 @@ export {
   FieldTitle,
 } from "./components/ui/field";
 
-export {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useFormField} from "./components/ui/form";
+export {
+  Controller,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useController,
+  useFieldArray,
+  useForm,
+  useFormContext,
+  useFormField,
+  useFormState,
+  useWatch,
+  type FormControlProps,
+} from "./components/ui/form";
+export type {
+  Control,
+  ControllerFieldState,
+  ControllerProps,
+  ControllerRenderProps,
+  DefaultValues,
+  FieldErrors,
+  FieldPath,
+  FieldValues,
+  Path,
+  FieldError as RHFFieldError,
+  RegisterOptions,
+  Resolver,
+  SubmitHandler,
+  UseControllerReturn,
+  UseFieldArrayReturn,
+  UseFormReturn,
+} from "./components/ui/form";
 
 export {HoverCard, HoverCardContent, HoverCardTrigger} from "./components/ui/hover-card";
 
-export {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot} from "./components/ui/input-otp";
+export {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+  REGEXP_ONLY_CHARS,
+  REGEXP_ONLY_DIGITS,
+  REGEXP_ONLY_DIGITS_AND_CHARS,
+} from "./components/ui/input-otp";
+export type {
+  InputOTPGroupProps,
+  InputOTPProps,
+  InputOTPSeparatorProps,
+  InputOTPSlotProps,
+  OTPInputProps,
+  SlotProps,
+} from "./components/ui/input-otp";
 
 export {Input} from "./components/ui/input";
 
@@ -178,6 +322,8 @@ export {
 export {Kbd, KbdGroup} from "./components/ui/kbd";
 
 export {Label} from "./components/ui/label";
+
+export {Meter, MeterIndicator, MeterLabel, MeterTrack} from "./components/ui/meter";
 
 export {
   Menubar,
@@ -211,6 +357,15 @@ export {
 } from "./components/ui/navigation-menu";
 
 export {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+  NumberFieldScrubArea,
+} from "./components/ui/number-field";
+
+export {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -227,6 +382,13 @@ export {Progress} from "./components/ui/progress";
 export {RadioGroup, RadioGroupItem} from "./components/ui/radio-group";
 
 export {ResizableHandle, ResizablePanel, ResizablePanelGroup} from "./components/ui/resizable";
+export type {
+  ImperativePanelGroupHandle,
+  ImperativePanelHandle,
+  ResizableHandleProps,
+  ResizablePanelGroupProps,
+  ResizablePanelProps,
+} from "./components/ui/resizable";
 
 export {ScrollArea, ScrollBar} from "./components/ui/scroll-area";
 
@@ -292,6 +454,7 @@ export {Spinner} from "./components/ui/spinner";
 export {Slider} from "./components/ui/slider";
 
 export {Toaster, toast} from "./components/ui/sonner";
+export type {Toast} from "./components/ui/sonner";
 
 export {Switch} from "./components/ui/switch";
 
@@ -301,19 +464,41 @@ export {Tabs, TabsContent, TabsList, TabsTrigger} from "./components/ui/tabs";
 
 export {Textarea} from "./components/ui/textarea";
 
+export {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} from "./components/ui/toolbar";
+
 export {ToggleGroup, ToggleGroupItem} from "./components/ui/toggle-group";
+export type {ToggleGroupItemProps, ToggleGroupProps} from "./components/ui/toggle-group";
 
 export {Toggle, toggleVariants} from "./components/ui/toggle";
+export type {ToggleProps, ToggleSize, ToggleVariant} from "./components/ui/toggle";
 
 export {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./components/ui/tooltip";
 
+export {CopyButton, type CopyButtonProps} from "./components/ui/copy-button";
+export {Stepper, type StepperProps} from "./components/ui/stepper";
+export {
+  Timeline,
+  TimelineContent,
+  TimelineDot,
+  TimelineItem,
+  type TimelineContentProps,
+  type TimelineDotProps,
+  type TimelineItemProps,
+  type TimelineProps,
+} from "./components/ui/timeline";
+export {VisuallyHidden, type VisuallyHiddenProps} from "./components/ui/visually-hidden";
+
+export {useBreakpoint, type Breakpoint} from "./hooks/useBreakpoint";
+export {useColorScheme, type ColorScheme} from "./hooks/useColorScheme";
+export {useFocusVisible} from "./hooks/useFocusVisible";
 export {useIsMobile} from "./hooks/useIsMobile";
+export {useMediaQuery} from "./hooks/useMediaQuery";
+export {usePrefersContrast} from "./hooks/usePrefersContrast";
+export {useReducedMotion} from "./hooks/useReducedMotion";
 export {useWindowSize} from "./hooks/useWindowSize";
 
 export {
-  // New descriptive names
   adjustHexColorLightness,
-  // Legacy aliases (deprecated)
   adjustLightness,
   calculateComplementaryHexColor,
   convertHexToHslString,
@@ -327,25 +512,18 @@ export {
   validateHexColorFormat,
 } from "./lib/color-conversion-utilities";
 export {cn} from "./lib/utilities";
+export type {ClassValue} from "./lib/utilities";
 
 // Animate-UI exports:
-export {FlipButton, type FlipButtonProps, type FlipDirection} from "./components/ui/flip-button";
-
-export {RippleButton, type RippleButtonProps} from "./components/ui/ripple-button";
-
-export {CountingNumber, type CountingNumberProps} from "./components/ui/counting-number";
-
-export {GradientText, type GradientTextProps} from "./components/ui/gradient-text";
-
-export {HighlightText, type HighlightTextProps} from "./components/ui/highlight-text";
-
 export {BubbleBackground, type BubbleBackgroundProps} from "./components/ui/bubble-background";
-
+export {CountingNumber, type CountingNumberProps} from "./components/ui/counting-number";
 export {FireworksBackground, type FireworksBackgroundProps} from "./components/ui/fireworks-background";
-
+export {FlipButton, type FlipButtonProps, type FlipDirection} from "./components/ui/flip-button";
 export {GradientBackground, type GradientBackgroundProps} from "./components/ui/gradient-background";
-
+export {GradientText, type GradientTextProps} from "./components/ui/gradient-text";
+export {HighlightText, type HighlightTextProps} from "./components/ui/highlight-text";
 export {HoleBackground, type HoleBackgroundProps} from "./components/ui/hole-background";
+export {RippleButton, type RippleButtonProps} from "./components/ui/ripple-button";
 
 // Magic UI exports:
 export {DotBackground} from "./components/ui/dot-background";
@@ -355,7 +533,7 @@ export {Scratcher} from "./components/ui/scratcher";
 export {BackgroundBeams} from "./components/ui/background-beams";
 export {TypewriterText, TypewriterTextSmooth} from "./components/ui/typewriter";
 
-// Jia Wei Ng export (https://github.com/jiaweing/DropDrawer):
+// DropDrawer export:
 export {
   DropDrawer,
   DropDrawerContent,

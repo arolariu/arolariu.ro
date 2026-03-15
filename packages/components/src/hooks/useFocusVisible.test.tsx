@@ -1,0 +1,236 @@
+import {act, render, renderHook} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {describe, expect, it} from "vitest";
+
+import {useFocusVisible} from "./useFocusVisible";
+
+describe("useFocusVisible", () => {
+  it("returns isFocusVisible as false initially", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    expect(result.current.isFocusVisible).toBe(false);
+  });
+
+  it("returns focusProps with onFocus and onBlur", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    expect(typeof result.current.focusProps.onFocus).toBe("function");
+    expect(typeof result.current.focusProps.onBlur).toBe("function");
+  });
+
+  it("returns true after keyboard navigation", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    // Simulate keyboard interaction
+    act(() => {
+      const keydownEvent = new KeyboardEvent("keydown", {key: "Tab"});
+      document.dispatchEvent(keydownEvent);
+    });
+
+    // Simulate focus event
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(true);
+  });
+
+  it("returns false after pointer interaction", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    // Simulate pointer interaction
+    act(() => {
+      const pointerdownEvent = new PointerEvent("pointerdown");
+      document.dispatchEvent(pointerdownEvent);
+    });
+
+    // Simulate focus event
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(false);
+  });
+
+  it("onBlur resets isFocusVisible to false", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    // First set to true via keyboard navigation
+    act(() => {
+      const keydownEvent = new KeyboardEvent("keydown", {key: "Tab"});
+      document.dispatchEvent(keydownEvent);
+    });
+
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(true);
+
+    // Then blur
+    act(() => {
+      result.current.focusProps.onBlur();
+    });
+
+    expect(result.current.isFocusVisible).toBe(false);
+  });
+
+  it("works in a real component scenario", async () => {
+    function TestComponent(): React.JSX.Element {
+      const {isFocusVisible, focusProps} = useFocusVisible();
+
+      return (
+        <div>
+          <button
+            data-testid='test-button'
+            data-focus-visible={isFocusVisible}
+            {...focusProps}>
+            Test
+          </button>
+          <button data-testid='next-button'>Next</button>
+        </div>
+      );
+    }
+
+    const user = userEvent.setup();
+    const {getByTestId} = render(<TestComponent />);
+    const button = getByTestId("test-button");
+    const nextButton = getByTestId("next-button");
+
+    expect(button.dataset.focusVisible).toBe("false");
+
+    await user.tab();
+    expect(button).toHaveFocus();
+    expect(button.dataset.focusVisible).toBe("true");
+
+    await user.tab();
+    expect(nextButton).toHaveFocus();
+    expect(button.dataset.focusVisible).toBe("false");
+
+    await user.pointer({target: button, keys: "[MouseLeft]"});
+    expect(button).toHaveFocus();
+    expect(button.dataset.focusVisible).toBe("false");
+  });
+
+  it("handles keyboard focus followed by blur then refocus", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    // Keyboard navigation
+    act(() => {
+      const keydownEvent = new KeyboardEvent("keydown", {key: "Tab"});
+      document.dispatchEvent(keydownEvent);
+    });
+
+    // Focus
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(true);
+
+    // Blur
+    act(() => {
+      result.current.focusProps.onBlur();
+    });
+
+    expect(result.current.isFocusVisible).toBe(false);
+
+    // Refocus again with keyboard still active
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(true);
+  });
+
+  it("handles multiple rapid keyboard and pointer interactions", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    // Keyboard
+    act(() => {
+      const keydownEvent = new KeyboardEvent("keydown", {key: "Tab"});
+      document.dispatchEvent(keydownEvent);
+    });
+
+    // Pointer (should override keyboard)
+    act(() => {
+      const pointerdownEvent = new PointerEvent("pointerdown");
+      document.dispatchEvent(pointerdownEvent);
+    });
+
+    // Focus after pointer
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(false);
+
+    // Keyboard again
+    act(() => {
+      const keydownEvent = new KeyboardEvent("keydown", {key: "Tab"});
+      document.dispatchEvent(keydownEvent);
+    });
+
+    // Focus after keyboard
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(true);
+  });
+
+  it("correctly switches from pointer to keyboard interaction", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    // Start with pointer
+    act(() => {
+      const pointerdownEvent = new PointerEvent("pointerdown");
+      document.dispatchEvent(pointerdownEvent);
+    });
+
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(false);
+
+    // Blur
+    act(() => {
+      result.current.focusProps.onBlur();
+    });
+
+    // Switch to keyboard
+    act(() => {
+      const keydownEvent = new KeyboardEvent("keydown", {key: "Enter"});
+      document.dispatchEvent(keydownEvent);
+    });
+
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    expect(result.current.isFocusVisible).toBe(true);
+  });
+
+  it("handles focus without prior keyboard or pointer interaction", () => {
+    const {result} = renderHook(() => useFocusVisible());
+
+    // Focus without any prior interaction
+    act(() => {
+      const focusEvent = {currentTarget: document.createElement("button")} as React.FocusEvent;
+      result.current.focusProps.onFocus(focusEvent);
+    });
+
+    // Should remain false since no keyboard interaction occurred
+    expect(result.current.isFocusVisible).toBe(false);
+  });
+});

@@ -1,0 +1,89 @@
+.root {
+  /* Minimal default — consumers can add borders/background via className */
+}
+
+.list {
+  display: flex;
+  position: relative;
+  z-index: 0;
+  padding-inline: 0;
+  gap: 0;
+  border-bottom: 1px solid var(--ac-border);
+  background-color: transparent;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  margin: 0;
+  outline: none;
+  background: none;
+  appearance: none;
+  color: var(--ac-muted-foreground);
+  font-family: inherit;
+  font-size: var(--ac-text-sm);
+  font-weight: 500;
+  user-select: none;
+  white-space: nowrap;
+  word-break: keep-all;
+  padding-inline: var(--ac-space-3);
+  padding-block: 0;
+  height: 2.25rem;
+  cursor: pointer;
+  transition: color var(--ac-transition-fast);
+
+  &[data-active] {
+    color: var(--ac-foreground);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      color: var(--ac-foreground);
+    }
+  }
+
+  &:focus-visible {
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: var(--ac-space-1) 0;
+      border-radius: var(--ac-radius-xs);
+      outline: 2px solid var(--ac-ring);
+      outline-offset: -1px;
+    }
+  }
+}
+
+.indicator {
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  bottom: -1px;
+  translate: var(--active-tab-left) 0;
+  width: var(--active-tab-width);
+  height: 2px;
+  background-color: var(--ac-foreground);
+  transition-property: translate, width;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
+.panel {
+  position: relative;
+  outline: none;
+  padding-top: var(--ac-space-4);
+
+  &:focus-visible {
+    outline: 2px solid var(--ac-ring);
+    outline-offset: -1px;
+    border-radius: var(--ac-radius-md);
+  }
+
+  &[hidden] {
+    display: none;
+  }
+}

@@ -115,6 +115,10 @@ describe("index.ts exports", () => {
     it("should export Checkbox", () => expect(exports).toHaveProperty("Checkbox"));
   });
 
+  describe("CheckboxGroup", () => {
+    it("should export CheckboxGroup", () => expect(exports).toHaveProperty("CheckboxGroup"));
+  });
+
   describe("Utilities", () => {
     it("should export cn", () => expect(exports).toHaveProperty("cn"));
   });
@@ -344,6 +348,13 @@ describe("index.ts exports", () => {
     it("should export MenubarTrigger", () => expect(exports).toHaveProperty("MenubarTrigger"));
   });
 
+  describe("Meter", () => {
+    it("should export Meter", () => expect(exports).toHaveProperty("Meter"));
+    it("should export MeterIndicator", () => expect(exports).toHaveProperty("MeterIndicator"));
+    it("should export MeterLabel", () => expect(exports).toHaveProperty("MeterLabel"));
+    it("should export MeterTrack", () => expect(exports).toHaveProperty("MeterTrack"));
+  });
+
   describe("NavigationMenu", () => {
     it("should export NavigationMenu", () => expect(exports).toHaveProperty("NavigationMenu"));
     it("should export NavigationMenuContent", () => expect(exports).toHaveProperty("NavigationMenuContent"));
@@ -354,6 +365,15 @@ describe("index.ts exports", () => {
     it("should export NavigationMenuTrigger", () => expect(exports).toHaveProperty("NavigationMenuTrigger"));
     it("should export navigationMenuTriggerStyle", () => expect(exports).toHaveProperty("navigationMenuTriggerStyle"));
     it("should export NavigationMenuViewport", () => expect(exports).toHaveProperty("NavigationMenuViewport"));
+  });
+
+  describe("NumberField", () => {
+    it("should export NumberField", () => expect(exports).toHaveProperty("NumberField"));
+    it("should export NumberFieldDecrement", () => expect(exports).toHaveProperty("NumberFieldDecrement"));
+    it("should export NumberFieldGroup", () => expect(exports).toHaveProperty("NumberFieldGroup"));
+    it("should export NumberFieldIncrement", () => expect(exports).toHaveProperty("NumberFieldIncrement"));
+    it("should export NumberFieldInput", () => expect(exports).toHaveProperty("NumberFieldInput"));
+    it("should export NumberFieldScrubArea", () => expect(exports).toHaveProperty("NumberFieldScrubArea"));
   });
 
   describe("Pagination", () => {
@@ -493,6 +513,14 @@ describe("index.ts exports", () => {
 
   describe("Textarea", () => {
     it("should export Textarea", () => expect(exports).toHaveProperty("Textarea"));
+  });
+
+  describe("Toolbar", () => {
+    it("should export Toolbar", () => expect(exports).toHaveProperty("Toolbar"));
+    it("should export ToolbarButton", () => expect(exports).toHaveProperty("ToolbarButton"));
+    it("should export ToolbarGroup", () => expect(exports).toHaveProperty("ToolbarGroup"));
+    it("should export ToolbarLink", () => expect(exports).toHaveProperty("ToolbarLink"));
+    it("should export ToolbarSeparator", () => expect(exports).toHaveProperty("ToolbarSeparator"));
   });
 
   describe("Toast", () => {

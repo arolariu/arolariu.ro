@@ -122,7 +122,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       {
         loading: t("toasts.revoke.loading"),
         success: t("toasts.revoke.success"),
-        error: (err: Error) => t("toasts.revoke.error", {message: err.message}),
+        error: (error: unknown) => t("toasts.revoke.error", {message: error instanceof Error ? error.message : String(error)}),
       },
     );
   }, [invoice.id, invoice.sharedWith, router, t]);

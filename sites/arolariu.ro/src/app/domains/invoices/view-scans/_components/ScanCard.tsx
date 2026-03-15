@@ -118,6 +118,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <div className={styles["checkboxPosition"]}>
               <Checkbox
                 checked={isSelected}
+                nativeButton
                 onCheckedChange={onToggleSelect}
                 className='h-5 w-5 border-2 border-white bg-white/80 data-[state=checked]:bg-purple-500'
               />

@@ -1,0 +1,286 @@
+import {act, render} from "@testing-library/react";
+import {beforeAll, describe, expect, it} from "vitest";
+
+// Polyfill for Base UI ScrollArea which calls getAnimations() in happy-dom
+beforeAll(() => {
+  if (!Element.prototype.getAnimations) {
+    Element.prototype.getAnimations = () => [];
+  }
+});
+
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
+import {BackgroundBeams} from "./background-beams";
+import {Badge} from "./badge";
+import {Button} from "./button";
+import {Checkbox} from "./checkbox";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "./collapsible";
+import {ContextMenu, ContextMenuTrigger} from "./context-menu";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTrigger} from "./dialog";
+import {DotBackground} from "./dot-background";
+import {Drawer, DrawerContent, DrawerTrigger} from "./drawer";
+import {DropdownMenu, DropdownMenuTrigger} from "./dropdown-menu";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "./hover-card";
+import {Input} from "./input";
+import {Menubar, MenubarMenu, MenubarTrigger} from "./menubar";
+import {NumberField, NumberFieldGroup, NumberFieldInput} from "./number-field";
+import {Popover, PopoverContent, PopoverTrigger} from "./popover";
+import {RadioGroup, RadioGroupItem} from "./radio-group";
+import {ScrollArea} from "./scroll-area";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "./select";
+import {Sheet, SheetContent, SheetTrigger} from "./sheet";
+import {Slider} from "./slider";
+import {Switch} from "./switch";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
+import {Toggle} from "./toggle";
+import {Tooltip, TooltipContent, TooltipTrigger} from "./tooltip";
+import {TypewriterText, TypewriterTextSmooth} from "./typewriter";
+
+const typewriterWords = [{text: "Hello"}] as const;
+
+describe("DOM wrapper ref forwarding", () => {
+  it("forwards refs for div and svg wrappers", () => {
+    // Arrange
+    const badgeRef = {current: null as HTMLDivElement | null};
+    const backgroundBeamsRef = {current: null as HTMLDivElement | null};
+    const dialogHeaderRef = {current: null as HTMLDivElement | null};
+    const dialogFooterRef = {current: null as HTMLDivElement | null};
+    const dotBackgroundRef = {current: null as SVGSVGElement | null};
+
+    // Act
+    render(
+      <>
+        <Badge ref={badgeRef}>New</Badge>
+        <BackgroundBeams ref={backgroundBeamsRef} />
+        <DialogHeader ref={dialogHeaderRef}>Header</DialogHeader>
+        <DialogFooter ref={dialogFooterRef}>Footer</DialogFooter>
+        <DotBackground ref={dotBackgroundRef} />
+      </>,
+    );
+
+    // Assert
+    expect(badgeRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(backgroundBeamsRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(dialogHeaderRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(dialogFooterRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(dotBackgroundRef.current).toBeInstanceOf(SVGSVGElement);
+  });
+
+  it("forwards refs for typewriter variants", () => {
+    // Arrange
+    const typewriterRef = {current: null as HTMLDivElement | null};
+    const smoothTypewriterRef = {current: null as HTMLDivElement | null};
+
+    // Act
+    render(
+      <>
+        <TypewriterText
+          ref={typewriterRef}
+          words={typewriterWords}
+        />
+        <TypewriterTextSmooth
+          ref={smoothTypewriterRef}
+          words={typewriterWords}
+        />
+      </>,
+    );
+
+    // Assert
+    expect(typewriterRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(smoothTypewriterRef.current).toBeInstanceOf(HTMLDivElement);
+  });
+
+  it("forwards refs for tier 1 Base UI wrappers", async () => {
+    // Arrange
+    const buttonRef = {current: null as HTMLButtonElement | null};
+    const inputRef = {current: null as HTMLElement | null};
+    const checkboxRef = {current: null as HTMLElement | null};
+    const switchRef = {current: null as HTMLElement | null};
+    const sliderRef = {current: null as HTMLDivElement | null};
+    const toggleRef = {current: null as HTMLButtonElement | null};
+    const selectTriggerRef = {current: null as HTMLButtonElement | null};
+    const selectContentRef = {current: null as HTMLDivElement | null};
+    const dialogTriggerRef = {current: null as HTMLElement | null};
+    const dialogContentRef = {current: null as HTMLDivElement | null};
+    const popoverTriggerRef = {current: null as HTMLElement | null};
+    const popoverContentRef = {current: null as HTMLDivElement | null};
+    const tooltipTriggerRef = {current: null as HTMLElement | null};
+    const tooltipContentRef = {current: null as HTMLDivElement | null};
+    const tabsTriggerRef = {current: null as HTMLElement | null};
+    const tabsContentRef = {current: null as HTMLDivElement | null};
+    const accordionTriggerRef = {current: null as HTMLElement | null};
+    const accordionContentRef = {current: null as HTMLDivElement | null};
+
+    // Act
+    await act(async () => {
+      render(
+        <>
+          <Button ref={buttonRef}>Click me</Button>
+          <Input
+            ref={inputRef}
+            defaultValue='Hello'
+          />
+          <Checkbox ref={checkboxRef} />
+          <Switch ref={switchRef} />
+          <Slider
+            ref={sliderRef}
+            defaultValue={[25]}
+          />
+          <Toggle ref={toggleRef}>Toggle</Toggle>
+          <Select defaultOpen>
+            <SelectTrigger ref={selectTriggerRef}>
+              <SelectValue placeholder='Pick one' />
+            </SelectTrigger>
+            <SelectContent ref={selectContentRef}>
+              <SelectItem value='one'>One</SelectItem>
+            </SelectContent>
+          </Select>
+          <Dialog defaultOpen>
+            <DialogTrigger ref={dialogTriggerRef}>Open dialog</DialogTrigger>
+            <DialogContent ref={dialogContentRef}>Dialog content</DialogContent>
+          </Dialog>
+          <Popover defaultOpen>
+            <PopoverTrigger ref={popoverTriggerRef}>Open popover</PopoverTrigger>
+            <PopoverContent ref={popoverContentRef}>Popover content</PopoverContent>
+          </Popover>
+          <Tooltip defaultOpen>
+            <TooltipTrigger ref={tooltipTriggerRef}>Hover me</TooltipTrigger>
+            <TooltipContent ref={tooltipContentRef}>Tooltip content</TooltipContent>
+          </Tooltip>
+          <Tabs defaultValue='overview'>
+            <TabsList>
+              <TabsTrigger
+                ref={tabsTriggerRef}
+                value='overview'>
+                Overview
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent
+              ref={tabsContentRef}
+              value='overview'>
+              Tab content
+            </TabsContent>
+          </Tabs>
+          <Accordion defaultValue='item-1'>
+            <AccordionItem value='item-1'>
+              <AccordionTrigger ref={accordionTriggerRef}>Section</AccordionTrigger>
+              <AccordionContent ref={accordionContentRef}>Accordion content</AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </>,
+      );
+      await Promise.resolve();
+    });
+
+    // Assert
+    expect(buttonRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(inputRef.current).toBeInstanceOf(HTMLInputElement);
+    expect(checkboxRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(switchRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(sliderRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(toggleRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(selectTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(selectContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(dialogTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(dialogContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(popoverTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(popoverContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(tooltipTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(tooltipContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(tabsTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(tabsContentRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(accordionTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(accordionContentRef.current).toBeInstanceOf(HTMLDivElement);
+  });
+
+  it("forwards refs for tier 2 Base UI wrappers", async () => {
+    // Arrange — trigger refs only (content refs require portal rendering)
+    const radioGroupRef = {current: null as HTMLDivElement | null};
+    const radioGroupItemRef = {current: null as HTMLButtonElement | null};
+    const numberFieldGroupRef = {current: null as HTMLDivElement | null};
+    const numberFieldInputRef = {current: null as HTMLElement | null};
+    const contextMenuTriggerRef = {current: null as HTMLDivElement | null};
+    const dropdownMenuTriggerRef = {current: null as HTMLButtonElement | null};
+    const menubarTriggerRef = {current: null as HTMLButtonElement | null};
+    const sheetTriggerRef = {current: null as HTMLButtonElement | null};
+    const sheetContentRef = {current: null as HTMLDivElement | null};
+    const drawerTriggerRef = {current: null as HTMLButtonElement | null};
+    const drawerContentRef = {current: null as HTMLDivElement | null};
+    const hoverCardTriggerRef = {current: null as HTMLAnchorElement | null};
+    const hoverCardContentRef = {current: null as HTMLDivElement | null};
+    const scrollAreaRef = {current: null as HTMLDivElement | null};
+    const collapsibleTriggerRef = {current: null as HTMLButtonElement | null};
+    const collapsibleContentRef = {current: null as HTMLDivElement | null};
+
+    // Act
+    await act(async () => {
+      render(
+        <>
+          <RadioGroup
+            ref={radioGroupRef}
+            aria-label='Plans'>
+            <RadioGroupItem
+              ref={radioGroupItemRef}
+              value='starter'
+              aria-label='Starter'
+            />
+          </RadioGroup>
+          <NumberField
+            aria-label='Quantity'
+            defaultValue={2}>
+            <NumberFieldGroup ref={numberFieldGroupRef}>
+              <NumberFieldInput ref={numberFieldInputRef} />
+            </NumberFieldGroup>
+          </NumberField>
+          <ContextMenu>
+            <ContextMenuTrigger ref={contextMenuTriggerRef}>Right-click me</ContextMenuTrigger>
+          </ContextMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger ref={dropdownMenuTriggerRef}>Open dropdown</DropdownMenuTrigger>
+          </DropdownMenu>
+          <Menubar>
+            <MenubarMenu>
+              <MenubarTrigger ref={menubarTriggerRef}>File</MenubarTrigger>
+            </MenubarMenu>
+          </Menubar>
+          <Sheet defaultOpen>
+            <SheetTrigger ref={sheetTriggerRef}>Open sheet</SheetTrigger>
+            <SheetContent ref={sheetContentRef}>Sheet content</SheetContent>
+          </Sheet>
+          <Drawer defaultOpen>
+            <DrawerTrigger ref={drawerTriggerRef}>Open drawer</DrawerTrigger>
+            <DrawerContent ref={drawerContentRef}>Drawer content</DrawerContent>
+          </Drawer>
+          <HoverCard defaultOpen>
+            <HoverCardTrigger
+              ref={hoverCardTriggerRef}
+              href='/profile'>
+              Hover card link
+            </HoverCardTrigger>
+            <HoverCardContent ref={hoverCardContentRef}>Hover card content</HoverCardContent>
+          </HoverCard>
+          <ScrollArea ref={scrollAreaRef}>Scrollable content</ScrollArea>
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger ref={collapsibleTriggerRef}>Toggle details</CollapsibleTrigger>
+            <CollapsibleContent ref={collapsibleContentRef}>Hidden details content</CollapsibleContent>
+          </Collapsible>
+        </>,
+      );
+      await Promise.resolve();
+    });
+
+    // Assert — trigger refs are set on mount, content refs only for defaultOpen components
+    expect(radioGroupRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(radioGroupItemRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(numberFieldGroupRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(numberFieldInputRef.current).toBeInstanceOf(HTMLInputElement);
+    expect(contextMenuTriggerRef.current).toBeInstanceOf(HTMLElement);
+    expect(dropdownMenuTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(menubarTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(sheetTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(drawerTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(hoverCardTriggerRef.current).toBeInstanceOf(HTMLElement);
+    expect(scrollAreaRef.current).toBeInstanceOf(HTMLDivElement);
+    expect(collapsibleTriggerRef.current).toBeInstanceOf(HTMLButtonElement);
+    expect(collapsibleContentRef.current).toBeInstanceOf(HTMLDivElement);
+  });
+});

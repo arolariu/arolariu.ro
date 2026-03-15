@@ -1,33 +1,60 @@
 "use client";
 
-import {cn} from "@/lib/utilities";
 import {motion, stagger, useAnimate, useInView} from "motion/react";
 import * as React from "react";
 
-export const TypewriterText = ({
-  words,
-  className,
-  cursorClassName,
-}: {
-  words: {
-    text: string;
-    className?: string;
-  }[];
+import {cn} from "@/lib/utilities";
+import styles from "./typewriter.module.css";
+
+/** Single word definition consumed by the typewriter components. */
+export interface TypewriterWord {
+  /** Word content split into animated characters at render time. @default undefined */
+  text: string;
+  /** Additional CSS classes merged with each rendered character. @default undefined */
   className?: string;
+}
+
+/** Props accepted by {@link TypewriterText} and {@link TypewriterTextSmooth}. */
+export interface TypewriterTextProps {
+  /** Ordered list of words rendered by the typewriter animation. @default undefined */
+  words: ReadonlyArray<TypewriterWord>;
+  /** Additional CSS classes merged with the outer container. @default undefined */
+  className?: string;
+  /** Additional CSS classes merged with the blinking cursor element. @default undefined */
   cursorClassName?: string;
-}): React.JSX.Element => {
-  // split text inside of words into array of characters
-  const wordsArray = words.map((word) => {
-    return {
+}
+
+/**
+ * Reveals text one character at a time with a stepped typewriter animation.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <TypewriterText words={[{text: "Hello"}, {text: "world"}]} />
+ * ```
+ *
+ * @see {@link TypewriterTextProps} for available props
+ */
+const TypewriterText = React.forwardRef<HTMLDivElement, TypewriterTextProps>(
+  ({words, className, cursorClassName}: Readonly<TypewriterTextProps>, ref): React.JSX.Element => {
+    const wordsArray = words.map((word) => ({
       ...word,
       text: [...word.text],
-    };
-  });
+    }));
 
-  const [scope, animate] = useAnimate();
-  const isInView = useInView(scope);
-  React.useEffect(() => {
-    if (isInView) {
+    const [scope, animate] = useAnimate();
+    const isInView = useInView(scope);
+
+    React.useEffect(() => {
+      if (!isInView) {
+        return;
+      }
+
       animate(
         "span",
         {
@@ -41,133 +68,108 @@ export const TypewriterText = ({
           ease: "easeInOut",
         },
       );
-    }
-  }, [isInView]);
+    }, [animate, isInView]);
 
-  const renderWords = () => {
     return (
-      <motion.div
-        ref={scope}
-        className='inline'>
-        {wordsArray.map((word, idx) => {
-          return (
+      <div
+        ref={ref}
+        className={cn(styles.root, className)}>
+        <motion.div
+          ref={scope}
+          className={styles.inline}>
+          {wordsArray.map((word, wordIndex) => (
             <div
-              key={`word-${idx}`}
-              className='inline-block'>
-              {word.text.map((char, index) => (
+              key={`word-${wordIndex}`}
+              className={styles.word}>
+              {word.text.map((character, characterIndex) => (
                 <motion.span
                   initial={{}}
-                  key={`char-${index}`}
-                  className={cn(`hidden text-black opacity-0 dark:text-white`, word.className)}>
-                  {char}
+                  key={`char-${characterIndex}`}
+                  className={cn(styles.hiddenCharacter, word.className)}>
+                  {character}
                 </motion.span>
               ))}
               &nbsp;
             </div>
-          );
-        })}
-      </motion.div>
+          ))}
+        </motion.div>
+        <motion.span
+          initial={{opacity: 0}}
+          animate={{opacity: 1}}
+          transition={{duration: 0.8, repeat: Infinity, repeatType: "reverse"}}
+          className={cn(styles.cursor, cursorClassName)}
+        />
+      </div>
     );
-  };
-  return (
-    <div className={cn("text-center text-base font-bold sm:text-xl md:text-3xl lg:text-5xl", className)}>
-      {renderWords()}
-      <motion.span
-        initial={{
-          opacity: 0,
-        }}
-        animate={{
-          opacity: 1,
-        }}
-        transition={{
-          duration: 0.8,
-          repeat: Infinity,
-          repeatType: "reverse",
-        }}
-        className={cn("inline-block h-4 w-[4px] rounded-sm bg-blue-500 md:h-6 lg:h-10", cursorClassName)}></motion.span>
-    </div>
-  );
-};
+  },
+);
+TypewriterText.displayName = "TypewriterText";
 
-export const TypewriterTextSmooth = ({
-  words,
-  className,
-  cursorClassName,
-}: {
-  words: {
-    text: string;
-    className?: string;
-  }[];
-  className?: string;
-  cursorClassName?: string;
-}): React.JSX.Element => {
-  // split text inside of words into array of characters
-  const wordsArray = words.map((word) => {
-    return {
+/**
+ * Reveals text with a continuous width-based typewriter sweep animation.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <TypewriterTextSmooth words={[{text: "Smooth"}, {text: "typing"}]} />
+ * ```
+ *
+ * @see {@link TypewriterTextProps} for available props
+ */
+const TypewriterTextSmooth = React.forwardRef<HTMLDivElement, TypewriterTextProps>(
+  ({words, className, cursorClassName}: Readonly<TypewriterTextProps>, ref): React.JSX.Element => {
+    const wordsArray = words.map((word) => ({
       ...word,
       text: [...word.text],
-    };
-  });
-  const renderWords = () => {
-    return (
-      <div>
-        {wordsArray.map((word, idx) => {
-          return (
+    }));
+
+    const renderWords = (): React.JSX.Element => {
+      return (
+        <div>
+          {wordsArray.map((word, wordIndex) => (
             <div
-              key={`word-${idx}`}
-              className='inline-block'>
-              {word.text.map((char, index) => (
+              key={`word-${wordIndex}`}
+              className={styles.word}>
+              {word.text.map((character, characterIndex) => (
                 <span
-                  key={`char-${index}`}
-                  className={cn(`text-black dark:text-white`, word.className)}>
-                  {char}
+                  key={`char-${characterIndex}`}
+                  className={cn(styles.visibleCharacter, word.className)}>
+                  {character}
                 </span>
               ))}
               &nbsp;
             </div>
-          );
-        })}
+          ))}
+        </div>
+      );
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={cn(styles.smoothRoot, className)}>
+        <motion.div
+          className={styles.smoothViewport}
+          initial={{width: "0%"}}
+          whileInView={{width: "fit-content"}}
+          transition={{duration: 2, ease: "linear", delay: 1}}>
+          <div className={styles.smoothText}>{renderWords()}</div>
+        </motion.div>
+        <motion.span
+          initial={{opacity: 0}}
+          animate={{opacity: 1}}
+          transition={{duration: 0.8, repeat: Infinity, repeatType: "reverse"}}
+          className={cn(styles.smoothCursor, cursorClassName)}
+        />
       </div>
     );
-  };
+  },
+);
+TypewriterTextSmooth.displayName = "TypewriterTextSmooth";
 
-  return (
-    <div className={cn("my-6 flex space-x-1", className)}>
-      <motion.div
-        className='overflow-hidden pb-2'
-        initial={{
-          width: "0%",
-        }}
-        whileInView={{
-          width: "fit-content",
-        }}
-        transition={{
-          duration: 2,
-          ease: "linear",
-          delay: 1,
-        }}>
-        <div
-          className='lg:text:3xl text-xs font-bold sm:text-base md:text-xl xl:text-5xl'
-          style={{
-            whiteSpace: "nowrap",
-          }}>
-          {renderWords()}{" "}
-        </div>{" "}
-      </motion.div>
-      <motion.span
-        initial={{
-          opacity: 0,
-        }}
-        animate={{
-          opacity: 1,
-        }}
-        transition={{
-          duration: 0.8,
-
-          repeat: Infinity,
-          repeatType: "reverse",
-        }}
-        className={cn("block h-4 w-[4px] rounded-sm bg-blue-500 sm:h-6 xl:h-12", cursorClassName)}></motion.span>
-    </div>
-  );
-};
+export {TypewriterText, TypewriterTextSmooth};

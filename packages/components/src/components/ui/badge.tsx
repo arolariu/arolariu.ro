@@ -1,39 +1,107 @@
-"use client";
-
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./badge.module.css";
 
-const badgeVariants = cva(
-  "inline-flex items-center rounded-md border border-neutral-200 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 dark:border-neutral-800 dark:focus:ring-neutral-300",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-transparent bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/80 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-50/80",
-        secondary:
-          "border-transparent bg-neutral-100 text-neutral-900 hover:bg-neutral-100/80 dark:bg-neutral-800 dark:text-neutral-50 dark:hover:bg-neutral-800/80",
-        destructive:
-          "border-transparent bg-red-500 text-neutral-50 shadow hover:bg-red-500/80 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/80",
-        outline: "text-neutral-950 dark:text-neutral-50",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
+/**
+ * Defines the supported visual treatments for the Badge component.
+ */
+export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {}
-
-function Badge({className, variant, ...props}: BadgeProps) {
-  return (
-    <div
-      className={cn(badgeVariants({variant}), className)}
-      {...props}
-    />
-  );
+/**
+ * Represents the options accepted by the internal badge class generator.
+ *
+ * @remarks
+ * This helper mirrors the public Badge styling API and exists so callers can derive
+ * consistent class names without rendering the component itself.
+ *
+ * @default variant `"default"`
+ */
+interface BadgeVariantOptions {
+  /**
+   * The visual emphasis applied to the badge surface.
+   *
+   * @default "default"
+   */
+  variant?: BadgeVariant;
+  /**
+   * Additional CSS classes merged with the generated badge classes.
+   */
+  className?: string;
 }
+
+const variantStyles: Record<BadgeVariant, string> = {
+  default: styles.default!,
+  secondary: styles.secondary!,
+  destructive: styles.destructive!,
+  outline: styles.outline!,
+};
+
+/**
+ * Represents the configurable props for the Badge component.
+ *
+ * @remarks
+ * Extends standard `<div>` attributes so badges can expose data attributes, ARIA
+ * state, and event handlers while preserving the library's visual variants.
+ *
+ * @default variant `"default"`
+ */
+export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Additional CSS classes merged with the computed badge classes.
+   */
+  className?: string;
+  /**
+   * The visual variant used to communicate importance or status.
+   *
+   * @default "default"
+   */
+  variant?: BadgeVariant;
+}
+
+/**
+ * Generates the CSS class list for a badge variant.
+ *
+ * @remarks
+ * This utility is useful when another component needs badge styling but cannot render
+ * the Badge component directly. It always includes the base badge classes.
+ *
+ * @example
+ * ```tsx
+ * <span className={badgeVariants({variant: "outline"})}>Beta</span>
+ * ```
+ *
+ * @see {@link Badge}
+ * @see {@link https://base-ui.com/react/overview Base UI documentation}
+ */
+function badgeVariants({variant = "default", className}: Readonly<BadgeVariantOptions> = {}): string {
+  return cn(styles.badge, variantStyles[variant], className);
+}
+
+/**
+ * A compact status label for surfacing metadata, categories, or state.
+ *
+ * @remarks
+ * **Rendering Context**: Server- and client-compatible presentational component.
+ *
+ * Renders a styled `<div>` with pill-like spacing and variant-driven colors.
+ * Use it for small, high-signal labels such as statuses, tags, or counters.
+ *
+ * @example
+ * ```tsx
+ * <Badge variant="secondary">New</Badge>
+ * ```
+ *
+ * @see {@link badgeVariants} — Generates matching badge classes without rendering.
+ * @see {@link https://base-ui.com/react/overview Base UI documentation}
+ */
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(({className, variant = "default", ...props}, ref) => (
+  <div
+    ref={ref}
+    className={badgeVariants({variant, className})}
+    {...props}
+  />
+));
+Badge.displayName = "Badge";
 
 export {Badge, badgeVariants};

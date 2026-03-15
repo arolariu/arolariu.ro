@@ -1,371 +1,450 @@
-# 🤝 Contributing to @arolariu/components
+# Contributing to `@arolariu/components`
 
-> **Join our mission to build the best React component library!** Every contribution, no matter the size, makes a difference.
+Thank you for contributing to the component library.
 
-<div align="center">
+This package is built around a **Base UI + CSS Modules** architecture. The goal is to keep components accessible, composable, well-typed, and easy to maintain across the monorepo.
 
-![Contributors Welcome](https://img.shields.io/badge/Contributors-Welcome-brightgreen?style=for-the-badge)
-![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-blue?style=for-the-badge)
-![Good First Issues](https://img.shields.io/badge/Good%20First%20Issues-Available-orange?style=for-the-badge)
-
-**Help us build beautiful, accessible components for the React community**
-
-[🚀 Quick Start](#-quick-start-for-contributors) • [💡 Ways to Contribute](#-ways-to-contribute) • [🛠️ Development Setup](#️-development-setup) • [📋 Guidelines](#-guidelines)
-
-</div>
+If you are adding or updating a component, this document is the source of truth for how component code in `packages/components` should be authored.
 
 ---
 
-## 🚀 Quick Start for Contributors
+## What This Package Uses
 
-**Get contributing in under 5 minutes:**
+- **Base UI** for accessible primitives and composition APIs
+- **CSS Modules** for scoped component styling
+- **TypeScript** for public API safety
+- **Vitest + Testing Library** for unit and interaction tests
+- **RSLib** for package builds
 
-```bash
-# 1. Fork the repository on GitHub
-# 2. Clone your fork
-git clone https://github.com/arolariu/arolariu.ro.git
-cd arolariu.ro/packages/components
+Please align new contributions with the current source architecture in:
 
-# 3. Install dependencies
-yarn install
-
-# 4. Start development environment
-yarn storybook    # 🎨 Component playground at http://localhost:6006
-yarn build        # 🔨 Build the library
-
-# 5. Make your amazing changes!
-# 6. Test and submit a PR
-```
+- `src/components/ui/button.tsx`
+- `src/components/ui/input.tsx`
+- `src/components/ui/switch.tsx`
+- `src/index.css`
 
 ---
 
-## 💡 Ways to Contribute
-
-### 🐛 Report Bugs
-
-Found something broken? Help us fix it!
-
-- **Before reporting**: Search [existing issues](https://github.com/arolariu/arolariu.ro/issues) to avoid duplicates
-- **Include**: Steps to reproduce, expected vs actual behavior, environment details
-- **Bonus points**: Provide a minimal reproduction case
-
-**[📝 Report a Bug →](https://github.com/arolariu/arolariu.ro/issues/new?template=bug_report.md)**
-
-### ✨ Suggest Features
-
-Have a great idea for a new component or feature?
-
-- **Describe the problem** it solves
-- **Explain the solution** you'd like to see
-- **Consider alternatives** and their trade-offs
-- **Check accessibility** requirements
-
-**[💡 Request a Feature →](https://github.com/arolariu/arolariu.ro/issues/new?template=feature_request.md)**
-
-### 🔧 Fix Issues
-
-Browse our [open issues](https://github.com/arolariu/arolariu.ro/issues) and help solve them:
-
-- 🟢 **Good first issues** - Perfect for newcomers
-- 🟡 **Help wanted** - We need your expertise
-- 🔴 **Bug fixes** - Critical issues needing attention
-
-### 🎨 Add Components
-
-Want to contribute a new component? Here's what we look for:
-
-- **Built on Radix UI** primitives when possible
-- **Accessible by default** (WAI-ARIA compliant)
-- **TypeScript support** with full type definitions
-- **Responsive design** with mobile-first approach
-- **Tailwind CSS** integration for styling
-- **Storybook stories** documenting all variants
-- **Comprehensive tests** ensuring reliability
-
-### 📖 Improve Documentation
-
-Help make our docs even better:
-
-- **README improvements** - Clearer explanations and examples
-- **API documentation** - Better prop descriptions and usage
-- **Storybook stories** - More comprehensive examples
-- **Debugging guides** - Help developers troubleshoot
-- **Tutorials** - Step-by-step guides for common use cases
-
----
-
-## 🛠️ Development Setup
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js** 22+
-- **Yarn** 4.9+ (preferred package manager)
-- **Git** for version control
+- Node.js 22+
+- npm
+- Git
 
-### Getting Started
+### Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/arolariu/arolariu.ro.git
-cd arolariu.ro/packages/components
-
-# Install dependencies
-yarn install
-
-# Start development tools
-yarn storybook    # 🎨 Component development at http://localhost:6006
-yarn build        # 🔨 Build for production
-yarn build:clean  # 🧹 Clean build artifacts
+cd arolariu.ro
+npm install
+cd packages/components
 ```
 
-### Project Structure
+### Useful Commands
 
+```bash
+npm run build
+npm run test
+npm run build:clean
 ```
-packages/components/
-├── 📁 src/
-│   ├── 📁 components/ui/     # Component implementations
-│   ├── 📁 hooks/            # Reusable React hooks
-│   ├── 📁 lib/              # Utility functions
-│   ├── 📄 index.ts          # Main entry point
-│   └── 📄 index.css         # Global styles
-├── 📁 stories/              # Storybook stories
-├── 📁 dist/                 # Built output (generated)
-├── 📄 package.json          # Package configuration
-├── 📄 README.md             # Main documentation
-└── 📄 tsconfig.json         # TypeScript configuration
-```
-
-### Development Workflow
-
-1. **Create a feature branch**
-
-   ```bash
-   git checkout -b feature/amazing-new-component
-   ```
-
-2. **Develop your component**
-
-   - Add component to `src/components/ui/`
-   - Export from `src/index.ts`
-   - Create Storybook story in `stories/`
-
-3. **Test your changes**
-
-   ```bash
-   yarn build          # Ensure it builds
-   yarn storybook      # Visual testing
-   ```
-
-4. **Submit a pull request**
-   - Write a clear description
-   - Include screenshots/GIFs for UI changes
-   - Link related issues
 
 ---
 
-## 📋 Guidelines
+## Contribution Scope
 
-### Component Development
+Good contributions include:
 
-#### 🎯 Accessibility First
+- fixing bugs in existing components
+- improving accessibility behavior
+- adding tests
+- improving JSDoc and usage documentation
+- adding new components that fit the package architecture
+- refining CSS token usage or state styling patterns
 
-- Use **Radix UI primitives** as the foundation
-- Include proper **ARIA attributes** and roles
-- Support **keyboard navigation**
-- Ensure **screen reader compatibility**
-- Test with accessibility tools
+Before opening a pull request, make sure your changes:
 
-#### 🎨 Design Principles
+- build successfully
+- include or update tests
+- preserve accessibility semantics
+- follow the authoring pattern documented below
 
-- **Mobile-first** responsive design
-- **Consistent spacing** using Tailwind CSS
-- **Theme-aware** components (light/dark mode)
-- **Semantic HTML** structure
-- **Consistent naming** conventions
+---
 
-#### 💻 Code Standards
+## Source Layout
+
+New UI components belong in `src/components/ui/`.
+
+Canonical component file structure:
+
+```text
+src/components/ui/
+  component.tsx          ← Component implementation
+  component.module.css   ← Scoped styles
+  component.test.tsx     ← Unit tests
+```
+
+When adding a new public component:
+
+1. Create the implementation in `src/components/ui/`.
+2. Create a colocated CSS Module.
+3. Create a colocated test file.
+4. Export the public API from `src/index.ts`.
+
+---
+
+## Architecture Principles
+
+### 1. Prefer Base UI Primitives
+
+Use Base UI when a primitive exists for the behavior you need. This ensures:
+
+- keyboard support
+- accessible state attributes
+- correct ARIA semantics
+- predictable composition via `render`
+
+Examples in the current codebase:
+
+- `src/components/ui/input.tsx`
+- `src/components/ui/switch.tsx`
+- `src/components/ui/accordion.tsx`
+- `src/components/ui/button.tsx`
+
+### 2. Use CSS Modules for Styling
+
+All component styles should live in a colocated `*.module.css` file.
+
+Do not introduce alternate styling systems for library component surfaces when a CSS Module belongs with the component.
+
+### 3. Keep Public APIs Typed and Documented
+
+Public props and state types should be explicit, exported when needed, and documented with JSDoc according to RFC 1002.
+
+### 4. Preserve Composition
+
+Components should support Base UI's composition model through `render` where appropriate. When wrapping a Base UI primitive, the wrapper should preserve the primitive's semantics and state exposure.
+
+---
+
+## Canonical Component Authoring Pattern
+
+For new primitive-like components and wrappers, follow this pattern:
 
 ```tsx
-// ✅ Good: Well-structured component
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+// 1. Import Base UI primitive + utilities
+import { useRender } from "@base-ui/react/use-render";
+import { mergeProps } from "@base-ui/react/merge-props";
+import { cn } from "@/lib/utilities";
+import styles from "./component.module.css";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-);
+// 2. Define state and props interfaces with JSDoc
+export interface ComponentState { ... }
+export interface ComponentProps extends useRender.ComponentProps<"div", ComponentState> { ... }
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
+// 3. Implement with useRender
+function Component(props: Component.Props) {
+  const { render, className, children, ...otherProps } = props;
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps({ className: cn(styles.root, className) }, otherProps, { children }),
+  });
+}
+Component.displayName = "Component";
+
+// 4. Add namespace types
+export namespace Component {
+  export type State = ComponentState;
+  export type Props = ComponentProps;
+}
+```
+
+### Implementation Notes
+
+- Import `useRender` and `mergeProps` from `@base-ui/react`.
+- Merge consumer `className` values with module classes via `cn`.
+- Set a stable `displayName`.
+- Add the `Component` namespace with `State` and `Props` aliases for the public typing pattern used in this package.
+- Keep state serializable and focused on what the render callback needs.
+
+### Wrapping an Existing Base UI Primitive
+
+When a Base UI primitive already provides behavior, wrap it instead of recreating it. In that case, follow the pattern used in files such as:
+
+- `src/components/ui/input.tsx`
+- `src/components/ui/switch.tsx`
+- `src/components/ui/accordion.tsx`
+
+That usually means:
+
+1. render the Base UI primitive
+2. pass the wrapper styles through the primitive's `render` prop
+3. merge consumer props with `mergeProps`
+4. preserve Base UI state and accessibility behavior
+
+### Backward Compatibility
+
+Some components still carry compatibility shims from older APIs, such as `asChild` support in `src/components/ui/button.tsx`. Do not add compatibility props unless they are required for an existing public contract.
+
+For new components, prefer the Base UI `render` model first.
+
+---
+
+## Type and JSDoc Requirements
+
+Document public component APIs so the code explains behavior, not just signatures.
+
+At minimum:
+
+- document exported props interfaces
+- document exported state interfaces and type aliases
+- document the component itself
+- include examples for non-trivial APIs
+- document behavior, constraints, and accessibility implications
+
+### Recommended Pattern
+
+```tsx
+/**
+ * Serializable state exposed to Base UI render callbacks.
+ */
+export interface ComponentState extends Record<string, unknown> {
+  disabled: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    return (
-      <button
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    );
-  },
-);
-Button.displayName = "Button";
+/**
+ * Props for the shared component wrapper.
+ */
+export interface ComponentProps extends useRender.ComponentProps<"div", ComponentState> {
+  /**
+   * Additional CSS classes merged with the root styles.
+   */
+  className?: string;
+}
 
-export { Button, buttonVariants };
+/**
+ * Renders a styled component wrapper with Base UI composition support.
+ *
+ * @example
+ * ```tsx
+ * <Component />
+ * ```
+ */
+function Component(props: Readonly<Component.Props>): React.ReactElement {
+  // implementation
+}
 ```
 
-#### 📚 Documentation Requirements
+Avoid documentation that only restates the symbol name.
 
-- **TypeScript definitions** for all props
-- **JSDoc comments** for complex components
-- **Storybook stories** showing all variants
-- **Usage examples** in README
-- **Accessibility notes** when relevant
+---
 
-### Storybook Stories
+## CSS Module Authoring Rules
 
-Create comprehensive stories for your components:
+CSS Modules are the canonical styling approach for this package.
 
-```tsx
-import type { Meta, StoryObj } from "@storybook/react";
-import { Button } from "../src/components/ui/button";
+### Use Design Tokens from `src/index.css`
 
-const meta: Meta<typeof Button> = {
-  title: "Components/Button",
-  component: Button,
-  parameters: {
-    docs: {
-      description: {
-        component:
-          "A versatile button component with multiple variants and sizes.",
-      },
-    },
-  },
-  argTypes: {
-    variant: {
-      control: { type: "select" },
-      options: [
-        "default",
-        "destructive",
-        "outline",
-        "secondary",
-        "ghost",
-        "link",
-      ],
-    },
-  },
-};
+Use the shared `--ac-*` custom properties defined in:
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+- `src/index.css`
 
-export const Default: Story = {
-  args: {
-    children: "Button",
-  },
-};
+Examples:
 
-export const AllVariants: Story = {
-  render: () => (
-    <div className="flex gap-2">
-      <Button variant="default">Default</Button>
-      <Button variant="destructive">Destructive</Button>
-      <Button variant="outline">Outline</Button>
-    </div>
-  ),
-};
+- `--ac-primary`
+- `--ac-foreground`
+- `--ac-border`
+- `--ac-radius-md`
+- `--ac-space-3`
+- `--ac-transition-fast`
+
+Do not hardcode values that should come from the token system unless the value is truly component-specific.
+
+### Style State Through `data-*` Attributes
+
+Base UI exposes state through attributes such as:
+
+- `[data-checked]`
+- `[data-disabled]`
+- `[data-panel-open]`
+
+Use those attributes as the primary styling contract.
+
+Example:
+
+```css
+.root[data-checked] {
+  background-color: var(--ac-primary);
+}
+
+.root[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 ```
 
-### Commit Messages
+Current examples:
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `src/components/ui/switch.module.css`
+- `src/components/ui/accordion.module.css`
+- `src/components/ui/button.module.css`
 
-```bash
-# Features
-feat: add new Button component with variants
-feat(input): add password visibility toggle
+### Guard Hover Styles with Pointer-Capable Media Queries
 
-# Bug fixes
-fix: resolve accessibility issue in Dialog component
-fix(button): prevent double-click on async actions
+Hover styles should be wrapped in:
 
-# Documentation
-docs: update README with new component examples
-docs(storybook): add comprehensive Button stories
-
-# Refactoring
-refactor: simplify component prop interfaces
-refactor(utils): optimize class name merging utility
+```css
+@media (hover: hover) {
+  .root:hover {
+    /* hover styles */
+  }
+}
 ```
 
----
+This matches the current package styling approach and avoids misleading hover behavior on touch-first devices.
 
-## 🏆 Recognition
+### Use `color-mix(in oklch, ...)` for Dynamic Color Treatments
 
-### Hall of Fame
+When deriving hover or softened surfaces from tokens, prefer:
 
-Contributors who have made significant impacts:
+```css
+background-color: color-mix(in oklch, var(--ac-primary), transparent 10%);
+```
 
-- **[Alexandru-Razvan Olariu](https://github.com/arolariu)** - Project Creator & Maintainer
-- **[Jia Wei Ng](https://github.com/jiaweing)** - DropDrawer Component
-- **You could be next!** 🌟
+This is already used in the package and keeps color transformations consistent with the OKLCH token system.
 
-### Ways We Say Thanks
+### Keep Styles Scoped
 
-- 📛 **Contributor badge** in README
-- 🎉 **Shoutouts** in release notes
-- 🏷️ **GitHub issue assignment** priority
-
----
-
-## 🤔 Need Help?
-
-### Getting Support
-
-- 💬 **GitHub Discussions** - Ask questions and share ideas
-- 🐛 **GitHub Issues** - Report bugs and request features
-- 📧 **Email** - [admin@arolariu.ro](mailto:admin@arolariu.ro) for private matters
-
-### Useful Resources
-
-- 📖 **[Radix UI Documentation](https://www.radix-ui.com/primitives/docs/overview/introduction)**
-- 🎨 **[Tailwind CSS Docs](https://tailwindcss.com/docs)**
-- ♿ **[WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)**
-- 📚 **[Storybook Documentation](https://storybook.js.org/docs)**
+- use local class names from the module
+- avoid global selectors unless there is a strong package-level need
+- avoid introducing resets in component CSS
+- keep structure and state selectors easy to read
 
 ---
 
-<div align="center">
+## Testing Requirements
 
-## 🙏 Thank You
+Every component must include a colocated `*.test.tsx` file.
 
-**Every contribution makes @arolariu/components better for the entire React community.**
+Minimum required coverage for each component:
 
-**Ready to contribute?** [🚀 **Start with a good first issue**](https://github.com/arolariu/arolariu.ro/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+1. **Smoke test**  
+   Confirms the component renders without crashing.
+
+2. **Ref forwarding test**  
+   Confirms refs reach the expected DOM node when the component supports refs.
+
+3. **`className` merge test**  
+   Confirms custom classes are preserved alongside default module styling.
+
+4. **State change or interaction test**  
+   Confirms the component updates correctly for clicks, keyboard input, open/closed state, checked state, or other interactive behavior.
+
+5. **Accessibility test**  
+   Confirms expected roles, labels, ARIA attributes, and accessible naming.
+
+Reference tests in the current codebase:
+
+- `src/components/ui/input.test.tsx`
+- `src/components/ui/switch.test.tsx`
+- `src/components/ui/button.test.tsx`
+
+### Testing Stack
+
+- Vitest
+- `@testing-library/react`
+- `@testing-library/jest-dom`
+- `@testing-library/user-event` for interactions
+
+### Testing Guidance
+
+- prefer role-based queries
+- verify accessible names
+- cover keyboard behavior for interactive controls
+- assert state attributes such as `aria-checked` or `data-disabled`
+- keep tests focused on public behavior rather than internal implementation details
 
 ---
 
-**Built with ❤️ by contributors like you**
+## Accessibility Expectations
 
-</div>
+Accessibility is a release requirement, not a follow-up task.
+
+When contributing a component:
+
+- use the appropriate Base UI primitive when available
+- preserve keyboard interaction
+- preserve focus visibility
+- preserve or improve ARIA semantics
+- verify labels, roles, and descriptions in tests
+
+If a component is presentational only, it should still avoid introducing inaccessible structure or misleading semantics.
+
+---
+
+## Styling and Naming Conventions
+
+### File Naming
+
+Use lowercase kebab-case:
+
+- `button.tsx`
+- `button.module.css`
+- `button.test.tsx`
+
+### CSS Class Naming
+
+Prefer simple, local names that match the component structure:
+
+- `root`
+- `trigger`
+- `thumb`
+- `panel`
+- `icon`
+- `content`
+
+Use variant or size names only when they represent real styling branches:
+
+- `default`
+- `destructive`
+- `outline`
+- `sizeSm`
+- `sizeLg`
+
+### Export Naming
+
+- component names use PascalCase
+- exported prop and state types use PascalCase
+- colocated helpers should have clear names such as `buttonVariants`
+
+---
+
+## Pull Request Checklist
+
+Before opening a pull request, verify that you have:
+
+- [ ] followed the Base UI + CSS Modules architecture
+- [ ] added or updated JSDoc for public APIs
+- [ ] added `component.test.tsx`
+- [ ] covered smoke, ref, className, interaction, and accessibility cases
+- [ ] used `--ac-*` tokens from `src/index.css`
+- [ ] styled component states with `data-*` attributes where applicable
+- [ ] wrapped hover styles in `@media (hover: hover)`
+- [ ] used `color-mix(in oklch, ...)` when deriving dynamic colors
+- [ ] exported the component from `src/index.ts`
+- [ ] confirmed the package builds and tests pass
+
+---
+
+## Need Help?
+
+If you are unsure how to structure a contribution:
+
+1. start by reviewing an existing component with similar behavior
+2. follow the patterns in `button.tsx`, `input.tsx`, or `switch.tsx`
+3. keep the implementation small and well-documented
+4. open a draft pull request early if you want feedback
+
+Thank you for helping keep `@arolariu/components` consistent, accessible, and maintainable.

@@ -169,9 +169,7 @@ describe("/api/health", () => {
   });
 
   it("handles non-Error thrown values gracefully", async () => {
-    mockFetch
-      .mockResolvedValueOnce({ok: true, status: 200})
-      .mockRejectedValueOnce("string error");
+    mockFetch.mockResolvedValueOnce({ok: true, status: 200}).mockRejectedValueOnce("string error");
 
     const {GET} = await import("./route");
     const response = await GET();

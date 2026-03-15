@@ -16,7 +16,11 @@ const {mockUploadData, mockGetBlockBlobClient, mockGetContainerClient} = vi.hois
   const _mockGetContainerClient = vi.fn(() => ({
     getBlockBlobClient: _mockGetBlockBlobClient,
   }));
-  return {mockUploadData: _mockUploadData, mockGetBlockBlobClient: _mockGetBlockBlobClient, mockGetContainerClient: _mockGetContainerClient};
+  return {
+    mockUploadData: _mockUploadData,
+    mockGetBlockBlobClient: _mockGetBlockBlobClient,
+    mockGetContainerClient: _mockGetContainerClient,
+  };
 });
 
 // Mock dependencies

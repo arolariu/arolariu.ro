@@ -116,10 +116,10 @@ export const WithLongDescription: Story = {
       date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       title: "Invoice Edited",
       description:
-        "The invoice was manually edited to correct several line items that were incorrectly detected by the AI analysis. " +
-        "Changes include: updated merchant name from 'Kfland' to 'Kaufland', corrected the total amount from $125.50 to $132.47, " +
-        "added 3 missing items (butter, eggs, and bread), removed 1 duplicate entry for 'Organic Milk', and updated the payment method from CASH to CREDIT CARD. " +
-        "The category was also changed from UNCATEGORIZED to GROCERIES for better analytics tracking.",
+        "The invoice was manually edited to correct several line items that were incorrectly detected by the AI analysis. "
+        + "Changes include: updated merchant name from 'Kfland' to 'Kaufland', corrected the total amount from $125.50 to $132.47, "
+        + "added 3 missing items (butter, eggs, and bread), removed 1 duplicate entry for 'Organic Milk', and updated the payment method from CASH to CREDIT CARD. "
+        + "The category was also changed from UNCATEGORIZED to GROCERIES for better analytics tracking.",
       icon: <TbFileInvoice className='h-3.5 w-3.5' />,
       completed: true,
       metadata: {notes: "Manual correction after AI scan"},

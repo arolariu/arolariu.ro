@@ -87,14 +87,25 @@ export const HighVolume: Story = {
   args: {
     data: [
       ...generateMockCategorySpending(8),
-      ...["Snacks", "Frozen", "Personal Care", "Condiments", "Pasta", "Canned", "Spices", "Baby", "Pet Food", "Bakery", "Deli", "Sweets"].map(
-        (category, index) => ({
-          category,
-          amount: faker.number.float({min: 15, max: 250, fractionDigits: 2}),
-          count: faker.number.int({min: 1, max: 12}),
-          fill: `var(--chart-${((index + 3) % 5) + 1})`,
-        }),
-      ),
+      ...[
+        "Snacks",
+        "Frozen",
+        "Personal Care",
+        "Condiments",
+        "Pasta",
+        "Canned",
+        "Spices",
+        "Baby",
+        "Pet Food",
+        "Bakery",
+        "Deli",
+        "Sweets",
+      ].map((category, index) => ({
+        category,
+        amount: faker.number.float({min: 15, max: 250, fractionDigits: 2}),
+        count: faker.number.int({min: 1, max: 12}),
+        fill: `var(--chart-${((index + 3) % 5) + 1})`,
+      })),
     ],
     currency: "RON",
   },

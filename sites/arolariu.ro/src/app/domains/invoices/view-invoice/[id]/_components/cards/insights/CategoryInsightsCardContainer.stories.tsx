@@ -133,9 +133,7 @@ export const CategorySuggestion: Story = {
         </div>
       </div>
       <div className='space-y-3'>
-        <p className='text-sm text-gray-600 dark:text-gray-400'>
-          Set a category to unlock detailed insights for this invoice.
-        </p>
+        <p className='text-sm text-gray-600 dark:text-gray-400'>Set a category to unlock detailed insights for this invoice.</p>
         <div className='flex gap-2'>
           {["Grocery", "Dining", "Home"].map((cat) => (
             <button

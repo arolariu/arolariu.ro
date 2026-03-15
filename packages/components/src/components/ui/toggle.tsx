@@ -1,44 +1,100 @@
 "use client";
 
-import * as TogglePrimitive from "@radix-ui/react-toggle";
-import {cva, type VariantProps} from "class-variance-authority";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {Toggle as BaseToggle} from "@base-ui/react/toggle";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";
+import styles from "./toggle.module.css";
 
-const toggleVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors hover:bg-neutral-100 hover:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-neutral-100 data-[state=on]:text-neutral-900 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 dark:hover:bg-neutral-800 dark:hover:text-neutral-400 dark:focus-visible:ring-neutral-300 dark:data-[state=on]:bg-neutral-800 dark:data-[state=on]:text-neutral-50",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        outline:
-          "border border-neutral-200 bg-transparent shadow-sm hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
-      },
-      size: {
-        default: "h-9 px-2 min-w-9",
-        sm: "h-8 px-1.5 min-w-8",
-        lg: "h-10 px-2.5 min-w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+export type ToggleVariant = "default" | "outline";
+export type ToggleSize = "default" | "sm" | "lg";
+
+export interface ToggleVariantOptions {
+  /**
+   * Controls the rendered visual variant.
+   * @default "default"
+   */
+  variant?: ToggleVariant;
+  /**
+   * Controls the rendered size variant.
+   * @default "default"
+   */
+  size?: ToggleSize;
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
+  className?: string;
+}
+
+/** Returns the CSS module classes used by the toggle wrapper. */
+export function toggleVariants({variant = "default", size = "default", className}: Readonly<ToggleVariantOptions> = {}): string {
+  const variantClass = variant === "outline" ? styles.outline : styles.default;
+  const sizeClass = size === "sm" ? styles.sizeSm : size === "lg" ? styles.sizeLg : styles.sizeDefault;
+
+  return cn(styles.root, variantClass, sizeClass, className);
+}
+
+export interface ToggleProps extends Omit<React.ComponentPropsWithRef<typeof BaseToggle>, "className"> {
+  /**
+   * Applies additional CSS classes to the component root element.
+   * @default undefined
+   */
+  className?: string;
+  /**
+   * Controls the rendered visual variant.
+   * @default "default"
+   */
+  variant?: ToggleVariant;
+  /**
+   * Controls the rendered size variant.
+   * @default "default"
+   */
+  size?: ToggleSize;
+}
+
+/**
+ * Renders the toggle control.
+ *
+ * @remarks
+ * - Renders a `<button>` element by default
+ * - Built on {@link https://base-ui.com/react/components/toggle | Base UI Toggle}
+ * - Supports the `render` prop for element composition
+ *
+ * @example
+ * ```tsx
+ * <Toggle>Content</Toggle>
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/toggle | Base UI Documentation}
+ */
+const Toggle = React.forwardRef<React.ComponentRef<typeof BaseToggle>, Toggle.Props>(
+  (props: Readonly<Toggle.Props>, ref): React.ReactElement => {
+    const {className, children, render, size, variant, ...otherProps} = props;
+
+    return (
+      <BaseToggle
+        ref={ref}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: toggleVariants({variant, size, className})}, {}),
+        })}>
+        {children}
+      </BaseToggle>
+    );
   },
 );
 
-const Toggle = React.forwardRef<
-  React.ComponentRef<typeof TogglePrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof TogglePrimitive.Root> & VariantProps<typeof toggleVariants>
->(({className, variant, size, ...props}, ref) => (
-  <TogglePrimitive.Root
-    ref={ref}
-    className={cn(toggleVariants({variant, size, className}))}
-    {...props}
-  />
-));
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Toggle {
+  export type Props = ToggleProps;
+  export type State = BaseToggle.State;
+}
 
-Toggle.displayName = TogglePrimitive.Root.displayName;
+Toggle.displayName = "Toggle";
 
-export {Toggle, toggleVariants};
+export {Toggle};
