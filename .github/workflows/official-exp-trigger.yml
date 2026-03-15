@@ -80,7 +80,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 📝 Display workflow context
         run: |
@@ -102,7 +102,7 @@ jobs:
       # Note: .github/actions/setup-workspace is Node.js + .NET only.
       # Python setup uses actions/setup-python directly with pip caching.
       - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -148,7 +148,7 @@ jobs:
     environment: ${{ inputs.environment || 'production' }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 📝 Display build context
         run: |
