@@ -33,12 +33,20 @@ function renderDialog({
 }
 
 describe("Dialog", () => {
-  it("renders the root, trigger, and content without crashing", async () => {
-    // Arrange
-    renderDialog({defaultOpen: true});
+  it("renders the trigger as an accessible button and opens the dialog", async () => {
+    // Arrange — render closed first to verify trigger accessibility
+    const user = userEvent.setup();
+    renderDialog({defaultOpen: false});
 
-    // Assert
-    expect(screen.getByRole("button", {hidden: true, name: "Open dialog"})).toBeInTheDocument();
+    // Assert — trigger is accessible before dialog opens
+    const trigger = screen.getByRole("button", {name: "Open dialog"});
+    expect(trigger).toBeInTheDocument();
+    expect(trigger).toBeVisible();
+
+    // Act — open the dialog
+    await user.click(trigger);
+
+    // Assert — dialog is visible
     expect(await screen.findByRole("dialog", {name: "Dialog title"})).toBeVisible();
   });
 

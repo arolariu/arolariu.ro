@@ -48,4 +48,22 @@ describe("generate-exports helpers", () => {
     // Assert
     expect(componentExports["./button"]).toEqual(createExportEntry("components/ui", "button"));
   });
+
+  it("collects exports in deterministic alphabetical order", () => {
+    // Arrange
+    const componentsDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "ac-components-order-"));
+    temporaryDirectories.push(componentsDirectory);
+    fs.writeFileSync(path.join(componentsDirectory, "zebra.tsx"), "export const Zebra = () => null;");
+    fs.writeFileSync(path.join(componentsDirectory, "alpha.tsx"), "export const Alpha = () => null;");
+    fs.writeFileSync(path.join(componentsDirectory, "middle.tsx"), "export const Middle = () => null;");
+
+    // Act
+    const componentExports = collectExportsFromDirectory({
+      distDir: "components/ui",
+      sourceDir: componentsDirectory,
+    });
+
+    // Assert
+    expect(Object.keys(componentExports)).toEqual(["./alpha", "./middle", "./zebra"]);
+  });
 });

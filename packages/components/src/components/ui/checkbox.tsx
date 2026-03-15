@@ -8,6 +8,9 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./checkbox.module.css";
 
+type BaseCheckboxCheckedChange = NonNullable<React.ComponentPropsWithRef<typeof BaseCheckbox.Root>["onCheckedChange"]>;
+type CheckboxChangeEventDetails = Parameters<BaseCheckboxCheckedChange>[1];
+
 /**
  * Props for the shared checkbox wrapper.
  */
@@ -17,7 +20,7 @@ interface CheckboxProps extends Omit<React.ComponentPropsWithRef<typeof BaseChec
   /** The current checked state, including support for the legacy `"indeterminate"` value. @default undefined */
   checked?: boolean | "indeterminate";
   /** Called whenever the checked state changes. @default undefined */
-  onCheckedChange?: (checked: boolean | "indeterminate") => void;
+  onCheckedChange?: (checked: boolean | "indeterminate", eventDetails: CheckboxChangeEventDetails) => void;
 }
 
 /**
@@ -41,13 +44,18 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof BaseCheckbox.Root>, 
     const {checked, className, onCheckedChange, render, ...otherProps} = props;
     const baseChecked = checked === "indeterminate" ? true : checked;
     const indeterminate = checked === "indeterminate";
+    const handleCheckedChange: BaseCheckboxCheckedChange | undefined = onCheckedChange
+      ? (nextChecked, eventDetails) => {
+          onCheckedChange(nextChecked, eventDetails);
+        }
+      : undefined;
 
     return (
       <BaseCheckbox.Root
         ref={ref}
         checked={baseChecked}
         indeterminate={indeterminate}
-        onCheckedChange={onCheckedChange as React.ComponentPropsWithRef<typeof BaseCheckbox.Root>["onCheckedChange"]}
+        onCheckedChange={handleCheckedChange}
         {...otherProps}
         render={useRender({
           defaultTagName: "button",

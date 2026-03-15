@@ -98,7 +98,9 @@ export function collectExportsFromDirectory(config: Readonly<ExportDirectoryConf
   }
 
   const collectedExports: Record<string, ExportEntry> = {};
-  const items = fs.readdirSync(config.sourceDir, {withFileTypes: true});
+  const items = fs
+    .readdirSync(config.sourceDir, {withFileTypes: true})
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   items.forEach((item) => {
     const itemName = item.name;
@@ -184,9 +186,6 @@ export function main(): Record<string, ExportEntry> {
   return exports;
 }
 
-const invokedPath = process.argv[1];
-const isDirectExecution = typeof invokedPath === "string" && path.resolve(invokedPath) === __filename;
-
-if (isDirectExecution) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main();
 }
