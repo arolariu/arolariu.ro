@@ -1,6 +1,7 @@
 import {render, screen} from "@testing-library/react";
-import {createRef} from "react";
-import {describe, expect, it} from "vitest";
+import userEvent from "@testing-library/user-event";
+import {type ChangeEvent, createRef} from "react";
+import {describe, expect, it, vi} from "vitest";
 
 import {Textarea} from "./textarea";
 
@@ -47,6 +48,24 @@ describe("Textarea", () => {
     );
 
     expect(screen.getByDisplayValue("Initial notes")).toBeInTheDocument();
+  });
+
+  it("calls onChange when user types", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn<(event: ChangeEvent<HTMLTextAreaElement>) => void>();
+
+    render(
+      <Textarea
+        aria-label='Message'
+        onChange={handleChange}
+      />,
+    );
+
+    await user.type(screen.getByRole("textbox", {name: "Message"}), "hello");
+
+    expect(handleChange).toHaveBeenCalled();
+    const lastCall = handleChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.target.value).toBe("hello");
   });
 
   it("supports accessible labelling and aria attributes", () => {

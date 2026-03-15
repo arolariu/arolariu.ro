@@ -1,11 +1,13 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi as vitest} from "vitest";
 
 import {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea} from "./input-group";
 
 describe("InputGroup", () => {
-  it("renders InputGroup components with children, custom classes, and forwarded refs", () => {
+  it("renders InputGroup components with children, custom classes, and forwarded refs", async () => {
     // Arrange
+    const user = userEvent.setup();
     const groupRef = {current: null as HTMLDivElement | null};
     const inputRef = {current: null as HTMLInputElement | null};
     const textareaRef = {current: null as HTMLTextAreaElement | null};
@@ -48,7 +50,7 @@ describe("InputGroup", () => {
     expect(inputRef.current).toBe(usernameInput);
     expect(textareaRef.current).toBe(notesTextarea);
 
-    fireEvent.click(screen.getByTestId("input-group-addon"));
+    await user.click(screen.getByTestId("input-group-addon"));
     expect(usernameInput).toHaveFocus();
   });
 
@@ -209,8 +211,9 @@ describe("InputGroup", () => {
     expect(inputRef.current).toBe(input);
   });
 
-  it("InputGroupAddon onClick focuses related input when clicking non-button content", () => {
+  it("InputGroupAddon onClick focuses related input when clicking non-button content", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <InputGroup>
         <InputGroupAddon
@@ -231,14 +234,15 @@ describe("InputGroup", () => {
     const addon = screen.getByTestId("addon");
     const input = screen.getByTestId("input");
 
-    fireEvent.click(addon);
+    await user.click(addon);
 
     // Assert
     expect(input).toHaveFocus();
   });
 
-  it("InputGroupAddon onClick does not interfere with button clicks", () => {
+  it("InputGroupAddon onClick does not interfere with button clicks", async () => {
     // Arrange
+    const user = userEvent.setup();
     const buttonClickHandler = vitest.fn();
 
     render(
@@ -256,14 +260,15 @@ describe("InputGroup", () => {
 
     // Act
     const button = screen.getByRole("button", {name: "Click me"});
-    fireEvent.click(button);
+    await user.click(button);
 
     // Assert
     expect(buttonClickHandler).toHaveBeenCalledTimes(1);
   });
 
-  it("renders InputGroupAddon with default onClick that prevents default when event is prevented", () => {
+  it("renders InputGroupAddon with default onClick that prevents default when event is prevented", async () => {
     // Arrange
+    const user = userEvent.setup();
     const onClickMock = vitest.fn((e) => e.preventDefault());
 
     render(
@@ -284,7 +289,7 @@ describe("InputGroup", () => {
     const addon = screen.getByTestId("addon");
     const input = screen.getByTestId("input");
 
-    fireEvent.click(addon);
+    await user.click(addon);
 
     // Assert
     expect(onClickMock).toHaveBeenCalledTimes(1);

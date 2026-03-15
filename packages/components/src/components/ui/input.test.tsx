@@ -1,6 +1,7 @@
 import {render, screen} from "@testing-library/react";
-import {createRef} from "react";
-import {describe, expect, it} from "vitest";
+import userEvent from "@testing-library/user-event";
+import {type ChangeEvent, createRef} from "react";
+import {describe, expect, it, vi} from "vitest";
 
 import {Input} from "./input";
 
@@ -47,6 +48,24 @@ describe("Input", () => {
     );
 
     expect(screen.getByDisplayValue("Alexandru")).toBeInTheDocument();
+  });
+
+  it("calls onChange when user types", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn<(event: ChangeEvent<HTMLInputElement>) => void>();
+
+    render(
+      <Input
+        aria-label='Email'
+        onChange={handleChange}
+      />,
+    );
+
+    await user.type(screen.getByRole("textbox", {name: "Email"}), "hello");
+
+    expect(handleChange).toHaveBeenCalled();
+    const lastCall = handleChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.target.value).toBe("hello");
   });
 
   it("supports accessible labelling and native attributes", () => {

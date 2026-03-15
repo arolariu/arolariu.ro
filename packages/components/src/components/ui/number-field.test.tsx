@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it} from "vitest";
 
 import {
@@ -35,14 +36,15 @@ describe("NumberField", () => {
     expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
-  it("increments and decrements the displayed value", () => {
+  it("increments and decrements the displayed value", async () => {
     // Arrange
+    const user = userEvent.setup();
     renderNumberField();
     const input = screen.getByRole("textbox");
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Increase"}));
-    fireEvent.click(screen.getByRole("button", {name: "Decrease"}));
+    await user.click(screen.getByRole("button", {name: "Increase"}));
+    await user.click(screen.getByRole("button", {name: "Decrease"}));
 
     // Assert
     expect(input).toHaveValue("2");

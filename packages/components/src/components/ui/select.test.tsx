@@ -1,4 +1,6 @@
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import * as React from "react";
 import {describe, expect, it, vi} from "vitest";
 
 import {Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue} from "./select";
@@ -23,6 +25,7 @@ describe("Select", () => {
 
   it("shows options when the trigger is opened", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Framework'>
@@ -36,7 +39,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
 
     // Assert
     expect(await screen.findByRole("option", {name: "React"})).toBeInTheDocument();
@@ -64,6 +67,7 @@ describe("Select", () => {
 
   it("renders item children inside the popup", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Framework'>
@@ -76,7 +80,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
 
     // Assert
     expect(await screen.findByText("React item content")).toBeInTheDocument();
@@ -84,6 +88,7 @@ describe("Select", () => {
 
   it("renders SelectGroup with SelectLabel", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Framework'>
@@ -100,7 +105,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
 
     // Assert
     await waitFor(() => {
@@ -111,6 +116,7 @@ describe("Select", () => {
 
   it("renders SelectSeparator between groups", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Technology'>
@@ -131,7 +137,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Technology"}));
+    await user.click(screen.getByRole("combobox", {name: "Technology"}));
 
     // Assert
     await waitFor(() => {
@@ -141,6 +147,7 @@ describe("Select", () => {
 
   it("renders SelectContent with scroll buttons automatically", async () => {
     // Arrange - SelectContent automatically renders scroll buttons
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Numbers'>
@@ -159,7 +166,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Numbers"}));
+    await user.click(screen.getByRole("combobox", {name: "Numbers"}));
 
     // Assert - Just verify content opens, scroll buttons are part of the implementation
     await waitFor(() => {
@@ -169,6 +176,7 @@ describe("Select", () => {
 
   it("merges custom className on SelectContent popup", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Framework'>
@@ -183,7 +191,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
 
     // Assert - The custom className is applied to the popup element
     await waitFor(() => {
@@ -195,6 +203,7 @@ describe("Select", () => {
 
   it("merges custom className on SelectLabel", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Framework'>
@@ -210,7 +219,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
 
     // Assert
     await waitFor(() => {
@@ -221,6 +230,7 @@ describe("Select", () => {
 
   it("merges custom className on SelectSeparator", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Framework'>
@@ -238,7 +248,7 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
 
     // Assert
     await waitFor(() => {
@@ -247,8 +257,73 @@ describe("Select", () => {
     });
   });
 
+  it("closes the listbox when Escape is pressed", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(
+      <Select>
+        <SelectTrigger aria-label='Framework'>
+          <SelectValue placeholder='Choose a framework' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value='react'>React</SelectItem>
+          <SelectItem value='vue'>Vue</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
+    await waitFor(() => expect(screen.getByRole("listbox")).toBeInTheDocument());
+
+    // Act
+    await user.keyboard("{Escape}");
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    });
+  });
+
+  it("navigates options with ArrowDown and ArrowUp after opening", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const mockOnValueChange = vi.fn();
+    render(
+      <Select
+        defaultValue='react'
+        onValueChange={mockOnValueChange}>
+        <SelectTrigger aria-label='Framework'>
+          <SelectValue placeholder='Choose a framework' />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value='react'>React</SelectItem>
+          <SelectItem value='vue'>Vue</SelectItem>
+          <SelectItem value='angular'>Angular</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+
+    // Act — open the select with the keyboard, navigate down one step from React → Vue,
+    // then back up Vue → React, then down again and confirm with Enter
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
+    await waitFor(() => screen.getByRole("option", {name: "React"}));
+
+    // ArrowDown from the currently selected "React" moves highlight to "Vue"
+    await user.keyboard("{ArrowDown}");
+    // ArrowUp moves highlight back to "React"
+    await user.keyboard("{ArrowUp}");
+    // ArrowDown again to land on "Vue", then Enter to confirm
+    await user.keyboard("{ArrowDown}{Enter}");
+
+    // Assert
+    await waitFor(() => {
+      expect(mockOnValueChange).toHaveBeenCalledWith("vue");
+    });
+  });
+
   it("calls onValueChange when selection changes", async () => {
     // Arrange
+    const user = userEvent.setup();
     const mockOnValueChange = vi.fn();
     render(
       <Select onValueChange={mockOnValueChange}>
@@ -263,9 +338,9 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
     await waitFor(() => screen.getByRole("option", {name: "React"}));
-    fireEvent.click(screen.getByRole("option", {name: "React"}));
+    await user.click(screen.getByRole("option", {name: "React"}));
 
     // Assert
     await waitFor(() => {
@@ -275,6 +350,7 @@ describe("Select", () => {
 
   it("does not call onValueChange when callback is undefined", async () => {
     // Arrange - No callback provided, just ensure no crash
+    const user = userEvent.setup();
     render(
       <Select>
         <SelectTrigger aria-label='Framework'>
@@ -287,13 +363,56 @@ describe("Select", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("combobox", {name: "Framework"}));
+    await user.click(screen.getByRole("combobox", {name: "Framework"}));
     await waitFor(() => screen.getByRole("option", {name: "React"}));
-    fireEvent.click(screen.getByRole("option", {name: "React"}));
+    await user.click(screen.getByRole("option", {name: "React"}));
 
     // Assert - No crash, selection works (verify the select processed the event)
     await waitFor(() => {
       expect(screen.getByRole("combobox")).toBeInTheDocument();
+    });
+  });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleValueChange = vi.fn<(value: string) => void>();
+
+    function ControlledSelect(): React.JSX.Element {
+      const [value, setValue] = React.useState("react");
+
+      return (
+        <Select
+          value={value}
+          onValueChange={(nextValue) => {
+            setValue(nextValue);
+            handleValueChange(nextValue);
+          }}>
+          <SelectTrigger aria-label='Controlled framework'>
+            <SelectValue placeholder='Choose a framework' />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='react'>React</SelectItem>
+            <SelectItem value='vue'>Vue</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    render(<ControlledSelect />);
+
+    const trigger = screen.getByRole("combobox", {name: "Controlled framework"});
+
+    expect(trigger).toHaveTextContent(/react/i);
+
+    // Act
+    await user.click(trigger);
+    await user.click(await screen.findByRole("option", {name: "Vue"}));
+
+    // Assert
+    expect(handleValueChange).toHaveBeenCalledWith("vue");
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", {name: "Controlled framework"})).toHaveTextContent(/vue/i);
     });
   });
 });

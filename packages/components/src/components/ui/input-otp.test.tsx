@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 
 import {InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot, REGEXP_ONLY_DIGITS} from "./input-otp";
@@ -12,12 +13,13 @@ describe("InputOTP", () => {
     expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
-  it("accepts typed values", () => {
+  it("accepts typed values", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(<InputOTP maxLength={2} />);
 
     // Act
-    fireEvent.input(screen.getByRole("textbox"), {target: {value: "12"}});
+    await user.type(screen.getByRole("textbox"), "12");
 
     // Assert
     expect(screen.getByRole("textbox")).toHaveValue("12");
@@ -139,8 +141,9 @@ describe("InputOTP", () => {
     expect(slot0).toBeInTheDocument();
   });
 
-  it("renders character in slot when value is entered", () => {
+  it("renders character in slot when value is entered", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(
       <InputOTP maxLength={3}>
         <InputOTPGroup>
@@ -157,7 +160,7 @@ describe("InputOTP", () => {
     );
 
     // Act
-    fireEvent.input(screen.getByRole("textbox"), {target: {value: "12"}});
+    await user.type(screen.getByRole("textbox"), "12");
 
     // Assert
     const slot0 = screen.getByTestId("slot-0");
