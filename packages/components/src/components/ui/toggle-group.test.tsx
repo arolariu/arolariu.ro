@@ -186,4 +186,53 @@ describe("ToggleGroup", () => {
     expect(screen.getByRole("group", {name: "Accessible formatting"})).toBeInTheDocument();
     expect(screen.getByRole("button", {name: "Bold accessible format"})).toHaveAttribute("aria-pressed", "true");
   });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleValueChange = vi.fn<(value: string[]) => void>();
+
+    function ControlledToggleGroup(): React.JSX.Element {
+      const [value, setValue] = React.useState<string[]>(["bold"]);
+
+      return (
+        <ToggleGroup
+          role='group'
+          aria-label='Controlled formatting'
+          multiple
+          value={value}
+          onValueChange={(nextValue) => {
+            setValue(nextValue);
+            handleValueChange(nextValue);
+          }}>
+          <ToggleGroupItem
+            value='bold'
+            aria-label='Bold controlled format'>
+            B
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value='italic'
+            aria-label='Italic controlled format'>
+            I
+          </ToggleGroupItem>
+        </ToggleGroup>
+      );
+    }
+
+    render(<ControlledToggleGroup />);
+
+    const boldToggle = screen.getByRole("button", {name: "Bold controlled format"});
+    const italicToggle = screen.getByRole("button", {name: "Italic controlled format"});
+
+    expect(boldToggle).toHaveAttribute("aria-pressed", "true");
+    expect(italicToggle).toHaveAttribute("aria-pressed", "false");
+
+    // Act
+    await user.click(italicToggle);
+
+    // Assert
+    expect(handleValueChange).toHaveBeenCalledWith(["bold", "italic"]);
+    expect(boldToggle).toHaveAttribute("aria-pressed", "true");
+    expect(italicToggle).toHaveAttribute("aria-pressed", "true");
+  });
 });

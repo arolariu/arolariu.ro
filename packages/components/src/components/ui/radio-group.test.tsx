@@ -172,4 +172,49 @@ describe("RadioGroup", () => {
     expect(screen.getByRole("radio", {name: "Starter accessible plan"})).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("radio", {name: "Pro accessible plan"})).toHaveAttribute("aria-checked", "false");
   });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleValueChange = vi.fn<(value: string) => void>();
+
+    function ControlledRadioGroup(): React.JSX.Element {
+      const [value, setValue] = React.useState("starter");
+
+      return (
+        <RadioGroup
+          aria-label='Controlled plan'
+          value={value}
+          onValueChange={(nextValue) => {
+            setValue(nextValue);
+            handleValueChange(nextValue);
+          }}>
+          <RadioGroupItem
+            value='starter'
+            aria-label='Starter controlled plan'
+          />
+          <RadioGroupItem
+            value='pro'
+            aria-label='Pro controlled plan'
+          />
+        </RadioGroup>
+      );
+    }
+
+    render(<ControlledRadioGroup />);
+
+    const starterRadio = screen.getByRole("radio", {name: "Starter controlled plan"});
+    const proRadio = screen.getByRole("radio", {name: "Pro controlled plan"});
+
+    expect(starterRadio).toHaveAttribute("aria-checked", "true");
+    expect(proRadio).toHaveAttribute("aria-checked", "false");
+
+    // Act
+    await user.click(proRadio);
+
+    // Assert
+    expect(handleValueChange).toHaveBeenCalledWith("pro");
+    expect(starterRadio).toHaveAttribute("aria-checked", "false");
+    expect(proRadio).toHaveAttribute("aria-checked", "true");
+  });
 });

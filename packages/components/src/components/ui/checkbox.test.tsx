@@ -87,6 +87,29 @@ describe("Checkbox", () => {
     expect(screen.getByRole("checkbox", {name: "Disabled checkbox"})).toHaveAttribute("data-disabled");
   });
 
+  it("does not call onCheckedChange when disabled", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleCheckedChange = vi.fn<(checked: boolean | "indeterminate") => void>();
+
+    render(
+      <Checkbox
+        aria-label='Disabled callback checkbox'
+        disabled
+        onCheckedChange={handleCheckedChange}
+      />,
+    );
+
+    const checkbox = screen.getByRole("checkbox", {name: "Disabled callback checkbox"});
+
+    // Act
+    await user.click(checkbox);
+
+    // Assert
+    expect(handleCheckedChange).not.toHaveBeenCalled();
+    expect(checkbox).toHaveAttribute("aria-checked", "false");
+  });
+
   it("supports keyboard toggling with the space key", async () => {
     // Arrange
     const user = userEvent.setup();
@@ -113,5 +136,39 @@ describe("Checkbox", () => {
 
     // Assert
     expect(screen.getByRole("checkbox", {name: "Select all rows"})).toHaveAttribute("aria-checked", "mixed");
+  });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleCheckedChange = vi.fn<(checked: boolean | "indeterminate") => void>();
+
+    function ControlledCheckbox(): React.JSX.Element {
+      const [checked, setChecked] = React.useState(false);
+
+      return (
+        <Checkbox
+          checked={checked}
+          aria-label='Controlled checkbox'
+          onCheckedChange={(nextChecked) => {
+            setChecked(nextChecked === true);
+            handleCheckedChange(nextChecked);
+          }}
+        />
+      );
+    }
+
+    render(<ControlledCheckbox />);
+
+    const checkbox = screen.getByRole("checkbox", {name: "Controlled checkbox"});
+
+    expect(checkbox).toHaveAttribute("aria-checked", "false");
+
+    // Act
+    await user.click(checkbox);
+
+    // Assert
+    expect(handleCheckedChange).toHaveBeenCalledWith(true);
+    expect(checkbox).toHaveAttribute("aria-checked", "true");
   });
 });

@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 
 import {Button} from "./button";
@@ -60,8 +61,9 @@ describe("Button", () => {
     expect(screen.queryByText("Hidden fallback")).not.toBeInTheDocument();
   });
 
-  it("prevents clicks on disabled non-native render targets", () => {
+  it("prevents clicks on disabled non-native render targets", async () => {
     // Arrange
+    const user = userEvent.setup();
     const handleClick = vi.fn();
 
     render(
@@ -74,7 +76,7 @@ describe("Button", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Disabled dashboard link"}));
+    await user.click(screen.getByRole("button", {name: "Disabled dashboard link"}));
 
     // Assert
     expect(handleClick).not.toHaveBeenCalled();
@@ -207,7 +209,8 @@ describe("Button", () => {
     expect(button).toHaveAttribute("disabled");
   });
 
-  it("renders disabled non-native button with aria-disabled", () => {
+  it("renders disabled non-native button with aria-disabled", async () => {
+    const user = userEvent.setup();
     const handleClick = vi.fn();
 
     render(
@@ -229,7 +232,7 @@ describe("Button", () => {
     expect(link).not.toHaveAttribute("disabled");
 
     // Click should be prevented
-    fireEvent.click(link);
+    await user.click(link);
     expect(handleClick).not.toHaveBeenCalled();
   });
 
@@ -263,8 +266,9 @@ describe("Button", () => {
     expect(button.className).toContain("outline");
   });
 
-  it("prevents Enter key on disabled non-native elements", () => {
+  it("prevents Enter key on disabled non-native elements", async () => {
     // Arrange
+    const user = userEvent.setup();
     const handleClick = vi.fn();
 
     render(
@@ -282,14 +286,16 @@ describe("Button", () => {
 
     // Act
     const link = screen.getByTestId("disabled-enter");
-    fireEvent.keyDown(link, {key: "Enter"});
+    link.focus();
+    await user.keyboard("{Enter}");
 
     // Assert - Enter should be prevented
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it("prevents Space key on disabled non-native elements", () => {
+  it("prevents Space key on disabled non-native elements", async () => {
     // Arrange
+    const user = userEvent.setup();
     const handleClick = vi.fn();
 
     render(
@@ -307,14 +313,17 @@ describe("Button", () => {
 
     // Act
     const link = screen.getByTestId("disabled-space");
-    fireEvent.keyDown(link, {key: " "});
+    link.focus();
+    await user.keyboard(" ");
 
     // Assert - Space should be prevented
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it("allows key events on disabled non-native elements for other keys", () => {
+  it("allows key events on disabled non-native elements for other keys", async () => {
     // Arrange
+    const user = userEvent.setup();
+
     render(
       <Button
         asChild
@@ -329,7 +338,8 @@ describe("Button", () => {
 
     // Act
     const link = screen.getByTestId("disabled-other-key");
-    fireEvent.keyDown(link, {key: "Tab"});
+    link.focus();
+    await user.keyboard("{Tab}");
 
     // Assert - should not throw or crash
     expect(link).toHaveAttribute("aria-disabled", "true");
@@ -387,8 +397,9 @@ describe("Button", () => {
     expect(divButton).not.toHaveAttribute("type");
   });
 
-  it("allows click on enabled non-native elements", () => {
+  it("allows click on enabled non-native elements", async () => {
     // Arrange
+    const user = userEvent.setup();
     const handleClick = vi.fn();
 
     render(
@@ -404,7 +415,7 @@ describe("Button", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByTestId("enabled-link"));
+    await user.click(screen.getByTestId("enabled-link"));
 
     // Assert - click should work
     expect(handleClick).toHaveBeenCalled();
@@ -520,7 +531,8 @@ describe("Button", () => {
     expect(mockPreventDefault).toHaveBeenCalled();
   });
 
-  it("allows keyDown (other keys) on disabled non-native button", () => {
+  it("allows keyDown (other keys) on disabled non-native button", async () => {
+    const user = userEvent.setup();
     const handleKeyDown = vi.fn();
 
     render(
@@ -537,7 +549,8 @@ describe("Button", () => {
     );
 
     const link = screen.getByTestId("disabled-link");
-    fireEvent.keyDown(link, {key: "Tab"});
+    link.focus();
+    await user.keyboard("{Tab}");
 
     expect(handleKeyDown).toHaveBeenCalled();
   });

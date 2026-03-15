@@ -1,4 +1,5 @@
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 
 import {CopyButton} from "./copy-button";
@@ -45,6 +46,7 @@ describe("CopyButton", () => {
   });
 
   it("copies text to clipboard on click", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -54,13 +56,14 @@ describe("CopyButton", () => {
     render(<CopyButton value='test value' />);
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await user.click(button);
     await waitFor(() => {
       expect(writeTextMock).toHaveBeenCalledWith("test value");
     });
   });
 
   it("shows check icon after successful copy", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -72,7 +75,7 @@ describe("CopyButton", () => {
 
     expect(screen.getByLabelText("Copy to clipboard")).toBeInTheDocument();
 
-    fireEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(screen.getByLabelText("Copied")).toBeInTheDocument();
@@ -80,6 +83,7 @@ describe("CopyButton", () => {
   });
 
   it("calls clipboard.writeText with correct value", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -89,7 +93,7 @@ describe("CopyButton", () => {
     render(<CopyButton value='test-value-123' />);
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(writeTextMock).toHaveBeenCalledWith("test-value-123");
@@ -97,6 +101,7 @@ describe("CopyButton", () => {
   });
 
   it("does not crash when clipboard writeText fails", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockRejectedValue(new Error("Clipboard access denied"));
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -107,7 +112,7 @@ describe("CopyButton", () => {
     const button = screen.getByRole("button");
 
     // Should not throw
-    fireEvent.click(button);
+    await user.click(button);
 
     // Wait a bit
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -117,6 +122,7 @@ describe("CopyButton", () => {
   });
 
   it("shows check icon and reverts after custom timeout", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -133,7 +139,7 @@ describe("CopyButton", () => {
 
     expect(screen.getByLabelText("Copy to clipboard")).toBeInTheDocument();
 
-    fireEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(screen.getByLabelText("Copied")).toBeInTheDocument();
@@ -149,6 +155,7 @@ describe("CopyButton", () => {
   });
 
   it("clears timeout on unmount", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -158,7 +165,7 @@ describe("CopyButton", () => {
     const {unmount} = render(<CopyButton value='test' />);
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(screen.getByLabelText("Copied")).toBeInTheDocument();
@@ -172,6 +179,7 @@ describe("CopyButton", () => {
   });
 
   it("handles multiple rapid clicks by resetting timeout", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -182,14 +190,14 @@ describe("CopyButton", () => {
     const button = screen.getByRole("button");
 
     // First click
-    fireEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(screen.getByLabelText("Copied")).toBeInTheDocument();
     });
 
     // Second click before timeout completes
-    fireEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(writeTextMock).toHaveBeenCalledTimes(2);
@@ -200,6 +208,7 @@ describe("CopyButton", () => {
   });
 
   it("does not copy when disabled", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -214,7 +223,7 @@ describe("CopyButton", () => {
     );
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await user.click(button);
 
     // Wait a bit
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -224,6 +233,7 @@ describe("CopyButton", () => {
   });
 
   it("does not copy when clipboard.writeText is not available", async () => {
+    const user = userEvent.setup();
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
       value: {writeText: undefined},
@@ -232,7 +242,7 @@ describe("CopyButton", () => {
     render(<CopyButton value='test' />);
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await user.click(button);
 
     // Wait a bit
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -242,6 +252,7 @@ describe("CopyButton", () => {
   });
 
   it("calls custom onClick handler", async () => {
+    const user = userEvent.setup();
     const onClickMock = vi.fn();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
@@ -257,7 +268,7 @@ describe("CopyButton", () => {
     );
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await user.click(button);
 
     await waitFor(() => {
       expect(onClickMock).toHaveBeenCalledTimes(1);
@@ -266,6 +277,7 @@ describe("CopyButton", () => {
   });
 
   it("does not copy when event is prevented by onClick handler", async () => {
+    const user = userEvent.setup();
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, "clipboard", {
       configurable: true,
@@ -280,7 +292,7 @@ describe("CopyButton", () => {
     );
     const button = screen.getByRole("button");
 
-    fireEvent.click(button);
+    await user.click(button);
 
     // Wait a bit
     await new Promise((resolve) => setTimeout(resolve, 20));

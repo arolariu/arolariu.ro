@@ -1,6 +1,7 @@
 import * as React from "react";
 
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 vi.mock("motion/react", async () => {
@@ -69,8 +70,9 @@ beforeEach(() => {
 });
 
 describe("RippleButton", () => {
-  it("renders RippleButton with custom classes and forwarded refs", () => {
+  it("renders RippleButton with custom classes and forwarded refs", async () => {
     // Arrange
+    const user = userEvent.setup();
     const rippleButtonRef = {current: null as HTMLButtonElement | null};
     const handleRippleClick = vi.fn();
 
@@ -90,12 +92,13 @@ describe("RippleButton", () => {
     expect(rippleButton).toHaveClass("ripple-button-class");
     expect(rippleButtonRef.current).toBe(rippleButton);
 
-    fireEvent.click(rippleButton);
+    await user.click(rippleButton);
     expect(handleRippleClick).toHaveBeenCalledTimes(1);
   });
 
-  it("creates ripple animation on click", () => {
+  it("creates ripple animation on click", async () => {
     // Arrange
+    const user = userEvent.setup();
     const rippleButtonRef = {current: null as HTMLButtonElement | null};
 
     // Act
@@ -122,8 +125,8 @@ describe("RippleButton", () => {
       toJSON: () => ({}),
     }));
 
-    // Click at position (100, 75)
-    fireEvent.click(button, {clientX: 100, clientY: 75});
+    // Click to create a ripple
+    await user.click(button);
 
     // Assert - ripple should be created (can't directly check ripple state but can verify click worked)
     expect(button).toBeInTheDocument();
@@ -131,6 +134,7 @@ describe("RippleButton", () => {
 
   it("removes ripple after timeout", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(<RippleButton data-testid='ripple-button'>Click me</RippleButton>);
     const button = screen.getByTestId("ripple-button");
 
@@ -147,7 +151,7 @@ describe("RippleButton", () => {
     }));
 
     // Click to create ripple
-    fireEvent.click(button, {clientX: 75, clientY: 75});
+    await user.click(button);
 
     // Button should still be there
     expect(button).toBeInTheDocument();
@@ -158,8 +162,10 @@ describe("RippleButton", () => {
     expect(button).toBeInTheDocument();
   });
 
-  it("handles custom rippleClassName", () => {
+  it("handles custom rippleClassName", async () => {
     // Arrange & Act
+    const user = userEvent.setup();
+
     render(
       <RippleButton
         rippleClassName='custom-ripple'
@@ -182,14 +188,16 @@ describe("RippleButton", () => {
       toJSON: () => ({}),
     }));
 
-    fireEvent.click(button, {clientX: 75, clientY: 75});
+    await user.click(button);
 
     // Assert - button renders correctly with custom ripple class
     expect(button).toBeInTheDocument();
   });
 
-  it("handles custom scale prop", () => {
+  it("handles custom scale prop", async () => {
     // Arrange & Act
+    const user = userEvent.setup();
+
     render(
       <RippleButton
         scale={20}
@@ -212,14 +220,16 @@ describe("RippleButton", () => {
       toJSON: () => ({}),
     }));
 
-    fireEvent.click(button, {clientX: 75, clientY: 75});
+    await user.click(button);
 
     // Assert
     expect(button).toBeInTheDocument();
   });
 
-  it("handles custom transition prop", () => {
+  it("handles custom transition prop", async () => {
     // Arrange & Act
+    const user = userEvent.setup();
+
     render(
       <RippleButton
         transition={{duration: 1.0, ease: "easeIn"}}
@@ -242,14 +252,15 @@ describe("RippleButton", () => {
       toJSON: () => ({}),
     }));
 
-    fireEvent.click(button, {clientX: 75, clientY: 75});
+    await user.click(button);
 
     // Assert
     expect(button).toBeInTheDocument();
   });
 
-  it("handles click when buttonRef is not available", () => {
+  it("handles click when buttonRef is not available", async () => {
     // Arrange
+    const user = userEvent.setup();
     render(<RippleButton data-testid='ripple-button'>No Ref</RippleButton>);
     const button = screen.getByTestId("ripple-button");
 
@@ -258,7 +269,7 @@ describe("RippleButton", () => {
     document.getElementById = vi.fn(() => null);
 
     // Act - click should not crash even if ref is not available
-    fireEvent.click(button, {clientX: 75, clientY: 75});
+    await user.click(button);
 
     // Assert
     expect(button).toBeInTheDocument();
@@ -269,6 +280,7 @@ describe("RippleButton", () => {
 
   it("cleans up timeouts on unmount", async () => {
     // Arrange
+    const user = userEvent.setup();
     const {unmount} = render(<RippleButton data-testid='ripple-button'>Cleanup Test</RippleButton>);
     const button = screen.getByTestId("ripple-button");
 
@@ -285,7 +297,7 @@ describe("RippleButton", () => {
     }));
 
     // Click to create ripple
-    fireEvent.click(button, {clientX: 75, clientY: 75});
+    await user.click(button);
 
     // Unmount before timeout completes
     unmount();

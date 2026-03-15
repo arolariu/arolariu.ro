@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import {describe, expect, it, vi} from "vitest";
 
-import {Toggle} from "./toggle";
+import {Toggle, toggleVariants} from "./toggle";
 
 describe("Toggle", () => {
   it("renders without crashing", () => {
@@ -91,6 +91,30 @@ describe("Toggle", () => {
     expect(screen.getByRole("button", {name: "Disabled toggle"})).toHaveAttribute("data-disabled");
   });
 
+  it("does not call onPressedChange when disabled", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handlePressedChange = vi.fn<(pressed: boolean) => void>();
+
+    render(
+      <Toggle
+        aria-label='Disabled callback toggle'
+        disabled
+        onPressedChange={handlePressedChange}>
+        Disabled callback
+      </Toggle>,
+    );
+
+    const toggle = screen.getByRole("button", {name: "Disabled callback toggle"});
+
+    // Act
+    await user.click(toggle);
+
+    // Assert
+    expect(handlePressedChange).not.toHaveBeenCalled();
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("supports keyboard toggling with the enter key", async () => {
     // Arrange
     const user = userEvent.setup();
@@ -119,5 +143,65 @@ describe("Toggle", () => {
 
     // Assert
     expect(screen.getByRole("button", {name: "Accessible toggle"})).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handlePressedChange = vi.fn<(pressed: boolean) => void>();
+
+    function ControlledToggle(): React.JSX.Element {
+      const [pressed, setPressed] = React.useState(false);
+
+      return (
+        <Toggle
+          pressed={pressed}
+          aria-label='Controlled toggle'
+          onPressedChange={(nextPressed) => {
+            setPressed(nextPressed);
+            handlePressedChange(nextPressed);
+          }}>
+          Controlled
+        </Toggle>
+      );
+    }
+
+    render(<ControlledToggle />);
+
+    const toggle = screen.getByRole("button", {name: "Controlled toggle"});
+
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    // Act
+    await user.click(toggle);
+
+    // Assert
+    expect(handlePressedChange).toHaveBeenCalledWith(true);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("computes outline and default variant classes", () => {
+    // Arrange
+    const defaultClasses = toggleVariants();
+
+    // Act
+    const outlineClasses = toggleVariants({variant: "outline"});
+
+    // Assert
+    expect(outlineClasses).not.toBe(defaultClasses);
+  });
+
+  it("computes small and large size classes", () => {
+    // Arrange
+    const defaultClasses = toggleVariants();
+
+    // Act
+    const smallClasses = toggleVariants({size: "sm"});
+    const largeClasses = toggleVariants({size: "lg"});
+
+    // Assert
+    expect(smallClasses).not.toBe(defaultClasses);
+    expect(largeClasses).not.toBe(defaultClasses);
+    expect(smallClasses).not.toBe(largeClasses);
   });
 });

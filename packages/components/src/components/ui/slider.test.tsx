@@ -140,4 +140,42 @@ describe("Slider", () => {
     expect(slider).toHaveAttribute("aria-orientation", "horizontal");
     expect(slider).toHaveAttribute("aria-valuenow", "40");
   });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleValueChange = vi.fn<(value: number[]) => void>();
+
+    function ControlledSlider(): React.JSX.Element {
+      const [value, setValue] = React.useState<number[]>([20]);
+
+      return (
+        <Slider
+          aria-label='Controlled slider'
+          value={value}
+          min={0}
+          max={100}
+          step={10}
+          onValueChange={(nextValue) => {
+            setValue(nextValue);
+            handleValueChange(nextValue);
+          }}
+        />
+      );
+    }
+
+    render(<ControlledSlider />);
+
+    const slider = screen.getByRole("slider");
+
+    expect(slider).toHaveAttribute("aria-valuenow", "20");
+
+    // Act
+    slider.focus();
+    await user.keyboard("{ArrowRight}");
+
+    // Assert
+    expect(handleValueChange).toHaveBeenCalledWith([30]);
+    expect(slider).toHaveAttribute("aria-valuenow", "30");
+  });
 });

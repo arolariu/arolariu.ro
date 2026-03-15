@@ -65,6 +65,13 @@ describe("Switch", () => {
     // Assert
     expect(switchElement).toHaveAttribute("aria-checked", "true");
     expect(handleCheckedChange.mock.calls.at(-1)?.[0]).toBe(true);
+
+    // Act
+    await user.click(switchElement);
+
+    // Assert
+    expect(switchElement).toHaveAttribute("aria-checked", "false");
+    expect(handleCheckedChange.mock.calls.at(-1)?.[0]).toBe(false);
   });
 
   it("marks disabled switches with data-disabled", () => {
@@ -106,5 +113,39 @@ describe("Switch", () => {
 
     // Assert
     expect(screen.getByRole("switch", {name: "Accessible switch"})).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("works in controlled mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleCheckedChange = vi.fn<(checked: boolean) => void>();
+
+    function ControlledSwitch(): React.JSX.Element {
+      const [checked, setChecked] = React.useState(false);
+
+      return (
+        <Switch
+          checked={checked}
+          aria-label='Controlled switch'
+          onCheckedChange={(nextChecked) => {
+            setChecked(nextChecked);
+            handleCheckedChange(nextChecked);
+          }}
+        />
+      );
+    }
+
+    render(<ControlledSwitch />);
+
+    const switchElement = screen.getByRole("switch", {name: "Controlled switch"});
+
+    expect(switchElement).toHaveAttribute("aria-checked", "false");
+
+    // Act
+    await user.click(switchElement);
+
+    // Assert
+    expect(handleCheckedChange).toHaveBeenCalledWith(true);
+    expect(switchElement).toHaveAttribute("aria-checked", "true");
   });
 });
