@@ -105,6 +105,24 @@ describe("useWindowSize", () => {
     });
   });
 
+  it("handles exact breakpoint boundary (768px)", async () => {
+    // Arrange
+    resizeViewport(768, 600);
+
+    // Act
+    const {result} = renderHook(() => useWindowSize());
+
+    // Assert
+    await waitFor(() => {
+      expect(result.current.windowSize).toStrictEqual({
+        width: 768,
+        height: 600,
+      });
+      expect(result.current.isMobile).toBe(false);
+      expect(result.current.isDesktop).toBe(true);
+    });
+  });
+
   it("updates on window resize", async () => {
     // Arrange
     resizeViewport(900, 700);

@@ -1,4 +1,5 @@
-import {act, fireEvent, render, renderHook} from "@testing-library/react";
+import {act, render, renderHook} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it} from "vitest";
 
 import {useFocusVisible} from "./useFocusVisible";
@@ -77,46 +78,40 @@ describe("useFocusVisible", () => {
     expect(result.current.isFocusVisible).toBe(false);
   });
 
-  it("works in a real component scenario", () => {
+  it("works in a real component scenario", async () => {
     function TestComponent(): React.JSX.Element {
       const {isFocusVisible, focusProps} = useFocusVisible();
 
       return (
-        <button
-          data-testid='test-button'
-          data-focus-visible={isFocusVisible}
-          {...focusProps}>
-          Test
-        </button>
+        <div>
+          <button
+            data-testid='test-button'
+            data-focus-visible={isFocusVisible}
+            {...focusProps}>
+            Test
+          </button>
+          <button data-testid='next-button'>Next</button>
+        </div>
       );
     }
 
+    const user = userEvent.setup();
     const {getByTestId} = render(<TestComponent />);
     const button = getByTestId("test-button");
+    const nextButton = getByTestId("next-button");
 
-    // Initial state
     expect(button.dataset.focusVisible).toBe("false");
 
-    // Keyboard then focus
-    act(() => {
-      const keydownEvent = new KeyboardEvent("keydown", {key: "Tab"});
-      document.dispatchEvent(keydownEvent);
-    });
-
-    fireEvent.focus(button);
+    await user.tab();
+    expect(button).toHaveFocus();
     expect(button.dataset.focusVisible).toBe("true");
 
-    // Blur
-    fireEvent.blur(button);
+    await user.tab();
+    expect(nextButton).toHaveFocus();
     expect(button.dataset.focusVisible).toBe("false");
 
-    // Pointer then focus
-    act(() => {
-      const pointerdownEvent = new PointerEvent("pointerdown");
-      document.dispatchEvent(pointerdownEvent);
-    });
-
-    fireEvent.focus(button);
+    await user.pointer({target: button, keys: "[MouseLeft]"});
+    expect(button).toHaveFocus();
     expect(button.dataset.focusVisible).toBe("false");
   });
 
