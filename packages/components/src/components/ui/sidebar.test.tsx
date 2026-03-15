@@ -1,4 +1,5 @@
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 
 vi.mock("@/hooks/useIsMobile", () => ({
@@ -37,6 +38,7 @@ import {
 describe("Sidebar", () => {
   it("renders SidebarProvider, Sidebar, SidebarContent, and SidebarTrigger with className and forwarded refs", async () => {
     // Arrange
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(false);
 
     const providerRef = {current: null as HTMLDivElement | null};
@@ -79,7 +81,7 @@ describe("Sidebar", () => {
     expect(contentRef.current).toBe(content);
     expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
 
-    fireEvent.click(trigger);
+    await user.click(trigger);
 
     await waitFor(() => {
       expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
@@ -281,6 +283,7 @@ describe("Sidebar", () => {
   });
 
   it("SidebarRail toggles sidebar on click", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(false);
 
     render(
@@ -298,7 +301,7 @@ describe("Sidebar", () => {
 
     expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
 
-    fireEvent.click(rail);
+    await user.click(rail);
 
     await waitFor(() => {
       expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
@@ -610,6 +613,7 @@ describe("Sidebar", () => {
   });
 
   it("renders Sidebar with collapsible='icon'", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(false);
 
     render(
@@ -626,7 +630,7 @@ describe("Sidebar", () => {
 
     expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
 
-    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
 
     await waitFor(() => {
       expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
@@ -634,7 +638,8 @@ describe("Sidebar", () => {
     });
   });
 
-  it("calls custom onClick handler on SidebarTrigger", () => {
+  it("calls custom onClick handler on SidebarTrigger", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(false);
     const mockOnClick = vi.fn();
 
@@ -647,7 +652,7 @@ describe("Sidebar", () => {
       </SidebarProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
 
     expect(mockOnClick).toHaveBeenCalled();
   });
@@ -739,6 +744,7 @@ describe("Sidebar", () => {
   });
 
   it("calls onOpenChange when sidebar is toggled in controlled mode", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(false);
     const mockOnOpenChange = vi.fn();
 
@@ -753,12 +759,13 @@ describe("Sidebar", () => {
       </SidebarProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
 
     expect(mockOnOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("renders mobile sidebar when isMobile is true", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(true);
 
     render(
@@ -771,7 +778,7 @@ describe("Sidebar", () => {
     );
 
     const trigger = screen.getByRole("button", {name: "Toggle Sidebar"});
-    fireEvent.click(trigger);
+    await user.click(trigger);
 
     await waitFor(() => {
       expect(screen.getByText("Mobile Content")).toBeInTheDocument();
@@ -861,11 +868,7 @@ describe("Sidebar", () => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a
-                    href='/dashboard'
-                    data-testid='menu-button-link'>
-                    Dashboard Link
-                  </a>
+                  <span data-testid='menu-button-link'>Dashboard Link</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -876,8 +879,28 @@ describe("Sidebar", () => {
 
     const links = screen.getAllByTestId("menu-button-link");
     // asChild clones props, so we may get duplicates - just check the first one
-    expect(links[0]).toHaveAttribute("href", "/dashboard");
+    expect(links[0].tagName).toBe("SPAN");
     expect(links[0]).toHaveAttribute("data-sidebar", "menu-button");
+  });
+
+  it("falls back to the default button when SidebarMenuButton receives a non-element child via asChild", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>{"Plain text child"}</SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByRole("button", {name: "Plain text child"})).toHaveAttribute("data-sidebar", "menu-button");
   });
 
   it("renders SidebarMenuButton with size='sm'", () => {
@@ -991,6 +1014,7 @@ describe("Sidebar", () => {
   });
 
   it("toggles sidebar on mobile when trigger is clicked", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(true);
 
     render(
@@ -1005,7 +1029,7 @@ describe("Sidebar", () => {
     const trigger = screen.getByRole("button", {name: "Toggle Sidebar"});
 
     // Open sidebar
-    fireEvent.click(trigger);
+    await user.click(trigger);
 
     await waitFor(() => {
       expect(screen.getByText("Mobile Sidebar Content")).toBeInTheDocument();
@@ -1021,7 +1045,7 @@ describe("Sidebar", () => {
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <h3 data-testid='group-label-heading'>Custom Heading</h3>
+                <span data-testid='group-label-heading'>Custom Heading</span>
               </SidebarGroupLabel>
             </SidebarGroup>
           </SidebarContent>
@@ -1030,8 +1054,26 @@ describe("Sidebar", () => {
     );
 
     const labels = screen.getAllByTestId("group-label-heading");
-    expect(labels[0].tagName).toBe("H3");
+    expect(labels[0].tagName).toBe("SPAN");
     expect(labels[0]).toHaveAttribute("data-sidebar", "group-label");
+  });
+
+  it("falls back to the default wrapper when SidebarGroupLabel receives a non-element child via asChild", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>{"Plain text heading"}</SidebarGroupLabel>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByText("Plain text heading")).toHaveAttribute("data-sidebar", "group-label");
   });
 
   it("renders SidebarGroupAction with asChild pattern", () => {
@@ -1044,11 +1086,7 @@ describe("Sidebar", () => {
             <SidebarGroup>
               <SidebarGroupLabel>Projects</SidebarGroupLabel>
               <SidebarGroupAction asChild>
-                <a
-                  href='/add-project'
-                  data-testid='add-project-link'>
-                  +
-                </a>
+                <span data-testid='add-project-link'>+</span>
               </SidebarGroupAction>
             </SidebarGroup>
           </SidebarContent>
@@ -1057,8 +1095,8 @@ describe("Sidebar", () => {
     );
 
     const actions = screen.getAllByTestId("add-project-link");
-    expect(actions[0].tagName).toBe("A");
-    expect(actions[0]).toHaveAttribute("href", "/add-project");
+    expect(actions[0].tagName).toBe("SPAN");
+    expect(actions[0]).toHaveAttribute("data-sidebar", "group-action");
   });
 
   it("renders SidebarGroupAction with type='submit'", () => {
@@ -1095,11 +1133,7 @@ describe("Sidebar", () => {
               <SidebarMenuItem>
                 <SidebarMenuButton>Item</SidebarMenuButton>
                 <SidebarMenuAction asChild>
-                  <a
-                    href='/more'
-                    data-testid='menu-action-link'>
-                    More
-                  </a>
+                  <span data-testid='menu-action-link'>More</span>
                 </SidebarMenuAction>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -1109,8 +1143,29 @@ describe("Sidebar", () => {
     );
 
     const actions = screen.getAllByTestId("menu-action-link");
-    expect(actions[0].tagName).toBe("A");
-    expect(actions[0]).toHaveAttribute("href", "/more");
+    expect(actions[0].tagName).toBe("SPAN");
+    expect(actions[0]).toHaveAttribute("data-sidebar", "menu-action");
+  });
+
+  it("falls back to the default button when SidebarMenuAction receives a non-element child via asChild", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton>Item</SidebarMenuButton>
+                <SidebarMenuAction asChild>{"More actions"}</SidebarMenuAction>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByRole("button", {name: "More actions"})).toHaveAttribute("data-sidebar", "menu-action");
   });
 
   it("renders SidebarMenuSubButton with isActive prop", () => {
@@ -1185,11 +1240,7 @@ describe("Sidebar", () => {
                 <SidebarMenuSub>
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton asChild>
-                      <a
-                        href='/custom-sub'
-                        data-testid='custom-sub-link'>
-                        Custom Sub Link
-                      </a>
+                      <span data-testid='custom-sub-link'>Custom Sub Link</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
@@ -1201,11 +1252,36 @@ describe("Sidebar", () => {
     );
 
     const links = screen.getAllByTestId("custom-sub-link");
-    expect(links[0].tagName).toBe("A");
-    expect(links[0]).toHaveAttribute("href", "/custom-sub");
+    expect(links[0].tagName).toBe("SPAN");
+    expect(links[0]).toHaveAttribute("data-sidebar", "menu-sub-button");
+  });
+
+  it("falls back to the default link when SidebarMenuSubButton receives a non-element child via asChild", () => {
+    vi.mocked(useIsMobile).mockReturnValue(false);
+
+    render(
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild>{"Plain nested link"}</SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+      </SidebarProvider>,
+    );
+
+    expect(screen.getByText("Plain nested link")).toHaveAttribute("data-sidebar", "menu-sub-button");
   });
 
   it("handles keyboard shortcut (Ctrl+B) to toggle sidebar", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(false);
 
     render(
@@ -1221,7 +1297,7 @@ describe("Sidebar", () => {
 
     expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
 
-    fireEvent.keyDown(globalThis.window, {key: "b", ctrlKey: true});
+    await user.keyboard("{Control>}b{/Control}");
 
     await waitFor(() => {
       expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
@@ -1229,6 +1305,7 @@ describe("Sidebar", () => {
   });
 
   it("handles keyboard shortcut (Cmd+B) to toggle sidebar on Mac", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(false);
 
     render(
@@ -1244,7 +1321,7 @@ describe("Sidebar", () => {
 
     expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
 
-    fireEvent.keyDown(globalThis.window, {key: "b", metaKey: true});
+    await user.keyboard("{Meta>}b{/Meta}");
 
     await waitFor(() => {
       expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
@@ -1252,6 +1329,7 @@ describe("Sidebar", () => {
   });
 
   it("closes mobile sidebar with Escape key", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(true);
 
     render(
@@ -1264,14 +1342,14 @@ describe("Sidebar", () => {
     );
 
     // Open sidebar
-    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
 
     await waitFor(() => {
       expect(screen.getByText("Mobile Content")).toBeInTheDocument();
     });
 
     // Close with Escape
-    fireEvent.keyDown(globalThis.window, {key: "Escape"});
+    await user.keyboard("{Escape}");
 
     await waitFor(() => {
       expect(screen.queryByText("Mobile Content")).not.toBeInTheDocument();
@@ -1279,6 +1357,7 @@ describe("Sidebar", () => {
   });
 
   it("closes mobile sidebar by clicking overlay", async () => {
+    const user = userEvent.setup();
     vi.mocked(useIsMobile).mockReturnValue(true);
 
     render(
@@ -1291,7 +1370,7 @@ describe("Sidebar", () => {
     );
 
     // Open sidebar
-    fireEvent.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
+    await user.click(screen.getByRole("button", {name: "Toggle Sidebar"}));
 
     await waitFor(() => {
       expect(screen.getByText("Mobile Content")).toBeInTheDocument();
@@ -1299,7 +1378,7 @@ describe("Sidebar", () => {
 
     // Click overlay (the button with aria-label "Close sidebar")
     const overlay = screen.getByLabelText("Close sidebar");
-    fireEvent.click(overlay);
+    await user.click(overlay);
 
     await waitFor(() => {
       expect(screen.queryByText("Mobile Content")).not.toBeInTheDocument();

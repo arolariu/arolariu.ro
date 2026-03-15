@@ -325,6 +325,41 @@ describe("Form", () => {
     expect(fallbackDiv.parentElement).toBeInTheDocument();
   });
 
+  it("renders a fallback wrapper when FormControl receives text children", () => {
+    // Arrange
+    function TestComponent(): React.JSX.Element {
+      const methods = useForm<TestFormValues>({
+        defaultValues: {
+          email: "",
+        },
+      });
+
+      return (
+        <Form {...methods}>
+          <form>
+            <FormField
+              control={methods.control}
+              name='email'
+              render={() => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>Plain text fallback</FormControl>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      );
+    }
+
+    render(<TestComponent />);
+
+    // Assert
+    const wrapper = screen.getByText("Plain text fallback").closest("div");
+    expect(wrapper).toHaveAttribute("aria-invalid", "false");
+    expect(wrapper?.id).toMatch(/-form-item$/);
+  });
+
   it("should merge refs in FormControl when child has ref", () => {
     // Arrange
     const childRef = React.createRef<HTMLInputElement>();

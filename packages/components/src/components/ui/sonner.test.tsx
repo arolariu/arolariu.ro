@@ -1,6 +1,6 @@
 import {act, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {afterEach, describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {toast, Toaster} from "./sonner";
 
@@ -138,6 +138,53 @@ describe("Sonner", () => {
     });
   });
 
+  it("normalizes explicit toast ids to strings", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("Explicit id toast", {id: 123});
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Explicit id toast")).toBeInTheDocument();
+      expect(toast.getToasts()[0]?.id).toBe("123");
+    });
+  });
+
+  it("falls back to sequence ids when crypto.randomUUID is unavailable", async () => {
+    // Arrange
+    render(<Toaster />);
+    const originalCrypto = globalThis.crypto;
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        ...originalCrypto,
+        randomUUID: undefined,
+      },
+    });
+
+    try {
+      // Act
+      act(() => {
+        toast("Sequence id toast");
+      });
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByText("Sequence id toast")).toBeInTheDocument();
+        expect(toast.getToasts()[0]?.id.startsWith("toast-")).toBe(true);
+      });
+    } finally {
+      Object.defineProperty(globalThis, "crypto", {
+        configurable: true,
+        value: originalCrypto,
+      });
+    }
+  });
+
   it("renders error toast with correct variant", async () => {
     // Arrange
     render(<Toaster />);
@@ -221,21 +268,16 @@ describe("Sonner", () => {
     });
   });
 
-  it("renders Toaster with different positions", () => {
-    // Arrange & Act - Test top-left
-    const {unmount} = render(<Toaster position='top-left' />);
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-    unmount();
+  it("renders Toaster with all supported positions", () => {
+    // Arrange
+    const positions = ["top-left", "top-right", "top-center", "bottom-left", "bottom-right", "bottom-center"] as const;
 
-    // Test bottom-center
-    const {unmount: unmount2} = render(<Toaster position='bottom-center' />);
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-    unmount2();
-
-    // Test top-right
-    const {unmount: unmount3} = render(<Toaster position='top-right' />);
-    expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
-    unmount3();
+    // Act / Assert
+    for (const position of positions) {
+      const {unmount} = render(<Toaster position={position} />);
+      expect(screen.getByLabelText("Notifications")).toBeInTheDocument();
+      unmount();
+    }
   });
 
   it("renders toast without description when only message is provided", async () => {
@@ -368,6 +410,33 @@ describe("Sonner", () => {
     });
   });
 
+  it("dismisses all active toasts when called without an id", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast("First toast");
+      toast("Second toast");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("First toast")).toBeInTheDocument();
+      expect(screen.getByText("Second toast")).toBeInTheDocument();
+    });
+
+    act(() => {
+      toast.dismiss();
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByText("First toast")).not.toBeInTheDocument();
+      expect(screen.queryByText("Second toast")).not.toBeInTheDocument();
+      expect(toast.getToasts()).toHaveLength(0);
+    });
+  });
+
   it("returns toast history via getHistory", async () => {
     // Arrange
     render(<Toaster />);
@@ -405,6 +474,40 @@ describe("Sonner", () => {
     // Assert
     await waitFor(() => {
       expect(screen.getByText("Toast with options")).toBeInTheDocument();
+    });
+  });
+
+  it("supports function-based titles and descriptions", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast(() => "Factory title", {
+        description: () => "Factory description",
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Factory title")).toBeInTheDocument();
+      expect(screen.getByText("Factory description")).toBeInTheDocument();
+    });
+  });
+
+  it("omits the close button when disabled via toaster defaults", async () => {
+    // Arrange
+    render(<Toaster closeButton={false} />);
+
+    // Act
+    act(() => {
+      toast("No close button toast");
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("No close button toast")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Close notification")).not.toBeInTheDocument();
     });
   });
 
@@ -489,6 +592,173 @@ describe("Sonner", () => {
     await waitFor(() => {
       expect(screen.getByText("Toast with node cancel")).toBeInTheDocument();
       expect(screen.getByRole("button", {name: "Custom Cancel"})).toBeInTheDocument();
+    });
+  });
+
+  it("shows a resolved promise toast even without a loading state", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    const promise = toast.promise(Promise.resolve("profile"), {
+      success: (value) => ({message: `Saved ${value}`}),
+    });
+
+    await act(async () => {
+      await promise;
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Saved profile")).toBeInTheDocument();
+      expect(toast.getToasts()[0]?.variant).toBe("success");
+    });
+  });
+
+  it("updates rejected promise toasts and runs finally callbacks", async () => {
+    // Arrange
+    let rejectPromise: ((reason?: unknown) => void) | undefined;
+    const promise = new Promise<string>((_resolve, reject) => {
+      rejectPromise = reject;
+    });
+    const handleFinally = vi.fn();
+    render(<Toaster />);
+
+    const pendingToast = toast.promise(promise, {
+      loading: "Saving profile",
+      error: () => ({
+        description: "Please retry.",
+        message: "Profile failed",
+      }),
+      finally: handleFinally,
+    });
+
+    expect(await screen.findByText("Saving profile")).toBeInTheDocument();
+
+    let rejectionMessage = "";
+
+    // Act
+    await act(async () => {
+      rejectPromise?.(new Error("Boom"));
+
+      try {
+        await pendingToast;
+      } catch (error) {
+        rejectionMessage = error instanceof Error ? error.message : String(error);
+      }
+    });
+
+    // Assert
+    expect(rejectionMessage).toBe("Boom");
+    await waitFor(() => {
+      expect(screen.getByText("Profile failed")).toBeInTheDocument();
+      expect(screen.getByText("Please retry.")).toBeInTheDocument();
+      expect(toast.getToasts()[0]?.variant).toBe("error");
+      expect(handleFinally).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("dismisses toasts after action button clicks", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleAction = vi.fn();
+    render(<Toaster />);
+
+    act(() => {
+      toast("Undoable toast", {
+        action: {
+          label: "Undo",
+          onClick: handleAction,
+        },
+      });
+    });
+
+    const actionButton = await screen.findByRole("button", {name: "Undo"});
+
+    // Act
+    await user.click(actionButton);
+
+    // Assert
+    expect(handleAction).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(screen.queryByText("Undoable toast")).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders toast actions passed as React nodes", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    act(() => {
+      toast("Toast with custom action", {
+        action: <button type='button'>Custom Action</button>,
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Toast with custom action")).toBeInTheDocument();
+      expect(screen.getByRole("button", {name: "Custom Action"})).toBeInTheDocument();
+    });
+  });
+
+  it("renders no action control for non-element renderables that are not toast actions", async () => {
+    // Arrange
+    render(<Toaster />);
+
+    act(() => {
+      toast("Toast with ignored action", {
+        action: "Ignored action",
+      });
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText("Toast with ignored action")).toBeInTheDocument();
+      expect(screen.queryByRole("button", {name: "Ignored action"})).not.toBeInTheDocument();
+    });
+  });
+
+  it("adds updated orphan toasts to history", () => {
+    // Arrange
+    render(<Toaster />);
+
+    // Act
+    act(() => {
+      toast.update("orphan-toast", {
+        message: "Recovered toast",
+        variant: "warning",
+      });
+    });
+
+    // Assert
+    expect(toast.getHistory().some((entry) => entry.id === "orphan-toast" && entry.variant === "warning" && entry.title === "Recovered toast")).toBe(true);
+  });
+
+  it("dismisses loading toasts when a promise resolves without success content", async () => {
+    // Arrange
+    let resolvePromise: ((value: string) => void) | undefined;
+    const promise = new Promise<string>((resolve) => {
+      resolvePromise = resolve;
+    });
+    render(<Toaster />);
+
+    const pendingToast = toast.promise(promise, {
+      loading: "Loading only",
+    });
+
+    expect(await screen.findByText("Loading only")).toBeInTheDocument();
+
+    // Act
+    await act(async () => {
+      resolvePromise?.("done");
+      await pendingToast;
+    });
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.queryByText("Loading only")).not.toBeInTheDocument();
+      expect(toast.getToasts()).toHaveLength(0);
     });
   });
 });

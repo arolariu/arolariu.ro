@@ -116,4 +116,22 @@ describe("ScrollArea", () => {
     // Assert - component renders
     expect(true).toBe(true);
   });
+
+  it("renders vertical and horizontal scrollbar orientations without crashing", async () => {
+    // Arrange / Act
+    await act(async () => {
+      render(
+        <ScrollArea>
+          <div style={{height: "3000px", width: "3000px"}}>
+            <p>Two-dimensional content</p>
+          </div>
+          <ScrollBar orientation='vertical' />
+          <ScrollBar orientation='horizontal' />
+        </ScrollArea>,
+      );
+    });
+
+    // Assert
+    expect(screen.getByText("Two-dimensional content")).toBeInTheDocument();
+  });
 });

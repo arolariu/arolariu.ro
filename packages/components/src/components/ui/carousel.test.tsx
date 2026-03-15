@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 interface MockEmblaApi {
@@ -76,13 +77,14 @@ describe("Carousel", () => {
     expect(screen.getByRole("region")).toBeInTheDocument();
   });
 
-  it("calls the carousel navigation methods when buttons are clicked", () => {
+  it("calls the carousel navigation methods when buttons are clicked", async () => {
     // Arrange
+    const user = userEvent.setup();
     renderCarousel();
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Previous slide"}));
-    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    await user.click(screen.getByRole("button", {name: "Previous slide"}));
+    await user.click(screen.getByRole("button", {name: "Next slide"}));
 
     // Assert
     expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
@@ -106,16 +108,17 @@ describe("Carousel", () => {
     expect(screen.getByText("Slide 2")).toBeInTheDocument();
   });
 
-  it("merges consumer onClick handlers with carousel navigation", () => {
+  it("merges consumer onClick handlers with carousel navigation", async () => {
     // Arrange
+    const user = userEvent.setup();
     const previousButtonOnClick = vi.fn();
     const nextButtonOnClick = vi.fn();
 
     renderCarousel({nextButtonOnClick, previousButtonOnClick});
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Previous slide"}));
-    fireEvent.click(screen.getByRole("button", {name: "Next slide"}));
+    await user.click(screen.getByRole("button", {name: "Previous slide"}));
+    await user.click(screen.getByRole("button", {name: "Next slide"}));
 
     // Assert
     expect(previousButtonOnClick).toHaveBeenCalledTimes(1);
@@ -145,13 +148,14 @@ describe("Carousel", () => {
     expect(screen.getByTestId("next-icon")).toBeInTheDocument();
   });
 
-  it("supports vertical keyboard navigation", () => {
+  it("supports vertical keyboard navigation", async () => {
     // Arrange
+    const user = userEvent.setup();
     renderCarousel({orientation: "vertical"});
 
     // Act
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowUp"});
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowDown"});
+    screen.getByRole("button", {name: "Previous slide"}).focus();
+    await user.keyboard("{ArrowUp}{ArrowDown}");
 
     // Assert
     expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
@@ -254,48 +258,54 @@ describe("Carousel", () => {
     );
   });
 
-  it("supports horizontal keyboard navigation with ArrowLeft", () => {
+  it("supports horizontal keyboard navigation with ArrowLeft", async () => {
     // Arrange
+    const user = userEvent.setup();
     renderCarousel({orientation: "horizontal"});
 
     // Act
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowLeft"});
+    screen.getByRole("button", {name: "Previous slide"}).focus();
+    await user.keyboard("{ArrowLeft}");
 
     // Assert
     expect(emblaMock.api.scrollPrev).toHaveBeenCalledTimes(1);
   });
 
-  it("supports horizontal keyboard navigation with ArrowRight", () => {
+  it("supports horizontal keyboard navigation with ArrowRight", async () => {
     // Arrange
+    const user = userEvent.setup();
     renderCarousel({orientation: "horizontal"});
 
     // Act
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowRight"});
+    screen.getByRole("button", {name: "Previous slide"}).focus();
+    await user.keyboard("{ArrowRight}");
 
     // Assert
     expect(emblaMock.api.scrollNext).toHaveBeenCalledTimes(1);
   });
 
-  it("ignores vertical arrow keys when orientation is horizontal", () => {
+  it("ignores vertical arrow keys when orientation is horizontal", async () => {
     // Arrange
+    const user = userEvent.setup();
     renderCarousel({orientation: "horizontal"});
 
     // Act
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowUp"});
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowDown"});
+    screen.getByRole("button", {name: "Previous slide"}).focus();
+    await user.keyboard("{ArrowUp}{ArrowDown}");
 
     // Assert
     expect(emblaMock.api.scrollPrev).not.toHaveBeenCalled();
     expect(emblaMock.api.scrollNext).not.toHaveBeenCalled();
   });
 
-  it("ignores horizontal arrow keys when orientation is vertical", () => {
+  it("ignores horizontal arrow keys when orientation is vertical", async () => {
     // Arrange
+    const user = userEvent.setup();
     renderCarousel({orientation: "vertical"});
 
     // Act
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowLeft"});
-    fireEvent.keyDown(screen.getByRole("region"), {key: "ArrowRight"});
+    screen.getByRole("button", {name: "Previous slide"}).focus();
+    await user.keyboard("{ArrowLeft}{ArrowRight}");
 
     // Assert
     expect(emblaMock.api.scrollPrev).not.toHaveBeenCalled();

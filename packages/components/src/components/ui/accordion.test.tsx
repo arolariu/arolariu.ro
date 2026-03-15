@@ -1,6 +1,7 @@
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it} from "vitest";
+import * as React from "react";
+import {describe, expect, it, vi} from "vitest";
 
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
 
@@ -70,6 +71,37 @@ describe("Accordion", () => {
     expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("calls onValueChange with the toggled item value", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleValueChange = vi.fn<(value: string | undefined, eventDetails: unknown) => void>();
+
+    render(
+      <Accordion
+        type='single'
+        onValueChange={handleValueChange}>
+        <AccordionItem value='item-1'>
+          <AccordionTrigger>Section one</AccordionTrigger>
+          <AccordionContent>Panel one content</AccordionContent>
+        </AccordionItem>
+      </Accordion>,
+    );
+
+    const trigger = screen.getByRole("button", {name: "Section one"});
+
+    // Act
+    await user.click(trigger);
+
+    // Assert
+    expect(handleValueChange.mock.calls.at(-1)?.[0]).toBe("item-1");
+
+    // Act
+    await user.click(trigger);
+
+    // Assert
+    expect(handleValueChange.mock.calls.at(-1)?.[0]).toBeUndefined();
+  });
+
   it("supports keyboard toggling with enter and space keys", async () => {
     // Arrange
     const user = userEvent.setup();
@@ -92,6 +124,27 @@ describe("Accordion", () => {
     // Assert
     expect(firstTrigger).toHaveFocus();
     expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("moves focus between accordion triggers with ArrowDown and ArrowUp", async () => {
+    // Arrange — Base UI Accordion implements the ARIA Disclosure Navigation pattern
+    // with roving focus: ArrowDown advances to the next header, ArrowUp retreats.
+    const user = userEvent.setup();
+    const {firstTrigger, secondTrigger} = renderAccordion();
+
+    firstTrigger.focus();
+
+    // Act — ArrowDown should move focus to the second trigger
+    await user.keyboard("{ArrowDown}");
+
+    // Assert
+    expect(secondTrigger).toHaveFocus();
+
+    // Act — ArrowUp should move focus back to the first trigger
+    await user.keyboard("{ArrowUp}");
+
+    // Assert
+    expect(firstTrigger).toHaveFocus();
   });
 
   it("supports multiple type accordion with multiple items open simultaneously", async () => {
@@ -151,5 +204,97 @@ describe("Accordion", () => {
 
     expect(trigger1).toHaveAttribute("aria-expanded", "true");
     expect(trigger2).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("works in controlled single mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleValueChange = vi.fn<(value: string | undefined) => void>();
+
+    function ControlledAccordion(): React.JSX.Element {
+      const [value, setValue] = React.useState("item-1");
+
+      return (
+        <Accordion
+          type='single'
+          value={value}
+          onValueChange={(nextValue) => {
+            setValue(nextValue ?? "");
+            handleValueChange(nextValue);
+          }}>
+          <AccordionItem value='item-1'>
+            <AccordionTrigger>Section one</AccordionTrigger>
+            <AccordionContent>Panel one content</AccordionContent>
+          </AccordionItem>
+          <AccordionItem value='item-2'>
+            <AccordionTrigger>Section two</AccordionTrigger>
+            <AccordionContent>Panel two content</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      );
+    }
+
+    render(<ControlledAccordion />);
+
+    const firstTrigger = screen.getByRole("button", {name: "Section one"});
+    const secondTrigger = screen.getByRole("button", {name: "Section two"});
+
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "false");
+
+    // Act
+    await user.click(secondTrigger);
+
+    // Assert
+    expect(handleValueChange).toHaveBeenCalledWith("item-2");
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Panel two content")).toBeVisible();
+  });
+
+  it("works in controlled multiple mode", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const handleValueChange = vi.fn<(value: string[]) => void>();
+
+    function ControlledAccordion(): React.JSX.Element {
+      const [value, setValue] = React.useState<string[]>(["item-1"]);
+
+      return (
+        <Accordion
+          type='multiple'
+          value={value}
+          onValueChange={(nextValue) => {
+            setValue(nextValue);
+            handleValueChange(nextValue);
+          }}>
+          <AccordionItem value='item-1'>
+            <AccordionTrigger>Section one</AccordionTrigger>
+            <AccordionContent>Panel one content</AccordionContent>
+          </AccordionItem>
+          <AccordionItem value='item-2'>
+            <AccordionTrigger>Section two</AccordionTrigger>
+            <AccordionContent>Panel two content</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      );
+    }
+
+    render(<ControlledAccordion />);
+
+    const firstTrigger = screen.getByRole("button", {name: "Section one"});
+    const secondTrigger = screen.getByRole("button", {name: "Section two"});
+
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "false");
+
+    // Act
+    await user.click(secondTrigger);
+
+    // Assert
+    expect(handleValueChange).toHaveBeenCalledWith(["item-1", "item-2"]);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Panel two content")).toBeVisible();
   });
 });

@@ -362,4 +362,130 @@ describe("ChartLegendContent", () => {
     // Assert - verify component renders
     expect(container).toBeInTheDocument();
   });
+
+  it("does not render chart styles when the config has no colors", () => {
+    // Arrange
+    const {container} = render(
+      <ChartContainer
+        config={{plain: {label: "Plain"}}}
+        style={{height: 300, width: 400}}>
+        <LineChart data={[{name: "Jan", plain: 42}]}>
+          <Line
+            dataKey='plain'
+            stroke='currentColor'
+            type='monotone'
+          />
+        </LineChart>
+      </ChartContainer>,
+    );
+
+    // Assert
+    expect(container.querySelector("style")).toBeNull();
+  });
+
+  it("renders formatter-provided React nodes for tooltip rows", () => {
+    // Arrange
+    render(
+      <ChartContainer config={config}>
+        <ChartTooltipContent
+          active
+          formatter={() => <span data-testid='custom-tooltip-row'>Custom tooltip row</span>}
+          payload={[
+            {
+              color: "#123456",
+              dataKey: "revenue",
+              name: "Revenue",
+              value: 42,
+            },
+          ]}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert
+    expect(screen.getByTestId("custom-tooltip-row")).toBeInTheDocument();
+  });
+
+  it("formats nested line labels with labelFormatter", () => {
+    // Arrange
+    render(
+      <ChartContainer config={config}>
+        <ChartTooltipContent
+          active
+          indicator='line'
+          label='revenue'
+          labelFormatter={(value) => `Label: ${String(value)}`}
+          payload={[
+            {
+              color: "#123456",
+              dataKey: "revenue",
+              name: "Revenue",
+              value: 42,
+            },
+          ]}
+        />
+      </ChartContainer>,
+    );
+
+    // Assert
+    expect(screen.getByText("Label: Revenue")).toBeInTheDocument();
+    expect(screen.getByText(/USD 42/)).toBeInTheDocument();
+  });
+
+  it("renders nothing when legend payload is empty", () => {
+    // Arrange
+    const {container} = render(
+      <ChartContainer config={config}>
+        <ChartLegendContent payload={[]} />
+      </ChartContainer>,
+    );
+
+    // Assert
+    expect(container).not.toHaveTextContent("Revenue");
+    expect(container.querySelector("svg")).toBeNull();
+  });
+
+  it("renders configured legend icons unless hideIcon is requested", () => {
+    // Arrange
+    const TestIcon = (): React.JSX.Element => <svg data-testid='legend-icon' />;
+    const iconConfig: ChartConfig = {
+      revenue: {
+        color: "#123456",
+        icon: TestIcon,
+        label: "Revenue",
+      },
+    };
+    const payload = [
+      {
+        color: "#123456",
+        dataKey: "revenue",
+        value: "Revenue",
+      },
+    ];
+    const {container, rerender} = render(
+      <ChartContainer config={iconConfig}>
+        <ChartLegendContent
+          payload={payload}
+          verticalAlign='top'
+        />
+      </ChartContainer>,
+    );
+
+    expect(screen.getByTestId("legend-icon")).toBeInTheDocument();
+
+    // Act
+    rerender(
+      <ChartContainer config={iconConfig}>
+        <ChartLegendContent
+          hideIcon
+          payload={payload}
+          verticalAlign='bottom'
+        />
+      </ChartContainer>,
+    );
+
+    // Assert
+    expect(screen.queryByTestId("legend-icon")).toBeNull();
+    expect(container).toHaveTextContent("Revenue");
+  });
 });

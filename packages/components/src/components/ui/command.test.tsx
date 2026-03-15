@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import {fireEvent, render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 
 import {
@@ -16,7 +17,7 @@ import {
 } from "./command";
 
 describe("Command", () => {
-  it("should filter items and display the empty state when nothing matches", () => {
+  it("should filter items and display the empty state when nothing matches", async () => {
     // Arrange
     render(
       <Command>
@@ -32,7 +33,8 @@ describe("Command", () => {
     );
 
     // Act
-    fireEvent.change(screen.getByRole("combobox"), {target: {value: "settings"}});
+    const user = userEvent.setup();
+    await user.type(screen.getByRole("combobox"), "settings");
 
     // Assert
     expect(screen.getByText("No results")).toBeInTheDocument();
@@ -40,7 +42,7 @@ describe("Command", () => {
     expect(screen.queryByText("Projects")).not.toBeInTheDocument();
   });
 
-  it("should navigate with the keyboard and select the active item on enter", () => {
+  it("should navigate with the keyboard and select the active item on enter", async () => {
     // Arrange
     const onSelectHome = vi.fn();
     const onSelectProjects = vi.fn();
@@ -59,9 +61,10 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowDown"});
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{Enter}");
 
     // Assert
     expect(onSelectHome).not.toHaveBeenCalled();
@@ -94,7 +97,7 @@ describe("Command", () => {
     expect(screen.getByRole("separator")).toBeInTheDocument();
   });
 
-  it("should navigate with ArrowUp key", () => {
+  it("should navigate with ArrowUp key", async () => {
     // Arrange
     const onSelectFirst = vi.fn();
     const onSelectSecond = vi.fn();
@@ -110,17 +113,17 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowDown"}); // Move to Second
-    fireEvent.keyDown(input, {key: "ArrowUp"}); // Move back to First
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{ArrowUp}{Enter}");
 
     // Assert
     expect(onSelectFirst).toHaveBeenCalledWith("First");
     expect(onSelectSecond).not.toHaveBeenCalled();
   });
 
-  it("should handle Home key to select first item", () => {
+  it("should handle Home key to select first item", async () => {
     // Arrange
     const onSelectFirst = vi.fn();
 
@@ -136,17 +139,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowDown"});
-    fireEvent.keyDown(input, {key: "ArrowDown"});
-    fireEvent.keyDown(input, {key: "Home"});
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{ArrowDown}{Home}{Enter}");
 
     // Assert
     expect(onSelectFirst).toHaveBeenCalledWith("First");
   });
 
-  it("should handle End key to select last item", () => {
+  it("should handle End key to select last item", async () => {
     // Arrange
     const onSelectLast = vi.fn();
 
@@ -162,9 +164,10 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "End"});
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{End}{Enter}");
 
     // Assert
     expect(onSelectLast).toHaveBeenCalledWith("Third");
@@ -186,7 +189,7 @@ describe("Command", () => {
     expect(screen.getByText("Actions")).toBeInTheDocument();
   });
 
-  it("should hide CommandSeparator when filtering", () => {
+  it("should hide CommandSeparator when filtering", async () => {
     // Arrange
     render(
       <Command>
@@ -200,14 +203,15 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "First"}});
+    await user.type(input, "First");
 
     // Assert
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
   });
 
-  it("should show CommandSeparator with alwaysRender prop even when filtering", () => {
+  it("should show CommandSeparator with alwaysRender prop even when filtering", async () => {
     // Arrange
     render(
       <Command>
@@ -221,14 +225,15 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "First"}});
+    await user.type(input, "First");
 
     // Assert
     expect(screen.getByRole("separator")).toBeInTheDocument();
   });
 
-  it("should filter items by keywords", () => {
+  it("should filter items by keywords", async () => {
     // Arrange
     render(
       <Command>
@@ -242,15 +247,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "preferences"}});
+    await user.type(input, "preferences");
 
     // Assert
     expect(screen.getByText("Settings")).toBeInTheDocument();
     expect(screen.queryByText("Home")).not.toBeInTheDocument();
   });
 
-  it("should handle Home key when no selectable items exist", () => {
+  it("should handle Home key when no selectable items exist", async () => {
     // Arrange
     render(
       <Command>
@@ -262,15 +268,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nonexistent"}});
-    fireEvent.keyDown(input, {key: "Home"});
+    await user.type(input, "nonexistent");
+    await user.keyboard("{Home}");
 
     // Assert - should not crash when no items available
     expect(screen.getByText("No results")).toBeInTheDocument();
   });
 
-  it("should handle End key when no selectable items exist", () => {
+  it("should handle End key when no selectable items exist", async () => {
     // Arrange
     render(
       <Command>
@@ -282,15 +289,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nonexistent"}});
-    fireEvent.keyDown(input, {key: "End"});
+    await user.type(input, "nonexistent");
+    await user.keyboard("{End}");
 
     // Assert - should not crash when no items available
     expect(screen.getByText("No results")).toBeInTheDocument();
   });
 
-  it("should handle default case in switch statement for unhandled keys", () => {
+  it("should handle default case in switch statement for unhandled keys", async () => {
     // Arrange
     render(
       <Command>
@@ -302,8 +310,10 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "Tab"});
+    await user.click(input);
+    await user.tab();
 
     // Assert - should handle unrecognized keys gracefully
     expect(screen.getByText("Item")).toBeInTheDocument();
@@ -331,7 +341,7 @@ describe("Command", () => {
     expect(screen.getByText("Item")).toBeInTheDocument();
   });
 
-  it("should disable filtering when shouldFilter is false", () => {
+  it("should disable filtering when shouldFilter is false", async () => {
     // Arrange
     render(
       <Command shouldFilter={false}>
@@ -344,15 +354,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nonexistent"}});
+    await user.type(input, "nonexistent");
 
     // Assert
     expect(screen.getByText("First")).toBeInTheDocument();
     expect(screen.getByText("Second")).toBeInTheDocument();
   });
 
-  it("should handle disabled items", () => {
+  it("should handle disabled items", async () => {
     // Arrange
     const onSelectEnabled = vi.fn();
     const onSelectDisabled = vi.fn();
@@ -372,14 +383,15 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const disabledItem = screen.getByText("Disabled");
-    fireEvent.click(disabledItem);
+    await user.click(disabledItem);
 
     // Assert
     expect(onSelectDisabled).not.toHaveBeenCalled();
   });
 
-  it("should handle keyboard loop navigation", () => {
+  it("should handle keyboard loop navigation", async () => {
     // Arrange
     const onSelectFirst = vi.fn();
 
@@ -394,16 +406,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowDown"}); // Select Second
-    fireEvent.keyDown(input, {key: "ArrowDown"}); // Loop to First
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
 
     // Assert
     expect(onSelectFirst).toHaveBeenCalledWith("First");
   });
 
-  it("should handle reverse keyboard loop navigation with ArrowUp", () => {
+  it("should handle reverse keyboard loop navigation with ArrowUp", async () => {
     // Arrange
     const onSelectLast = vi.fn();
 
@@ -418,15 +430,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowUp"}); // Loop to Second
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{ArrowUp}{Enter}");
 
     // Assert
     expect(onSelectLast).toHaveBeenCalledWith("Second");
   });
 
-  it("should not loop navigation without loop prop", () => {
+  it("should not loop navigation without loop prop", async () => {
     // Arrange
     const onSelectSecond = vi.fn();
 
@@ -441,16 +454,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowDown"}); // Select Second
-    fireEvent.keyDown(input, {key: "ArrowDown"}); // Stay at Second
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
 
     // Assert
     expect(onSelectSecond).toHaveBeenCalledWith("Second");
   });
 
-  it("should handle custom filter function", () => {
+  it("should handle custom filter function", async () => {
     // Arrange
     const customFilter = vi.fn((value: string, search: string) => {
       return value.startsWith(search) ? 1 : 0;
@@ -468,8 +481,9 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "app"}});
+    await user.type(input, "app");
 
     // Assert
     expect(customFilter).toHaveBeenCalled();
@@ -477,7 +491,7 @@ describe("Command", () => {
     expect(screen.queryByText("Banana")).not.toBeInTheDocument();
   });
 
-  it("should handle forceMount on CommandItem", () => {
+  it("should handle forceMount on CommandItem", async () => {
     // Arrange
     render(
       <Command>
@@ -491,15 +505,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nomatch"}});
+    await user.type(input, "nomatch");
 
     // Assert
     expect(screen.getByText("Always Visible")).toBeInTheDocument();
     expect(screen.queryByText("Sometimes Visible")).not.toBeInTheDocument();
   });
 
-  it("should handle forceMount on CommandGroup", () => {
+  it("should handle forceMount on CommandGroup", async () => {
     // Arrange
     render(
       <Command>
@@ -518,14 +533,15 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nomatch"}});
+    await user.type(input, "nomatch");
 
     // Assert
     expect(screen.getByText("Always Visible Group")).toBeInTheDocument();
   });
 
-  it("should handle controlled input value", () => {
+  it("should handle controlled input value", async () => {
     // Arrange
     const TestComponent = () => {
       const [value, setValue] = React.useState("");
@@ -547,14 +563,15 @@ describe("Command", () => {
     render(<TestComponent />);
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "test"}});
+    await user.type(input, "test");
 
     // Assert
     expect(input).toHaveValue("test");
   });
 
-  it("should handle mouse hover selection", () => {
+  it("should handle mouse hover selection", async () => {
     // Arrange
     render(
       <Command>
@@ -567,14 +584,15 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const secondItem = screen.getByText("Second");
-    fireEvent.mouseEnter(secondItem);
+    await user.hover(secondItem);
 
     // Assert
     expect(secondItem).toHaveAttribute("aria-selected", "true");
   });
 
-  it("should handle disablePointerSelection prop", () => {
+  it("should handle disablePointerSelection prop", async () => {
     // Arrange
     render(
       <Command disablePointerSelection>
@@ -587,9 +605,10 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const firstItem = screen.getByText("First");
     const secondItem = screen.getByText("Second");
-    fireEvent.mouseEnter(secondItem);
+    await user.hover(secondItem);
 
     // Assert - First item should still be selected after hover
     expect(firstItem).toHaveAttribute("aria-selected", "true");
@@ -614,7 +633,7 @@ describe("Command", () => {
     expect(shortcut).toHaveClass("custom-shortcut");
   });
 
-  it("should handle CommandItem with custom value prop", () => {
+  it("should handle CommandItem with custom value prop", async () => {
     // Arrange
     const onSelect = vi.fn();
 
@@ -631,14 +650,15 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const item = screen.getByText("Display Text");
-    fireEvent.click(item);
+    await user.click(item);
 
     // Assert
     expect(onSelect).toHaveBeenCalledWith("custom-value");
   });
 
-  it("should handle CommandItem focus event", () => {
+  it("should handle CommandItem focus event", async () => {
     // Arrange
     render(
       <Command>
@@ -650,14 +670,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const secondItem = screen.getByText("Second");
-    fireEvent.focus(secondItem);
+    await user.tab();
+    await user.tab();
 
     // Assert
     expect(secondItem).toHaveAttribute("aria-selected", "true");
   });
 
-  it("should handle empty search results correctly", () => {
+  it("should handle empty search results correctly", async () => {
     // Arrange
     render(
       <Command>
@@ -675,14 +697,15 @@ describe("Command", () => {
     expect(screen.getByText("Item")).toBeInTheDocument();
 
     // Act - search with no match
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nonexistent"}});
+    await user.type(input, "nonexistent");
 
     // Assert
     expect(screen.getByText("No results found")).toBeInTheDocument();
   });
 
-  it("should ignore Home key when no selectable items exist", () => {
+  it("should ignore Home key when no selectable items exist", async () => {
     // Arrange
     render(
       <Command>
@@ -694,15 +717,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nomatch"}});
-    fireEvent.keyDown(input, {key: "Home"});
+    await user.type(input, "nomatch");
+    await user.keyboard("{Home}");
 
     // Assert - no error should occur, command should remain functional
     expect(screen.getByText("No results")).toBeInTheDocument();
   });
 
-  it("should ignore End key when no selectable items exist", () => {
+  it("should ignore End key when no selectable items exist", async () => {
     // Arrange
     render(
       <Command>
@@ -714,15 +738,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.change(input, {target: {value: "nomatch"}});
-    fireEvent.keyDown(input, {key: "End"});
+    await user.type(input, "nomatch");
+    await user.keyboard("{End}");
 
     // Assert - no error should occur
     expect(screen.getByText("No results")).toBeInTheDocument();
   });
 
-  it("should ignore Enter key during IME composition", () => {
+  it("should ignore Enter key during IME composition", async () => {
     // Arrange
     const onSelect = vi.fn();
 
@@ -736,8 +761,10 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowDown"}); // Select First item
+    await user.click(input);
+    await user.keyboard("{ArrowDown}"); // Select First item
     // Create a keydown event with isComposing flag
     const composingEvent = new KeyboardEvent("keydown", {
       key: "Enter",
@@ -787,7 +814,7 @@ describe("Command", () => {
     expect(screen.getByRole("dialog", {name: "Command menu"})).toBeInTheDocument();
   });
 
-  it("should wrap from last to first item when loop is enabled and ArrowDown is pressed", () => {
+  it("should wrap from last to first item when loop is enabled and ArrowDown is pressed", async () => {
     // Arrange
     const onSelectFirst = vi.fn();
 
@@ -803,16 +830,16 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "End"}); // Jump to Third
-    fireEvent.keyDown(input, {key: "ArrowDown"}); // Loop to First
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{End}{ArrowDown}{Enter}");
 
     // Assert
     expect(onSelectFirst).toHaveBeenCalledWith("First");
   });
 
-  it("should wrap from first to last item when loop is enabled and ArrowUp is pressed from start", () => {
+  it("should wrap from first to last item when loop is enabled and ArrowUp is pressed from start", async () => {
     // Arrange
     const onSelectLast = vi.fn();
 
@@ -828,9 +855,10 @@ describe("Command", () => {
     );
 
     // Act
+    const user = userEvent.setup();
     const input = screen.getByRole("combobox");
-    fireEvent.keyDown(input, {key: "ArrowUp"}); // Loop to Third (last)
-    fireEvent.keyDown(input, {key: "Enter"});
+    await user.click(input);
+    await user.keyboard("{ArrowUp}{Enter}");
 
     // Assert
     expect(onSelectLast).toHaveBeenCalledWith("Third");

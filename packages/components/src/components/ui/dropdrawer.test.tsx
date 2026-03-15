@@ -1,4 +1,5 @@
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import {useIsMobile} from "@/hooks/useIsMobile";
@@ -53,10 +54,13 @@ describe("DropDrawer", () => {
     renderDropDrawer();
 
     // Act
-    fireEvent.click(screen.getByRole("button", {name: "Open menu"}));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open menu"}));
 
     // Assert
     await waitFor(() => {
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(screen.getByText("Profile")).toBeVisible();
       expect(screen.getByText("Security")).toBeVisible();
     });
@@ -71,6 +75,8 @@ describe("DropDrawer", () => {
 
     // Assert
     await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.queryByRole("menu")).not.toBeInTheDocument();
       expect(screen.getByText("Profile")).toBeVisible();
       expect(screen.getByText("Security")).toBeVisible();
     });
@@ -82,7 +88,8 @@ describe("DropDrawer", () => {
     renderDropDrawer({defaultOpen: true});
 
     // Act
-    fireEvent.click(screen.getByText("Security"));
+    const user = userEvent.setup();
+    await user.click(screen.getByText("Security"));
 
     // Assert
     await waitFor(() => {
@@ -208,6 +215,25 @@ describe("DropDrawer", () => {
         expect(footer).toHaveTextContent("Footer content");
       });
     });
+
+    it("renders footer content on desktop", async () => {
+      // Arrange
+      mockedUseIsMobile.mockReturnValue(false);
+      render(
+        <DropDrawer defaultOpen>
+          <DropDrawerTrigger>Open</DropDrawerTrigger>
+          <DropDrawerContent>
+            <DropDrawerItem>Item 1</DropDrawerItem>
+            <DropDrawerFooter data-testid='desktop-footer'>Footer content</DropDrawerFooter>
+          </DropDrawerContent>
+        </DropDrawer>,
+      );
+
+      // Assert
+      await waitFor(() => {
+        expect(screen.getByTestId("desktop-footer")).toHaveTextContent("Footer content");
+      });
+    });
   });
 
   describe("DropDrawerSub, DropDrawerSubTrigger, and DropDrawerSubContent", () => {
@@ -227,7 +253,8 @@ describe("DropDrawer", () => {
       renderDropDrawer({defaultOpen: true});
 
       // Act
-      fireEvent.click(screen.getByText("Security"));
+      const user = userEvent.setup();
+    await user.click(screen.getByText("Security"));
 
       // Assert
       await waitFor(() => {
@@ -242,7 +269,8 @@ describe("DropDrawer", () => {
       // Act - hover over submenu trigger
       await waitFor(() => screen.getByText("Security"));
       const securityTrigger = screen.getByText("Security");
-      fireEvent.mouseEnter(securityTrigger);
+      const user = userEvent.setup();
+    await user.hover(securityTrigger);
 
       // Assert - submenu content should become visible
       await waitFor(() => {
@@ -290,7 +318,7 @@ describe("DropDrawer", () => {
           <DropDrawerTrigger>Open</DropDrawerTrigger>
           <DropDrawerContent>
             <DropDrawerItem>Item 1</DropDrawerItem>
-            <DropDrawerSeparator />
+            <DropDrawerSeparator data-testid='mobile-separator' />
             <DropDrawerItem>Item 2</DropDrawerItem>
           </DropDrawerContent>
         </DropDrawer>,
@@ -300,6 +328,7 @@ describe("DropDrawer", () => {
       await waitFor(() => {
         expect(screen.getByText("Item 1")).toBeVisible();
         expect(screen.getByText("Item 2")).toBeVisible();
+        expect(screen.queryByTestId("mobile-separator")).not.toBeInTheDocument();
       });
     });
   });
@@ -465,7 +494,8 @@ describe("DropDrawer", () => {
 
       // Act
       await waitFor(() => screen.getByTestId("disabled-item"));
-      fireEvent.click(screen.getByTestId("disabled-item"));
+      const user = userEvent.setup();
+    await user.click(screen.getByTestId("disabled-item"));
 
       // Assert
       expect(mockOnClick).not.toHaveBeenCalled();
@@ -491,7 +521,8 @@ describe("DropDrawer", () => {
 
       // Act
       await waitFor(() => screen.getByTestId("disabled-item"));
-      fireEvent.click(screen.getByTestId("disabled-item"));
+      const user = userEvent.setup();
+    await user.click(screen.getByTestId("disabled-item"));
 
       // Assert
       expect(mockOnSelect).not.toHaveBeenCalled();
@@ -512,7 +543,8 @@ describe("DropDrawer", () => {
       );
 
       // Act
-      fireEvent.click(screen.getByRole("button", {name: "Open"}));
+      const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Open"}));
       await waitFor(() => screen.getByText("Close on click"));
 
       // Assert - Item rendered
@@ -591,7 +623,8 @@ describe("DropDrawerItem - onSelect callback", () => {
     );
 
     await waitFor(() => screen.getByTestId("item-with-select"));
-    fireEvent.click(screen.getByTestId("item-with-select"));
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("item-with-select"));
 
     expect(mockOnSelect).toHaveBeenCalled();
   });
@@ -614,7 +647,8 @@ describe("DropDrawerItem - onSelect callback", () => {
     );
 
     await waitFor(() => screen.getByTestId("item-with-select"));
-    fireEvent.click(screen.getByTestId("item-with-select"));
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("item-with-select"));
 
     expect(mockOnSelect).toHaveBeenCalled();
   });
@@ -659,7 +693,8 @@ describe("DropDrawerSubTrigger with onClick", () => {
     );
 
     await waitFor(() => screen.getByText("Sub"));
-    fireEvent.click(screen.getByText("Sub"));
+    const user = userEvent.setup();
+    await user.click(screen.getByText("Sub"));
 
     expect(mockOnClick).toHaveBeenCalled();
   });
@@ -683,7 +718,8 @@ describe("DropDrawerSubTrigger with onClick", () => {
     );
 
     await waitFor(() => screen.getByText("Sub"));
-    fireEvent.click(screen.getByText("Sub"));
+    const user = userEvent.setup();
+    await user.click(screen.getByText("Sub"));
 
     expect(mockOnClick).toHaveBeenCalled();
     await waitFor(() => {
@@ -713,7 +749,9 @@ describe("DropDrawerSubTrigger keyboard navigation", () => {
     await waitFor(() => screen.getByText("Keyboard Sub"));
     const trigger = screen.getByText("Keyboard Sub");
 
-    fireEvent.keyDown(trigger, {key: "Enter"});
+    const user = userEvent.setup();
+    trigger.focus();
+    await user.keyboard("{Enter}");
 
     await waitFor(() => {
       expect(screen.getByText("Keyboard Item")).toBeVisible();
@@ -740,11 +778,82 @@ describe("DropDrawerSubTrigger keyboard navigation", () => {
     await waitFor(() => screen.getByText("Space Sub"));
     const trigger = screen.getByText("Space Sub");
 
-    fireEvent.keyDown(trigger, {key: " "});
+    const user = userEvent.setup();
+    trigger.focus();
+    await user.keyboard(" ");
 
     await waitFor(() => {
       expect(screen.getByText("Space Item")).toBeVisible();
     });
+  });
+
+  it("ignores non-activation keys on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSub id='ignored-key-submenu'>
+            <DropDrawerSubTrigger>Ignored Key Sub</DropDrawerSubTrigger>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Ignored Key Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    const trigger = await screen.findByText("Ignored Key Sub");
+    const user = userEvent.setup();
+
+    trigger.focus();
+    await user.keyboard("{ArrowDown}");
+
+    expect(screen.queryByText("Ignored Key Item")).not.toBeInTheDocument();
+  });
+
+  it("navigates using the parent submenu id fallback on mobile", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSubTrigger data-parent-submenu-id='fallback-submenu'>Fallback Sub</DropDrawerSubTrigger>
+          <DropDrawerSub id='fallback-submenu'>
+            <DropDrawerSubContent>
+              <DropDrawerItem>Fallback Item</DropDrawerItem>
+            </DropDrawerSubContent>
+          </DropDrawerSub>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByText("Fallback Sub"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Fallback Item")).toBeVisible();
+    });
+  });
+
+  it("does not navigate when a mobile subtrigger cannot resolve a submenu id", async () => {
+    mockedUseIsMobile.mockReturnValue(true);
+
+    render(
+      <DropDrawer defaultOpen>
+        <DropDrawerTrigger>Open</DropDrawerTrigger>
+        <DropDrawerContent>
+          <DropDrawerSubTrigger>Orphan Sub</DropDrawerSubTrigger>
+        </DropDrawerContent>
+      </DropDrawer>,
+    );
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByText("Orphan Sub"));
+
+    expect(screen.queryByRole("button", {name: "Go back"})).not.toBeInTheDocument();
   });
 });
 
@@ -769,7 +878,9 @@ describe("DropDrawerItem keyboard navigation", () => {
     await waitFor(() => screen.getByTestId("keyboard-item"));
     const item = screen.getByTestId("keyboard-item");
 
-    fireEvent.keyDown(item, {key: "Enter"});
+    const user = userEvent.setup();
+    item.focus();
+    await user.keyboard("{Enter}");
 
     expect(mockOnClick).toHaveBeenCalled();
   });
@@ -794,7 +905,9 @@ describe("DropDrawerItem keyboard navigation", () => {
     await waitFor(() => screen.getByTestId("space-item"));
     const item = screen.getByTestId("space-item");
 
-    fireEvent.keyDown(item, {key: " "});
+    const user = userEvent.setup();
+    item.focus();
+    await user.keyboard(" ");
 
     expect(mockOnClick).toHaveBeenCalled();
   });
@@ -820,14 +933,15 @@ describe("DropDrawer back navigation", () => {
     );
 
     // Navigate into submenu
+    const user = userEvent.setup();
     await waitFor(() => screen.getByText("Nested"));
-    fireEvent.click(screen.getByText("Nested"));
+    await user.click(screen.getByText("Nested"));
 
     await waitFor(() => screen.getByText("Nested Item"));
 
     // Navigate back
     const backButton = screen.getByRole("button", {name: "Go back"});
-    fireEvent.click(backButton);
+    await user.click(backButton);
 
     await waitFor(() => {
       expect(screen.getByText("Main Item")).toBeVisible();

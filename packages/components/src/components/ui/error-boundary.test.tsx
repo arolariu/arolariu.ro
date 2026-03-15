@@ -1,4 +1,5 @@
-import {fireEvent, render, screen} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 
 import {ErrorBoundary} from "./error-boundary";
@@ -76,7 +77,7 @@ describe("ErrorBoundary", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("resets when the retry button is clicked", () => {
+  it("resets when the retry button is clicked", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     let shouldThrow = true;
 
@@ -97,7 +98,8 @@ describe("ErrorBoundary", () => {
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
 
     shouldThrow = false;
-    fireEvent.click(screen.getByRole("button", {name: "Try again"}));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", {name: "Try again"}));
 
     expect(screen.getByText("Recovered")).toBeInTheDocument();
 
