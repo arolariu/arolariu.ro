@@ -98,9 +98,7 @@ export function collectExportsFromDirectory(config: Readonly<ExportDirectoryConf
   }
 
   const collectedExports: Record<string, ExportEntry> = {};
-  const items = fs
-    .readdirSync(config.sourceDir, {withFileTypes: true})
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const items = fs.readdirSync(config.sourceDir, {withFileTypes: true}).sort((a, b) => a.name.localeCompare(b.name));
 
   items.forEach((item) => {
     const itemName = item.name;
