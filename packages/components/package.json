@@ -87,7 +87,9 @@
     "build:clean": "rimraf dist",
     "build:exports": "node scripts/generate-exports.ts",
     "test": "npm run test:unit",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "clsx": "*",
@@ -110,17 +112,23 @@
     "@rsbuild/core": "*",
     "@rsbuild/plugin-react": "*",
     "@rslib/core": "*",
+    "@storybook/addon-a11y": "10.3.3",
+    "@storybook/addon-docs": "10.3.3",
+    "@storybook/addon-links": "10.3.3",
+    "@storybook/react-vite": "10.3.3",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
     "motion": "*",
-    "postcss": "*",
     "playwright": "*",
+    "postcss": "*",
     "react": "*",
     "react-dom": "*",
     "react-hook-form": "*",
     "recharts": "*",
     "rimraf": "*",
+    "storybook": "10.3.3",
+    "storybook-addon-rslib": "3.3.2",
     "typescript": "*"
   },
   "publishConfig": {
@@ -141,6 +149,11 @@
       "import": "./dist/*.js",
       "default": "./dist/*.js"
     },
+    "./accordion.stories": {
+      "types": "./dist/components/ui/accordion.stories.d.ts",
+      "import": "./dist/components/ui/accordion.stories.js",
+      "default": "./dist/components/ui/accordion.stories.js"
+    },
     "./accordion": {
       "types": "./dist/components/ui/accordion.d.ts",
       "import": "./dist/components/ui/accordion.js",
@@ -150,6 +163,11 @@
       "types": "./dist/components/ui/alert-dialog.d.ts",
       "import": "./dist/components/ui/alert-dialog.js",
       "default": "./dist/components/ui/alert-dialog.js"
+    },
+    "./alert.stories": {
+      "types": "./dist/components/ui/alert.stories.d.ts",
+      "import": "./dist/components/ui/alert.stories.js",
+      "default": "./dist/components/ui/alert.stories.js"
     },
     "./alert": {
       "types": "./dist/components/ui/alert.d.ts",
@@ -176,6 +194,11 @@
       "import": "./dist/components/ui/background-beams.js",
       "default": "./dist/components/ui/background-beams.js"
     },
+    "./badge.stories": {
+      "types": "./dist/components/ui/badge.stories.d.ts",
+      "import": "./dist/components/ui/badge.stories.js",
+      "default": "./dist/components/ui/badge.stories.js"
+    },
     "./badge": {
       "types": "./dist/components/ui/badge.d.ts",
       "import": "./dist/components/ui/badge.js",
@@ -196,6 +219,11 @@
       "import": "./dist/components/ui/button-group.js",
       "default": "./dist/components/ui/button-group.js"
     },
+    "./button.stories": {
+      "types": "./dist/components/ui/button.stories.d.ts",
+      "import": "./dist/components/ui/button.stories.js",
+      "default": "./dist/components/ui/button.stories.js"
+    },
     "./button": {
       "types": "./dist/components/ui/button.d.ts",
       "import": "./dist/components/ui/button.js",
@@ -210,6 +238,11 @@
       "types": "./dist/components/ui/card-skeleton.d.ts",
       "import": "./dist/components/ui/card-skeleton.js",
       "default": "./dist/components/ui/card-skeleton.js"
+    },
+    "./card.stories": {
+      "types": "./dist/components/ui/card.stories.d.ts",
+      "import": "./dist/components/ui/card.stories.js",
+      "default": "./dist/components/ui/card.stories.js"
     },
     "./card": {
       "types": "./dist/components/ui/card.d.ts",
@@ -231,6 +264,11 @@
       "import": "./dist/components/ui/checkbox-group.js",
       "default": "./dist/components/ui/checkbox-group.js"
     },
+    "./checkbox.stories": {
+      "types": "./dist/components/ui/checkbox.stories.d.ts",
+      "import": "./dist/components/ui/checkbox.stories.js",
+      "default": "./dist/components/ui/checkbox.stories.js"
+    },
     "./checkbox": {
       "types": "./dist/components/ui/checkbox.d.ts",
       "import": "./dist/components/ui/checkbox.js",
@@ -240,6 +278,11 @@
       "types": "./dist/components/ui/collapsible.d.ts",
       "import": "./dist/components/ui/collapsible.js",
       "default": "./dist/components/ui/collapsible.js"
+    },
+    "./combobox": {
+      "types": "./dist/components/ui/combobox.d.ts",
+      "import": "./dist/components/ui/combobox.js",
+      "default": "./dist/components/ui/combobox.js"
     },
     "./command": {
       "types": "./dist/components/ui/command.d.ts",
@@ -251,6 +294,11 @@
       "import": "./dist/components/ui/context-menu.js",
       "default": "./dist/components/ui/context-menu.js"
     },
+    "./copy-button.stories": {
+      "types": "./dist/components/ui/copy-button.stories.d.ts",
+      "import": "./dist/components/ui/copy-button.stories.js",
+      "default": "./dist/components/ui/copy-button.stories.js"
+    },
     "./copy-button": {
       "types": "./dist/components/ui/copy-button.d.ts",
       "import": "./dist/components/ui/copy-button.js",
@@ -260,6 +308,11 @@
       "types": "./dist/components/ui/counting-number.d.ts",
       "import": "./dist/components/ui/counting-number.js",
       "default": "./dist/components/ui/counting-number.js"
+    },
+    "./dialog.stories": {
+      "types": "./dist/components/ui/dialog.stories.d.ts",
+      "import": "./dist/components/ui/dialog.stories.js",
+      "default": "./dist/components/ui/dialog.stories.js"
     },
     "./dialog": {
       "types": "./dist/components/ui/dialog.d.ts",
@@ -285,6 +338,11 @@
       "types": "./dist/components/ui/dropdrawer.d.ts",
       "import": "./dist/components/ui/dropdrawer.js",
       "default": "./dist/components/ui/dropdrawer.js"
+    },
+    "./empty.stories": {
+      "types": "./dist/components/ui/empty.stories.d.ts",
+      "import": "./dist/components/ui/empty.stories.js",
+      "default": "./dist/components/ui/empty.stories.js"
     },
     "./empty": {
       "types": "./dist/components/ui/empty.d.ts",
@@ -361,6 +419,11 @@
       "import": "./dist/components/ui/input-otp.js",
       "default": "./dist/components/ui/input-otp.js"
     },
+    "./input.stories": {
+      "types": "./dist/components/ui/input.stories.d.ts",
+      "import": "./dist/components/ui/input.stories.js",
+      "default": "./dist/components/ui/input.stories.js"
+    },
     "./input": {
       "types": "./dist/components/ui/input.d.ts",
       "import": "./dist/components/ui/input.js",
@@ -416,10 +479,20 @@
       "import": "./dist/components/ui/pagination.js",
       "default": "./dist/components/ui/pagination.js"
     },
+    "./popover.stories": {
+      "types": "./dist/components/ui/popover.stories.d.ts",
+      "import": "./dist/components/ui/popover.stories.js",
+      "default": "./dist/components/ui/popover.stories.js"
+    },
     "./popover": {
       "types": "./dist/components/ui/popover.d.ts",
       "import": "./dist/components/ui/popover.js",
       "default": "./dist/components/ui/popover.js"
+    },
+    "./progress.stories": {
+      "types": "./dist/components/ui/progress.stories.d.ts",
+      "import": "./dist/components/ui/progress.stories.js",
+      "default": "./dist/components/ui/progress.stories.js"
     },
     "./progress": {
       "types": "./dist/components/ui/progress.d.ts",
@@ -451,6 +524,11 @@
       "import": "./dist/components/ui/scroll-area.js",
       "default": "./dist/components/ui/scroll-area.js"
     },
+    "./select.stories": {
+      "types": "./dist/components/ui/select.stories.d.ts",
+      "import": "./dist/components/ui/select.stories.js",
+      "default": "./dist/components/ui/select.stories.js"
+    },
     "./select": {
       "types": "./dist/components/ui/select.d.ts",
       "import": "./dist/components/ui/select.js",
@@ -471,6 +549,11 @@
       "import": "./dist/components/ui/sidebar.js",
       "default": "./dist/components/ui/sidebar.js"
     },
+    "./skeleton.stories": {
+      "types": "./dist/components/ui/skeleton.stories.d.ts",
+      "import": "./dist/components/ui/skeleton.stories.js",
+      "default": "./dist/components/ui/skeleton.stories.js"
+    },
     "./skeleton": {
       "types": "./dist/components/ui/skeleton.d.ts",
       "import": "./dist/components/ui/skeleton.js",
@@ -486,15 +569,30 @@
       "import": "./dist/components/ui/sonner.js",
       "default": "./dist/components/ui/sonner.js"
     },
+    "./spinner.stories": {
+      "types": "./dist/components/ui/spinner.stories.d.ts",
+      "import": "./dist/components/ui/spinner.stories.js",
+      "default": "./dist/components/ui/spinner.stories.js"
+    },
     "./spinner": {
       "types": "./dist/components/ui/spinner.d.ts",
       "import": "./dist/components/ui/spinner.js",
       "default": "./dist/components/ui/spinner.js"
     },
+    "./stepper.stories": {
+      "types": "./dist/components/ui/stepper.stories.d.ts",
+      "import": "./dist/components/ui/stepper.stories.js",
+      "default": "./dist/components/ui/stepper.stories.js"
+    },
     "./stepper": {
       "types": "./dist/components/ui/stepper.d.ts",
       "import": "./dist/components/ui/stepper.js",
       "default": "./dist/components/ui/stepper.js"
+    },
+    "./switch.stories": {
+      "types": "./dist/components/ui/switch.stories.d.ts",
+      "import": "./dist/components/ui/switch.stories.js",
+      "default": "./dist/components/ui/switch.stories.js"
     },
     "./switch": {
       "types": "./dist/components/ui/switch.d.ts",
@@ -511,6 +609,11 @@
       "import": "./dist/components/ui/table.js",
       "default": "./dist/components/ui/table.js"
     },
+    "./tabs.stories": {
+      "types": "./dist/components/ui/tabs.stories.d.ts",
+      "import": "./dist/components/ui/tabs.stories.js",
+      "default": "./dist/components/ui/tabs.stories.js"
+    },
     "./tabs": {
       "types": "./dist/components/ui/tabs.d.ts",
       "import": "./dist/components/ui/tabs.js",
@@ -520,6 +623,11 @@
       "types": "./dist/components/ui/textarea.d.ts",
       "import": "./dist/components/ui/textarea.js",
       "default": "./dist/components/ui/textarea.js"
+    },
+    "./timeline.stories": {
+      "types": "./dist/components/ui/timeline.stories.d.ts",
+      "import": "./dist/components/ui/timeline.stories.js",
+      "default": "./dist/components/ui/timeline.stories.js"
     },
     "./timeline": {
       "types": "./dist/components/ui/timeline.d.ts",
@@ -540,6 +648,11 @@
       "types": "./dist/components/ui/toolbar.d.ts",
       "import": "./dist/components/ui/toolbar.js",
       "default": "./dist/components/ui/toolbar.js"
+    },
+    "./tooltip.stories": {
+      "types": "./dist/components/ui/tooltip.stories.d.ts",
+      "import": "./dist/components/ui/tooltip.stories.js",
+      "default": "./dist/components/ui/tooltip.stories.js"
     },
     "./tooltip": {
       "types": "./dist/components/ui/tooltip.d.ts",

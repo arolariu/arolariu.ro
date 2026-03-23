@@ -150,6 +150,16 @@ export {Checkbox} from "./components/ui/checkbox";
 export {Collapsible, CollapsibleContent, CollapsibleTrigger} from "./components/ui/collapsible";
 
 export {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxGroup,
+  ComboboxItem,
+  ComboboxSeparator,
+  ComboboxTrigger,
+} from "./components/ui/combobox";
+
+export {
   Command,
   CommandDialog,
   CommandEmpty,
