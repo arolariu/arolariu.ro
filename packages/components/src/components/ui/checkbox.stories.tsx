@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Checkbox} from "./checkbox";
 
 const meta = {
+  title: "Components/Forms/Checkbox",
   component: Checkbox,
   tags: ["autodocs"],
   argTypes: {

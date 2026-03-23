@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Timeline, TimelineContent, TimelineDot, TimelineItem} from "./timeline";
 
 const meta = {
+  title: "Components/Data Display/Timeline",
   component: Timeline,
   tags: ["autodocs"],
   argTypes: {},

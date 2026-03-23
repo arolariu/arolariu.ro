@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./card";
 
 const meta = {
+  title: "Components/Data Display/Card",
   component: Card,
   tags: ["autodocs"],
   argTypes: {},

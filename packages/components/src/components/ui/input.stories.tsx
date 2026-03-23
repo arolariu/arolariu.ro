@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Input} from "./input";
 
 const meta = {
+  title: "Components/Forms/Input",
   component: Input,
   tags: ["autodocs"],
   argTypes: {

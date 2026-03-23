@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 
 const meta = {
+  title: "Components/Actions/Button",
   component: Button,
   tags: ["autodocs"],
   argTypes: {

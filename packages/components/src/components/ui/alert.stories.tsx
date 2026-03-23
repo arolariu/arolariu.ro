@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Alert, AlertDescription, AlertTitle} from "./alert";
 
 const meta = {
+  title: "Components/Feedback/Alert",
   component: Alert,
   tags: ["autodocs"],
   argTypes: {

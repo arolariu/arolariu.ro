@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./accordion";
 
 const meta = {
+  title: "Components/Layout/Accordion",
   component: Accordion,
   tags: ["autodocs"],
   argTypes: {},

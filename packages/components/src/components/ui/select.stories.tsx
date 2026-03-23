@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "./select";
 
 const meta = {
+  title: "Components/Forms/Select",
   component: Select,
   tags: ["autodocs"],
   argTypes: {},

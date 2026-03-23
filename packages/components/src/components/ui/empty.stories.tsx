@@ -3,6 +3,7 @@ import {Button} from "./button";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "./empty";
 
 const meta = {
+  title: "Components/Feedback/Empty",
   component: Empty,
   tags: ["autodocs"],
   argTypes: {},

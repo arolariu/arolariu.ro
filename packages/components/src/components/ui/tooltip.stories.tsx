@@ -3,6 +3,7 @@ import {Button} from "./button";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
 
 const meta = {
+  title: "Components/Overlays/Tooltip",
   component: Tooltip,
   tags: ["autodocs"],
   argTypes: {},

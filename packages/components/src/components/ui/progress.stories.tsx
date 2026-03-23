@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Progress} from "./progress";
 
 const meta = {
+  title: "Components/Feedback/Progress",
   component: Progress,
   tags: ["autodocs"],
   argTypes: {

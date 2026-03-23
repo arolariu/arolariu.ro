@@ -3,6 +3,7 @@ import {Button} from "./button";
 import {Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "./dialog";
 
 const meta = {
+  title: "Components/Feedback/Dialog",
   component: Dialog,
   tags: ["autodocs"],
   argTypes: {},

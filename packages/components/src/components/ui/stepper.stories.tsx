@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Stepper} from "./stepper";
 
 const meta = {
+  title: "Components/Data Display/Stepper",
   component: Stepper,
   tags: ["autodocs"],
   argTypes: {

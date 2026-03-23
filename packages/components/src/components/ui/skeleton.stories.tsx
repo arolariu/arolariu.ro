@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Skeleton} from "./skeleton";
 
 const meta = {
+  title: "Components/Feedback/Skeleton",
   component: Skeleton,
   tags: ["autodocs"],
   argTypes: {},

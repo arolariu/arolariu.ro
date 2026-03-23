@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Spinner} from "./spinner";
 
 const meta = {
+  title: "Components/Feedback/Spinner",
   component: Spinner,
   tags: ["autodocs"],
   argTypes: {},

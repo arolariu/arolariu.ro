@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {CopyButton} from "./copy-button";
 
 const meta = {
+  title: "Components/Actions/CopyButton",
   component: CopyButton,
   tags: ["autodocs"],
   argTypes: {

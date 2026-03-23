@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
 
 const meta = {
+  title: "Components/Navigation/Tabs",
   component: Tabs,
   tags: ["autodocs"],
   argTypes: {},

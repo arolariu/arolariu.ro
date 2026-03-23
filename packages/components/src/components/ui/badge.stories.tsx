@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Badge} from "./badge";
 
 const meta = {
+  title: "Components/Data Display/Badge",
   component: Badge,
   tags: ["autodocs"],
   argTypes: {

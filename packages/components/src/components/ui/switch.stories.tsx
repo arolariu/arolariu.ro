@@ -2,6 +2,7 @@ import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Switch} from "./switch";
 
 const meta = {
+  title: "Components/Forms/Switch",
   component: Switch,
   tags: ["autodocs"],
   argTypes: {
