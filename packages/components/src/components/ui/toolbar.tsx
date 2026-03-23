@@ -8,12 +8,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./toolbar.module.css";
 
-type ToolbarProps = React.ComponentPropsWithRef<typeof BaseToolbar.Root>;
-type ToolbarButtonProps = React.ComponentPropsWithRef<typeof BaseToolbar.Button>;
-type ToolbarGroupProps = React.ComponentPropsWithRef<typeof BaseToolbar.Group>;
-type ToolbarSeparatorProps = React.ComponentPropsWithRef<typeof BaseToolbar.Separator>;
-type ToolbarLinkProps = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
-
 /**
  * Arranges related actions into a keyboard-accessible toolbar.
  *
@@ -173,31 +167,31 @@ function ToolbarLink(props: Readonly<ToolbarLink.Props>): React.ReactElement {
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Toolbar {
-  export type Props = ToolbarProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Root>;
   export type State = BaseToolbar.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarButton {
-  export type Props = ToolbarButtonProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Button>;
   export type State = BaseToolbar.Button.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarGroup {
-  export type Props = ToolbarGroupProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Group>;
   export type State = BaseToolbar.Group.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarSeparator {
-  export type Props = ToolbarSeparatorProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Separator>;
   export type State = BaseToolbar.Separator.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarLink {
-  export type Props = ToolbarLinkProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
   export type State = BaseToolbar.Link.State;
 }
 

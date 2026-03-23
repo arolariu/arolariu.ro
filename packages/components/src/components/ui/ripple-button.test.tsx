@@ -271,11 +271,7 @@ describe("RippleButton", () => {
   it("skips ripple creation when the internal button ref is unavailable", () => {
     // Arrange
     const handleRippleClick = vi.fn();
-    const {unmount} = render(
-      <RippleButton onClick={handleRippleClick}>
-        No Ref
-      </RippleButton>,
-    );
+    const {unmount} = render(<RippleButton onClick={handleRippleClick}>No Ref</RippleButton>);
 
     const clickHandler = __motionState.buttonProps?.onClick as ((event: React.MouseEvent<HTMLButtonElement>) => void) | undefined;
 

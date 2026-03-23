@@ -222,6 +222,7 @@ const ContextMenuSub: typeof BaseContextMenu.SubmenuRoot & {displayName?: string
  */
 const ContextMenuTrigger = React.forwardRef<React.ComponentRef<typeof BaseContextMenu.Trigger>, ContextMenuTrigger.Props>(
   (props: Readonly<ContextMenuTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
     const {asChild = false, children, className, render, ...otherProps} = props;
     const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -367,6 +368,7 @@ const ContextMenuContent = React.forwardRef<React.ComponentRef<typeof BaseContex
  * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
  */
 function ContextMenuItem(props: Readonly<ContextMenuItem.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -532,6 +534,7 @@ function ContextMenuSeparator(props: Readonly<ContextMenuSeparator.Props>): Reac
  * @see {@link https://base-ui.com/react/components/context-menu | Base UI Documentation}
  */
 function ContextMenuShortcut(props: Readonly<ContextMenuShortcut.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

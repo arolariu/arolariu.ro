@@ -384,7 +384,7 @@ function updateToast(toastId: ToastIdentifier, options: ToastUpdateOptions): str
   const normalizedToastId = String(toastId);
   const existingRecord = toastRecords.get(normalizedToastId);
   const mergedOptions: ToastOptions = {
-    ...(existingRecord?.options ?? {}),
+    ...existingRecord?.options,
     ...options,
   };
   const variant = options.variant ?? existingRecord?.snapshot.variant ?? "default";

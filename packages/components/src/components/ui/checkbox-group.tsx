@@ -8,8 +8,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./checkbox-group.module.css";
 
-type CheckboxGroupProps = React.ComponentPropsWithRef<typeof BaseCheckboxGroup>;
-
 /**
  * Groups related checkboxes into a single accessible fieldset-like control.
  *
@@ -45,7 +43,7 @@ function CheckboxGroup(props: Readonly<CheckboxGroup.Props>): React.ReactElement
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace CheckboxGroup {
-  export type Props = CheckboxGroupProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseCheckboxGroup>;
   export type State = BaseCheckboxGroup.State;
 }
 

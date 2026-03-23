@@ -732,7 +732,9 @@ describe("Sonner", () => {
     });
 
     // Assert
-    expect(toast.getHistory().some((entry) => entry.id === "orphan-toast" && entry.variant === "warning" && entry.title === "Recovered toast")).toBe(true);
+    expect(
+      toast.getHistory().some((entry) => entry.id === "orphan-toast" && entry.variant === "warning" && entry.title === "Recovered toast"),
+    ).toBe(true);
   });
 
   it("dismisses loading toasts when a promise resolves without success content", async () => {

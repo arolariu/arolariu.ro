@@ -4,14 +4,14 @@
 
 import {GripVertical} from "lucide-react";
 import * as React from "react";
-import type {ImperativePanelGroupHandle, ImperativePanelHandle} from "react-resizable-panels";
+import type {ImperativePanelGroupHandle} from "react-resizable-panels";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import {cn} from "@/lib/utilities";
 
 import styles from "./resizable.module.css";
 
-export type {ImperativePanelGroupHandle, ImperativePanelHandle};
+export type {ImperativePanelGroupHandle, ImperativePanelHandle} from "react-resizable-panels";
 
 /**
  * Props for the {@link ResizablePanelGroup} component.

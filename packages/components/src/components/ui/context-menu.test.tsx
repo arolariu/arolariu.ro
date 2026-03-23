@@ -249,7 +249,7 @@ describe("ContextMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByText("Top level")).toBeInTheDocument();
@@ -278,7 +278,7 @@ describe("ContextMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByTestId("sub-trigger")).toHaveClass("custom-sub-trigger");
@@ -302,7 +302,7 @@ describe("ContextMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByText("Actions")).toBeInTheDocument();
@@ -327,7 +327,7 @@ describe("ContextMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByTestId("menu-label")).toHaveClass("custom-label");
@@ -403,7 +403,7 @@ describe("ContextMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
       await screen.findByText("Item 1");
 
       // Assert
@@ -429,7 +429,7 @@ describe("ContextMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByText("⌘C")).toBeInTheDocument();
@@ -455,7 +455,7 @@ describe("ContextMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
+      await user.pointer({keys: "[MouseRight]", target: screen.getByText("Open context menu")});
 
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");

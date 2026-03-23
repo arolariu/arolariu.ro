@@ -192,6 +192,7 @@ interface DropdownMenuItemProps extends React.ComponentPropsWithRef<typeof BaseM
 }
 
 function DropdownMenuItem(props: Readonly<DropdownMenuItemProps>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

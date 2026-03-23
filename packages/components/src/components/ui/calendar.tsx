@@ -75,7 +75,7 @@ function Calendar({
       captionLayout={captionLayout}
       formatters={{
         formatMonthDropdown: (date) => {
-          const locale = props.locale;
+          const {locale} = props;
 
           return date.toLocaleString(locale?.code ?? "default", {month: "short"});
         },

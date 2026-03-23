@@ -15,17 +15,26 @@ vi.mock("motion/react", async () => {
   }
 
   function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement> & {
-      animate?: unknown;
-      initial?: unknown;
-      transition?: unknown;
-    }>(({animate, children, initial, transition, ...props}, ref) => ReactModule.createElement(tag, {
-      ...props,
-      ref,
-      "data-motion-animate": serializeProp(animate),
-      "data-motion-initial": serializeProp(initial),
-      "data-motion-transition": serializeProp(transition),
-    }, children));
+    return ReactModule.forwardRef<
+      Element,
+      React.HTMLAttributes<HTMLElement> & {
+        animate?: unknown;
+        initial?: unknown;
+        transition?: unknown;
+      }
+    >(({animate, children, initial, transition, ...props}, ref) =>
+      ReactModule.createElement(
+        tag,
+        {
+          ...props,
+          ref,
+          "data-motion-animate": serializeProp(animate),
+          "data-motion-initial": serializeProp(initial),
+          "data-motion-transition": serializeProp(transition),
+        },
+        children,
+      ),
+    );
   }
 
   return {
@@ -116,9 +125,6 @@ describe("HighlightText", () => {
       />,
     );
 
-    expect(screen.getByTestId("highlight-transition")).toHaveAttribute(
-      "data-motion-transition",
-      JSON.stringify(transition),
-    );
+    expect(screen.getByTestId("highlight-transition")).toHaveAttribute("data-motion-transition", JSON.stringify(transition));
   });
 });

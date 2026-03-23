@@ -222,6 +222,7 @@ const DropdownMenuSub: typeof BaseMenu.SubmenuRoot & {displayName?: string} = Ba
  */
 const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, DropdownMenuTrigger.Props>(
   (props: Readonly<DropdownMenuTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
     const {asChild = false, children, className, render, ...otherProps} = props;
     const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -367,6 +368,7 @@ const DropdownMenuContent = React.forwardRef<React.ComponentRef<typeof BaseMenu.
  * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
  */
 function DropdownMenuItem(props: Readonly<DropdownMenuItem.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -532,6 +534,7 @@ function DropdownMenuSeparator(props: Readonly<DropdownMenuSeparator.Props>): Re
  * @see {@link https://base-ui.com/react/components/menu | Base UI Documentation}
  */
 function DropdownMenuShortcut(props: Readonly<DropdownMenuShortcut.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

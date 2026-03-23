@@ -8,13 +8,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./number-field.module.css";
 
-type NumberFieldProps = React.ComponentPropsWithRef<typeof BaseNumberField.Root>;
-type NumberFieldGroupProps = React.ComponentPropsWithRef<typeof BaseNumberField.Group>;
-type NumberFieldInputProps = React.ComponentPropsWithRef<typeof BaseNumberField.Input>;
-type NumberFieldIncrementProps = React.ComponentPropsWithRef<typeof BaseNumberField.Increment>;
-type NumberFieldDecrementProps = React.ComponentPropsWithRef<typeof BaseNumberField.Decrement>;
-type NumberFieldScrubAreaProps = React.ComponentPropsWithRef<typeof BaseNumberField.ScrubArea>;
-
 /**
  * Provides a styled numeric input with optional steppers and scrub support.
  *
@@ -210,37 +203,37 @@ function NumberFieldScrubArea(props: Readonly<NumberFieldScrubArea.Props>): Reac
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberField {
-  export type Props = NumberFieldProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Root>;
   export type State = BaseNumberField.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldGroup {
-  export type Props = NumberFieldGroupProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Group>;
   export type State = BaseNumberField.Group.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldInput {
-  export type Props = NumberFieldInputProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Input>;
   export type State = BaseNumberField.Input.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldIncrement {
-  export type Props = NumberFieldIncrementProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Increment>;
   export type State = BaseNumberField.Increment.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldDecrement {
-  export type Props = NumberFieldDecrementProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.Decrement>;
   export type State = BaseNumberField.Decrement.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace NumberFieldScrubArea {
-  export type Props = NumberFieldScrubAreaProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseNumberField.ScrubArea>;
   export type State = BaseNumberField.ScrubArea.State;
 }
 

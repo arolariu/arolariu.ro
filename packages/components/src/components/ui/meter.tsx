@@ -8,11 +8,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./meter.module.css";
 
-type MeterProps = React.ComponentPropsWithRef<typeof BaseMeter.Root>;
-type MeterTrackProps = React.ComponentPropsWithRef<typeof BaseMeter.Track>;
-type MeterIndicatorProps = React.ComponentPropsWithRef<typeof BaseMeter.Indicator>;
-type MeterLabelProps = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
-
 /**
  * Displays a scalar measurement within a known range.
  *
@@ -140,25 +135,25 @@ function MeterLabel(props: Readonly<MeterLabel.Props>): React.ReactElement {
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Meter {
-  export type Props = MeterProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Root>;
   export type State = BaseMeter.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterTrack {
-  export type Props = MeterTrackProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Track>;
   export type State = BaseMeter.Track.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterIndicator {
-  export type Props = MeterIndicatorProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Indicator>;
   export type State = BaseMeter.Indicator.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterLabel {
-  export type Props = MeterLabelProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
   export type State = BaseMeter.Label.State;
 }
 

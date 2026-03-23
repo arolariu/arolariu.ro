@@ -318,6 +318,7 @@ function NavigationMenuViewport(props: Readonly<NavigationMenuViewport.Props>): 
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
 function NavigationMenuIndicator(props: Readonly<NavigationMenuIndicator.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

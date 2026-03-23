@@ -37,7 +37,7 @@ export interface SeparatorProps extends Omit<React.ComponentPropsWithRef<typeof 
  * @see {@link https://base-ui.com/react/components/separator | Base UI Documentation}
  */
 function Separator(props: Readonly<Separator.Props>): React.ReactElement {
-  const {className, decorative: _decorative = true, orientation = "horizontal", render, ...otherProps} = props;
+  const {className, orientation = "horizontal", render, ...otherProps} = props;
 
   return (
     <BaseSeparator

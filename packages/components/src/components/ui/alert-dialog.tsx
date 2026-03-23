@@ -109,6 +109,7 @@ AlertDialog.displayName = "AlertDialog";
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
 function AlertDialogTrigger(props: Readonly<AlertDialogTrigger.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -237,6 +238,7 @@ AlertDialogContent.displayName = "AlertDialogContent";
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
 function AlertDialogHeader(props: Readonly<AlertDialogHeader.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -269,6 +271,7 @@ AlertDialogHeader.displayName = "AlertDialogHeader";
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
 function AlertDialogFooter(props: Readonly<AlertDialogFooter.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

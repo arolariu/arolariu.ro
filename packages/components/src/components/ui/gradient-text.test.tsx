@@ -7,7 +7,9 @@ vi.mock("motion/react", async () => {
   const ReactModule = await import("react");
 
   function createMotionPrimitive<TTag extends keyof React.JSX.IntrinsicElements>(tag: TTag) {
-    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement>>(({children, ...props}, ref) => ReactModule.createElement(tag, {...props, ref}, children));
+    return ReactModule.forwardRef<Element, React.HTMLAttributes<HTMLElement>>(({children, ...props}, ref) =>
+      ReactModule.createElement(tag, {...props, ref}, children),
+    );
   }
 
   return {

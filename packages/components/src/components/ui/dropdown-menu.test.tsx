@@ -251,7 +251,7 @@ describe("DropdownMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByText("Settings")).toBeInTheDocument();
@@ -280,7 +280,7 @@ describe("DropdownMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByTestId("sub-trigger")).toHaveClass("custom-sub-trigger");
@@ -304,7 +304,7 @@ describe("DropdownMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByText("My Account")).toBeInTheDocument();
@@ -329,7 +329,7 @@ describe("DropdownMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByTestId("menu-label")).toHaveClass("custom-label");
@@ -405,7 +405,7 @@ describe("DropdownMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
       await screen.findByText("Item 1");
 
       // Assert
@@ -431,7 +431,7 @@ describe("DropdownMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByText("⌘S")).toBeInTheDocument();
@@ -457,7 +457,7 @@ describe("DropdownMenu", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open menu"}));
+      await user.click(screen.getByRole("button", {name: "Open menu"}));
 
       // Assert
       expect(await screen.findByTestId("shortcut")).toHaveClass("custom-shortcut");

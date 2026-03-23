@@ -10,9 +10,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./radio-group.module.css";
 
-type RadioGroupProps = React.ComponentPropsWithRef<typeof BaseRadioGroup>;
-type RadioGroupItemProps = React.ComponentPropsWithRef<typeof Radio.Root>;
-
 /**
  * Coordinates radio group state and selection behavior.
  *
@@ -84,13 +81,13 @@ const RadioGroupItem = React.forwardRef<React.ComponentRef<typeof Radio.Root>, R
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace RadioGroup {
-  export type Props = RadioGroupProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseRadioGroup>;
   export type State = BaseRadioGroup.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace RadioGroupItem {
-  export type Props = RadioGroupItemProps;
+  export type Props = React.ComponentPropsWithRef<typeof Radio.Root>;
   export type State = Radio.Root.State;
 }
 

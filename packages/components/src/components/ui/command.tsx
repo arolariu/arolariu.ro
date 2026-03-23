@@ -285,16 +285,16 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
   ) => {
     const [activeItemId, setActiveItemId] = React.useState<string | null>(null);
     const [search, setSearch] = React.useState("");
-    const itemOrderReference = React.useRef(0);
-    const itemsReference = React.useRef(new Map<string, CommandRegisteredItem>());
+    const itemOrderRef = React.useRef(0);
+    const itemsRef = React.useRef(new Map<string, CommandRegisteredItem>());
     const [itemsVersion, setItemsVersion] = React.useState(0);
     const listId = React.useId();
 
     const registerItem = React.useCallback((item: Omit<CommandRegisteredItem, "order">): void => {
-      const existingItem = itemsReference.current.get(item.id);
+      const existingItem = itemsRef.current.get(item.id);
       const nextItem: CommandRegisteredItem = {
         ...item,
-        order: existingItem?.order ?? itemOrderReference.current++,
+        order: existingItem?.order ?? itemOrderRef.current++,
       };
 
       const hasChanged =
@@ -311,12 +311,12 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
         return;
       }
 
-      itemsReference.current.set(item.id, nextItem);
+      itemsRef.current.set(item.id, nextItem);
       setItemsVersion((currentVersion) => currentVersion + 1);
     }, []);
 
     const unregisterItem = React.useCallback((itemId: string): void => {
-      if (!itemsReference.current.delete(itemId)) {
+      if (!itemsRef.current.delete(itemId)) {
         return;
       }
 
@@ -324,14 +324,15 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
     }, []);
 
     const items = React.useMemo(() => {
-      return [...itemsReference.current.values()].sort((firstItem, secondItem) => firstItem.order - secondItem.order);
+      return [...itemsRef.current.values()].toSorted((firstItem, secondItem) => firstItem.order - secondItem.order);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- itemsVersion is an intentional change counter
     }, [itemsVersion]);
 
     const isFiltering = shouldFilter && search.trim().length > 0;
 
     const isItemVisible = React.useCallback(
       (itemId: string): boolean => {
-        const item = itemsReference.current.get(itemId);
+        const item = itemsRef.current.get(itemId);
 
         if (!item) {
           return false;
@@ -355,11 +356,13 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
 
     React.useEffect(() => {
       if (selectableItems.length === 0) {
+        // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
         setActiveItemId(null);
         return;
       }
 
       if (!activeItemId || !selectableItems.some((item) => item.id === activeItemId)) {
+        // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
         setActiveItemId(selectableItems[0].id);
       }
     }, [activeItemId, selectableItems]);
@@ -369,7 +372,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
         return;
       }
 
-      itemsReference.current.get(activeItemId)?.ref.current?.scrollIntoView({
+      itemsRef.current.get(activeItemId)?.ref.current?.scrollIntoView({
         block: "nearest",
       });
     }, [activeItemId]);
@@ -427,7 +430,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
         return;
       }
 
-      itemsReference.current.get(activeItemId)?.ref.current?.click();
+      itemsRef.current.get(activeItemId)?.ref.current?.click();
     }, [activeItemId]);
 
     const hasVisibleItemsInGroup = React.useCallback(
@@ -484,6 +487,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
           ref={ref}
           aria-label={label}
           className={cn(styles.command, className)}
+          role='toolbar'
           onKeyDown={(event) => {
             onKeyDown?.(event);
 
@@ -796,11 +800,11 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
       useCommandContext("CommandItem");
     const groupId = React.useContext(CommandGroupContext);
     const generatedId = React.useId();
-    const itemReference = React.useRef<HTMLDivElement | null>(null);
+    const itemRef = React.useRef<HTMLDivElement | null>(null);
     const keywordSignature = React.useMemo(() => keywords.join("\u0000"), [keywords]);
 
     React.useLayoutEffect(() => {
-      const textValue = value ?? itemReference.current?.textContent?.trim() ?? "";
+      const textValue = value ?? itemRef.current?.textContent?.trim() ?? "";
 
       registerItem({
         disabled,
@@ -808,7 +812,7 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
         groupId,
         id: generatedId,
         keywords,
-        ref: itemReference,
+        ref: itemRef,
         textValue,
         value,
       });
@@ -832,7 +836,7 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
       <div
         {...props}
         ref={(node) => {
-          itemReference.current = node;
+          itemRef.current = node;
           assignRef(ref, node);
         }}
         aria-disabled={disabled || undefined}
@@ -848,8 +852,20 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
           }
 
           selectSpecificItem(generatedId);
-          onSelect?.(value ?? itemReference.current?.textContent?.trim() ?? "");
+          onSelect?.(value ?? itemRef.current?.textContent?.trim() ?? "");
           onClick?.(event);
+        }}
+        onKeyDown={(event) => {
+          if (disabled) {
+            event.preventDefault();
+            return;
+          }
+
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectSpecificItem(generatedId);
+            onSelect?.(value ?? itemRef.current?.textContent?.trim() ?? "");
+          }
         }}
         onFocus={() => {
           if (disabled) {
