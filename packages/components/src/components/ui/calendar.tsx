@@ -58,16 +58,10 @@ const calendarButtonVariantStyles: Record<CalendarButtonVariant, string> = {
  *
  * @see {@link https://daypicker.dev | React Day Picker Docs}
  */
-function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  captionLayout = "label",
-  buttonVariant = "ghost",
-  formatters,
-  components,
-  ...props
-}: Readonly<CalendarProps>): React.JSX.Element {
+const Calendar = React.forwardRef<HTMLDivElement, CalendarProps>(function Calendar(
+  {className, classNames, showOutsideDays = true, captionLayout = "label", buttonVariant = "ghost", formatters, components, ...props},
+  forwardedRef,
+) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -125,7 +119,7 @@ function Calendar({
         Root: ({className: rootClassName, rootRef, ...rootProps}) => (
           <div
             data-slot='calendar'
-            ref={rootRef}
+            ref={rootRef ?? forwardedRef}
             className={cn(styles.calendarRoot, rootClassName)}
             {...rootProps}
           />
@@ -163,7 +157,7 @@ function Calendar({
       {...props}
     />
   );
-}
+});
 
 function CalendarWeekNumber({week, children, ...tdProps}: Readonly<CalendarWeekNumberProps>): React.JSX.Element {
   return (

@@ -51,12 +51,13 @@ interface AvatarFallbackProps extends Omit<React.ComponentPropsWithRef<typeof Ba
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-function Avatar(props: Readonly<Avatar.Props>): React.ReactElement {
+const Avatar = React.forwardRef<HTMLSpanElement, Avatar.Props>(function Avatar(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseAvatar.Root
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "span",
         render: render as never,
@@ -65,7 +66,7 @@ function Avatar(props: Readonly<Avatar.Props>): React.ReactElement {
       {children}
     </BaseAvatar.Root>
   );
-}
+});
 Avatar.displayName = "Avatar";
 
 /**
@@ -84,12 +85,13 @@ Avatar.displayName = "Avatar";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-function AvatarImage(props: Readonly<AvatarImage.Props>): React.ReactElement {
+const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImage.Props>(function AvatarImage(props, forwardedRef) {
   const {className, render, ...otherProps} = props;
 
   return (
     <BaseAvatar.Image
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "img",
         render: render as never,
@@ -97,7 +99,7 @@ function AvatarImage(props: Readonly<AvatarImage.Props>): React.ReactElement {
       })}
     />
   );
-}
+});
 AvatarImage.displayName = "AvatarImage";
 
 /**
@@ -116,12 +118,13 @@ AvatarImage.displayName = "AvatarImage";
  *
  * @see {@link https://base-ui.com/react/components/avatar | Base UI Documentation}
  */
-function AvatarFallback(props: Readonly<AvatarFallback.Props>): React.ReactElement {
+const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallback.Props>(function AvatarFallback(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseAvatar.Fallback
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "span",
         render: render as never,
@@ -130,7 +133,7 @@ function AvatarFallback(props: Readonly<AvatarFallback.Props>): React.ReactEleme
       {children}
     </BaseAvatar.Fallback>
   );
-}
+});
 AvatarFallback.displayName = "AvatarFallback";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

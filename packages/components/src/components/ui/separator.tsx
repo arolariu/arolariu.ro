@@ -36,13 +36,14 @@ export interface SeparatorProps extends Omit<React.ComponentPropsWithRef<typeof 
  *
  * @see {@link https://base-ui.com/react/components/separator | Base UI Documentation}
  */
-function Separator(props: Readonly<Separator.Props>): React.ReactElement {
+const Separator = React.forwardRef<HTMLDivElement, Separator.Props>(function Separator(props, forwardedRef) {
   const {className, orientation = "horizontal", render, ...otherProps} = props;
 
   return (
     <BaseSeparator
       orientation={orientation}
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -55,7 +56,7 @@ function Separator(props: Readonly<Separator.Props>): React.ReactElement {
       })}
     />
   );
-}
+});
 Separator.displayName = "Separator";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
