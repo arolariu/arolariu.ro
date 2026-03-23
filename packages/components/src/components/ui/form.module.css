@@ -1,0 +1,20 @@
+.item {
+  display: grid;
+  gap: var(--ac-space-2);
+}
+
+.labelError {
+  color: var(--ac-destructive);
+}
+
+.description {
+  color: var(--ac-muted-foreground);
+  font-size: 0.8rem;
+}
+
+.message {
+  color: var(--ac-destructive);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+

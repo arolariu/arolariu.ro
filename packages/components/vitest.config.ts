@@ -1,6 +1,6 @@
 /**
- * Vitest configuration for @arolariu/components library
- * Extends the base monorepo config with component library specific settings
+ * Vitest configuration for @arolariu/components library.
+ * Extends the base monorepo config with component-library-specific settings.
  *
  * @see https://vitest.dev/config/
  */
@@ -16,11 +16,49 @@ export default mergeConfig(
     plugins: [react()],
     test: {
       coverage: {
-        exclude: ["src/components/**"],
+        exclude: [
+          // ── Base config exclusions (mergeConfig replaces arrays) ──
+          "**/node_modules/**",
+          "**/dist/**",
+          "**/.next/**",
+          "**/.rslib/**",
+          "**/build/**",
+          "**/out/**",
+          "**/coverage/**",
+          "**/storybook-static/**",
+          "**/*.stories.{ts,tsx,js,jsx}",
+          "**/.storybook/**",
+          "**/*.d.ts",
+          "**/types/**/*.ts",
+          "**/{generated,__generated__}/**",
+          "**/*.generated.{ts,tsx,js,jsx}",
+          "**/*.test.{ts,tsx,js,jsx}",
+          "**/*.spec.{ts,tsx,js,jsx}",
+          "**/*.config.{js,ts,mjs,mts}",
+          "**/*.setup.{js,ts,mjs,mts}",
+          "**/telemetry.ts",
+          "**/instrumentation.ts",
+          "**/proxy.ts",
+
+          // ── Component library specific ──
+          // CSS Modules — not instrumentable via v8
+          "**/*.css",
+          // Barrel re-export files — no logic to cover
+          "**/index.ts",
+          // Build scripts — not runtime code
+          "**/scripts/**",
+          // Pure re-export hooks — no local logic
+          "**/useReducedMotion.tsx",
+          // Canvas/animation-heavy decorative components — untestable in happy-dom
+          "**/fireworks-background.tsx",
+          "**/hole-background.tsx",
+          "**/scratcher.tsx",
+        ],
         thresholds: {
-          // Override branch threshold for defensive nullish coalescing patterns
-          // that cannot realistically be triggered in normal code paths
-          branches: 85,
+          branches: 80,
+          functions: 95,
+          lines: 95,
+          statements: 95,
         },
       },
     },

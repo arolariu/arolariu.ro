@@ -1,5 +1,16 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {TbBolt, TbBrain, TbBuildingStore, TbCheck, TbChartBar, TbClock, TbReceipt, TbScanEye, TbShoppingCart, TbSparkles} from "react-icons/tb";
+import {
+  TbBolt,
+  TbBrain,
+  TbBuildingStore,
+  TbChartBar,
+  TbCheck,
+  TbClock,
+  TbReceipt,
+  TbScanEye,
+  TbShoppingCart,
+  TbSparkles,
+} from "react-icons/tb";
 
 /**
  * Static visual preview of the AnalyzeDialog component.

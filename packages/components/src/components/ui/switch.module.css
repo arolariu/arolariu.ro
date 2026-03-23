@@ -1,0 +1,42 @@
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 2rem;
+  height: 1.125rem;
+  padding: 0.125rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-color: color-mix(in oklch, var(--ac-foreground), transparent 84%);
+  cursor: pointer;
+  outline: none;
+  transition: background-color var(--ac-transition-fast);
+}
+
+.root[data-checked] {
+  background-color: var(--ac-primary);
+}
+
+.root[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.root:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.thumb {
+  display: block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 999px;
+  background-color: var(--ac-background);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+  transition: transform var(--ac-transition-fast);
+}
+
+.root[data-checked] .thumb {
+  transform: translateX(0.875rem);
+}

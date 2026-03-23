@@ -1,21 +1,63 @@
 "use client";
 
-import {cn} from "@/lib/utilities";
+import {Input as BaseInput} from "@base-ui/react/input";
+import {mergeProps} from "@base-ui/react/merge-props";
+import {useRender} from "@base-ui/react/use-render";
 import * as React from "react";
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(({className, type, ...props}, ref) => {
-  return (
-    <input
-      type={type}
-      className={cn(
-        "flex h-9 w-full rounded-md border border-neutral-200 bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-neutral-950 placeholder:text-neutral-500 focus-visible:ring-1 focus-visible:ring-neutral-950 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:border-neutral-800 dark:file:text-neutral-50 dark:placeholder:text-neutral-400 dark:focus-visible:ring-neutral-300",
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
-});
+import {cn} from "@/lib/utilities";
+import styles from "./input.module.css";
+
+/**
+ * Props for the shared input wrapper.
+ */
+export interface InputProps extends Omit<React.ComponentPropsWithRef<typeof BaseInput>, "className"> {
+  /** Additional CSS classes merged with the input styles. @default undefined */
+  className?: string;
+  /** The HTML input type forwarded to the underlying control. @default undefined */
+  type?: React.HTMLInputTypeAttribute;
+}
+
+/**
+ * Renders a styled text input for free-form single-line entry.
+ *
+ * @remarks
+ * - Renders an `<input>` element by default
+ * - Built on {@link https://base-ui.com/react/components/input | Base UI Input}
+ * - Supports the `render` prop for element composition
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example Basic usage
+ * ```tsx
+ * <Input type="email" placeholder="name@example.com" />
+ * ```
+ *
+ * @see {@link https://base-ui.com/react/components/input | Base UI Documentation}
+ */
+const Input = React.forwardRef<React.ComponentRef<typeof BaseInput>, Input.Props>(
+  (props: Readonly<Input.Props>, ref): React.ReactElement => {
+    const {className, render, type, ...otherProps} = props;
+
+    return (
+      <BaseInput
+        ref={ref}
+        type={type}
+        {...otherProps}
+        render={useRender({
+          defaultTagName: "input",
+          render: render as never,
+          props: mergeProps({className: cn(styles.input, className)}, {}),
+        })}
+      />
+    );
+  },
+);
 Input.displayName = "Input";
+
+// eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
+namespace Input {
+  export type Props = InputProps;
+  export type State = BaseInput.State;
+}
 
 export {Input};

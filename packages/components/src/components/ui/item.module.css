@@ -1,0 +1,143 @@
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.separator {
+  margin: 0 !important;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ac-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--ac-radius-md);
+  background-color: transparent;
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-sm);
+  outline: none;
+  transition: border-color var(--ac-transition-fast), background-color var(--ac-transition-fast), box-shadow var(--ac-transition-fast);
+}
+
+.item a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.item:focus-visible {
+  border-color: var(--ac-ring);
+  box-shadow: 0 0 0 1px var(--ac-ring);
+}
+
+.outline {
+  border-color: var(--ac-border);
+}
+
+.muted {
+  background-color: color-mix(in oklch, var(--ac-muted), transparent 25%);
+}
+
+.sizeDefault {
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-4);
+}
+
+.sizeSm {
+  gap: calc(var(--ac-space-2) + 0.125rem);
+  padding: calc(var(--ac-space-2) + 0.125rem) var(--ac-space-4);
+}
+
+.media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-2);
+  flex-shrink: 0;
+}
+
+.media svg {
+  flex-shrink: 0;
+}
+
+.mediaIcon {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background-color: var(--ac-muted);
+}
+
+.mediaIcon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.mediaImage {
+  width: 2.5rem;
+  height: 2.5rem;
+  overflow: hidden;
+  border-radius: var(--ac-radius-sm);
+}
+
+.mediaImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+  gap: var(--ac-space-1);
+}
+
+.content + .content {
+  flex: none;
+}
+
+.title {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.description {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  line-height: 1.5;
+}
+
+.description a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .description a:hover {
+    color: var(--ac-foreground);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+
+.header,
+.footer {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-2);
+}

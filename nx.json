@@ -53,5 +53,6 @@
         "babel": true
       }
     }
-  }
+  },
+  "analytics": true
 }

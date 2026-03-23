@@ -1,163 +1,390 @@
-"use client";
-
-import {Slot} from "@radix-ui/react-slot";
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
 import {Separator} from "@/components/ui/separator";
 import {cn} from "@/lib/utilities";
+import styles from "./item.module.css";
 
-function ItemGroup({className, ...props}: React.ComponentProps<"div">) {
-  return (
+/** Supported surface variants for {@link Item}. */
+export type ItemVariant = "default" | "outline" | "muted";
+
+/** Supported size variants for {@link Item}. */
+export type ItemSize = "default" | "sm";
+
+/** Supported media treatments for {@link ItemMedia}. */
+export type ItemMediaVariant = "default" | "icon" | "image";
+
+type ItemDataAttributes = Record<`data-${string}`, string | boolean | undefined>;
+
+/**
+ * Props for the {@link ItemGroup} component.
+ */
+export type ItemGroupProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link ItemSeparator} component.
+ */
+export type ItemSeparatorProps = React.ComponentPropsWithoutRef<typeof Separator>;
+
+/**
+ * Props for the {@link Item} component.
+ */
+export interface ItemProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** Enables rendering an existing div-compatible child element. @default false */
+  asChild?: boolean;
+  /** Compactness applied to the item container. @default "default" */
+  size?: ItemSize;
+  /** Visual surface treatment for the item container. @default "default" */
+  variant?: ItemVariant;
+}
+
+/**
+ * Props for the {@link ItemMedia} component.
+ */
+export interface ItemMediaProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** Visual treatment used for the media slot. @default "default" */
+  variant?: ItemMediaVariant;
+}
+
+/**
+ * Props for the {@link ItemContent} component.
+ */
+export type ItemContentProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link ItemTitle} component.
+ */
+export type ItemTitleProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link ItemDescription} component.
+ */
+export type ItemDescriptionProps = React.ComponentPropsWithoutRef<"p">;
+
+/**
+ * Props for the {@link ItemActions} component.
+ */
+export type ItemActionsProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link ItemHeader} component.
+ */
+export type ItemHeaderProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Props for the {@link ItemFooter} component.
+ */
+export type ItemFooterProps = React.ComponentPropsWithoutRef<"div">;
+
+/**
+ * Groups a collection of list-like items with consistent spacing.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemGroup>
+ *   <Item />
+ * </ItemGroup>
+ * ```
+ *
+ * @see {@link ItemGroupProps} for available props
+ */
+const ItemGroup = React.forwardRef<HTMLDivElement, ItemGroupProps>(
+  ({className, ...props}: Readonly<ItemGroupProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       role='list'
       data-slot='item-group'
-      className={cn("group/item-group flex flex-col", className)}
+      className={cn(styles.group, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function ItemSeparator({className, ...props}: React.ComponentProps<typeof Separator>) {
-  return (
+/**
+ * Inserts a separator between adjacent items.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a wrapped `Separator` component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemSeparator />
+ * ```
+ *
+ * @see {@link ItemSeparatorProps} for available props
+ */
+const ItemSeparator = React.forwardRef<HTMLDivElement, ItemSeparatorProps>(
+  ({className, ...props}: Readonly<ItemSeparatorProps>, ref): React.JSX.Element => (
     <Separator
+      ref={ref}
       data-slot='item-separator'
       orientation='horizontal'
-      className={cn("my-0", className)}
+      className={cn(styles.separator, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-const itemVariants = cva(
-  "group/item [a]:hover:bg-neutral-100/50 focus-visible:border-neutral-950 focus-visible:ring-neutral-950/50 [a]:transition-colors flex flex-wrap items-center rounded-md border border-neutral-200 border-transparent text-sm outline-none transition-colors duration-100 focus-visible:ring-[3px] dark:[a]:hover:bg-neutral-800/50 dark:focus-visible:border-neutral-300 dark:focus-visible:ring-neutral-300/50 dark:border-neutral-800",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        outline: "border-neutral-200 dark:border-neutral-800",
-        muted: "bg-neutral-100/50 dark:bg-neutral-800/50",
-      },
-      size: {
-        default: "gap-4 p-4",
-        sm: "gap-2.5 px-4 py-3",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+/**
+ * Creates a flexible data-display row with optional media and actions.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element by default
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <Item variant='outline'>Content</Item>
+ * ```
+ *
+ * @see {@link ItemProps} for available props
+ */
+const Item = React.forwardRef<HTMLDivElement, ItemProps>(
+  (
+    {className, variant = "default", size = "default", asChild = false, children, ...props}: Readonly<ItemProps>,
+    ref,
+  ): React.JSX.Element => {
+    const mergedClassName = cn(
+      styles.item,
+      variant === "outline" && styles.outline,
+      variant === "muted" && styles.muted,
+      size === "sm" ? styles.sizeSm : styles.sizeDefault,
+      className,
+    );
+
+    if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<
+        React.ComponentPropsWithoutRef<"div"> & ItemDataAttributes & {ref?: React.Ref<HTMLDivElement>}
+      >;
+
+      // eslint-disable-next-line react-x/no-clone-element -- replaces Radix Slot while preserving asChild prop merging
+      return React.cloneElement(child, {
+        ...props,
+        ref,
+        "data-size": size,
+        "data-slot": "item",
+        "data-variant": variant,
+        className: cn(mergedClassName, child.props.className),
+      });
+    }
+
+    return (
+      <div
+        ref={ref}
+        data-slot='item'
+        data-size={size}
+        data-variant={variant}
+        className={mergedClassName}
+        {...props}>
+        {children}
+      </div>
+    );
   },
 );
 
-function Item({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof itemVariants> & {asChild?: boolean}) {
-  const Comp = asChild ? Slot : "div";
-  return (
-    <Comp
-      data-slot='item'
-      data-variant={variant}
-      data-size={size}
-      className={cn(itemVariants({variant, size, className}))}
-      {...props}
-    />
-  );
-}
-
-const itemMediaVariants = cva(
-  "flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        icon: "bg-neutral-100 size-8 rounded-sm border border-neutral-200 [&_svg:not([class*='size-'])]:size-4 dark:bg-neutral-800 dark:border-neutral-800",
-        image: "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  },
-);
-
-function ItemMedia({className, variant = "default", ...props}: React.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) {
-  return (
+/**
+ * Renders the leading media slot for an item.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemMedia variant='icon'>⭐</ItemMedia>
+ * ```
+ *
+ * @see {@link ItemMediaProps} for available props
+ */
+const ItemMedia = React.forwardRef<HTMLDivElement, ItemMediaProps>(
+  ({className, variant = "default", ...props}: Readonly<ItemMediaProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-media'
       data-variant={variant}
-      className={cn(itemMediaVariants({variant, className}))}
+      className={cn(styles.media, variant === "icon" && styles.mediaIcon, variant === "image" && styles.mediaImage, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function ItemContent({className, ...props}: React.ComponentProps<"div">) {
-  return (
+/**
+ * Wraps the main textual content for an item.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemContent>Details</ItemContent>
+ * ```
+ *
+ * @see {@link ItemContentProps} for available props
+ */
+const ItemContent = React.forwardRef<HTMLDivElement, ItemContentProps>(
+  ({className, ...props}: Readonly<ItemContentProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-content'
-      className={cn("flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none", className)}
+      className={cn(styles.content, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function ItemTitle({className, ...props}: React.ComponentProps<"div">) {
-  return (
+/**
+ * Displays the primary title text for an item.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemTitle>Title</ItemTitle>
+ * ```
+ *
+ * @see {@link ItemTitleProps} for available props
+ */
+const ItemTitle = React.forwardRef<HTMLDivElement, ItemTitleProps>(
+  ({className, ...props}: Readonly<ItemTitleProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-title'
-      className={cn("flex w-fit items-center gap-2 text-sm leading-snug font-medium", className)}
+      className={cn(styles.title, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function ItemDescription({className, ...props}: React.ComponentProps<"p">) {
-  return (
+/**
+ * Displays secondary descriptive content for an item.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<p>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemDescription>Support text</ItemDescription>
+ * ```
+ *
+ * @see {@link ItemDescriptionProps} for available props
+ */
+const ItemDescription = React.forwardRef<HTMLParagraphElement, ItemDescriptionProps>(
+  ({className, ...props}: Readonly<ItemDescriptionProps>, ref): React.JSX.Element => (
     <p
+      ref={ref}
       data-slot='item-description'
-      className={cn(
-        "line-clamp-2 text-sm leading-normal font-normal text-balance text-neutral-500 dark:text-neutral-400",
-        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-neutral-900 dark:[&>a:hover]:text-neutral-50",
-        className,
-      )}
+      className={cn(styles.description, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function ItemActions({className, ...props}: React.ComponentProps<"div">) {
-  return (
+/**
+ * Hosts action controls aligned to the trailing edge of an item.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemActions>
+ *   <button type='button'>Edit</button>
+ * </ItemActions>
+ * ```
+ *
+ * @see {@link ItemActionsProps} for available props
+ */
+const ItemActions = React.forwardRef<HTMLDivElement, ItemActionsProps>(
+  ({className, ...props}: Readonly<ItemActionsProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-actions'
-      className={cn("flex items-center gap-2", className)}
+      className={cn(styles.actions, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function ItemHeader({className, ...props}: React.ComponentProps<"div">) {
-  return (
+/**
+ * Wraps leading title and description content for an item.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemHeader>
+ *   <ItemTitle>Profile</ItemTitle>
+ * </ItemHeader>
+ * ```
+ *
+ * @see {@link ItemHeaderProps} for available props
+ */
+const ItemHeader = React.forwardRef<HTMLDivElement, ItemHeaderProps>(
+  ({className, ...props}: Readonly<ItemHeaderProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-header'
-      className={cn("flex basis-full items-center justify-between gap-2", className)}
+      className={cn(styles.header, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function ItemFooter({className, ...props}: React.ComponentProps<"div">) {
-  return (
+/**
+ * Wraps trailing metadata or supplementary content for an item.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <ItemFooter>Updated 2m ago</ItemFooter>
+ * ```
+ *
+ * @see {@link ItemFooterProps} for available props
+ */
+const ItemFooter = React.forwardRef<HTMLDivElement, ItemFooterProps>(
+  ({className, ...props}: Readonly<ItemFooterProps>, ref): React.JSX.Element => (
     <div
+      ref={ref}
       data-slot='item-footer'
-      className={cn("flex basis-full items-center justify-between gap-2", className)}
+      className={cn(styles.footer, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+
+ItemGroup.displayName = "ItemGroup";
+ItemSeparator.displayName = "ItemSeparator";
+Item.displayName = "Item";
+ItemMedia.displayName = "ItemMedia";
+ItemContent.displayName = "ItemContent";
+ItemTitle.displayName = "ItemTitle";
+ItemDescription.displayName = "ItemDescription";
+ItemActions.displayName = "ItemActions";
+ItemHeader.displayName = "ItemHeader";
+ItemFooter.displayName = "ItemFooter";
 
 export {Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemGroup, ItemHeader, ItemMedia, ItemSeparator, ItemTitle};

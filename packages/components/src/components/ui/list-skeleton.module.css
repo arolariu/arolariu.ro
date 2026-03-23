@@ -1,0 +1,35 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-3);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+}
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ac-space-1);
+}
+
+.primary {
+  width: 60%;
+  height: 0.875rem;
+}
+
+.secondary {
+  width: 40%;
+  height: 0.75rem;
+}

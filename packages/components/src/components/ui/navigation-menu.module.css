@@ -1,0 +1,110 @@
+.root {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-1);
+  min-height: var(--ac-size-default);
+  padding: 0 var(--ac-space-3);
+  border: none;
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-sm);
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: background-color var(--ac-transition-fast), color var(--ac-transition-fast);
+}
+
+.trigger:hover,
+.trigger[data-open],
+.trigger:focus-visible {
+  background-color: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+
+.triggerIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+  transition: transform var(--ac-transition-normal);
+}
+
+.trigger[data-open] .triggerIcon {
+  transform: rotate(180deg);
+}
+
+.content {
+  width: 100%;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--ac-radius-sm);
+  color: inherit;
+  outline: none;
+  text-decoration: none;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.viewportWrapper {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: var(--ac-space-2);
+}
+
+.positioner {
+  z-index: 40;
+}
+
+.popup {
+  overflow: hidden;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-popover);
+  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.25);
+}
+
+.viewport {
+  width: min(100vw - 2rem, var(--ac-nav-content-width, 20rem));
+  height: var(--ac-nav-content-height);
+  transition: width var(--ac-transition-normal), height var(--ac-transition-normal);
+}
+
+.indicator {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 0.5rem;
+}
+
+.indicatorInner {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-top-left-radius: var(--ac-radius-xs);
+  background-color: var(--ac-border);
+  transform: translateY(0.125rem) rotate(45deg);
+}

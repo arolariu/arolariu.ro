@@ -1,0 +1,84 @@
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.root::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 140%;
+  height: 140%;
+  transform: translate3d(-50%, -50%, 0);
+  background: radial-gradient(ellipse at 50% 55%, transparent 10%, white 50%);
+}
+
+:global(.dark) .root::before,
+:global([data-theme="dark"]) .root::before {
+  background: radial-gradient(ellipse at 50% 55%, transparent 10%, black 50%);
+}
+
+.root::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: translate3d(-50%, -50%, 0);
+  mix-blend-mode: overlay;
+  background: radial-gradient(ellipse at 50% 75%, #a900ff 20%, transparent 75%);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0.1;
+}
+
+:global(.dark) .canvas,
+:global([data-theme="dark"]) .canvas {
+  opacity: 0.2;
+}
+
+.glow {
+  position: absolute;
+  top: -71.5%;
+  left: 50%;
+  z-index: 3;
+  width: 30%;
+  height: 140%;
+  transform: translate3d(-50%, 0, 0);
+  border-bottom-left-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+  background: linear-gradient(20deg, #00f8f1, rgb(255 189 30 / 0.25) 16.5%, #fe848f 33%, rgb(254 132 143 / 0.25) 49.5%, #00f8f1 66%, rgb(0 248 241 / 0.5) 85.5%, #ffbd1e 100%);
+  background-position: 0% 100%;
+  background-size: 100% 200%;
+  opacity: 0.75;
+  mix-blend-mode: plus-darker;
+  filter: blur(48px);
+}
+
+:global(.dark) .glow,
+:global([data-theme="dark"]) .glow {
+  background: linear-gradient(20deg, #00f8f1, rgb(255 189 30 / 0.125) 16.5%, #fe848f 33%, rgb(254 132 143 / 0.125) 49.5%, #00f8f1 66%, rgb(0 248 241 / 0.375) 85.5%, #ffbd1e 100%);
+  mix-blend-mode: plus-lighter;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background: repeating-linear-gradient(transparent, transparent 1px, white 1px, white 2px);
+}

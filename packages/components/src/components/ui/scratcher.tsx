@@ -1,21 +1,48 @@
 "use client";
 
-import {cn} from "@/lib/utilities";
 import {motion, useAnimation} from "motion/react";
 import React, {useEffect, useRef, useState} from "react";
 
-interface ScratcherProps {
+import {cn} from "@/lib/utilities";
+import styles from "./scratcher.module.css";
+
+/** Props accepted by {@link Scratcher}. */
+export interface ScratcherProps {
+  /** Content revealed after the overlay is scratched away. @default undefined */
   children: React.ReactNode;
+  /** Width of the scratch card surface in pixels. @default undefined */
   width: number;
+  /** Height of the scratch card surface in pixels. @default undefined */
   height: number;
+  /** Percentage of cleared pixels required before completion fires. @default 50 */
   minScratchPercentage?: number;
+  /** Additional CSS classes merged with the scratch card container. @default undefined */
   className?: string;
+  /** Callback invoked once the scratch completion threshold is reached. @default undefined */
   onComplete?: () => void;
+  /** Three-stop gradient used for the scratchable overlay. @default ["#A97CF8", "#F38CB8", "#FDCC92"] */
   gradientColors?: [string, string, string];
 }
 
 const defaultGradientColors: [string, string, string] = ["#A97CF8", "#F38CB8", "#FDCC92"];
+const ignoreAnimationError = (): null => null;
 
+/**
+ * Renders a scratch-card reveal surface with animated completion feedback.
+ *
+ * @remarks
+ * - Animated component using the `motion` library
+ * - Renders a `<div>` element containing a `<canvas>`
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ * - Client-side only (`"use client"` directive)
+ *
+ * @example
+ * ```tsx
+ * <Scratcher width={320} height={180}>Prize unlocked</Scratcher>
+ * ```
+ *
+ * @see {@link ScratcherProps} for available props
+ */
 export const Scratcher: React.FC<ScratcherProps> = ({
   width,
   height,
@@ -24,7 +51,7 @@ export const Scratcher: React.FC<ScratcherProps> = ({
   children,
   className,
   gradientColors = defaultGradientColors,
-}) => {
+}): React.JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -33,120 +60,120 @@ export const Scratcher: React.FC<ScratcherProps> = ({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (canvas && ctx) {
-      ctx.fillStyle = "#ccc";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, gradientColors[0]);
-      gradient.addColorStop(0.5, gradientColors[1]);
-      gradient.addColorStop(1, gradientColors[2]);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) {
+      return;
     }
+
+    context.fillStyle = "#ccc";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, gradientColors[0]);
+    gradient.addColorStop(0.5, gradientColors[1]);
+    gradient.addColorStop(1, gradientColors[2]);
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
   }, [gradientColors]);
 
-  useEffect(() => {
-    const handleDocumentMouseMove = (event: MouseEvent) => {
-      if (!isScratching) return;
-      scratch(event.clientX, event.clientY);
-    };
-
-    const handleDocumentTouchMove = (event: TouchEvent) => {
-      if (!isScratching) return;
-      const [touch] = event.touches;
-      if (!touch) return;
-      scratch(touch.clientX, touch.clientY);
-    };
-
-    const handleDocumentMouseUp = () => {
-      setIsScratching(false);
-      checkCompletion();
-    };
-
-    const handleDocumentTouchEnd = () => {
-      setIsScratching(false);
-      checkCompletion();
-    };
-
-    document.addEventListener("mousedown", handleDocumentMouseMove);
-    document.addEventListener("mousemove", handleDocumentMouseMove);
-    document.addEventListener("touchstart", handleDocumentTouchMove);
-    document.addEventListener("touchmove", handleDocumentTouchMove);
-    document.addEventListener("mouseup", handleDocumentMouseUp);
-    document.addEventListener("touchend", handleDocumentTouchEnd);
-    document.addEventListener("touchcancel", handleDocumentTouchEnd);
-
-    return () => {
-      document.removeEventListener("mousedown", handleDocumentMouseMove);
-      document.removeEventListener("mousemove", handleDocumentMouseMove);
-      document.removeEventListener("touchstart", handleDocumentTouchMove);
-      document.removeEventListener("touchmove", handleDocumentTouchMove);
-      document.removeEventListener("mouseup", handleDocumentMouseUp);
-      document.removeEventListener("touchend", handleDocumentTouchEnd);
-      document.removeEventListener("touchcancel", handleDocumentTouchEnd);
-    };
-  }, [isScratching]);
-
-  const handleMouseDown = () => setIsScratching(true);
-
-  const handleTouchStart = () => setIsScratching(true);
-
-  const scratch = (clientX: number, clientY: number) => {
+  const scratch = React.useCallback((clientX: number, clientY: number): void => {
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (canvas && ctx) {
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left + 16;
-      const y = clientY - rect.top + 16;
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.beginPath();
-      ctx.arc(x, y, 30, 0, Math.PI * 2);
-      ctx.fill();
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) {
+      return;
     }
-  };
 
-  const startAnimation = async () => {
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left + 16;
+    const y = clientY - rect.top + 16;
+    context.globalCompositeOperation = "destination-out";
+    context.beginPath();
+    context.arc(x, y, 30, 0, Math.PI * 2);
+    context.fill();
+  }, []);
+
+  const startAnimation = React.useCallback(async (): Promise<void> => {
     await controls.start({
       scale: [1, 1.5, 1],
       rotate: [0, 10, -10, 10, -10, 0],
       transition: {duration: 0.5},
     });
 
-    // Call onComplete after animation finishes
-    if (onComplete) {
-      onComplete();
-    }
-  };
+    onComplete?.();
+  }, [controls, onComplete]);
 
-  const checkCompletion = () => {
-    if (isComplete) return;
+  const checkCompletion = React.useCallback((): void => {
+    if (isComplete) {
+      return;
+    }
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (canvas && ctx) {
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const pixels = imageData.data;
-      const totalPixels = pixels.length / 4;
-      let clearPixels = 0;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) {
+      return;
+    }
 
-      for (let i = 3; i < pixels.length; i += 4) {
-        if (pixels[i] === 0) clearPixels++;
-      }
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+    const totalPixels = pixels.length / 4;
+    let clearPixels = 0;
 
-      const percentage = (clearPixels / totalPixels) * 100;
-
-      if (percentage >= minScratchPercentage) {
-        setIsComplete(true);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        startAnimation();
+    for (let index = 3; index < pixels.length; index += 4) {
+      if (pixels[index] === 0) {
+        clearPixels += 1;
       }
     }
-  };
+
+    const percentage = (clearPixels / totalPixels) * 100;
+    if (percentage >= minScratchPercentage) {
+      setIsComplete(true);
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      startAnimation().catch(ignoreAnimationError);
+    }
+  }, [isComplete, minScratchPercentage, startAnimation]);
+
+  useEffect(() => {
+    const handleDocumentMouseMove = (event: MouseEvent): void => {
+      if (isScratching) {
+        scratch(event.clientX, event.clientY);
+      }
+    };
+
+    const handleDocumentTouchMove = (event: TouchEvent): void => {
+      if (!isScratching) {
+        return;
+      }
+
+      const [touch] = event.touches;
+      if (!touch) {
+        return;
+      }
+
+      scratch(touch.clientX, touch.clientY);
+    };
+
+    const handleDocumentPointerEnd = (): void => {
+      setIsScratching(false);
+      checkCompletion();
+    };
+
+    globalThis.document.addEventListener("mousemove", handleDocumentMouseMove);
+    globalThis.document.addEventListener("touchmove", handleDocumentTouchMove);
+    globalThis.document.addEventListener("mouseup", handleDocumentPointerEnd);
+    globalThis.document.addEventListener("touchend", handleDocumentPointerEnd);
+    globalThis.document.addEventListener("touchcancel", handleDocumentPointerEnd);
+
+    return () => {
+      globalThis.document.removeEventListener("mousemove", handleDocumentMouseMove);
+      globalThis.document.removeEventListener("touchmove", handleDocumentTouchMove);
+      globalThis.document.removeEventListener("mouseup", handleDocumentPointerEnd);
+      globalThis.document.removeEventListener("touchend", handleDocumentPointerEnd);
+      globalThis.document.removeEventListener("touchcancel", handleDocumentPointerEnd);
+    };
+  }, [checkCompletion, isScratching, scratch]);
 
   return (
     <motion.div
-      className={cn("relative select-none", className)}
+      className={cn(styles.root, className)}
       style={{
         width,
         height,
@@ -158,10 +185,13 @@ export const Scratcher: React.FC<ScratcherProps> = ({
         ref={canvasRef}
         width={width}
         height={height}
-        className='absolute top-0 left-0'
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}></canvas>
+        className={styles.canvas}
+        onMouseDown={() => setIsScratching(true)}
+        onTouchStart={() => setIsScratching(true)}
+      />
       {children}
     </motion.div>
   );
 };
+
+Scratcher.displayName = "Scratcher";

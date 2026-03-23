@@ -1,0 +1,44 @@
+.button {
+  position: relative;
+  display: inline-block;
+  height: 2.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: var(--ac-text-sm);
+  font-weight: 500;
+  line-height: 1.25rem;
+  perspective: 1000px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--ac-ring);
+  outline-offset: 2px;
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ac-radius-lg);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.front {
+  background: var(--ac-muted);
+  color: var(--ac-foreground);
+}
+
+.back {
+  background: var(--ac-primary);
+  color: var(--ac-primary-foreground);
+}
+
+.measure {
+  visibility: hidden;
+}

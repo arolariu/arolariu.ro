@@ -1,0 +1,76 @@
+.root {
+  display: inline-flex;
+  width: fit-content;
+  align-items: stretch;
+}
+
+.root > * {
+  flex-shrink: 0;
+}
+
+.root > *:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+.root > input {
+  flex: 1 1 auto;
+}
+
+.horizontal > *:not(:first-child) {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.horizontal > *:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.vertical {
+  flex-direction: column;
+  width: 100%;
+}
+
+.vertical > *:not(:first-child) {
+  margin-top: -1px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.vertical > *:not(:last-child) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  padding: 0 var(--ac-space-4);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-muted);
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-sm);
+  font-weight: 500;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.text svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.separator {
+  position: relative;
+  margin: 0 !important;
+  align-self: stretch;
+  background-color: var(--ac-border);
+}
+
+.separator[data-orientation="vertical"] {
+  height: auto;
+}

@@ -1,0 +1,32 @@
+.root {
+  display: grid;
+  gap: var(--ac-space-2);
+}
+
+.label {
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-sm);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.track {
+  position: relative;
+  width: 100%;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background-color: var(--ac-secondary);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--ac-border), transparent 20%);
+}
+
+.indicator {
+  height: inherit;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--ac-primary), white 10%) 0%,
+    var(--ac-primary) 100%
+  );
+  transition: width var(--ac-transition-slow);
+}

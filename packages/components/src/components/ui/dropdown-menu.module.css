@@ -1,0 +1,113 @@
+.positioner {
+  z-index: 50;
+}
+
+.content {
+  min-width: 12rem;
+  max-height: var(--available-height);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--ac-space-1);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-popover);
+  color: var(--ac-popover-foreground);
+  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.35);
+  transform-origin: var(--transform-origin);
+  transition: opacity var(--ac-transition-normal), transform var(--ac-transition-normal);
+}
+
+.content[data-starting-style],
+.content[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-2);
+  width: 100%;
+  min-height: var(--ac-size-default);
+  padding: var(--ac-space-1) var(--ac-space-2);
+  border-radius: var(--ac-radius-sm);
+  outline: none;
+  color: inherit;
+  font-size: var(--ac-text-sm);
+  cursor: default;
+  user-select: none;
+}
+
+.item[data-highlighted] {
+  background-color: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+
+.item[data-disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.subTrigger {
+  padding-right: var(--ac-space-3);
+}
+
+.subTrigger[data-popup-open] {
+  background-color: var(--ac-accent);
+  color: var(--ac-accent-foreground);
+}
+
+.subTriggerIcon {
+  width: 1rem;
+  height: 1rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.indicatorItem {
+  padding-left: calc(var(--ac-space-2) + 1.25rem);
+}
+
+.indicatorSlot {
+  position: absolute;
+  left: var(--ac-space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+}
+
+.indicatorIcon,
+.radioIndicatorIcon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.radioIndicatorIcon {
+  fill: currentcolor;
+}
+
+.label {
+  padding: var(--ac-space-1) var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+  font-weight: 600;
+}
+
+.inset {
+  padding-left: calc(var(--ac-space-2) + 1.25rem);
+}
+
+.separator {
+  height: 1px;
+  margin: var(--ac-space-1) calc(var(--ac-space-1) * -1);
+  background-color: var(--ac-border);
+}
+
+.shortcut {
+  margin-left: auto;
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-xs);
+  letter-spacing: 0.08em;
+}

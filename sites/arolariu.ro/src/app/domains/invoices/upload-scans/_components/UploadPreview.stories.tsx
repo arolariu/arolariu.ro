@@ -27,7 +27,11 @@ export const MixedStates: Story = {
         {/* Pending */}
         <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
           <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
-            <img src='https://picsum.photos/seed/upload1/400/300' alt='Pending upload' className='h-full w-full object-cover' />
+            <img
+              src='https://picsum.photos/seed/upload1/400/300'
+              alt='Pending upload'
+              className='h-full w-full object-cover'
+            />
             <div className='absolute top-2 right-2'>
               <span className='rounded-full bg-gray-500/80 px-2 py-0.5 text-xs text-white'>Pending</span>
             </div>
@@ -46,7 +50,11 @@ export const MixedStates: Story = {
         {/* Uploading */}
         <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
           <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
-            <img src='https://picsum.photos/seed/upload2/400/300' alt='Uploading scan' className='h-full w-full object-cover' />
+            <img
+              src='https://picsum.photos/seed/upload2/400/300'
+              alt='Uploading scan'
+              className='h-full w-full object-cover'
+            />
             <div className='absolute inset-0 flex items-center justify-center bg-blue-500/30'>
               <span className='animate-spin text-2xl'>⏳</span>
             </div>
@@ -70,7 +78,11 @@ export const MixedStates: Story = {
         {/* Completed */}
         <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
           <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
-            <img src='https://picsum.photos/seed/upload3/400/300' alt='Completed upload' className='h-full w-full object-cover' />
+            <img
+              src='https://picsum.photos/seed/upload3/400/300'
+              alt='Completed upload'
+              className='h-full w-full object-cover'
+            />
             <div className='absolute inset-0 flex items-center justify-center bg-green-500/30'>
               <span className='text-2xl'>✅</span>
             </div>
@@ -87,7 +99,11 @@ export const MixedStates: Story = {
         {/* Failed */}
         <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
           <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
-            <img src='https://picsum.photos/seed/upload4/400/300' alt='Failed upload' className='h-full w-full object-cover' />
+            <img
+              src='https://picsum.photos/seed/upload4/400/300'
+              alt='Failed upload'
+              className='h-full w-full object-cover'
+            />
             <div className='absolute inset-0 flex items-center justify-center bg-red-500/30'>
               <span className='text-2xl'>❌</span>
             </div>

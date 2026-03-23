@@ -1,147 +1,271 @@
 "use client";
 
-/* eslint-disable */
-
-import {cva, type VariantProps} from "class-variance-authority";
 import * as React from "react";
 
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Textarea} from "@/components/ui/textarea";
 import {cn} from "@/lib/utilities";
+import styles from "./input-group.module.css";
 
-function InputGroup({className, ...props}: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot='input-group'
-      role='group'
-      className={cn(
-        "group/input-group relative flex w-full items-center rounded-md border border-neutral-200 shadow-xs transition-[color,box-shadow] outline-none dark:border-neutral-800 dark:bg-neutral-200/30 dark:dark:bg-neutral-800/30",
-        "h-9 has-[>textarea]:h-auto",
+/** Supported alignment options for {@link InputGroupAddon}. */
+export type InputGroupAddonAlign = "inline-start" | "inline-end" | "block-start" | "block-end";
 
-        // Variants based on alignment.
-        "has-[>[data-align=inline-start]]:[&>input]:pl-2",
-        "has-[>[data-align=inline-end]]:[&>input]:pr-2",
-        "has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:[&>input]:pb-3",
-        "has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3",
+/** Supported compact button sizes for {@link InputGroupButton}. */
+export type InputGroupButtonSize = "xs" | "sm" | "icon-xs" | "icon-sm";
 
-        // Focus state.
-        "has-[[data-slot=input-group-control]:focus-visible]:ring-1 has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-950 dark:has-[[data-slot=input-group-control]:focus-visible]:ring-neutral-300",
+/**
+ * Props for the {@link InputGroup} component.
+ */
+export type InputGroupProps = React.ComponentPropsWithoutRef<"div">;
 
-        // Error state.
-        "has-[[data-slot][aria-invalid=true]]:border-red-500 has-[[data-slot][aria-invalid=true]]:ring-red-500/20 dark:has-[[data-slot][aria-invalid=true]]:border-red-900 dark:dark:has-[[data-slot][aria-invalid=true]]:ring-red-900/40 dark:has-[[data-slot][aria-invalid=true]]:ring-red-500/40 dark:has-[[data-slot][aria-invalid=true]]:ring-red-900/20",
-
-        className,
-      )}
-      {...props}
-    />
-  );
+/**
+ * Props for the {@link InputGroupAddon} component.
+ */
+export interface InputGroupAddonProps extends React.ComponentPropsWithoutRef<"div"> {
+  /** Position of the addon relative to the input control. @default "inline-start" */
+  align?: InputGroupAddonAlign;
 }
 
-const inputGroupAddonVariants = cva(
-  "text-neutral-500 flex h-auto cursor-text select-none items-center justify-center gap-2 py-1.5 text-sm font-medium group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4 dark:text-neutral-400",
-  {
-    variants: {
-      align: {
-        "inline-start": "order-first pl-3 has-[>button]:ml-[-0.45rem] has-[>kbd]:ml-[-0.35rem]",
-        "inline-end": "order-last pr-3 has-[>button]:mr-[-0.4rem] has-[>kbd]:mr-[-0.35rem]",
-        "block-start": "[.border-b]:pb-3 order-first w-full justify-start px-3 pt-3 group-has-[>input]/input-group:pt-2.5",
-        "block-end": "[.border-t]:pt-3 order-last w-full justify-start px-3 pb-3 group-has-[>input]/input-group:pb-2.5",
-      },
-    },
-    defaultVariants: {
-      align: "inline-start",
-    },
-  },
+/**
+ * Props for the {@link InputGroupButton} component.
+ */
+export interface InputGroupButtonProps extends Omit<React.ComponentPropsWithoutRef<typeof Button>, "size"> {
+  /** Compact button size used within the group chrome. @default "xs" */
+  size?: InputGroupButtonSize;
+}
+
+/**
+ * Props for the {@link InputGroupText} component.
+ */
+export type InputGroupTextProps = React.ComponentPropsWithoutRef<"span">;
+
+/**
+ * Props for the {@link InputGroupInput} component.
+ */
+export type InputGroupInputProps = React.ComponentPropsWithoutRef<"input">;
+
+/**
+ * Props for the {@link InputGroupTextarea} component.
+ */
+export type InputGroupTextareaProps = React.ComponentPropsWithoutRef<"textarea">;
+
+function getAddonAlignClass(align: InputGroupAddonAlign): string {
+  switch (align) {
+    case "block-end": {
+      return styles.blockEnd;
+    }
+    case "block-start": {
+      return styles.blockStart;
+    }
+    case "inline-end": {
+      return styles.inlineEnd;
+    }
+    default: {
+      return styles.inlineStart;
+    }
+  }
+}
+
+function getButtonSizeClass(size: InputGroupButtonSize): string {
+  switch (size) {
+    case "icon-sm": {
+      return styles.buttonIconSm;
+    }
+    case "icon-xs": {
+      return styles.buttonIconXs;
+    }
+    case "sm": {
+      return styles.buttonSm;
+    }
+    default: {
+      return styles.buttonXs;
+    }
+  }
+}
+
+/**
+ * Creates a composable shell for grouped text inputs and controls.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroup>
+ *   <InputGroupInput />
+ * </InputGroup>
+ * ```
+ *
+ * @see {@link InputGroupProps} for available props
+ */
+const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
+  ({className, ...props}: Readonly<InputGroupProps>, ref): React.JSX.Element => (
+    <div
+      ref={ref}
+      role='group'
+      data-slot='input-group'
+      className={cn(styles.group, className)}
+      {...props}
+    />
+  ),
 );
 
-function InputGroupAddon({
-  className,
-  align = "inline-start",
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
-  return (
+/**
+ * Renders supplementary content around an input group control.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<div>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupAddon align='inline-end'>.com</InputGroupAddon>
+ * ```
+ *
+ * @see {@link InputGroupAddonProps} for available props
+ */
+const InputGroupAddon = React.forwardRef<HTMLDivElement, InputGroupAddonProps>(
+  ({className, align = "inline-start", onClick, ...props}: Readonly<InputGroupAddonProps>, ref): React.JSX.Element => (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- clicking the addon focuses the related control.
     <div
+      ref={ref}
       role='group'
       data-slot='input-group-addon'
       data-align={align}
-      className={cn(inputGroupAddonVariants({align}), className)}
-      onClick={(e) => {
-        if ((e.target as HTMLElement).closest("button")) {
+      className={cn(styles.addon, getAddonAlignClass(align), className)}
+      onClick={(event): void => {
+        if ((event.target as HTMLElement).closest("button")) {
+          onClick?.(event);
           return;
         }
-        e.currentTarget.parentElement?.querySelector("input")?.focus();
+
+        onClick?.(event);
+
+        if (event.defaultPrevented) {
+          return;
+        }
+
+        event.currentTarget.parentElement?.querySelector<HTMLInputElement | HTMLTextAreaElement>("input, textarea")?.focus();
       }}
       {...props}
     />
-  );
-}
+  ),
+);
 
-const inputGroupButtonVariants = cva("flex items-center gap-2 text-sm shadow-none", {
-  variants: {
-    size: {
-      xs: "h-6 gap-1 rounded-[calc(var(--radius)-5px)] px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
-      sm: "h-8 gap-1.5 rounded-md px-2.5 has-[>svg]:px-2.5",
-      "icon-xs": "size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0",
-      "icon-sm": "size-8 p-0 has-[>svg]:p-0",
-    },
-  },
-  defaultVariants: {
-    size: "xs",
-  },
-});
-
-function InputGroupButton({
-  className,
-  type = "button",
-  variant = "ghost",
-  size = "xs",
-  ...props
-}: Omit<React.ComponentProps<typeof Button>, "size"> & VariantProps<typeof inputGroupButtonVariants>) {
-  return (
+/**
+ * Renders a compact button matched to input group dimensions.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a wrapped `Button` component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupButton size='sm'>Search</InputGroupButton>
+ * ```
+ *
+ * @see {@link InputGroupButtonProps} for available props
+ */
+const InputGroupButton = React.forwardRef<HTMLButtonElement, InputGroupButtonProps>(
+  ({className, type = "button", variant = "ghost", size = "xs", ...props}: Readonly<InputGroupButtonProps>, ref): React.JSX.Element => (
     <Button
+      ref={ref}
       type={type}
       data-size={size}
       variant={variant}
-      className={cn(inputGroupButtonVariants({size}), className)}
+      className={cn(styles.button, getButtonSizeClass(size), className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function InputGroupText({className, ...props}: React.ComponentProps<"span">) {
-  return (
+/**
+ * Displays static inline text within an input group.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a `<span>` element
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupText>@</InputGroupText>
+ * ```
+ *
+ * @see {@link InputGroupTextProps} for available props
+ */
+const InputGroupText = React.forwardRef<HTMLSpanElement, InputGroupTextProps>(
+  ({className, ...props}: Readonly<InputGroupTextProps>, ref): React.JSX.Element => (
     <span
-      className={cn(
-        "flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
-        className,
-      )}
+      ref={ref}
+      className={cn(styles.text, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function InputGroupInput({className, ...props}: React.ComponentProps<"input">) {
-  return (
+/**
+ * Renders the primary input control inside an input group.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a wrapped `Input` component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupInput placeholder='Search...' />
+ * ```
+ *
+ * @see {@link InputGroupInputProps} for available props
+ */
+const InputGroupInput = React.forwardRef<HTMLInputElement, InputGroupInputProps>(
+  ({className, ...props}: Readonly<InputGroupInputProps>, ref): React.JSX.Element => (
     <Input
+      ref={ref}
       data-slot='input-group-control'
-      className={cn("flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent", className)}
+      className={cn(styles.input, className)}
       {...props}
     />
-  );
-}
+  ),
+);
 
-function InputGroupTextarea({className, ...props}: React.ComponentProps<"textarea">) {
-  return (
+/**
+ * Renders a textarea control inside an input group.
+ *
+ * @remarks
+ * - Pure CSS component (no Base UI primitive)
+ * - Renders a wrapped `Textarea` component
+ * - Styling via CSS Modules with `--ac-*` custom properties
+ *
+ * @example
+ * ```tsx
+ * <InputGroupTextarea rows={4} />
+ * ```
+ *
+ * @see {@link InputGroupTextareaProps} for available props
+ */
+const InputGroupTextarea = React.forwardRef<HTMLTextAreaElement, InputGroupTextareaProps>(
+  ({className, ...props}: Readonly<InputGroupTextareaProps>, ref): React.JSX.Element => (
     <Textarea
+      ref={ref}
       data-slot='input-group-control'
-      className={cn(
-        "flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent",
-        className,
-      )}
+      className={cn(styles.textarea, className)}
       {...props}
     />
-  );
-}
+  ),
+);
+
+InputGroup.displayName = "InputGroup";
+InputGroupAddon.displayName = "InputGroupAddon";
+InputGroupButton.displayName = "InputGroupButton";
+InputGroupText.displayName = "InputGroupText";
+InputGroupInput.displayName = "InputGroupInput";
+InputGroupTextarea.displayName = "InputGroupTextarea";
 
 export {InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea};

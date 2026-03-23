@@ -82,13 +82,24 @@ export const HighVolume: Story = {
   args: {
     data: [
       ...generateMockCategoryTrendData(8),
-      ...["Snacks", "Cleaning", "Personal Care", "Frozen", "Condiments", "Pasta", "Canned Goods", "Spices", "Baby", "Pet Food", "Bakery", "Deli"].map(
-        (category) => ({
-          category,
-          current: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
-          average: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
-        }),
-      ),
+      ...[
+        "Snacks",
+        "Cleaning",
+        "Personal Care",
+        "Frozen",
+        "Condiments",
+        "Pasta",
+        "Canned Goods",
+        "Spices",
+        "Baby",
+        "Pet Food",
+        "Bakery",
+        "Deli",
+      ].map((category) => ({
+        category,
+        current: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
+        average: faker.number.float({min: 10, max: 200, fractionDigits: 2}),
+      })),
     ],
     currency: "RON",
   },

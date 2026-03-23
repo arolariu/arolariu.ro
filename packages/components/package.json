@@ -1,8 +1,8 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "0.5.0",
-  "description": "🎨 70+ beautiful, accessible React components built on Radix UI. TypeScript-first, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
+  "version": "1.0.0",
+  "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
     "type": "git",
@@ -16,7 +16,9 @@
   },
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "source": "src/index.ts",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -36,6 +38,9 @@
   "files": [
     "dist",
     "src",
+    "!src/**/*.test.*",
+    "!src/**/*.spec.*",
+    "!src/**/*.stories.*",
     "LICENSE.md",
     "README.md",
     "CHANGELOG.md",
@@ -55,9 +60,8 @@
     "component-library",
     "design-system",
     "typescript",
-    "tailwindcss",
-    "radix-ui",
-    "shadcn-ui",
+    "base-ui",
+    "css-modules",
     "accessible",
     "tree-shakeable",
     "modern-ui",
@@ -86,74 +90,37 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@hookform/resolvers": "*",
-    "@radix-ui/react-accordion": "*",
-    "@radix-ui/react-alert-dialog": "*",
-    "@radix-ui/react-aspect-ratio": "*",
-    "@radix-ui/react-avatar": "*",
-    "@radix-ui/react-checkbox": "*",
-    "@radix-ui/react-collapsible": "*",
-    "@radix-ui/react-context-menu": "*",
-    "@radix-ui/react-dialog": "*",
-    "@radix-ui/react-dropdown-menu": "*",
-    "@radix-ui/react-hover-card": "*",
-    "@radix-ui/react-label": "*",
-    "@radix-ui/react-menubar": "*",
-    "@radix-ui/react-navigation-menu": "*",
-    "@radix-ui/react-popover": "*",
-    "@radix-ui/react-progress": "*",
-    "@radix-ui/react-radio-group": "*",
-    "@radix-ui/react-scroll-area": "*",
-    "@radix-ui/react-select": "*",
-    "@radix-ui/react-separator": "*",
-    "@radix-ui/react-slider": "*",
-    "@radix-ui/react-slot": "*",
-    "@radix-ui/react-switch": "*",
-    "@radix-ui/react-tabs": "*",
-    "@radix-ui/react-toggle": "*",
-    "@radix-ui/react-toggle-group": "*",
-    "@radix-ui/react-tooltip": "*",
-    "class-variance-authority": "*",
     "clsx": "*",
-    "cmdk": "*",
     "embla-carousel-react": "*",
     "input-otp": "*",
     "lucide-react": "*",
-    "motion": "*",
-    "next-themes": "*",
     "react-day-picker": "*",
-    "react-hook-form": "*",
-    "react-resizable-panels": "*",
-    "recharts": "*",
-    "shiki": "*",
-    "sonner": "*",
-    "tailwind-merge": "*",
-    "tailwindcss-animate": "*",
-    "vaul": "*",
-    "zod": "*"
+    "react-resizable-panels": "*"
   },
   "peerDependencies": {
+    "@base-ui/react": "^1",
     "motion": "^12",
     "react": "^18.2 || ^19",
     "react-dom": "^18.2 || ^19",
-    "tailwindcss": "^4"
+    "react-hook-form": "^7",
+    "recharts": "^3.8"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "*",
+    "@base-ui/react": "*",
     "@rsbuild/core": "*",
     "@rsbuild/plugin-react": "*",
     "@rslib/core": "*",
-    "@tailwindcss/postcss": "*",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
-    "cssnano": "*",
-    "playwright": "*",
+    "motion": "*",
     "postcss": "*",
+    "playwright": "*",
     "react": "*",
     "react-dom": "*",
+    "react-hook-form": "*",
+    "recharts": "*",
     "rimraf": "*",
-    "tailwindcss": "*",
     "typescript": "*"
   },
   "publishConfig": {
@@ -193,6 +160,11 @@
       "types": "./dist/components/ui/aspect-ratio.d.ts",
       "import": "./dist/components/ui/aspect-ratio.js",
       "default": "./dist/components/ui/aspect-ratio.js"
+    },
+    "./async-boundary": {
+      "types": "./dist/components/ui/async-boundary.d.ts",
+      "import": "./dist/components/ui/async-boundary.js",
+      "default": "./dist/components/ui/async-boundary.js"
     },
     "./avatar": {
       "types": "./dist/components/ui/avatar.d.ts",
@@ -234,6 +206,11 @@
       "import": "./dist/components/ui/calendar.js",
       "default": "./dist/components/ui/calendar.js"
     },
+    "./card-skeleton": {
+      "types": "./dist/components/ui/card-skeleton.d.ts",
+      "import": "./dist/components/ui/card-skeleton.js",
+      "default": "./dist/components/ui/card-skeleton.js"
+    },
     "./card": {
       "types": "./dist/components/ui/card.d.ts",
       "import": "./dist/components/ui/card.js",
@@ -248,6 +225,11 @@
       "types": "./dist/components/ui/chart.d.ts",
       "import": "./dist/components/ui/chart.js",
       "default": "./dist/components/ui/chart.js"
+    },
+    "./checkbox-group": {
+      "types": "./dist/components/ui/checkbox-group.d.ts",
+      "import": "./dist/components/ui/checkbox-group.js",
+      "default": "./dist/components/ui/checkbox-group.js"
     },
     "./checkbox": {
       "types": "./dist/components/ui/checkbox.d.ts",
@@ -268,6 +250,11 @@
       "types": "./dist/components/ui/context-menu.d.ts",
       "import": "./dist/components/ui/context-menu.js",
       "default": "./dist/components/ui/context-menu.js"
+    },
+    "./copy-button": {
+      "types": "./dist/components/ui/copy-button.d.ts",
+      "import": "./dist/components/ui/copy-button.js",
+      "default": "./dist/components/ui/copy-button.js"
     },
     "./counting-number": {
       "types": "./dist/components/ui/counting-number.d.ts",
@@ -304,6 +291,11 @@
       "import": "./dist/components/ui/empty.js",
       "default": "./dist/components/ui/empty.js"
     },
+    "./error-boundary": {
+      "types": "./dist/components/ui/error-boundary.d.ts",
+      "import": "./dist/components/ui/error-boundary.js",
+      "default": "./dist/components/ui/error-boundary.js"
+    },
     "./field": {
       "types": "./dist/components/ui/field.d.ts",
       "import": "./dist/components/ui/field.js",
@@ -318,6 +310,16 @@
       "types": "./dist/components/ui/flip-button.d.ts",
       "import": "./dist/components/ui/flip-button.js",
       "default": "./dist/components/ui/flip-button.js"
+    },
+    "./focus-scope": {
+      "types": "./dist/components/ui/focus-scope.d.ts",
+      "import": "./dist/components/ui/focus-scope.js",
+      "default": "./dist/components/ui/focus-scope.js"
+    },
+    "./form-skeleton": {
+      "types": "./dist/components/ui/form-skeleton.d.ts",
+      "import": "./dist/components/ui/form-skeleton.js",
+      "default": "./dist/components/ui/form-skeleton.js"
     },
     "./form": {
       "types": "./dist/components/ui/form.d.ts",
@@ -379,15 +381,35 @@
       "import": "./dist/components/ui/label.js",
       "default": "./dist/components/ui/label.js"
     },
+    "./list-skeleton": {
+      "types": "./dist/components/ui/list-skeleton.d.ts",
+      "import": "./dist/components/ui/list-skeleton.js",
+      "default": "./dist/components/ui/list-skeleton.js"
+    },
+    "./loading-overlay": {
+      "types": "./dist/components/ui/loading-overlay.d.ts",
+      "import": "./dist/components/ui/loading-overlay.js",
+      "default": "./dist/components/ui/loading-overlay.js"
+    },
     "./menubar": {
       "types": "./dist/components/ui/menubar.d.ts",
       "import": "./dist/components/ui/menubar.js",
       "default": "./dist/components/ui/menubar.js"
     },
+    "./meter": {
+      "types": "./dist/components/ui/meter.d.ts",
+      "import": "./dist/components/ui/meter.js",
+      "default": "./dist/components/ui/meter.js"
+    },
     "./navigation-menu": {
       "types": "./dist/components/ui/navigation-menu.d.ts",
       "import": "./dist/components/ui/navigation-menu.js",
       "default": "./dist/components/ui/navigation-menu.js"
+    },
+    "./number-field": {
+      "types": "./dist/components/ui/number-field.d.ts",
+      "import": "./dist/components/ui/number-field.js",
+      "default": "./dist/components/ui/number-field.js"
     },
     "./pagination": {
       "types": "./dist/components/ui/pagination.d.ts",
@@ -469,10 +491,20 @@
       "import": "./dist/components/ui/spinner.js",
       "default": "./dist/components/ui/spinner.js"
     },
+    "./stepper": {
+      "types": "./dist/components/ui/stepper.d.ts",
+      "import": "./dist/components/ui/stepper.js",
+      "default": "./dist/components/ui/stepper.js"
+    },
     "./switch": {
       "types": "./dist/components/ui/switch.d.ts",
       "import": "./dist/components/ui/switch.js",
       "default": "./dist/components/ui/switch.js"
+    },
+    "./table-skeleton": {
+      "types": "./dist/components/ui/table-skeleton.d.ts",
+      "import": "./dist/components/ui/table-skeleton.js",
+      "default": "./dist/components/ui/table-skeleton.js"
     },
     "./table": {
       "types": "./dist/components/ui/table.d.ts",
@@ -489,6 +521,11 @@
       "import": "./dist/components/ui/textarea.js",
       "default": "./dist/components/ui/textarea.js"
     },
+    "./timeline": {
+      "types": "./dist/components/ui/timeline.d.ts",
+      "import": "./dist/components/ui/timeline.js",
+      "default": "./dist/components/ui/timeline.js"
+    },
     "./toggle-group": {
       "types": "./dist/components/ui/toggle-group.d.ts",
       "import": "./dist/components/ui/toggle-group.js",
@@ -498,6 +535,11 @@
       "types": "./dist/components/ui/toggle.d.ts",
       "import": "./dist/components/ui/toggle.js",
       "default": "./dist/components/ui/toggle.js"
+    },
+    "./toolbar": {
+      "types": "./dist/components/ui/toolbar.d.ts",
+      "import": "./dist/components/ui/toolbar.js",
+      "default": "./dist/components/ui/toolbar.js"
     },
     "./tooltip": {
       "types": "./dist/components/ui/tooltip.d.ts",
@@ -509,25 +551,70 @@
       "import": "./dist/components/ui/typewriter.js",
       "default": "./dist/components/ui/typewriter.js"
     },
-    "./useismobile": {
-      "types": "./dist/components/ui/useismobile.d.ts",
-      "import": "./dist/components/ui/useismobile.js",
-      "default": "./dist/components/ui/useismobile.js"
+    "./visually-hidden": {
+      "types": "./dist/components/ui/visually-hidden.d.ts",
+      "import": "./dist/components/ui/visually-hidden.js",
+      "default": "./dist/components/ui/visually-hidden.js"
     },
-    "./usewindowsize": {
-      "types": "./dist/components/ui/usewindowsize.d.ts",
-      "import": "./dist/components/ui/usewindowsize.js",
-      "default": "./dist/components/ui/usewindowsize.js"
+    "./useAnnounce": {
+      "types": "./dist/hooks/useAnnounce.d.ts",
+      "import": "./dist/hooks/useAnnounce.js",
+      "default": "./dist/hooks/useAnnounce.js"
+    },
+    "./useBreakpoint": {
+      "types": "./dist/hooks/useBreakpoint.d.ts",
+      "import": "./dist/hooks/useBreakpoint.js",
+      "default": "./dist/hooks/useBreakpoint.js"
+    },
+    "./useColorScheme": {
+      "types": "./dist/hooks/useColorScheme.d.ts",
+      "import": "./dist/hooks/useColorScheme.js",
+      "default": "./dist/hooks/useColorScheme.js"
+    },
+    "./useFocusManager": {
+      "types": "./dist/hooks/useFocusManager.d.ts",
+      "import": "./dist/hooks/useFocusManager.js",
+      "default": "./dist/hooks/useFocusManager.js"
+    },
+    "./useFocusVisible": {
+      "types": "./dist/hooks/useFocusVisible.d.ts",
+      "import": "./dist/hooks/useFocusVisible.js",
+      "default": "./dist/hooks/useFocusVisible.js"
+    },
+    "./useIsMobile": {
+      "types": "./dist/hooks/useIsMobile.d.ts",
+      "import": "./dist/hooks/useIsMobile.js",
+      "default": "./dist/hooks/useIsMobile.js"
+    },
+    "./useMediaQuery": {
+      "types": "./dist/hooks/useMediaQuery.d.ts",
+      "import": "./dist/hooks/useMediaQuery.js",
+      "default": "./dist/hooks/useMediaQuery.js"
+    },
+    "./usePrefersContrast": {
+      "types": "./dist/hooks/usePrefersContrast.d.ts",
+      "import": "./dist/hooks/usePrefersContrast.js",
+      "default": "./dist/hooks/usePrefersContrast.js"
+    },
+    "./useReducedMotion": {
+      "types": "./dist/hooks/useReducedMotion.d.ts",
+      "import": "./dist/hooks/useReducedMotion.js",
+      "default": "./dist/hooks/useReducedMotion.js"
+    },
+    "./useWindowSize": {
+      "types": "./dist/hooks/useWindowSize.d.ts",
+      "import": "./dist/hooks/useWindowSize.js",
+      "default": "./dist/hooks/useWindowSize.js"
     },
     "./color-conversion-utilities": {
-      "types": "./dist/components/ui/color-conversion-utilities.d.ts",
-      "import": "./dist/components/ui/color-conversion-utilities.js",
-      "default": "./dist/components/ui/color-conversion-utilities.js"
+      "types": "./dist/lib/color-conversion-utilities.d.ts",
+      "import": "./dist/lib/color-conversion-utilities.js",
+      "default": "./dist/lib/color-conversion-utilities.js"
     },
     "./utilities": {
-      "types": "./dist/components/ui/utilities.d.ts",
-      "import": "./dist/components/ui/utilities.js",
-      "default": "./dist/components/ui/utilities.js"
+      "types": "./dist/lib/utilities.d.ts",
+      "import": "./dist/lib/utilities.js",
+      "default": "./dist/lib/utilities.js"
     }
   }
 }

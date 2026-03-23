@@ -1,0 +1,250 @@
+.container {
+  --ac-cell-size: var(--ac-size-default);
+  width: fit-content;
+  padding: var(--ac-space-3);
+  background-color: var(--ac-background);
+  color: var(--ac-foreground);
+  border-radius: var(--ac-radius-lg);
+}
+
+.calendarRoot {
+  width: fit-content;
+}
+
+.root {
+  width: fit-content;
+}
+
+.months {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+@media (min-width: 768px) {
+  .months {
+    flex-direction: row;
+  }
+}
+
+.month {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--ac-space-4);
+}
+
+.nav {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-1);
+}
+
+.navButton {
+  width: var(--ac-cell-size);
+  height: var(--ac-cell-size);
+  padding: 0;
+
+  &[disabled],
+  &[aria-disabled="true"] {
+    opacity: 0.5;
+  }
+}
+
+.monthCaption {
+  display: flex;
+  width: 100%;
+  height: var(--ac-cell-size);
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--ac-cell-size);
+}
+
+.dropdowns {
+  display: flex;
+  width: 100%;
+  height: var(--ac-cell-size);
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-2);
+  font-size: var(--ac-text-sm);
+  font-weight: 500;
+}
+
+.dropdownRoot {
+  position: relative;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-background);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+
+  &:focus-within {
+    outline: 3px solid color-mix(in oklch, var(--ac-ring), transparent 65%);
+    outline-offset: 0;
+    border-color: var(--ac-ring);
+  }
+}
+
+.dropdown {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.captionLabel {
+  user-select: none;
+  font-size: var(--ac-text-sm);
+  font-weight: 500;
+}
+
+.captionLabelDropdown {
+  display: flex;
+  height: 2rem;
+  align-items: center;
+  gap: var(--ac-space-1);
+  padding-inline: var(--ac-space-2);
+  border-radius: var(--ac-radius-md);
+}
+
+.monthGrid {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.weekdays {
+  display: flex;
+}
+
+.weekday {
+  flex: 1;
+  border-radius: var(--ac-radius-md);
+  color: var(--ac-muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-align: center;
+  user-select: none;
+}
+
+.week {
+  display: flex;
+  width: 100%;
+  margin-top: var(--ac-space-2);
+}
+
+.weekNumberHeader,
+.weekNumber {
+  width: var(--ac-cell-size);
+  color: var(--ac-muted-foreground);
+  font-size: 0.8rem;
+  text-align: center;
+  user-select: none;
+}
+
+.weekNumberCell {
+  display: flex;
+  width: var(--ac-cell-size);
+  height: var(--ac-cell-size);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.day {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  text-align: center;
+  user-select: none;
+}
+
+.rangeStart {
+  border-top-left-radius: var(--ac-radius-md);
+  border-bottom-left-radius: var(--ac-radius-md);
+  background-color: var(--ac-muted);
+}
+
+.rangeMiddle {
+  border-radius: 0;
+}
+
+.rangeEnd {
+  border-top-right-radius: var(--ac-radius-md);
+  border-bottom-right-radius: var(--ac-radius-md);
+  background-color: var(--ac-muted);
+}
+
+.today {
+  border-radius: var(--ac-radius-md);
+  background-color: var(--ac-muted);
+  color: var(--ac-foreground);
+}
+
+.outside {
+  color: var(--ac-muted-foreground);
+}
+
+.day[data-disabled="true"] {
+  opacity: 0.5;
+  color: var(--ac-muted-foreground);
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.chevron {
+  width: 1rem;
+  height: 1rem;
+}
+
+.dayButton {
+  position: relative;
+  z-index: 0;
+  display: flex;
+  width: 100%;
+  min-width: var(--ac-cell-size);
+  height: auto;
+  aspect-ratio: 1;
+  flex-direction: column;
+  gap: var(--ac-space-1);
+  font-weight: 400;
+  line-height: 1;
+
+  &:focus-visible,
+  .day[data-focused="true"] & {
+    z-index: 1;
+    outline: 3px solid color-mix(in oklch, var(--ac-ring), transparent 65%);
+    outline-offset: -1px;
+  }
+
+  &[data-selected-single="true"],
+  &[data-range-start="true"],
+  &[data-range-end="true"] {
+    background-color: var(--ac-foreground);
+    color: var(--ac-background);
+  }
+
+  &[data-range-middle="true"] {
+    border-radius: 0;
+    background-color: var(--ac-muted);
+    color: var(--ac-foreground);
+  }
+
+  &[data-range-start="true"],
+  &[data-range-end="true"] {
+    border-radius: var(--ac-radius-md);
+  }
+
+  & > span {
+    font-size: var(--ac-text-xs);
+    opacity: 0.7;
+  }
+}
+

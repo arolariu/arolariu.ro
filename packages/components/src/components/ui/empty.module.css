@@ -1,0 +1,84 @@
+.empty {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ac-space-6);
+  padding: var(--ac-space-6);
+  border: 1px dashed var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  max-width: 24rem;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-2);
+  text-align: center;
+}
+
+.media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--ac-space-2);
+  flex-shrink: 0;
+}
+
+.media svg {
+  flex-shrink: 0;
+}
+
+.mediaIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  background-color: var(--ac-muted);
+  color: var(--ac-foreground);
+}
+
+.mediaIcon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.title {
+  color: var(--ac-foreground);
+  font-size: var(--ac-text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.description {
+  color: var(--ac-muted-foreground);
+  font-size: var(--ac-text-sm);
+  line-height: 1.6;
+}
+
+.description a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .description a:hover {
+    color: var(--ac-foreground);
+  }
+}
+
+.content {
+  display: flex;
+  width: 100%;
+  max-width: 24rem;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ac-space-4);
+  font-size: var(--ac-text-sm);
+}
