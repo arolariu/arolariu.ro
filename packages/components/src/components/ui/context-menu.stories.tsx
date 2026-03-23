@@ -61,15 +61,15 @@ export const WithCheckboxes: Story = {
       <ContextMenuContent className='w-64'>
         <ContextMenuItem>
           <span>Cut</span>
-          <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘X</span>
+          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘X</span>
         </ContextMenuItem>
         <ContextMenuItem>
           <span>Copy</span>
-          <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘C</span>
+          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘C</span>
         </ContextMenuItem>
         <ContextMenuItem>
           <span>Paste</span>
-          <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘V</span>
+          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘V</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuCheckboxItem checked>Show Toolbar</ContextMenuCheckboxItem>

@@ -18,14 +18,17 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <div className="w-64 space-y-2">
-      <Meter value={72} min={0} max={100}>
+    <div className='w-64 space-y-2'>
+      <Meter
+        value={72}
+        min={0}
+        max={100}>
         <MeterLabel>Storage used</MeterLabel>
         <MeterTrack>
           <MeterIndicator />
         </MeterTrack>
       </Meter>
-      <p className="text-sm text-muted-foreground">72% of 100 GB used</p>
+      <p className='text-muted-foreground text-sm'>72% of 100 GB used</p>
     </div>
   ),
 };
@@ -35,14 +38,17 @@ export const Default: Story = {
  */
 export const LowValue: Story = {
   render: () => (
-    <div className="w-64 space-y-2">
-      <Meter value={25} min={0} max={100}>
+    <div className='w-64 space-y-2'>
+      <Meter
+        value={25}
+        min={0}
+        max={100}>
         <MeterLabel>Battery level</MeterLabel>
         <MeterTrack>
           <MeterIndicator />
         </MeterTrack>
       </Meter>
-      <p className="text-sm text-muted-foreground">25% remaining</p>
+      <p className='text-muted-foreground text-sm'>25% remaining</p>
     </div>
   ),
 };
@@ -52,14 +58,17 @@ export const LowValue: Story = {
  */
 export const HighValue: Story = {
   render: () => (
-    <div className="w-64 space-y-2">
-      <Meter value={95} min={0} max={100}>
+    <div className='w-64 space-y-2'>
+      <Meter
+        value={95}
+        min={0}
+        max={100}>
         <MeterLabel>CPU usage</MeterLabel>
         <MeterTrack>
           <MeterIndicator />
         </MeterTrack>
       </Meter>
-      <p className="text-sm text-muted-foreground text-destructive">95% - High usage detected</p>
+      <p className='text-muted-foreground text-destructive text-sm'>95% - High usage detected</p>
     </div>
   ),
 };

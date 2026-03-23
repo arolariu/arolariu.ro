@@ -74,7 +74,7 @@ export const DigitsOnly: Story = {
           <InputOTPSlot index={5} />
         </InputOTPGroup>
       </InputOTP>
-      <p className='text-xs text-muted-foreground'>A 6-digit code was sent to your email</p>
+      <p className='text-muted-foreground text-xs'>A 6-digit code was sent to your email</p>
     </div>
   ),
 };
@@ -96,7 +96,7 @@ export const FourDigitPIN: Story = {
           <InputOTPSlot index={3} />
         </InputOTPGroup>
       </InputOTP>
-      <p className='text-xs text-muted-foreground'>Enter your 4-digit security PIN</p>
+      <p className='text-muted-foreground text-xs'>Enter your 4-digit security PIN</p>
     </div>
   ),
 };

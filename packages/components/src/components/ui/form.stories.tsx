@@ -1,10 +1,10 @@
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {useForm} from "react-hook-form";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import * as z from "zod";
+import {Button} from "./button";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "./form";
 import {Input} from "./input";
-import {Button} from "./button";
 
 const meta = {
   title: "Components/Forms/Form",
@@ -146,7 +146,7 @@ export const ProfileForm: Story = {
                 <FormControl>
                   <textarea
                     placeholder='Tell us a bit about yourself'
-                    className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+                    className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm'
                     rows={4}
                     {...field}
                   />
@@ -305,7 +305,7 @@ export const WithConditionalFields: Story = {
                 <FormLabel>Account Type</FormLabel>
                 <FormControl>
                   <select
-                    className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+                    className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm'
                     {...field}>
                     <option value='personal'>Personal</option>
                     <option value='business'>Business</option>

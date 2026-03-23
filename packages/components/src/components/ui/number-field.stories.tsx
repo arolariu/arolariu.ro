@@ -45,7 +45,7 @@ export const WithLimits: Story = {
           <NumberFieldIncrement />
         </NumberFieldGroup>
       </NumberField>
-      <p className='text-xs text-muted-foreground'>Minimum: 1, Maximum: 10</p>
+      <p className='text-muted-foreground text-xs'>Minimum: 1, Maximum: 10</p>
     </div>
   ),
 };
@@ -69,7 +69,7 @@ export const WithStep: Story = {
           <NumberFieldIncrement />
         </NumberFieldGroup>
       </NumberField>
-      <p className='text-xs text-muted-foreground'>Step: 0.1 (10%)</p>
+      <p className='text-muted-foreground text-xs'>Step: 0.1 (10%)</p>
     </div>
   ),
 };
@@ -95,7 +95,7 @@ export const Currency: Story = {
           <NumberFieldIncrement />
         </NumberFieldGroup>
       </NumberField>
-      <p className='text-xs text-muted-foreground'>Currency: USD</p>
+      <p className='text-muted-foreground text-xs'>Currency: USD</p>
     </div>
   ),
 };

@@ -19,10 +19,10 @@ type Story = StoryObj<typeof meta>;
  */
 export const Horizontal: Story = {
   render: () => (
-    <ButtonGroup orientation="horizontal">
-      <Button variant="outline">Left</Button>
-      <Button variant="outline">Center</Button>
-      <Button variant="outline">Right</Button>
+    <ButtonGroup orientation='horizontal'>
+      <Button variant='outline'>Left</Button>
+      <Button variant='outline'>Center</Button>
+      <Button variant='outline'>Right</Button>
     </ButtonGroup>
   ),
 };
@@ -32,12 +32,12 @@ export const Horizontal: Story = {
  */
 export const Vertical: Story = {
   render: () => (
-    <ButtonGroup orientation="vertical">
-      <Button variant="outline">Option A</Button>
-      <ButtonGroupSeparator orientation="horizontal" />
-      <Button variant="outline">Option B</Button>
-      <ButtonGroupSeparator orientation="horizontal" />
-      <Button variant="outline">Option C</Button>
+    <ButtonGroup orientation='vertical'>
+      <Button variant='outline'>Option A</Button>
+      <ButtonGroupSeparator orientation='horizontal' />
+      <Button variant='outline'>Option B</Button>
+      <ButtonGroupSeparator orientation='horizontal' />
+      <Button variant='outline'>Option C</Button>
     </ButtonGroup>
   ),
 };
@@ -47,12 +47,16 @@ export const Vertical: Story = {
  */
 export const WithText: Story = {
   render: () => (
-    <ButtonGroup orientation="horizontal">
+    <ButtonGroup orientation='horizontal'>
       <ButtonGroupText>Actions:</ButtonGroupText>
-      <Button variant="default" size="sm">
+      <Button
+        variant='default'
+        size='sm'>
         Save
       </Button>
-      <Button variant="outline" size="sm">
+      <Button
+        variant='outline'
+        size='sm'>
         Cancel
       </Button>
     </ButtonGroup>

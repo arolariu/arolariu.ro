@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {Button} from "./button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,7 +14,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
-import {Button} from "./button";
 
 const meta = {
   title: "Components/Navigation/DropdownMenu",
@@ -107,11 +107,11 @@ export const WithSubmenus: Story = {
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <span>New File</span>
-          <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘N</span>
+          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘N</span>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <span>New Window</span>
-          <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘⇧N</span>
+          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘⇧N</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuSub>
@@ -127,7 +127,7 @@ export const WithSubmenus: Story = {
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <span>Print</span>
-          <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘P</span>
+          <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘P</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

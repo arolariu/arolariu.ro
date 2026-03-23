@@ -1,5 +1,5 @@
+import {AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline} from "lucide-react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight} from "lucide-react";
 import {Toolbar, ToolbarButton, ToolbarGroup, ToolbarLink, ToolbarSeparator} from "./toolbar";
 
 const meta = {
@@ -19,15 +19,15 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <Toolbar aria-label="Text formatting">
-      <ToolbarButton aria-label="Bold">
-        <Bold className="h-4 w-4" />
+    <Toolbar aria-label='Text formatting'>
+      <ToolbarButton aria-label='Bold'>
+        <Bold className='h-4 w-4' />
       </ToolbarButton>
-      <ToolbarButton aria-label="Italic">
-        <Italic className="h-4 w-4" />
+      <ToolbarButton aria-label='Italic'>
+        <Italic className='h-4 w-4' />
       </ToolbarButton>
-      <ToolbarButton aria-label="Underline">
-        <Underline className="h-4 w-4" />
+      <ToolbarButton aria-label='Underline'>
+        <Underline className='h-4 w-4' />
       </ToolbarButton>
     </Toolbar>
   ),
@@ -38,28 +38,28 @@ export const Default: Story = {
  */
 export const WithGroups: Story = {
   render: () => (
-    <Toolbar aria-label="Text editing">
+    <Toolbar aria-label='Text editing'>
       <ToolbarGroup>
-        <ToolbarButton aria-label="Bold">
-          <Bold className="h-4 w-4" />
+        <ToolbarButton aria-label='Bold'>
+          <Bold className='h-4 w-4' />
         </ToolbarButton>
-        <ToolbarButton aria-label="Italic">
-          <Italic className="h-4 w-4" />
+        <ToolbarButton aria-label='Italic'>
+          <Italic className='h-4 w-4' />
         </ToolbarButton>
-        <ToolbarButton aria-label="Underline">
-          <Underline className="h-4 w-4" />
+        <ToolbarButton aria-label='Underline'>
+          <Underline className='h-4 w-4' />
         </ToolbarButton>
       </ToolbarGroup>
       <ToolbarSeparator />
       <ToolbarGroup>
-        <ToolbarButton aria-label="Align left">
-          <AlignLeft className="h-4 w-4" />
+        <ToolbarButton aria-label='Align left'>
+          <AlignLeft className='h-4 w-4' />
         </ToolbarButton>
-        <ToolbarButton aria-label="Align center">
-          <AlignCenter className="h-4 w-4" />
+        <ToolbarButton aria-label='Align center'>
+          <AlignCenter className='h-4 w-4' />
         </ToolbarButton>
-        <ToolbarButton aria-label="Align right">
-          <AlignRight className="h-4 w-4" />
+        <ToolbarButton aria-label='Align right'>
+          <AlignRight className='h-4 w-4' />
         </ToolbarButton>
       </ToolbarGroup>
     </Toolbar>
@@ -71,15 +71,15 @@ export const WithGroups: Story = {
  */
 export const WithLinks: Story = {
   render: () => (
-    <Toolbar aria-label="Document actions">
+    <Toolbar aria-label='Document actions'>
       <ToolbarGroup>
         <ToolbarButton>Save</ToolbarButton>
         <ToolbarButton>Export</ToolbarButton>
       </ToolbarGroup>
       <ToolbarSeparator />
       <ToolbarGroup>
-        <ToolbarLink href="#docs">Documentation</ToolbarLink>
-        <ToolbarLink href="#help">Help</ToolbarLink>
+        <ToolbarLink href='#docs'>Documentation</ToolbarLink>
+        <ToolbarLink href='#help'>Help</ToolbarLink>
       </ToolbarGroup>
     </Toolbar>
   ),

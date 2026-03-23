@@ -56,9 +56,7 @@ export const WithoutCancel: Story = {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Terms and Conditions Updated</AlertDialogTitle>
-          <AlertDialogDescription>
-            We have updated our terms and conditions. Please review them before continuing.
-          </AlertDialogDescription>
+          <AlertDialogDescription>We have updated our terms and conditions. Please review them before continuing.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogAction>I Understand</AlertDialogAction>
@@ -100,7 +98,7 @@ export const WithLongContent: Story = {
 export const CustomTrigger: Story = {
   render: () => (
     <AlertDialog>
-      <AlertDialogTrigger className='rounded-lg bg-destructive px-6 py-3 font-semibold text-destructive-foreground hover:bg-destructive/90'>
+      <AlertDialogTrigger className='bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg px-6 py-3 font-semibold'>
         Delete Everything
       </AlertDialogTrigger>
       <AlertDialogContent>

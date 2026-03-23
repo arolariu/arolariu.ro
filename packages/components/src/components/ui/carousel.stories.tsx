@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious} from "./carousel";
 import {Card, CardContent} from "./card";
+import {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious} from "./carousel";
 
 const meta = {
   title: "Components/Data Display/Carousel",

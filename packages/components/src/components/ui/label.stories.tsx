@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Input} from "./input";
 import {Checkbox} from "./checkbox";
+import {Input} from "./input";
 import {Label} from "./label";
 
 const meta = {
@@ -20,12 +20,12 @@ type Story = StoryObj<typeof meta>;
  */
 export const WithInput: Story = {
   render: () => (
-    <div className="space-y-2">
-      <Label htmlFor="email-input">Email address</Label>
+    <div className='space-y-2'>
+      <Label htmlFor='email-input'>Email address</Label>
       <Input
-        id="email-input"
-        type="email"
-        placeholder="you@example.com"
+        id='email-input'
+        type='email'
+        placeholder='you@example.com'
       />
     </div>
   ),
@@ -36,9 +36,9 @@ export const WithInput: Story = {
  */
 export const WithCheckbox: Story = {
   render: () => (
-    <div className="flex items-center space-x-2">
-      <Checkbox id="terms" />
-      <Label htmlFor="terms">Accept terms and conditions</Label>
+    <div className='flex items-center space-x-2'>
+      <Checkbox id='terms' />
+      <Label htmlFor='terms'>Accept terms and conditions</Label>
     </div>
   ),
 };
@@ -48,13 +48,13 @@ export const WithCheckbox: Story = {
  */
 export const Required: Story = {
   render: () => (
-    <div className="space-y-2">
-      <Label htmlFor="username">
-        Username <span className="text-destructive">*</span>
+    <div className='space-y-2'>
+      <Label htmlFor='username'>
+        Username <span className='text-destructive'>*</span>
       </Label>
       <Input
-        id="username"
-        placeholder="Enter username"
+        id='username'
+        placeholder='Enter username'
         required
       />
     </div>

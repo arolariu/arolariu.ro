@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {useState} from "react";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Combobox, ComboboxContent, ComboboxEmpty, ComboboxGroup, ComboboxItem, ComboboxSeparator, ComboboxTrigger} from "./combobox";
 
 const meta = {

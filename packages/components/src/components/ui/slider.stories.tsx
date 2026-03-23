@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import React from "react";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Slider} from "./slider";
 
 const meta = {
@@ -19,7 +19,7 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <div className="w-64">
+    <div className='w-64'>
       <Slider
         defaultValue={[50]}
         min={0}
@@ -34,9 +34,9 @@ export const Default: Story = {
  */
 export const CustomRange: Story = {
   render: () => (
-    <div className="w-64 space-y-4">
+    <div className='w-64 space-y-4'>
       <div>
-        <p className="text-sm text-muted-foreground mb-2">Price range: $0 - $1000</p>
+        <p className='text-muted-foreground mb-2 text-sm'>Price range: $0 - $1000</p>
         <Slider
           defaultValue={[250]}
           min={0}
@@ -56,10 +56,10 @@ export const Controlled: Story = {
     const [value, setValue] = React.useState([30]);
 
     return (
-      <div className="w-64 space-y-4">
-        <div className="flex justify-between">
-          <span className="text-sm">Volume</span>
-          <span className="text-sm font-medium">{value[0]}%</span>
+      <div className='w-64 space-y-4'>
+        <div className='flex justify-between'>
+          <span className='text-sm'>Volume</span>
+          <span className='text-sm font-medium'>{value[0]}%</span>
         </div>
         <Slider
           value={value}

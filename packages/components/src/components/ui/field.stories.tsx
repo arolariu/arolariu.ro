@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Input} from "./input";
 import {Field, FieldContent, FieldDescription, FieldError, FieldLabel} from "./field";
+import {Input} from "./input";
 
 const meta = {
   title: "Components/Forms/Field",
@@ -20,12 +20,12 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <Field>
-      <FieldLabel htmlFor="email">Email address</FieldLabel>
+      <FieldLabel htmlFor='email'>Email address</FieldLabel>
       <FieldContent>
         <Input
-          id="email"
-          type="email"
-          placeholder="you@example.com"
+          id='email'
+          type='email'
+          placeholder='you@example.com'
         />
       </FieldContent>
     </Field>
@@ -38,14 +38,12 @@ export const Default: Story = {
 export const WithDescription: Story = {
   render: () => (
     <Field>
-      <FieldLabel htmlFor="username">Username</FieldLabel>
-      <FieldDescription>
-        Choose a unique username. This will be your public identifier.
-      </FieldDescription>
+      <FieldLabel htmlFor='username'>Username</FieldLabel>
+      <FieldDescription>Choose a unique username. This will be your public identifier.</FieldDescription>
       <FieldContent>
         <Input
-          id="username"
-          placeholder="johndoe"
+          id='username'
+          placeholder='johndoe'
         />
       </FieldContent>
     </Field>
@@ -58,13 +56,13 @@ export const WithDescription: Story = {
 export const WithError: Story = {
   render: () => (
     <Field>
-      <FieldLabel htmlFor="password">Password</FieldLabel>
+      <FieldLabel htmlFor='password'>Password</FieldLabel>
       <FieldContent>
         <Input
-          id="password"
-          type="password"
-          placeholder="Enter password"
-          aria-invalid="true"
+          id='password'
+          type='password'
+          placeholder='Enter password'
+          aria-invalid='true'
         />
       </FieldContent>
       <FieldError errors={[{message: "Password must be at least 8 characters"}]} />

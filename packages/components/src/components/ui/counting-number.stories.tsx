@@ -1,0 +1,66 @@
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
+import {CountingNumber} from "./counting-number";
+
+const meta = {
+  title: "Components/Data Display/CountingNumber",
+  component: CountingNumber,
+  tags: ["autodocs"],
+  argTypes: {
+    number: {
+      control: "number",
+      description: "Final numeric value to animate toward",
+    },
+    fromNumber: {
+      control: "number",
+      description: "Initial numeric value used before the spring animation starts",
+    },
+    decimalPlaces: {
+      control: "number",
+      description: "Number of decimal places rendered during the animation",
+    },
+  },
+} satisfies Meta<typeof CountingNumber>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/**
+ * Integer counting animation from 0 to 1000.
+ */
+export const Integer: Story = {
+  args: {
+    number: 1000,
+    fromNumber: 0,
+  },
+};
+
+/**
+ * Decimal counting animation with two decimal places.
+ */
+export const Decimal: Story = {
+  args: {
+    number: 99.99,
+    fromNumber: 0,
+    decimalPlaces: 2,
+  },
+};
+
+/**
+ * Counting animation that starts when element enters viewport.
+ */
+export const InView: Story = {
+  args: {
+    number: 5000,
+    fromNumber: 0,
+    inView: true,
+    inViewOnce: true,
+  },
+  render: (args) => (
+    <div style={{marginTop: "200vh", padding: "2rem", background: "#f3f4f6", borderRadius: "8px", textAlign: "center"}}>
+      <p style={{fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem"}}>Scroll down to see animation</p>
+      <div style={{fontSize: "3rem", fontWeight: "bold", color: "#111827"}}>
+        <CountingNumber {...args} />
+      </div>
+    </div>
+  ),
+};

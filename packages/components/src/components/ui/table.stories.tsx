@@ -58,19 +58,19 @@ export const WithCaption: Story = {
         <TableRow>
           <TableHead>Invoice</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+          <TableHead className='text-right'>Amount</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow>
           <TableCell>INV-001</TableCell>
           <TableCell>Paid</TableCell>
-          <TableCell className="text-right">$250.00</TableCell>
+          <TableCell className='text-right'>$250.00</TableCell>
         </TableRow>
         <TableRow>
           <TableCell>INV-002</TableCell>
           <TableCell>Pending</TableCell>
-          <TableCell className="text-right">$150.00</TableCell>
+          <TableCell className='text-right'>$150.00</TableCell>
         </TableRow>
       </TableBody>
     </Table>
@@ -86,26 +86,26 @@ export const WithFooter: Story = {
       <TableHeader>
         <TableRow>
           <TableHead>Product</TableHead>
-          <TableHead className="text-right">Quantity</TableHead>
-          <TableHead className="text-right">Price</TableHead>
+          <TableHead className='text-right'>Quantity</TableHead>
+          <TableHead className='text-right'>Price</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow>
           <TableCell>Widget A</TableCell>
-          <TableCell className="text-right">5</TableCell>
-          <TableCell className="text-right">$50.00</TableCell>
+          <TableCell className='text-right'>5</TableCell>
+          <TableCell className='text-right'>$50.00</TableCell>
         </TableRow>
         <TableRow>
           <TableCell>Widget B</TableCell>
-          <TableCell className="text-right">3</TableCell>
-          <TableCell className="text-right">$30.00</TableCell>
+          <TableCell className='text-right'>3</TableCell>
+          <TableCell className='text-right'>$30.00</TableCell>
         </TableRow>
       </TableBody>
       <TableFooter>
         <TableRow>
           <TableCell colSpan={2}>Total</TableCell>
-          <TableCell className="text-right">$80.00</TableCell>
+          <TableCell className='text-right'>$80.00</TableCell>
         </TableRow>
       </TableFooter>
     </Table>

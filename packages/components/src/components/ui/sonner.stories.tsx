@@ -52,7 +52,7 @@ export const Error: Story = {
   render: () => (
     <>
       <Button
-        variant="destructive"
+        variant='destructive'
         onClick={() =>
           toast.error("Failed to save changes", {
             description: "Please try again later.",

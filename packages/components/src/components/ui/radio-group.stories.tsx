@@ -26,7 +26,7 @@ export const Default: Story = {
         />
         <label
           htmlFor='option-1'
-          className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+          className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
           Option 1
         </label>
       </div>
@@ -37,7 +37,7 @@ export const Default: Story = {
         />
         <label
           htmlFor='option-2'
-          className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+          className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
           Option 2
         </label>
       </div>
@@ -48,7 +48,7 @@ export const Default: Story = {
         />
         <label
           htmlFor='option-3'
-          className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+          className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
           Option 3
         </label>
       </div>
@@ -75,7 +75,7 @@ export const WithDescriptions: Story = {
             className='text-sm font-medium'>
             Free Plan
           </label>
-          <p className='text-sm text-muted-foreground'>Perfect for trying out our service. Limited features.</p>
+          <p className='text-muted-foreground text-sm'>Perfect for trying out our service. Limited features.</p>
         </div>
       </div>
       <div className='flex items-start space-x-3 rounded-lg border p-4'>
@@ -89,7 +89,7 @@ export const WithDescriptions: Story = {
             className='text-sm font-medium'>
             Pro Plan
           </label>
-          <p className='text-sm text-muted-foreground'>Best for professionals. All features included.</p>
+          <p className='text-muted-foreground text-sm'>Best for professionals. All features included.</p>
         </div>
       </div>
       <div className='flex items-start space-x-3 rounded-lg border p-4'>
@@ -103,7 +103,7 @@ export const WithDescriptions: Story = {
             className='text-sm font-medium'>
             Enterprise Plan
           </label>
-          <p className='text-sm text-muted-foreground'>For large organizations. Custom solutions available.</p>
+          <p className='text-muted-foreground text-sm'>For large organizations. Custom solutions available.</p>
         </div>
       </div>
     </RadioGroup>
@@ -170,7 +170,7 @@ export const PaymentMethod: Story = {
         />
         <label
           htmlFor='payment-card'
-          className='flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary'>
+          className='border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary flex flex-col items-center justify-between rounded-md border-2 p-4'>
           <svg
             xmlns='http://www.w3.org/2000/svg'
             viewBox='0 0 24 24'
@@ -200,7 +200,7 @@ export const PaymentMethod: Story = {
         />
         <label
           htmlFor='payment-paypal'
-          className='flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary'>
+          className='border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary flex flex-col items-center justify-between rounded-md border-2 p-4'>
           <svg
             role='img'
             viewBox='0 0 24 24'
@@ -219,7 +219,7 @@ export const PaymentMethod: Story = {
         />
         <label
           htmlFor='payment-apple'
-          className='flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary'>
+          className='border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary flex flex-col items-center justify-between rounded-md border-2 p-4'>
           <svg
             role='img'
             viewBox='0 0 24 24'

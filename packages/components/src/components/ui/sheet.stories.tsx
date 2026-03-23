@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger} from "./sheet";
 import {Button} from "./button";
+import {Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger} from "./sheet";
 
 const meta = {
   title: "Components/Feedback/Sheet",
@@ -36,7 +36,7 @@ export const Default: Story = {
             <input
               id='name'
               defaultValue='John Doe'
-              className='col-span-3 rounded-md border border-input bg-background px-3 py-2 text-sm'
+              className='border-input bg-background col-span-3 rounded-md border px-3 py-2 text-sm'
             />
           </div>
           <div className='grid grid-cols-4 items-center gap-4'>
@@ -48,7 +48,7 @@ export const Default: Story = {
             <input
               id='username'
               defaultValue='@johndoe'
-              className='col-span-3 rounded-md border border-input bg-background px-3 py-2 text-sm'
+              className='border-input bg-background col-span-3 rounded-md border px-3 py-2 text-sm'
             />
           </div>
         </div>
@@ -117,7 +117,7 @@ export const FromTop: Story = {
           <input
             type='search'
             placeholder='Type to search...'
-            className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+            className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm'
           />
           <div className='mt-4 space-y-2'>
             <div className='rounded-md border p-3 text-sm'>Result 1</div>
@@ -145,7 +145,7 @@ export const FromBottom: Story = {
         <div className='grid grid-cols-4 gap-4 py-4'>
           <Button
             variant='outline'
-            className='flex-col gap-2 h-auto py-4'>
+            className='h-auto flex-col gap-2 py-4'>
             <svg
               className='h-6 w-6'
               fill='none'
@@ -162,7 +162,7 @@ export const FromBottom: Story = {
           </Button>
           <Button
             variant='outline'
-            className='flex-col gap-2 h-auto py-4'>
+            className='h-auto flex-col gap-2 py-4'>
             <svg
               className='h-6 w-6'
               fill='none'
@@ -179,7 +179,7 @@ export const FromBottom: Story = {
           </Button>
           <Button
             variant='outline'
-            className='flex-col gap-2 h-auto py-4'>
+            className='h-auto flex-col gap-2 py-4'>
             <svg
               className='h-6 w-6'
               fill='currentColor'
@@ -190,7 +190,7 @@ export const FromBottom: Story = {
           </Button>
           <Button
             variant='outline'
-            className='flex-col gap-2 h-auto py-4'>
+            className='h-auto flex-col gap-2 py-4'>
             <svg
               className='h-6 w-6'
               fill='currentColor'

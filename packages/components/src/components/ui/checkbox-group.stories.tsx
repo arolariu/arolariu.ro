@@ -20,9 +20,9 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <CheckboxGroup defaultValue={["news"]}>
-      <Checkbox value="news">Newsletter</Checkbox>
-      <Checkbox value="events">Events</Checkbox>
-      <Checkbox value="updates">Product Updates</Checkbox>
+      <Checkbox value='news'>Newsletter</Checkbox>
+      <Checkbox value='events'>Events</Checkbox>
+      <Checkbox value='updates'>Product Updates</Checkbox>
     </CheckboxGroup>
   ),
 };
@@ -33,9 +33,9 @@ export const Default: Story = {
 export const MultipleSelected: Story = {
   render: () => (
     <CheckboxGroup defaultValue={["news", "events"]}>
-      <Checkbox value="news">Newsletter</Checkbox>
-      <Checkbox value="events">Events</Checkbox>
-      <Checkbox value="updates">Product Updates</Checkbox>
+      <Checkbox value='news'>Newsletter</Checkbox>
+      <Checkbox value='events'>Events</Checkbox>
+      <Checkbox value='updates'>Product Updates</Checkbox>
     </CheckboxGroup>
   ),
 };
@@ -48,15 +48,15 @@ export const Controlled: Story = {
     const [value, setValue] = React.useState<string[]>(["events"]);
 
     return (
-      <div className="space-y-4">
+      <div className='space-y-4'>
         <CheckboxGroup
           value={value}
           onValueChange={(newValue) => setValue(newValue)}>
-          <Checkbox value="news">Newsletter</Checkbox>
-          <Checkbox value="events">Events</Checkbox>
-          <Checkbox value="updates">Product Updates</Checkbox>
+          <Checkbox value='news'>Newsletter</Checkbox>
+          <Checkbox value='events'>Events</Checkbox>
+          <Checkbox value='updates'>Product Updates</Checkbox>
         </CheckboxGroup>
-        <p className="text-sm text-muted-foreground">Selected: {value.join(", ") || "none"}</p>
+        <p className='text-muted-foreground text-sm'>Selected: {value.join(", ") || "none"}</p>
       </div>
     );
   },

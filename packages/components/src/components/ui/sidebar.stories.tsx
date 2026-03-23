@@ -69,7 +69,7 @@ export const Default: Story = {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-            <div className='px-4 py-2 text-sm text-muted-foreground'>© 2025 Company</div>
+            <div className='text-muted-foreground px-4 py-2 text-sm'>© 2025 Company</div>
           </SidebarFooter>
         </Sidebar>
         <main className='flex-1 p-6'>
@@ -188,7 +188,7 @@ export const WithGroups: Story = {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-            <div className='px-4 py-2 text-sm text-muted-foreground'>v1.0.0</div>
+            <div className='text-muted-foreground px-4 py-2 text-sm'>v1.0.0</div>
           </SidebarFooter>
         </Sidebar>
         <main className='flex-1 p-6'>
@@ -199,15 +199,15 @@ export const WithGroups: Story = {
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             <div className='rounded-lg border p-4'>
               <h3 className='font-semibold'>Card 1</h3>
-              <p className='text-sm text-muted-foreground'>Content goes here</p>
+              <p className='text-muted-foreground text-sm'>Content goes here</p>
             </div>
             <div className='rounded-lg border p-4'>
               <h3 className='font-semibold'>Card 2</h3>
-              <p className='text-sm text-muted-foreground'>Content goes here</p>
+              <p className='text-muted-foreground text-sm'>Content goes here</p>
             </div>
             <div className='rounded-lg border p-4'>
               <h3 className='font-semibold'>Card 3</h3>
-              <p className='text-sm text-muted-foreground'>Content goes here</p>
+              <p className='text-muted-foreground text-sm'>Content goes here</p>
             </div>
           </div>
         </main>

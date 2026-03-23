@@ -37,20 +37,20 @@ export const Default: Story = {
         <MenubarTrigger>File</MenubarTrigger>
         <MenubarContent>
           <MenubarItem>
-            New Tab <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘T</span>
+            New Tab <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘T</span>
           </MenubarItem>
           <MenubarItem>
-            New Window <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘N</span>
+            New Window <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘N</span>
           </MenubarItem>
           <MenubarItem disabled>New Incognito Window</MenubarItem>
           <MenubarSeparator />
           <MenubarItem>
-            Save <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘S</span>
+            Save <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘S</span>
           </MenubarItem>
           <MenubarItem>Save As...</MenubarItem>
           <MenubarSeparator />
           <MenubarItem>
-            Print... <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘P</span>
+            Print... <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘P</span>
           </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
@@ -58,20 +58,20 @@ export const Default: Story = {
         <MenubarTrigger>Edit</MenubarTrigger>
         <MenubarContent>
           <MenubarItem>
-            Undo <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘Z</span>
+            Undo <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘Z</span>
           </MenubarItem>
           <MenubarItem>
-            Redo <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⇧⌘Z</span>
+            Redo <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⇧⌘Z</span>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarItem>
-            Cut <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘X</span>
+            Cut <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘X</span>
           </MenubarItem>
           <MenubarItem>
-            Copy <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘C</span>
+            Copy <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘C</span>
           </MenubarItem>
           <MenubarItem>
-            Paste <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘V</span>
+            Paste <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘V</span>
           </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
@@ -83,17 +83,17 @@ export const Default: Story = {
           <MenubarCheckboxItem>Show Status Bar</MenubarCheckboxItem>
           <MenubarSeparator />
           <MenubarItem>
-            Actual Size <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘0</span>
+            Actual Size <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘0</span>
           </MenubarItem>
           <MenubarItem>
-            Zoom In <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘+</span>
+            Zoom In <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘+</span>
           </MenubarItem>
           <MenubarItem>
-            Zoom Out <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘-</span>
+            Zoom Out <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘-</span>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarItem>
-            Full Screen <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌃⌘F</span>
+            Full Screen <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌃⌘F</span>
           </MenubarItem>
         </MenubarContent>
       </MenubarMenu>

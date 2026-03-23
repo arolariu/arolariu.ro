@@ -62,7 +62,7 @@ export const WithIcons: Story = {
               />
             </svg>
             <span>New File</span>
-            <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘N</span>
+            <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘N</span>
           </CommandItem>
           <CommandItem>
             <svg
@@ -78,7 +78,7 @@ export const WithIcons: Story = {
               />
             </svg>
             <span>Copy</span>
-            <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘C</span>
+            <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘C</span>
           </CommandItem>
           <CommandItem>
             <svg
@@ -94,7 +94,7 @@ export const WithIcons: Story = {
               />
             </svg>
             <span>Paste</span>
-            <span className='ml-auto text-xs tracking-widest text-muted-foreground'>⌘V</span>
+            <span className='text-muted-foreground ml-auto text-xs tracking-widest'>⌘V</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

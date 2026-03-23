@@ -1,7 +1,7 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {HoverCard, HoverCardContent, HoverCardTrigger} from "./hover-card";
 import {Avatar} from "./avatar";
 import {Button} from "./button";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "./hover-card";
 
 const meta = {
   title: "Components/Overlays/HoverCard",
@@ -34,7 +34,7 @@ export const Default: Story = {
           />
           <div className='space-y-1'>
             <h4 className='text-sm font-semibold'>@nextjs</h4>
-            <p className='text-sm text-muted-foreground'>The React Framework – created and maintained by @vercel.</p>
+            <p className='text-muted-foreground text-sm'>The React Framework – created and maintained by @vercel.</p>
             <div className='flex items-center pt-2'>
               <svg
                 className='mr-2 h-4 w-4 opacity-70'
@@ -48,7 +48,7 @@ export const Default: Story = {
                   d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
                 />
               </svg>
-              <span className='text-xs text-muted-foreground'>Joined December 2021</span>
+              <span className='text-muted-foreground text-xs'>Joined December 2021</span>
             </div>
           </div>
         </div>
@@ -87,15 +87,15 @@ export const ProductInfo: Story = {
       <HoverCardContent className='w-80'>
         <div className='space-y-2'>
           <h4 className='text-sm font-semibold'>Premium Headphones</h4>
-          <p className='text-sm text-muted-foreground'>High-fidelity audio with active noise cancellation and 30-hour battery life.</p>
+          <p className='text-muted-foreground text-sm'>High-fidelity audio with active noise cancellation and 30-hour battery life.</p>
           <div className='flex items-center justify-between pt-2'>
             <span className='text-lg font-bold'>$299.99</span>
             <span className='rounded-full bg-green-500/10 px-2 py-1 text-xs font-medium text-green-600'>In Stock</span>
           </div>
           <div className='flex gap-2 pt-2'>
-            <span className='rounded-md bg-muted px-2 py-1 text-xs'>Wireless</span>
-            <span className='rounded-md bg-muted px-2 py-1 text-xs'>Bluetooth 5.0</span>
-            <span className='rounded-md bg-muted px-2 py-1 text-xs'>ANC</span>
+            <span className='bg-muted rounded-md px-2 py-1 text-xs'>Wireless</span>
+            <span className='bg-muted rounded-md px-2 py-1 text-xs'>Bluetooth 5.0</span>
+            <span className='bg-muted rounded-md px-2 py-1 text-xs'>ANC</span>
           </div>
         </div>
       </HoverCardContent>
@@ -119,13 +119,11 @@ export const RepositoryStats: Story = {
           <div className='flex items-start justify-between'>
             <div>
               <h4 className='text-sm font-semibold'>next.js</h4>
-              <p className='text-xs text-muted-foreground'>The React Framework for the Web</p>
+              <p className='text-muted-foreground text-xs'>The React Framework for the Web</p>
             </div>
-            <span className='rounded-md bg-muted px-2 py-1 text-xs font-medium'>Public</span>
+            <span className='bg-muted rounded-md px-2 py-1 text-xs font-medium'>Public</span>
           </div>
-          <p className='text-sm text-muted-foreground'>
-            Used by 500k+ developers to build full-stack web applications with React.
-          </p>
+          <p className='text-muted-foreground text-sm'>Used by 500k+ developers to build full-stack web applications with React.</p>
           <div className='flex gap-4 text-sm'>
             <div className='flex items-center gap-1'>
               <svg
