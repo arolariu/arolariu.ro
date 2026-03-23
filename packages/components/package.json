@@ -115,7 +115,6 @@
     "@storybook/addon-a11y": "10.3.3",
     "@storybook/addon-docs": "10.3.3",
     "@storybook/addon-links": "10.3.3",
-    "@storybook/react-vite": "10.3.3",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
@@ -129,6 +128,7 @@
     "rimraf": "*",
     "storybook": "10.3.3",
     "storybook-addon-rslib": "3.3.2",
+    "storybook-react-rsbuild": "3.3.2",
     "typescript": "*"
   },
   "publishConfig": {

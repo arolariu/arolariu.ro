@@ -1,4 +1,4 @@
-import type {Meta, StoryObj} from "@storybook/react-vite";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
 
 const meta = {

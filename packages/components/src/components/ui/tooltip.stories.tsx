@@ -1,4 +1,4 @@
-import type {Meta, StoryObj} from "@storybook/react-vite";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./tooltip";
 
