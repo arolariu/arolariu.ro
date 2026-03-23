@@ -490,11 +490,20 @@ export {VisuallyHidden, type VisuallyHiddenProps} from "./components/ui/visually
 
 export {useBreakpoint, type Breakpoint} from "./hooks/useBreakpoint";
 export {useColorScheme, type ColorScheme} from "./hooks/useColorScheme";
+export {useControllableState, type UseControllableStateOptions} from "./hooks/useControllableState";
+export {useDebounce} from "./hooks/useDebounce";
+export {useEventCallback} from "./hooks/useEventCallback";
 export {useFocusVisible} from "./hooks/useFocusVisible";
+export {useId} from "./hooks/useId";
 export {useIsMobile} from "./hooks/useIsMobile";
 export {useMediaQuery} from "./hooks/useMediaQuery";
+export {useMergedRefs} from "./hooks/useMergedRefs";
+export {useOnClickOutside} from "./hooks/useOnClickOutside";
 export {usePrefersContrast} from "./hooks/usePrefersContrast";
+export {usePrevious} from "./hooks/usePrevious";
 export {useReducedMotion} from "./hooks/useReducedMotion";
+export {useThrottle} from "./hooks/useThrottle";
+export {useTimeout} from "./hooks/useTimeout";
 export {useWindowSize} from "./hooks/useWindowSize";
 
 export {
