@@ -116,6 +116,7 @@
     "@storybook/addon-docs": "*",
     "@storybook/addon-links": "*",
     "@storybook/addon-themes": "*",
+    "@storybook/blocks": "*",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
