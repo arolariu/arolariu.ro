@@ -271,9 +271,9 @@ async function installNodeJs(): Promise<boolean> {
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(): Promise<number> {
-  console.log(styleText("bold", styleText("magenta", "\n╔════════════════════════════════════════╗")));
-  console.log(styleText("bold", styleText("magenta", "║   arolariu.ro Development Setup Tool   ║")));
-  console.log(styleText("bold", styleText("magenta", "╚════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "magenta"], "║   arolariu.ro Development Setup Tool   ║"));
+  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   let hasErrors = false;
 

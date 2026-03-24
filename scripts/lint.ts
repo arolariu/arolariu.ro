@@ -147,7 +147,7 @@ function printMemorySummary(results: ESLintWorkerResult[]): void {
 async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Promise<number> {
   const hasSelectiveTargeting = filePatterns && filePatterns.length > 0;
   const targetDisplay = hasSelectiveTargeting ? `${lintTarget} (${filePatterns.length} patterns)` : lintTarget;
-  console.log(styleText("bold", styleText("magenta", `\n🔎 Running ESLint for: ${targetDisplay}`)));
+  console.log(styleText(["bold", "magenta"], `\n🔎 Running ESLint for: ${targetDisplay}`));
 
   if (hasSelectiveTargeting) {
     console.log(styleText("gray", "   Patterns: " + filePatterns.join(", ")));
@@ -294,7 +294,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       printMemorySummary(validResults);
       printSlowestFilesReport(validResults);
 
-      console.log(styleText("bold", styleText("cyan", `\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`)));
+      console.log(styleText(["bold", "cyan"], `\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`));
       return totalErrors > 0 ? 1 : 0;
     } else {
       // Single target - still use worker for consistency
@@ -342,9 +342,9 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(arg?: string, filePatterns?: string[]): Promise<number> {
-  console.log(styleText("bold", styleText("magenta", "\n╔════════════════════════════════════════╗")));
-  console.log(styleText("bold", styleText("magenta", "║    arolariu.ro Code Linter Tool        ║")));
-  console.log(styleText("bold", styleText("magenta", "╚════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "magenta"], "║    arolariu.ro Code Linter Tool        ║"));
+  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   if (!arg) {
     console.error(styleText("red", "✗ Missing target argument"));

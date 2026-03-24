@@ -64,7 +64,7 @@ function createLine(width: number, label?: string): string {
   const remaining = width - labelWithPadding.length;
   const leftPad = Math.floor(remaining / 2);
   const rightPad = remaining - leftPad;
-  return styleText("gray", box.horizontal.repeat(leftPad)) + styleText("bold", styleText("white", labelWithPadding)) + styleText("gray", box.horizontal.repeat(rightPad));
+  return styleText("gray", box.horizontal.repeat(leftPad)) + styleText(["bold", "white"], labelWithPadding) + styleText("gray", box.horizontal.repeat(rightPad));
 }
 
 /**
@@ -82,7 +82,7 @@ function createProgressBar(completed: number, total: number, width: number = 20)
 
   const filled = styleText("green", "█".repeat(filledWidth));
   const empty = styleText("gray", "░".repeat(emptyWidth));
-  const percentageText = styleText("bold", styleText("white", String(percentage) + "%"));
+  const percentageText = styleText(["bold", "white"], String(percentage) + "%");
 
   return `${filled}${empty} ${percentageText}`;
 }
@@ -95,12 +95,12 @@ function createProgressBar(completed: number, total: number, width: number = 20)
  */
 function createStatusBadge(result: FormatWorkerResult): string {
   if (result.exitCode !== 0) {
-    return styleText("bgRed", styleText("white", " FAILED "));
+    return styleText(["bgRed", "white"], " FAILED ");
   }
   if (result.formatted) {
-    return styleText("bgYellow", styleText("black", " FORMATTED "));
+    return styleText(["bgYellow", "black"], " FORMATTED ");
   }
-  return styleText("bgGreen", styleText("black", " CLEAN "));
+  return styleText(["bgGreen", "black"], " CLEAN ");
 }
 
 /**
@@ -589,13 +589,13 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
     if (exitCode === 0) {
       console.log();
       console.log(
-        styleText("bgGreen", styleText("black", " SUCCESS ")) + styleText("green", " All targets formatted successfully! ") + styleText("bold", "🎉"),
+        styleText(["bgGreen", "black"], " SUCCESS ") + styleText("green", " All targets formatted successfully! ") + styleText("bold", "🎉"),
       );
       console.log();
     } else {
       console.log();
       console.log(
-        styleText("bgYellow", styleText("black", " WARNING ")) + styleText("yellow", " Formatting completed with some issues ") + styleText("bold", "⚠️"),
+        styleText(["bgYellow", "black"], " WARNING ") + styleText("yellow", " Formatting completed with some issues ") + styleText("bold", "⚠️"),
       );
       console.log();
     }
@@ -603,7 +603,7 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
     return exitCode;
   } catch (error) {
     console.log();
-    console.log(styleText("bgRed", styleText("white", " ERROR ")) + styleText("red", " Formatting failed ") + styleText("bold", "❌"));
+    console.log(styleText(["bgRed", "white"], " ERROR ") + styleText("red", " Formatting failed ") + styleText("bold", "❌"));
     console.log();
 
     if (error instanceof Error) {

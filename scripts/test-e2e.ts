@@ -463,9 +463,9 @@ const runOpenAPITestCollection = async (
  * @returns A promise that resolves when the flow completes.
  */
 const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
-  console.log(styleText("bold", styleText("magenta", `\n╔════════════════════════════════════════╗`)));
-  console.log(styleText("bold", styleText("magenta", `║   E2E Testing: ${target.padEnd(23)} ║`)));
-  console.log(styleText("bold", styleText("magenta", `╚════════════════════════════════════════╝`)));
+  console.log(styleText(["bold", "magenta"], `\n╔════════════════════════════════════════╗`));
+  console.log(styleText(["bold", "magenta"], `║   E2E Testing: ${target.padEnd(23)} ║`));
+  console.log(styleText(["bold", "magenta"], `╚════════════════════════════════════════╝`));
 
   const targetConfiguration = targetConfigurationMap[target];
   const collectionPath = loadOpenAPITestCollectionPath(target);
@@ -534,9 +534,9 @@ const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(arg?: string): Promise<number> {
-  console.log(styleText("bold", styleText("magenta", "\n╔════════════════════════════════════════╗")));
-  console.log(styleText("bold", styleText("magenta", "║   arolariu.ro E2E Test Runner          ║")));
-  console.log(styleText("bold", styleText("magenta", "╚════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "magenta"], "║   arolariu.ro E2E Test Runner          ║"));
+  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   if (!arg) {
     console.error(styleText("red", "✗ Missing target argument"));
