@@ -115,6 +115,7 @@
     "@storybook/addon-a11y": "*",
     "@storybook/addon-docs": "*",
     "@storybook/addon-links": "*",
+    "@storybook/addon-themes": "*",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
@@ -149,840 +150,420 @@
       "import": "./dist/*.js",
       "default": "./dist/*.js"
     },
-    "./accordion.stories": {
-      "types": "./dist/components/ui/accordion.stories.d.ts",
-      "import": "./dist/components/ui/accordion.stories.js",
-      "default": "./dist/components/ui/accordion.stories.js"
-    },
     "./accordion": {
       "types": "./dist/components/ui/accordion.d.ts",
       "import": "./dist/components/ui/accordion.js",
       "default": "./dist/components/ui/accordion.js"
-    },
-    "./alert-dialog.stories": {
-      "types": "./dist/components/ui/alert-dialog.stories.d.ts",
-      "import": "./dist/components/ui/alert-dialog.stories.js",
-      "default": "./dist/components/ui/alert-dialog.stories.js"
     },
     "./alert-dialog": {
       "types": "./dist/components/ui/alert-dialog.d.ts",
       "import": "./dist/components/ui/alert-dialog.js",
       "default": "./dist/components/ui/alert-dialog.js"
     },
-    "./alert.stories": {
-      "types": "./dist/components/ui/alert.stories.d.ts",
-      "import": "./dist/components/ui/alert.stories.js",
-      "default": "./dist/components/ui/alert.stories.js"
-    },
     "./alert": {
       "types": "./dist/components/ui/alert.d.ts",
       "import": "./dist/components/ui/alert.js",
       "default": "./dist/components/ui/alert.js"
-    },
-    "./aspect-ratio.stories": {
-      "types": "./dist/components/ui/aspect-ratio.stories.d.ts",
-      "import": "./dist/components/ui/aspect-ratio.stories.js",
-      "default": "./dist/components/ui/aspect-ratio.stories.js"
     },
     "./aspect-ratio": {
       "types": "./dist/components/ui/aspect-ratio.d.ts",
       "import": "./dist/components/ui/aspect-ratio.js",
       "default": "./dist/components/ui/aspect-ratio.js"
     },
-    "./async-boundary.stories": {
-      "types": "./dist/components/ui/async-boundary.stories.d.ts",
-      "import": "./dist/components/ui/async-boundary.stories.js",
-      "default": "./dist/components/ui/async-boundary.stories.js"
-    },
     "./async-boundary": {
       "types": "./dist/components/ui/async-boundary.d.ts",
       "import": "./dist/components/ui/async-boundary.js",
       "default": "./dist/components/ui/async-boundary.js"
-    },
-    "./avatar.stories": {
-      "types": "./dist/components/ui/avatar.stories.d.ts",
-      "import": "./dist/components/ui/avatar.stories.js",
-      "default": "./dist/components/ui/avatar.stories.js"
     },
     "./avatar": {
       "types": "./dist/components/ui/avatar.d.ts",
       "import": "./dist/components/ui/avatar.js",
       "default": "./dist/components/ui/avatar.js"
     },
-    "./background-beams.stories": {
-      "types": "./dist/components/ui/background-beams.stories.d.ts",
-      "import": "./dist/components/ui/background-beams.stories.js",
-      "default": "./dist/components/ui/background-beams.stories.js"
-    },
     "./background-beams": {
       "types": "./dist/components/ui/background-beams.d.ts",
       "import": "./dist/components/ui/background-beams.js",
       "default": "./dist/components/ui/background-beams.js"
-    },
-    "./badge.stories": {
-      "types": "./dist/components/ui/badge.stories.d.ts",
-      "import": "./dist/components/ui/badge.stories.js",
-      "default": "./dist/components/ui/badge.stories.js"
     },
     "./badge": {
       "types": "./dist/components/ui/badge.d.ts",
       "import": "./dist/components/ui/badge.js",
       "default": "./dist/components/ui/badge.js"
     },
-    "./breadcrumb.stories": {
-      "types": "./dist/components/ui/breadcrumb.stories.d.ts",
-      "import": "./dist/components/ui/breadcrumb.stories.js",
-      "default": "./dist/components/ui/breadcrumb.stories.js"
-    },
     "./breadcrumb": {
       "types": "./dist/components/ui/breadcrumb.d.ts",
       "import": "./dist/components/ui/breadcrumb.js",
       "default": "./dist/components/ui/breadcrumb.js"
-    },
-    "./bubble-background.stories": {
-      "types": "./dist/components/ui/bubble-background.stories.d.ts",
-      "import": "./dist/components/ui/bubble-background.stories.js",
-      "default": "./dist/components/ui/bubble-background.stories.js"
     },
     "./bubble-background": {
       "types": "./dist/components/ui/bubble-background.d.ts",
       "import": "./dist/components/ui/bubble-background.js",
       "default": "./dist/components/ui/bubble-background.js"
     },
-    "./button-group.stories": {
-      "types": "./dist/components/ui/button-group.stories.d.ts",
-      "import": "./dist/components/ui/button-group.stories.js",
-      "default": "./dist/components/ui/button-group.stories.js"
-    },
     "./button-group": {
       "types": "./dist/components/ui/button-group.d.ts",
       "import": "./dist/components/ui/button-group.js",
       "default": "./dist/components/ui/button-group.js"
-    },
-    "./button.stories": {
-      "types": "./dist/components/ui/button.stories.d.ts",
-      "import": "./dist/components/ui/button.stories.js",
-      "default": "./dist/components/ui/button.stories.js"
     },
     "./button": {
       "types": "./dist/components/ui/button.d.ts",
       "import": "./dist/components/ui/button.js",
       "default": "./dist/components/ui/button.js"
     },
-    "./calendar.stories": {
-      "types": "./dist/components/ui/calendar.stories.d.ts",
-      "import": "./dist/components/ui/calendar.stories.js",
-      "default": "./dist/components/ui/calendar.stories.js"
-    },
     "./calendar": {
       "types": "./dist/components/ui/calendar.d.ts",
       "import": "./dist/components/ui/calendar.js",
       "default": "./dist/components/ui/calendar.js"
-    },
-    "./card-skeleton.stories": {
-      "types": "./dist/components/ui/card-skeleton.stories.d.ts",
-      "import": "./dist/components/ui/card-skeleton.stories.js",
-      "default": "./dist/components/ui/card-skeleton.stories.js"
     },
     "./card-skeleton": {
       "types": "./dist/components/ui/card-skeleton.d.ts",
       "import": "./dist/components/ui/card-skeleton.js",
       "default": "./dist/components/ui/card-skeleton.js"
     },
-    "./card.stories": {
-      "types": "./dist/components/ui/card.stories.d.ts",
-      "import": "./dist/components/ui/card.stories.js",
-      "default": "./dist/components/ui/card.stories.js"
-    },
     "./card": {
       "types": "./dist/components/ui/card.d.ts",
       "import": "./dist/components/ui/card.js",
       "default": "./dist/components/ui/card.js"
-    },
-    "./carousel.stories": {
-      "types": "./dist/components/ui/carousel.stories.d.ts",
-      "import": "./dist/components/ui/carousel.stories.js",
-      "default": "./dist/components/ui/carousel.stories.js"
     },
     "./carousel": {
       "types": "./dist/components/ui/carousel.d.ts",
       "import": "./dist/components/ui/carousel.js",
       "default": "./dist/components/ui/carousel.js"
     },
-    "./chart.stories": {
-      "types": "./dist/components/ui/chart.stories.d.ts",
-      "import": "./dist/components/ui/chart.stories.js",
-      "default": "./dist/components/ui/chart.stories.js"
-    },
     "./chart": {
       "types": "./dist/components/ui/chart.d.ts",
       "import": "./dist/components/ui/chart.js",
       "default": "./dist/components/ui/chart.js"
-    },
-    "./checkbox-group.stories": {
-      "types": "./dist/components/ui/checkbox-group.stories.d.ts",
-      "import": "./dist/components/ui/checkbox-group.stories.js",
-      "default": "./dist/components/ui/checkbox-group.stories.js"
     },
     "./checkbox-group": {
       "types": "./dist/components/ui/checkbox-group.d.ts",
       "import": "./dist/components/ui/checkbox-group.js",
       "default": "./dist/components/ui/checkbox-group.js"
     },
-    "./checkbox.stories": {
-      "types": "./dist/components/ui/checkbox.stories.d.ts",
-      "import": "./dist/components/ui/checkbox.stories.js",
-      "default": "./dist/components/ui/checkbox.stories.js"
-    },
     "./checkbox": {
       "types": "./dist/components/ui/checkbox.d.ts",
       "import": "./dist/components/ui/checkbox.js",
       "default": "./dist/components/ui/checkbox.js"
-    },
-    "./collapsible.stories": {
-      "types": "./dist/components/ui/collapsible.stories.d.ts",
-      "import": "./dist/components/ui/collapsible.stories.js",
-      "default": "./dist/components/ui/collapsible.stories.js"
     },
     "./collapsible": {
       "types": "./dist/components/ui/collapsible.d.ts",
       "import": "./dist/components/ui/collapsible.js",
       "default": "./dist/components/ui/collapsible.js"
     },
-    "./combobox.stories": {
-      "types": "./dist/components/ui/combobox.stories.d.ts",
-      "import": "./dist/components/ui/combobox.stories.js",
-      "default": "./dist/components/ui/combobox.stories.js"
-    },
     "./combobox": {
       "types": "./dist/components/ui/combobox.d.ts",
       "import": "./dist/components/ui/combobox.js",
       "default": "./dist/components/ui/combobox.js"
-    },
-    "./command.stories": {
-      "types": "./dist/components/ui/command.stories.d.ts",
-      "import": "./dist/components/ui/command.stories.js",
-      "default": "./dist/components/ui/command.stories.js"
     },
     "./command": {
       "types": "./dist/components/ui/command.d.ts",
       "import": "./dist/components/ui/command.js",
       "default": "./dist/components/ui/command.js"
     },
-    "./context-menu.stories": {
-      "types": "./dist/components/ui/context-menu.stories.d.ts",
-      "import": "./dist/components/ui/context-menu.stories.js",
-      "default": "./dist/components/ui/context-menu.stories.js"
-    },
     "./context-menu": {
       "types": "./dist/components/ui/context-menu.d.ts",
       "import": "./dist/components/ui/context-menu.js",
       "default": "./dist/components/ui/context-menu.js"
-    },
-    "./copy-button.stories": {
-      "types": "./dist/components/ui/copy-button.stories.d.ts",
-      "import": "./dist/components/ui/copy-button.stories.js",
-      "default": "./dist/components/ui/copy-button.stories.js"
     },
     "./copy-button": {
       "types": "./dist/components/ui/copy-button.d.ts",
       "import": "./dist/components/ui/copy-button.js",
       "default": "./dist/components/ui/copy-button.js"
     },
-    "./counting-number.stories": {
-      "types": "./dist/components/ui/counting-number.stories.d.ts",
-      "import": "./dist/components/ui/counting-number.stories.js",
-      "default": "./dist/components/ui/counting-number.stories.js"
-    },
     "./counting-number": {
       "types": "./dist/components/ui/counting-number.d.ts",
       "import": "./dist/components/ui/counting-number.js",
       "default": "./dist/components/ui/counting-number.js"
-    },
-    "./dialog.stories": {
-      "types": "./dist/components/ui/dialog.stories.d.ts",
-      "import": "./dist/components/ui/dialog.stories.js",
-      "default": "./dist/components/ui/dialog.stories.js"
     },
     "./dialog": {
       "types": "./dist/components/ui/dialog.d.ts",
       "import": "./dist/components/ui/dialog.js",
       "default": "./dist/components/ui/dialog.js"
     },
-    "./dot-background.stories": {
-      "types": "./dist/components/ui/dot-background.stories.d.ts",
-      "import": "./dist/components/ui/dot-background.stories.js",
-      "default": "./dist/components/ui/dot-background.stories.js"
-    },
     "./dot-background": {
       "types": "./dist/components/ui/dot-background.d.ts",
       "import": "./dist/components/ui/dot-background.js",
       "default": "./dist/components/ui/dot-background.js"
-    },
-    "./drawer.stories": {
-      "types": "./dist/components/ui/drawer.stories.d.ts",
-      "import": "./dist/components/ui/drawer.stories.js",
-      "default": "./dist/components/ui/drawer.stories.js"
     },
     "./drawer": {
       "types": "./dist/components/ui/drawer.d.ts",
       "import": "./dist/components/ui/drawer.js",
       "default": "./dist/components/ui/drawer.js"
     },
-    "./dropdown-menu.stories": {
-      "types": "./dist/components/ui/dropdown-menu.stories.d.ts",
-      "import": "./dist/components/ui/dropdown-menu.stories.js",
-      "default": "./dist/components/ui/dropdown-menu.stories.js"
-    },
     "./dropdown-menu": {
       "types": "./dist/components/ui/dropdown-menu.d.ts",
       "import": "./dist/components/ui/dropdown-menu.js",
       "default": "./dist/components/ui/dropdown-menu.js"
-    },
-    "./dropdrawer.stories": {
-      "types": "./dist/components/ui/dropdrawer.stories.d.ts",
-      "import": "./dist/components/ui/dropdrawer.stories.js",
-      "default": "./dist/components/ui/dropdrawer.stories.js"
     },
     "./dropdrawer": {
       "types": "./dist/components/ui/dropdrawer.d.ts",
       "import": "./dist/components/ui/dropdrawer.js",
       "default": "./dist/components/ui/dropdrawer.js"
     },
-    "./empty.stories": {
-      "types": "./dist/components/ui/empty.stories.d.ts",
-      "import": "./dist/components/ui/empty.stories.js",
-      "default": "./dist/components/ui/empty.stories.js"
-    },
     "./empty": {
       "types": "./dist/components/ui/empty.d.ts",
       "import": "./dist/components/ui/empty.js",
       "default": "./dist/components/ui/empty.js"
-    },
-    "./error-boundary.stories": {
-      "types": "./dist/components/ui/error-boundary.stories.d.ts",
-      "import": "./dist/components/ui/error-boundary.stories.js",
-      "default": "./dist/components/ui/error-boundary.stories.js"
     },
     "./error-boundary": {
       "types": "./dist/components/ui/error-boundary.d.ts",
       "import": "./dist/components/ui/error-boundary.js",
       "default": "./dist/components/ui/error-boundary.js"
     },
-    "./field.stories": {
-      "types": "./dist/components/ui/field.stories.d.ts",
-      "import": "./dist/components/ui/field.stories.js",
-      "default": "./dist/components/ui/field.stories.js"
-    },
     "./field": {
       "types": "./dist/components/ui/field.d.ts",
       "import": "./dist/components/ui/field.js",
       "default": "./dist/components/ui/field.js"
-    },
-    "./fireworks-background.stories": {
-      "types": "./dist/components/ui/fireworks-background.stories.d.ts",
-      "import": "./dist/components/ui/fireworks-background.stories.js",
-      "default": "./dist/components/ui/fireworks-background.stories.js"
     },
     "./fireworks-background": {
       "types": "./dist/components/ui/fireworks-background.d.ts",
       "import": "./dist/components/ui/fireworks-background.js",
       "default": "./dist/components/ui/fireworks-background.js"
     },
-    "./flip-button.stories": {
-      "types": "./dist/components/ui/flip-button.stories.d.ts",
-      "import": "./dist/components/ui/flip-button.stories.js",
-      "default": "./dist/components/ui/flip-button.stories.js"
-    },
     "./flip-button": {
       "types": "./dist/components/ui/flip-button.d.ts",
       "import": "./dist/components/ui/flip-button.js",
       "default": "./dist/components/ui/flip-button.js"
-    },
-    "./focus-scope.stories": {
-      "types": "./dist/components/ui/focus-scope.stories.d.ts",
-      "import": "./dist/components/ui/focus-scope.stories.js",
-      "default": "./dist/components/ui/focus-scope.stories.js"
     },
     "./focus-scope": {
       "types": "./dist/components/ui/focus-scope.d.ts",
       "import": "./dist/components/ui/focus-scope.js",
       "default": "./dist/components/ui/focus-scope.js"
     },
-    "./form-skeleton.stories": {
-      "types": "./dist/components/ui/form-skeleton.stories.d.ts",
-      "import": "./dist/components/ui/form-skeleton.stories.js",
-      "default": "./dist/components/ui/form-skeleton.stories.js"
-    },
     "./form-skeleton": {
       "types": "./dist/components/ui/form-skeleton.d.ts",
       "import": "./dist/components/ui/form-skeleton.js",
       "default": "./dist/components/ui/form-skeleton.js"
-    },
-    "./form.stories": {
-      "types": "./dist/components/ui/form.stories.d.ts",
-      "import": "./dist/components/ui/form.stories.js",
-      "default": "./dist/components/ui/form.stories.js"
     },
     "./form": {
       "types": "./dist/components/ui/form.d.ts",
       "import": "./dist/components/ui/form.js",
       "default": "./dist/components/ui/form.js"
     },
-    "./gradient-background.stories": {
-      "types": "./dist/components/ui/gradient-background.stories.d.ts",
-      "import": "./dist/components/ui/gradient-background.stories.js",
-      "default": "./dist/components/ui/gradient-background.stories.js"
-    },
     "./gradient-background": {
       "types": "./dist/components/ui/gradient-background.d.ts",
       "import": "./dist/components/ui/gradient-background.js",
       "default": "./dist/components/ui/gradient-background.js"
-    },
-    "./gradient-text.stories": {
-      "types": "./dist/components/ui/gradient-text.stories.d.ts",
-      "import": "./dist/components/ui/gradient-text.stories.js",
-      "default": "./dist/components/ui/gradient-text.stories.js"
     },
     "./gradient-text": {
       "types": "./dist/components/ui/gradient-text.d.ts",
       "import": "./dist/components/ui/gradient-text.js",
       "default": "./dist/components/ui/gradient-text.js"
     },
-    "./highlight-text.stories": {
-      "types": "./dist/components/ui/highlight-text.stories.d.ts",
-      "import": "./dist/components/ui/highlight-text.stories.js",
-      "default": "./dist/components/ui/highlight-text.stories.js"
-    },
     "./highlight-text": {
       "types": "./dist/components/ui/highlight-text.d.ts",
       "import": "./dist/components/ui/highlight-text.js",
       "default": "./dist/components/ui/highlight-text.js"
-    },
-    "./hole-background.stories": {
-      "types": "./dist/components/ui/hole-background.stories.d.ts",
-      "import": "./dist/components/ui/hole-background.stories.js",
-      "default": "./dist/components/ui/hole-background.stories.js"
     },
     "./hole-background": {
       "types": "./dist/components/ui/hole-background.d.ts",
       "import": "./dist/components/ui/hole-background.js",
       "default": "./dist/components/ui/hole-background.js"
     },
-    "./hover-card.stories": {
-      "types": "./dist/components/ui/hover-card.stories.d.ts",
-      "import": "./dist/components/ui/hover-card.stories.js",
-      "default": "./dist/components/ui/hover-card.stories.js"
-    },
     "./hover-card": {
       "types": "./dist/components/ui/hover-card.d.ts",
       "import": "./dist/components/ui/hover-card.js",
       "default": "./dist/components/ui/hover-card.js"
-    },
-    "./input-group.stories": {
-      "types": "./dist/components/ui/input-group.stories.d.ts",
-      "import": "./dist/components/ui/input-group.stories.js",
-      "default": "./dist/components/ui/input-group.stories.js"
     },
     "./input-group": {
       "types": "./dist/components/ui/input-group.d.ts",
       "import": "./dist/components/ui/input-group.js",
       "default": "./dist/components/ui/input-group.js"
     },
-    "./input-otp.stories": {
-      "types": "./dist/components/ui/input-otp.stories.d.ts",
-      "import": "./dist/components/ui/input-otp.stories.js",
-      "default": "./dist/components/ui/input-otp.stories.js"
-    },
     "./input-otp": {
       "types": "./dist/components/ui/input-otp.d.ts",
       "import": "./dist/components/ui/input-otp.js",
       "default": "./dist/components/ui/input-otp.js"
-    },
-    "./input.stories": {
-      "types": "./dist/components/ui/input.stories.d.ts",
-      "import": "./dist/components/ui/input.stories.js",
-      "default": "./dist/components/ui/input.stories.js"
     },
     "./input": {
       "types": "./dist/components/ui/input.d.ts",
       "import": "./dist/components/ui/input.js",
       "default": "./dist/components/ui/input.js"
     },
-    "./item.stories": {
-      "types": "./dist/components/ui/item.stories.d.ts",
-      "import": "./dist/components/ui/item.stories.js",
-      "default": "./dist/components/ui/item.stories.js"
-    },
     "./item": {
       "types": "./dist/components/ui/item.d.ts",
       "import": "./dist/components/ui/item.js",
       "default": "./dist/components/ui/item.js"
-    },
-    "./kbd.stories": {
-      "types": "./dist/components/ui/kbd.stories.d.ts",
-      "import": "./dist/components/ui/kbd.stories.js",
-      "default": "./dist/components/ui/kbd.stories.js"
     },
     "./kbd": {
       "types": "./dist/components/ui/kbd.d.ts",
       "import": "./dist/components/ui/kbd.js",
       "default": "./dist/components/ui/kbd.js"
     },
-    "./label.stories": {
-      "types": "./dist/components/ui/label.stories.d.ts",
-      "import": "./dist/components/ui/label.stories.js",
-      "default": "./dist/components/ui/label.stories.js"
-    },
     "./label": {
       "types": "./dist/components/ui/label.d.ts",
       "import": "./dist/components/ui/label.js",
       "default": "./dist/components/ui/label.js"
-    },
-    "./list-skeleton.stories": {
-      "types": "./dist/components/ui/list-skeleton.stories.d.ts",
-      "import": "./dist/components/ui/list-skeleton.stories.js",
-      "default": "./dist/components/ui/list-skeleton.stories.js"
     },
     "./list-skeleton": {
       "types": "./dist/components/ui/list-skeleton.d.ts",
       "import": "./dist/components/ui/list-skeleton.js",
       "default": "./dist/components/ui/list-skeleton.js"
     },
-    "./loading-overlay.stories": {
-      "types": "./dist/components/ui/loading-overlay.stories.d.ts",
-      "import": "./dist/components/ui/loading-overlay.stories.js",
-      "default": "./dist/components/ui/loading-overlay.stories.js"
-    },
     "./loading-overlay": {
       "types": "./dist/components/ui/loading-overlay.d.ts",
       "import": "./dist/components/ui/loading-overlay.js",
       "default": "./dist/components/ui/loading-overlay.js"
-    },
-    "./menubar.stories": {
-      "types": "./dist/components/ui/menubar.stories.d.ts",
-      "import": "./dist/components/ui/menubar.stories.js",
-      "default": "./dist/components/ui/menubar.stories.js"
     },
     "./menubar": {
       "types": "./dist/components/ui/menubar.d.ts",
       "import": "./dist/components/ui/menubar.js",
       "default": "./dist/components/ui/menubar.js"
     },
-    "./meter.stories": {
-      "types": "./dist/components/ui/meter.stories.d.ts",
-      "import": "./dist/components/ui/meter.stories.js",
-      "default": "./dist/components/ui/meter.stories.js"
-    },
     "./meter": {
       "types": "./dist/components/ui/meter.d.ts",
       "import": "./dist/components/ui/meter.js",
       "default": "./dist/components/ui/meter.js"
-    },
-    "./navigation-menu.stories": {
-      "types": "./dist/components/ui/navigation-menu.stories.d.ts",
-      "import": "./dist/components/ui/navigation-menu.stories.js",
-      "default": "./dist/components/ui/navigation-menu.stories.js"
     },
     "./navigation-menu": {
       "types": "./dist/components/ui/navigation-menu.d.ts",
       "import": "./dist/components/ui/navigation-menu.js",
       "default": "./dist/components/ui/navigation-menu.js"
     },
-    "./number-field.stories": {
-      "types": "./dist/components/ui/number-field.stories.d.ts",
-      "import": "./dist/components/ui/number-field.stories.js",
-      "default": "./dist/components/ui/number-field.stories.js"
-    },
     "./number-field": {
       "types": "./dist/components/ui/number-field.d.ts",
       "import": "./dist/components/ui/number-field.js",
       "default": "./dist/components/ui/number-field.js"
-    },
-    "./pagination.stories": {
-      "types": "./dist/components/ui/pagination.stories.d.ts",
-      "import": "./dist/components/ui/pagination.stories.js",
-      "default": "./dist/components/ui/pagination.stories.js"
     },
     "./pagination": {
       "types": "./dist/components/ui/pagination.d.ts",
       "import": "./dist/components/ui/pagination.js",
       "default": "./dist/components/ui/pagination.js"
     },
-    "./popover.stories": {
-      "types": "./dist/components/ui/popover.stories.d.ts",
-      "import": "./dist/components/ui/popover.stories.js",
-      "default": "./dist/components/ui/popover.stories.js"
-    },
     "./popover": {
       "types": "./dist/components/ui/popover.d.ts",
       "import": "./dist/components/ui/popover.js",
       "default": "./dist/components/ui/popover.js"
-    },
-    "./progress.stories": {
-      "types": "./dist/components/ui/progress.stories.d.ts",
-      "import": "./dist/components/ui/progress.stories.js",
-      "default": "./dist/components/ui/progress.stories.js"
     },
     "./progress": {
       "types": "./dist/components/ui/progress.d.ts",
       "import": "./dist/components/ui/progress.js",
       "default": "./dist/components/ui/progress.js"
     },
-    "./radio-group.stories": {
-      "types": "./dist/components/ui/radio-group.stories.d.ts",
-      "import": "./dist/components/ui/radio-group.stories.js",
-      "default": "./dist/components/ui/radio-group.stories.js"
-    },
     "./radio-group": {
       "types": "./dist/components/ui/radio-group.d.ts",
       "import": "./dist/components/ui/radio-group.js",
       "default": "./dist/components/ui/radio-group.js"
-    },
-    "./resizable.stories": {
-      "types": "./dist/components/ui/resizable.stories.d.ts",
-      "import": "./dist/components/ui/resizable.stories.js",
-      "default": "./dist/components/ui/resizable.stories.js"
     },
     "./resizable": {
       "types": "./dist/components/ui/resizable.d.ts",
       "import": "./dist/components/ui/resizable.js",
       "default": "./dist/components/ui/resizable.js"
     },
-    "./ripple-button.stories": {
-      "types": "./dist/components/ui/ripple-button.stories.d.ts",
-      "import": "./dist/components/ui/ripple-button.stories.js",
-      "default": "./dist/components/ui/ripple-button.stories.js"
-    },
     "./ripple-button": {
       "types": "./dist/components/ui/ripple-button.d.ts",
       "import": "./dist/components/ui/ripple-button.js",
       "default": "./dist/components/ui/ripple-button.js"
-    },
-    "./scratcher.stories": {
-      "types": "./dist/components/ui/scratcher.stories.d.ts",
-      "import": "./dist/components/ui/scratcher.stories.js",
-      "default": "./dist/components/ui/scratcher.stories.js"
     },
     "./scratcher": {
       "types": "./dist/components/ui/scratcher.d.ts",
       "import": "./dist/components/ui/scratcher.js",
       "default": "./dist/components/ui/scratcher.js"
     },
-    "./scroll-area.stories": {
-      "types": "./dist/components/ui/scroll-area.stories.d.ts",
-      "import": "./dist/components/ui/scroll-area.stories.js",
-      "default": "./dist/components/ui/scroll-area.stories.js"
-    },
     "./scroll-area": {
       "types": "./dist/components/ui/scroll-area.d.ts",
       "import": "./dist/components/ui/scroll-area.js",
       "default": "./dist/components/ui/scroll-area.js"
-    },
-    "./select.stories": {
-      "types": "./dist/components/ui/select.stories.d.ts",
-      "import": "./dist/components/ui/select.stories.js",
-      "default": "./dist/components/ui/select.stories.js"
     },
     "./select": {
       "types": "./dist/components/ui/select.d.ts",
       "import": "./dist/components/ui/select.js",
       "default": "./dist/components/ui/select.js"
     },
-    "./separator.stories": {
-      "types": "./dist/components/ui/separator.stories.d.ts",
-      "import": "./dist/components/ui/separator.stories.js",
-      "default": "./dist/components/ui/separator.stories.js"
-    },
     "./separator": {
       "types": "./dist/components/ui/separator.d.ts",
       "import": "./dist/components/ui/separator.js",
       "default": "./dist/components/ui/separator.js"
-    },
-    "./sheet.stories": {
-      "types": "./dist/components/ui/sheet.stories.d.ts",
-      "import": "./dist/components/ui/sheet.stories.js",
-      "default": "./dist/components/ui/sheet.stories.js"
     },
     "./sheet": {
       "types": "./dist/components/ui/sheet.d.ts",
       "import": "./dist/components/ui/sheet.js",
       "default": "./dist/components/ui/sheet.js"
     },
-    "./sidebar.stories": {
-      "types": "./dist/components/ui/sidebar.stories.d.ts",
-      "import": "./dist/components/ui/sidebar.stories.js",
-      "default": "./dist/components/ui/sidebar.stories.js"
-    },
     "./sidebar": {
       "types": "./dist/components/ui/sidebar.d.ts",
       "import": "./dist/components/ui/sidebar.js",
       "default": "./dist/components/ui/sidebar.js"
-    },
-    "./skeleton.stories": {
-      "types": "./dist/components/ui/skeleton.stories.d.ts",
-      "import": "./dist/components/ui/skeleton.stories.js",
-      "default": "./dist/components/ui/skeleton.stories.js"
     },
     "./skeleton": {
       "types": "./dist/components/ui/skeleton.d.ts",
       "import": "./dist/components/ui/skeleton.js",
       "default": "./dist/components/ui/skeleton.js"
     },
-    "./slider.stories": {
-      "types": "./dist/components/ui/slider.stories.d.ts",
-      "import": "./dist/components/ui/slider.stories.js",
-      "default": "./dist/components/ui/slider.stories.js"
-    },
     "./slider": {
       "types": "./dist/components/ui/slider.d.ts",
       "import": "./dist/components/ui/slider.js",
       "default": "./dist/components/ui/slider.js"
-    },
-    "./sonner.stories": {
-      "types": "./dist/components/ui/sonner.stories.d.ts",
-      "import": "./dist/components/ui/sonner.stories.js",
-      "default": "./dist/components/ui/sonner.stories.js"
     },
     "./sonner": {
       "types": "./dist/components/ui/sonner.d.ts",
       "import": "./dist/components/ui/sonner.js",
       "default": "./dist/components/ui/sonner.js"
     },
-    "./spinner.stories": {
-      "types": "./dist/components/ui/spinner.stories.d.ts",
-      "import": "./dist/components/ui/spinner.stories.js",
-      "default": "./dist/components/ui/spinner.stories.js"
-    },
     "./spinner": {
       "types": "./dist/components/ui/spinner.d.ts",
       "import": "./dist/components/ui/spinner.js",
       "default": "./dist/components/ui/spinner.js"
-    },
-    "./stepper.stories": {
-      "types": "./dist/components/ui/stepper.stories.d.ts",
-      "import": "./dist/components/ui/stepper.stories.js",
-      "default": "./dist/components/ui/stepper.stories.js"
     },
     "./stepper": {
       "types": "./dist/components/ui/stepper.d.ts",
       "import": "./dist/components/ui/stepper.js",
       "default": "./dist/components/ui/stepper.js"
     },
-    "./switch.stories": {
-      "types": "./dist/components/ui/switch.stories.d.ts",
-      "import": "./dist/components/ui/switch.stories.js",
-      "default": "./dist/components/ui/switch.stories.js"
-    },
     "./switch": {
       "types": "./dist/components/ui/switch.d.ts",
       "import": "./dist/components/ui/switch.js",
       "default": "./dist/components/ui/switch.js"
-    },
-    "./table-skeleton.stories": {
-      "types": "./dist/components/ui/table-skeleton.stories.d.ts",
-      "import": "./dist/components/ui/table-skeleton.stories.js",
-      "default": "./dist/components/ui/table-skeleton.stories.js"
     },
     "./table-skeleton": {
       "types": "./dist/components/ui/table-skeleton.d.ts",
       "import": "./dist/components/ui/table-skeleton.js",
       "default": "./dist/components/ui/table-skeleton.js"
     },
-    "./table.stories": {
-      "types": "./dist/components/ui/table.stories.d.ts",
-      "import": "./dist/components/ui/table.stories.js",
-      "default": "./dist/components/ui/table.stories.js"
-    },
     "./table": {
       "types": "./dist/components/ui/table.d.ts",
       "import": "./dist/components/ui/table.js",
       "default": "./dist/components/ui/table.js"
-    },
-    "./tabs.stories": {
-      "types": "./dist/components/ui/tabs.stories.d.ts",
-      "import": "./dist/components/ui/tabs.stories.js",
-      "default": "./dist/components/ui/tabs.stories.js"
     },
     "./tabs": {
       "types": "./dist/components/ui/tabs.d.ts",
       "import": "./dist/components/ui/tabs.js",
       "default": "./dist/components/ui/tabs.js"
     },
-    "./textarea.stories": {
-      "types": "./dist/components/ui/textarea.stories.d.ts",
-      "import": "./dist/components/ui/textarea.stories.js",
-      "default": "./dist/components/ui/textarea.stories.js"
-    },
     "./textarea": {
       "types": "./dist/components/ui/textarea.d.ts",
       "import": "./dist/components/ui/textarea.js",
       "default": "./dist/components/ui/textarea.js"
-    },
-    "./timeline.stories": {
-      "types": "./dist/components/ui/timeline.stories.d.ts",
-      "import": "./dist/components/ui/timeline.stories.js",
-      "default": "./dist/components/ui/timeline.stories.js"
     },
     "./timeline": {
       "types": "./dist/components/ui/timeline.d.ts",
       "import": "./dist/components/ui/timeline.js",
       "default": "./dist/components/ui/timeline.js"
     },
-    "./toggle-group.stories": {
-      "types": "./dist/components/ui/toggle-group.stories.d.ts",
-      "import": "./dist/components/ui/toggle-group.stories.js",
-      "default": "./dist/components/ui/toggle-group.stories.js"
-    },
     "./toggle-group": {
       "types": "./dist/components/ui/toggle-group.d.ts",
       "import": "./dist/components/ui/toggle-group.js",
       "default": "./dist/components/ui/toggle-group.js"
-    },
-    "./toggle.stories": {
-      "types": "./dist/components/ui/toggle.stories.d.ts",
-      "import": "./dist/components/ui/toggle.stories.js",
-      "default": "./dist/components/ui/toggle.stories.js"
     },
     "./toggle": {
       "types": "./dist/components/ui/toggle.d.ts",
       "import": "./dist/components/ui/toggle.js",
       "default": "./dist/components/ui/toggle.js"
     },
-    "./toolbar.stories": {
-      "types": "./dist/components/ui/toolbar.stories.d.ts",
-      "import": "./dist/components/ui/toolbar.stories.js",
-      "default": "./dist/components/ui/toolbar.stories.js"
-    },
     "./toolbar": {
       "types": "./dist/components/ui/toolbar.d.ts",
       "import": "./dist/components/ui/toolbar.js",
       "default": "./dist/components/ui/toolbar.js"
-    },
-    "./tooltip.stories": {
-      "types": "./dist/components/ui/tooltip.stories.d.ts",
-      "import": "./dist/components/ui/tooltip.stories.js",
-      "default": "./dist/components/ui/tooltip.stories.js"
     },
     "./tooltip": {
       "types": "./dist/components/ui/tooltip.d.ts",
       "import": "./dist/components/ui/tooltip.js",
       "default": "./dist/components/ui/tooltip.js"
     },
-    "./typewriter.stories": {
-      "types": "./dist/components/ui/typewriter.stories.d.ts",
-      "import": "./dist/components/ui/typewriter.stories.js",
-      "default": "./dist/components/ui/typewriter.stories.js"
-    },
     "./typewriter": {
       "types": "./dist/components/ui/typewriter.d.ts",
       "import": "./dist/components/ui/typewriter.js",
       "default": "./dist/components/ui/typewriter.js"
-    },
-    "./visually-hidden.stories": {
-      "types": "./dist/components/ui/visually-hidden.stories.d.ts",
-      "import": "./dist/components/ui/visually-hidden.stories.js",
-      "default": "./dist/components/ui/visually-hidden.stories.js"
     },
     "./visually-hidden": {
       "types": "./dist/components/ui/visually-hidden.d.ts",

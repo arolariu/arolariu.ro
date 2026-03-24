@@ -103,8 +103,8 @@ export function collectExportsFromDirectory(config: Readonly<ExportDirectoryConf
   items.forEach((item) => {
     const itemName = item.name;
 
-    // Skip test files
-    if (itemName.includes(".test.") || itemName.includes(".spec.")) {
+    // Skip test and story files
+    if (itemName.includes(".test.") || itemName.includes(".spec.") || itemName.includes(".stories.")) {
       return;
     }
 
