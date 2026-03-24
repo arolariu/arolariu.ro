@@ -67,32 +67,34 @@ export const DefaultOpen: Story = {
 /**
  * Controlled collapsible.
  */
-export const Controlled: Story = {
-  render: () => {
-    const [isOpen, setIsOpen] = React.useState(false);
+function ControlledDemo() {
+  const [isOpen, setIsOpen] = React.useState(false);
 
-    return (
-      <div className='space-y-4'>
-        <Collapsible
-          open={isOpen}
-          onOpenChange={setIsOpen}
-          className='w-[350px]'>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant='outline'
-              className='w-full justify-between'>
-              Toggle content
-              <ChevronDown className='h-4 w-4' />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className='pt-4'>
-            <p className='text-muted-foreground text-sm'>
-              This collapsible is controlled. The state is managed externally and displayed below.
-            </p>
-          </CollapsibleContent>
-        </Collapsible>
-        <p className='text-sm'>Status: {isOpen ? "Open" : "Closed"}</p>
-      </div>
-    );
-  },
+  return (
+    <div className='space-y-4'>
+      <Collapsible
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className='w-[350px]'>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant='outline'
+            className='w-full justify-between'>
+            Toggle content
+            <ChevronDown className='h-4 w-4' />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className='pt-4'>
+          <p className='text-muted-foreground text-sm'>
+            This collapsible is controlled. The state is managed externally and displayed below.
+          </p>
+        </CollapsibleContent>
+      </Collapsible>
+      <p className='text-sm'>Status: {isOpen ? "Open" : "Closed"}</p>
+    </div>
+  );
+}
+
+export const Controlled: Story = {
+  render: () => <ControlledDemo />,
 };

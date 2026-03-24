@@ -36,21 +36,23 @@ export const WithIcon: Story = {
 /**
  * Controlled toggle showing pressed state.
  */
-export const Controlled: Story = {
-  render: () => {
-    const [pressed, setPressed] = React.useState(false);
+function ControlledDemo() {
+  const [pressed, setPressed] = React.useState(false);
 
-    return (
-      <div className='space-y-4'>
-        <Toggle
-          pressed={pressed}
-          onPressedChange={setPressed}
-          aria-label='Toggle bold'>
-          <Bold className='mr-2 h-4 w-4' />
-          Bold
-        </Toggle>
-        <p className='text-muted-foreground text-sm'>Status: {pressed ? "Pressed" : "Not pressed"}</p>
-      </div>
-    );
-  },
+  return (
+    <div className='space-y-4'>
+      <Toggle
+        pressed={pressed}
+        onPressedChange={setPressed}
+        aria-label='Toggle bold'>
+        <Bold className='mr-2 h-4 w-4' />
+        Bold
+      </Toggle>
+      <p className='text-muted-foreground text-sm'>Status: {pressed ? "Pressed" : "Not pressed"}</p>
+    </div>
+  );
+}
+
+export const Controlled: Story = {
+  render: () => <ControlledDemo />,
 };

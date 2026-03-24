@@ -70,34 +70,36 @@ export const Multiple: Story = {
 /**
  * Controlled toggle group with multiple selections.
  */
-export const Controlled: Story = {
-  render: () => {
-    const [value, setValue] = React.useState<string[]>(["bold", "italic"]);
+function ControlledDemo() {
+  const [value, setValue] = React.useState<string[]>(["bold", "italic"]);
 
-    return (
-      <div className='space-y-4'>
-        <ToggleGroup
-          value={value}
-          onValueChange={(newValue) => setValue(newValue)}
-          toggleMultiple>
-          <ToggleGroupItem
-            value='bold'
-            aria-label='Toggle bold'>
-            <Bold className='h-4 w-4' />
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value='italic'
-            aria-label='Toggle italic'>
-            <Italic className='h-4 w-4' />
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value='underline'
-            aria-label='Toggle underline'>
-            <Underline className='h-4 w-4' />
-          </ToggleGroupItem>
-        </ToggleGroup>
-        <p className='text-muted-foreground text-sm'>Selected: {value.join(", ") || "none"}</p>
-      </div>
-    );
-  },
+  return (
+    <div className='space-y-4'>
+      <ToggleGroup
+        value={value}
+        onValueChange={(newValue) => setValue(newValue)}
+        toggleMultiple>
+        <ToggleGroupItem
+          value='bold'
+          aria-label='Toggle bold'>
+          <Bold className='h-4 w-4' />
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value='italic'
+          aria-label='Toggle italic'>
+          <Italic className='h-4 w-4' />
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value='underline'
+          aria-label='Toggle underline'>
+          <Underline className='h-4 w-4' />
+        </ToggleGroupItem>
+      </ToggleGroup>
+      <p className='text-muted-foreground text-sm'>Selected: {value.join(", ") || "none"}</p>
+    </div>
+  );
+}
+
+export const Controlled: Story = {
+  render: () => <ControlledDemo />,
 };

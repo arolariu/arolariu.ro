@@ -51,23 +51,25 @@ export const CustomRange: Story = {
 /**
  * Controlled slider showing current value.
  */
-export const Controlled: Story = {
-  render: () => {
-    const [value, setValue] = React.useState([30]);
+function ControlledDemo() {
+  const [value, setValue] = React.useState([30]);
 
-    return (
-      <div className='w-64 space-y-4'>
-        <div className='flex justify-between'>
-          <span className='text-sm'>Volume</span>
-          <span className='text-sm font-medium'>{value[0]}%</span>
-        </div>
-        <Slider
-          value={value}
-          onValueChange={setValue}
-          min={0}
-          max={100}
-        />
+  return (
+    <div className='w-64 space-y-4'>
+      <div className='flex justify-between'>
+        <span className='text-sm'>Volume</span>
+        <span className='text-sm font-medium'>{value[0]}%</span>
       </div>
-    );
-  },
+      <Slider
+        value={value}
+        onValueChange={setValue}
+        min={0}
+        max={100}
+      />
+    </div>
+  );
+}
+
+export const Controlled: Story = {
+  render: () => <ControlledDemo />,
 };
