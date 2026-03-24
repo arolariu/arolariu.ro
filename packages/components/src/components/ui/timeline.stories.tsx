@@ -123,11 +123,13 @@ function TimelineCompleted(): React.JSX.Element {
         </TimelineContent>
       </TimelineItem>
       <TimelineItem>
-        <TimelineDot style={{
-          backgroundColor: "#3b82f6",
-          borderColor: "#3b82f6",
-          boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.2)"
-        }} />
+        <TimelineDot
+          style={{
+            backgroundColor: "#3b82f6",
+            borderColor: "#3b82f6",
+            boxShadow: "0 0 0 4px rgba(59, 130, 246, 0.2)",
+          }}
+        />
         <TimelineContent>
           <div style={{display: "flex", flexDirection: "column", gap: "4px"}}>
             <strong style={{color: "#1e40af"}}>Profile Setup (Current)</strong>

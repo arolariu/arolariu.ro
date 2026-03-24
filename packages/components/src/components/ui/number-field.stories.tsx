@@ -99,3 +99,90 @@ export const Currency: Story = {
     </div>
   ),
 };
+
+/**
+ * Number field showing currency with $ prefix.
+ */
+export const WithCurrency: Story = {
+  render: () => (
+    <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
+      <label style={{fontSize: "14px", fontWeight: 500}}>Budget Amount</label>
+      <div style={{position: "relative"}}>
+        <span
+          style={{
+            position: "absolute",
+            left: "12px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: "14px",
+            color: "#6b7280",
+            zIndex: 1,
+          }}>
+          $
+        </span>
+        <NumberField
+          defaultValue={1000}
+          min={0}
+          step={50}
+          formatOptions={{
+            style: "decimal",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }}>
+          <NumberFieldGroup>
+            <NumberFieldDecrement />
+            <NumberFieldInput
+              aria-label='Budget'
+              style={{paddingLeft: "28px"}}
+            />
+            <NumberFieldIncrement />
+          </NumberFieldGroup>
+        </NumberField>
+      </div>
+      <p style={{fontSize: "12px", color: "#6b7280"}}>Set your monthly budget in USD</p>
+    </div>
+  ),
+};
+
+/**
+ * Number field constrained between 0 and 100 with validation.
+ */
+export const MinMax: Story = {
+  render: () => (
+    <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
+      <label style={{fontSize: "14px", fontWeight: 500}}>Progress Percentage</label>
+      <NumberField
+        defaultValue={50}
+        min={0}
+        max={100}
+        step={5}>
+        <NumberFieldGroup>
+          <NumberFieldDecrement />
+          <NumberFieldInput aria-label='Percentage' />
+          <NumberFieldIncrement />
+        </NumberFieldGroup>
+      </NumberField>
+      <div style={{display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#6b7280"}}>
+        <span>Min: 0%</span>
+        <span>Max: 100%</span>
+      </div>
+      <div
+        style={{
+          width: "100%",
+          height: "8px",
+          background: "#e5e7eb",
+          borderRadius: "4px",
+          overflow: "hidden",
+        }}>
+        <div
+          style={{
+            width: "50%",
+            height: "100%",
+            background: "#3b82f6",
+            transition: "width 0.3s",
+          }}
+        />
+      </div>
+    </div>
+  ),
+};

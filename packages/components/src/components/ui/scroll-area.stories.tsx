@@ -100,3 +100,70 @@ export const Compact: Story = {
     </ScrollArea>
   ),
 };
+
+/**
+ * Scroll area with wide horizontal content only.
+ */
+export const HorizontalScroll: Story = {
+  render: () => (
+    <ScrollArea style={{width: "400px", borderRadius: "8px", border: "1px solid #e5e7eb"}}>
+      <div style={{display: "flex", gap: "16px", padding: "16px", width: "max-content"}}>
+        {Array.from({length: 15}, (_, i) => (
+          <div
+            key={i}
+            style={{
+              minWidth: "150px",
+              height: "100px",
+              background: `linear-gradient(135deg, ${i % 2 === 0 ? "#3b82f6" : "#8b5cf6"} 0%, ${i % 2 === 0 ? "#1e40af" : "#6d28d9"} 100%)`,
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontWeight: "600",
+            }}>
+            Card {i + 1}
+          </div>
+        ))}
+      </div>
+      <ScrollBar orientation='horizontal' />
+    </ScrollArea>
+  ),
+};
+
+/**
+ * Scroll area with both horizontal and vertical scrolling.
+ */
+export const BothAxes: Story = {
+  render: () => (
+    <ScrollArea style={{width: "400px", height: "300px", borderRadius: "8px", border: "1px solid #e5e7eb", padding: "16px"}}>
+      <div style={{width: "800px"}}>
+        <h3 style={{marginBottom: "16px", fontSize: "16px", fontWeight: "600"}}>Wide and Tall Content</h3>
+        <table style={{width: "100%", borderCollapse: "collapse"}}>
+          <thead>
+            <tr style={{background: "#f3f4f6"}}>
+              <th style={{padding: "8px", textAlign: "left", border: "1px solid #e5e7eb"}}>Column A</th>
+              <th style={{padding: "8px", textAlign: "left", border: "1px solid #e5e7eb"}}>Column B</th>
+              <th style={{padding: "8px", textAlign: "left", border: "1px solid #e5e7eb"}}>Column C</th>
+              <th style={{padding: "8px", textAlign: "left", border: "1px solid #e5e7eb"}}>Column D</th>
+              <th style={{padding: "8px", textAlign: "left", border: "1px solid #e5e7eb"}}>Column E</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({length: 20}, (_, i) => (
+              <tr key={i}>
+                <td style={{padding: "8px", border: "1px solid #e5e7eb"}}>Row {i + 1} - A</td>
+                <td style={{padding: "8px", border: "1px solid #e5e7eb"}}>Row {i + 1} - B</td>
+                <td style={{padding: "8px", border: "1px solid #e5e7eb"}}>Row {i + 1} - C</td>
+                <td style={{padding: "8px", border: "1px solid #e5e7eb"}}>Row {i + 1} - D</td>
+                <td style={{padding: "8px", border: "1px solid #e5e7eb"}}>Row {i + 1} - E</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <ScrollBar orientation='vertical' />
+      <ScrollBar orientation='horizontal' />
+    </ScrollArea>
+  ),
+};

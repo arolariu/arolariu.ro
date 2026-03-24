@@ -78,3 +78,46 @@ export const InNavigation: Story = {
     </div>
   ),
 };
+
+/**
+ * Separator with centered label text.
+ */
+export const WithLabel: Story = {
+  render: () => (
+    <div style={{width: "320px"}}>
+      <div style={{position: "relative", display: "flex", alignItems: "center", marginTop: "24px", marginBottom: "24px"}}>
+        <Separator style={{flex: 1}} />
+        <span style={{padding: "0 16px", fontSize: "14px", color: "#6b7280", fontWeight: "500"}}>OR</span>
+        <Separator style={{flex: 1}} />
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * Separator used as a decorative visual divider.
+ */
+export const Decorative: Story = {
+  render: () => (
+    <div style={{maxWidth: "600px"}}>
+      <section style={{marginBottom: "24px"}}>
+        <h3 style={{fontSize: "18px", fontWeight: "600", marginBottom: "8px"}}>Introduction</h3>
+        <p style={{fontSize: "14px", color: "#6b7280", lineHeight: "1.6"}}>
+          This is the first section of content. It contains important information that sets the context for what follows.
+        </p>
+      </section>
+
+      <Separator
+        decorative
+        style={{margin: "32px 0"}}
+      />
+
+      <section>
+        <h3 style={{fontSize: "18px", fontWeight: "600", marginBottom: "8px"}}>Details</h3>
+        <p style={{fontSize: "14px", color: "#6b7280", lineHeight: "1.6"}}>
+          This is the second section with additional details and supporting information separated visually from the introduction.
+        </p>
+      </section>
+    </div>
+  ),
+};

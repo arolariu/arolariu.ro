@@ -69,3 +69,86 @@ export const WithError: Story = {
     </Field>
   ),
 };
+
+/**
+ * Field with required asterisk indicator.
+ */
+export const Required: Story = {
+  render: () => (
+    <Field>
+      <FieldLabel htmlFor='email'>
+        Email address <span style={{color: "#ef4444"}}>*</span>
+      </FieldLabel>
+      <FieldContent>
+        <Input
+          id='email'
+          type='email'
+          placeholder='you@example.com'
+          required
+        />
+      </FieldContent>
+      <FieldDescription>Required field - must be a valid email address</FieldDescription>
+    </Field>
+  ),
+};
+
+/**
+ * Field with horizontal label and input layout.
+ */
+export const Horizontal: Story = {
+  render: () => (
+    <Field>
+      <div style={{display: "flex", alignItems: "center", gap: "1rem"}}>
+        <FieldLabel
+          htmlFor='username'
+          style={{minWidth: "120px", marginBottom: 0}}>
+          Username:
+        </FieldLabel>
+        <FieldContent style={{flex: 1}}>
+          <Input
+            id='username'
+            placeholder='johndoe'
+          />
+        </FieldContent>
+      </div>
+    </Field>
+  ),
+};
+
+/**
+ * Field with help icon tooltip.
+ */
+export const WithHint: Story = {
+  render: () => (
+    <Field>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+        <FieldLabel htmlFor='api-key'>API Key</FieldLabel>
+        <span
+          title='Your unique API key for authentication. Keep this secret!'
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "16px",
+            height: "16px",
+            background: "#3b82f6",
+            color: "white",
+            borderRadius: "50%",
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+            cursor: "help",
+          }}>
+          ?
+        </span>
+      </div>
+      <FieldContent>
+        <Input
+          id='api-key'
+          type='password'
+          placeholder='sk_live_...'
+        />
+      </FieldContent>
+      <FieldDescription>This key provides full access to your account</FieldDescription>
+    </Field>
+  ),
+};

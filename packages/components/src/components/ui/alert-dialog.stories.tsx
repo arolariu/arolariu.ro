@@ -1,3 +1,4 @@
+import React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {
   AlertDialog,
@@ -115,4 +116,106 @@ export const CustomTrigger: Story = {
       </AlertDialogContent>
     </AlertDialog>
   ),
+};
+
+/**
+ * Destructive confirmation dialog for critical actions like account deletion.
+ */
+export const DestructiveConfirm: Story = {
+  render: () => (
+    <AlertDialog>
+      <AlertDialogTrigger
+        style={{
+          background: "#ef4444",
+          color: "#fff",
+          padding: "8px 16px",
+          borderRadius: "6px",
+          border: "none",
+          cursor: "pointer",
+          fontWeight: 500,
+        }}>
+        Delete Account
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle style={{color: "#dc2626"}}>⚠️ Delete Account</AlertDialogTitle>
+          <AlertDialogDescription>
+            <div style={{display: "flex", flexDirection: "column", gap: "12px", paddingTop: "8px"}}>
+              <p>This action cannot be undone. This will permanently delete your account and remove all your data from our servers.</p>
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "6px",
+                  padding: "12px",
+                  fontSize: "14px",
+                }}>
+                <strong style={{color: "#dc2626"}}>What will be deleted:</strong>
+                <ul style={{marginTop: "8px", marginLeft: "20px", color: "#991b1b"}}>
+                  <li>All personal information</li>
+                  <li>All projects and files</li>
+                  <li>All comments and activity</li>
+                  <li>All billing information</li>
+                </ul>
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction style={{background: "#dc2626", color: "#fff"}}>Yes, Delete My Account</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  ),
+};
+
+/**
+ * Confirmation dialog with a "Don't show again" checkbox option.
+ */
+function WithCheckboxDemo() {
+  const [dontShowAgain, setDontShowAgain] = React.useState(false);
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger
+        style={{background: "#3b82f6", color: "#fff", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer"}}>
+        Show Tutorial
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Welcome Tutorial</AlertDialogTitle>
+          <AlertDialogDescription>
+            <div style={{display: "flex", flexDirection: "column", gap: "12px"}}>
+              <p>Would you like to start the interactive tutorial? It will guide you through the main features of the application.</p>
+              <div style={{display: "flex", alignItems: "center", gap: "8px", paddingTop: "8px"}}>
+                <input
+                  type='checkbox'
+                  id='dont-show'
+                  checked={dontShowAgain}
+                  onChange={(e) => setDontShowAgain(e.target.checked)}
+                  style={{width: "16px", height: "16px", cursor: "pointer"}}
+                />
+                <label
+                  htmlFor='dont-show'
+                  style={{fontSize: "14px", cursor: "pointer"}}>
+                  Don't show this message again
+                </label>
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => console.log("Skipped. Don't show again:", dontShowAgain)}>Skip Tutorial</AlertDialogCancel>
+          <AlertDialogAction onClick={() => console.log("Starting tutorial. Don't show again:", dontShowAgain)}>
+            Start Tutorial
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+export const WithCheckbox: Story = {
+  render: () => <WithCheckboxDemo />,
 };

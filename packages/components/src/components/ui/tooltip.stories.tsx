@@ -74,9 +74,7 @@ export const WithDelay: Story = {
         <TooltipTrigger>
           <Button variant='outline'>Hover me (1s delay)</Button>
         </TooltipTrigger>
-        <TooltipContent side='top'>
-          This tooltip appears after a 1 second delay
-        </TooltipContent>
+        <TooltipContent side='top'>This tooltip appears after a 1 second delay</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ),
@@ -92,7 +90,9 @@ function TooltipWithRichContent(): React.JSX.Element {
         <TooltipTrigger>
           <Button variant='outline'>Hover for details</Button>
         </TooltipTrigger>
-        <TooltipContent side='top' style={{maxWidth: "250px"}}>
+        <TooltipContent
+          side='top'
+          style={{maxWidth: "250px"}}>
           <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
             <div style={{fontWeight: "bold", fontSize: "14px"}}>Product Information</div>
             <div style={{fontSize: "12px", lineHeight: "1.5"}}>
@@ -101,11 +101,10 @@ function TooltipWithRichContent(): React.JSX.Element {
             <div style={{fontSize: "12px", lineHeight: "1.5"}}>
               <strong>Price:</strong> $49.99
             </div>
-            <a 
-              href='#' 
+            <a
+              href='#'
               style={{fontSize: "12px", color: "inherit", textDecoration: "underline"}}
-              onClick={(e) => e.preventDefault()}
-            >
+              onClick={(e) => e.preventDefault()}>
               View details →
             </a>
           </div>

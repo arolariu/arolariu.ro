@@ -64,3 +64,60 @@ export const InView: Story = {
     </div>
   ),
 };
+
+/**
+ * Currency counter with dollar prefix counting to $1,234.56.
+ */
+export const Currency: Story = {
+  render: () => (
+    <div style={{padding: "2rem", textAlign: "center"}}>
+      <div style={{fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem"}}>Total Revenue</div>
+      <div style={{fontSize: "3rem", fontWeight: "bold", color: "#059669"}}>
+        $
+        <CountingNumber
+          number={1234.56}
+          fromNumber={0}
+          decimalPlaces={2}
+        />
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * Percentage counter from 0 to 100 with % suffix.
+ */
+export const Percentage: Story = {
+  render: () => (
+    <div style={{padding: "2rem", textAlign: "center"}}>
+      <div style={{fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem"}}>Completion Rate</div>
+      <div style={{fontSize: "3rem", fontWeight: "bold", color: "#3b82f6"}}>
+        <CountingNumber
+          number={100}
+          fromNumber={0}
+          decimalPlaces={0}
+        />
+        %
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * Large number counter to 1,000,000 with comma separators.
+ */
+export const Large: Story = {
+  render: () => (
+    <div style={{padding: "2rem", textAlign: "center"}}>
+      <div style={{fontSize: "0.875rem", color: "#6b7280", marginBottom: "0.5rem"}}>Active Users</div>
+      <div style={{fontSize: "3rem", fontWeight: "bold", color: "#8b5cf6"}}>
+        <CountingNumber
+          number={1000000}
+          fromNumber={0}
+          decimalPlaces={0}
+        />
+      </div>
+      <div style={{fontSize: "0.875rem", color: "#6b7280", marginTop: "0.5rem"}}>(1 million milestone reached!)</div>
+    </div>
+  ),
+};

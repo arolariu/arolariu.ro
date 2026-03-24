@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
-import {Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectScrollDownButton, SelectScrollUpButton, SelectTrigger, SelectValue} from "./select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue} from "./select";
 
 const meta = {
   title: "Components/Forms/Select",

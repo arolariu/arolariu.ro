@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {useState} from "react";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Textarea} from "./textarea";
 
 const meta = {
@@ -55,7 +55,7 @@ function WithCharCountDemo() {
   return (
     <div style={{width: "400px"}}>
       <Textarea
-        placeholder="Enter your bio (max 200 characters)..."
+        placeholder='Enter your bio (max 200 characters)...'
         value={text}
         onChange={(e) => setText(e.target.value)}
         maxLength={maxChars}
@@ -86,29 +86,23 @@ export const AutoResize: Story = {
   render: () => (
     <div style={{display: "flex", flexDirection: "column", gap: "1rem", width: "400px"}}>
       <div>
-        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>
-          Small (2 rows)
-        </label>
+        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>Small (2 rows)</label>
         <Textarea
-          placeholder="Compact textarea"
+          placeholder='Compact textarea'
           rows={2}
         />
       </div>
       <div>
-        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>
-          Medium (5 rows)
-        </label>
+        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>Medium (5 rows)</label>
         <Textarea
-          placeholder="Standard textarea"
+          placeholder='Standard textarea'
           rows={5}
         />
       </div>
       <div>
-        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>
-          Large (10 rows)
-        </label>
+        <label style={{display: "block", marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 500}}>Large (10 rows)</label>
         <Textarea
-          placeholder="Expanded textarea"
+          placeholder='Expanded textarea'
           rows={10}
         />
       </div>

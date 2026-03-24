@@ -1,3 +1,4 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle} from "./item";
 
@@ -128,4 +129,92 @@ export const SmallSize: Story = {
       </ItemActions>
     </Item>
   ),
+};
+
+/**
+ * Item with leading checkbox for selection.
+ */
+export const WithCheckbox: Story = {
+  render: () => (
+    <Item>
+      <input
+        type='checkbox'
+        style={{
+          width: "16px",
+          height: "16px",
+          cursor: "pointer",
+          accentColor: "#3b82f6",
+        }}
+        aria-label='Select item'
+      />
+      <ItemMedia variant='icon'>📁</ItemMedia>
+      <ItemContent>
+        <ItemTitle>Project files</ItemTitle>
+        <ItemDescription>Select to include in export</ItemDescription>
+      </ItemContent>
+    </Item>
+  ),
+};
+
+/**
+ * Item showing notification badge count.
+ */
+export const WithBadge: Story = {
+  render: () => (
+    <Item>
+      <ItemMedia variant='icon'>💬</ItemMedia>
+      <ItemContent>
+        <ItemTitle>Messages</ItemTitle>
+        <ItemDescription>You have unread messages</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <span
+          style={{
+            padding: "0.125rem 0.5rem",
+            fontSize: "0.75rem",
+            fontWeight: "600",
+            background: "#ef4444",
+            color: "white",
+            borderRadius: "9999px",
+            minWidth: "20px",
+            textAlign: "center",
+          }}>
+          12
+        </span>
+      </ItemActions>
+    </Item>
+  ),
+};
+
+function ClickableItemContent(): React.JSX.Element {
+  const [clicked, setClicked] = React.useState(false);
+
+  return (
+    <Item
+      onClick={() => setClicked(!clicked)}
+      style={{
+        cursor: "pointer",
+        transition: "background-color 0.2s",
+        backgroundColor: clicked ? "#f3f4f6" : "transparent",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = "#f9fafb";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = clicked ? "#f3f4f6" : "transparent";
+      }}>
+      <ItemMedia variant='icon'>📄</ItemMedia>
+      <ItemContent>
+        <ItemTitle>Document.pdf</ItemTitle>
+        <ItemDescription>{clicked ? "Selected" : "Click to select"}</ItemDescription>
+      </ItemContent>
+    </Item>
+  );
+}
+
+/**
+ * Item with hover effect and click handler.
+ */
+export const Clickable: Story = {
+  render: () => <ClickableItemContent />,
 };

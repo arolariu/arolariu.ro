@@ -49,9 +49,9 @@ export const OnDisabled: Story = {
 export const WithLabel: Story = {
   render: () => (
     <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-      <Switch id="airplane-mode" />
+      <Switch id='airplane-mode' />
       <label
-        htmlFor="airplane-mode"
+        htmlFor='airplane-mode'
         style={{fontSize: "0.875rem", fontWeight: 500, cursor: "pointer"}}>
         Airplane Mode
       </label>
@@ -64,23 +64,23 @@ export const Small: Story = {
     <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
       <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
         <Switch
-          id="normal"
+          id='normal'
           defaultChecked
         />
         <label
-          htmlFor="normal"
+          htmlFor='normal'
           style={{fontSize: "0.875rem"}}>
           Normal size
         </label>
       </div>
       <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
         <Switch
-          id="small"
+          id='small'
           defaultChecked
           style={{transform: "scale(0.8)", transformOrigin: "left"}}
         />
         <label
-          htmlFor="small"
+          htmlFor='small'
           style={{fontSize: "0.75rem"}}>
           Smaller variant (scaled)
         </label>

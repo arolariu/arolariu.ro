@@ -115,7 +115,11 @@ function NestedPopover(): React.JSX.Element {
           <p style={{fontSize: "14px"}}>This is the outer popover content.</p>
           <Popover>
             <PopoverTrigger>
-              <Button size='sm' variant='secondary'>Open Inner</Button>
+              <Button
+                size='sm'
+                variant='secondary'>
+                Open Inner
+              </Button>
             </PopoverTrigger>
             <PopoverContent>
               <div style={{padding: "16px"}}>

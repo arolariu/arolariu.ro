@@ -145,3 +145,157 @@ export const CustomSize: Story = {
     </div>
   ),
 };
+
+/**
+ * Line chart variant showing trend data.
+ */
+export const LineChart: Story = {
+  render: () => {
+    const {Line, LineChart: RechartsLineChart, ResponsiveContainer} = require("recharts");
+
+    const lineData = [
+      {month: "Jan", sales: 4000},
+      {month: "Feb", sales: 3000},
+      {month: "Mar", sales: 5000},
+      {month: "Apr", sales: 4500},
+      {month: "May", sales: 6000},
+      {month: "Jun", sales: 5500},
+    ];
+
+    const lineConfig = {
+      sales: {
+        label: "Sales",
+        color: "#8b5cf6",
+      },
+    };
+
+    return (
+      <div style={{width: "600px", height: "400px"}}>
+        <ChartContainer config={lineConfig}>
+          <RechartsLineChart data={lineData}>
+            <CartesianGrid
+              strokeDasharray='3 3'
+              vertical={false}
+            />
+            <XAxis
+              dataKey='month'
+              tickLine={false}
+              axisLine={false}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line
+              type='monotone'
+              dataKey='sales'
+              stroke='var(--color-sales)'
+              strokeWidth={2}
+              dot={{fill: "var(--color-sales)", r: 4}}
+            />
+          </RechartsLineChart>
+        </ChartContainer>
+      </div>
+    );
+  },
+};
+
+/**
+ * Pie chart variant showing distribution.
+ */
+export const PieChart: Story = {
+  render: () => {
+    const {Pie, PieChart: RechartsPieChart, Cell} = require("recharts");
+
+    const pieData = [
+      {name: "Desktop", value: 45},
+      {name: "Mobile", value: 30},
+      {name: "Tablet", value: 25},
+    ];
+
+    const COLORS = ["#3b82f6", "#10b981", "#f59e0b"];
+
+    const pieConfig = {
+      desktop: {label: "Desktop", color: "#3b82f6"},
+      mobile: {label: "Mobile", color: "#10b981"},
+      tablet: {label: "Tablet", color: "#f59e0b"},
+    };
+
+    return (
+      <div style={{width: "500px", height: "400px"}}>
+        <ChartContainer config={pieConfig}>
+          <RechartsPieChart>
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Pie
+              data={pieData}
+              cx='50%'
+              cy='50%'
+              labelLine={false}
+              label={({name, percent}: {name: string; percent: number}) => `${name} ${(percent * 100).toFixed(0)}%`}
+              outerRadius={120}
+              dataKey='value'>
+              {pieData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+          </RechartsPieChart>
+        </ChartContainer>
+      </div>
+    );
+  },
+};
+
+/**
+ * Stacked bar chart showing composition.
+ */
+export const Stacked: Story = {
+  render: () => {
+    const stackedData = [
+      {month: "Jan", productA: 400, productB: 240, productC: 240},
+      {month: "Feb", productA: 300, productB: 138, productC: 221},
+      {month: "Mar", productA: 200, productB: 980, productC: 229},
+      {month: "Apr", productA: 278, productB: 390, productC: 200},
+      {month: "May", productA: 189, productB: 480, productC: 218},
+    ];
+
+    const stackedConfig = {
+      productA: {label: "Product A", color: "#3b82f6"},
+      productB: {label: "Product B", color: "#8b5cf6"},
+      productC: {label: "Product C", color: "#ec4899"},
+    };
+
+    return (
+      <div style={{width: "600px", height: "400px"}}>
+        <ChartContainer config={stackedConfig}>
+          <BarChart data={stackedData}>
+            <CartesianGrid
+              strokeDasharray='3 3'
+              vertical={false}
+            />
+            <XAxis
+              dataKey='month'
+              tickLine={false}
+              axisLine={false}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar
+              dataKey='productA'
+              stackId='a'
+              fill='var(--color-productA)'
+            />
+            <Bar
+              dataKey='productB'
+              stackId='a'
+              fill='var(--color-productB)'
+            />
+            <Bar
+              dataKey='productC'
+              stackId='a'
+              fill='var(--color-productC)'
+            />
+          </BarChart>
+        </ChartContainer>
+      </div>
+    );
+  },
+};

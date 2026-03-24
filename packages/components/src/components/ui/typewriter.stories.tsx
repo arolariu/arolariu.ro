@@ -60,3 +60,51 @@ export const LongText: Story = {
     </div>
   ),
 };
+
+/**
+ * Typewriter effect on code or terminal-style text.
+ */
+export const CodeTyping: Story = {
+  render: () => (
+    <div
+      style={{
+        padding: "1.5rem",
+        background: "#1f2937",
+        color: "#10b981",
+        fontFamily: "monospace",
+        fontSize: "1rem",
+        borderRadius: "8px",
+        maxWidth: "600px",
+      }}>
+      <div style={{marginBottom: "0.5rem", color: "#9ca3af"}}>$ </div>
+      <TypewriterText words={[{text: "npm"}, {text: "install"}, {text: "@arolariu/components"}]} />
+    </div>
+  ),
+};
+
+/**
+ * Typewriter cycling through multiple phrases.
+ */
+export const MultiLine: Story = {
+  render: () => (
+    <div style={{padding: "2rem", textAlign: "center"}}>
+      <div style={{fontSize: "2rem", fontWeight: "bold", minHeight: "3rem"}}>
+        <TypewriterText
+          words={[
+            {text: "Welcome"},
+            {text: "to"},
+            {text: "our"},
+            {text: "platform"},
+            {text: "•"},
+            {text: "Build"},
+            {text: "amazing"},
+            {text: "things"},
+            {text: "•"},
+            {text: "Start"},
+            {text: "today"},
+          ]}
+        />
+      </div>
+    </div>
+  ),
+};

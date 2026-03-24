@@ -94,3 +94,74 @@ export const ShortcutsList: Story = {
     </div>
   ),
 };
+
+/**
+ * Multi-key combination showing Ctrl+Shift+P.
+ */
+export const Combination: Story = {
+  render: () => (
+    <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+      <span>Command Palette:</span>
+      <KbdGroup>
+        <Kbd>Ctrl</Kbd>
+        <Kbd>Shift</Kbd>
+        <Kbd>P</Kbd>
+      </KbdGroup>
+    </div>
+  ),
+};
+
+/**
+ * Mac-style keyboard shortcut with ⌘ symbol.
+ */
+export const MacStyle: Story = {
+  render: () => (
+    <div style={{display: "flex", flexDirection: "column", gap: "0.75rem"}}>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+        <span>Quick Open:</span>
+        <KbdGroup>
+          <Kbd>⌘</Kbd>
+          <Kbd>K</Kbd>
+        </KbdGroup>
+      </div>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+        <span>Save:</span>
+        <KbdGroup>
+          <Kbd>⌘</Kbd>
+          <Kbd>S</Kbd>
+        </KbdGroup>
+      </div>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+        <span>Close Tab:</span>
+        <KbdGroup>
+          <Kbd>⌘</Kbd>
+          <Kbd>W</Kbd>
+        </KbdGroup>
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * Keyboard shortcut shown inline within descriptive text.
+ */
+export const InContext: Story = {
+  render: () => (
+    <div style={{maxWidth: "32rem", lineHeight: "1.75", fontSize: "0.875rem"}}>
+      <p>
+        To quickly save your work, press{" "}
+        <KbdGroup>
+          <Kbd>Ctrl</Kbd>
+          <Kbd>S</Kbd>
+        </KbdGroup>
+        . You can also use{" "}
+        <KbdGroup>
+          <Kbd>Ctrl</Kbd>
+          <Kbd>Shift</Kbd>
+          <Kbd>S</Kbd>
+        </KbdGroup>{" "}
+        to save with a new name. Press <Kbd>Esc</Kbd> to close any dialog without saving changes.
+      </p>
+    </div>
+  ),
+};

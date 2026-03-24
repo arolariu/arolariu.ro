@@ -98,3 +98,94 @@ function ControlledDemo() {
 export const Controlled: Story = {
   render: () => <ControlledDemo />,
 };
+
+function AnimatedCollapsibleContent(): React.JSX.Element {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  return (
+    <Collapsible
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      className='w-[350px]'>
+      <CollapsibleTrigger asChild>
+        <Button
+          variant='outline'
+          className='w-full justify-between'>
+          Show details
+          <ChevronDown
+            className='h-4 w-4'
+            style={{
+              transition: "transform 0.3s",
+              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+            }}
+          />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent
+        className='pt-4'
+        style={{
+          overflow: "hidden",
+          transition: "height 0.3s ease-out",
+        }}>
+        <div style={{padding: "1rem", background: "#f9fafb", borderRadius: "6px"}}>
+          <p className='text-sm'>This content animates smoothly when expanding and collapsing.</p>
+          <p
+            className='text-muted-foreground text-sm'
+            style={{marginTop: "0.5rem"}}>
+            The height transition creates a polished user experience.
+          </p>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+/**
+ * Collapsible with smooth height animation.
+ */
+export const Animated: Story = {
+  render: () => <AnimatedCollapsibleContent />,
+};
+
+/**
+ * Nested collapsible panels.
+ */
+export const Nested: Story = {
+  render: () => (
+    <Collapsible className='w-[350px]'>
+      <CollapsibleTrigger asChild>
+        <Button
+          variant='outline'
+          className='w-full justify-between'>
+          Parent Section
+          <ChevronDown className='h-4 w-4' />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className='pt-4'>
+        <p
+          className='text-sm'
+          style={{marginBottom: "1rem"}}>
+          This is the parent content area.
+        </p>
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='w-full justify-between'>
+              Nested Section
+              <ChevronDown className='h-4 w-4' />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className='pt-2'>
+            <p
+              className='text-muted-foreground text-sm'
+              style={{paddingLeft: "1rem"}}>
+              This is nested content inside the parent collapsible.
+            </p>
+          </CollapsibleContent>
+        </Collapsible>
+      </CollapsibleContent>
+    </Collapsible>
+  ),
+};

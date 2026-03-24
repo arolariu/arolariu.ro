@@ -58,14 +58,15 @@ export const ContentOnly: Story = {
 function CardWithImage(): React.JSX.Element {
   return (
     <Card style={{maxWidth: "400px"}}>
-      <div style={{
-        width: "100%",
-        height: "200px",
-        backgroundColor: "#e5e7eb",
-        backgroundImage: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        borderTopLeftRadius: "8px",
-        borderTopRightRadius: "8px",
-      }}></div>
+      <div
+        style={{
+          width: "100%",
+          height: "200px",
+          backgroundColor: "#e5e7eb",
+          backgroundImage: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          borderTopLeftRadius: "8px",
+          borderTopRightRadius: "8px",
+        }}></div>
       <CardHeader>
         <CardTitle>Mountain Landscape</CardTitle>
         <CardDescription>Beautiful scenery from the mountains</CardDescription>
@@ -76,14 +77,15 @@ function CardWithImage(): React.JSX.Element {
         </p>
       </CardContent>
       <CardFooter>
-        <button style={{
-          padding: "8px 16px",
-          backgroundColor: "#3b82f6",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: "pointer",
-        }}>
+        <button
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}>
           View Details
         </button>
       </CardFooter>
@@ -108,13 +110,12 @@ function InteractiveCard(): React.JSX.Element {
         cursor: "pointer",
         transition: "all 0.2s ease",
         transform: isHovered ? "translateY(-4px)" : "translateY(0)",
-        boxShadow: isHovered 
+        boxShadow: isHovered
           ? "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
           : "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
       }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+      onMouseLeave={() => setIsHovered(false)}>
       <CardHeader>
         <CardTitle>Interactive Card</CardTitle>
         <CardDescription>Hover over this card to see the effect</CardDescription>
@@ -122,9 +123,7 @@ function InteractiveCard(): React.JSX.Element {
       <CardContent>
         <p>This card responds to hover interactions with smooth animations.</p>
       </CardContent>
-      <CardFooter style={{color: "#6b7280", fontSize: "12px"}}>
-        Click to explore
-      </CardFooter>
+      <CardFooter style={{color: "#6b7280", fontSize: "12px"}}>Click to explore</CardFooter>
     </Card>
   );
 }
@@ -140,55 +139,61 @@ function LoadingCard(): React.JSX.Element {
   return (
     <Card style={{maxWidth: "400px"}}>
       <CardHeader>
-        <div style={{
-          width: "60%",
-          height: "24px",
-          backgroundColor: "#e5e7eb",
-          borderRadius: "4px",
-          marginBottom: "8px",
-          animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        }}></div>
-        <div style={{
-          width: "80%",
-          height: "16px",
-          backgroundColor: "#e5e7eb",
-          borderRadius: "4px",
-          animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        }}></div>
+        <div
+          style={{
+            width: "60%",
+            height: "24px",
+            backgroundColor: "#e5e7eb",
+            borderRadius: "4px",
+            marginBottom: "8px",
+            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          }}></div>
+        <div
+          style={{
+            width: "80%",
+            height: "16px",
+            backgroundColor: "#e5e7eb",
+            borderRadius: "4px",
+            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          }}></div>
       </CardHeader>
       <CardContent>
         <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
-          <div style={{
-            width: "100%",
-            height: "16px",
-            backgroundColor: "#e5e7eb",
-            borderRadius: "4px",
-            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          }}></div>
-          <div style={{
-            width: "90%",
-            height: "16px",
-            backgroundColor: "#e5e7eb",
-            borderRadius: "4px",
-            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          }}></div>
-          <div style={{
-            width: "75%",
-            height: "16px",
-            backgroundColor: "#e5e7eb",
-            borderRadius: "4px",
-            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-          }}></div>
+          <div
+            style={{
+              width: "100%",
+              height: "16px",
+              backgroundColor: "#e5e7eb",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}></div>
+          <div
+            style={{
+              width: "90%",
+              height: "16px",
+              backgroundColor: "#e5e7eb",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}></div>
+          <div
+            style={{
+              width: "75%",
+              height: "16px",
+              backgroundColor: "#e5e7eb",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}></div>
         </div>
       </CardContent>
       <CardFooter>
-        <div style={{
-          width: "100px",
-          height: "36px",
-          backgroundColor: "#e5e7eb",
-          borderRadius: "4px",
-          animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        }}></div>
+        <div
+          style={{
+            width: "100px",
+            height: "36px",
+            backgroundColor: "#e5e7eb",
+            borderRadius: "4px",
+            animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          }}></div>
       </CardFooter>
       <style>{`
         @keyframes pulse {

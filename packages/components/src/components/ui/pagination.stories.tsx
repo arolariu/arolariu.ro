@@ -161,7 +161,9 @@ function CompactPagination(): React.JSX.Element {
           <PaginationPrevious href='#' />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href='#' isActive>
+          <PaginationLink
+            href='#'
+            isActive>
             1
           </PaginationLink>
         </PaginationItem>
@@ -203,7 +205,9 @@ function PaginationWithPageSize(): React.JSX.Element {
             <PaginationLink href='#'>1</PaginationLink>
           </PaginationItem>
           <PaginationItem>
-            <PaginationLink href='#' isActive>
+            <PaginationLink
+              href='#'
+              isActive>
               2
             </PaginationLink>
           </PaginationItem>
@@ -215,13 +219,14 @@ function PaginationWithPageSize(): React.JSX.Element {
           </PaginationItem>
         </PaginationContent>
       </Pagination>
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        fontSize: "14px",
-        color: "#6b7280"
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          fontSize: "14px",
+          color: "#6b7280",
+        }}>
         <span>Items per page:</span>
         <select
           value={pageSize}
@@ -232,12 +237,11 @@ function PaginationWithPageSize(): React.JSX.Element {
             borderRadius: "4px",
             fontSize: "14px",
             cursor: "pointer",
-          }}
-        >
-          <option value="10">10</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
+          }}>
+          <option value='10'>10</option>
+          <option value='25'>25</option>
+          <option value='50'>50</option>
+          <option value='100'>100</option>
         </select>
       </div>
     </div>

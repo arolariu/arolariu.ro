@@ -193,3 +193,313 @@ export const Compact: Story = {
     </Menubar>
   ),
 };
+
+/**
+ * Classic File/Edit/View menubar like desktop applications.
+ */
+export const FileEditView: Story = {
+  render: () => (
+    <div style={{width: "100%"}}>
+      <Menubar style={{borderBottom: "1px solid #e5e7eb", paddingBottom: "8px"}}>
+        <MenubarMenu>
+          <MenubarTrigger>File</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>
+              <svg
+                style={{marginRight: "8px", width: "16px", height: "16px"}}
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'>
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                />
+              </svg>
+              New Document
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘N</span>
+            </MenubarItem>
+            <MenubarItem>
+              <svg
+                style={{marginRight: "8px", width: "16px", height: "16px"}}
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'>
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
+                />
+              </svg>
+              Open...
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘O</span>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem>
+              Save
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘S</span>
+            </MenubarItem>
+            <MenubarItem>Save As...</MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem>
+              Export
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘E</span>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem>Close</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger>Edit</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>
+              Undo
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘Z</span>
+            </MenubarItem>
+            <MenubarItem>
+              Redo
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘⇧Z</span>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem>
+              Cut
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘X</span>
+            </MenubarItem>
+            <MenubarItem>
+              Copy
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘C</span>
+            </MenubarItem>
+            <MenubarItem>
+              Paste
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘V</span>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem>Select All</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger>View</MenubarTrigger>
+          <MenubarContent>
+            <MenubarCheckboxItem checked>Show Sidebar</MenubarCheckboxItem>
+            <MenubarCheckboxItem>Show Minimap</MenubarCheckboxItem>
+            <MenubarCheckboxItem checked>Show Line Numbers</MenubarCheckboxItem>
+            <MenubarSeparator />
+            <MenubarItem>
+              Zoom In
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘+</span>
+            </MenubarItem>
+            <MenubarItem>
+              Zoom Out
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘-</span>
+            </MenubarItem>
+            <MenubarItem>
+              Reset Zoom
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘0</span>
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+    </div>
+  ),
+};
+
+/**
+ * Menubar items showing keyboard shortcuts for power users.
+ */
+export const WithShortcuts: Story = {
+  render: () => (
+    <Menubar>
+      <MenubarMenu>
+        <MenubarTrigger>Actions</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem>
+            <svg
+              style={{marginRight: "8px", width: "16px", height: "16px"}}
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'>
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
+              />
+            </svg>
+            Search
+            <span
+              style={{
+                marginLeft: "auto",
+                display: "flex",
+                gap: "2px",
+                alignItems: "center",
+              }}>
+              <kbd
+                style={{
+                  padding: "2px 6px",
+                  background: "#f3f4f6",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                }}>
+                ⌘
+              </kbd>
+              <kbd
+                style={{
+                  padding: "2px 6px",
+                  background: "#f3f4f6",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                }}>
+                K
+              </kbd>
+            </span>
+          </MenubarItem>
+          <MenubarItem>
+            New Tab
+            <span
+              style={{
+                marginLeft: "auto",
+                display: "flex",
+                gap: "2px",
+                alignItems: "center",
+              }}>
+              <kbd
+                style={{
+                  padding: "2px 6px",
+                  background: "#f3f4f6",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                }}>
+                ⌘
+              </kbd>
+              <kbd
+                style={{
+                  padding: "2px 6px",
+                  background: "#f3f4f6",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                }}>
+                T
+              </kbd>
+            </span>
+          </MenubarItem>
+          <MenubarItem>
+            Close Tab
+            <span
+              style={{
+                marginLeft: "auto",
+                display: "flex",
+                gap: "2px",
+                alignItems: "center",
+              }}>
+              <kbd
+                style={{
+                  padding: "2px 6px",
+                  background: "#f3f4f6",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                }}>
+                ⌘
+              </kbd>
+              <kbd
+                style={{
+                  padding: "2px 6px",
+                  background: "#f3f4f6",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                }}>
+                W
+              </kbd>
+            </span>
+          </MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+      <MenubarMenu>
+        <MenubarTrigger>Tools</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem>
+            Developer Tools
+            <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>F12</span>
+          </MenubarItem>
+          <MenubarItem>
+            Task Manager
+            <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⇧⎋</span>
+          </MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+    </Menubar>
+  ),
+};
+
+/**
+ * Menubar with disabled menu items showing unavailable actions.
+ */
+export const Disabled: Story = {
+  render: () => (
+    <div style={{display: "flex", flexDirection: "column", gap: "12px"}}>
+      <p style={{fontSize: "14px", color: "#6b7280"}}>Some menu items are disabled when conditions aren't met:</p>
+      <Menubar>
+        <MenubarMenu>
+          <MenubarTrigger>Edit</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>Cut</MenubarItem>
+            <MenubarItem>Copy</MenubarItem>
+            <MenubarItem disabled>
+              Paste
+              <span style={{marginLeft: "auto", fontSize: "12px", color: "#9ca3af"}}>⌘V</span>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem disabled>Undo</MenubarItem>
+            <MenubarItem disabled>Redo</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger>Format</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>Bold</MenubarItem>
+            <MenubarItem>Italic</MenubarItem>
+            <MenubarItem disabled>
+              Strikethrough
+              <span
+                style={{
+                  marginLeft: "8px",
+                  padding: "2px 6px",
+                  background: "#fef3c7",
+                  color: "#92400e",
+                  borderRadius: "4px",
+                  fontSize: "10px",
+                  fontWeight: 600,
+                }}>
+                PRO
+              </span>
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem disabled>Code Block</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger style={{opacity: 0.5, cursor: "not-allowed"}}>Export</MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem disabled>PDF</MenubarItem>
+            <MenubarItem disabled>Word</MenubarItem>
+            <MenubarItem disabled>Markdown</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar>
+      <p style={{fontSize: "12px", color: "#9ca3af"}}>💡 Disabled items appear grayed out and cannot be clicked</p>
+    </div>
+  ),
+};

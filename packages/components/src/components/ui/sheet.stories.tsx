@@ -204,3 +204,220 @@ export const FromBottom: Story = {
     </Sheet>
   ),
 };
+
+/**
+ * Sheet containing a settings form with multiple input fields.
+ */
+export const WithForm: Story = {
+  render: () => (
+    <Sheet>
+      <SheetTrigger>Account Settings</SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Account Settings</SheetTitle>
+          <SheetDescription>Update your account information and preferences.</SheetDescription>
+        </SheetHeader>
+        <div style={{display: "flex", flexDirection: "column", gap: "16px", paddingTop: "16px", paddingBottom: "16px"}}>
+          <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
+            <label
+              htmlFor='email'
+              style={{fontSize: "14px", fontWeight: 500}}>
+              Email Address
+            </label>
+            <input
+              id='email'
+              type='email'
+              defaultValue='john.doe@example.com'
+              style={{
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                padding: "8px 12px",
+                fontSize: "14px",
+                background: "#fff",
+              }}
+            />
+          </div>
+          <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
+            <label
+              htmlFor='notifications'
+              style={{fontSize: "14px", fontWeight: 500}}>
+              Notification Preferences
+            </label>
+            <select
+              id='notifications'
+              style={{
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                padding: "8px 12px",
+                fontSize: "14px",
+                background: "#fff",
+              }}>
+              <option>All notifications</option>
+              <option>Important only</option>
+              <option>None</option>
+            </select>
+          </div>
+          <div style={{display: "flex", alignItems: "center", gap: "8px"}}>
+            <input
+              id='marketing'
+              type='checkbox'
+              defaultChecked
+              style={{width: "16px", height: "16px"}}
+            />
+            <label
+              htmlFor='marketing'
+              style={{fontSize: "14px"}}>
+              Receive marketing emails
+            </label>
+          </div>
+          <div style={{display: "flex", alignItems: "center", gap: "8px"}}>
+            <input
+              id='newsletter'
+              type='checkbox'
+              style={{width: "16px", height: "16px"}}
+            />
+            <label
+              htmlFor='newsletter'
+              style={{fontSize: "14px"}}>
+              Subscribe to newsletter
+            </label>
+          </div>
+        </div>
+        <SheetFooter>
+          <SheetClose asChild>
+            <Button variant='outline'>Cancel</Button>
+          </SheetClose>
+          <Button type='submit'>Save Changes</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  ),
+};
+
+/**
+ * Sheet with scrollable long content exceeding viewport height.
+ */
+export const LongContent: Story = {
+  render: () => (
+    <Sheet>
+      <SheetTrigger>View Terms & Conditions</SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Terms and Conditions</SheetTitle>
+          <SheetDescription>Please read our terms carefully.</SheetDescription>
+        </SheetHeader>
+        <div style={{maxHeight: "60vh", overflowY: "auto", paddingTop: "16px", paddingBottom: "16px"}}>
+          <div style={{display: "flex", flexDirection: "column", gap: "16px", fontSize: "14px", lineHeight: "1.6"}}>
+            <section>
+              <h3 style={{fontWeight: 600, marginBottom: "8px"}}>1. Acceptance of Terms</h3>
+              <p style={{color: "#6b7280"}}>
+                By accessing and using this service, you accept and agree to be bound by the terms and provision of this agreement. If you
+                do not agree to abide by the above, please do not use this service.
+              </p>
+            </section>
+            <section>
+              <h3 style={{fontWeight: 600, marginBottom: "8px"}}>2. Use License</h3>
+              <p style={{color: "#6b7280"}}>
+                Permission is granted to temporarily download one copy of the materials on our service for personal, non-commercial
+                transitory viewing only. This is the grant of a license, not a transfer of title.
+              </p>
+            </section>
+            <section>
+              <h3 style={{fontWeight: 600, marginBottom: "8px"}}>3. Disclaimer</h3>
+              <p style={{color: "#6b7280"}}>
+                The materials on our service are provided on an 'as is' basis. We make no warranties, expressed or implied, and hereby
+                disclaim and negate all other warranties including, without limitation, implied warranties or conditions of merchantability,
+                fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
+              </p>
+            </section>
+            <section>
+              <h3 style={{fontWeight: 600, marginBottom: "8px"}}>4. Limitations</h3>
+              <p style={{color: "#6b7280"}}>
+                In no event shall we or our suppliers be liable for any damages (including, without limitation, damages for loss of data or
+                profit, or due to business interruption) arising out of the use or inability to use the materials on our service.
+              </p>
+            </section>
+            <section>
+              <h3 style={{fontWeight: 600, marginBottom: "8px"}}>5. Privacy Policy</h3>
+              <p style={{color: "#6b7280"}}>
+                Your use of our service is also governed by our Privacy Policy. Please review our Privacy Policy, which also governs the
+                service and informs users of our data collection practices.
+              </p>
+            </section>
+            <section>
+              <h3 style={{fontWeight: 600, marginBottom: "8px"}}>6. Governing Law</h3>
+              <p style={{color: "#6b7280"}}>
+                These terms and conditions are governed by and construed in accordance with the laws and you irrevocably submit to the
+                exclusive jurisdiction of the courts in that location.
+              </p>
+            </section>
+          </div>
+        </div>
+        <SheetFooter>
+          <SheetClose asChild>
+            <Button>I Agree</Button>
+          </SheetClose>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  ),
+};
+
+/**
+ * Sheet with sticky footer containing action buttons.
+ */
+export const WithFooter: Story = {
+  render: () => (
+    <Sheet>
+      <SheetTrigger>Checkout</SheetTrigger>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>Shopping Cart</SheetTitle>
+          <SheetDescription>Review your items before checkout.</SheetDescription>
+        </SheetHeader>
+        <div style={{display: "flex", flexDirection: "column", gap: "12px", paddingTop: "16px", paddingBottom: "16px"}}>
+          {[
+            {name: "Wireless Headphones", price: "$299.99", qty: 1},
+            {name: "USB-C Cable", price: "$19.99", qty: 2},
+            {name: "Laptop Stand", price: "$49.99", qty: 1},
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "12px",
+                border: "1px solid #e5e7eb",
+                borderRadius: "6px",
+              }}>
+              <div>
+                <div style={{fontWeight: 500, fontSize: "14px"}}>{item.name}</div>
+                <div style={{fontSize: "12px", color: "#6b7280"}}>Quantity: {item.qty}</div>
+              </div>
+              <div style={{fontWeight: 600}}>{item.price}</div>
+            </div>
+          ))}
+          <div
+            style={{
+              marginTop: "8px",
+              paddingTop: "12px",
+              borderTop: "1px solid #e5e7eb",
+              display: "flex",
+              justifyContent: "space-between",
+              fontWeight: 600,
+            }}>
+            <span>Total:</span>
+            <span>$389.96</span>
+          </div>
+        </div>
+        <SheetFooter style={{position: "sticky", bottom: 0, background: "#fff", paddingTop: "16px"}}>
+          <SheetClose asChild>
+            <Button variant='outline'>Continue Shopping</Button>
+          </SheetClose>
+          <Button>Proceed to Checkout</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  ),
+};

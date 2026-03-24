@@ -168,7 +168,9 @@ function BreadcrumbWithIcons(): React.JSX.Element {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href='/' style={{display: "flex", alignItems: "center", gap: "4px"}}>
+          <BreadcrumbLink
+            href='/'
+            style={{display: "flex", alignItems: "center", gap: "4px"}}>
             <svg
               style={{width: "16px", height: "16px"}}
               fill='none'
@@ -186,7 +188,9 @@ function BreadcrumbWithIcons(): React.JSX.Element {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href='/products' style={{display: "flex", alignItems: "center", gap: "4px"}}>
+          <BreadcrumbLink
+            href='/products'
+            style={{display: "flex", alignItems: "center", gap: "4px"}}>
             <svg
               style={{width: "16px", height: "16px"}}
               fill='none'
@@ -204,7 +208,9 @@ function BreadcrumbWithIcons(): React.JSX.Element {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href='/products/electronics' style={{display: "flex", alignItems: "center", gap: "4px"}}>
+          <BreadcrumbLink
+            href='/products/electronics'
+            style={{display: "flex", alignItems: "center", gap: "4px"}}>
             <svg
               style={{width: "16px", height: "16px"}}
               fill='none'

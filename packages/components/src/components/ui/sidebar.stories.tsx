@@ -306,3 +306,184 @@ export const Collapsible: Story = {
     </SidebarProvider>
   ),
 };
+
+/**
+ * Sidebar in collapsed/icon-only mode.
+ */
+export const Collapsed: Story = {
+  render: () => (
+    <SidebarProvider defaultOpen={false}>
+      <div style={{display: "flex", minHeight: "500px", width: "100%"}}>
+        <Sidebar collapsible='icon'>
+          <SidebarHeader>
+            <div style={{padding: "8px 16px"}}>
+              <div style={{width: "32px", height: "32px", background: "#3b82f6", borderRadius: "6px"}} />
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {["🏠", "📊", "📁", "👥", "⚙️"].map((icon, i) => (
+                    <SidebarMenuItem key={i}>
+                      <SidebarMenuButton tooltip={`Menu ${i + 1}`}>
+                        <span style={{fontSize: "18px"}}>{icon}</span>
+                        <span>Menu {i + 1}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+        <main style={{flex: 1, padding: "24px"}}>
+          <SidebarTrigger />
+          <h2 style={{fontSize: "20px", fontWeight: "600", marginTop: "16px"}}>Icon-Only Sidebar</h2>
+          <p style={{color: "#6b7280", marginTop: "8px"}}>Hover over icons to see tooltips.</p>
+        </main>
+      </div>
+    </SidebarProvider>
+  ),
+};
+
+/**
+ * Sidebar with notification badges on menu items.
+ */
+export const WithBadges: Story = {
+  render: () => (
+    <SidebarProvider>
+      <div style={{display: "flex", minHeight: "500px", width: "100%"}}>
+        <Sidebar>
+          <SidebarHeader>
+            <div style={{padding: "16px"}}>
+              <h2 style={{fontSize: "18px", fontWeight: "600"}}>Notifications</h2>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton>
+                      <span>Inbox</span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          padding: "2px 8px",
+                          background: "#ef4444",
+                          color: "white",
+                          fontSize: "12px",
+                          borderRadius: "12px",
+                          fontWeight: "600",
+                        }}>
+                        12
+                      </span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton>
+                      <span>Messages</span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          padding: "2px 8px",
+                          background: "#3b82f6",
+                          color: "white",
+                          fontSize: "12px",
+                          borderRadius: "12px",
+                          fontWeight: "600",
+                        }}>
+                        5
+                      </span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton>
+                      <span>Updates</span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          padding: "2px 8px",
+                          background: "#10b981",
+                          color: "white",
+                          fontSize: "12px",
+                          borderRadius: "12px",
+                          fontWeight: "600",
+                        }}>
+                        23
+                      </span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton>
+                      <span>Archive</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+        <main style={{flex: 1, padding: "24px"}}>
+          <SidebarTrigger />
+          <h2 style={{fontSize: "20px", fontWeight: "600", marginTop: "16px"}}>Badge Indicators</h2>
+          <p style={{color: "#6b7280", marginTop: "8px"}}>Menu items show notification counts.</p>
+        </main>
+      </div>
+    </SidebarProvider>
+  ),
+};
+
+/**
+ * Sidebar with search input at the top.
+ */
+export const WithSearch: Story = {
+  render: () => (
+    <SidebarProvider>
+      <div style={{display: "flex", minHeight: "500px", width: "100%"}}>
+        <Sidebar>
+          <SidebarHeader>
+            <div style={{padding: "16px"}}>
+              <input
+                type='text'
+                placeholder='Search...'
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                }}
+              />
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {["Dashboard", "Analytics", "Projects", "Team", "Calendar", "Documents", "Settings"].map((item) => (
+                    <SidebarMenuItem key={item}>
+                      <SidebarMenuButton>
+                        <span>{item}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
+            <div style={{padding: "16px", fontSize: "12px", color: "#6b7280"}}>7 items found</div>
+          </SidebarFooter>
+        </Sidebar>
+        <main style={{flex: 1, padding: "24px"}}>
+          <SidebarTrigger />
+          <h2 style={{fontSize: "20px", fontWeight: "600", marginTop: "16px"}}>Searchable Sidebar</h2>
+          <p style={{color: "#6b7280", marginTop: "8px"}}>Use the search input to filter menu items.</p>
+        </main>
+      </div>
+    </SidebarProvider>
+  ),
+};

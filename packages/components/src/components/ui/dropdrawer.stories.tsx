@@ -84,3 +84,185 @@ export const MobileView: Story = {
     </div>
   ),
 };
+
+/**
+ * DropDrawer with checkbox items for multi-selection.
+ */
+export const WithCheckboxItems: Story = {
+  render: () => (
+    <div style={{padding: "2rem"}}>
+      <div style={{padding: "1.5rem", background: "#f9fafb", borderRadius: "8px"}}>
+        <h3 style={{fontSize: "1.125rem", fontWeight: "600", marginBottom: "1rem"}}>Multi-Select Menu</h3>
+        <p style={{marginBottom: "1rem", color: "#4b5563"}}>DropDrawer can contain checkbox items for multi-selection scenarios:</p>
+        <div
+          style={{
+            padding: "1rem",
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "6px",
+          }}>
+          {[
+            {label: "Show notifications", checked: true},
+            {label: "Enable sound", checked: false},
+            {label: "Auto-save", checked: true},
+            {label: "Dark mode", checked: false},
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px",
+                borderBottom: idx < 3 ? "1px solid #f3f4f6" : "none",
+              }}>
+              <input
+                type='checkbox'
+                defaultChecked={item.checked}
+                style={{width: "16px", height: "16px"}}
+              />
+              <span style={{fontSize: "14px"}}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * DropDrawer with a destructive action (delete, remove).
+ */
+export const Destructive: Story = {
+  render: () => (
+    <div style={{padding: "2rem"}}>
+      <div style={{padding: "1.5rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px"}}>
+        <h3 style={{fontSize: "1.125rem", fontWeight: "600", marginBottom: "1rem", color: "#dc2626"}}>Destructive Actions</h3>
+        <p style={{marginBottom: "1rem", color: "#991b1b"}}>DropDrawer can include destructive actions with appropriate styling:</p>
+        <div
+          style={{
+            padding: "1rem",
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "6px",
+          }}>
+          <Button
+            variant='ghost'
+            style={{width: "100%", justifyContent: "flex-start", marginBottom: "4px"}}>
+            Edit
+          </Button>
+          <Button
+            variant='ghost'
+            style={{width: "100%", justifyContent: "flex-start", marginBottom: "4px"}}>
+            Duplicate
+          </Button>
+          <Button
+            variant='ghost'
+            style={{width: "100%", justifyContent: "flex-start", marginBottom: "4px"}}>
+            Archive
+          </Button>
+          <div style={{borderTop: "1px solid #e5e7eb", marginTop: "8px", paddingTop: "8px"}}>
+            <Button
+              variant='ghost'
+              style={{
+                width: "100%",
+                justifyContent: "flex-start",
+                color: "#dc2626",
+              }}>
+              <svg
+                style={{width: "16px", height: "16px", marginRight: "8px"}}
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'>
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                />
+              </svg>
+              Delete
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+/**
+ * DropDrawer organized into labeled sections.
+ */
+export const WithSections: Story = {
+  render: () => (
+    <div style={{padding: "2rem"}}>
+      <div style={{padding: "1.5rem", background: "#f9fafb", borderRadius: "8px"}}>
+        <h3 style={{fontSize: "1.125rem", fontWeight: "600", marginBottom: "1rem"}}>Sectioned Menu</h3>
+        <p style={{marginBottom: "1rem", color: "#4b5563"}}>DropDrawer can be organized into multiple sections with labels:</p>
+        <div
+          style={{
+            padding: "1rem",
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "6px",
+          }}>
+          <div style={{marginBottom: "12px"}}>
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#6b7280",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: "8px",
+                paddingLeft: "8px",
+              }}>
+              Account
+            </div>
+            <Button
+              variant='ghost'
+              style={{width: "100%", justifyContent: "flex-start", marginBottom: "2px"}}>
+              Profile
+            </Button>
+            <Button
+              variant='ghost'
+              style={{width: "100%", justifyContent: "flex-start", marginBottom: "2px"}}>
+              Settings
+            </Button>
+          </div>
+          <div style={{borderTop: "1px solid #e5e7eb", paddingTop: "12px", marginBottom: "12px"}}>
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#6b7280",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: "8px",
+                paddingLeft: "8px",
+              }}>
+              Help
+            </div>
+            <Button
+              variant='ghost'
+              style={{width: "100%", justifyContent: "flex-start", marginBottom: "2px"}}>
+              Documentation
+            </Button>
+            <Button
+              variant='ghost'
+              style={{width: "100%", justifyContent: "flex-start", marginBottom: "2px"}}>
+              Support
+            </Button>
+          </div>
+          <div style={{borderTop: "1px solid #e5e7eb", paddingTop: "12px"}}>
+            <Button
+              variant='ghost'
+              style={{width: "100%", justifyContent: "flex-start"}}>
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ),
+};

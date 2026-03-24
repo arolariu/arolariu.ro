@@ -64,9 +64,7 @@ function InfoAlert(): React.JSX.Element {
         </svg>
         <div>
           <AlertTitle style={{color: "#1e40af"}}>Information</AlertTitle>
-          <AlertDescription style={{color: "#1e3a8a"}}>
-            Your session will expire in 5 minutes. Please save your work.
-          </AlertDescription>
+          <AlertDescription style={{color: "#1e3a8a"}}>Your session will expire in 5 minutes. Please save your work.</AlertDescription>
         </div>
       </div>
     </Alert>
@@ -98,9 +96,7 @@ function SuccessAlert(): React.JSX.Element {
         </svg>
         <div>
           <AlertTitle style={{color: "#15803d"}}>Success</AlertTitle>
-          <AlertDescription style={{color: "#166534"}}>
-            Your changes have been saved successfully.
-          </AlertDescription>
+          <AlertDescription style={{color: "#166534"}}>Your changes have been saved successfully.</AlertDescription>
         </div>
       </div>
     </Alert>
@@ -118,11 +114,7 @@ function AlertWithAction(): React.JSX.Element {
   const [visible, setVisible] = React.useState(true);
 
   if (!visible) {
-    return (
-      <div style={{padding: "16px", textAlign: "center", color: "#6b7280"}}>
-        Alert dismissed
-      </div>
-    );
+    return <div style={{padding: "16px", textAlign: "center", color: "#6b7280"}}>Alert dismissed</div>;
   }
 
   return (
@@ -144,8 +136,7 @@ function AlertWithAction(): React.JSX.Element {
             fontSize: "14px",
             cursor: "pointer",
             flexShrink: 0,
-          }}
-        >
+          }}>
           Dismiss
         </button>
       </div>

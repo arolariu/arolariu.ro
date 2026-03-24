@@ -159,3 +159,105 @@ export const RepositoryStats: Story = {
     </HoverCard>
   ),
 };
+
+/**
+ * Hover card showing a user profile with avatar, bio, and follow button.
+ */
+export const UserProfile: Story = {
+  render: () => (
+    <HoverCard>
+      <HoverCardTrigger
+        href='#'
+        style={{fontWeight: 500, textDecoration: "underline", textUnderlineOffset: "4px"}}>
+        @sarah_dev
+      </HoverCardTrigger>
+      <HoverCardContent style={{width: "320px"}}>
+        <div style={{display: "flex", gap: "16px"}}>
+          <Avatar
+            src='https://i.pravatar.cc/150?img=47'
+            fallback='SD'
+          />
+          <div style={{flex: 1, display: "flex", flexDirection: "column", gap: "8px"}}>
+            <div>
+              <h4 style={{fontSize: "14px", fontWeight: 600}}>Sarah Anderson</h4>
+              <p style={{fontSize: "14px", color: "#6b7280"}}>@sarah_dev</p>
+            </div>
+            <p style={{fontSize: "14px", color: "#6b7280", lineHeight: "1.5"}}>
+              Full-stack developer passionate about React, TypeScript, and building accessible web experiences. Coffee enthusiast ☕
+            </p>
+            <div style={{display: "flex", gap: "16px", fontSize: "14px", paddingTop: "8px"}}>
+              <div>
+                <span style={{fontWeight: 600}}>1,234</span> <span style={{color: "#6b7280"}}>followers</span>
+              </div>
+              <div>
+                <span style={{fontWeight: 600}}>567</span> <span style={{color: "#6b7280"}}>following</span>
+              </div>
+            </div>
+            <Button
+              size='sm'
+              style={{marginTop: "8px"}}>
+              Follow
+            </Button>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  ),
+};
+
+/**
+ * Hover card showing a link preview with title, description, and thumbnail.
+ */
+export const LinkPreview: Story = {
+  render: () => (
+    <HoverCard>
+      <HoverCardTrigger
+        href='#'
+        style={{color: "#3b82f6", textDecoration: "underline", textUnderlineOffset: "4px"}}>
+        Read the full article
+      </HoverCardTrigger>
+      <HoverCardContent style={{width: "360px", padding: 0}}>
+        <div style={{overflow: "hidden", borderRadius: "8px"}}>
+          <div
+            style={{
+              width: "100%",
+              height: "180px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontSize: "48px",
+              fontWeight: 600,
+            }}>
+            📰
+          </div>
+          <div style={{padding: "16px"}}>
+            <h4 style={{fontSize: "16px", fontWeight: 600, marginBottom: "8px"}}>10 Tips for Building Better React Applications</h4>
+            <p style={{fontSize: "14px", color: "#6b7280", lineHeight: "1.5", marginBottom: "12px"}}>
+              Learn best practices and modern patterns for building scalable, maintainable React applications. Covers hooks, performance
+              optimization, and more.
+            </p>
+            <div style={{display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#9ca3af"}}>
+              <svg
+                style={{width: "16px", height: "16px"}}
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'>
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+                />
+              </svg>
+              <span>5 min read</span>
+              <span>•</span>
+              <span>blog.example.com</span>
+            </div>
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  ),
+};

@@ -219,25 +219,27 @@ function TableWithActions(): React.JSX.Element {
           <TableCell>Active</TableCell>
           <TableCell style={{textAlign: "right"}}>
             <div style={{display: "flex", gap: "8px", justifyContent: "flex-end"}}>
-              <button style={{
-                padding: "4px 12px",
-                fontSize: "12px",
-                border: "1px solid #d1d5db",
-                borderRadius: "4px",
-                backgroundColor: "white",
-                cursor: "pointer",
-              }}>
+              <button
+                style={{
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  backgroundColor: "white",
+                  cursor: "pointer",
+                }}>
                 Edit
               </button>
-              <button style={{
-                padding: "4px 12px",
-                fontSize: "12px",
-                border: "1px solid #dc2626",
-                borderRadius: "4px",
-                backgroundColor: "white",
-                color: "#dc2626",
-                cursor: "pointer",
-              }}>
+              <button
+                style={{
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  border: "1px solid #dc2626",
+                  borderRadius: "4px",
+                  backgroundColor: "white",
+                  color: "#dc2626",
+                  cursor: "pointer",
+                }}>
                 Delete
               </button>
             </div>
@@ -249,25 +251,27 @@ function TableWithActions(): React.JSX.Element {
           <TableCell>Active</TableCell>
           <TableCell style={{textAlign: "right"}}>
             <div style={{display: "flex", gap: "8px", justifyContent: "flex-end"}}>
-              <button style={{
-                padding: "4px 12px",
-                fontSize: "12px",
-                border: "1px solid #d1d5db",
-                borderRadius: "4px",
-                backgroundColor: "white",
-                cursor: "pointer",
-              }}>
+              <button
+                style={{
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  backgroundColor: "white",
+                  cursor: "pointer",
+                }}>
                 Edit
               </button>
-              <button style={{
-                padding: "4px 12px",
-                fontSize: "12px",
-                border: "1px solid #dc2626",
-                borderRadius: "4px",
-                backgroundColor: "white",
-                color: "#dc2626",
-                cursor: "pointer",
-              }}>
+              <button
+                style={{
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  border: "1px solid #dc2626",
+                  borderRadius: "4px",
+                  backgroundColor: "white",
+                  color: "#dc2626",
+                  cursor: "pointer",
+                }}>
                 Delete
               </button>
             </div>

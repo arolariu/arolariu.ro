@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Search} from "lucide-react";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Input} from "./input";
 
 const meta = {
@@ -80,11 +80,11 @@ export const WithError: Story = {
       <Input
         {...args}
         style={{borderColor: "red", borderWidth: "2px"}}
-        aria-invalid="true"
-        aria-describedby="error-message"
+        aria-invalid='true'
+        aria-describedby='error-message'
       />
       <p
-        id="error-message"
+        id='error-message'
         style={{color: "red", fontSize: "0.875rem", marginTop: "0.25rem"}}>
         Please enter a valid email address
       </p>
@@ -107,8 +107,8 @@ export const WithIcon: Story = {
         }}
       />
       <Input
-        type="text"
-        placeholder="Search..."
+        type='text'
+        placeholder='Search...'
         style={{paddingLeft: "36px"}}
       />
     </div>

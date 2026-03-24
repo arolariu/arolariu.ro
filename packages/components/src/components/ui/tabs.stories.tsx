@@ -1,5 +1,5 @@
-import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {FileText, Home, Settings} from "lucide-react";
+import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "./tabs";
 
 const meta = {
