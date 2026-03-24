@@ -1,3 +1,4 @@
+import * as React from "react";
 import type {Meta, StoryObj} from "storybook-react-rsbuild";
 import {Button} from "./button";
 import {Popover, PopoverContent, PopoverTrigger} from "./popover";

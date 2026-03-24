@@ -78,6 +78,13 @@ const preview: Preview = {
       const theme = context.globals["theme"] ?? "dark";
       const isDark = theme === "dark";
 
+      // Also set body/html background so the entire Storybook canvas matches
+      if (typeof document !== "undefined") {
+        document.body.style.backgroundColor = isDark ? "#09090b" : "#ffffff";
+        document.body.style.color = isDark ? "#fafafa" : "#09090b";
+        document.documentElement.style.backgroundColor = isDark ? "#09090b" : "#ffffff";
+      }
+
       return (
         <div
           data-theme={isDark ? "dark" : undefined}
@@ -85,7 +92,7 @@ const preview: Preview = {
             padding: "1rem",
             backgroundColor: isDark ? "#09090b" : "#ffffff",
             color: isDark ? "#fafafa" : "#09090b",
-            minHeight: "100%",
+            minHeight: "100vh",
           }}>
           <Story />
         </div>
