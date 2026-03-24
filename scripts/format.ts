@@ -11,7 +11,7 @@
 
 import process from "node:process";
 import {fileURLToPath} from "node:url";
-import pc from "picocolors";
+import {styleText} from "node:util";
 import Piscina from "piscina";
 import {
   createProgressTracker,
@@ -27,10 +27,10 @@ const allTargets: FormatTarget[] = ["packages", "website", "cv", "api"];
 
 /** Target display configuration with icons and colors */
 const targetConfig: Record<FormatTarget, {icon: string; color: (s: string) => string; description: string}> = {
-  packages: {icon: "📦", color: pc.cyan, description: "Component Library"},
-  website: {icon: "🌐", color: pc.blue, description: "Next.js Website"},
-  cv: {icon: "📄", color: pc.magenta, description: "SvelteKit CV"},
-  api: {icon: "⚙️", color: pc.yellow, description: ".NET Backend"},
+  packages: {icon: "📦", color: (s: string) => styleText("cyan", s), description: "Component Library"},
+  website: {icon: "🌐", color: (s: string) => styleText("blue", s), description: "Next.js Website"},
+  cv: {icon: "📄", color: (s: string) => styleText("magenta", s), description: "SvelteKit CV"},
+  api: {icon: "⚙️", color: (s: string) => styleText("yellow", s), description: ".NET Backend"},
 };
 
 /** Box drawing characters for fancy borders */
@@ -58,13 +58,13 @@ const box = {
  */
 function createLine(width: number, label?: string): string {
   if (!label) {
-    return pc.gray(box.horizontal.repeat(width));
+    return styleText("gray", box.horizontal.repeat(width));
   }
   const labelWithPadding = ` ${label} `;
   const remaining = width - labelWithPadding.length;
   const leftPad = Math.floor(remaining / 2);
   const rightPad = remaining - leftPad;
-  return pc.gray(box.horizontal.repeat(leftPad)) + pc.bold(pc.white(labelWithPadding)) + pc.gray(box.horizontal.repeat(rightPad));
+  return styleText("gray", box.horizontal.repeat(leftPad)) + styleText("bold", styleText("white", labelWithPadding)) + styleText("gray", box.horizontal.repeat(rightPad));
 }
 
 /**
@@ -80,9 +80,9 @@ function createProgressBar(completed: number, total: number, width: number = 20)
   const filledWidth = Math.round((completed / total) * width);
   const emptyWidth = width - filledWidth;
 
-  const filled = pc.green("█".repeat(filledWidth));
-  const empty = pc.gray("░".repeat(emptyWidth));
-  const percentageText = pc.bold(pc.white(String(percentage) + "%"));
+  const filled = styleText("green", "█".repeat(filledWidth));
+  const empty = styleText("gray", "░".repeat(emptyWidth));
+  const percentageText = styleText("bold", styleText("white", String(percentage) + "%"));
 
   return `${filled}${empty} ${percentageText}`;
 }
@@ -95,12 +95,12 @@ function createProgressBar(completed: number, total: number, width: number = 20)
  */
 function createStatusBadge(result: FormatWorkerResult): string {
   if (result.exitCode !== 0) {
-    return pc.bgRed(pc.white(" FAILED "));
+    return styleText("bgRed", styleText("white", " FAILED "));
   }
   if (result.formatted) {
-    return pc.bgYellow(pc.black(" FORMATTED "));
+    return styleText("bgYellow", styleText("black", " FORMATTED "));
   }
-  return pc.bgGreen(pc.black(" CLEAN "));
+  return styleText("bgGreen", styleText("black", " CLEAN "));
 }
 
 /**
@@ -111,12 +111,12 @@ function createStatusBadge(result: FormatWorkerResult): string {
  */
 function formatDuration(ms: number): string {
   if (ms < 1000) {
-    return pc.green(`${ms}ms`);
+    return styleText("green", `${ms}ms`);
   }
   if (ms < 5000) {
-    return pc.yellow(`${(ms / 1000).toFixed(1)}s`);
+    return styleText("yellow", `${(ms / 1000).toFixed(1)}s`);
   }
-  return pc.red(`${(ms / 1000).toFixed(1)}s`);
+  return styleText("red", `${(ms / 1000).toFixed(1)}s`);
 }
 
 /**
@@ -137,12 +137,12 @@ function printWorkerResult(result: FormatWorkerResult, index?: number): void {
 
   // Card header
   console.log();
-  console.log(pc.gray(`  ${box.topLeft}${box.horizontal.repeat(cardWidth)}${box.topRight}`));
+  console.log(styleText("gray", `  ${box.topLeft}${box.horizontal.repeat(cardWidth)}${box.topRight}`));
 
   // Title row: [icon TARGET Description] [BADGE]
   const indexBadge = index === undefined ? "" : `#${index + 1} `;
-  const coloredTitle = index === undefined ? "" : pc.gray(`#${index + 1} `);
-  const fullTitle = `${coloredTitle}${config.icon} ${config.color(pc.bold(result.target.toUpperCase()))} ${pc.dim(config.description)}`;
+  const coloredTitle = index === undefined ? "" : styleText("gray", `#${index + 1} `);
+  const fullTitle = `${coloredTitle}${config.icon} ${config.color(styleText("bold", result.target.toUpperCase()))} ${styleText("dim", config.description)}`;
   const badge = createStatusBadge(result);
 
   // Calculate padding: we need to account for ANSI codes in colored strings
@@ -159,49 +159,49 @@ function printWorkerResult(result: FormatWorkerResult, index?: number): void {
   const paddingNeeded = innerWidth - titleVisibleLength - badgeVisibleLength + 1;
   const padding = " ".repeat(Math.max(0, paddingNeeded));
 
-  console.log(pc.gray(`  ${box.vertical} `) + fullTitle + padding + badge + pc.gray(` ${box.vertical}`));
+  console.log(styleText("gray", `  ${box.vertical} `) + fullTitle + padding + badge + styleText("gray", ` ${box.vertical}`));
 
   // Separator
-  console.log(pc.gray(`  ${box.teeRight}${box.horizontal.repeat(cardWidth)}${box.teeLeft}`));
+  console.log(styleText("gray", `  ${box.teeRight}${box.horizontal.repeat(cardWidth)}${box.teeLeft}`));
 
   // Stats row: Worker info and Duration breakdown
   const workerText = `Worker #${result.workerId}`;
   const timingText = `init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms`;
-  const statsLine = ` ${pc.dim(workerText)}  ${pc.gray("│")}  ${pc.dim(timingText)}`;
+  const statsLine = ` ${styleText("dim", workerText)}  ${styleText("gray", "│")}  ${styleText("dim", timingText)}`;
   // Visible length calculation for stats
   const statsVisibleLength = 1 + workerText.length + 3 + timingText.length;
   const statsPadding = " ".repeat(Math.max(0, innerWidth - statsVisibleLength));
 
-  console.log(pc.gray(`  ${box.vertical}`) + statsLine + statsPadding + pc.gray(`  ${box.vertical}`));
+  console.log(styleText("gray", `  ${box.vertical}`) + statsLine + statsPadding + styleText("gray", `  ${box.vertical}`));
 
   // Second stats row: Total duration
   const durationText = `Total: ${formatDuration(result.durationMs)}`;
   const memoryText = `Memory: ${formatBytes(result.peakMemoryBytes)}`;
-  const statsLine2 = ` ${durationText}  ${pc.gray("│")}  ${pc.dim(memoryText)}`;
+  const statsLine2 = ` ${durationText}  ${styleText("gray", "│")}  ${styleText("dim", memoryText)}`;
   const statsVisibleLength2 = 1 + 7 + result.durationMs.toString().length + 2 + 3 + 8 + 10;
   const statsPadding2 = " ".repeat(Math.max(0, innerWidth - statsVisibleLength2));
 
-  console.log(pc.gray(`  ${box.vertical}`) + statsLine2 + statsPadding2 + pc.gray(`  ${box.vertical}`));
+  console.log(styleText("gray", `  ${box.vertical}`) + statsLine2 + statsPadding2 + styleText("gray", `  ${box.vertical}`));
 
   // Result text (if any meaningful output)
   if (result.resultText && result.resultText.trim().length > 0) {
-    console.log(pc.gray(`  ${box.teeRight}${box.horizontal.repeat(cardWidth)}${box.teeLeft}`));
+    console.log(styleText("gray", `  ${box.teeRight}${box.horizontal.repeat(cardWidth)}${box.teeLeft}`));
     const lines = result.resultText.trim().split("\n").slice(0, 5); // Limit to 5 lines
     for (const line of lines) {
       const maxLineLength = innerWidth - 4;
       const truncatedLine = line.length > maxLineLength ? line.substring(0, maxLineLength - 3) + "..." : line;
       const linePadding = " ".repeat(Math.max(0, innerWidth - truncatedLine.length - 1));
-      console.log(pc.gray(`  ${box.vertical} `) + truncatedLine + linePadding + pc.gray(`  ${box.vertical}`));
+      console.log(styleText("gray", `  ${box.vertical} `) + truncatedLine + linePadding + styleText("gray", `  ${box.vertical}`));
     }
     if (result.resultText.trim().split("\n").length > 5) {
       const moreText = "... and more";
       const morePadding = " ".repeat(innerWidth - moreText.length - 1);
-      console.log(pc.gray(`  ${box.vertical} `) + pc.dim(moreText) + morePadding + pc.gray(`  ${box.vertical}`));
+      console.log(styleText("gray", `  ${box.vertical} `) + styleText("dim", moreText) + morePadding + styleText("gray", `  ${box.vertical}`));
     }
   }
 
   // Card footer
-  console.log(pc.gray(`  ${box.bottomLeft}${box.horizontal.repeat(cardWidth)}${box.bottomRight}`));
+  console.log(styleText("gray", `  ${box.bottomLeft}${box.horizontal.repeat(cardWidth)}${box.bottomRight}`));
 }
 
 /**
@@ -209,11 +209,11 @@ function printWorkerResult(result: FormatWorkerResult, index?: number): void {
  */
 function printTargetOverview(): void {
   console.log();
-  console.log(pc.bold("  📋 Targets to format:"));
+  console.log(styleText("bold", "  📋 Targets to format:"));
   console.log();
   for (const target of allTargets) {
     const config = targetConfig[target];
-    console.log(`     ${config.icon}  ${config.color(pc.bold(target.padEnd(10)))} ${pc.dim(config.description)}`);
+    console.log(`     ${config.icon}  ${config.color(styleText("bold", target.padEnd(10)))} ${styleText("dim", config.description)}`);
   }
   console.log();
 }
@@ -247,31 +247,31 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
 
   // Status breakdown with icons
   if (alreadyFormatted > 0) {
-    const bar = pc.green("█".repeat(alreadyFormatted));
+    const bar = styleText("green", "█".repeat(alreadyFormatted));
     console.log(
-      `   ${pc.green("●")} ${pc.bold("Clean:")}     ${bar} ${pc.green(String(alreadyFormatted))} target(s) already formatted`,
+      `   ${styleText("green", "●")} ${styleText("bold", "Clean:")}     ${bar} ${styleText("green", String(alreadyFormatted))} target(s) already formatted`,
     );
   }
   if (formatted > 0) {
-    const bar = pc.yellow("█".repeat(formatted));
+    const bar = styleText("yellow", "█".repeat(formatted));
     console.log(
-      `   ${pc.yellow("●")} ${pc.bold("Fixed:")}     ${bar} ${pc.yellow(String(formatted))} target(s) were formatted`,
+      `   ${styleText("yellow", "●")} ${styleText("bold", "Fixed:")}     ${bar} ${styleText("yellow", String(formatted))} target(s) were formatted`,
     );
   }
   if (failed > 0) {
-    const bar = pc.red("█".repeat(failed));
-    console.log(`   ${pc.red("●")} ${pc.bold("Failed:")}    ${bar} ${pc.red(String(failed))} target(s) failed`);
+    const bar = styleText("red", "█".repeat(failed));
+    console.log(`   ${styleText("red", "●")} ${styleText("bold", "Failed:")}    ${bar} ${styleText("red", String(failed))} target(s) failed`);
   }
 
   console.log();
 
   // Resource usage
-  console.log(pc.bold("   📊 Resource Usage:"));
+  console.log(styleText("bold", "   📊 Resource Usage:"));
   if (totalFiles > 0) {
-    console.log(pc.dim(`      Files processed: ${totalFiles}`));
+    console.log(styleText("dim", `      Files processed: ${totalFiles}`));
   }
-  console.log(pc.dim(`      Peak memory (max worker): ${formatBytes(maxMemory)}`));
-  console.log(pc.dim(`      Combined memory: ${formatBytes(totalMemory)}`));
+  console.log(styleText("dim", `      Peak memory (max worker): ${formatBytes(maxMemory)}`));
+  console.log(styleText("dim", `      Combined memory: ${formatBytes(totalMemory)}`));
 
   console.log();
 
@@ -279,8 +279,8 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
   const avgDuration = Math.round(totalDuration / results.length);
   const totalInitTime = results.reduce((sum, r) => sum + r.initTimeMs, 0);
   const totalWorkTime = results.reduce((sum, r) => sum + r.workTimeMs, 0);
-  console.log(pc.dim(`   ⏱️  Total time: ${totalDuration}ms (avg: ${avgDuration}ms per target)`));
-  console.log(pc.dim(`      Init time: ${totalInitTime}ms  │  Work time: ${totalWorkTime}ms`));
+  console.log(styleText("dim", `   ⏱️  Total time: ${totalDuration}ms (avg: ${avgDuration}ms per target)`));
+  console.log(styleText("dim", `      Init time: ${totalInitTime}ms  │  Work time: ${totalWorkTime}ms`));
 
   console.log();
   console.log(createLine(boxWidth + 6));
@@ -303,11 +303,11 @@ async function runOnAllTargets(filePatterns?: string[]): Promise<number> {
   printTargetOverview();
 
   if (filePatterns && filePatterns.length > 0) {
-    console.log(pc.gray("  📁 Selective targeting: " + filePatterns.join(", ")));
+    console.log(styleText("gray", "  📁 Selective targeting: " + filePatterns.join(", ")));
     console.log();
   }
 
-  console.log(pc.bold(pc.cyan("  🧵 Dispatching parallel workers...")));
+  console.log(styleText(["bold", "cyan"], "  🧵 Dispatching parallel workers..."));
   console.log();
 
   const piscina = new Piscina({
@@ -316,7 +316,7 @@ async function runOnAllTargets(filePatterns?: string[]): Promise<number> {
   });
 
   console.log(
-    pc.dim(`     PID: ${process.pid}  │  Workers: ${piscina.options.minThreads}-${piscina.options.maxThreads} threads`),
+    styleText("dim", `     PID: ${process.pid}  │  Workers: ${piscina.options.minThreads}-${piscina.options.maxThreads} threads`),
   );
   console.log();
 
@@ -332,9 +332,9 @@ async function runOnAllTargets(filePatterns?: string[]): Promise<number> {
     // Log all spawn events first with target-specific icons
     for (const [index, target] of allTargets.entries()) {
       const config = targetConfig[target];
-      const timestamp = pc.gray(`[${formatTimestamp()}]`);
-      const workerLabel = pc.cyan(`Worker #${index + 1}`);
-      console.log(`${timestamp} 🚀 ${workerLabel} spawned for ${config.icon} ${config.color(pc.bold(target))}`);
+      const timestamp = styleText("gray", `[${formatTimestamp()}]`);
+      const workerLabel = styleText("cyan", `Worker #${index + 1}`);
+      console.log(`${timestamp} 🚀 ${workerLabel} spawned for ${config.icon} ${config.color(styleText("bold", target))}`);
     }
     console.log();
 
@@ -407,7 +407,7 @@ async function runOnAllTargets(filePatterns?: string[]): Promise<number> {
 
     // Show graceful degradation notice if any workers failed
     if (failedWorkers > 0) {
-      console.log(pc.yellow(`\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`));
+      console.log(styleText("yellow", `\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`));
     }
 
     const elapsed = Date.now() - startTime;
@@ -425,7 +425,7 @@ async function runOnAllTargets(filePatterns?: string[]): Promise<number> {
     }
 
     // Show completion
-    console.log(pc.green(`\n  ✓ Completed in ${elapsed}ms`));
+    console.log(styleText("green", `\n  ✓ Completed in ${elapsed}ms`));
 
     // Print results in order with index
     const validResults: FormatWorkerResult[] = [];
@@ -458,16 +458,16 @@ async function runOnSingleTarget(target: FormatTarget, filePatterns?: string[]):
 
   console.log();
   console.log(
-    pc.bold(`  ${config.icon} Formatting: ${config.color(target.toUpperCase())}`) +
-      pc.dim(` (${config.description})`),
+    styleText("bold", `  ${config.icon} Formatting: ${config.color(target.toUpperCase())}`) +
+      styleText("dim", ` (${config.description})`),
   );
 
   if (filePatterns && filePatterns.length > 0) {
-    console.log(pc.gray("  📁 Patterns: " + filePatterns.join(", ")));
+    console.log(styleText("gray", "  📁 Patterns: " + filePatterns.join(", ")));
   }
 
   console.log();
-  console.log(pc.yellow("  ⏳ Processing..."));
+  console.log(styleText("yellow", "  ⏳ Processing..."));
 
   const piscina = new Piscina({
     filename: fileURLToPath(new URL("./workers/format.worker.ts", import.meta.url)),
@@ -487,13 +487,13 @@ async function runOnSingleTarget(target: FormatTarget, filePatterns?: string[]):
       const result = (await piscina.run(input)) as FormatWorkerResult;
       const elapsed = Date.now() - startTime;
 
-      console.log(pc.green(`  ✓ Completed in ${elapsed}ms`));
+      console.log(styleText("green", `  ✓ Completed in ${elapsed}ms`));
 
       printWorkerResult(result);
 
       return result.exitCode;
     } catch (error) {
-      console.log(pc.red(`  ✗ Worker crashed: ${error}`));
+      console.log(styleText("red", `  ✗ Worker crashed: ${error}`));
       return 1;
     }
   } finally {
@@ -505,12 +505,16 @@ async function runOnSingleTarget(target: FormatTarget, filePatterns?: string[]):
  * Prints the fancy header banner.
  */
 function printHeader(): void {
-  const gradient = [pc.magenta, pc.blue, pc.cyan];
+  const gradient = [
+    (s: string) => styleText("magenta", s),
+    (s: string) => styleText("blue", s),
+    (s: string) => styleText("cyan", s),
+  ];
 
   console.log();
   console.log(gradient[0]!("  ╭─────────────────────────────────────────────────────╮"));
-  console.log(gradient[0]!("  │") + pc.bold("          🎨 arolariu.ro Code Formatter              ") + gradient[0]!("│"));
-  console.log(gradient[1]!("  │") + pc.dim("       Prettier • dotnet format • Parallel           ") + gradient[1]!("│"));
+  console.log(gradient[0]!("  │") + styleText("bold", "          🎨 arolariu.ro Code Formatter              ") + gradient[0]!("│"));
+  console.log(gradient[1]!("  │") + styleText("dim", "       Prettier • dotnet format • Parallel           ") + gradient[1]!("│"));
   console.log(gradient[2]!("  ╰─────────────────────────────────────────────────────╯"));
   console.log();
 }
@@ -519,24 +523,24 @@ function printHeader(): void {
  * Prints the help/usage information.
  */
 function printHelp(): void {
-  console.log(pc.bold("  📖 Usage:") + pc.cyan(" format <target> [glob patterns...]"));
+  console.log(styleText("bold", "  📖 Usage:") + styleText("cyan", " format <target> [glob patterns...]"));
   console.log();
-  console.log(pc.bold("  Available targets:"));
+  console.log(styleText("bold", "  Available targets:"));
   console.log();
-  console.log(`     ${pc.cyan("all")}       ${pc.dim("→")} Format all targets in parallel`);
+  console.log(`     ${styleText("cyan", "all")}       ${styleText("dim", "→")} Format all targets in parallel`);
   console.log();
   for (const target of allTargets) {
     const config = targetConfig[target];
-    console.log(`     ${config.icon} ${config.color(target.padEnd(9))} ${pc.dim("→")} ${config.description}`);
+    console.log(`     ${config.icon} ${config.color(target.padEnd(9))} ${styleText("dim", "→")} ${config.description}`);
   }
   console.log();
-  console.log(pc.bold("  📁 Selective targeting:"));
-  console.log(pc.dim('     format website "src/**/*.tsx"    Format only TSX files in website'));
-  console.log(pc.dim('     format packages "**/*.ts"        Format only TS files in packages'));
+  console.log(styleText("bold", "  📁 Selective targeting:"));
+  console.log(styleText("dim", '     format website "src/**/*.tsx"    Format only TSX files in website'));
+  console.log(styleText("dim", '     format packages "**/*.ts"        Format only TS files in packages'));
   console.log();
-  console.log(pc.dim("  Examples:"));
-  console.log(pc.dim("     npm run format all"));
-  console.log(pc.dim("     npm run format website"));
+  console.log(styleText("dim", "  Examples:"));
+  console.log(styleText("dim", "     npm run format all"));
+  console.log(styleText("dim", "     npm run format website"));
   console.log();
 }
 
@@ -557,7 +561,7 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
   printHeader();
 
   if (!arg) {
-    console.log(pc.yellow("  ⚠️  Missing target argument"));
+    console.log(styleText("yellow", "  ⚠️  Missing target argument"));
     console.log();
     printHelp();
     return 1;
@@ -577,21 +581,21 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
         exitCode = await runOnSingleTarget(arg, filePatterns);
         break;
       default:
-        console.error(pc.red(`✗ Invalid target: "${arg}"`));
-        console.log(pc.gray("\n💡 Valid targets: all, packages, website, cv, api\n"));
+        console.error(styleText("red", `✗ Invalid target: "${arg}"`));
+        console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, api\n"));
         return 1;
     }
 
     if (exitCode === 0) {
       console.log();
       console.log(
-        pc.bgGreen(pc.black(" SUCCESS ")) + pc.green(" All targets formatted successfully! ") + pc.bold("🎉"),
+        styleText("bgGreen", styleText("black", " SUCCESS ")) + styleText("green", " All targets formatted successfully! ") + styleText("bold", "🎉"),
       );
       console.log();
     } else {
       console.log();
       console.log(
-        pc.bgYellow(pc.black(" WARNING ")) + pc.yellow(" Formatting completed with some issues ") + pc.bold("⚠️"),
+        styleText("bgYellow", styleText("black", " WARNING ")) + styleText("yellow", " Formatting completed with some issues ") + styleText("bold", "⚠️"),
       );
       console.log();
     }
@@ -599,26 +603,26 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
     return exitCode;
   } catch (error) {
     console.log();
-    console.log(pc.bgRed(pc.white(" ERROR ")) + pc.red(" Formatting failed ") + pc.bold("❌"));
+    console.log(styleText("bgRed", styleText("white", " ERROR ")) + styleText("red", " Formatting failed ") + styleText("bold", "❌"));
     console.log();
 
     if (error instanceof Error) {
-      console.log(pc.gray(`  ${box.topLeft}${box.horizontal.repeat(50)}${box.topRight}`));
+      console.log(styleText("gray", `  ${box.topLeft}${box.horizontal.repeat(50)}${box.topRight}`));
       console.log(
-        pc.gray(`  ${box.vertical}`) + pc.red(` Error: ${error.message}`.padEnd(50)) + pc.gray(box.vertical),
+        styleText("gray", `  ${box.vertical}`) + styleText("red", ` Error: ${error.message}`.padEnd(50)) + styleText("gray", box.vertical),
       );
-      console.log(pc.gray(`  ${box.bottomLeft}${box.horizontal.repeat(50)}${box.bottomRight}`));
+      console.log(styleText("gray", `  ${box.bottomLeft}${box.horizontal.repeat(50)}${box.bottomRight}`));
 
       if (error.stack) {
         console.log();
-        console.log(pc.dim("  Stack trace:"));
+        console.log(styleText("dim", "  Stack trace:"));
         const stackLines = error.stack.split("\n").slice(1, 4);
         for (const line of stackLines) {
-          console.log(pc.dim(`    ${line.trim()}`));
+          console.log(styleText("dim", `    ${line.trim()}`));
         }
       }
     } else {
-      console.log(pc.red(`  ${String(error)}`));
+      console.log(styleText("red", `  ${String(error)}`));
     }
 
     console.log();

@@ -24,7 +24,7 @@ import {existsSync, statSync} from "node:fs";
 import {createServer} from "node:net";
 import {freemem, platform} from "node:os";
 import {join} from "node:path";
-import pc from "picocolors";
+import {styleText} from "node:util";
 import {formatBytes} from "./common/index.ts";
 
 // ============================================================================
@@ -511,11 +511,11 @@ async function checkPorts(): Promise<DiagnosticCheck> {
 function statusBadge(status: CheckStatus): string {
   switch (status) {
     case "pass":
-      return pc.green("✓ PASS");
+      return styleText("green", "✓ PASS");
     case "warn":
-      return pc.yellow("⚠ WARN");
+      return styleText("yellow", "⚠ WARN");
     case "fail":
-      return pc.red("✗ FAIL");
+      return styleText("red", "✗ FAIL");
   }
 }
 
@@ -540,17 +540,17 @@ function printResults(checks: readonly DiagnosticCheck[], verbose: boolean): voi
     const group = checks.filter((c) => c.category === cat);
     if (group.length === 0) continue;
 
-    console.log(pc.bold(`\n  ${CATEGORY_LABELS[cat]}`));
-    console.log(pc.gray(`  ${"─".repeat(50)}`));
+    console.log(styleText("bold", `\n  ${CATEGORY_LABELS[cat]}`));
+    console.log(styleText("gray", `  ${"─".repeat(50)}`));
 
     for (const check of group) {
       const badge = statusBadge(check.status);
       const name = check.name.padEnd(28);
-      console.log(`  ${badge}  ${name} ${pc.dim(check.message)}`);
+      console.log(`  ${badge}  ${name} ${styleText("dim", check.message)}`);
 
       if (verbose && check.detail) {
         for (const line of check.detail.split("\n")) {
-          console.log(pc.gray(`                                     ${line}`));
+          console.log(styleText("gray", `                                     ${line}`));
         }
       }
     }
@@ -567,21 +567,21 @@ function printSummary(checks: readonly DiagnosticCheck[]): void {
   const warnings = checks.filter((c) => c.status === "warn").length;
   const failures = checks.filter((c) => c.status === "fail").length;
 
-  console.log(pc.gray(`\n  ${"─".repeat(50)}`));
+  console.log(styleText("gray", `\n  ${"─".repeat(50)}`));
   const parts: string[] = [
-    pc.green(`${passed} passed`),
-    warnings > 0 ? pc.yellow(`${warnings} warning${warnings === 1 ? "" : "s"}`) : "",
-    failures > 0 ? pc.red(`${failures} failure${failures === 1 ? "" : "s"}`) : "",
+    styleText("green", `${passed} passed`),
+    warnings > 0 ? styleText("yellow", `${warnings} warning${warnings === 1 ? "" : "s"}`) : "",
+    failures > 0 ? styleText("red", `${failures} failure${failures === 1 ? "" : "s"}`) : "",
   ].filter(Boolean);
-  console.log(`\n  Summary: ${parts.join(pc.dim(", "))}`);
+  console.log(`\n  Summary: ${parts.join(styleText("dim", ", "))}`);
 
   // Suggested fixes
   const fixable = checks.filter((c) => c.status !== "pass" && c.fix);
   if (fixable.length > 0) {
-    console.log(pc.bold("\n  Suggested fixes:"));
+    console.log(styleText("bold", "\n  Suggested fixes:"));
     for (const check of fixable) {
-      const icon = check.status === "fail" ? pc.red("✗") : pc.yellow("⚠");
-      console.log(`  ${icon} ${pc.bold(check.name)}: ${pc.dim(check.fix!)}`);
+      const icon = check.status === "fail" ? styleText("red", "✗") : styleText("yellow", "⚠");
+      console.log(`  ${icon} ${styleText("bold", check.name)}: ${styleText("dim", check.fix!)}`);
     }
   }
 
@@ -592,12 +592,12 @@ function printSummary(checks: readonly DiagnosticCheck[]): void {
  * Prints CLI usage information.
  */
 function printHelp(): void {
-  console.log(pc.bold("\n  Usage:"));
-  console.log(pc.dim("    node --experimental-strip-types scripts/doctor.ts [options]\n"));
-  console.log(pc.bold("  Options:"));
-  console.log(`    ${pc.green("--verbose, -v")}   Show detailed output for each check`);
-  console.log(`    ${pc.green("--ci")}            Non-interactive mode (skip port checks)`);
-  console.log(`    ${pc.green("--help, -h")}      Show this help message`);
+  console.log(styleText("bold", "\n  Usage:"));
+  console.log(styleText("dim", "    node --experimental-strip-types scripts/doctor.ts [options]\n"));
+  console.log(styleText("bold", "  Options:"));
+  console.log(`    ${styleText("green", "--verbose, -v")}   Show detailed output for each check`);
+  console.log(`    ${styleText("green", "--ci")}            Non-interactive mode (skip port checks)`);
+  console.log(`    ${styleText("green", "--help, -h")}      Show this help message`);
   console.log();
 }
 
@@ -617,10 +617,10 @@ export async function main(flags: Readonly<CliFlags>): Promise<number> {
     return 0;
   }
 
-  console.log(pc.bold(pc.green("\n╔══════════════════════════════════════════╗")));
-  console.log(pc.bold(pc.green("║   🩺 arolariu.ro Workspace Doctor        ║")));
-  console.log(pc.bold(pc.green("║   Health Diagnostics & Validation        ║")));
-  console.log(pc.bold(pc.green("╚══════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "green"], "\n╔══════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "green"], "║   🩺 arolariu.ro Workspace Doctor        ║"));
+  console.log(styleText(["bold", "green"], "║   Health Diagnostics & Validation        ║"));
+  console.log(styleText(["bold", "green"], "╚══════════════════════════════════════════╝\n"));
 
   const checks: DiagnosticCheck[] = [];
 
@@ -663,7 +663,7 @@ if (import.meta.main) {
   main(flags)
     .then((exitCode) => process.exit(exitCode))
     .catch((error) => {
-      console.error(pc.red("\n❌ Unexpected error:"), error);
+      console.error(styleText("red", "\n❌ Unexpected error:"), error);
       process.exit(1);
     });
 }

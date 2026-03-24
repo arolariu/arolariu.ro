@@ -9,7 +9,7 @@
 
 import {createSpinner} from "nanospinner";
 import {spawn} from "node:child_process";
-import pc from "picocolors";
+import {styleText} from "node:util";
 
 /**
  * Runs a command with a spinner and captures output.
@@ -53,7 +53,7 @@ export async function runWithSpinner(
 
         // Wait for the spawn event to ensure PID is available
         child.on("spawn", () => {
-          const pidText = pc.gray(`[PID: ${child.pid || "N/A"}]`);
+          const pidText = styleText("gray", `[PID: ${child.pid || "N/A"}]`);
           spinner.update({text: `${spinnerText} ${pidText}`});
         });
 
@@ -67,27 +67,27 @@ export async function runWithSpinner(
 
         child.on("close", (code) => {
           const fullOutput = output + errorOutput;
-          const pidText = pc.gray(`[PID: ${child.pid}]`);
+          const pidText = styleText("gray", `[PID: ${child.pid}]`);
           if (code === 0) {
-            spinner.success({text: `${spinnerText} ${pc.green("✓")} ${pidText}`});
+            spinner.success({text: `${spinnerText} ${styleText("green", "✓")} ${pidText}`});
           } else {
-            spinner.error({text: `${spinnerText} ${pc.red("✗")} ${pidText}`});
+            spinner.error({text: `${spinnerText} ${styleText("red", "✗")} ${pidText}`});
             if (fullOutput.trim()) {
-              console.log(pc.gray(`\n${fullOutput.trim()}\n`));
+              console.log(styleText("gray", `\n${fullOutput.trim()}\n`));
             }
           }
           resolve({code: code ?? 1, output: fullOutput});
         });
 
         child.on("error", (error) => {
-          spinner.error({text: `${spinnerText} ${pc.red("✗")}`});
-          console.error(pc.red(`Error: ${error.message}`));
+          spinner.error({text: `${spinnerText} ${styleText("red", "✗")}`});
+          console.error(styleText("red", `Error: ${error.message}`));
           resolve({code: 1, output: error.message});
         });
       });
     }
     case false: {
-      console.log(pc.cyan(`\n${spinnerText} ...`));
+      console.log(styleText("cyan", `\n${spinnerText} ...`));
 
       return new Promise((resolve) => {
         const child = spawn(command, args, {
@@ -97,15 +97,15 @@ export async function runWithSpinner(
 
         child.on("close", (code) => {
           if (code === 0) {
-            console.log(pc.green(`  ✓ ${spinnerText} completed successfully!\n`));
+            console.log(styleText("green", `  ✓ ${spinnerText} completed successfully!\n`));
           } else {
-            console.log(pc.red(`  ✗ ${spinnerText} failed!\n`));
+            console.log(styleText("red", `  ✗ ${spinnerText} failed!\n`));
           }
           resolve({code: code ?? 1, output: ""});
         });
 
         child.on("error", (error) => {
-          console.error(pc.red(`  ✗ Error: ${error.message}!\n`));
+          console.error(styleText("red", `  ✗ Error: ${error.message}!\n`));
           resolve({code: 1, output: error.message});
         });
       });
@@ -197,9 +197,9 @@ export function formatTimestamp(): string {
  * ```
  */
 export function logWorkerSpawn(workerId: number, taskName: string): void {
-  const timestamp = pc.gray(`[${formatTimestamp()}]`);
-  const workerLabel = pc.cyan(`Worker #${workerId}`);
-  const taskLabel = pc.bold(pc.yellow(`"${taskName}"`));
+  const timestamp = styleText("gray", `[${formatTimestamp()}]`);
+  const workerLabel = styleText("cyan", `Worker #${workerId}`);
+  const taskLabel = styleText(["bold", "yellow"], `"${taskName}"`);
   console.log(`${timestamp} 🚀 ${workerLabel} spawned for task ${taskLabel}`);
 }
 
@@ -236,12 +236,12 @@ export function logWorkerComplete(
   durationMs: number,
   status: "success" | "error",
 ): void {
-  const timestamp = pc.gray(`[${formatTimestamp()}]`);
+  const timestamp = styleText("gray", `[${formatTimestamp()}]`);
   const icon = status === "success" ? "✅" : "❌";
-  const workerLabel = pc.cyan(`Worker #${workerId}`);
-  const taskLabel = pc.bold(pc.yellow(`"${taskName}"`));
-  const durationColor = status === "success" ? pc.green : pc.red;
-  const formattedDuration = durationColor(formatDurationMs(durationMs));
+  const workerLabel = styleText("cyan", `Worker #${workerId}`);
+  const taskLabel = styleText(["bold", "yellow"], `"${taskName}"`);
+  const colorName = status === "success" ? "green" : "red";
+  const formattedDuration = styleText(colorName as "green" | "red", formatDurationMs(durationMs));
   console.log(`${timestamp} ${icon} ${workerLabel} finished ${taskLabel} in ${formattedDuration}`);
 }
 
@@ -285,7 +285,7 @@ export function createProgressTracker(total: number): ProgressTracker {
     const barWidth = 20;
     const filled = Math.round((completed / total) * barWidth);
     const empty = barWidth - filled;
-    const bar = pc.green("█".repeat(filled)) + pc.gray("░".repeat(empty));
+    const bar = styleText("green", "█".repeat(filled)) + styleText("gray", "░".repeat(empty));
     process.stdout.write(`\r  ⏳ Progress: [${bar}] ${completed}/${total} workers completed`);
   }
 
@@ -349,17 +349,17 @@ export function printWorkerTimeline(results: readonly TimelineEntry[]): void {
   const lineWidth = barWidth + 22;
 
   console.log();
-  console.log(pc.bold("  📊 Worker Timeline"));
-  console.log(pc.gray("  " + "─".repeat(lineWidth)));
+  console.log(styleText("bold", "  📊 Worker Timeline"));
+  console.log(styleText("gray", "  " + "─".repeat(lineWidth)));
 
   for (const result of results) {
     const filled = Math.round((result.durationMs / maxDuration) * barWidth);
-    const bar = pc.cyan("█".repeat(filled)) + pc.gray("░".repeat(barWidth - filled));
+    const bar = styleText("cyan", "█".repeat(filled)) + styleText("gray", "░".repeat(barWidth - filled));
     const label = result.target.padEnd(10);
     const duration = formatDurationMs(result.durationMs).padStart(8);
     console.log(`  ${label} │${bar}│ ${duration}`);
   }
 
-  console.log(pc.gray("  " + "─".repeat(lineWidth)));
-  console.log(pc.gray(`  ${"".padEnd(10)}  0s${" ".repeat(barWidth - 12)}${formatDurationMs(maxDuration)}`));
+  console.log(styleText("gray", "  " + "─".repeat(lineWidth)));
+  console.log(styleText("gray", `  ${"".padEnd(10)}  0s${" ".repeat(barWidth - 12)}${formatDurationMs(maxDuration)}`));
 }

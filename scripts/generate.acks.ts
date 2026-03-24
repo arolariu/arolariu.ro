@@ -11,7 +11,7 @@
 import fs, {globSync} from "node:fs";
 import {EOL} from "node:os";
 import path from "node:path";
-import pc from "picocolors";
+import {styleText} from "node:util";
 import type {NodePackageDependencyType, NodePackageInformation} from "./types";
 
 function generateAcknowledgements(verbose: boolean = false) {
@@ -40,14 +40,14 @@ function writeJsonFileWithManifests(packageManifests: Map<NodePackageDependencyT
     sortedPackages.set(depType, sortedPackagesArray);
   }
 
-  console.log(pc.gray("[arolariu::writeJsonFileWithManifests] Writing licenses.json file to path:\n\t >>"), pc.cyan(rootPath));
-  console.info(pc.gray("[arolariu::writeJsonFileWithManifests] Exact path:"), pc.dim(path.dirname(rootPath)));
+  console.log(styleText("gray", "[arolariu::writeJsonFileWithManifests] Writing licenses.json file to path:\n\t >>"), styleText("cyan", rootPath));
+  console.info(styleText("gray", "[arolariu::writeJsonFileWithManifests] Exact path:"), styleText("dim", path.dirname(rootPath)));
 
   const fileContent = JSON.stringify(Object.fromEntries(sortedPackages), null, 0);
   fs.mkdirSync(path.dirname(rootPath), {recursive: true});
   fs.writeFileSync(rootPath, fileContent + EOL, "utf-8");
 
-  console.info(pc.gray("[arolariu::writeJsonFileWithManifests] Finished writing licenses.json file."));
+  console.info(styleText("gray", "[arolariu::writeJsonFileWithManifests] Finished writing licenses.json file."));
 }
 
 /**
@@ -230,13 +230,13 @@ function extractDependenciesFromRootManifest(verbose: boolean = false): Map<Node
  * This function will be the entry point of the script.
  */
 export async function main(verbose: boolean = false): Promise<number> {
-  console.log(pc.cyan("🔧 Configuration:\n"));
-  console.log(pc.gray(`   Verbose: ${verbose ? pc.green("✅ Enabled") : pc.red("❌ Disabled")}`));
-  console.log(pc.gray(`   Working Directory: ${pc.dim(process.cwd())}`));
+  console.log(styleText("cyan", "🔧 Configuration:\n"));
+  console.log(styleText("gray", `   Verbose: ${verbose ? styleText("green", "✅ Enabled") : styleText("red", "❌ Disabled")}`));
+  console.log(styleText("gray", `   Working Directory: ${styleText("dim", process.cwd())}`));
   console.log();
 
   generateAcknowledgements(verbose);
-  console.log(pc.green("\n✨ Acknowledgements generation completed."));
+  console.log(styleText("green", "\n✨ Acknowledgements generation completed."));
   return 0;
 }
 
@@ -245,22 +245,22 @@ if (import.meta.main) {
   const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
   const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
   if (wantsHelp) {
-    console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
-    console.log(pc.magenta("║            ||arolariu.ro|| Acknowledgements Generator - Help     ║"));
-    console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
-    console.log(pc.cyan("Usage:"), pc.gray("npm run generate /acks [flags]\n"));
-    console.log(pc.cyan("Flags:"));
-    console.log(`  ${pc.green("/verbose     /v    --verbose     -v")}      Enable verbose logging 🔊`);
-    console.log(`  ${pc.green("/help        /h    --help        -h")}      Show this help menu ❓`);
+    console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
+    console.log(styleText("magenta", "║            ||arolariu.ro|| Acknowledgements Generator - Help     ║"));
+    console.log(styleText("magenta", "╚══════════════════════════════════════════════════════════════════╝\n"));
+    console.log(styleText("cyan", "Usage:"), styleText("gray", "npm run generate /acks [flags]\n"));
+    console.log(styleText("cyan", "Flags:"));
+    console.log(`  ${styleText("green", "/verbose     /v    --verbose     -v")}      Enable verbose logging 🔊`);
+    console.log(`  ${styleText("green", "/help        /h    --help        -h")}      Show this help menu ❓`);
     console.log("\nExample:");
-    console.log(pc.gray("  npm run generate /acks /verbose"));
+    console.log(styleText("gray", "  npm run generate /acks /verbose"));
     process.exit(0);
   }
   try {
     const code = await main(verbose);
     process.exit(code);
   } catch (err) {
-    console.error(pc.red("Acknowledgements generation failed:"));
+    console.error(styleText("red", "Acknowledgements generation failed:"));
     console.error(err);
     process.exit(1);
   }
