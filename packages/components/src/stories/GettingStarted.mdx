@@ -1,0 +1,94 @@
+import {Meta} from "@storybook/blocks";
+
+<Meta title="Introduction/Getting Started" />
+
+# Getting Started
+
+## Installation
+
+Install the package and its peer dependencies:
+
+```bash
+npm install @arolariu/components @base-ui/react motion react react-dom
+```
+
+## Setup
+
+### 1. Import Styles
+
+Add the required CSS import to your app entry point:
+
+```tsx
+// app/layout.tsx or main.tsx
+import "@arolariu/components/styles";
+```
+
+### 2. Use Components
+
+```tsx
+import {Button, Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
+
+export function MyCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hello World</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p>Your first component!</p>
+        <Button>Click me</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### 3. Dark Mode
+
+Add `data-theme="dark"` to your root element:
+
+```tsx
+<html data-theme="dark">
+  <body>{children}</body>
+</html>
+```
+
+Or toggle with JavaScript:
+```tsx
+document.documentElement.setAttribute("data-theme", "dark");
+```
+
+### 4. Tree-Shaking
+
+Import individual components for smaller bundles:
+
+```tsx
+// ✅ Import from subpath (tree-shakeable)
+import {Button} from "@arolariu/components/button";
+import {useMediaQuery} from "@arolariu/components/useMediaQuery";
+```
+
+## TypeScript
+
+All components are fully typed. Use `Readonly<Props>` for component props:
+
+```tsx
+import type {ButtonProps} from "@arolariu/components";
+```
+
+## Next.js Integration
+
+The library works with Next.js App Router. Server Components can import components — client-only ones have `"use client"` directives.
+
+```tsx
+// app/page.tsx (Server Component)
+import {Card, CardContent} from "@arolariu/components";
+
+export default function Page() {
+  return (
+    <Card>
+      <CardContent>Server-rendered!</CardContent>
+    </Card>
+  );
+}
+```

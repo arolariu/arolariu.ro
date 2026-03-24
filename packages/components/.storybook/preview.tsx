@@ -1,5 +1,7 @@
+import {withThemeByDataAttribute} from "@storybook/addon-themes";
 import type {Preview} from "storybook-react-rsbuild";
 import "../src/index.css";
+import {darkTheme} from "./theme";
 
 const preview: Preview = {
   parameters: {
@@ -9,6 +11,9 @@ const preview: Preview = {
         color: /(background|color)$/i,
         date: /Date$/i,
       },
+    },
+    docs: {
+      theme: darkTheme,
     },
     a11y: {
       config: {
@@ -29,6 +34,14 @@ const preview: Preview = {
     },
   },
   decorators: [
+    withThemeByDataAttribute({
+      themes: {
+        light: "",
+        dark: "dark",
+      },
+      defaultTheme: "dark",
+      attributeName: "data-theme",
+    }),
     (Story) => (
       <div style={{padding: "1rem"}}>
         <Story />
