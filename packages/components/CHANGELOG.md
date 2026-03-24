@@ -8,6 +8,63 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [1.1.0](https://www.npmjs.com/package/@arolariu/components/v/1.1.0) - 2026-03-24
+
+**✨ New Features**
+
+- 🪝 **13 new utility hooks**: `useControllableState`, `useEventCallback`, `useMergedRefs`, `useId`, `useOnClickOutside`, `usePrevious`, `useTimeout`, `useDebounce`, `useThrottle`, `useLocalStorage`, `useClipboard`, `useIntersectionObserver`, `useInterval`
+- 🔍 **Combobox compound component**: searchable dropdown composing Command + Popover + Button with single/multi select, keyboard navigation, and async loading support
+- 🎬 **Storybook 10 with RSBuild**: full design system documentation with `storybook-react-rsbuild` + `storybook-addon-rslib` integration
+- 📖 **439 story variants** across 84 components with component-specific states (disabled, error, loading, sizes, custom content)
+- 📄 **MDX documentation pages**: Welcome, Getting Started, and Design Principles
+- 🎨 **Design token showcase**: interactive Foundations stories for Colors, Spacing, Border Radius, Typography, Motion, and Component Sizes
+- 🌗 **Dual light/dark theme** toggle in Storybook toolbar with matching preview backgrounds
+- 🏷️ **Brand identity**: arolariu.ro logo in Storybook sidebar, custom dark + light themes
+- 📐 **Sidebar organization**: Introduction → Foundations → Components (11 subcategories)
+- 🏅 **Component status badges**: Stable, New in v1.0 tags on key components
+
+**🔧 Improvements**
+
+- 🔗 **forwardRef on 35 additional components** (82 of 84 now support ref forwarding)
+- 📊 **Recharts v3.8** — 48+ chart primitives, 11 hooks, all re-exported
+- 📝 **React Hook Form** — full API surface with `useFormContext`, `useFormState`, `Controller`, 17 types
+- ♿ **A11y platform layer**: `VisuallyHidden`, `FocusScope`, `useFocusManager`, `useAnnounce`
+- 🎭 **Motion system**: tokens, presets (fadeIn, slideUp, scaleIn), `Presence`, `Collapse`
+- 💀 **Loading patterns**: `CardSkeleton`, `TableSkeleton`, `FormSkeleton`, `ListSkeleton`, `LoadingOverlay`
+- 🛡️ **Error boundaries**: `ErrorBoundary` (class component with retry), `AsyncBoundary` (Suspense + ErrorBoundary)
+- 🆕 **New components**: `CopyButton`, `Stepper`, `Timeline`
+- 🏗️ **RSC compatibility**: removed unnecessary `"use client"` from 9 presentational components
+- 📦 **Dependency audit**: calendar migrated from deprecated `table` to `month_grid`, carousel axis/orientation fix, all third-party wrapper types exported
+
+**🐛 Bug Fixes**
+
+- 🔒 Fixed stale closure in `useLocalStorage` setValue (functional state updater)
+- 🔒 Fixed stale closure in `useControllableState` uncontrolled mode
+- 🔒 Fixed `useThrottle` callback ref to prevent timer reset on re-render
+- 🎯 Fixed tooltip z-index stacking context (Positioner needs z-index, not Popup)
+- 🎯 Fixed Commander layout (removed separators, flex list, scroll support)
+- 🎯 Fixed tooltip contrast (force child color inheritance)
+- 🎯 Fixed button.module.css `:disabled` alongside `[data-disabled]`
+- 📦 Removed 84 erroneous `.stories` subpath exports from package.json
+- 📦 Fixed `sideEffects` glob from `*.css` to `**/*.css` for nested CSS modules
+- 📦 Changed all storybook devDependencies from pinned versions to `*` (monorepo pattern)
+
+**📚 Documentation**
+
+- 📖 `MIGRATION.md` — comprehensive v0.x → v1.0 migration guide
+- 📖 `EXAMPLES.md` — 10 production-ready pattern recipes
+- 📖 `RFC 1006` — updated to reflect Base UI + CSS Modules architecture
+- 📖 Storybook Welcome, Getting Started, Design Principles MDX pages
+
+**🧪 Testing**
+
+- 95%+ line/function/statement coverage, 80%+ branch coverage
+- 1300+ tests across 102 test files
+- All ESLint errors resolved (0 errors, 0 warnings)
+- Storybook build verified clean
+
+---
+
 ### [1.0.0](https://www.npmjs.com/package/@arolariu/components/v/1.0.0) - 2026-03-13
 **💥 Breaking Changes**
 - 🔄 **Migrated component primitives from Radix UI to Base UI** using the consolidated `@base-ui/react` package instead of 25+ `@radix-ui/react-*` packages.
