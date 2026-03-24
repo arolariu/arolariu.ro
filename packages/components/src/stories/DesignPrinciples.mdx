@@ -1,0 +1,48 @@
+{/* @meta title: Introduction/Design Principles */}
+
+# Design Principles
+
+## 🎯 Accessibility First
+
+Every component is built on **Base UI** primitives, ensuring:
+- Correct ARIA attributes and roles
+- Keyboard navigation support
+- Screen reader compatibility
+- Focus management
+- Color contrast compliance (WCAG 2.1 AA)
+
+## 🎨 Design Tokens
+
+We use **OKLCH** color space for perceptually uniform colors:
+- Colors stay visually consistent across light and dark themes
+- Tokens are CSS custom properties (`--ac-*` prefix)
+- Override any token to create custom themes
+
+## 🧩 Composition Over Configuration
+
+Components follow the **compound component** pattern:
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+  </CardHeader>
+  <CardContent>Content</CardContent>
+  <CardFooter>Footer</CardFooter>
+</Card>
+```
+
+## 🔧 Progressive Enhancement
+
+- Server Components by default
+- `"use client"` only when hooks/interactivity needed
+- CSS Modules for scoped, predictable styles
+- No runtime CSS-in-JS overhead
+
+## 📐 Consistent API
+
+Every component follows these conventions:
+- `className` prop for custom styling
+- `forwardRef` for DOM access
+- `displayName` for debugging
+- JSDoc for API documentation
+- Co-located tests and stories

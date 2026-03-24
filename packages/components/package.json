@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
@@ -87,7 +87,9 @@
     "build:clean": "rimraf dist",
     "build:exports": "node scripts/generate-exports.ts",
     "test": "npm run test:unit",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "clsx": "*",
@@ -110,17 +112,24 @@
     "@rsbuild/core": "*",
     "@rsbuild/plugin-react": "*",
     "@rslib/core": "*",
+    "@storybook/addon-a11y": "*",
+    "@storybook/addon-docs": "*",
+    "@storybook/addon-links": "*",
+    "@storybook/addon-themes": "*",
     "@types/node": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
     "motion": "*",
-    "postcss": "*",
     "playwright": "*",
+    "postcss": "*",
     "react": "*",
     "react-dom": "*",
     "react-hook-form": "*",
     "recharts": "*",
     "rimraf": "*",
+    "storybook": "*",
+    "storybook-addon-rslib": "*",
+    "storybook-react-rsbuild": "*",
     "typescript": "*"
   },
   "publishConfig": {
@@ -240,6 +249,11 @@
       "types": "./dist/components/ui/collapsible.d.ts",
       "import": "./dist/components/ui/collapsible.js",
       "default": "./dist/components/ui/collapsible.js"
+    },
+    "./combobox": {
+      "types": "./dist/components/ui/combobox.d.ts",
+      "import": "./dist/components/ui/combobox.js",
+      "default": "./dist/components/ui/combobox.js"
     },
     "./command": {
       "types": "./dist/components/ui/command.d.ts",
@@ -566,10 +580,30 @@
       "import": "./dist/hooks/useBreakpoint.js",
       "default": "./dist/hooks/useBreakpoint.js"
     },
+    "./useClipboard": {
+      "types": "./dist/hooks/useClipboard.d.ts",
+      "import": "./dist/hooks/useClipboard.js",
+      "default": "./dist/hooks/useClipboard.js"
+    },
     "./useColorScheme": {
       "types": "./dist/hooks/useColorScheme.d.ts",
       "import": "./dist/hooks/useColorScheme.js",
       "default": "./dist/hooks/useColorScheme.js"
+    },
+    "./useControllableState": {
+      "types": "./dist/hooks/useControllableState.d.ts",
+      "import": "./dist/hooks/useControllableState.js",
+      "default": "./dist/hooks/useControllableState.js"
+    },
+    "./useDebounce": {
+      "types": "./dist/hooks/useDebounce.d.ts",
+      "import": "./dist/hooks/useDebounce.js",
+      "default": "./dist/hooks/useDebounce.js"
+    },
+    "./useEventCallback": {
+      "types": "./dist/hooks/useEventCallback.d.ts",
+      "import": "./dist/hooks/useEventCallback.js",
+      "default": "./dist/hooks/useEventCallback.js"
     },
     "./useFocusManager": {
       "types": "./dist/hooks/useFocusManager.d.ts",
@@ -581,25 +615,70 @@
       "import": "./dist/hooks/useFocusVisible.js",
       "default": "./dist/hooks/useFocusVisible.js"
     },
+    "./useId": {
+      "types": "./dist/hooks/useId.d.ts",
+      "import": "./dist/hooks/useId.js",
+      "default": "./dist/hooks/useId.js"
+    },
+    "./useIntersectionObserver": {
+      "types": "./dist/hooks/useIntersectionObserver.d.ts",
+      "import": "./dist/hooks/useIntersectionObserver.js",
+      "default": "./dist/hooks/useIntersectionObserver.js"
+    },
+    "./useInterval": {
+      "types": "./dist/hooks/useInterval.d.ts",
+      "import": "./dist/hooks/useInterval.js",
+      "default": "./dist/hooks/useInterval.js"
+    },
     "./useIsMobile": {
       "types": "./dist/hooks/useIsMobile.d.ts",
       "import": "./dist/hooks/useIsMobile.js",
       "default": "./dist/hooks/useIsMobile.js"
+    },
+    "./useLocalStorage": {
+      "types": "./dist/hooks/useLocalStorage.d.ts",
+      "import": "./dist/hooks/useLocalStorage.js",
+      "default": "./dist/hooks/useLocalStorage.js"
     },
     "./useMediaQuery": {
       "types": "./dist/hooks/useMediaQuery.d.ts",
       "import": "./dist/hooks/useMediaQuery.js",
       "default": "./dist/hooks/useMediaQuery.js"
     },
+    "./useMergedRefs": {
+      "types": "./dist/hooks/useMergedRefs.d.ts",
+      "import": "./dist/hooks/useMergedRefs.js",
+      "default": "./dist/hooks/useMergedRefs.js"
+    },
+    "./useOnClickOutside": {
+      "types": "./dist/hooks/useOnClickOutside.d.ts",
+      "import": "./dist/hooks/useOnClickOutside.js",
+      "default": "./dist/hooks/useOnClickOutside.js"
+    },
     "./usePrefersContrast": {
       "types": "./dist/hooks/usePrefersContrast.d.ts",
       "import": "./dist/hooks/usePrefersContrast.js",
       "default": "./dist/hooks/usePrefersContrast.js"
     },
+    "./usePrevious": {
+      "types": "./dist/hooks/usePrevious.d.ts",
+      "import": "./dist/hooks/usePrevious.js",
+      "default": "./dist/hooks/usePrevious.js"
+    },
     "./useReducedMotion": {
       "types": "./dist/hooks/useReducedMotion.d.ts",
       "import": "./dist/hooks/useReducedMotion.js",
       "default": "./dist/hooks/useReducedMotion.js"
+    },
+    "./useThrottle": {
+      "types": "./dist/hooks/useThrottle.d.ts",
+      "import": "./dist/hooks/useThrottle.js",
+      "default": "./dist/hooks/useThrottle.js"
+    },
+    "./useTimeout": {
+      "types": "./dist/hooks/useTimeout.d.ts",
+      "import": "./dist/hooks/useTimeout.js",
+      "default": "./dist/hooks/useTimeout.js"
     },
     "./useWindowSize": {
       "types": "./dist/hooks/useWindowSize.d.ts",

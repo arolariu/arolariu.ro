@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import {render, screen, waitFor} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -144,7 +142,12 @@ describe("CountingNumber", () => {
   it("forwards transition options to useSpring", () => {
     const transition = {stiffness: 200, damping: 20};
 
-    render(<CountingNumber number={25} transition={transition} />);
+    render(
+      <CountingNumber
+        number={25}
+        transition={transition}
+      />,
+    );
 
     expect(useSpringMock).toHaveBeenCalledWith(
       expect.objectContaining({

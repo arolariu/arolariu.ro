@@ -171,6 +171,7 @@ const SheetClose = BaseDialog.Close;
  */
 const SheetTrigger = React.forwardRef<HTMLButtonElement, SheetTrigger.Props>(
   (props: Readonly<SheetTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
     const {asChild = false, children, className, render, ...otherProps} = props;
     const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -277,6 +278,7 @@ const SheetContent = React.forwardRef<React.ComponentRef<typeof BaseDialog.Popup
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
 function SheetHeader(props: Readonly<SheetHeader.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -305,6 +307,7 @@ function SheetHeader(props: Readonly<SheetHeader.Props>): React.ReactElement {
  * @see {@link https://base-ui.com/react/components/dialog | Base UI Documentation}
  */
 function SheetFooter(props: Readonly<SheetFooter.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

@@ -63,12 +63,13 @@ export interface ToggleGroupItemProps extends Omit<ToggleProps, "pressed" | "def
  *
  * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
-function ToggleGroup(props: Readonly<ToggleGroup.Props>): React.ReactElement {
+const ToggleGroup = React.forwardRef<HTMLDivElement, ToggleGroup.Props>(function ToggleGroup(props, forwardedRef) {
   const {className, children, render, size, variant, ...otherProps} = props;
 
   return (
     <BaseToggleGroup
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -77,7 +78,7 @@ function ToggleGroup(props: Readonly<ToggleGroup.Props>): React.ReactElement {
       <ToggleGroupContext.Provider value={{variant, size}}>{children}</ToggleGroupContext.Provider>
     </BaseToggleGroup>
   );
-}
+});
 
 /**
  * Renders an individual toggle item within a toggle group.
@@ -96,12 +97,13 @@ function ToggleGroup(props: Readonly<ToggleGroup.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/toggle-group | Base UI Toggle Group Docs}
  */
-function ToggleGroupItem(props: Readonly<ToggleGroupItem.Props>): React.ReactElement {
+const ToggleGroupItem = React.forwardRef<HTMLButtonElement, ToggleGroupItem.Props>(function ToggleGroupItem(props, forwardedRef) {
   const {className, size, variant, ...otherProps} = props;
   const context = React.useContext(ToggleGroupContext);
 
   return (
     <Toggle
+      ref={forwardedRef}
       className={cn(
         toggleVariants({
           variant: variant ?? context.variant,
@@ -114,7 +116,7 @@ function ToggleGroupItem(props: Readonly<ToggleGroupItem.Props>): React.ReactEle
       {...otherProps}
     />
   );
-}
+});
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToggleGroup {

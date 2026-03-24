@@ -1,4 +1,6 @@
-import {clsx, type ClassValue} from "clsx";
+import {clsx} from "clsx";
+
+export type {ClassValue} from "clsx";
 
 /**
  * Helper function that merges CSS class names.
@@ -6,8 +8,6 @@ import {clsx, type ClassValue} from "clsx";
  * @param inputs Array of class names
  * @returns Merged class names string
  */
-export function cn(...inputs: ReadonlyArray<ClassValue>): string {
+export function cn(...inputs: ReadonlyArray<import("clsx").ClassValue>): string {
   return clsx(inputs);
 }
-
-export type {ClassValue};

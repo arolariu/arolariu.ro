@@ -8,11 +8,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./meter.module.css";
 
-type MeterProps = React.ComponentPropsWithRef<typeof BaseMeter.Root>;
-type MeterTrackProps = React.ComponentPropsWithRef<typeof BaseMeter.Track>;
-type MeterIndicatorProps = React.ComponentPropsWithRef<typeof BaseMeter.Indicator>;
-type MeterLabelProps = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
-
 /**
  * Displays a scalar measurement within a known range.
  *
@@ -32,12 +27,13 @@ type MeterLabelProps = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-function Meter(props: Readonly<Meter.Props>): React.ReactElement {
+const Meter = React.forwardRef<HTMLDivElement, Meter.Props>(function Meter(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseMeter.Root
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -46,7 +42,7 @@ function Meter(props: Readonly<Meter.Props>): React.ReactElement {
       {children}
     </BaseMeter.Root>
   );
-}
+});
 
 /**
  * Renders the background track for a meter.
@@ -62,12 +58,13 @@ function Meter(props: Readonly<Meter.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-function MeterTrack(props: Readonly<MeterTrack.Props>): React.ReactElement {
+const MeterTrack = React.forwardRef<HTMLDivElement, MeterTrack.Props>(function MeterTrack(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseMeter.Track
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -76,7 +73,7 @@ function MeterTrack(props: Readonly<MeterTrack.Props>): React.ReactElement {
       {children}
     </BaseMeter.Track>
   );
-}
+});
 
 /**
  * Renders the filled indicator that reflects the current meter value.
@@ -92,12 +89,13 @@ function MeterTrack(props: Readonly<MeterTrack.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-function MeterIndicator(props: Readonly<MeterIndicator.Props>): React.ReactElement {
+const MeterIndicator = React.forwardRef<HTMLDivElement, MeterIndicator.Props>(function MeterIndicator(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseMeter.Indicator
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -106,7 +104,7 @@ function MeterIndicator(props: Readonly<MeterIndicator.Props>): React.ReactEleme
       {children}
     </BaseMeter.Indicator>
   );
-}
+});
 
 /**
  * Renders the accessible label associated with a meter.
@@ -122,12 +120,13 @@ function MeterIndicator(props: Readonly<MeterIndicator.Props>): React.ReactEleme
  *
  * @see {@link https://base-ui.com/react/components/meter | Base UI Meter Docs}
  */
-function MeterLabel(props: Readonly<MeterLabel.Props>): React.ReactElement {
+const MeterLabel = React.forwardRef<HTMLSpanElement, MeterLabel.Props>(function MeterLabel(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseMeter.Label
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "span",
         render: render as never,
@@ -136,29 +135,29 @@ function MeterLabel(props: Readonly<MeterLabel.Props>): React.ReactElement {
       {children}
     </BaseMeter.Label>
   );
-}
+});
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Meter {
-  export type Props = MeterProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Root>;
   export type State = BaseMeter.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterTrack {
-  export type Props = MeterTrackProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Track>;
   export type State = BaseMeter.Track.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterIndicator {
-  export type Props = MeterIndicatorProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Indicator>;
   export type State = BaseMeter.Indicator.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MeterLabel {
-  export type Props = MeterLabelProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseMeter.Label>;
   export type State = BaseMeter.Label.State;
 }
 

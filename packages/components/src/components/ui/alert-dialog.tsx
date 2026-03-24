@@ -108,13 +108,15 @@ AlertDialog.displayName = "AlertDialog";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-function AlertDialogTrigger(props: Readonly<AlertDialogTrigger.Props>): React.ReactElement {
+const AlertDialogTrigger = React.forwardRef<HTMLButtonElement, AlertDialogTrigger.Props>(function AlertDialogTrigger(props, forwardedRef) {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
   return (
     <BaseAlertDialog.Trigger
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "button",
         render: renderProp as never,
@@ -123,7 +125,7 @@ function AlertDialogTrigger(props: Readonly<AlertDialogTrigger.Props>): React.Re
       {renderProp ? undefined : children}
     </BaseAlertDialog.Trigger>
   );
-}
+});
 AlertDialogTrigger.displayName = "AlertDialogTrigger";
 
 /**
@@ -198,7 +200,7 @@ AlertDialogOverlay.displayName = "AlertDialogOverlay";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-function AlertDialogContent(props: Readonly<AlertDialogContent.Props>): React.ReactElement {
+const AlertDialogContent = React.forwardRef<HTMLDivElement, AlertDialogContent.Props>(function AlertDialogContent(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
@@ -206,6 +208,7 @@ function AlertDialogContent(props: Readonly<AlertDialogContent.Props>): React.Re
       <AlertDialogOverlay />
       <BaseAlertDialog.Popup
         {...otherProps}
+        ref={forwardedRef}
         render={useRender({
           defaultTagName: "div",
           render: render as never,
@@ -215,7 +218,7 @@ function AlertDialogContent(props: Readonly<AlertDialogContent.Props>): React.Re
       </BaseAlertDialog.Popup>
     </AlertDialogPortal>
   );
-}
+});
 AlertDialogContent.displayName = "AlertDialogContent";
 
 /**
@@ -237,6 +240,7 @@ AlertDialogContent.displayName = "AlertDialogContent";
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
 function AlertDialogHeader(props: Readonly<AlertDialogHeader.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -269,6 +273,7 @@ AlertDialogHeader.displayName = "AlertDialogHeader";
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
 function AlertDialogFooter(props: Readonly<AlertDialogFooter.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -364,12 +369,13 @@ AlertDialogDescription.displayName = "AlertDialogDescription";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-function AlertDialogAction(props: Readonly<AlertDialogAction.Props>): React.ReactElement {
+const AlertDialogAction = React.forwardRef<HTMLButtonElement, AlertDialogAction.Props>(function AlertDialogAction(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseAlertDialog.Close
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "button",
         render: render as never,
@@ -383,7 +389,7 @@ function AlertDialogAction(props: Readonly<AlertDialogAction.Props>): React.Reac
       {children}
     </BaseAlertDialog.Close>
   );
-}
+});
 AlertDialogAction.displayName = "AlertDialogAction";
 
 /**
@@ -402,12 +408,13 @@ AlertDialogAction.displayName = "AlertDialogAction";
  *
  * @see {@link https://base-ui.com/react/components/alert-dialog | Base UI Documentation}
  */
-function AlertDialogCancel(props: Readonly<AlertDialogCancel.Props>): React.ReactElement {
+const AlertDialogCancel = React.forwardRef<HTMLButtonElement, AlertDialogCancel.Props>(function AlertDialogCancel(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseAlertDialog.Close
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "button",
         render: render as never,
@@ -421,7 +428,7 @@ function AlertDialogCancel(props: Readonly<AlertDialogCancel.Props>): React.Reac
       {children}
     </BaseAlertDialog.Close>
   );
-}
+});
 AlertDialogCancel.displayName = "AlertDialogCancel";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

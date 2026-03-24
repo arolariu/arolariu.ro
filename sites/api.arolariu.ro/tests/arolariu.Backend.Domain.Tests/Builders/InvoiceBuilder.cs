@@ -68,11 +68,12 @@ internal static class InvoiceBuilder
     };
   }
 
-  public static TheoryData<Invoice> GetInvoiceTheoryData() => [
-      CreateRandomInvoice(),
-      CreateRandomInvoice(),
-      CreateRandomInvoice()
-    ];
+  public static TheoryData<Invoice> GetInvoiceTheoryData() => new()
+  {
+    CreateRandomInvoice(),
+    CreateRandomInvoice(),
+    CreateRandomInvoice()
+  };
 
   public static List<Invoice> CreateMultipleRandomInvoices(int count = 3)
   {

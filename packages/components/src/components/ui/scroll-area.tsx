@@ -8,9 +8,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./scroll-area.module.css";
 
-type ScrollAreaProps = React.ComponentPropsWithRef<typeof BaseScrollArea.Root>;
-type ScrollBarProps = React.ComponentPropsWithRef<typeof BaseScrollArea.Scrollbar>;
-
 /**
  * Coordinates scroll area layout and scrolling behavior.
  *
@@ -88,13 +85,13 @@ function ScrollBar(props: Readonly<ScrollBar.Props>): React.ReactElement {
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ScrollArea {
-  export type Props = ScrollAreaProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseScrollArea.Root>;
   export type State = BaseScrollArea.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ScrollBar {
-  export type Props = ScrollBarProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseScrollArea.Scrollbar>;
   export type State = BaseScrollArea.Scrollbar.State;
 }
 

@@ -37,22 +37,25 @@ const useDropDrawerContext = (): DropDrawerContextValue => {
 const Drawer = BaseDrawer.Root;
 const DrawerPortal = BaseDrawer.Portal;
 
-function DrawerTrigger(props: Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Trigger> & {asChild?: boolean}>): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const DrawerTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithRef<typeof BaseDrawer.Trigger> & {asChild?: boolean}>(
+  function DrawerTrigger(props, forwardedRef) {
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BaseDrawer.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseDrawer.Trigger>
-  );
-}
+    return (
+      <BaseDrawer.Trigger
+        {...otherProps}
+        ref={forwardedRef}
+        render={useRender({
+          defaultTagName: "button",
+          render: renderProp as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BaseDrawer.Trigger>
+    );
+  },
+);
 
 function DrawerOverlay(props: Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Backdrop>>): React.ReactElement {
   const {className, render, ...otherProps} = props;
@@ -69,29 +72,30 @@ function DrawerOverlay(props: Readonly<React.ComponentPropsWithRef<typeof BaseDr
   );
 }
 
-function DrawerContent(
-  props: Readonly<React.ComponentPropsWithRef<typeof BaseDrawer.Popup> & {children?: React.ReactNode}>,
-): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const DrawerContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithRef<typeof BaseDrawer.Popup> & {children?: React.ReactNode}>(
+  function DrawerContent(props, forwardedRef) {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <DrawerPortal>
-      <DrawerOverlay />
-      <BaseDrawer.Viewport className={styles.drawerViewport}>
-        <BaseDrawer.Popup
-          {...otherProps}
-          render={useRender({
-            defaultTagName: "div",
-            render: render as never,
-            props: mergeProps({className: cn(styles.drawerContent, className)}, {}),
-          })}>
-          <div className={styles.drawerHandle} />
-          <BaseDrawer.Content className={styles.drawerInnerContent}>{children}</BaseDrawer.Content>
-        </BaseDrawer.Popup>
-      </BaseDrawer.Viewport>
-    </DrawerPortal>
-  );
-}
+    return (
+      <DrawerPortal>
+        <DrawerOverlay />
+        <BaseDrawer.Viewport className={styles.drawerViewport}>
+          <BaseDrawer.Popup
+            {...otherProps}
+            ref={forwardedRef}
+            render={useRender({
+              defaultTagName: "div",
+              render: render as never,
+              props: mergeProps({className: cn(styles.drawerContent, className)}, {}),
+            })}>
+            <div className={styles.drawerHandle} />
+            <BaseDrawer.Content className={styles.drawerInnerContent}>{children}</BaseDrawer.Content>
+          </BaseDrawer.Popup>
+        </BaseDrawer.Viewport>
+      </DrawerPortal>
+    );
+  },
+);
 
 function DrawerHeader(
   props: Readonly<React.ComponentPropsWithRef<"div"> & {render?: useRender.RenderProp<Record<string, never>>}>,
@@ -136,34 +140,37 @@ function DrawerTitle(props: Readonly<React.ComponentPropsWithRef<typeof BaseDraw
 const DropdownMenu = BaseMenu.Root;
 const DropdownMenuSub = BaseMenu.SubmenuRoot;
 
-function DropdownMenuTrigger(
-  props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Trigger> & {asChild?: boolean}>,
-): React.ReactElement {
-  const {asChild = false, children, className, render, ...otherProps} = props;
-  const renderProp = asChild && React.isValidElement(children) ? children : render;
+const DropdownMenuTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithRef<typeof BaseMenu.Trigger> & {asChild?: boolean}>(
+  function DropdownMenuTrigger(props, forwardedRef) {
+    const {asChild = false, children, className, render, ...otherProps} = props;
+    const renderProp = asChild && React.isValidElement(children) ? children : render;
 
-  return (
-    <BaseMenu.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: renderProp as never,
-        props: mergeProps({className}, {}),
-      })}>
-      {renderProp ? undefined : children}
-    </BaseMenu.Trigger>
-  );
-}
+    return (
+      <BaseMenu.Trigger
+        {...otherProps}
+        ref={forwardedRef}
+        render={useRender({
+          defaultTagName: "button",
+          render: renderProp as never,
+          props: mergeProps({className}, {}),
+        })}>
+        {renderProp ? undefined : children}
+      </BaseMenu.Trigger>
+    );
+  },
+);
 
-function DropdownMenuContent(
-  props: Readonly<React.ComponentPropsWithRef<typeof BaseMenu.Positioner> & {children?: React.ReactNode}>,
-): React.ReactElement {
+const DropdownMenuContent = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithRef<typeof BaseMenu.Positioner> & {children?: React.ReactNode}
+>(function DropdownMenuContent(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseMenu.Portal>
       <BaseMenu.Positioner
         {...otherProps}
+        ref={forwardedRef}
         render={useRender({
           defaultTagName: "div",
           props: mergeProps({className: styles.dropdownPositioner}, {}),
@@ -179,7 +186,7 @@ function DropdownMenuContent(
       </BaseMenu.Positioner>
     </BaseMenu.Portal>
   );
-}
+});
 
 interface DropdownMenuItemProps extends React.ComponentPropsWithRef<typeof BaseMenu.Item> {
   /** @deprecated Prefer Base UI's `render` prop. */
@@ -192,6 +199,7 @@ interface DropdownMenuItemProps extends React.ComponentPropsWithRef<typeof BaseM
 }
 
 function DropdownMenuItem(props: Readonly<DropdownMenuItemProps>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, inset = false, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -408,11 +416,15 @@ function DropDrawer({children, ...props}: DropDrawerRootProps): React.JSX.Elemen
  *
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Drawer Docs}
  */
-function DropDrawerTrigger({className, children, ...props}: DropDrawerTriggerProps): React.JSX.Element {
+const DropDrawerTrigger = React.forwardRef<HTMLButtonElement, DropDrawerTriggerProps>(function DropDrawerTrigger(
+  {className, children, ...props},
+  forwardedRef,
+) {
   const {isMobile} = useDropDrawerContext();
 
   return isMobile ? (
     <DrawerTrigger
+      ref={forwardedRef}
       data-slot='drop-drawer-trigger'
       className={className}
       {...(props as React.ComponentProps<typeof DrawerTrigger>)}>
@@ -420,13 +432,14 @@ function DropDrawerTrigger({className, children, ...props}: DropDrawerTriggerPro
     </DrawerTrigger>
   ) : (
     <DropdownMenuTrigger
+      ref={forwardedRef}
       data-slot='drop-drawer-trigger'
       className={className}
       {...(props as React.ComponentProps<typeof DropdownMenuTrigger>)}>
       {children}
     </DropdownMenuTrigger>
   );
-}
+});
 
 /**
  * Renders the responsive dropdown or drawer content surface.
@@ -444,7 +457,10 @@ function DropDrawerTrigger({className, children, ...props}: DropDrawerTriggerPro
  *
  * @see {@link https://base-ui.com/react/components/menu | Base UI Menu Docs}
  */
-function DropDrawerContent({className, children, ...props}: DropDrawerContentProps): React.JSX.Element {
+const DropDrawerContent = React.forwardRef<HTMLDivElement, DropDrawerContentProps>(function DropDrawerContent(
+  {className, children, ...props},
+  forwardedRef,
+) {
   const {isMobile} = useDropDrawerContext();
   const [activeSubmenu, setActiveSubmenu] = React.useState<string | null>(null);
   const [submenuTitle, setSubmenuTitle] = React.useState<string | null>(null);
@@ -594,6 +610,7 @@ function DropDrawerContent({className, children, ...props}: DropDrawerContentPro
           submenuTitle,
         }}>
         <DrawerContent
+          ref={forwardedRef}
           data-slot='drop-drawer-content'
           className={cn(styles.mobileContent, className)}
           {...(props as React.ComponentProps<typeof DrawerContent>)}>
@@ -670,6 +687,7 @@ function DropDrawerContent({className, children, ...props}: DropDrawerContentPro
         submenuTitle,
       }}>
       <DropdownMenuContent
+        ref={forwardedRef}
         data-slot='drop-drawer-content'
         align='end'
         sideOffset={4}
@@ -679,7 +697,7 @@ function DropDrawerContent({className, children, ...props}: DropDrawerContentPro
       </DropdownMenuContent>
     </SubmenuContext.Provider>
   );
-}
+});
 
 /**
  * Renders an actionable item inside the drop drawer surface.

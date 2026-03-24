@@ -33,13 +33,14 @@ export interface ProgressProps extends Omit<React.ComponentPropsWithRef<typeof B
  *
  * @see {@link https://base-ui.com/react/components/progress | Base UI Documentation}
  */
-function Progress(props: Readonly<Progress.Props>): React.ReactElement {
+const Progress = React.forwardRef<HTMLDivElement, Progress.Props>(function Progress(props, forwardedRef) {
   const {className, render, value = 0, ...otherProps} = props;
 
   return (
     <BaseProgress.Root
       value={value}
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -49,7 +50,7 @@ function Progress(props: Readonly<Progress.Props>): React.ReactElement {
       </BaseProgress.Track>
     </BaseProgress.Root>
   );
-}
+});
 Progress.displayName = "Progress";
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

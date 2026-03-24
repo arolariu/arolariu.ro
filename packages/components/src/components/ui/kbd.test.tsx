@@ -75,11 +75,7 @@ describe("Kbd", () => {
 
   it("sets the data-slot attribute on Kbd", () => {
     // Arrange
-    render(
-      <Kbd data-testid='kbd-slot'>
-        K
-      </Kbd>,
-    );
+    render(<Kbd data-testid='kbd-slot'>K</Kbd>);
 
     // Assert
     expect(screen.getByTestId("kbd-slot")).toHaveAttribute("data-slot", "kbd");

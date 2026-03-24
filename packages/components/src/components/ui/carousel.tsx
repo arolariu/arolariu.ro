@@ -127,7 +127,9 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
         return;
       }
 
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setCanScrollPrev(emblaApi.canScrollPrev());
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setCanScrollNext(emblaApi.canScrollNext());
     }, []);
 

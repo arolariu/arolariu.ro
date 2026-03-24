@@ -1,0 +1,158 @@
+/**
+ * Combobox component styles
+ * Compound component combining Command, Popover, and Button
+ */
+
+/* Root container */
+.combobox {
+  display: contents;
+}
+
+/* Trigger button */
+.trigger {
+  justify-content: space-between;
+  width: 100%;
+  min-width: 200px;
+}
+
+.triggerValue {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerPlaceholder {
+  color: var(--ac-neutral-500);
+}
+
+.triggerIcon {
+  margin-left: var(--ac-spacing-2);
+  height: 1rem;
+  width: 1rem;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* Popover content */
+.content {
+  width: var(--anchor-width);
+  min-width: 200px;
+  padding: 0;
+}
+
+/* Command container */
+.command {
+  border: none;
+  box-shadow: none;
+}
+
+.commandInput {
+  border-bottom: 1px solid var(--ac-neutral-200);
+  border-radius: 0;
+}
+
+.commandList {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Items */
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-spacing-2);
+  cursor: pointer;
+  padding: var(--ac-spacing-2) var(--ac-spacing-3);
+  border-radius: var(--ac-radius-sm);
+  transition: background-color 0.2s;
+}
+
+.item:hover {
+  background-color: var(--ac-neutral-100);
+}
+
+.item[data-disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.itemSelected {
+  background-color: var(--ac-neutral-100);
+}
+
+.itemCheck {
+  height: 1rem;
+  width: 1rem;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.itemCheckVisible {
+  opacity: 1;
+}
+
+.itemLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Empty state */
+.empty {
+  padding: var(--ac-spacing-6) var(--ac-spacing-4);
+  text-align: center;
+  color: var(--ac-neutral-500);
+  font-size: var(--ac-font-size-sm);
+}
+
+/* Group */
+.group {
+  padding: var(--ac-spacing-1) 0;
+}
+
+/* Separator */
+.separator {
+  margin: var(--ac-spacing-1) 0;
+  height: 1px;
+  background-color: var(--ac-neutral-200);
+}
+
+/* Dark mode */
+:global(.dark) .triggerPlaceholder {
+  color: var(--ac-neutral-400);
+}
+
+:global(.dark) .commandInput {
+  border-bottom-color: var(--ac-neutral-700);
+}
+
+:global(.dark) .item:hover {
+  background-color: var(--ac-neutral-800);
+}
+
+:global(.dark) .itemSelected {
+  background-color: var(--ac-neutral-800);
+}
+
+:global(.dark) .empty {
+  color: var(--ac-neutral-400);
+}
+
+:global(.dark) .separator {
+  background-color: var(--ac-neutral-700);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .trigger {
+    min-width: 150px;
+  }
+
+  .content {
+    min-width: 150px;
+  }
+}

@@ -176,22 +176,25 @@ const NavigationMenuItem = BaseNavigationMenu.Item;
  *
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
-function NavigationMenuTrigger(props: Readonly<NavigationMenuTrigger.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const NavigationMenuTrigger = React.forwardRef<HTMLButtonElement, NavigationMenuTrigger.Props>(
+  function NavigationMenuTrigger(props, forwardedRef) {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseNavigationMenu.Trigger
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "button",
-        render: render as never,
-        props: mergeProps({className: cn(styles.trigger, className)}, {}),
-      })}>
-      {children}
-      <ChevronDown className={styles.triggerIcon} />
-    </BaseNavigationMenu.Trigger>
-  );
-}
+    return (
+      <BaseNavigationMenu.Trigger
+        {...otherProps}
+        ref={forwardedRef}
+        render={useRender({
+          defaultTagName: "button",
+          render: render as never,
+          props: mergeProps({className: cn(styles.trigger, className)}, {}),
+        })}>
+        {children}
+        <ChevronDown className={styles.triggerIcon} />
+      </BaseNavigationMenu.Trigger>
+    );
+  },
+);
 
 /**
  * Renders the navigation menu content.
@@ -208,21 +211,24 @@ function NavigationMenuTrigger(props: Readonly<NavigationMenuTrigger.Props>): Re
  *
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
-function NavigationMenuContent(props: Readonly<NavigationMenuContent.Props>): React.ReactElement {
-  const {className, children, render, ...otherProps} = props;
+const NavigationMenuContent = React.forwardRef<HTMLDivElement, NavigationMenuContent.Props>(
+  function NavigationMenuContent(props, forwardedRef) {
+    const {className, children, render, ...otherProps} = props;
 
-  return (
-    <BaseNavigationMenu.Content
-      {...otherProps}
-      render={useRender({
-        defaultTagName: "div",
-        render: render as never,
-        props: mergeProps({className: cn(styles.content, className)}, {}),
-      })}>
-      {children}
-    </BaseNavigationMenu.Content>
-  );
-}
+    return (
+      <BaseNavigationMenu.Content
+        {...otherProps}
+        ref={forwardedRef}
+        render={useRender({
+          defaultTagName: "div",
+          render: render as never,
+          props: mergeProps({className: cn(styles.content, className)}, {}),
+        })}>
+        {children}
+      </BaseNavigationMenu.Content>
+    );
+  },
+);
 
 /**
  * Renders the navigation menu link.
@@ -239,12 +245,13 @@ function NavigationMenuContent(props: Readonly<NavigationMenuContent.Props>): Re
  *
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
-function NavigationMenuLink(props: Readonly<NavigationMenuLink.Props>): React.ReactElement {
+const NavigationMenuLink = React.forwardRef<HTMLAnchorElement, NavigationMenuLink.Props>(function NavigationMenuLink(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseNavigationMenu.Link
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "a",
         render: render as never,
@@ -253,7 +260,7 @@ function NavigationMenuLink(props: Readonly<NavigationMenuLink.Props>): React.Re
       {children}
     </BaseNavigationMenu.Link>
   );
-}
+});
 
 /**
  * Renders the navigation menu viewport.
@@ -318,6 +325,7 @@ function NavigationMenuViewport(props: Readonly<NavigationMenuViewport.Props>): 
  * @see {@link https://base-ui.com/react/components/navigation-menu | Base UI Documentation}
  */
 function NavigationMenuIndicator(props: Readonly<NavigationMenuIndicator.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

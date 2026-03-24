@@ -8,12 +8,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./toolbar.module.css";
 
-type ToolbarProps = React.ComponentPropsWithRef<typeof BaseToolbar.Root>;
-type ToolbarButtonProps = React.ComponentPropsWithRef<typeof BaseToolbar.Button>;
-type ToolbarGroupProps = React.ComponentPropsWithRef<typeof BaseToolbar.Group>;
-type ToolbarSeparatorProps = React.ComponentPropsWithRef<typeof BaseToolbar.Separator>;
-type ToolbarLinkProps = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
-
 /**
  * Arranges related actions into a keyboard-accessible toolbar.
  *
@@ -32,12 +26,13 @@ type ToolbarLinkProps = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-function Toolbar(props: Readonly<Toolbar.Props>): React.ReactElement {
+const Toolbar = React.forwardRef<HTMLDivElement, Toolbar.Props>(function Toolbar(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseToolbar.Root
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -46,7 +41,7 @@ function Toolbar(props: Readonly<Toolbar.Props>): React.ReactElement {
       {children}
     </BaseToolbar.Root>
   );
-}
+});
 
 /**
  * Renders an interactive button within a toolbar.
@@ -63,12 +58,13 @@ function Toolbar(props: Readonly<Toolbar.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-function ToolbarButton(props: Readonly<ToolbarButton.Props>): React.ReactElement {
+const ToolbarButton = React.forwardRef<HTMLButtonElement, ToolbarButton.Props>(function ToolbarButton(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseToolbar.Button
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "button",
         render: render as never,
@@ -77,7 +73,7 @@ function ToolbarButton(props: Readonly<ToolbarButton.Props>): React.ReactElement
       {children}
     </BaseToolbar.Button>
   );
-}
+});
 
 /**
  * Groups related toolbar controls into a single visual cluster.
@@ -96,12 +92,13 @@ function ToolbarButton(props: Readonly<ToolbarButton.Props>): React.ReactElement
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-function ToolbarGroup(props: Readonly<ToolbarGroup.Props>): React.ReactElement {
+const ToolbarGroup = React.forwardRef<HTMLDivElement, ToolbarGroup.Props>(function ToolbarGroup(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseToolbar.Group
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -110,7 +107,7 @@ function ToolbarGroup(props: Readonly<ToolbarGroup.Props>): React.ReactElement {
       {children}
     </BaseToolbar.Group>
   );
-}
+});
 
 /**
  * Renders a visual separator between toolbar items or groups.
@@ -126,12 +123,13 @@ function ToolbarGroup(props: Readonly<ToolbarGroup.Props>): React.ReactElement {
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-function ToolbarSeparator(props: Readonly<ToolbarSeparator.Props>): React.ReactElement {
+const ToolbarSeparator = React.forwardRef<HTMLDivElement, ToolbarSeparator.Props>(function ToolbarSeparator(props, forwardedRef) {
   const {className, render, ...otherProps} = props;
 
   return (
     <BaseToolbar.Separator
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "div",
         render: render as never,
@@ -139,7 +137,7 @@ function ToolbarSeparator(props: Readonly<ToolbarSeparator.Props>): React.ReactE
       })}
     />
   );
-}
+});
 
 /**
  * Renders a link that visually matches toolbar buttons.
@@ -155,12 +153,13 @@ function ToolbarSeparator(props: Readonly<ToolbarSeparator.Props>): React.ReactE
  *
  * @see {@link https://base-ui.com/react/components/toolbar | Base UI Toolbar Docs}
  */
-function ToolbarLink(props: Readonly<ToolbarLink.Props>): React.ReactElement {
+const ToolbarLink = React.forwardRef<HTMLAnchorElement, ToolbarLink.Props>(function ToolbarLink(props, forwardedRef) {
   const {className, children, render, ...otherProps} = props;
 
   return (
     <BaseToolbar.Link
       {...otherProps}
+      ref={forwardedRef}
       render={useRender({
         defaultTagName: "a",
         render: render as never,
@@ -169,35 +168,35 @@ function ToolbarLink(props: Readonly<ToolbarLink.Props>): React.ReactElement {
       {children}
     </BaseToolbar.Link>
   );
-}
+});
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Toolbar {
-  export type Props = ToolbarProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Root>;
   export type State = BaseToolbar.Root.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarButton {
-  export type Props = ToolbarButtonProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Button>;
   export type State = BaseToolbar.Button.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarGroup {
-  export type Props = ToolbarGroupProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Group>;
   export type State = BaseToolbar.Group.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarSeparator {
-  export type Props = ToolbarSeparatorProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Separator>;
   export type State = BaseToolbar.Separator.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace ToolbarLink {
-  export type Props = ToolbarLinkProps;
+  export type Props = React.ComponentPropsWithRef<typeof BaseToolbar.Link>;
   export type State = BaseToolbar.Link.State;
 }
 

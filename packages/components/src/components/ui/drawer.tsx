@@ -258,6 +258,7 @@ const DrawerContent = React.forwardRef<React.ComponentRef<typeof BaseDrawer.Popu
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 function DrawerHeader(props: Readonly<DrawerHeader.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -286,6 +287,7 @@ function DrawerHeader(props: Readonly<DrawerHeader.Props>): React.ReactElement {
  * @see {@link https://base-ui.com/react/components/drawer | Base UI Documentation}
  */
 function DrawerFooter(props: Readonly<DrawerFooter.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 

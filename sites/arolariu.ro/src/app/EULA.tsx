@@ -252,6 +252,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         <p className={styles["accordionDescription"]}>{t("cookiesPolicy.cookies.essential.description")}</p>
                         <div className={styles["switchRow"]}>
                           <Switch
+                            nativeButton
                             id='essential'
                             checked
                             disabled
@@ -283,6 +284,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         <p className={styles["accordionDescription"]}>{t("cookiesPolicy.cookies.analytics.description")}</p>
                         <div className={styles["switchRow"]}>
                           <Switch
+                            nativeButton
                             id='analytics'
                             checked={cookieState.analytics}
                             onCheckedChange={handleAnalyticsCheckedChange}

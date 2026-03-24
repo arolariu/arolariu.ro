@@ -68,6 +68,7 @@ function Collapsible(props: Readonly<Collapsible.Props>): React.ReactElement {
  */
 const CollapsibleTrigger = React.forwardRef<React.ComponentRef<typeof BaseCollapsible.Trigger>, CollapsibleTrigger.Props>(
   (props: Readonly<CollapsibleTrigger.Props>, ref): React.ReactElement => {
+    // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
     const {asChild = false, children, className, render, ...otherProps} = props;
     const renderProp = asChild && React.isValidElement(children) ? children : render;
 

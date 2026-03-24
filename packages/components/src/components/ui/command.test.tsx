@@ -989,11 +989,12 @@ describe("Command", () => {
     const onSelectSecond = vi.fn();
 
     render(
-      <Command onKeyDown={(event) => {
-        if (event.key === "ArrowDown") {
-          event.preventDefault();
-        }
-      }}>
+      <Command
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+          }
+        }}>
         <CommandInput placeholder='Search' />
         <CommandList>
           <CommandItem onSelect={onSelectFirst}>First</CommandItem>

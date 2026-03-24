@@ -43,15 +43,10 @@ const ignoreAnimationError = (): null => null;
  *
  * @see {@link ScratcherProps} for available props
  */
-export const Scratcher: React.FC<ScratcherProps> = ({
-  width,
-  height,
-  minScratchPercentage = 50,
-  onComplete,
-  children,
-  className,
-  gradientColors = defaultGradientColors,
-}): React.JSX.Element => {
+export const Scratcher = React.forwardRef<HTMLDivElement, ScratcherProps>(function Scratcher(
+  {width, height, minScratchPercentage = 50, onComplete, children, className, gradientColors = defaultGradientColors},
+  forwardedRef,
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -173,6 +168,7 @@ export const Scratcher: React.FC<ScratcherProps> = ({
 
   return (
     <motion.div
+      ref={forwardedRef}
       className={cn(styles.root, className)}
       style={{
         width,
@@ -192,6 +188,6 @@ export const Scratcher: React.FC<ScratcherProps> = ({
       {children}
     </motion.div>
   );
-};
+});
 
 Scratcher.displayName = "Scratcher";

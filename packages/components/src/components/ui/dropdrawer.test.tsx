@@ -254,7 +254,7 @@ describe("DropDrawer", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByText("Security"));
+      await user.click(screen.getByText("Security"));
 
       // Assert
       await waitFor(() => {
@@ -270,7 +270,7 @@ describe("DropDrawer", () => {
       await waitFor(() => screen.getByText("Security"));
       const securityTrigger = screen.getByText("Security");
       const user = userEvent.setup();
-    await user.hover(securityTrigger);
+      await user.hover(securityTrigger);
 
       // Assert - submenu content should become visible
       await waitFor(() => {
@@ -582,7 +582,7 @@ describe("DropDrawer", () => {
       // Act
       await waitFor(() => screen.getByTestId("disabled-item"));
       const user = userEvent.setup();
-    await user.click(screen.getByTestId("disabled-item"));
+      await user.click(screen.getByTestId("disabled-item"));
 
       // Assert
       expect(mockOnClick).not.toHaveBeenCalled();
@@ -609,7 +609,7 @@ describe("DropDrawer", () => {
       // Act
       await waitFor(() => screen.getByTestId("disabled-item"));
       const user = userEvent.setup();
-    await user.click(screen.getByTestId("disabled-item"));
+      await user.click(screen.getByTestId("disabled-item"));
 
       // Assert
       expect(mockOnSelect).not.toHaveBeenCalled();
@@ -631,7 +631,7 @@ describe("DropDrawer", () => {
 
       // Act
       const user = userEvent.setup();
-    await user.click(screen.getByRole("button", {name: "Open"}));
+      await user.click(screen.getByRole("button", {name: "Open"}));
       await waitFor(() => screen.getByText("Close on click"));
 
       // Assert - Item rendered

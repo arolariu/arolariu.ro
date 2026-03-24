@@ -12,7 +12,7 @@ import path from "node:path";
 const bundlerConfig = defineConfig({
   source: {
     entry: {
-      index: ["./src/**", "!./src/**/*.test.*", "!./src/**/*.spec.*", "!./src/**/*.stories.*"],
+      index: ["./src/**", "!./src/**/*.test.*", "!./src/**/*.spec.*", "!./src/**/*.stories.*", "!./src/**/*.mdx"],
     },
     tsconfigPath: path.resolve(__dirname, "./tsconfig.json"),
   },

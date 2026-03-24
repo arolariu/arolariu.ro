@@ -10,14 +10,6 @@ import * as React from "react";
 import {cn} from "@/lib/utilities";
 import styles from "./menubar.module.css";
 
-type MenubarProps = Omit<React.ComponentPropsWithRef<typeof BaseMenubar>, "className"> & {className?: string};
-interface MenubarTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.Trigger>, "className"> {
-  /**
-   * Applies additional CSS classes to the component root element.
-   * @default undefined
-   */
-  className?: string;
-}
 interface MenubarSubTriggerProps extends Omit<React.ComponentPropsWithRef<typeof BaseMenu.SubmenuTrigger>, "className"> {
   /**
    * Applies additional CSS classes to the component root element.
@@ -540,6 +532,7 @@ function MenubarSeparator(props: Readonly<MenubarSeparator.Props>): React.ReactE
  * @see {@link https://base-ui.com/react/components/menubar | Base UI Documentation}
  */
 function MenubarShortcut(props: Readonly<MenubarShortcut.Props>): React.ReactElement {
+  // eslint-disable-next-line sonarjs/deprecation -- backward-compatible asChild API
   const {asChild = false, children, className, render, ...otherProps} = props;
   const renderProp = asChild && React.isValidElement(children) ? children : render;
 
@@ -554,13 +547,19 @@ function MenubarShortcut(props: Readonly<MenubarShortcut.Props>): React.ReactEle
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace Menubar {
-  export type Props = MenubarProps;
+  export type Props = Omit<React.ComponentPropsWithRef<typeof BaseMenubar>, "className"> & {className?: string};
   export type State = BaseMenubar.State;
 }
 
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API
 namespace MenubarTrigger {
-  export type Props = MenubarTriggerProps;
+  export type Props = Omit<React.ComponentPropsWithRef<typeof BaseMenu.Trigger>, "className"> & {
+    /**
+     * Applies additional CSS classes to the component root element.
+     * @default undefined
+     */
+    className?: string;
+  };
   export type State = BaseMenu.Trigger.State;
 }
 // eslint-disable-next-line no-redeclare -- required for the canonical component namespace typing API

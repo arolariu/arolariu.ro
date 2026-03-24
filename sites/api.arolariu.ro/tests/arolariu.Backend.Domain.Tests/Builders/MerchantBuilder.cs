@@ -61,11 +61,12 @@ public static class MerchantTestDataBuilder
   }
 
   /// <summary>Provides theory data containing several randomized merchants.</summary>
-  public static TheoryData<Merchant> GetMerchantTheoryData() => [
-      CreateRandomMerchant(),
-      CreateRandomMerchant(),
-      CreateRandomMerchant()
-    ];
+  public static TheoryData<Merchant> GetMerchantTheoryData() => new()
+  {
+    CreateRandomMerchant(),
+    CreateRandomMerchant(),
+    CreateRandomMerchant()
+  };
 
   /// <summary>Creates multiple randomly generated merchants.</summary>
   public static List<Merchant> CreateMultipleRandomMerchants(int count = 3)
