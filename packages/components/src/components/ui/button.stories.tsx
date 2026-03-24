@@ -5,6 +5,9 @@ const meta = {
   title: "Components/Actions/Button",
   component: Button,
   tags: ["autodocs"],
+  parameters: {
+    componentSubtitle: "✅ Stable",
+  },
   argTypes: {
     variant: {
       control: "select",

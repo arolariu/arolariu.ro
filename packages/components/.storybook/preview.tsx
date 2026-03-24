@@ -32,6 +32,30 @@ const preview: Preview = {
         desktop: {name: "Desktop", styles: {width: "1280px", height: "800px"}},
       },
     },
+    options: {
+      storySort: {
+        order: [
+          "Introduction",
+          ["Welcome", "Getting Started", "Design Principles"],
+          "Foundations",
+          ["Design Tokens", "Typography", "Motion", "Component Sizes"],
+          "Components",
+          [
+            "Actions",
+            "Forms",
+            "Data Display",
+            "Feedback",
+            "Navigation",
+            "Overlays",
+            "Layout",
+            "Typography",
+            "Backgrounds",
+            "Utilities",
+            "Interactions",
+          ],
+        ],
+      },
+    },
   },
   decorators: [
     withThemeByDataAttribute({

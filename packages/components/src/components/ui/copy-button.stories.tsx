@@ -5,6 +5,9 @@ const meta = {
   title: "Components/Actions/CopyButton",
   component: CopyButton,
   tags: ["autodocs"],
+  parameters: {
+    componentSubtitle: "🆕 New in v1.0",
+  },
   argTypes: {
     value: {
       control: "text",

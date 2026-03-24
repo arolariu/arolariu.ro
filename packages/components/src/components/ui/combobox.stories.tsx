@@ -8,6 +8,7 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    componentSubtitle: "🆕 New in v1.0",
   },
 } satisfies Meta<typeof Combobox>;
 
