@@ -25,11 +25,8 @@
   },
   "devDependencies": {
     "@playwright/test": "*",
-    "@sveltejs/adapter-auto": "*",
     "@sveltejs/kit": "*",
     "@sveltejs/vite-plugin-svelte": "*",
-    "@tailwindcss/forms": "*",
-    "@tailwindcss/typography": "*",
     "@tailwindcss/vite": "*",
     "@testing-library/svelte": "*",
     "@types/node": "*",
