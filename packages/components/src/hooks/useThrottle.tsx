@@ -40,6 +40,11 @@ import * as React from "react";
 export function useThrottle<Args extends unknown[]>(callback: (...args: Args) => void, delay: number): (...args: Args) => void {
   const lastRunRef = React.useRef(0);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const callbackRef = React.useRef(callback);
+
+  React.useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
 
   React.useEffect(() => {
     return () => {
@@ -55,7 +60,7 @@ export function useThrottle<Args extends unknown[]>(callback: (...args: Args) =>
       const timeSinceLastRun = now - lastRunRef.current;
 
       if (timeSinceLastRun >= delay) {
-        callback(...args);
+        callbackRef.current(...args);
         lastRunRef.current = now;
       } else {
         if (timeoutRef.current) {
@@ -63,11 +68,11 @@ export function useThrottle<Args extends unknown[]>(callback: (...args: Args) =>
         }
 
         timeoutRef.current = globalThis.setTimeout(() => {
-          callback(...args);
+          callbackRef.current(...args);
           lastRunRef.current = Date.now();
         }, delay - timeSinceLastRun);
       }
     },
-    [callback, delay],
+    [delay],
   );
 }

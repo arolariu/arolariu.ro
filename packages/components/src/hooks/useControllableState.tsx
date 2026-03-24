@@ -63,15 +63,18 @@ export function useControllableState<T>(options: UseControllableStateOptions<T>)
 
   const setValue = React.useCallback(
     (nextValue: T | ((prev: T) => T)) => {
-      const resolvedValue = typeof nextValue === "function" ? (nextValue as (prev: T) => T)(value) : nextValue;
-
       if (!isControlled) {
-        setUncontrolledState(resolvedValue);
+        setUncontrolledState((currentValue) => {
+          const resolvedValue = typeof nextValue === "function" ? (nextValue as (prev: T) => T)(currentValue) : nextValue;
+          onChange?.(resolvedValue);
+          return resolvedValue;
+        });
+      } else {
+        const resolvedValue = typeof nextValue === "function" ? (nextValue as (prev: T) => T)(controlled as T) : nextValue;
+        onChange?.(resolvedValue);
       }
-
-      onChange?.(resolvedValue);
     },
-    [isControlled, onChange, value],
+    [isControlled, onChange, controlled],
   );
 
   return [value, setValue];
