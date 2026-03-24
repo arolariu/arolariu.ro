@@ -1,7 +1,6 @@
-import {withThemeByDataAttribute} from "@storybook/addon-themes";
 import type {Preview} from "storybook-react-rsbuild";
 import "../src/index.css";
-import {darkTheme} from "./theme";
+import {darkTheme, lightTheme} from "./theme";
 
 const preview: Preview = {
   parameters: {
@@ -57,20 +56,41 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [
-    withThemeByDataAttribute({
-      themes: {
-        light: "",
-        dark: "dark",
+  globalTypes: {
+    theme: {
+      name: "Theme",
+      description: "Component theme",
+      toolbar: {
+        icon: "paintbrush",
+        items: [
+          {value: "light", title: "☀️ Light", icon: "sun"},
+          {value: "dark", title: "🌙 Dark", icon: "moon"},
+        ],
+        dynamicTitle: true,
       },
-      defaultTheme: "dark",
-      attributeName: "data-theme",
-    }),
-    (Story) => (
-      <div style={{padding: "1rem"}}>
-        <Story />
-      </div>
-    ),
+    },
+  },
+  initialGlobals: {
+    theme: "dark",
+  },
+  decorators: [
+    (Story, context) => {
+      const theme = context.globals["theme"] ?? "dark";
+      const isDark = theme === "dark";
+
+      return (
+        <div
+          data-theme={isDark ? "dark" : undefined}
+          style={{
+            padding: "1rem",
+            backgroundColor: isDark ? "#09090b" : "#ffffff",
+            color: isDark ? "#fafafa" : "#09090b",
+            minHeight: "100%",
+          }}>
+          <Story />
+        </div>
+      );
+    },
   ],
 };
 
