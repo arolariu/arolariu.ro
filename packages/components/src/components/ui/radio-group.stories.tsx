@@ -233,3 +233,49 @@ export const PaymentMethod: Story = {
     </RadioGroup>
   ),
 };
+
+/**
+ * Radio group with all options disabled.
+ */
+export const Disabled: Story = {
+  render: () => (
+    <RadioGroup defaultValue='option-1'>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+        <RadioGroupItem
+          value='option-1'
+          id='disabled-option-1'
+          disabled
+        />
+        <label
+          htmlFor='disabled-option-1'
+          style={{fontSize: "0.875rem", fontWeight: 500, opacity: 0.5}}>
+          Disabled Option 1
+        </label>
+      </div>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+        <RadioGroupItem
+          value='option-2'
+          id='disabled-option-2'
+          disabled
+        />
+        <label
+          htmlFor='disabled-option-2'
+          style={{fontSize: "0.875rem", fontWeight: 500, opacity: 0.5}}>
+          Disabled Option 2
+        </label>
+      </div>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
+        <RadioGroupItem
+          value='option-3'
+          id='disabled-option-3'
+          disabled
+        />
+        <label
+          htmlFor='disabled-option-3'
+          style={{fontSize: "0.875rem", fontWeight: 500, opacity: 0.5}}>
+          Disabled Option 3
+        </label>
+      </div>
+    </RadioGroup>
+  ),
+};

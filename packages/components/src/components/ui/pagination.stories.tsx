@@ -149,3 +149,101 @@ export const ExtendedRange: Story = {
     </Pagination>
   ),
 };
+
+/**
+ * Compact pagination with fewer visible page numbers.
+ */
+function CompactPagination(): React.JSX.Element {
+  return (
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious href='#' />
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationLink href='#' isActive>
+            1
+          </PaginationLink>
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationLink href='#'>2</PaginationLink>
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationEllipsis />
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationLink href='#'>8</PaginationLink>
+        </PaginationItem>
+        <PaginationItem>
+          <PaginationNext href='#' />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
+}
+
+export const Compact: Story = {
+  render: () => <CompactPagination />,
+};
+
+/**
+ * Pagination showing items-per-page selector.
+ */
+function PaginationWithPageSize(): React.JSX.Element {
+  const [pageSize, setPageSize] = React.useState("10");
+
+  return (
+    <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "16px"}}>
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious href='#' />
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationLink href='#'>1</PaginationLink>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationLink href='#' isActive>
+              2
+            </PaginationLink>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationLink href='#'>3</PaginationLink>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationNext href='#' />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        fontSize: "14px",
+        color: "#6b7280"
+      }}>
+        <span>Items per page:</span>
+        <select
+          value={pageSize}
+          onChange={(e) => setPageSize(e.target.value)}
+          style={{
+            padding: "4px 8px",
+            border: "1px solid #d1d5db",
+            borderRadius: "4px",
+            fontSize: "14px",
+            cursor: "pointer",
+          }}
+        >
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+export const WithPageSize: Story = {
+  render: () => <PaginationWithPageSize />,
+};

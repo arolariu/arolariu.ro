@@ -73,3 +73,75 @@ function ControlledDemo() {
 export const Controlled: Story = {
   render: () => <ControlledDemo />,
 };
+
+/**
+ * Disabled slider.
+ */
+export const Disabled: Story = {
+  render: () => (
+    <div style={{width: "256px"}}>
+      <Slider
+        defaultValue={[50]}
+        min={0}
+        max={100}
+        disabled
+      />
+    </div>
+  ),
+};
+
+/**
+ * Range slider with two thumbs.
+ */
+function RangeSliderDemo() {
+  const [range, setRange] = React.useState([25, 75]);
+
+  return (
+    <div style={{width: "256px", display: "flex", flexDirection: "column", gap: "1rem"}}>
+      <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.875rem"}}>
+        <span>Price Range</span>
+        <span style={{fontWeight: 500}}>
+          ${range[0]} - ${range[1]}
+        </span>
+      </div>
+      <Slider
+        value={range}
+        onValueChange={setRange}
+        min={0}
+        max={100}
+        step={5}
+      />
+    </div>
+  );
+}
+
+export const RangeSlider: Story = {
+  render: () => <RangeSliderDemo />,
+};
+
+/**
+ * Slider with min/max labels.
+ */
+export const WithLabels: Story = {
+  render: () => (
+    <div style={{width: "256px"}}>
+      <Slider
+        defaultValue={[50]}
+        min={0}
+        max={100}
+      />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: "0.5rem",
+          fontSize: "0.75rem",
+          color: "gray",
+        }}>
+        <span>0</span>
+        <span>50</span>
+        <span>100</span>
+      </div>
+    </div>
+  ),
+};

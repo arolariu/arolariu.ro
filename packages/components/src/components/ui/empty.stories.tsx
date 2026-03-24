@@ -37,13 +37,16 @@ export const Default: Story = {
   ),
 };
 
-export const WithAction: Story = {
-  render: () => (
+/**
+ * Empty state with action button (CTA).
+ */
+function EmptyWithAction(): React.JSX.Element {
+  return (
     <Empty>
       <EmptyHeader>
         <EmptyMedia variant='icon'>
           <svg
-            className='h-12 w-12'
+            style={{width: "48px", height: "48px"}}
             fill='none'
             viewBox='0 0 24 24'
             stroke='currentColor'>
@@ -62,5 +65,48 @@ export const WithAction: Story = {
         <Button>Create Item</Button>
       </EmptyContent>
     </Empty>
-  ),
+  );
+}
+
+export const WithAction: Story = {
+  render: () => <EmptyWithAction />,
+};
+
+/**
+ * Minimal empty state without header (compact variant).
+ */
+function CompactEmpty(): React.JSX.Element {
+  return (
+    <Empty>
+      <EmptyContent style={{paddingTop: "32px"}}>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "12px",
+          textAlign: "center",
+        }}>
+          <svg
+            style={{width: "32px", height: "32px", color: "#9ca3af"}}
+            fill='none'
+            viewBox='0 0 24 24'
+            stroke='currentColor'>
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4'
+            />
+          </svg>
+          <p style={{fontSize: "14px", color: "#6b7280", margin: 0}}>
+            No data available
+          </p>
+        </div>
+      </EmptyContent>
+    </Empty>
+  );
+}
+
+export const Compact: Story = {
+  render: () => <CompactEmpty />,
 };

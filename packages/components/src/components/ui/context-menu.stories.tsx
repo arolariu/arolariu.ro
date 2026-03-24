@@ -194,3 +194,91 @@ export const WithLabelsAndRadio: Story = {
     </ContextMenu>
   ),
 };
+
+/**
+ * Context menu items with keyboard shortcuts displayed.
+ */
+function ContextMenuWithShortcuts(): React.JSX.Element {
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger className='flex h-[150px] w-[300px] items-center justify-center rounded-md border border-dashed text-sm'>
+        Right click here
+      </ContextMenuTrigger>
+      <ContextMenuContent className='w-64'>
+        <ContextMenuLabel>Edit</ContextMenuLabel>
+        <ContextMenuSeparator />
+        <ContextMenuItem>
+          <span>Undo</span>
+          <span style={{marginLeft: "auto", fontSize: "12px", opacity: 0.6, letterSpacing: "0.05em"}}>⌘Z</span>
+        </ContextMenuItem>
+        <ContextMenuItem>
+          <span>Redo</span>
+          <span style={{marginLeft: "auto", fontSize: "12px", opacity: 0.6, letterSpacing: "0.05em"}}>⌘⇧Z</span>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem>
+          <span>Cut</span>
+          <span style={{marginLeft: "auto", fontSize: "12px", opacity: 0.6, letterSpacing: "0.05em"}}>⌘X</span>
+        </ContextMenuItem>
+        <ContextMenuItem>
+          <span>Copy</span>
+          <span style={{marginLeft: "auto", fontSize: "12px", opacity: 0.6, letterSpacing: "0.05em"}}>⌘C</span>
+        </ContextMenuItem>
+        <ContextMenuItem>
+          <span>Paste</span>
+          <span style={{marginLeft: "auto", fontSize: "12px", opacity: 0.6, letterSpacing: "0.05em"}}>⌘V</span>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem>
+          <span>Select All</span>
+          <span style={{marginLeft: "auto", fontSize: "12px", opacity: 0.6, letterSpacing: "0.05em"}}>⌘A</span>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+export const WithShortcuts: Story = {
+  render: () => <ContextMenuWithShortcuts />,
+};
+
+/**
+ * Context menu with nested submenu structure.
+ */
+function ContextMenuNestedSubmenu(): React.JSX.Element {
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger className='flex h-[150px] w-[300px] items-center justify-center rounded-md border border-dashed text-sm'>
+        Right click here
+      </ContextMenuTrigger>
+      <ContextMenuContent className='w-64'>
+        <ContextMenuItem>Open</ContextMenuItem>
+        <ContextMenuItem>Open in New Tab</ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>Export As</ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            <ContextMenuItem>PDF</ContextMenuItem>
+            <ContextMenuItem>PNG</ContextMenuItem>
+            <ContextMenuItem>SVG</ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>More Formats</ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuItem>JPEG</ContextMenuItem>
+                <ContextMenuItem>WebP</ContextMenuItem>
+                <ContextMenuItem>TIFF</ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSeparator />
+        <ContextMenuItem>Properties</ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+}
+
+export const NestedSubmenu: Story = {
+  render: () => <ContextMenuNestedSubmenu />,
+};

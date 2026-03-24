@@ -28,29 +28,44 @@ export const Default: Story = {
   ),
 };
 
-export const WithForm: Story = {
-  render: () => (
+/**
+ * Popover containing a small form with inputs.
+ */
+function PopoverWithForm(): React.JSX.Element {
+  return (
     <Popover>
       <PopoverTrigger>
         <Button>Settings</Button>
       </PopoverTrigger>
       <PopoverContent>
-        <div className='space-y-3 p-4'>
-          <h3 className='font-semibold'>Settings</h3>
-          <div className='space-y-2'>
-            <label className='text-sm'>
+        <div style={{display: "flex", flexDirection: "column", gap: "12px", padding: "16px"}}>
+          <h3 style={{fontWeight: 600}}>Settings</h3>
+          <div style={{display: "flex", flexDirection: "column", gap: "8px"}}>
+            <label style={{fontSize: "14px", display: "flex", flexDirection: "column", gap: "4px"}}>
               Width
               <input
                 type='number'
-                className='mt-1 w-full rounded border px-2 py-1'
+                style={{
+                  marginTop: "4px",
+                  width: "100%",
+                  borderRadius: "4px",
+                  border: "1px solid #d1d5db",
+                  padding: "4px 8px",
+                }}
                 defaultValue={300}
               />
             </label>
-            <label className='text-sm'>
+            <label style={{fontSize: "14px", display: "flex", flexDirection: "column", gap: "4px"}}>
               Height
               <input
                 type='number'
-                className='mt-1 w-full rounded border px-2 py-1'
+                style={{
+                  marginTop: "4px",
+                  width: "100%",
+                  borderRadius: "4px",
+                  border: "1px solid #d1d5db",
+                  padding: "4px 8px",
+                }}
                 defaultValue={200}
               />
             </label>
@@ -59,5 +74,62 @@ export const WithForm: Story = {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+export const WithForm: Story = {
+  render: () => <PopoverWithForm />,
+};
+
+/**
+ * Popover with custom right-side placement alignment.
+ */
+export const CustomPlacement: Story = {
+  render: () => (
+    <Popover>
+      <PopoverTrigger>
+        <Button variant='outline'>Open Right</Button>
+      </PopoverTrigger>
+      <PopoverContent side='right'>
+        <div style={{padding: "16px"}}>
+          <h3 style={{fontWeight: 600, marginBottom: "8px"}}>Right Side Popover</h3>
+          <p style={{fontSize: "14px"}}>This popover appears on the right side of the trigger.</p>
+        </div>
+      </PopoverContent>
+    </Popover>
   ),
+};
+
+/**
+ * Nested popover demonstration (popover inside popover).
+ */
+function NestedPopover(): React.JSX.Element {
+  return (
+    <Popover>
+      <PopoverTrigger>
+        <Button variant='outline'>Open Outer</Button>
+      </PopoverTrigger>
+      <PopoverContent>
+        <div style={{padding: "16px", display: "flex", flexDirection: "column", gap: "12px"}}>
+          <h3 style={{fontWeight: 600}}>Outer Popover</h3>
+          <p style={{fontSize: "14px"}}>This is the outer popover content.</p>
+          <Popover>
+            <PopoverTrigger>
+              <Button size='sm' variant='secondary'>Open Inner</Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <div style={{padding: "16px"}}>
+                <h4 style={{fontWeight: 600, fontSize: "14px", marginBottom: "8px"}}>Inner Popover</h4>
+                <p style={{fontSize: "12px"}}>This is a nested popover!</p>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export const Nested: Story = {
+  render: () => <NestedPopover />,
 };

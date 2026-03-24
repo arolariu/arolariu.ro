@@ -45,3 +45,46 @@ export const OnDisabled: Story = {
     disabled: true,
   },
 };
+
+export const WithLabel: Story = {
+  render: () => (
+    <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
+      <Switch id="airplane-mode" />
+      <label
+        htmlFor="airplane-mode"
+        style={{fontSize: "0.875rem", fontWeight: 500, cursor: "pointer"}}>
+        Airplane Mode
+      </label>
+    </div>
+  ),
+};
+
+export const Small: Story = {
+  render: () => (
+    <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
+      <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
+        <Switch
+          id="normal"
+          defaultChecked
+        />
+        <label
+          htmlFor="normal"
+          style={{fontSize: "0.875rem"}}>
+          Normal size
+        </label>
+      </div>
+      <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
+        <Switch
+          id="small"
+          defaultChecked
+          style={{transform: "scale(0.8)", transformOrigin: "left"}}
+        />
+        <label
+          htmlFor="small"
+          style={{fontSize: "0.75rem"}}>
+          Smaller variant (scaled)
+        </label>
+      </div>
+    </div>
+  ),
+};
