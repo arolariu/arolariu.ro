@@ -1,6 +1,6 @@
 import type {Preview} from "storybook-react-rsbuild";
 import "../src/index.css";
-import {darkTheme, lightTheme} from "./theme";
+import {lightTheme} from "./theme";
 
 const preview: Preview = {
   parameters: {
@@ -12,7 +12,7 @@ const preview: Preview = {
       },
     },
     docs: {
-      theme: darkTheme,
+      theme: lightTheme,
     },
     a11y: {
       config: {
