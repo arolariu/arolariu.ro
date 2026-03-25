@@ -37,27 +37,6 @@ const ARTIFACT_FILENAME = "lint-result.json";
 const MAX_RAW_OUTPUT_LENGTH = 50_000;
 
 /**
- * Parsed ESLint JSON output message
- */
-interface ESLintMessage {
-  ruleId: string | null;
-  severity: 1 | 2; // 1 = warning, 2 = error
-  message: string;
-  line: number;
-  column: number;
-}
-
-/**
- * Parsed ESLint JSON output file result
- */
-interface ESLintFileResult {
-  filePath: string;
-  messages: ESLintMessage[];
-  errorCount: number;
-  warningCount: number;
-}
-
-/**
  * Runs the lint check and produces a result artifact
  *
  * @returns The lint check result
@@ -68,74 +47,71 @@ export async function runLintCheck(): Promise<HygieneCheckResult> {
   try {
     core.info("🔍 Starting lint check...");
 
-    // Run ESLint with JSON format for structured output
+    // Run the monorepo's custom lint script (Piscina-based parallel ESLint)
+    // Do NOT pass --format json — the custom script doesn't support it
     core.info("Running npm run lint...");
-    const lintResult = await exec.getExecOutput("npm", ["run", "lint", "--", "--format", "json"], {
+    const lintResult = await exec.getExecOutput("npm", ["run", "lint"], {
       ignoreReturnCode: true,
       silent: true,
     });
 
     const duration = Math.round(performance.now() - startTime);
+    const combinedOutput = lintResult.stdout + "\n" + lintResult.stderr;
     const rawOutput =
-      lintResult.stdout.length > MAX_RAW_OUTPUT_LENGTH
-        ? lintResult.stdout.substring(0, MAX_RAW_OUTPUT_LENGTH) + "\n\n... (output truncated)"
-        : lintResult.stdout;
+      combinedOutput.length > MAX_RAW_OUTPUT_LENGTH
+        ? combinedOutput.substring(0, MAX_RAW_OUTPUT_LENGTH) + "\n\n... (output truncated)"
+        : combinedOutput;
 
-    // Try to parse JSON output
-    let eslintResults: ESLintFileResult[] = [];
-    let parseError = false;
+    // Parse error/warning counts from the lint script's summary line:
+    // "📊 Summary: N error(s), M warning(s)"
+    let totalErrors = 0;
+    let totalWarnings = 0;
+    const issues: FileIssue[] = [];
 
-    try {
-      // ESLint JSON output might be wrapped in npm output, try to extract it
-      const jsonMatch = lintResult.stdout.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        eslintResults = JSON.parse(jsonMatch[0]) as ESLintFileResult[];
+    const summaryMatch = combinedOutput.match(/Summary:\s*(\d+)\s*error\(s\),\s*(\d+)\s*warning\(s\)/);
+    if (summaryMatch) {
+      totalErrors = parseInt(summaryMatch[1] ?? "0", 10);
+      totalWarnings = parseInt(summaryMatch[2] ?? "0", 10);
+    }
+
+    // Also parse individual ESLint stylish-format issues for the file list
+    // Pattern: "/path/to/file.ts\n  line:col  error  message  rule-name"
+    const issuePattern = /^\s+(\d+):(\d+)\s+(error|warning)\s+(.+?)\s{2,}(\S+)\s*$/gm;
+    let currentFile = "";
+    for (const line of combinedOutput.split("\n")) {
+      // Detect file path lines (absolute paths or relative paths without leading whitespace)
+      const fileLine = line.match(/^([/\\]|[A-Za-z]:\\|\S+\.[jt]sx?)/);
+      if (fileLine && !line.startsWith(" ")) {
+        currentFile = line.trim();
+        continue;
       }
-    } catch {
-      core.warning("Could not parse ESLint JSON output, using text analysis");
-      parseError = true;
+      const match = line.match(/^\s+(\d+):(\d+)\s+(error|warning)\s+(.+?)\s{2,}(\S+)\s*$/);
+      if (match && currentFile) {
+        issues.push({
+          path: currentFile,
+          line: parseInt(match[1] ?? "0", 10),
+          column: parseInt(match[2] ?? "0", 10),
+          severity: match[3] === "error" ? "error" : "warning",
+          message: match[4]?.trim() ?? "",
+          ruleId: match[5] ?? undefined,
+        });
+      }
     }
 
     let result: HygieneCheckResult;
 
-    if (lintResult.exitCode === 0) {
+    if (lintResult.exitCode === 0 && totalErrors === 0) {
       core.info("✅ All lint checks passed");
 
       result = createSuccessResult("lint", "All lint checks passed", duration, {
         lintIssues: [],
         errorCount: 0,
-        warningCount: 0,
+        warningCount: totalWarnings,
       });
 
       core.setOutput("lint-passed", "true");
       core.setOutput("lint-output", "All checks passed!");
     } else {
-      // Calculate totals from parsed results
-      let totalErrors = 0;
-      let totalWarnings = 0;
-      const issues: FileIssue[] = [];
-
-      if (!parseError) {
-        for (const file of eslintResults) {
-          totalErrors += file.errorCount;
-          totalWarnings += file.warningCount;
-
-          for (const msg of file.messages) {
-            issues.push({
-              path: file.filePath,
-              line: msg.line,
-              column: msg.column,
-              severity: msg.severity === 2 ? "error" : "warning",
-              message: msg.message,
-              ruleId: msg.ruleId ?? undefined,
-            });
-          }
-        }
-      } else {
-        // Fallback: count errors/warnings from exit code
-        totalErrors = lintResult.exitCode !== 0 ? 1 : 0;
-      }
-
       core.warning(`❌ Lint check failed: ${totalErrors} error(s), ${totalWarnings} warning(s)`);
 
       result = createFailureResult("lint", `${totalErrors} error(s), ${totalWarnings} warning(s)`, duration, {
