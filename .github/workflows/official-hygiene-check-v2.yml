@@ -280,10 +280,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: test-result
-          path: |
-            artifacts/hygiene/test-result.json
-            artifacts/vitest-output.json
-            coverage/vitest/coverage-summary.json
+          path: artifacts/hygiene/test-result.json
           retention-days: 7
 
   # ============================================================================
