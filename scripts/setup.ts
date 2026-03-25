@@ -170,8 +170,9 @@ async function installDotnet(): Promise<boolean> {
     console.log(styleText("yellow", `  ⚠ Also set DOTNET_ROOT=${installDir}`));
 
     return true;
-  } catch (error: any) {
-    console.error(styleText("red", "  ✗ Failed to install .NET 10 SDK:"), error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(styleText("red", "  ✗ Failed to install .NET 10 SDK:"), message);
     return false;
   }
 }
@@ -252,8 +253,9 @@ async function installNodeJs(): Promise<boolean> {
     console.log(styleText("yellow", "  ⚠ You may need to restart your terminal or IDE for changes to take effect."));
 
     return true;
-  } catch (error: any) {
-    console.error(styleText("red", "  ✗ Failed to install Node.js 24:"), error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(styleText("red", "  ✗ Failed to install Node.js 24:"), message);
     console.log(styleText("yellow", "\n  💡 Please install Node.js 24 manually from https://nodejs.org/"));
     return false;
   }

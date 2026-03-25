@@ -471,7 +471,7 @@ export async function main(verbose: boolean = false): Promise<number> {
   console.log(styleText("cyan", "💾 Writing .env file...\n"));
   fs.writeFileSync(".env", content, {mode: 0o600});
 
-  console.log(styleText("green", `   Generated ${styleText("green", Object.keys(config).length)} environment variables`));
+  console.log(styleText("green", `   Generated ${styleText("green", String(Object.keys(config).length))} environment variables`));
   console.log(styleText("green", `   File: ${styleText("cyan", path.resolve(".env"))}\n`));
 
   // Copy to sub-repositories if needed

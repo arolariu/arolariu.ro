@@ -39,7 +39,7 @@ export async function main(verbose: boolean = false): Promise<number> {
   verbose && console.info(styleText("gray", "   Wrote placeholder artifact."));
 
   console.log(styleText("green", "✨ GraphQL generation completed (placeholder)."));
-  return 1; // one artifact placeholder written
+  return 0;
 }
 
 if (import.meta.main) {

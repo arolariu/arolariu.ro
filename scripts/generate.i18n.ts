@@ -131,9 +131,9 @@ function compareMessageKeysNaive(
   const currentKeys = extractMessageKeys(currentTranslationsKeys, verbose);
 
   console.info(
-    `[arolariu.ro::compareMessageKeysNaive] Extracted ${styleText("yellow", baseKeys.length)} keys from the base translation file (en.json)`,
+    `[arolariu.ro::compareMessageKeysNaive] Extracted ${styleText("yellow", String(baseKeys.length))} keys from the base translation file (en.json)`,
   );
-  console.info(`[arolariu.ro::compareMessageKeysNaive] Extracted ${styleText("yellow", currentKeys.length)} keys from the current translation file.`);
+  console.info(`[arolariu.ro::compareMessageKeysNaive] Extracted ${styleText("yellow", String(currentKeys.length))} keys from the current translation file.`);
 
   if (baseKeys.length === currentKeys.length) {
     console.info(styleText("green", "[arolariu.ro::compareMessageKeysNaive] Translation files have equal keys!"));
@@ -230,7 +230,7 @@ function areMessageValuesEqual(baseTranslationMessage: Message, currentTranslati
     console.info("[arolariu.ro::areMessageValuesEqual] Finished comparing MessageFormat objects.");
     console.warn(
       styleText("yellow", 
-        `[arolariu.ro::areMessageValuesEqual] Found ${styleText("red", equalValuesCount)} equal sub-message values out of ${styleText("green", baseMessageKeys.length)} total sub-messages.`,
+        `[arolariu.ro::areMessageValuesEqual] Found ${styleText("red", String(equalValuesCount))} equal sub-message values out of ${styleText("green", String(baseMessageKeys.length))} total sub-messages.`,
       ),
     );
     return equalValuesCount === baseMessageKeys.length;
