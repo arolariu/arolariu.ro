@@ -343,8 +343,9 @@ export async function main(): Promise<number> {
     try {
       execSync("npm install -g npm@latest", {stdio: "inherit"});
       console.log(styleText("green", `  ✓ npm updated successfully`));
-    } catch (error: any) {
-      console.error(styleText("red", `  ✗ Failed to update npm: ${error.message}`));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(styleText("red", `  ✗ Failed to update npm: ${msg}`));
       hasErrors = true;
     }
   } else {

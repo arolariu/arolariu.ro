@@ -665,12 +665,17 @@ function checkBundleSize(): DiagnosticCheck {
     };
   }
   try {
-    const escapedPath = nextDir.replaceAll("'", "''");
-    const raw = exec(`powershell -NoProfile -Command "(Get-ChildItem '${escapedPath}' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum"`);
-    if (!raw) {
-      return {name: "Bundle size", category: "quality", status: "warn", message: "Could not measure .next/ size"};
+    let sizeBytes = 0;
+    if (platform() === "win32") {
+      const escapedPath = nextDir.replaceAll("'", "''");
+      const raw = exec(`powershell -NoProfile -Command "(Get-ChildItem '${escapedPath}' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum"`);
+      if (!raw) return {name: "Bundle size", category: "quality", status: "warn", message: "Could not measure .next/ size"};
+      sizeBytes = parseInt(raw, 10);
+    } else {
+      const raw = exec(`du -sb "${nextDir}" 2>/dev/null | cut -f1`);
+      if (!raw) return {name: "Bundle size", category: "quality", status: "warn", message: "Could not measure .next/ size"};
+      sizeBytes = parseInt(raw, 10);
     }
-    const sizeBytes = parseInt(raw, 10);
     if (Number.isNaN(sizeBytes)) {
       return {name: "Bundle size", category: "quality", status: "warn", message: "Could not parse .next/ size"};
     }
@@ -695,7 +700,7 @@ function checkBundleSize(): DiagnosticCheck {
 function loadNxGraph(): Record<string, unknown> | null {
   const tmpFile = join(process.cwd(), ".nx-graph-check.json");
   try {
-    exec(`npx nx graph --file=${tmpFile}`);
+    exec(`npx nx graph --file="${tmpFile}"`);
     if (!existsSync(tmpFile)) return null;
     const raw = readFileSync(tmpFile, "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -729,16 +734,33 @@ function checkCircularDeps(graph: Record<string, unknown> | null): DiagnosticChe
   if (!deps) {
     return {name: "Circular dependencies", category: "graph", status: "pass", message: "No dependencies to analyze"};
   }
-  // Simple cycle detection: check if A→B and B→A exist
+  // DFS-based cycle detection for cycles of any length
   const cycles: string[] = [];
-  for (const [source, targets] of Object.entries(deps)) {
-    for (const edge of targets) {
-      const reverseEdges = deps[edge.target];
-      if (reverseEdges?.some((r) => r.target === source)) {
-        const cycleKey = [source, edge.target].sort().join(" ↔ ");
-        if (!cycles.includes(cycleKey)) cycles.push(cycleKey);
+  const visited = new Set<string>();
+  const inStack = new Set<string>();
+
+  function dfs(node: string, path: string[]): void {
+    if (inStack.has(node)) {
+      const cycleStart = path.indexOf(node);
+      if (cycleStart >= 0) {
+        const cycle = path.slice(cycleStart).join(" → ") + " → " + node;
+        cycles.push(cycle);
       }
+      return;
     }
+    if (visited.has(node)) return;
+    visited.add(node);
+    inStack.add(node);
+    path.push(node);
+    for (const edge of deps[node] ?? []) {
+      dfs(edge.target, path);
+    }
+    path.pop();
+    inStack.delete(node);
+  }
+
+  for (const node of Object.keys(deps)) {
+    dfs(node, []);
   }
   if (cycles.length > 0) {
     return {
@@ -770,7 +792,7 @@ function checkWebsiteDependsOnComponents(graph: Record<string, unknown> | null):
       category: "graph",
       status: "fail",
       message: "Website does not depend on @arolariu/components",
-      fix: "Add dependsOn: ['components:build'] to sites/arolariu.ro/project.json build target",
+      fix: "Ensure @arolariu/components is listed in the website's package.json dependencies and project.json has dependsOn: ['components:build']",
     };
   }
   return {name: "Website depends on Components", category: "graph", status: "pass", message: "Edge present in graph"};

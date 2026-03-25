@@ -25,6 +25,7 @@
 import {execSync} from "node:child_process";
 import {existsSync, readFileSync, unlinkSync} from "node:fs";
 import {join} from "node:path";
+import {platform} from "node:os";
 import {styleText} from "node:util";
 
 import {formatBytes} from "./common/index.ts";
@@ -315,11 +316,16 @@ async function collectDisk(): Promise<DiskInfo> {
   function measureDir(relativePath: string): number {
     const absPath = join(ROOT, relativePath);
     if (!existsSync(absPath)) return 0;
-    const escaped = absPath.replaceAll("'", "''");
-    const result = exec(
-      `powershell -NoProfile -Command "(Get-ChildItem '${escaped}' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum"`,
-      60_000,
-    );
+    let result: string | null;
+    if (platform() === "win32") {
+      const escaped = absPath.replaceAll("'", "''");
+      result = exec(
+        `powershell -NoProfile -Command "(Get-ChildItem '${escaped}' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum"`,
+        60_000,
+      );
+    } else {
+      result = exec(`du -sb "${absPath}" 2>/dev/null | cut -f1`, 60_000);
+    }
     if (!result) return 0;
     const parsed = Number.parseInt(result, 10);
     return Number.isNaN(parsed) ? 0 : parsed;
