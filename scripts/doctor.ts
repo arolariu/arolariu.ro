@@ -59,10 +59,6 @@ interface DiagnosticCheck {
   readonly fix?: string;
 }
 
-interface WeightedCheck extends DiagnosticCheck {
-  readonly weight: number;
-}
-
 /** Parsed CLI flags. */
 interface CliFlags {
   readonly verbose: boolean;
@@ -115,7 +111,6 @@ const CHECK_WEIGHTS: Record<string, number> = {
   "Port availability": 1,
   "npm audit": 15,
   "Outdated packages": 5,
-  "Lint errors": 10,
   "TypeScript strict": 10,
   "Bundle size": 5,
   "Nx graph integrity": 5,
@@ -670,7 +665,8 @@ function checkBundleSize(): DiagnosticCheck {
     };
   }
   try {
-    const raw = exec(`powershell -NoProfile -Command "(Get-ChildItem '${nextDir}' -Recurse -File | Measure-Object -Property Length -Sum).Sum"`);
+    const escapedPath = nextDir.replaceAll("'", "''");
+    const raw = exec(`powershell -NoProfile -Command "(Get-ChildItem '${escapedPath}' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum"`);
     if (!raw) {
       return {name: "Bundle size", category: "quality", status: "warn", message: "Could not measure .next/ size"};
     }
@@ -680,7 +676,7 @@ function checkBundleSize(): DiagnosticCheck {
     }
     const sizeStr = formatBytes(sizeBytes);
     if (sizeBytes > BUNDLE_SIZE_FAIL_BYTES) {
-      return {name: "Bundle size", category: "quality", status: "fail", message: `${sizeStr} (exceeds ${formatBytes(BUNDLE_SIZE_FAIL_BYTES)} threshold)`, fix: "Investigate bundle bloat with: npm run analyze"};
+      return {name: "Bundle size", category: "quality", status: "fail", message: `${sizeStr} (exceeds ${formatBytes(BUNDLE_SIZE_FAIL_BYTES)} threshold)`, fix: "Investigate bundle bloat with: cd sites/arolariu.ro && npm run analyze"};
     }
     if (sizeBytes > BUNDLE_SIZE_WARN_BYTES) {
       return {name: "Bundle size", category: "quality", status: "warn", message: `${sizeStr} (approaching ${formatBytes(BUNDLE_SIZE_FAIL_BYTES)} threshold)`};
@@ -702,12 +698,12 @@ function loadNxGraph(): Record<string, unknown> | null {
     exec(`npx nx graph --file=${tmpFile}`);
     if (!existsSync(tmpFile)) return null;
     const raw = readFileSync(tmpFile, "utf-8");
-    unlinkSync(tmpFile);
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     return (parsed["graph"] ?? parsed) as Record<string, unknown>;
   } catch {
-    try { unlinkSync(tmpFile); } catch { /* ignore */ }
     return null;
+  } finally {
+    try { unlinkSync(tmpFile); } catch { /* ignore */ }
   }
 }
 
