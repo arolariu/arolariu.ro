@@ -146,9 +146,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               <TableCell>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>
-                    </TooltipTrigger>
+                    <TooltipTrigger render={<span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>} />
                     <TooltipContent>
                       <p>{new Date(invoice.createdAt).toUTCString()}</p>
                     </TooltipContent>
@@ -166,14 +164,14 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger
-                        asChild
-                        className='hover:text-accent-primary cursor-pointer'>
-                        <Link
-                          href={`/domains/invoices/view-invoice/${invoice.id}`}
-                          className={styles["viewLink"]}>
-                          <TbEye className={styles["viewIcon"]} />
-                        </Link>
-                      </TooltipTrigger>
+                        className='hover:text-accent-primary cursor-pointer'
+                        render={
+                          <Link
+                            href={`/domains/invoices/view-invoice/${invoice.id}`}
+                            className={styles["viewLink"]}>
+                            <TbEye className={styles["viewIcon"]} />
+                          </Link>
+                        } />
                       <TooltipContent>{t("viewInvoice")}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

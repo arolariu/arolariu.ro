@@ -90,13 +90,20 @@ export default function RemoveScanDialog(): React.JSX.Element {
     } finally {
       setIsDeleting(false);
     }
-  }, [invoice, scan, isLastScan, close, router]);
+  }, [invoice, scan, isLastScan, close, router, t]);
+
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (shouldOpen) open();
+      else close();
+    },
+    [open, close],
+  );
 
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>

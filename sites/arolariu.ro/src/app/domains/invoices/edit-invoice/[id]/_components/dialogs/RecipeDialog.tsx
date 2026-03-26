@@ -1,7 +1,7 @@
 "use client";
 
 // TODO: refactor.
-/* eslint-disable */
+/* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
 import {RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
@@ -39,6 +39,11 @@ import {useCallback, useState} from "react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RecipeDialog.module.scss";
+
+/** Rich text renderer for bold/strong text in translations */
+function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
+  return <strong>{chunks}</strong>;
+}
 
 const CreateDialog = () => {
   const t = useTranslations("Invoices.EditInvoice.recipeDialog");
@@ -86,17 +91,19 @@ const CreateDialog = () => {
               <div>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={() => {}}
-                        className='flex items-center gap-1'>
-                        <TbSparkles className='h-3 w-3' />
-                        {t("actions.generateName")}
-                      </Button>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='sm'
+                          onClick={() => {}}
+                          className='flex items-center gap-1'>
+                          <TbSparkles className='h-3 w-3' />
+                          {t("actions.generateName")}
+                        </Button>
+                      }
+                    />
                     <TooltipContent>
                       <p className={styles["tooltipText"]}>{t("tooltips.generateName")}</p>
                     </TooltipContent>
@@ -192,16 +199,18 @@ const CreateDialog = () => {
               <Label htmlFor='instructions'>{t("fields.instructions")}</Label>
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      onClick={() => {}}>
-                      <TbWand className='mr-1 h-4 w-4' />
-                      {t("actions.enhanceInstructions")}
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={() => {}}>
+                        <TbWand className='mr-1 h-4 w-4' />
+                        {t("actions.enhanceInstructions")}
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.enhanceInstructions")}</p>
                   </TooltipContent>
@@ -386,17 +395,19 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               <div>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={generateName}
-                        className='flex items-center gap-1'>
-                        <TbSparkles className='h-3 w-3' />
-                        {t("actions.generateName")}
-                      </Button>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='sm'
+                          onClick={generateName}
+                          className='flex items-center gap-1'>
+                          <TbSparkles className='h-3 w-3' />
+                          {t("actions.generateName")}
+                        </Button>
+                      }
+                    />
                     <TooltipContent>
                       <p className={styles["tooltipText"]}>{t("tooltips.generateName")}</p>
                     </TooltipContent>
@@ -493,16 +504,18 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               <Label htmlFor='instructions'>{t("fields.instructions")}</Label>
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      onClick={enhanceInstructions}>
-                      <TbWand className='mr-1 h-4 w-4' />
-                      {t("actions.enhanceInstructions")}
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={enhanceInstructions}>
+                        <TbWand className='mr-1 h-4 w-4' />
+                        {t("actions.enhanceInstructions")}
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.enhanceInstructions")}</p>
                   </TooltipContent>
@@ -588,7 +601,7 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
         <AlertDialogHeader>
           <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t.rich("delete.description", {name: recipe.name, strong: (chunks) => <strong>{chunks}</strong>})}
+            {t.rich("delete.description", {name: recipe.name, strong: RichTextStrong})}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

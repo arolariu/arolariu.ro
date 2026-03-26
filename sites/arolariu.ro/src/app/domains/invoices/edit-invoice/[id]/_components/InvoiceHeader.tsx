@@ -97,31 +97,35 @@ export default function InvoiceHeader(): React.JSX.Element {
           {hasChanges ? (
             <>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant='default'
-                    size='sm'
-                    onClick={handleSave}
-                    disabled={isSaving}>
-                    <TbDeviceFloppy className='mr-2 h-4 w-4' />
-                    {isSaving ? t("buttons.saving") : t("buttons.save")}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='default'
+                      size='sm'
+                      onClick={handleSave}
+                      disabled={isSaving}>
+                      <TbDeviceFloppy className='mr-2 h-4 w-4' />
+                      {isSaving ? t("buttons.saving") : t("buttons.save")}
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <p>{t("tooltips.saveAllPendingChanges")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={handleDiscard}
-                    disabled={isSaving}>
-                    <TbX className='mr-2 h-4 w-4' />
-                    {t("buttons.discard")}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={handleDiscard}
+                      disabled={isSaving}>
+                      <TbX className='mr-2 h-4 w-4' />
+                      {t("buttons.discard")}
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <p>{t("tooltips.discardAllPendingChanges")}</p>
                 </TooltipContent>
@@ -129,45 +133,51 @@ export default function InvoiceHeader(): React.JSX.Element {
             </>
           ) : null}
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={handleInvoicePrint}>
-                <TbPrinter className='mr-2 h-4 w-4' />
-                {t("buttons.print")}
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleInvoicePrint}>
+                  <TbPrinter className='mr-2 h-4 w-4' />
+                  {t("buttons.print")}
+                </Button>
+              }
+            />
             <TooltipContent>
               <p>{t("tooltips.printInvoiceWithAllDetails")}</p>
             </TooltipContent>
           </Tooltip>
           {Boolean(canAnalyze) && (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={openAnalysisDialog}
-                  variant='outline'
-                  size='sm'>
-                  <TbScanEye className='mr-2 h-4 w-4' />
-                  {t("buttons.analyzeWithAi")}
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    onClick={openAnalysisDialog}
+                    variant='outline'
+                    size='sm'>
+                    <TbScanEye className='mr-2 h-4 w-4' />
+                    {t("buttons.analyzeWithAi")}
+                  </Button>
+                }
+              />
               <TooltipContent>
                 <p>{t("tooltips.analyzeSpendingPatterns")}</p>
               </TooltipContent>
             </Tooltip>
           )}
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={openDeleteDialog}
-                variant='destructive'
-                size='sm'>
-                <TbTrash className='mr-2 h-4 w-4' />
-                {t("buttons.delete")}
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  onClick={openDeleteDialog}
+                  variant='destructive'
+                  size='sm'>
+                  <TbTrash className='mr-2 h-4 w-4' />
+                  {t("buttons.delete")}
+                </Button>
+              }
+            />
             <TooltipContent>
               <p>{t("tooltips.deleteInvoicePermanently")}</p>
             </TooltipContent>

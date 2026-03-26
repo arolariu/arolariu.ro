@@ -82,15 +82,17 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
           </div>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className='cursor-pointer'
-                  onClick={openAddDialog}
-                  size='sm'>
-                  <TbPlus className='mr-2 h-4 w-4' />
-                  {t("buttons.addField")}
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    className='cursor-pointer'
+                    onClick={openAddDialog}
+                    size='sm'>
+                    <TbPlus className='mr-2 h-4 w-4' />
+                    {t("buttons.addField")}
+                  </Button>
+                }
+              />
               <TooltipContent>
                 <p>{t("tooltips.addCustomMetadata")}</p>
               </TooltipContent>
@@ -119,14 +121,16 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
 
                   <div className={styles["editButton"]}>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant='ghost'
-                          size='icon'
-                          className='h-8 w-8 cursor-pointer'>
-                          <TbPencil className='h-4 w-4' />
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8 cursor-pointer'>
+                            <TbPencil className='h-4 w-4' />
+                          </Button>
+                        }
+                      />
                       <DropdownMenuContent align='end'>
                         <DropdownMenuItem
                           onClick={openEditDialog}

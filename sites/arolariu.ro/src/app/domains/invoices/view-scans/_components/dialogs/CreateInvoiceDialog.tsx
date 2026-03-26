@@ -25,7 +25,7 @@ import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbArrowRight, TbCheck, TbFileInvoice, TbFileTypePdf, TbLoader2, TbPhoto, TbSparkles, TbStack2} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 import {createInvoiceFromScans} from "../../_actions/createInvoiceFromScans";
@@ -134,7 +134,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   // Calculate total size
   const totalSize = selectedScans.reduce((sum, scan) => sum + scan.sizeInBytes, 0);
 
-  const handleClose = (): void => {
+  const handleClose = useCallback((): void => {
     if (step === "complete") {
       router.push("/domains/invoices/view-invoices");
     }
@@ -146,7 +146,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       setCreatedCount(0);
       setMode("single");
     }, 300);
-  };
+  }, [step, router, close]);
 
   const handleCreate = async (): Promise<void> => {
     if (selectedScans.length === 0) return;
@@ -194,6 +194,18 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     }
   };
 
+  const handleModeChange = useCallback((v: unknown) => {
+    setMode(v as CreationMode);
+  }, []);
+
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (shouldOpen) open();
+      else handleClose();
+    },
+    [open, handleClose],
+  );
+
   // Render select step content
   const renderSelectStep = (): React.JSX.Element => (
     <motion.div
@@ -236,7 +248,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           <p className={styles["modeLabel"]}>{t("chooseMode")}</p>
           <RadioGroup
             value={mode}
-            onValueChange={(v) => setMode(v as CreationMode)}>
+            onValueChange={handleModeChange}>
             {/* Single mode option */}
             <Label
               htmlFor='single'
@@ -399,7 +411,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className='sm:max-w-lg'>
         <AnimatePresence mode='wait'>
           {step === "select" ? renderSelectStep() : null}

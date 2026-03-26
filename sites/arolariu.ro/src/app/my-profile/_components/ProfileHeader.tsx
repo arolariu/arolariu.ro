@@ -91,15 +91,17 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
 
             <div className={styles["editActions"]}>
               <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='cursor-pointer gap-2'>
-                    <TbEdit className='h-4 w-4' />
-                    {t("header.editProfile")}
-                  </Button>
-                </SheetTrigger>
+                <SheetTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='cursor-pointer gap-2'>
+                      <TbEdit className='h-4 w-4' />
+                      {t("header.editProfile")}
+                    </Button>
+                  }
+                />
                 <SheetContent>
                   <SheetHeader>
                     <SheetTitle>{t("header.editProfileTitle")}</SheetTitle>
@@ -109,14 +111,15 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                     <p className={styles["sheetNote"]}>{t("header.editProfileClerkNote")}</p>
                     <Button
                       className='w-full cursor-pointer'
-                      asChild>
-                      <a
-                        href='https://accounts.arolariu.ro/user'
-                        target='_blank'
-                        rel='noopener noreferrer'>
-                        {t("header.manageOnClerk")}
-                      </a>
-                    </Button>
+                      render={
+                        <a
+                          href='https://accounts.arolariu.ro/user'
+                          target='_blank'
+                          rel='noopener noreferrer'>
+                          {t("header.manageOnClerk")}
+                        </a>
+                      }
+                    />
                   </div>
                 </SheetContent>
               </Sheet>

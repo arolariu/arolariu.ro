@@ -127,14 +127,14 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             {/* Actions menu */}
             <div className={styles["actionsPosition"]}>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger render={
                   <Button
                     variant='ghost'
                     size='icon'
                     className='h-7 w-7 rounded-full bg-white/80 text-gray-700 shadow-sm hover:bg-white dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800'>
                     <TbDotsVertical className={styles["menuIcon"]} />
                   </Button>
-                </DropdownMenuTrigger>
+                } />
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem
                     className='text-red-600 focus:bg-red-50 focus:text-red-700 dark:text-red-400 dark:focus:bg-red-900/20'

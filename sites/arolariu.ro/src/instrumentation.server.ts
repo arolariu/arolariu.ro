@@ -458,41 +458,41 @@ const connectionString = process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"];
  * their failed HTTP requests get auto-instrumented, generating more spans/exports, which
  * starve the dev server of connections (net::ERR_ABORTED in Playwright).
  */
-const {traceExporter, metricExporter, logExporter} = connectionString
-  ? (() => {
-      console.log(">>> 📡 Using Azure Monitor exporters for OpenTelemetry");
-      const credential = new DefaultAzureCredential({
-        managedIdentityClientId: process.env["AZURE_CLIENT_ID"],
-      });
-      return {
-        logExporter: new AzureMonitorLogExporter({connectionString, credential}),
-        traceExporter: new AzureMonitorTraceExporter({connectionString, credential}) as
-          | AzureMonitorTraceExporter
-          | OTLPTraceExporter
-          | undefined,
-        metricExporter: new AzureMonitorMetricExporter({connectionString, credential}) as
-          | AzureMonitorMetricExporter
-          | OTLPMetricExporter
-          | undefined,
-      };
-    })()
-  : otlpEndpoint
-    ? (() => {
-        console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
-        return {
-          logExporter: new OTLPLogExporter({url: `${otlpEndpoint}/v1/logs`, headers: {}}),
-          traceExporter: new OTLPTraceExporter({url: `${otlpEndpoint}/v1/traces`, headers: {}}) as OTLPTraceExporter | undefined,
-          metricExporter: new OTLPMetricExporter({url: `${otlpEndpoint}/v1/metrics`, headers: {}}) as OTLPMetricExporter | undefined,
-        };
-      })()
-    : (() => {
-        console.log(">>> 📡 No OTel exporter configured — instrumentation active, export disabled (console logs only)");
-        return {
-          logExporter: null as InstanceType<typeof OTLPLogExporter> | null,
-          traceExporter: undefined as OTLPTraceExporter | undefined,
-          metricExporter: undefined as OTLPMetricExporter | undefined,
-        };
-      })();
+function createExporters(): {
+  logExporter: AzureMonitorLogExporter | OTLPLogExporter | null;
+  traceExporter: AzureMonitorTraceExporter | OTLPTraceExporter | undefined;
+  metricExporter: AzureMonitorMetricExporter | OTLPMetricExporter | undefined;
+} {
+  if (connectionString) {
+    console.log(">>> 📡 Using Azure Monitor exporters for OpenTelemetry");
+    const credential = new DefaultAzureCredential({
+      managedIdentityClientId: process.env["AZURE_CLIENT_ID"],
+    });
+    return {
+      logExporter: new AzureMonitorLogExporter({connectionString, credential}),
+      traceExporter: new AzureMonitorTraceExporter({connectionString, credential}),
+      metricExporter: new AzureMonitorMetricExporter({connectionString, credential}),
+    };
+  }
+
+  if (otlpEndpoint) {
+    console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
+    return {
+      logExporter: new OTLPLogExporter({url: `${otlpEndpoint}/v1/logs`, headers: {}}),
+      traceExporter: new OTLPTraceExporter({url: `${otlpEndpoint}/v1/traces`, headers: {}}),
+      metricExporter: new OTLPMetricExporter({url: `${otlpEndpoint}/v1/metrics`, headers: {}}),
+    };
+  }
+
+  console.log(">>> 📡 No OTel exporter configured — instrumentation active, export disabled (console logs only)");
+  return {
+    logExporter: null,
+    traceExporter: undefined,
+    metricExporter: undefined,
+  };
+}
+
+const {traceExporter, metricExporter, logExporter} = createExporters();
 
 /**
  * Service resource with standard OTel semantic conventions.
@@ -519,16 +519,13 @@ const serviceResource = createServiceResource();
 
 // Only wire the LoggerProvider when a real exporter destination exists.
 // Without one, websiteLogger is a no-op and logs go to console only.
-const websiteLoggerProvider =
-  logExporter !== null && logExporter !== undefined
-    ? (() => {
-        const provider = new LoggerProvider({
-          ...(serviceResource ? {resource: serviceResource} : {}),
-        });
-        provider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
-        return provider;
-      })()
-    : null;
+let websiteLoggerProvider: LoggerProvider | null = null;
+if (logExporter !== null) {
+  websiteLoggerProvider = new LoggerProvider({
+    ...(serviceResource ? {resource: serviceResource} : {}),
+  });
+  websiteLoggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
+}
 
 const websiteLogger = websiteLoggerProvider?.getLogger("arolariu.website.server", process.env["COMMIT_SHA"] ?? "unknown") ?? null;
 
@@ -1348,15 +1345,15 @@ export function logWithTrace(level: LogLevel, message: string, attributes?: Reco
   };
 
   const normalizedAttributes: Record<string, boolean | number | string> = {};
-  for (const [key, value] of Object.entries({
+  const mergedAttributes: Record<string, unknown> = {
     ...attributes,
     "app.log.context": renderContext,
     "app.log.trace_id": spanContext?.traceId,
     "app.log.span_id": spanContext?.spanId,
-  })) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Object.entries returns unknown values
-    if ((value as any) instanceof Error && value !== null && value !== undefined) {
-      normalizedAttributes[key] = (value as any).message;
+  };
+  for (const [key, value] of Object.entries(mergedAttributes)) {
+    if (value instanceof Error) {
+      normalizedAttributes[key] = value.message;
     } else if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
       normalizedAttributes[key] = value;
     } else if (value !== undefined) {

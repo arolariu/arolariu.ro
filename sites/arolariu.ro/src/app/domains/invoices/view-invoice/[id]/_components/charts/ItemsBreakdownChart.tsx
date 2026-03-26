@@ -3,7 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
-import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {QuantityData} from "../../_utils/analytics";
 import styles from "./ItemsBreakdownChart.module.scss";
 
@@ -49,6 +49,11 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
     },
   };
 
+  const coloredData = data.map((item, index) => ({
+    ...item,
+    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+  }));
+
   const tickFormatter = useCallback((value: number) => `${value}`, []);
 
   return (
@@ -65,7 +70,7 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
             width='100%'
             height='100%'>
             <BarChart
-              data={data}
+              data={coloredData}
               layout='vertical'
               margin={{top: 4, right: 8, bottom: 4, left: 4}}>
               <XAxis
@@ -96,14 +101,8 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
               <Bar
                 dataKey='price'
                 radius={[0, 4, 4, 0]}
-                maxBarSize={24}>
-                {data.map((item) => (
-                  <Cell
-                    key={`cell-${item.name}`}
-                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
-                  />
-                ))}
-              </Bar>
+                maxBarSize={24}
+              />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

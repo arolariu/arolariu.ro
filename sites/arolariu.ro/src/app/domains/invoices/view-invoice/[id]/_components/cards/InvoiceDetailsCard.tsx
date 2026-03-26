@@ -127,13 +127,13 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                             {item.detectedAllergens.map((allergen) => (
                               <TooltipProvider key={allergen.name}>
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
+                                  <TooltipTrigger render={
                                     <Badge
                                       variant='secondary'
                                       className='text-xs'>
                                       {allergen.name}
                                     </Badge>
-                                  </TooltipTrigger>
+                                  } />
                                   <TooltipContent>
                                     <p>{allergen.description}</p>
                                   </TooltipContent>

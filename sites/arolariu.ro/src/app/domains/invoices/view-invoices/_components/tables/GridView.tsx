@@ -87,15 +87,15 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
-                      asChild
-                      className='cursor-pointer'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='bg-background/80 h-8 w-8 backdrop-blur-sm'>
-                        <TbEye className={styles["viewIcon"]} />
-                      </Button>
-                    </TooltipTrigger>
+                      className='cursor-pointer'
+                      render={
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='bg-background/80 h-8 w-8 backdrop-blur-sm'>
+                          <TbEye className={styles["viewIcon"]} />
+                        </Button>
+                      } />
                     <TooltipContent>{t("tooltips.viewDetails")}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

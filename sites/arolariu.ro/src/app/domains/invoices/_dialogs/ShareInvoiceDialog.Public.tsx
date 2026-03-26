@@ -10,6 +10,11 @@ import {TbAlertTriangle, TbArrowLeft, TbCheck, TbCopy, TbGlobe, TbQrcode, TbShie
 import QRCode from "react-qr-code";
 import styles from "./ShareInvoiceDialog.Public.module.scss";
 
+/** Rich text renderer for bold/strong text in translations */
+function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
+  return <strong>{chunks}</strong>;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -153,7 +158,7 @@ export function AlreadyPublicMode({
         <TbGlobe className={styles["globeAlertIcon"]} />
         <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("alreadyPublic.title")}</AlertTitle>
         <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
-          {t.rich("alreadyPublic.description", {strong: (chunks) => <strong>{chunks}</strong>})}
+          {t.rich("alreadyPublic.description", {strong: RichTextStrong})}
         </AlertDescription>
       </Alert>
 
@@ -210,7 +215,7 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
         <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("warning.title")}</AlertTitle>
         <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
-          {t.rich("warning.description", {strong: (chunks) => <strong>{chunks}</strong>})}
+          {t.rich("warning.description", {strong: RichTextStrong})}
         </AlertDescription>
       </Alert>
 

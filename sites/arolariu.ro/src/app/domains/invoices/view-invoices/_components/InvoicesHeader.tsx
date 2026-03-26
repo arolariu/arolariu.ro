@@ -36,7 +36,7 @@ export default function InvoicesHeader(): React.JSX.Element {
       <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='outline'
                 size='sm'
@@ -45,14 +45,14 @@ export default function InvoicesHeader(): React.JSX.Element {
                 <TbUpload className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>{t("actions.import")}</span>
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("tooltips.import")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='outline'
                 size='sm'
@@ -61,14 +61,14 @@ export default function InvoicesHeader(): React.JSX.Element {
                 <TbDownload className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>{t("actions.export")}</span>
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("tooltips.export")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='outline'
                 size='sm'
@@ -77,14 +77,14 @@ export default function InvoicesHeader(): React.JSX.Element {
                 <TbPrinter className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>{t("actions.print")}</span>
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("tooltips.print")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Link href='/domains/invoices/create-invoice'>
                 <Button
                   size='sm'
@@ -93,7 +93,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                   <span>{t("actions.newInvoice")}</span>
                 </Button>
               </Link>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("tooltips.newInvoice")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>

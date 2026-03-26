@@ -1,7 +1,7 @@
 "use client";
 
 // TODO: refactor.
-/* eslint-disable */
+/* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
 import {usePaginationWithSearch} from "@/hooks";
 import {formatDate} from "@/lib/utils.generic";

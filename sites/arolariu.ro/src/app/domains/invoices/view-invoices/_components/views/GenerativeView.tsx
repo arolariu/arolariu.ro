@@ -45,7 +45,7 @@ type Props = Readonly<{
  */
 export default function RenderGenerativeView({invoices}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoices.generativeView");
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<Message[]>(() => [
     {
       id: "welcome",
       content: t("welcomeMessage"),

@@ -2,7 +2,7 @@
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
+import {Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategorySpending} from "../../_utils/analytics";
 import styles from "./SpendingByCategoryChart.module.scss";
 
@@ -79,6 +79,11 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
     total += item.amount;
   }
 
+  const coloredData = data.map((item, index) => ({
+    ...item,
+    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+  }));
+
   return (
     <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
       <CardHeader className='pb-2'>
@@ -94,22 +99,16 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
             height='100%'>
             <PieChart>
               <Pie
-                data={data}
+                data={coloredData}
                 dataKey='amount'
                 nameKey='category'
                 cx='50%'
                 cy='50%'
                 innerRadius={40}
                 outerRadius={70}
-                paddingAngle={2}>
-                {data.map((item) => (
-                  <Cell
-                    key={`cell-${item.category}`}
-                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
-                    className='stroke-background stroke-2'
-                  />
-                ))}
-              </Pie>
+                paddingAngle={2}
+                className='stroke-background stroke-2'
+              />
               <Tooltip
                 content={
                   <CustomTooltip

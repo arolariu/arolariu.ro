@@ -72,7 +72,7 @@ export function ReceiptScanCard(): React.JSX.Element {
           <Dialog
             open={isOpen}
             onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger render={
               <div className={styles["imageContainer"]}>
                 <Image
                   src={currentScanSrc}
@@ -82,7 +82,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                   className={`${styles["scanImage"]} ${isTransitioning ? styles["scanImageTransitioning"] : ""}`}
                 />
               </div>
-            </DialogTrigger>
+            } />
             <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>
@@ -105,7 +105,7 @@ export function ReceiptScanCard(): React.JSX.Element {
         </CardContent>
         <CardFooter className='flex flex-col gap-2'>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='outline'
                 className='w-full bg-transparent'
@@ -113,7 +113,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                 <TbZoomIn className='mr-2 h-4 w-4' />
                 {t("buttons.expand")}
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>
               <p>{t("tooltips.expand")}</p>
             </TooltipContent>
@@ -122,14 +122,14 @@ export function ReceiptScanCard(): React.JSX.Element {
             <div className={styles["scanNavigation"]}>
               {currentScanIndex > 0 && (
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger render={
                     <Button
                       variant='secondary'
                       className='flex-1'
                       onClick={handlePreviousScan}>
                       {t("buttons.previousScan")}
                     </Button>
-                  </TooltipTrigger>
+                  } />
                   <TooltipContent>
                     <p>{t("tooltips.previousScan")}</p>
                   </TooltipContent>
@@ -137,14 +137,14 @@ export function ReceiptScanCard(): React.JSX.Element {
               )}
               {currentScanIndex < totalScans - 1 && (
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger render={
                     <Button
                       variant='secondary'
                       className='flex-1'
                       onClick={handleNextScan}>
                       {t("buttons.nextScan")}
                     </Button>
-                  </TooltipTrigger>
+                  } />
                   <TooltipContent>
                     <p>{t("tooltips.nextScan")}</p>
                   </TooltipContent>

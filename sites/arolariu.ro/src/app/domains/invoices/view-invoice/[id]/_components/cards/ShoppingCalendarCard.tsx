@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {createContext, useContext, useMemo} from "react";
+import {createContext, use, useMemo} from "react";
 import {TbArrowDown, TbArrowUp, TbCalendar, TbInfoCircle, TbShoppingCart, TbTrendingUp} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -32,6 +32,7 @@ import {
 import styles from "./ShoppingCalendarCard.module.scss";
 
 /** Props type for the Calendar's DayButton slot component */
+/* eslint-disable react/require-default-props -- Calendar library controls these props; defaults handled in CustomDayButton destructuring */
 type DayButtonProps = {
   readonly day: {date: Date};
   readonly className?: string;
@@ -40,6 +41,7 @@ type DayButtonProps = {
   readonly "aria-pressed"?: boolean | "false" | "true" | "mixed";
   readonly tabIndex?: number;
 };
+/* eslint-enable react/require-default-props */
 
 /** Context for sharing calendar data with CustomDayButton */
 type CalendarDataContextType = {
@@ -55,7 +57,7 @@ type CalendarDataContextType = {
 const CalendarDataContext = createContext<CalendarDataContextType | null>(null);
 
 function useCalendarData(): CalendarDataContextType {
-  const context = useContext(CalendarDataContext);
+  const context = use(CalendarDataContext);
   if (!context) {
     throw new Error("useCalendarData must be used within CalendarDataContext.Provider");
   }
@@ -146,8 +148,14 @@ function isSameDay(date1: Date, date2: Date): boolean {
 }
 
 /** Custom day button component that renders spending data from context */
-function CustomDayButton(props: DayButtonProps): React.JSX.Element {
-  const {day, className, ...rest} = props;
+function CustomDayButton({
+  day,
+  className = "",
+  disabled = false,
+  "aria-label": ariaLabel,
+  "aria-pressed": ariaPressed,
+  tabIndex = 0,
+}: DayButtonProps): React.JSX.Element {
   const {locale, currency, month, transactionDate, spendingByDay, historicalByDay, maxDayAmount} = useCalendarData();
   const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
   const {date} = day;
@@ -164,10 +172,10 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
   const button = (
     <Button
       variant='ghost'
-      disabled={rest.disabled}
-      aria-label={rest["aria-label"]}
-      aria-pressed={rest["aria-pressed"]}
-      tabIndex={rest.tabIndex}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      aria-pressed={ariaPressed}
+      tabIndex={tabIndex}
       className={`h-9 w-9 p-0 font-normal aria-selected:opacity-100 ${intensityClass} ${ringClass} flex items-center justify-center rounded-md transition-all ${className}`}>
       <time dateTime={date.toISOString()}>{date.getDate()}</time>
     </Button>
@@ -177,7 +185,7 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger render={button} />
       <DayTooltipContent
         amount={amount}
         count={count}
@@ -238,7 +246,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
   );
 
   return (
-    <CalendarDataContext.Provider value={calendarDataValue}>
+    <CalendarDataContext value={calendarDataValue}>
       <TooltipProvider>
         <Card className='transition-shadow duration-300 hover:shadow-md'>
           <CardHeader className='pb-3'>
@@ -246,9 +254,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
               <TbCalendar className='text-muted-foreground h-4 w-4' />
               {t("title")}
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <TbInfoCircle className='text-muted-foreground h-4 w-4 cursor-help' />
-                </TooltipTrigger>
+                <TooltipTrigger render={<TbInfoCircle className='text-muted-foreground h-4 w-4 cursor-help' />} />
                 <TooltipContent
                   side='top'
                   className='text-xs'>
@@ -341,6 +347,6 @@ export function ShoppingCalendarCard(): React.JSX.Element {
           </CardContent>
         </Card>
       </TooltipProvider>
-    </CalendarDataContext.Provider>
+    </CalendarDataContext>
   );
 }

@@ -36,7 +36,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
           </span>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger render={
                 <Button
                   variant='ghost'
                   size='sm'
@@ -45,7 +45,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                   <TbX className={styles["clearIcon"]} />
                   <span className={styles["hiddenMobile"]}>{t("clearSelection")}</span>
                 </Button>
-              </TooltipTrigger>
+              } />
               <TooltipContent>{t("clearSelection")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -54,7 +54,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
         <div className={styles["toolbarRight"]}>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger render={
                 <Button
                   onClick={onCreateInvoice}
                   className='bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'>
@@ -62,7 +62,7 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
                   <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</span>
                   <span className={styles["visibleMobile"]}>{t("createInvoice").split(" ")[0]}</span>
                 </Button>
-              </TooltipTrigger>
+              } />
               <TooltipContent>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>

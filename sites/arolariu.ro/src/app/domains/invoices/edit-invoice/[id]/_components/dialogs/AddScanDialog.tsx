@@ -27,6 +27,14 @@ import {TbCloudUpload, TbFile, TbLoader2, TbUpload, TbX} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./AddScanDialog.module.scss";
 
+function getDropzoneClassName(isUploading: boolean, isDragReject: boolean, isDragAccept: boolean, isDragActive: boolean): string | undefined {
+  if (isUploading) return styles["dropzoneDisabled"];
+  if (isDragReject) return styles["dropzoneDragReject"];
+  if (isDragAccept) return styles["dropzoneDragAccept"];
+  if (isDragActive) return styles["dropzoneDragActive"];
+  return styles["dropzoneIdle"];
+}
+
 /**
  * Dialog for adding a new scan to an existing invoice.
  *
@@ -90,7 +98,7 @@ export default function AddScanDialog(): React.JSX.Element {
       setScanType(detectScanType(selectedFile.name));
       setFile(selectedFile);
     },
-    [detectScanType],
+    [detectScanType, t],
   );
 
   const {getRootProps, getInputProps, isDragActive, isDragAccept, isDragReject} = useDropzone({
@@ -170,7 +178,7 @@ export default function AddScanDialog(): React.JSX.Element {
     } finally {
       setIsUploading(false);
     }
-  }, [file, invoice, scanType, close, router]);
+  }, [file, invoice, scanType, close, router, t]);
 
   const handleClose = useCallback(() => {
     setFile(null);
@@ -181,11 +189,18 @@ export default function AddScanDialog(): React.JSX.Element {
     setScanType(Number(value) as InvoiceScanType);
   }, []);
 
+  const handleOpenChange = useCallback(
+    (shouldOpen: boolean) => {
+      if (shouldOpen) open();
+      else handleClose();
+    },
+    [open, handleClose],
+  );
+
   return (
     <Dialog
       open={isOpen}
-      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
-      onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
+      onOpenChange={handleOpenChange}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
@@ -197,17 +212,7 @@ export default function AddScanDialog(): React.JSX.Element {
           {/* Dropzone - using react-dropzone library pattern with spread props */}
           <div
             {...getRootProps()}
-            className={
-              isUploading
-                ? styles["dropzoneDisabled"]
-                : isDragReject
-                  ? styles["dropzoneDragReject"]
-                  : isDragAccept
-                    ? styles["dropzoneDragAccept"]
-                    : isDragActive
-                      ? styles["dropzoneDragActive"]
-                      : styles["dropzoneIdle"]
-            }>
+            className={getDropzoneClassName(isUploading, isDragReject, isDragAccept, isDragActive)}>
             <input {...getInputProps()} />
             <TbCloudUpload className={styles["uploadIcon"]} />
             {isDragActive ? (

@@ -107,7 +107,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
               </div>
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger render={
                     <Button
                       variant='ghost'
                       size='icon'
@@ -115,7 +115,7 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
                       aria-label={t("aria.sendEmail", {user})}>
                       <TbMail className='h-3.5 w-3.5' />
                     </Button>
-                  </TooltipTrigger>
+                  } />
                   <TooltipContent
                     side='left'
                     className='text-xs'>

@@ -74,7 +74,7 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
   });
 
   // Create a stable reference to the current dialog
-  const currentDialog = useRef<DialogCurrent>({
+  const currentDialogRef = useRef<DialogCurrent>({
     type: null,
     mode: null,
     payload: null,
@@ -86,7 +86,7 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
    * whether that dialog is currently open.
    * It uses the currentDialog state to determine if the dialog is open.
    */
-  const isOpen = useCallback((dialog: DialogType) => currentDialog.current.type === dialog, []);
+  const isOpen = useCallback((dialog: DialogType) => currentDialogRef.current.type === dialog, []);
 
   /**
    * This function tries to open a dialog.
@@ -96,10 +96,10 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
    * It uses the setCurrentDialog function to update the state.
    */
   const openDialog = useCallback((dialog: DialogType, mode: DialogMode = "view", payload: DialogPayload = null) => {
-    if (currentDialog.current.type === null) {
+    if (currentDialogRef.current.type === null) {
       // Update both ref and state atomically
-      currentDialog.current = {type: dialog, mode, payload};
-      setDialogState(currentDialog.current);
+      currentDialogRef.current = {type: dialog, mode, payload};
+      setDialogState(currentDialogRef.current);
     }
   }, []);
 
@@ -112,14 +112,14 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
    * This function does not take any arguments.
    */
   const closeDialog = useCallback(() => {
-    currentDialog.current = {type: null, mode: null, payload: null};
-    setDialogState(currentDialog.current);
+    currentDialogRef.current = {type: null, mode: null, payload: null};
+    setDialogState(currentDialogRef.current);
   }, []);
 
   // The context value
   const value = useMemo(
     () => ({
-      currentDialog: currentDialog.current,
+      currentDialog: currentDialogRef.current,
       isOpen,
       openDialog,
       closeDialog,

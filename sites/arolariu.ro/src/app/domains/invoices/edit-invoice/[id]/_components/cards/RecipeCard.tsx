@@ -119,13 +119,15 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         </CardTitle>
         <CardAction className='mb-2 flex items-start justify-between'>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant='ghost'
-                size='icon'>
-                <TbSeparatorHorizontal className='h-4 w-4' />
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant='ghost'
+                  size='icon'>
+                  <TbSeparatorHorizontal className='h-4 w-4' />
+                </Button>
+              }
+            />
             <DropdownMenuContent align='end'>
               <DropdownMenuItem
                 className='cursor-pointer'
@@ -172,9 +174,11 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
             {ingredients.length > 3 && (
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <li className={styles["moreIngredients"]}>{t("ingredients.more", {count: String(ingredients.length - 3)})}</li>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <li className={styles["moreIngredients"]}>{t("ingredients.more", {count: String(ingredients.length - 3)})}</li>
+                    }
+                  />
                   <TooltipContent className='max-w-xs'>
                     <p className={styles["tooltipTitle"]}>{t("ingredients.additionalLabel")}</p>
                     <ul className={styles["tooltipIngredientsList"]}>
@@ -193,23 +197,27 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         <div className={styles["timingRow"]}>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={styles["timeItem"]}>
-                  <TbClock className='mr-1 h-3 w-3' />
-                  {t("timing.prepLabel", {minutes: String(preparationTime)})}
-                </div>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <div className={styles["timeItem"]}>
+                    <TbClock className='mr-1 h-3 w-3' />
+                    {t("timing.prepLabel", {minutes: String(preparationTime)})}
+                  </div>
+                }
+              />
               <TooltipContent side='bottom'>
                 <p>{t("timing.prepTooltip", {minutes: String(preparationTime)})}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={styles["timeItem"]}>
-                  <TbToolsKitchen className='mr-1 h-3 w-3' />
-                  {t("timing.cookLabel", {minutes: String(cookingTime)})}
-                </div>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <div className={styles["timeItem"]}>
+                    <TbToolsKitchen className='mr-1 h-3 w-3' />
+                    {t("timing.cookLabel", {minutes: String(cookingTime)})}
+                  </div>
+                }
+              />
               <TooltipContent side='bottom'>
                 <p>{t("timing.cookTooltip", {minutes: String(cookingTime)})}</p>
               </TooltipContent>

@@ -77,15 +77,17 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
         <div className={styles["actions"]}>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='outline'
-                  className='group w-full cursor-pointer'
-                  onClick={openMerchantInfoDialog}>
-                  <span>{t("buttons.viewMerchantDetails")}</span>
-                  <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className='group w-full cursor-pointer'
+                    onClick={openMerchantInfoDialog}>
+                    <span>{t("buttons.viewMerchantDetails")}</span>
+                    <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                  </Button>
+                }
+              />
               <TooltipContent>
                 <p>{t("tooltips.viewMerchantDetails")}</p>
               </TooltipContent>
@@ -94,16 +96,18 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
 
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='outline'
-                  className='group w-full cursor-pointer'
-                  onClick={openMerchantReceiptsDialog}>
-                  <TbShoppingBag className='mr-2 h-4 w-4' />
-                  <span>{t("buttons.viewAllReceipts")}</span>
-                  <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className='group w-full cursor-pointer'
+                    onClick={openMerchantReceiptsDialog}>
+                    <TbShoppingBag className='mr-2 h-4 w-4' />
+                    <span>{t("buttons.viewAllReceipts")}</span>
+                    <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                  </Button>
+                }
+              />
               <TooltipContent side='bottom'>
                 <p>{t("tooltips.viewAllReceipts")}</p>
               </TooltipContent>
