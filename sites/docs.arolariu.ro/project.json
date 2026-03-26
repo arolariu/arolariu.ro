@@ -56,7 +56,7 @@
     "clean": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx rimraf _site api obj",
+        "command": "node -e \"for(const d of['_site','api','obj'])require('fs').rmSync(d,{recursive:true,force:true})\"",
         "cwd": "sites/docs.arolariu.ro"
       }
     },

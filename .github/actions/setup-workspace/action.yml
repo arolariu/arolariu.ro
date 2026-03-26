@@ -145,7 +145,7 @@ runs:
       run: |
         if [ "${{ steps.cache-node.outputs.cache-hit }}" != "true" ]; then
           echo "::group::📦 Installing Node.js dependencies..."
-          npm ci --prefer-offline --no-audit
+          npm install --prefer-offline --no-audit
           echo "::endgroup::"
           echo "✅ Dependencies installed successfully"
         else

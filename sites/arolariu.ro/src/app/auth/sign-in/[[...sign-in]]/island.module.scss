@@ -62,6 +62,7 @@
   padding: space(3);
   background-color: color-alpha('card', 0.6);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   @include shadow('2xl');
   @include transition((border-color, box-shadow));
 

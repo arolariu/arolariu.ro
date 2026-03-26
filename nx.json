@@ -47,12 +47,5 @@
       "cache": true
     }
   },
-  "generators": {
-    "@nx/react": {
-      "application": {
-        "babel": true
-      }
-    }
-  },
   "analytics": true
 }

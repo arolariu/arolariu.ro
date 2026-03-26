@@ -11,7 +11,7 @@
 
 import path from "node:path";
 import process from "node:process";
-import pc from "picocolors";
+import {styleText} from "node:util";
 import Piscina from "piscina";
 import {
   createProgressTracker,
@@ -57,17 +57,17 @@ const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv"];
  * @returns Nothing.
  */
 function printWorkerResult(result: ESLintWorkerResult): void {
-  const workerInfo = pc.gray(`[Worker #${result.workerId}]`);
-  const timingInfo = pc.gray(`[init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms, total: ${result.durationMs}ms]`);
-  const fileInfo = pc.gray(`[${result.fileCount} files]`);
-  const memInfo = pc.gray(`[${formatBytes(result.peakMemoryBytes)}]`);
+  const workerInfo = styleText("gray", `[Worker #${result.workerId}]`);
+  const timingInfo = styleText("gray", `[init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms, total: ${result.durationMs}ms]`);
+  const fileInfo = styleText("gray", `[${result.fileCount} files]`);
+  const memInfo = styleText("gray", `[${formatBytes(result.peakMemoryBytes)}]`);
   console.log(
-    pc.cyan(`\n🔍 ESLint config: ${pc.bold(result.configName)} ${workerInfo}`),
+    styleText("cyan", `\n🔍 ESLint config: ${styleText("bold", result.configName)} ${workerInfo}`),
   );
-  console.log(pc.gray(`   ${timingInfo} ${fileInfo} ${memInfo}`));
+  console.log(styleText("gray", `   ${timingInfo} ${fileInfo} ${memInfo}`));
 
   if (result.error) {
-    console.log(pc.red(`  ✗ Worker error: ${result.error}`));
+    console.log(styleText("red", `  ✗ Worker error: ${result.error}`));
     return;
   }
 
@@ -77,12 +77,12 @@ function printWorkerResult(result: ESLintWorkerResult): void {
 
   if (result.errorCount > 0 || result.warningCount > 0) {
     if (result.errorCount > 0) {
-      console.log(pc.red(`  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
+      console.log(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
     } else {
-      console.log(pc.yellow(`  ⚠ ESLint found ${result.warningCount} warning(s)`));
+      console.log(styleText("yellow", `  ⚠ ESLint found ${result.warningCount} warning(s)`));
     }
   } else {
-    console.log(pc.green(`  ✓ No linting issues found for ${result.configName}`));
+    console.log(styleText("green", `  ✓ No linting issues found for ${result.configName}`));
   }
 }
 
@@ -107,11 +107,11 @@ function printSlowestFilesReport(results: ESLintWorkerResult[]): void {
     return; // No timing data available
   }
 
-  console.log(pc.bold("\n  🐢 Slowest Files to Lint:"));
+  console.log(styleText("bold", "\n  🐢 Slowest Files to Lint:"));
   for (const [index, file] of topSlowest.entries()) {
     const relativePath = path.relative(process.cwd(), file.filePath);
-    const timeStr = file.lintTimeMs > 0 ? pc.yellow(`${file.lintTimeMs.toFixed(0)}ms`) : pc.gray("cached");
-    console.log(pc.gray(`     ${index + 1}. `) + pc.dim(relativePath) + ` ${timeStr}`);
+    const timeStr = file.lintTimeMs > 0 ? styleText("yellow", `${file.lintTimeMs.toFixed(0)}ms`) : styleText("gray", "cached");
+    console.log(styleText("gray", `     ${index + 1}. `) + styleText("dim", relativePath) + ` ${timeStr}`);
   }
 }
 
@@ -125,10 +125,10 @@ function printMemorySummary(results: ESLintWorkerResult[]): void {
   const maxMemory = Math.max(...results.map((r) => r.peakMemoryBytes));
   const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
 
-  console.log(pc.bold("\n  📊 Resource Usage:"));
-  console.log(pc.gray(`     Total files linted: `) + pc.cyan(`${totalFiles}`));
-  console.log(pc.gray(`     Peak memory (max worker): `) + pc.cyan(formatBytes(maxMemory)));
-  console.log(pc.gray(`     Combined memory (all workers): `) + pc.cyan(formatBytes(totalMemory)));
+  console.log(styleText("bold", "\n  📊 Resource Usage:"));
+  console.log(styleText("gray", `     Total files linted: `) + styleText("cyan", `${totalFiles}`));
+  console.log(styleText("gray", `     Peak memory (max worker): `) + styleText("cyan", formatBytes(maxMemory)));
+  console.log(styleText("gray", `     Combined memory (all workers): `) + styleText("cyan", formatBytes(totalMemory)));
 }
 
 /**
@@ -147,10 +147,10 @@ function printMemorySummary(results: ESLintWorkerResult[]): void {
 async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Promise<number> {
   const hasSelectiveTargeting = filePatterns && filePatterns.length > 0;
   const targetDisplay = hasSelectiveTargeting ? `${lintTarget} (${filePatterns.length} patterns)` : lintTarget;
-  console.log(pc.bold(pc.magenta(`\n🔎 Running ESLint for: ${targetDisplay}`)));
+  console.log(styleText(["bold", "magenta"], `\n🔎 Running ESLint for: ${targetDisplay}`));
 
   if (hasSelectiveTargeting) {
-    console.log(pc.gray("   Patterns: " + filePatterns.join(", ")));
+    console.log(styleText("gray", "   Patterns: " + filePatterns.join(", ")));
   }
 
   // Create Piscina worker pool
@@ -163,10 +163,10 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
 
   try {
     if (lintTarget === "all") {
-      console.log(pc.yellow("⏱️  Running lint on all targets in parallel..."));
-      console.log(pc.bold(pc.cyan("\n  🧵 Dispatching parallel workers...")));
-      console.log(pc.gray(`     Main process PID: ${process.pid}`));
-      console.log(pc.gray(`     Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}`));
+      console.log(styleText("yellow", "⏱️  Running lint on all targets in parallel..."));
+      console.log(styleText(["bold", "cyan"], "\n  🧵 Dispatching parallel workers..."));
+      console.log(styleText("gray", `     Main process PID: ${process.pid}`));
+      console.log(styleText("gray", `     Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}`));
       console.log();
 
       const progress = createProgressTracker(allTargets.length);
@@ -253,7 +253,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       // Show graceful degradation notice if any workers failed
       if (failedWorkers > 0) {
         console.log(
-          pc.yellow(`\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`),
+          styleText("yellow", `\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`),
         );
       }
 
@@ -278,9 +278,9 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         if (!result) continue;
         validResults.push(result);
 
-        console.log(pc.gray("\n─────────────────────────────────────────────────"));
+        console.log(styleText("gray", "\n─────────────────────────────────────────────────"));
         printWorkerResult(result);
-        console.log(pc.gray("─────────────────────────────────────────────────"));
+        console.log(styleText("gray", "─────────────────────────────────────────────────"));
 
         if (result.error) {
           totalErrors++;
@@ -294,7 +294,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       printMemorySummary(validResults);
       printSlowestFilesReport(validResults);
 
-      console.log(pc.bold(pc.cyan(`\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`)));
+      console.log(styleText(["bold", "cyan"], `\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`));
       return totalErrors > 0 ? 1 : 0;
     } else {
       // Single target - still use worker for consistency
@@ -320,7 +320,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         }
         return result.errorCount > 0 ? 1 : 0;
       } catch (error) {
-        console.log(pc.red(`  ✗ Worker crashed: ${error}`));
+        console.log(styleText("red", `  ✗ Worker crashed: ${error}`));
         return 1;
       }
     }
@@ -342,20 +342,20 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(arg?: string, filePatterns?: string[]): Promise<number> {
-  console.log(pc.bold(pc.magenta("\n╔════════════════════════════════════════╗")));
-  console.log(pc.bold(pc.magenta("║    arolariu.ro Code Linter Tool        ║")));
-  console.log(pc.bold(pc.magenta("╚════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "magenta"], "║    arolariu.ro Code Linter Tool        ║"));
+  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   if (!arg) {
-    console.error(pc.red("✗ Missing target argument"));
-    console.log(pc.gray("\n💡 Usage: lint <all|packages|website|cv> [glob patterns...]"));
-    console.log(pc.gray("   - all:      Lint all targets"));
-    console.log(pc.gray("   - packages: Lint component packages"));
-    console.log(pc.gray("   - website:  Lint main website"));
-    console.log(pc.gray("   - cv:       Lint CV site"));
-    console.log(pc.gray("\n📁 Selective targeting:"));
-    console.log(pc.gray('   lint website "src/**/*.tsx"       Lint only TSX files'));
-    console.log(pc.gray('   lint all "**/*.test.ts"           Lint only test files\n'));
+    console.error(styleText("red", "✗ Missing target argument"));
+    console.log(styleText("gray", "\n💡 Usage: lint <all|packages|website|cv> [glob patterns...]"));
+    console.log(styleText("gray", "   - all:      Lint all targets"));
+    console.log(styleText("gray", "   - packages: Lint component packages"));
+    console.log(styleText("gray", "   - website:  Lint main website"));
+    console.log(styleText("gray", "   - cv:       Lint CV site"));
+    console.log(styleText("gray", "\n📁 Selective targeting:"));
+    console.log(styleText("gray", '   lint website "src/**/*.tsx"       Lint only TSX files'));
+    console.log(styleText("gray", '   lint all "**/*.test.ts"           Lint only test files\n'));
     return 1;
   }
 
@@ -376,20 +376,20 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
         exitCode = await startESLint("cv", filePatterns);
         break;
       default:
-        console.error(pc.red(`✗ Invalid target: "${arg}"`));
-        console.log(pc.gray("\n💡 Valid targets: all, packages, website, cv\n"));
+        console.error(styleText("red", `✗ Invalid target: "${arg}"`));
+        console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv\n"));
         return 1;
     }
 
     if (exitCode === 0) {
-      console.log(pc.bold(pc.green("\n✅ Linting completed successfully!\n")));
+      console.log(styleText(["bold", "green"], "\n✅ Linting completed successfully!\n"));
     } else {
-      console.log(pc.bold(pc.red("\n❌ Linting completed with errors\n")));
+      console.log(styleText(["bold", "red"], "\n❌ Linting completed with errors\n"));
     }
 
     return exitCode;
   } catch (error) {
-    console.error(pc.bold(pc.red("\n❌ Linting failed with errors:")), error);
+    console.error(styleText(["bold", "red"], "\n❌ Linting failed with errors:"), error);
     return 1;
   }
 }

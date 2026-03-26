@@ -280,8 +280,15 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: test-result
+          path: artifacts/hygiene/test-result.json
+          retention-days: 7
+
+      - name: 📤 Upload test coverage & output
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: test-coverage
           path: |
-            artifacts/hygiene/test-result.json
             artifacts/vitest-output.json
             coverage/vitest/coverage-summary.json
           retention-days: 7

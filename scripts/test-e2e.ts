@@ -10,7 +10,7 @@
 
 import {execSync} from "node:child_process";
 import {existsSync, mkdirSync, readFileSync, rmSync, writeFileSync} from "node:fs";
-import pc from "picocolors";
+import {styleText} from "node:util";
 
 type E2ETestTarget = "frontend" | "backend" | "cv" | "all";
 type RunnableTarget = Exclude<E2ETestTarget, "all">;
@@ -94,8 +94,8 @@ const targetConfigurationMap: Record<RunnableTarget, TargetConfiguration> = {
  * @returns Nothing.
  */
 const injectAuthTokenIntoCollection = (collectionPath: string, token: string): void => {
-  console.log(pc.cyan(`\n🔑 Injecting auth token into collection...`));
-  console.log(pc.gray(`   Path: ${collectionPath}`));
+  console.log(styleText("cyan", `\n🔑 Injecting auth token into collection...`));
+  console.log(styleText("gray", `   Path: ${collectionPath}`));
 
   const parsedCollection = JSON.parse(readFileSync(collectionPath, "utf-8")) as unknown;
   if (typeof parsedCollection !== "object" || parsedCollection === null) {
@@ -114,7 +114,7 @@ const injectAuthTokenIntoCollection = (collectionPath: string, token: string): v
 
   collection.variable = collectionVariables;
   writeFileSync(collectionPath, JSON.stringify(collection, null, 2));
-  console.log(pc.green(`   ✓ Auth token injected successfully`));
+  console.log(styleText("green", `   ✓ Auth token injected successfully`));
 };
 
 /**
@@ -132,7 +132,7 @@ const restoreCollectionContent = (collectionPath: string, originalContent: strin
     throw new Error(`Collection restore verification failed for ${collectionPath}.`);
   }
 
-  console.log(pc.green(`   ✓ Collection restored to original content`));
+  console.log(styleText("green", `   ✓ Collection restored to original content`));
 };
 
 /**
@@ -177,9 +177,9 @@ const loadOpenAPITestEnvironmentPath = (target: RunnableTarget, profile: Environ
 const ensureReportDir = (dir: string): void => {
   try {
     mkdirSync(dir, {recursive: true});
-    console.log(pc.gray(`   📁 Report directory: ${dir}`));
+    console.log(styleText("gray", `   📁 Report directory: ${dir}`));
   } catch (e) {
-    console.error(pc.red("   ✗ Failed to create report directory:"), dir, e);
+    console.error(styleText("red", "   ✗ Failed to create report directory:"), dir, e);
   }
 };
 
@@ -197,7 +197,7 @@ const ensureReportDir = (dir: string): void => {
 const writeAssertionSummary = (target: string, reportDir: string): void => {
   const jsonPath = `${reportDir}/newman-${target}.json`;
   if (!existsSync(jsonPath)) {
-    console.warn(pc.yellow(`   ⚠ JSON report not found, cannot create summary: ${jsonPath}`));
+    console.warn(styleText("yellow", `   ⚠ JSON report not found, cannot create summary: ${jsonPath}`));
     return;
   }
   try {
@@ -214,17 +214,17 @@ const writeAssertionSummary = (target: string, reportDir: string): void => {
     let md = `### Failed Assertions (${target})\n`;
     if (!failures.length) {
       md += "No failed assertions.\n";
-      console.log(pc.green(`   ✓ No failed assertions for ${target}`));
+      console.log(styleText("green", `   ✓ No failed assertions for ${target}`));
     } else {
       failures.forEach((failure, index) => {
         md += `${index + 1}. AssertionError  ${failure.assertion}\n   ${failure.error}\n   in "${failure.item}"\n\n`;
       });
-      console.log(pc.yellow(`   ⚠ ${failures.length} failed assertion(s) for ${target}`));
+      console.log(styleText("yellow", `   ⚠ ${failures.length} failed assertion(s) for ${target}`));
     }
     writeFileSync(`${reportDir}/newman-${target}-summary.md`, md.trim() + "\n");
-    console.log(pc.gray(`   📄 Summary written to: ${reportDir}/newman-${target}-summary.md`));
+    console.log(styleText("gray", `   📄 Summary written to: ${reportDir}/newman-${target}-summary.md`));
   } catch (e) {
-    console.error(pc.red("   ✗ Error while writing assertion summary:"), e);
+    console.error(styleText("red", "   ✗ Error while writing assertion summary:"), e);
   }
 };
 
@@ -243,7 +243,7 @@ const readPositiveIntegerEnv = (key: string, fallback: number): number => {
 
   const parsedValue = Number.parseInt(rawValue, 10);
   if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-    console.warn(pc.yellow(`⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`));
+    console.warn(styleText("yellow", `⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`));
     return fallback;
   }
 
@@ -272,7 +272,7 @@ const readBooleanEnv = (key: string, fallback: boolean): boolean => {
     return false;
   }
 
-  console.warn(pc.yellow(`⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`));
+  console.warn(styleText("yellow", `⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`));
   return fallback;
 };
 
@@ -365,16 +365,16 @@ const sanitizeNewmanJsonReport = (jsonPath: string): void => {
 
     if (BEARER_JWT_DETECTION_PATTERN.test(serializedReport) || JWT_DETECTION_PATTERN.test(serializedReport)) {
       rmSync(jsonPath, {force: true});
-      console.warn(pc.yellow(`   ⚠ Removed unsanitized Newman JSON report due to remaining JWT patterns: ${jsonPath}`));
+      console.warn(styleText("yellow", `   ⚠ Removed unsanitized Newman JSON report due to remaining JWT patterns: ${jsonPath}`));
       return;
     }
 
     writeFileSync(jsonPath, serializedReport, "utf-8");
-    console.log(pc.gray(`   🔐 Sanitized Newman JSON report (${accumulator.redactionCount} redactions)`));
+    console.log(styleText("gray", `   🔐 Sanitized Newman JSON report (${accumulator.redactionCount} redactions)`));
   } catch (error) {
     rmSync(jsonPath, {force: true});
-    console.warn(pc.yellow(`   ⚠ Failed to sanitize Newman JSON report and removed it: ${jsonPath}`));
-    console.warn(pc.gray(`      Reason: ${error instanceof Error ? error.message : String(error)}`));
+    console.warn(styleText("yellow", `   ⚠ Failed to sanitize Newman JSON report and removed it: ${jsonPath}`));
+    console.warn(styleText("gray", `      Reason: ${error instanceof Error ? error.message : String(error)}`));
   }
 };
 
@@ -398,7 +398,7 @@ const runOpenAPITestCollection = async (
   reportDir: string,
   runtimeAuthToken?: string,
 ): Promise<void> => {
-  console.log(pc.cyan(`\n🧪 Running Newman test collection for: ${pc.bold(target)}`));
+  console.log(styleText("cyan", `\n🧪 Running Newman test collection for: ${styleText("bold", target)}`));
   ensureReportDir(reportDir);
   const jsonPath = `${reportDir}/newman-${target}.json`;
   const junitPath = `${reportDir}/newman-${target}.xml`;
@@ -407,13 +407,13 @@ const runOpenAPITestCollection = async (
   const scriptTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_SCRIPT", 10_000);
   const strictMode = readBooleanEnv("NEWMAN_STRICT_MODE", false);
 
-  console.log(pc.gray(`   📦 Collection path: ${collectionPath}`));
-  console.log(pc.gray(`   🌍 Environment path: ${environmentPath}`));
-  console.log(pc.gray(`   📊 JSON report: ${jsonPath}`));
-  console.log(pc.gray(`   📊 JUnit report: ${junitPath}`));
-  console.log(pc.gray(`   ⏱ Timeout: ${collectionTimeout}ms (request: ${requestTimeout}ms, script: ${scriptTimeout}ms)`));
-  console.log(pc.gray(`   🚦 Strict mode (--bail): ${strictMode}`));
-  console.log(pc.cyan(`\n⚡ Executing tests...\n`));
+  console.log(styleText("gray", `   📦 Collection path: ${collectionPath}`));
+  console.log(styleText("gray", `   🌍 Environment path: ${environmentPath}`));
+  console.log(styleText("gray", `   📊 JSON report: ${jsonPath}`));
+  console.log(styleText("gray", `   📊 JUnit report: ${junitPath}`));
+  console.log(styleText("gray", `   ⏱ Timeout: ${collectionTimeout}ms (request: ${requestTimeout}ms, script: ${scriptTimeout}ms)`));
+  console.log(styleText("gray", `   🚦 Strict mode (--bail): ${strictMode}`));
+  console.log(styleText("cyan", `\n⚡ Executing tests...\n`));
 
   try {
     const commandParts = [
@@ -430,22 +430,22 @@ const runOpenAPITestCollection = async (
     ].filter((part) => part.length > 0);
 
     execSync(commandParts.join(" "), {stdio: "inherit"});
-    console.log(pc.green(`\n   ✓ Newman tests passed for ${target}`));
+    console.log(styleText("green", `\n   ✓ Newman tests passed for ${target}`));
   } catch (error) {
-    console.error(pc.red(`\n   ✗ Newman tests failed for ${target}`));
+    console.error(styleText("red", `\n   ✗ Newman tests failed for ${target}`));
     throw error;
   } finally {
     try {
-      console.log(pc.cyan(`\n📝 Generating assertion summary...`));
+      console.log(styleText("cyan", `\n📝 Generating assertion summary...`));
       writeAssertionSummary(target, reportDir);
     } catch (e) {
-      console.error(pc.red("   ✗ Failed generating assertion summary:"), e);
+      console.error(styleText("red", "   ✗ Failed generating assertion summary:"), e);
     }
 
     try {
       sanitizeNewmanJsonReport(jsonPath);
     } catch (e) {
-      console.error(pc.red("   ✗ Failed sanitizing Newman JSON report:"), e);
+      console.error(styleText("red", "   ✗ Failed sanitizing Newman JSON report:"), e);
     }
   }
 };
@@ -463,9 +463,9 @@ const runOpenAPITestCollection = async (
  * @returns A promise that resolves when the flow completes.
  */
 const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
-  console.log(pc.bold(pc.magenta(`\n╔════════════════════════════════════════╗`)));
-  console.log(pc.bold(pc.magenta(`║   E2E Testing: ${target.padEnd(23)} ║`)));
-  console.log(pc.bold(pc.magenta(`╚════════════════════════════════════════╝`)));
+  console.log(styleText(["bold", "magenta"], `\n╔════════════════════════════════════════╗`));
+  console.log(styleText(["bold", "magenta"], `║   E2E Testing: ${target.padEnd(23)} ║`));
+  console.log(styleText(["bold", "magenta"], `╚════════════════════════════════════════╝`));
 
   const targetConfiguration = targetConfigurationMap[target];
   const collectionPath = loadOpenAPITestCollectionPath(target);
@@ -487,17 +487,17 @@ const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
   }
 
   if (targetConfiguration.authPolicy === "optional" && authToken.length === 0) {
-    console.warn(pc.yellow(`⚠ E2E_TEST_AUTH_TOKEN is not set. Continuing ${target} run without auth token injection.`));
+    console.warn(styleText("yellow", `⚠ E2E_TEST_AUTH_TOKEN is not set. Continuing ${target} run without auth token injection.`));
   }
 
   if (targetConfiguration.authPolicy === "ignored" && authToken.length > 0) {
-    console.log(pc.gray(`ℹ ${target} does not require auth token; skipping auth injection.`));
+    console.log(styleText("gray", `ℹ ${target} does not require auth token; skipping auth injection.`));
   }
 
-  console.log(pc.cyan(`\n📦 Target: ${pc.bold(target)} (${targetConfiguration.label})`));
-  console.log(pc.gray(`   Collection: ${collectionPath}`));
-  console.log(pc.gray(`   Environment: ${environmentPath} (${environmentProfile})`));
-  console.log(pc.gray(`   Reports: ${reportDir}`));
+  console.log(styleText("cyan", `\n📦 Target: ${styleText("bold", target)} (${targetConfiguration.label})`));
+  console.log(styleText("gray", `   Collection: ${collectionPath}`));
+  console.log(styleText("gray", `   Environment: ${environmentPath} (${environmentProfile})`));
+  console.log(styleText("gray", `   Reports: ${reportDir}`));
 
   const shouldInjectAuthToken = targetConfiguration.authPolicy !== "ignored" && authToken.length > 0;
   const originalCollectionContent = shouldInjectAuthToken ? readFileSync(collectionPath, "utf-8") : "";
@@ -516,12 +516,12 @@ const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
     );
   } finally {
     if (shouldInjectAuthToken) {
-      console.log(pc.cyan(`\n🔄 Restoring collection content...`));
+      console.log(styleText("cyan", `\n🔄 Restoring collection content...`));
       restoreCollectionContent(collectionPath, originalCollectionContent);
     }
   }
 
-  console.log(pc.bold(pc.green(`\n✅ Completed Newman tests for: ${target}\n`)));
+  console.log(styleText(["bold", "green"], `\n✅ Completed Newman tests for: ${target}\n`));
 };
 
 /**
@@ -534,22 +534,22 @@ const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(arg?: string): Promise<number> {
-  console.log(pc.bold(pc.magenta("\n╔════════════════════════════════════════╗")));
-  console.log(pc.bold(pc.magenta("║   arolariu.ro E2E Test Runner          ║")));
-  console.log(pc.bold(pc.magenta("╚════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "magenta"], "║   arolariu.ro E2E Test Runner          ║"));
+  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   if (!arg) {
-    console.error(pc.red("✗ Missing target argument"));
-    console.log(pc.gray("\n💡 Usage: test:e2e <frontend|backend|cv|all>"));
-    console.log(pc.gray("   - frontend: Run frontend E2E tests"));
-    console.log(pc.gray("   - backend:  Run backend API tests"));
-    console.log(pc.gray("   - cv:       Run CV website/API tests"));
-    console.log(pc.gray("   - all:      Run all E2E tests"));
-    console.log(pc.yellow("\n⚠️  Notes:"));
-    console.log(pc.yellow("   - E2E_TEST_AUTH_TOKEN is required for backend"));
-    console.log(pc.yellow("   - E2E_TEST_AUTH_TOKEN is optional for frontend"));
-    console.log(pc.yellow("   - E2E_TEST_AUTH_TOKEN is ignored for cv"));
-    console.log(pc.yellow("   - E2E_TEST_ENVIRONMENT can be local|production (default: production)\n"));
+    console.error(styleText("red", "✗ Missing target argument"));
+    console.log(styleText("gray", "\n💡 Usage: test:e2e <frontend|backend|cv|all>"));
+    console.log(styleText("gray", "   - frontend: Run frontend E2E tests"));
+    console.log(styleText("gray", "   - backend:  Run backend API tests"));
+    console.log(styleText("gray", "   - cv:       Run CV website/API tests"));
+    console.log(styleText("gray", "   - all:      Run all E2E tests"));
+    console.log(styleText("yellow", "\n⚠️  Notes:"));
+    console.log(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is required for backend"));
+    console.log(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is optional for frontend"));
+    console.log(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is ignored for cv"));
+    console.log(styleText("yellow", "   - E2E_TEST_ENVIRONMENT can be local|production (default: production)\n"));
     return 1;
   }
 
@@ -565,23 +565,23 @@ export async function main(arg?: string): Promise<number> {
         await startNewmanTesting("cv");
         break;
       case "all":
-        console.log(pc.bold(pc.cyan("\n🎯 Running all E2E tests...\n")));
+        console.log(styleText(["bold", "cyan"], "\n🎯 Running all E2E tests...\n"));
         await startNewmanTesting("frontend");
-        console.log(pc.gray("\n─────────────────────────────────────────────────\n"));
+        console.log(styleText("gray", "\n─────────────────────────────────────────────────\n"));
         await startNewmanTesting("backend");
-        console.log(pc.gray("\n─────────────────────────────────────────────────\n"));
+        console.log(styleText("gray", "\n─────────────────────────────────────────────────\n"));
         await startNewmanTesting("cv");
         break;
       default:
-        console.error(pc.red(`✗ Invalid target: "${arg}"`));
-        console.log(pc.gray("\n💡 Valid targets: frontend, backend, cv, all\n"));
+        console.error(styleText("red", `✗ Invalid target: "${arg}"`));
+        console.log(styleText("gray", "\n💡 Valid targets: frontend, backend, cv, all\n"));
         return 1;
     }
 
-    console.log(pc.bold(pc.green("\n🎉 All E2E tests completed successfully!\n")));
+    console.log(styleText(["bold", "green"], "\n🎉 All E2E tests completed successfully!\n"));
     return 0;
   } catch (error) {
-    console.error(pc.bold(pc.red("\n❌ E2E tests failed with errors\n")));
+    console.error(styleText(["bold", "red"], "\n❌ E2E tests failed with errors\n"));
     return 1;
   }
 }

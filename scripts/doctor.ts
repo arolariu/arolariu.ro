@@ -20,11 +20,11 @@
  */
 
 import {execSync} from "node:child_process";
-import {existsSync, statSync} from "node:fs";
+import {existsSync, readFileSync, statSync, unlinkSync} from "node:fs";
 import {createServer} from "node:net";
 import {freemem, platform} from "node:os";
 import {join} from "node:path";
-import pc from "picocolors";
+import {styleText} from "node:util";
 import {formatBytes} from "./common/index.ts";
 
 // ============================================================================
@@ -35,7 +35,7 @@ import {formatBytes} from "./common/index.ts";
 type CheckStatus = "pass" | "warn" | "fail";
 
 /** Logical grouping for diagnostic checks. */
-type CheckCategory = "toolchain" | "workspace" | "environment" | "system";
+type CheckCategory = "toolchain" | "workspace" | "environment" | "system" | "security" | "quality" | "graph";
 
 /**
  * Result of a single diagnostic check.
@@ -64,6 +64,9 @@ interface CliFlags {
   readonly verbose: boolean;
   readonly ci: boolean;
   readonly help: boolean;
+  readonly score: boolean;
+  readonly json: boolean;
+  readonly quick: boolean;
 }
 
 // ============================================================================
@@ -88,6 +91,32 @@ const CHECKED_PORTS: readonly {port: number; label: string}[] = [
   {port: 5000, label: "API (.NET)"},
   {port: 6006, label: "Storybook"},
 ];
+
+const BUNDLE_SIZE_WARN_BYTES = 15 * 1024 * 1024; // 15 MB
+const BUNDLE_SIZE_FAIL_BYTES = 20 * 1024 * 1024; // 20 MB
+const MAX_MAJOR_OUTDATED_WARN = 5;
+const MAX_MAJOR_OUTDATED_FAIL = 10;
+
+const CHECK_WEIGHTS: Record<string, number> = {
+  "Node.js version": 8,
+  "npm version": 8,
+  ".NET SDK": 3,
+  "Nx CLI": 5,
+  "node_modules": 8,
+  "npm workspace integrity": 5,
+  "Required config files": 5,
+  "Environment files": 3,
+  "Git status": 2,
+  "Disk space": 3,
+  "Port availability": 1,
+  "npm audit": 15,
+  "Outdated packages": 5,
+  "TypeScript strict": 10,
+  "Bundle size": 5,
+  "Nx graph integrity": 5,
+  "Circular dependencies": 5,
+  "Website depends on Components": 5,
+};
 
 // ============================================================================
 // Utility Helpers
@@ -504,18 +533,281 @@ async function checkPorts(): Promise<DiagnosticCheck> {
 }
 
 // ============================================================================
-// Output Formatting
+// Security, Quality & Graph Checks
+// ============================================================================
+
+/** Runs npm audit and checks for critical/high vulnerabilities. */
+function checkNpmAudit(): DiagnosticCheck {
+  const raw = exec("npm audit --json 2>&1");
+  if (!raw) {
+    return {
+      name: "npm audit",
+      category: "security",
+      status: "warn",
+      message: "Could not run npm audit",
+      fix: "Run: npm install to generate package-lock.json",
+    };
+  }
+  try {
+    const jsonStart = raw.indexOf("{");
+    if (jsonStart < 0) {
+      return {name: "npm audit", category: "security", status: "pass", message: "No vulnerabilities found"};
+    }
+    const parsed = JSON.parse(raw.slice(jsonStart)) as Record<string, unknown>;
+    const vuln = parsed["metadata"] as Record<string, unknown> | undefined;
+    const vulnerabilities = vuln?.["vulnerabilities"] as Record<string, number> | undefined;
+    if (!vulnerabilities) {
+      return {name: "npm audit", category: "security", status: "pass", message: "No vulnerabilities found"};
+    }
+    const critical = vulnerabilities["critical"] ?? 0;
+    const high = vulnerabilities["high"] ?? 0;
+    const moderate = vulnerabilities["moderate"] ?? 0;
+    const low = vulnerabilities["low"] ?? 0;
+    const total = critical + high + moderate + low;
+    if (critical > 0 || high > 0) {
+      return {
+        name: "npm audit",
+        category: "security",
+        status: "fail",
+        message: `${critical} critical, ${high} high, ${moderate} moderate, ${low} low`,
+        fix: "Run: npm audit fix or review vulnerabilities with npm audit",
+      };
+    }
+    if (total > 0) {
+      return {
+        name: "npm audit",
+        category: "security",
+        status: "warn",
+        message: `${moderate} moderate, ${low} low (no critical/high)`,
+      };
+    }
+    return {name: "npm audit", category: "security", status: "pass", message: "No vulnerabilities found"};
+  } catch {
+    return {name: "npm audit", category: "security", status: "warn", message: "Could not parse npm audit output"};
+  }
+}
+
+/** Checks for outdated packages with major version bumps. */
+function checkOutdatedPackages(): DiagnosticCheck {
+  const raw = exec("npm outdated --json 2>&1");
+  if (!raw || raw.trim() === "{}") {
+    return {name: "Outdated packages", category: "security", status: "pass", message: "All packages up to date"};
+  }
+  try {
+    const jsonStart = raw.indexOf("{");
+    if (jsonStart < 0) {
+      return {name: "Outdated packages", category: "security", status: "pass", message: "All packages up to date"};
+    }
+    const parsed = JSON.parse(raw.slice(jsonStart)) as Record<string, Record<string, string>>;
+    let majorCount = 0;
+    let minorCount = 0;
+    let patchCount = 0;
+    for (const pkg of Object.values(parsed)) {
+      const current = pkg["current"];
+      const latest = pkg["latest"];
+      if (!current || !latest) continue;
+      const currentMajor = parseMajor(current);
+      const latestMajor = parseMajor(latest);
+      if (latestMajor > currentMajor) majorCount++;
+      else if (latest !== current) {
+        const currentMinor = parseInt(current.split(".")[1] ?? "0", 10);
+        const latestMinor = parseInt(latest.split(".")[1] ?? "0", 10);
+        if (latestMinor > currentMinor) minorCount++;
+        else patchCount++;
+      }
+    }
+    const total = majorCount + minorCount + patchCount;
+    if (total === 0) {
+      return {name: "Outdated packages", category: "security", status: "pass", message: "All packages up to date"};
+    }
+    const msg = `${majorCount} major, ${minorCount} minor, ${patchCount} patch updates available`;
+    if (majorCount > MAX_MAJOR_OUTDATED_FAIL) {
+      return {name: "Outdated packages", category: "security", status: "fail", message: msg, fix: "Run: npm outdated to review and update packages"};
+    }
+    if (majorCount > MAX_MAJOR_OUTDATED_WARN) {
+      return {name: "Outdated packages", category: "security", status: "warn", message: msg};
+    }
+    return {name: "Outdated packages", category: "security", status: "pass", message: msg};
+  } catch {
+    return {name: "Outdated packages", category: "security", status: "warn", message: "Could not parse npm outdated output"};
+  }
+}
+
+/** Checks for TypeScript compilation errors using tsc --noEmit. */
+function checkTypeScript(): DiagnosticCheck {
+  const result = exec("npx tsc --noEmit --pretty false 2>&1");
+  if (result === null) {
+    return {name: "TypeScript strict", category: "quality", status: "warn", message: "Could not run tsc"};
+  }
+  const errorMatch = result.match(/error TS\d+/g);
+  if (errorMatch && errorMatch.length > 0) {
+    return {
+      name: "TypeScript strict",
+      category: "quality",
+      status: "fail",
+      message: `${errorMatch.length} TypeScript error(s)`,
+      detail: result.split("\n").slice(0, 5).join("\n"),
+      fix: "Fix TypeScript errors shown above",
+    };
+  }
+  return {name: "TypeScript strict", category: "quality", status: "pass", message: "No type errors"};
+}
+
+/** Checks the website bundle size by scanning the .next directory. */
+function checkBundleSize(): DiagnosticCheck {
+  const nextDir = join(process.cwd(), "sites", "arolariu.ro", ".next");
+  if (!existsSync(nextDir)) {
+    return {
+      name: "Bundle size",
+      category: "quality",
+      status: "warn",
+      message: "No .next/ directory found — run a build first",
+    };
+  }
+  try {
+    let sizeBytes = 0;
+    if (platform() === "win32") {
+      const escapedPath = nextDir.replaceAll("'", "''");
+      const raw = exec(`powershell -NoProfile -Command "(Get-ChildItem '${escapedPath}' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum"`);
+      if (!raw) return {name: "Bundle size", category: "quality", status: "warn", message: "Could not measure .next/ size"};
+      sizeBytes = parseInt(raw, 10);
+    } else {
+      const raw = exec(`du -sb "${nextDir}" 2>/dev/null | cut -f1`);
+      if (!raw) return {name: "Bundle size", category: "quality", status: "warn", message: "Could not measure .next/ size"};
+      sizeBytes = parseInt(raw, 10);
+    }
+    if (Number.isNaN(sizeBytes)) {
+      return {name: "Bundle size", category: "quality", status: "warn", message: "Could not parse .next/ size"};
+    }
+    const sizeStr = formatBytes(sizeBytes);
+    if (sizeBytes > BUNDLE_SIZE_FAIL_BYTES) {
+      return {name: "Bundle size", category: "quality", status: "fail", message: `${sizeStr} (exceeds ${formatBytes(BUNDLE_SIZE_FAIL_BYTES)} threshold)`, fix: "Investigate bundle bloat with: cd sites/arolariu.ro && npm run analyze"};
+    }
+    if (sizeBytes > BUNDLE_SIZE_WARN_BYTES) {
+      return {name: "Bundle size", category: "quality", status: "warn", message: `${sizeStr} (approaching ${formatBytes(BUNDLE_SIZE_FAIL_BYTES)} threshold)`};
+    }
+    return {name: "Bundle size", category: "quality", status: "pass", message: sizeStr};
+  } catch {
+    return {name: "Bundle size", category: "quality", status: "warn", message: "Could not measure bundle size"};
+  }
+}
+
+/**
+ * Loads the Nx dependency graph once for reuse across multiple graph checks.
+ *
+ * @returns The parsed graph object or `null` if generation failed.
+ */
+function loadNxGraph(): Record<string, unknown> | null {
+  const tmpFile = join(process.cwd(), ".nx-graph-check.json");
+  try {
+    exec(`npx nx graph --file="${tmpFile}"`);
+    if (!existsSync(tmpFile)) return null;
+    const raw = readFileSync(tmpFile, "utf-8");
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return (parsed["graph"] ?? parsed) as Record<string, unknown>;
+  } catch {
+    return null;
+  } finally {
+    try { unlinkSync(tmpFile); } catch { /* ignore */ }
+  }
+}
+
+/** Checks Nx graph integrity and detects workspace projects. */
+function checkNxGraph(graph: Record<string, unknown> | null): DiagnosticCheck {
+  if (!graph) {
+    return {name: "Nx graph integrity", category: "graph", status: "warn", message: "Could not generate Nx graph"};
+  }
+  const nodes = graph["nodes"] as Record<string, unknown> | undefined;
+  const projectCount = nodes ? Object.keys(nodes).length : 0;
+  if (projectCount === 0) {
+    return {name: "Nx graph integrity", category: "graph", status: "fail", message: "No projects detected in Nx graph", fix: "Check nx.json and project.json files"};
+  }
+  return {name: "Nx graph integrity", category: "graph", status: "pass", message: `${projectCount} projects detected`};
+}
+
+/** Checks for circular dependencies between workspaces in the Nx graph. */
+function checkCircularDeps(graph: Record<string, unknown> | null): DiagnosticCheck {
+  if (!graph) {
+    return {name: "Circular dependencies", category: "graph", status: "warn", message: "Could not generate graph for cycle check"};
+  }
+  const deps = graph["dependencies"] as Record<string, Array<{target: string}>> | undefined;
+  if (!deps) {
+    return {name: "Circular dependencies", category: "graph", status: "pass", message: "No dependencies to analyze"};
+  }
+  // DFS-based cycle detection for cycles of any length
+  const cycles: string[] = [];
+  const visited = new Set<string>();
+  const inStack = new Set<string>();
+
+  function dfs(node: string, path: string[]): void {
+    if (inStack.has(node)) {
+      const cycleStart = path.indexOf(node);
+      if (cycleStart >= 0) {
+        const cycle = path.slice(cycleStart).join(" → ") + " → " + node;
+        cycles.push(cycle);
+      }
+      return;
+    }
+    if (visited.has(node)) return;
+    visited.add(node);
+    inStack.add(node);
+    path.push(node);
+    for (const edge of deps[node] ?? []) {
+      dfs(edge.target, path);
+    }
+    path.pop();
+    inStack.delete(node);
+  }
+
+  for (const node of Object.keys(deps)) {
+    dfs(node, []);
+  }
+  if (cycles.length > 0) {
+    return {
+      name: "Circular dependencies",
+      category: "graph",
+      status: "fail",
+      message: `${cycles.length} circular dependency(ies) found`,
+      detail: cycles.join("\n"),
+      fix: "Break circular dependencies between workspaces",
+    };
+  }
+  return {name: "Circular dependencies", category: "graph", status: "pass", message: "No circular dependencies"};
+}
+
+/** Checks that website depends on components in the Nx graph. */
+function checkWebsiteDependsOnComponents(graph: Record<string, unknown> | null): DiagnosticCheck {
+  if (!graph) {
+    return {name: "Website depends on Components", category: "graph", status: "warn", message: "Could not generate graph"};
+  }
+  const deps = graph["dependencies"] as Record<string, Array<{target: string}>> | undefined;
+  if (!deps) {
+    return {name: "Website depends on Components", category: "graph", status: "warn", message: "No dependency data"};
+  }
+  const websiteDeps = deps["@arolariu/website"] ?? [];
+  const hasComponentsDep = websiteDeps.some((d) => d.target === "@arolariu/components");
+  if (!hasComponentsDep) {
+    return {
+      name: "Website depends on Components",
+      category: "graph",
+      status: "fail",
+      message: "Website does not depend on @arolariu/components",
+      fix: "Ensure @arolariu/components is listed in the website's package.json dependencies and project.json has dependsOn: ['components:build']",
+    };
+  }
+  return {name: "Website depends on Components", category: "graph", status: "pass", message: "Edge present in graph"};
+}
 // ============================================================================
 
 /** Maps a check status to a colored badge string. */
 function statusBadge(status: CheckStatus): string {
   switch (status) {
     case "pass":
-      return pc.green("✓ PASS");
+      return styleText("green", "✓ PASS");
     case "warn":
-      return pc.yellow("⚠ WARN");
+      return styleText("yellow", "⚠ WARN");
     case "fail":
-      return pc.red("✗ FAIL");
+      return styleText("red", "✗ FAIL");
   }
 }
 
@@ -525,6 +817,9 @@ const CATEGORY_LABELS: Record<CheckCategory, string> = {
   workspace: "📦 Workspace",
   environment: "🌐 Environment",
   system: "💻 System",
+  security: "🔒 Security",
+  quality: "🧪 Quality",
+  graph: "🔗 Graph",
 };
 
 /**
@@ -534,23 +829,23 @@ const CATEGORY_LABELS: Record<CheckCategory, string> = {
  * @param verbose - Whether to show detail lines for each check.
  */
 function printResults(checks: readonly DiagnosticCheck[], verbose: boolean): void {
-  const categories: CheckCategory[] = ["toolchain", "workspace", "environment", "system"];
+  const categories: CheckCategory[] = ["toolchain", "workspace", "environment", "system", "security", "quality", "graph"];
 
   for (const cat of categories) {
     const group = checks.filter((c) => c.category === cat);
     if (group.length === 0) continue;
 
-    console.log(pc.bold(`\n  ${CATEGORY_LABELS[cat]}`));
-    console.log(pc.gray(`  ${"─".repeat(50)}`));
+    console.log(styleText("bold", `\n  ${CATEGORY_LABELS[cat]}`));
+    console.log(styleText("gray", `  ${"─".repeat(50)}`));
 
     for (const check of group) {
       const badge = statusBadge(check.status);
       const name = check.name.padEnd(28);
-      console.log(`  ${badge}  ${name} ${pc.dim(check.message)}`);
+      console.log(`  ${badge}  ${name} ${styleText("dim", check.message)}`);
 
       if (verbose && check.detail) {
         for (const line of check.detail.split("\n")) {
-          console.log(pc.gray(`                                     ${line}`));
+          console.log(styleText("gray", `                                     ${line}`));
         }
       }
     }
@@ -567,21 +862,21 @@ function printSummary(checks: readonly DiagnosticCheck[]): void {
   const warnings = checks.filter((c) => c.status === "warn").length;
   const failures = checks.filter((c) => c.status === "fail").length;
 
-  console.log(pc.gray(`\n  ${"─".repeat(50)}`));
+  console.log(styleText("gray", `\n  ${"─".repeat(50)}`));
   const parts: string[] = [
-    pc.green(`${passed} passed`),
-    warnings > 0 ? pc.yellow(`${warnings} warning${warnings === 1 ? "" : "s"}`) : "",
-    failures > 0 ? pc.red(`${failures} failure${failures === 1 ? "" : "s"}`) : "",
+    styleText("green", `${passed} passed`),
+    warnings > 0 ? styleText("yellow", `${warnings} warning${warnings === 1 ? "" : "s"}`) : "",
+    failures > 0 ? styleText("red", `${failures} failure${failures === 1 ? "" : "s"}`) : "",
   ].filter(Boolean);
-  console.log(`\n  Summary: ${parts.join(pc.dim(", "))}`);
+  console.log(`\n  Summary: ${parts.join(styleText("dim", ", "))}`);
 
   // Suggested fixes
   const fixable = checks.filter((c) => c.status !== "pass" && c.fix);
   if (fixable.length > 0) {
-    console.log(pc.bold("\n  Suggested fixes:"));
+    console.log(styleText("bold", "\n  Suggested fixes:"));
     for (const check of fixable) {
-      const icon = check.status === "fail" ? pc.red("✗") : pc.yellow("⚠");
-      console.log(`  ${icon} ${pc.bold(check.name)}: ${pc.dim(check.fix!)}`);
+      const icon = check.status === "fail" ? styleText("red", "✗") : styleText("yellow", "⚠");
+      console.log(`  ${icon} ${styleText("bold", check.name)}: ${styleText("dim", check.fix!)}`);
     }
   }
 
@@ -592,13 +887,57 @@ function printSummary(checks: readonly DiagnosticCheck[]): void {
  * Prints CLI usage information.
  */
 function printHelp(): void {
-  console.log(pc.bold("\n  Usage:"));
-  console.log(pc.dim("    node --experimental-strip-types scripts/doctor.ts [options]\n"));
-  console.log(pc.bold("  Options:"));
-  console.log(`    ${pc.green("--verbose, -v")}   Show detailed output for each check`);
-  console.log(`    ${pc.green("--ci")}            Non-interactive mode (skip port checks)`);
-  console.log(`    ${pc.green("--help, -h")}      Show this help message`);
+  console.log(styleText("bold", "\n  Usage:"));
+  console.log(styleText("dim", "    node --experimental-strip-types scripts/doctor.ts [options]\n"));
+  console.log(styleText("bold", "  Options:"));
+  console.log(`    ${styleText("green", "--verbose, -v")}   Show detailed output for each check`);
+  console.log(`    ${styleText("green", "--ci")}            Non-interactive mode (skip port checks)`);
+  console.log(`    ${styleText("green", "--help, -h")}      Show this help message`);
+  console.log(`    ${styleText("green", "--score")}          Compute and display health score (0-100)`);
+  console.log(`    ${styleText("green", "--json")}           Output results as JSON`);
+  console.log(`    ${styleText("green", "--quick")}          Skip slow checks (audit, tsc, graph)`);
   console.log();
+}
+
+// ============================================================================
+// Health Score
+// ============================================================================
+
+function computeHealthScore(checks: readonly DiagnosticCheck[]): number {
+  let earned = 0;
+  let total = 0;
+  for (const check of checks) {
+    const weight = CHECK_WEIGHTS[check.name] ?? 3;
+    total += weight;
+    if (check.status === "pass") earned += weight;
+    else if (check.status === "warn") earned += weight * 0.5;
+  }
+  return total > 0 ? Math.round((earned / total) * 100) : 100;
+}
+
+function gradeFromScore(score: number): string {
+  if (score >= 95) return "A+";
+  if (score >= 90) return "A";
+  if (score >= 80) return "B";
+  if (score >= 70) return "C";
+  if (score >= 60) return "D";
+  return "F";
+}
+
+function printHealthScore(checks: readonly DiagnosticCheck[]): void {
+  const score = computeHealthScore(checks);
+  const grade = gradeFromScore(score);
+  const barWidth = 20;
+  const filled = Math.round((score / 100) * barWidth);
+  const empty = barWidth - filled;
+  const barColor = score >= 90 ? "green" : score >= 70 ? "yellow" : "red";
+  const bar = styleText(barColor as "green" | "yellow" | "red", "█".repeat(filled)) + styleText("gray", "░".repeat(empty));
+
+  console.log();
+  console.log(styleText("gray", "  ╭─────────────────────────────────────────╮"));
+  console.log(styleText("gray", "  │") + `  🏥 Health Score: ${styleText("bold", String(score))}/100  Grade: ${styleText("bold", grade)}  ` + styleText("gray", "│"));
+  console.log(styleText("gray", "  │") + `  ${bar}  ` + styleText("gray", "│"));
+  console.log(styleText("gray", "  ╰─────────────────────────────────────────╯"));
 }
 
 // ============================================================================
@@ -617,10 +956,10 @@ export async function main(flags: Readonly<CliFlags>): Promise<number> {
     return 0;
   }
 
-  console.log(pc.bold(pc.green("\n╔══════════════════════════════════════════╗")));
-  console.log(pc.bold(pc.green("║   🩺 arolariu.ro Workspace Doctor        ║")));
-  console.log(pc.bold(pc.green("║   Health Diagnostics & Validation        ║")));
-  console.log(pc.bold(pc.green("╚══════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "green"], "\n╔══════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "green"], "║   🩺 arolariu.ro Workspace Doctor        ║"));
+  console.log(styleText(["bold", "green"], "║   Health Diagnostics & Validation        ║"));
+  console.log(styleText(["bold", "green"], "╚══════════════════════════════════════════╝\n"));
 
   const checks: DiagnosticCheck[] = [];
 
@@ -645,8 +984,45 @@ export async function main(flags: Readonly<CliFlags>): Promise<number> {
     checks.push(await checkPorts());
   }
 
+  // Security checks (skip with --quick)
+  if (!flags.quick) {
+    checks.push(checkNpmAudit());
+    checks.push(checkOutdatedPackages());
+  }
+
+  // Quality checks (skip with --quick)
+  if (!flags.quick) {
+    checks.push(checkTypeScript());
+  }
+  checks.push(checkBundleSize());
+
+  // Graph checks (skip with --quick)
+  if (!flags.quick) {
+    const graph = loadNxGraph();
+    checks.push(checkNxGraph(graph));
+    checks.push(checkCircularDeps(graph));
+    checks.push(checkWebsiteDependsOnComponents(graph));
+  }
+
+  // JSON output mode
+  if (flags.json) {
+    const score = computeHealthScore(checks);
+    const output = {
+      score,
+      grade: gradeFromScore(score),
+      checks: checks.map((c) => ({name: c.name, category: c.category, status: c.status, message: c.message})),
+      timestamp: new Date().toISOString(),
+    };
+    console.log(JSON.stringify(output, null, 2));
+    return checks.some((c) => c.status === "fail") ? 1 : 0;
+  }
+
   printResults(checks, flags.verbose);
   printSummary(checks);
+
+  if (flags.score) {
+    printHealthScore(checks);
+  }
 
   const hasFailures = checks.some((c) => c.status === "fail");
   return hasFailures ? 1 : 0;
@@ -658,12 +1034,15 @@ if (import.meta.main) {
     verbose: argv.some((a) => ["--verbose", "-v"].includes(a)),
     ci: argv.some((a) => a === "--ci"),
     help: argv.some((a) => ["--help", "-h"].includes(a)),
+    score: argv.some((a) => a === "--score"),
+    json: argv.some((a) => a === "--json"),
+    quick: argv.some((a) => a === "--quick"),
   };
 
   main(flags)
     .then((exitCode) => process.exit(exitCode))
     .catch((error) => {
-      console.error(pc.red("\n❌ Unexpected error:"), error);
+      console.error(styleText("red", "\n❌ Unexpected error:"), error);
       process.exit(1);
     });
 }

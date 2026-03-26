@@ -84,29 +84,16 @@ function parseVitestOutput(output: string): ParsedTestStats {
     failedTestNames: [],
   };
 
-  // Parse test counts from Vitest summary line
-  // Example: "Tests  5 passed | 2 failed | 1 skipped (8)"
-  // Or: "✓ 5 passed" "✗ 2 failed"
-  const testSummaryMatch = output.match(/Tests?\s+(\d+)\s+passed(?:\s+\|\s+(\d+)\s+failed)?(?:\s+\|\s+(\d+)\s+skipped)?/i);
-  if (testSummaryMatch) {
-    stats.passed = parseInt(testSummaryMatch[1] ?? "0", 10);
-    stats.failed = parseInt(testSummaryMatch[2] ?? "0", 10);
-    stats.skipped = parseInt(testSummaryMatch[3] ?? "0", 10);
-    stats.totalTests = stats.passed + stats.failed + stats.skipped;
+  // Vitest summary format: "Tests  204 passed (204)" or "Tests  5 passed | 2 failed (7)"
+  const vitestSummary = output.match(/Tests\s+(\d+)\s+passed(?:\s*\|\s*(\d+)\s+failed)?(?:\s*\|\s*(\d+)\s+skipped)?/);
+  if (vitestSummary) {
+    stats.passed += parseInt(vitestSummary[1] ?? "0", 10);
+    stats.failed += parseInt(vitestSummary[2] ?? "0", 10);
+    stats.skipped += parseInt(vitestSummary[3] ?? "0", 10);
   }
 
-  // Alternative format: individual counts
-  const passedMatch = output.match(/✓\s+(\d+)\s+passed/);
-  const failedMatch = output.match(/✗\s+(\d+)\s+failed/);
-  const skippedMatch = output.match(/↓\s+(\d+)\s+skipped/);
-
-  if (passedMatch) stats.passed = parseInt(passedMatch[1] ?? "0", 10);
-  if (failedMatch) stats.failed = parseInt(failedMatch[1] ?? "0", 10);
-  if (skippedMatch) stats.skipped = parseInt(skippedMatch[1] ?? "0", 10);
-
-  if (passedMatch || failedMatch || skippedMatch) {
-    stats.totalTests = stats.passed + stats.failed + stats.skipped;
-  }
+  // Also match "Test Files  N passed (N)" for file count (informational)
+  // But we care about individual test counts above
 
   // Parse duration: "Duration  1.23s" or "Time: 1.23s"
   const durationMatch = output.match(/(?:Duration|Time)[:\s]+(\d+(?:\.\d+)?)\s*s/i);
@@ -114,14 +101,72 @@ function parseVitestOutput(output: string): ParsedTestStats {
     stats.duration = Math.round(parseFloat(durationMatch[1] ?? "0") * 1000);
   }
 
-  // Extract failed test names from output
-  // Pattern: "FAIL tests/foo.test.ts > Test Suite > test name"
+  // Extract failed test names from Vitest output
   const failedTestMatches = output.matchAll(/FAIL\s+(.+?)\s+>\s+(.+)/g);
   for (const match of failedTestMatches) {
     stats.failedTestNames.push(match[2] ?? "Unknown test");
   }
 
+  stats.totalTests = stats.passed + stats.failed + stats.skipped;
   return stats;
+}
+
+/**
+ * Parses .NET xUnit/MSTest output to extract test statistics
+ *
+ * @param output - The stdout/stderr from dotnet test
+ * @returns Parsed test statistics
+ */
+function parseDotnetOutput(output: string): ParsedTestStats {
+  const stats: ParsedTestStats = {
+    totalTests: 0,
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    duration: 0,
+    failedTestNames: [],
+  };
+
+  // .NET test output: "Passed!  - Failed:     0, Passed:  1033, Skipped:     0, Total:  1033, Duration: 2 s"
+  // There may be multiple such lines (one per test assembly)
+  const dotnetMatches = output.matchAll(/(?:Passed!|Failed!)\s*-\s*Failed:\s*(\d+),\s*Passed:\s*(\d+),\s*Skipped:\s*(\d+),\s*Total:\s*(\d+)(?:,\s*Duration:\s*(\d+)\s*s)?/g);
+  for (const match of dotnetMatches) {
+    stats.failed += parseInt(match[1] ?? "0", 10);
+    stats.passed += parseInt(match[2] ?? "0", 10);
+    stats.skipped += parseInt(match[3] ?? "0", 10);
+    stats.totalTests += parseInt(match[4] ?? "0", 10);
+    if (match[5]) {
+      stats.duration += parseInt(match[5], 10) * 1000;
+    }
+  }
+
+  return stats;
+}
+
+/**
+ * Combines test statistics from multiple test runners
+ *
+ * @param runners - Array of parsed stats from different runners
+ * @returns Combined statistics
+ */
+function combineTestStats(...runners: ParsedTestStats[]): ParsedTestStats {
+  const combined: ParsedTestStats = {
+    totalTests: 0,
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    duration: 0,
+    failedTestNames: [],
+  };
+  for (const runner of runners) {
+    combined.totalTests += runner.totalTests;
+    combined.passed += runner.passed;
+    combined.failed += runner.failed;
+    combined.skipped += runner.skipped;
+    combined.duration = Math.max(combined.duration, runner.duration);
+    combined.failedTestNames.push(...runner.failedTestNames);
+  }
+  return combined;
 }
 
 /**
@@ -146,9 +191,11 @@ export async function runTestCheck(): Promise<HygieneCheckResult> {
 
     const totalDuration = Math.round(performance.now() - startTime);
 
-    // Parse test statistics from output
+    // Parse test statistics from output (supports both Vitest and .NET xUnit)
     const combinedOutput = testResult.stdout + "\n" + testResult.stderr;
-    const parsedStats = parseVitestOutput(combinedOutput);
+    const vitestStats = parseVitestOutput(combinedOutput);
+    const dotnetStats = parseDotnetOutput(combinedOutput);
+    const parsedStats = combineTestStats(vitestStats, dotnetStats);
 
     // Use parsed duration or fallback to total duration
     const testDuration = parsedStats.duration > 0 ? parsedStats.duration : totalDuration;

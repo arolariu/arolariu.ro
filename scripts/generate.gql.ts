@@ -11,7 +11,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import pc from "picocolors";
+import {styleText} from "node:util";
 
 /**
  * GraphQL Types generator (placeholder).
@@ -23,23 +23,23 @@ import pc from "picocolors";
  *  3. Output artifacts into a designated cache folder
  */
 export async function main(verbose: boolean = false): Promise<number> {
-  console.log(pc.cyan("🔧 Configuration:\n"));
-  console.log(pc.gray(`   Verbose: ${verbose ? pc.green("✅ Enabled") : pc.red("❌ Disabled")}`));
-  console.log(pc.gray(`   Working Directory: ${pc.dim(process.cwd())}`));
+  console.log(styleText("cyan", "🔧 Configuration:\n"));
+  console.log(styleText("gray", `   Verbose: ${verbose ? styleText("green", "✅ Enabled") : styleText("red", "❌ Disabled")}`));
+  console.log(styleText("gray", `   Working Directory: ${styleText("dim", process.cwd())}`));
   console.log();
 
   // Placeholder logic – ensure folder exists.
   const outDir = path.resolve("scripts", "__generated__", "gql");
   fs.mkdirSync(outDir, {recursive: true});
-  verbose && console.info(pc.gray(`   Ensured output directory: ${outDir}`));
+  verbose && console.info(styleText("gray", `   Ensured output directory: ${outDir}`));
 
   // In the future replace with actual schema + codegen steps.
   const placeholder = `// Generated at ${new Date().toISOString()}\n// TODO: Integrate GraphQL Codegen here.\n`;
   fs.writeFileSync(path.join(outDir, "README.placeholder.txt"), placeholder, "utf-8");
-  verbose && console.info(pc.gray("   Wrote placeholder artifact."));
+  verbose && console.info(styleText("gray", "   Wrote placeholder artifact."));
 
-  console.log(pc.green("✨ GraphQL generation completed (placeholder)."));
-  return 1; // one artifact placeholder written
+  console.log(styleText("green", "✨ GraphQL generation completed (placeholder)."));
+  return 0;
 }
 
 if (import.meta.main) {
@@ -48,15 +48,15 @@ if (import.meta.main) {
   const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
 
   if (wantsHelp) {
-    console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
-    console.log(pc.magenta("║               ||arolariu.ro|| GQL Types Generator - Help         ║"));
-    console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
-    console.log(pc.cyan("Usage:"), pc.gray("npm run generate /gql [optional flags]\n"));
-    console.log(pc.cyan("Flags:"));
-    console.log(`  ${pc.green("/verbose     /v    --verbose     -v")}  Enable verbose logging 🔊`);
-    console.log(`  ${pc.green("/help        /h    --help        -h")}  Show this help menu ❓`);
+    console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
+    console.log(styleText("magenta", "║               ||arolariu.ro|| GQL Types Generator - Help         ║"));
+    console.log(styleText("magenta", "╚══════════════════════════════════════════════════════════════════╝\n"));
+    console.log(styleText("cyan", "Usage:"), styleText("gray", "npm run generate /gql [optional flags]\n"));
+    console.log(styleText("cyan", "Flags:"));
+    console.log(`  ${styleText("green", "/verbose     /v    --verbose     -v")}  Enable verbose logging 🔊`);
+    console.log(`  ${styleText("green", "/help        /h    --help        -h")}  Show this help menu ❓`);
     console.log("\nExample:");
-    console.log(pc.gray("  npm run generate /gql /verbose"));
+    console.log(styleText("gray", "  npm run generate /gql /verbose"));
     process.exit(0);
   }
 
@@ -64,7 +64,7 @@ if (import.meta.main) {
     const code = await main(verbose);
     process.exit(code);
   } catch (err) {
-    console.error(pc.red("GraphQL generation failed:"));
+    console.error(styleText("red", "GraphQL generation failed:"));
     console.error(err);
     process.exit(1);
   }

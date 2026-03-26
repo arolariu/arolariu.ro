@@ -21,7 +21,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import pc from "picocolors";
+import {styleText} from "node:util";
 
 /**
  * Represents either a plain string message or a message formatted with `MessageFormat`.
@@ -131,12 +131,12 @@ function compareMessageKeysNaive(
   const currentKeys = extractMessageKeys(currentTranslationsKeys, verbose);
 
   console.info(
-    `[arolariu.ro::compareMessageKeysNaive] Extracted ${pc.yellow(baseKeys.length)} keys from the base translation file (en.json)`,
+    `[arolariu.ro::compareMessageKeysNaive] Extracted ${styleText("yellow", String(baseKeys.length))} keys from the base translation file (en.json)`,
   );
-  console.info(`[arolariu.ro::compareMessageKeysNaive] Extracted ${pc.yellow(currentKeys.length)} keys from the current translation file.`);
+  console.info(`[arolariu.ro::compareMessageKeysNaive] Extracted ${styleText("yellow", String(currentKeys.length))} keys from the current translation file.`);
 
   if (baseKeys.length === currentKeys.length) {
-    console.info(pc.green("[arolariu.ro::compareMessageKeysNaive] Translation files have equal keys!"));
+    console.info(styleText("green", "[arolariu.ro::compareMessageKeysNaive] Translation files have equal keys!"));
     return true;
   }
 
@@ -229,8 +229,8 @@ function areMessageValuesEqual(baseTranslationMessage: Message, currentTranslati
 
     console.info("[arolariu.ro::areMessageValuesEqual] Finished comparing MessageFormat objects.");
     console.warn(
-      pc.yellow(
-        `[arolariu.ro::areMessageValuesEqual] Found ${pc.red(equalValuesCount)} equal sub-message values out of ${pc.green(baseMessageKeys.length)} total sub-messages.`,
+      styleText("yellow", 
+        `[arolariu.ro::areMessageValuesEqual] Found ${styleText("red", String(equalValuesCount))} equal sub-message values out of ${styleText("green", String(baseMessageKeys.length))} total sub-messages.`,
       ),
     );
     return equalValuesCount === baseMessageKeys.length;
@@ -359,7 +359,7 @@ function validateLocale(
   verbose: boolean,
 ): number {
   const targetFile = path.resolve(translationsPath, `${targetLocale}.json`);
-  console.info(pc.cyan(`\n📋 Validating ${pc.bold(targetLocale.toUpperCase())} translations...`));
+  console.info(styleText("cyan", `\n📋 Validating ${styleText("bold", targetLocale.toUpperCase())} translations...`));
 
   const targetTranslations = loadTranslationFile(targetFile, verbose);
   const targetKeys = extractMessageKeys(targetTranslations, verbose);
@@ -368,10 +368,10 @@ function validateLocale(
   const missingKeys = findMissingKeys(enKeys, targetKeys, verbose);
 
   if (missingKeys.length > 0) {
-    console.info(pc.yellow(`[arolariu.ro::generateTranslations] Writing ${missingKeys.length} missing keys to ${targetLocale}.json...`));
+    console.info(styleText("yellow", `[arolariu.ro::generateTranslations] Writing ${missingKeys.length} missing keys to ${targetLocale}.json...`));
     writeTranslationKeysFile(targetFile, missingKeys, verbose);
   } else {
-    console.log(pc.green(`[arolariu.ro::generateTranslations] No missing keys detected for ${targetLocale}.`));
+    console.log(styleText("green", `[arolariu.ro::generateTranslations] No missing keys detected for ${targetLocale}.`));
   }
 
   areMessageValuesEqual(enTranslations, targetTranslations, verbose);
@@ -385,9 +385,9 @@ function validateLocale(
  * @param verbose A boolean flag that indicates if the script should log verbose output.
  */
 export async function main(verbose: boolean = false): Promise<number> {
-  console.log(pc.cyan("🔧 Configuration:\n"));
-  console.log(pc.gray(`   Verbose: ${verbose ? pc.green("✅ Enabled") : pc.red("❌ Disabled")}`));
-  console.log(pc.gray(`   Working Directory: ${pc.dim(process.cwd())}`));
+  console.log(styleText("cyan", "🔧 Configuration:\n"));
+  console.log(styleText("gray", `   Verbose: ${verbose ? styleText("green", "✅ Enabled") : styleText("red", "❌ Disabled")}`));
+  console.log(styleText("gray", `   Working Directory: ${styleText("dim", process.cwd())}`));
   console.log();
 
   console.info("[arolariu.ro::generateTranslations] Generating translations...");
@@ -405,7 +405,7 @@ export async function main(verbose: boolean = false): Promise<number> {
 
   console.info("[arolariu.ro::generateTranslations] Extracting English translation keys...");
   const enKeys = extractMessageKeys(enTranslations, verbose);
-  console.info(pc.gray(`   Total English keys: ${pc.green(String(enKeys.length))}`));
+  console.info(styleText("gray", `   Total English keys: ${styleText("green", String(enKeys.length))}`));
 
   // Validate each supported locale against English
   let totalMissingKeys = 0;
@@ -418,15 +418,15 @@ export async function main(verbose: boolean = false): Promise<number> {
   }
 
   // Summary output
-  console.log(pc.green("\n✨ i18n synchronization completed."));
-  console.log(pc.cyan("📊 Summary:"));
-  console.log(pc.gray(`   English keys (source): ${pc.green(String(enKeys.length))}`));
+  console.log(styleText("green", "\n✨ i18n synchronization completed."));
+  console.log(styleText("cyan", "📊 Summary:"));
+  console.log(styleText("gray", `   English keys (source): ${styleText("green", String(enKeys.length))}`));
   for (const locale of SUPPORTED_LOCALES) {
     const count = localeResults[locale];
-    const status = count === 0 ? pc.green("✓ complete") : pc.yellow(`${count} keys added`);
-    console.log(pc.gray(`   ${locale.toUpperCase()}: ${status}`));
+    const status = count === 0 ? styleText("green", "✓ complete") : styleText("yellow", `${count} keys added`);
+    console.log(styleText("gray", `   ${locale.toUpperCase()}: ${status}`));
   }
-  console.log(pc.gray(`   Total missing keys added: ${pc.green(String(totalMissingKeys))}`));
+  console.log(styleText("gray", `   Total missing keys added: ${styleText("green", String(totalMissingKeys))}`));
 
   return totalMissingKeys;
 }
@@ -437,22 +437,22 @@ if (import.meta.main) {
   const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
 
   if (wantsHelp) {
-    console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
-    console.log(pc.magenta("║                   ||arolariu.ro|| i18n Generator - Help          ║"));
-    console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
-    console.log(pc.cyan("Usage:"), pc.gray("npm run generate /i18n [flags]\n"));
-    console.log(pc.cyan("Description:"));
-    console.log(pc.gray("  Validates and synchronizes translation files against English (en.json)."));
-    console.log(pc.gray("  Ensures all supported locales have matching translation keys.\n"));
-    console.log(pc.cyan("Supported Locales:"));
-    console.log(pc.gray("  • en.json - English (source of truth)"));
-    console.log(pc.gray("  • ro.json - Romanian"));
-    console.log(pc.gray("  • fr.json - French\n"));
-    console.log(pc.cyan("Flags:"));
-    console.log(`  ${pc.green("/verbose     /v    --verbose     -v")}  Enable verbose logging 🔊`);
-    console.log(`  ${pc.green("/help        /h    --help        -h")}  Show this help menu ❓`);
+    console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
+    console.log(styleText("magenta", "║                   ||arolariu.ro|| i18n Generator - Help          ║"));
+    console.log(styleText("magenta", "╚══════════════════════════════════════════════════════════════════╝\n"));
+    console.log(styleText("cyan", "Usage:"), styleText("gray", "npm run generate /i18n [flags]\n"));
+    console.log(styleText("cyan", "Description:"));
+    console.log(styleText("gray", "  Validates and synchronizes translation files against English (en.json)."));
+    console.log(styleText("gray", "  Ensures all supported locales have matching translation keys.\n"));
+    console.log(styleText("cyan", "Supported Locales:"));
+    console.log(styleText("gray", "  • en.json - English (source of truth)"));
+    console.log(styleText("gray", "  • ro.json - Romanian"));
+    console.log(styleText("gray", "  • fr.json - French\n"));
+    console.log(styleText("cyan", "Flags:"));
+    console.log(`  ${styleText("green", "/verbose     /v    --verbose     -v")}  Enable verbose logging 🔊`);
+    console.log(`  ${styleText("green", "/help        /h    --help        -h")}  Show this help menu ❓`);
     console.log("\nExample:");
-    console.log(pc.gray("  npm run generate /i18n /verbose"));
+    console.log(styleText("gray", "  npm run generate /i18n /verbose"));
     process.exit(0);
   }
 
@@ -460,7 +460,7 @@ if (import.meta.main) {
     const code = await main(verbose);
     process.exit(code);
   } catch (err) {
-    console.error(pc.red("i18n generation failed:"));
+    console.error(styleText("red", "i18n generation failed:"));
     console.error(err);
     process.exit(1);
   }

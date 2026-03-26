@@ -18,7 +18,7 @@ import {execSync} from "child_process";
 import {existsSync, mkdirSync} from "fs";
 import {homedir, platform, tmpdir} from "os";
 import {join} from "path";
-import pc from "picocolors";
+import {styleText} from "node:util";
 
 const REQUIRED_DOTNET_VERSION = 10;
 const REQUIRED_NODE_VERSION = 24;
@@ -119,7 +119,7 @@ function getNpmVersion(): {installed: boolean; version: string; majorVersion: nu
  * @returns `true` when installation succeeded; otherwise `false`.
  */
 async function installDotnet(): Promise<boolean> {
-  console.log(pc.cyan("\n📥 Installing .NET 10 SDK..."));
+  console.log(styleText("cyan", "\n📥 Installing .NET 10 SDK..."));
 
   const isWindows = platform() === "win32";
   const installDir = join(homedir(), ".dotnet");
@@ -132,7 +132,7 @@ async function installDotnet(): Promise<boolean> {
 
     if (isWindows) {
       // Download and run PowerShell install script
-      console.log(pc.gray("  → Downloading .NET install script for Windows..."));
+      console.log(styleText("gray", "  → Downloading .NET install script for Windows..."));
       const scriptPath = join(tmpdir(), "dotnet-install.ps1");
 
       // Download the script
@@ -142,14 +142,14 @@ async function installDotnet(): Promise<boolean> {
       );
 
       // Run the script to install .NET 10
-      console.log(pc.gray("  → Installing .NET 10 SDK..."));
+      console.log(styleText("gray", "  → Installing .NET 10 SDK..."));
       execSync(
         `powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}" -Channel 10.0 -InstallDir "${installDir}" -Version latest`,
         {stdio: "inherit"},
       );
     } else {
       // Download and run bash install script for Linux/macOS
-      console.log(pc.gray("  → Downloading .NET install script for Unix..."));
+      console.log(styleText("gray", "  → Downloading .NET install script for Unix..."));
       const scriptPath = join(tmpdir(), "dotnet-install.sh");
 
       // Download the script
@@ -157,7 +157,7 @@ async function installDotnet(): Promise<boolean> {
       execSync(`chmod +x "${scriptPath}"`, {stdio: "inherit"});
 
       // Run the script to install .NET 10
-      console.log(pc.gray("  → Installing .NET 10 SDK..."));
+      console.log(styleText("gray", "  → Installing .NET 10 SDK..."));
       execSync(`"${scriptPath}" --channel 10.0 --install-dir "${installDir}" --version latest`, {stdio: "inherit"});
     }
 
@@ -165,13 +165,14 @@ async function installDotnet(): Promise<boolean> {
     process.env["PATH"] = `${installDir}${isWindows ? ";" : ":"}${process.env["PATH"]}`;
     process.env["DOTNET_ROOT"] = installDir;
 
-    console.log(pc.green("  ✓ .NET 10 SDK installed successfully!"));
-    console.log(pc.yellow(`  ⚠ Please add ${installDir} to your PATH environment variable permanently.`));
-    console.log(pc.yellow(`  ⚠ Also set DOTNET_ROOT=${installDir}`));
+    console.log(styleText("green", "  ✓ .NET 10 SDK installed successfully!"));
+    console.log(styleText("yellow", `  ⚠ Please add ${installDir} to your PATH environment variable permanently.`));
+    console.log(styleText("yellow", `  ⚠ Also set DOTNET_ROOT=${installDir}`));
 
     return true;
-  } catch (error: any) {
-    console.error(pc.red("  ✗ Failed to install .NET 10 SDK:"), error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(styleText("red", "  ✗ Failed to install .NET 10 SDK:"), message);
     return false;
   }
 }
@@ -188,7 +189,7 @@ async function installDotnet(): Promise<boolean> {
  * @returns `true` when installation completed; otherwise `false`.
  */
 async function installNodeJs(): Promise<boolean> {
-  console.log(pc.cyan("\n📥 Installing Node.js 24..."));
+  console.log(styleText("cyan", "\n📥 Installing Node.js 24..."));
 
   const currentPlatform = platform();
   const arch = process.arch;
@@ -204,7 +205,7 @@ async function installNodeJs(): Promise<boolean> {
 
   try {
     if (currentPlatform === "win32") {
-      console.log(pc.gray("  → Downloading Node.js 24 installer for Windows..."));
+      console.log(styleText("gray", "  → Downloading Node.js 24 installer for Windows..."));
       const installerUrl = `https://nodejs.org/dist/v24.9.0/node-v24.9.0-${nodeArch}.msi`;
       const installerPath = join(tmpdir(), "node-installer.msi");
 
@@ -212,22 +213,22 @@ async function installNodeJs(): Promise<boolean> {
         stdio: "inherit",
       });
 
-      console.log(pc.gray("  → Running Node.js installer..."));
-      console.log(pc.yellow("  ⚠ Please follow the installation wizard to complete the installation."));
+      console.log(styleText("gray", "  → Running Node.js installer..."));
+      console.log(styleText("yellow", "  ⚠ Please follow the installation wizard to complete the installation."));
       execSync(`msiexec /i "${installerPath}" /qn`, {stdio: "inherit"});
     } else if (currentPlatform === "darwin") {
-      console.log(pc.gray("  → Downloading Node.js 24 package for macOS..."));
+      console.log(styleText("gray", "  → Downloading Node.js 24 package for macOS..."));
       const installerUrl = `https://nodejs.org/dist/v24.9.0/node-v24.9.0.pkg`;
       const installerPath = join(tmpdir(), "node-installer.pkg");
 
       execSync(`curl -o "${installerPath}" "${installerUrl}"`, {stdio: "inherit"});
 
-      console.log(pc.gray("  → Running Node.js installer..."));
-      console.log(pc.yellow("  ⚠ You may be prompted for your password."));
+      console.log(styleText("gray", "  → Running Node.js installer..."));
+      console.log(styleText("yellow", "  ⚠ You may be prompted for your password."));
       execSync(`sudo installer -pkg "${installerPath}" -target /`, {stdio: "inherit"});
     } else {
       // Linux - download and extract tarball
-      console.log(pc.gray("  → Downloading Node.js 24 for Linux..."));
+      console.log(styleText("gray", "  → Downloading Node.js 24 for Linux..."));
       const installDir = join(homedir(), ".nodejs");
       const tarballUrl = `https://nodejs.org/dist/v24.9.0/node-v24.9.0-linux-${nodeArch}.tar.xz`;
       const tarballPath = join(tmpdir(), "node.tar.xz");
@@ -238,23 +239,24 @@ async function installNodeJs(): Promise<boolean> {
         mkdirSync(installDir, {recursive: true});
       }
 
-      console.log(pc.gray("  → Extracting Node.js..."));
+      console.log(styleText("gray", "  → Extracting Node.js..."));
       execSync(`tar -xf "${tarballPath}" -C "${installDir}" --strip-components=1`, {stdio: "inherit"});
 
       // Add to PATH for current session
       const binDir = join(installDir, "bin");
       process.env["PATH"] = `${binDir}:${process.env["PATH"]}`;
 
-      console.log(pc.yellow(`  ⚠ Please add ${binDir} to your PATH environment variable permanently.`));
+      console.log(styleText("yellow", `  ⚠ Please add ${binDir} to your PATH environment variable permanently.`));
     }
 
-    console.log(pc.green("  ✓ Node.js 24 installation completed!"));
-    console.log(pc.yellow("  ⚠ You may need to restart your terminal or IDE for changes to take effect."));
+    console.log(styleText("green", "  ✓ Node.js 24 installation completed!"));
+    console.log(styleText("yellow", "  ⚠ You may need to restart your terminal or IDE for changes to take effect."));
 
     return true;
-  } catch (error: any) {
-    console.error(pc.red("  ✗ Failed to install Node.js 24:"), error.message);
-    console.log(pc.yellow("\n  💡 Please install Node.js 24 manually from https://nodejs.org/"));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(styleText("red", "  ✗ Failed to install Node.js 24:"), message);
+    console.log(styleText("yellow", "\n  💡 Please install Node.js 24 manually from https://nodejs.org/"));
     return false;
   }
 }
@@ -271,101 +273,102 @@ async function installNodeJs(): Promise<boolean> {
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(): Promise<number> {
-  console.log(pc.bold(pc.magenta("\n╔════════════════════════════════════════╗")));
-  console.log(pc.bold(pc.magenta("║   arolariu.ro Development Setup Tool   ║")));
-  console.log(pc.bold(pc.magenta("╚════════════════════════════════════════╝\n")));
+  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  console.log(styleText(["bold", "magenta"], "║   arolariu.ro Development Setup Tool   ║"));
+  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   let hasErrors = false;
 
   // Check .NET version
-  console.log(pc.bold("\n🔍 Checking .NET SDK..."));
+  console.log(styleText("bold", "\n🔍 Checking .NET SDK..."));
   const dotnetInfo = getDotnetVersion();
 
   if (!dotnetInfo.installed) {
-    console.log(pc.red(`  ✗ .NET is not installed`));
-    console.log(pc.yellow(`  → Required: .NET ${REQUIRED_DOTNET_VERSION}.x`));
+    console.log(styleText("red", `  ✗ .NET is not installed`));
+    console.log(styleText("yellow", `  → Required: .NET ${REQUIRED_DOTNET_VERSION}.x`));
 
     const installed = await installDotnet();
     if (!installed) {
       hasErrors = true;
     }
   } else if (dotnetInfo.majorVersion < REQUIRED_DOTNET_VERSION) {
-    console.log(pc.yellow(`  ⚠ Found .NET ${dotnetInfo.version}`));
-    console.log(pc.yellow(`  → Required: .NET ${REQUIRED_DOTNET_VERSION}.x`));
+    console.log(styleText("yellow", `  ⚠ Found .NET ${dotnetInfo.version}`));
+    console.log(styleText("yellow", `  → Required: .NET ${REQUIRED_DOTNET_VERSION}.x`));
 
     const installed = await installDotnet();
     if (!installed) {
       hasErrors = true;
     }
   } else {
-    console.log(pc.green(`  ✓ .NET ${dotnetInfo.version} is installed`));
+    console.log(styleText("green", `  ✓ .NET ${dotnetInfo.version} is installed`));
   }
 
   // Check Node.js version
-  console.log(pc.bold("\n🔍 Checking Node.js..."));
+  console.log(styleText("bold", "\n🔍 Checking Node.js..."));
   const nodeInfo = getNodeVersion();
 
   if (!nodeInfo.installed) {
-    console.log(pc.red(`  ✗ Node.js is not installed`));
-    console.log(pc.yellow(`  → Required: Node.js ${REQUIRED_NODE_VERSION}.x or higher`));
+    console.log(styleText("red", `  ✗ Node.js is not installed`));
+    console.log(styleText("yellow", `  → Required: Node.js ${REQUIRED_NODE_VERSION}.x or higher`));
 
     const installed = await installNodeJs();
     if (!installed) {
       hasErrors = true;
     }
   } else if (nodeInfo.majorVersion < REQUIRED_NODE_VERSION) {
-    console.log(pc.yellow(`  ⚠ Found Node.js ${nodeInfo.version}`));
-    console.log(pc.yellow(`  → Required: Node.js ${REQUIRED_NODE_VERSION}.x or higher`));
+    console.log(styleText("yellow", `  ⚠ Found Node.js ${nodeInfo.version}`));
+    console.log(styleText("yellow", `  → Required: Node.js ${REQUIRED_NODE_VERSION}.x or higher`));
 
     const installed = await installNodeJs();
     if (!installed) {
       hasErrors = true;
     }
   } else {
-    console.log(pc.green(`  ✓ Node.js ${nodeInfo.version} is installed`));
+    console.log(styleText("green", `  ✓ Node.js ${nodeInfo.version} is installed`));
   }
 
   // Check npm version
-  console.log(pc.bold("\n🔍 Checking npm..."));
+  console.log(styleText("bold", "\n🔍 Checking npm..."));
   const npmInfo = getNpmVersion();
 
   if (!npmInfo.installed) {
-    console.log(pc.red(`  ✗ npm is not installed`));
-    console.log(pc.yellow(`  → npm should be installed with Node.js`));
+    console.log(styleText("red", `  ✗ npm is not installed`));
+    console.log(styleText("yellow", `  → npm should be installed with Node.js`));
     hasErrors = true;
   } else if (npmInfo.majorVersion < REQUIRED_NPM_VERSION) {
-    console.log(pc.yellow(`  ⚠ Found npm ${npmInfo.version}`));
-    console.log(pc.yellow(`  → Required: npm ${REQUIRED_NPM_VERSION}.x or higher`));
-    console.log(pc.gray(`  → Updating npm...`));
+    console.log(styleText("yellow", `  ⚠ Found npm ${npmInfo.version}`));
+    console.log(styleText("yellow", `  → Required: npm ${REQUIRED_NPM_VERSION}.x or higher`));
+    console.log(styleText("gray", `  → Updating npm...`));
 
     try {
       execSync("npm install -g npm@latest", {stdio: "inherit"});
-      console.log(pc.green(`  ✓ npm updated successfully`));
-    } catch (error: any) {
-      console.error(pc.red(`  ✗ Failed to update npm: ${error.message}`));
+      console.log(styleText("green", `  ✓ npm updated successfully`));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(styleText("red", `  ✗ Failed to update npm: ${msg}`));
       hasErrors = true;
     }
   } else {
-    console.log(pc.green(`  ✓ npm ${npmInfo.version} is installed`));
+    console.log(styleText("green", `  ✓ npm ${npmInfo.version} is installed`));
   }
 
   // Stop if there were critical errors
   if (hasErrors) {
-    console.log(pc.bold(pc.red("\n❌ Setup encountered errors. Please resolve them before continuing.\n")));
+    console.log(styleText(["bold", "red"], "\n❌ Setup encountered errors. Please resolve them before continuing.\n"));
     return 1;
   }
 
   // Final summary
   if (hasErrors) {
-    console.log(pc.bold(pc.red("\n❌ Setup completed with errors.\n")));
+    console.log(styleText(["bold", "red"], "\n❌ Setup completed with errors.\n"));
     return 1;
   }
 
-  console.log(pc.bold(pc.green("\n✅ Setup completed successfully!")));
-  console.log(pc.gray("\n📝 Next steps:"));
-  console.log(pc.gray("  1. Restart your terminal or IDE if you installed new software"));
-  console.log(pc.gray("  2. Run 'npm run dev' to start development"));
-  console.log(pc.gray("  3. Check the README.md for more information\n"));
+  console.log(styleText(["bold", "green"], "\n✅ Setup completed successfully!"));
+  console.log(styleText("gray", "\n📝 Next steps:"));
+  console.log(styleText("gray", "  1. Restart your terminal or IDE if you installed new software"));
+  console.log(styleText("gray", "  2. Run 'npm run dev' to start development"));
+  console.log(styleText("gray", "  3. Check the README.md for more information\n"));
 
   return 0;
 }
@@ -374,7 +377,7 @@ if (import.meta.main) {
   main()
     .then((exitCode) => process.exit(exitCode))
     .catch((error) => {
-      console.error(pc.red("\n❌ Unexpected error:"), error);
+      console.error(styleText("red", "\n❌ Unexpected error:"), error);
       process.exit(1);
     });
 }
