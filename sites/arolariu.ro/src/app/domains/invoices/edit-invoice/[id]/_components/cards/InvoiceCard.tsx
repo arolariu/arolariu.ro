@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Input,
   Label,
   Popover,
@@ -162,8 +163,8 @@ export default function InvoiceCard(): React.JSX.Element {
 
   return (
     <motion.div variants={{hidden: {opacity: 0}, visible: {opacity: 1}}}>
-      <Card className={styles["card"]}>
-        <CardHeader className={styles["cardHeader"]}>
+      <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
+        <CardHeader className='pb-3'>
           <div className={styles["headerRow"]}>
             <CardTitle>{t("title")}</CardTitle>
             <TooltipProvider>
@@ -172,9 +173,9 @@ export default function InvoiceCard(): React.JSX.Element {
                   render={
                     <Badge
                       variant={currentIsImportant === true ? "default" : "outline"}
-                      className={styles["importantBadge"]}
+                      className='cursor-pointer transition-transform hover:scale-105'
                       onClick={handleImportantToggle}>
-                      <TbHeart className={currentIsImportant ? styles["heartIconFilled"] : styles["heartIcon"]} />
+                      <TbHeart className={cn("text-red-500 hover:text-red-700", currentIsImportant && "fill-red-500")} />
                       {currentIsImportant ? t("importantBadge") : t("markImportant")}
                     </Badge>
                   }
@@ -187,36 +188,36 @@ export default function InvoiceCard(): React.JSX.Element {
           </div>
           <CardDescription>
             {t("fromMerchant", {merchant: merchant.name})}
-            <Separator />
+            <Separator className='my-2' />
             <Textarea
               value={currentDescription}
               onChange={handleDescriptionChange}
               placeholder={t("descriptionPlaceholder")}
-              className={styles["descriptionTextarea"]}
+              className='min-h-20 resize-none'
               rows={3}
             />
           </CardDescription>
         </CardHeader>
-        <CardContent className={styles["cardContent"]}>
+        <CardContent className='space-y-4'>
           <div className={styles["detailsGrid"]}>
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className={styles["detailLabel"]}>{t("labels.dateUtc")}</h3>
               <div className={styles["dateRow"]}>
-                <TbCalendar className={styles["mutedIcon"]} />
+                <TbCalendar className='text-muted-foreground mr-2 h-4 w-4' />
                 <Popover>
                   <PopoverTrigger
                     render={
                       <Button
                         variant='outline'
-                        className={styles["dateButton"]}>
+                        className='w-64 justify-start text-left font-normal'>
                         {formatDate(currentTransactionDate, {dateStyle: "full", timeStyle: "short", timeZone: "UTC", locale})}
                       </Button>
                     }
                   />
                   <PopoverContent
-                    className={styles["popoverContent"]}
+                    className='w-auto p-4'
                     align='start'>
                     <Calendar
                       mode='single'
@@ -226,9 +227,9 @@ export default function InvoiceCard(): React.JSX.Element {
                       captionLayout='dropdown'
                       startMonth={new Date(2015, 0)}
                       endMonth={new Date(new Date().getFullYear() + 1, 11)}
-                      className={styles["calendar"]}
+                      className='w-64 rounded-md border [--cell-size:2.5rem]'
                     />
-                    <Separator />
+                    <Separator className='my-3' />
                     <div className={styles["timePicker"]}>
                       <div className={styles["timeColumn"]}>
                         <Label
@@ -243,7 +244,7 @@ export default function InvoiceCard(): React.JSX.Element {
                           max={23}
                           value={currentTransactionDate.getUTCHours()}
                           onChange={handleHoursChange}
-                          className={styles["timeInput"]}
+                          className='h-9 w-16 text-center'
                         />
                       </div>
                       <span className={styles["timeSeparator"]}>:</span>
@@ -260,7 +261,7 @@ export default function InvoiceCard(): React.JSX.Element {
                           max={59}
                           value={currentTransactionDate.getUTCMinutes()}
                           onChange={handleMinutesChange}
-                          className={styles["timeInput"]}
+                          className='h-9 w-16 text-center'
                         />
                       </div>
                       <span className={styles["timeUtc"]}>{t("labels.utc")}</span>
@@ -274,11 +275,11 @@ export default function InvoiceCard(): React.JSX.Element {
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className={styles["detailLabel"]}>{t("labels.category")}</h3>
               <div className={styles["categoryRow"]}>
-                <TbTag className={styles["mutedIcon"]} />
+                <TbTag className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentCategory)}
                   onValueChange={handleCategoryChange}>
-                  <SelectTrigger className={styles["categoryTrigger"]}>
+                  <SelectTrigger className='w-40'>
                     <SelectValue placeholder={t("placeholders.selectCategory")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -298,11 +299,11 @@ export default function InvoiceCard(): React.JSX.Element {
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className={styles["detailLabel"]}>{t("labels.paymentMethod")}</h3>
               <div className={styles["paymentRow"]}>
-                <TbCreditCard className={styles["mutedIcon"]} />
+                <TbCreditCard className='text-muted-foreground mr-2 h-4 w-4' />
                 <Select
                   value={String(currentPaymentType)}
                   onValueChange={handlePaymentTypeChange}>
-                  <SelectTrigger className={styles["paymentTrigger"]}>
+                  <SelectTrigger className='w-45'>
                     <SelectValue placeholder={t("placeholders.selectPaymentType")} />
                   </SelectTrigger>
                   <SelectContent>

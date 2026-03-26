@@ -66,17 +66,17 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
   return (
     <Tabs
       defaultValue='link'
-      className={styles["tabsRoot"]}>
-      <TabsList className={styles["tabsList"]}>
+      className='w-full'>
+      <TabsList className='grid w-full grid-cols-2'>
         <TabsTrigger
           value='link'
-          className={styles["tabsTrigger"]}>
+          className='cursor-pointer'>
           <TbCopy className={styles["tabIcon"]} />
           {t("tabs.directLink")}
         </TabsTrigger>
         <TabsTrigger
           value='qr'
-          className={styles["tabsTrigger"]}>
+          className='cursor-pointer'>
           <TbQrcode className={styles["tabIcon"]} />
           {t("tabs.qrCode")}
         </TabsTrigger>
@@ -84,12 +84,12 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
 
       <TabsContent
         value='link'
-        className={`${styles["linkTabContent"]} ${styles["body"]}`}>
+        className={`mt-4 ${styles["body"]}`}>
         <div className={styles["linkRow"]}>
           <Input
             value={shareUrl}
             readOnly
-            className={styles["inputMono"]}
+            className='flex-1 font-mono text-xs'
           />
           <Button
             size='icon'
@@ -103,7 +103,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
 
       <TabsContent
         value='qr'
-        className={styles["qrTabContent"]}>
+        className='mt-4'>
         <div className={styles["qrContainer"]}>
           <div className={styles["qrWrapper"]}>
             <QRCode
@@ -119,7 +119,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
           <Button
             variant='outline'
             onClick={onCopyQRCode}
-            className={styles["buttonFull"]}>
+            className='w-full'>
             <TbCopy className={styles["tabIcon"]} />
             {t("copyQrImage")}
           </Button>
@@ -154,10 +154,10 @@ export function AlreadyPublicMode({
     <div className={styles["body"]}>
       <Alert
         variant='destructive'
-        className={styles["alertWarning"]}>
+        className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
         <TbGlobe className={styles["globeAlertIcon"]} />
-        <AlertTitle className={styles["alertWarningTitle"]}>{t("alreadyPublic.title")}</AlertTitle>
-        <AlertDescription className={styles["alertWarningDescription"]}>
+        <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("alreadyPublic.title")}</AlertTitle>
+        <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
           {t.rich("alreadyPublic.description", {strong: RichTextStrong})}
         </AlertDescription>
       </Alert>
@@ -174,7 +174,7 @@ export function AlreadyPublicMode({
           variant='destructive'
           onClick={onRevokeAccess}
           disabled={isRevoking}
-          className={styles["buttonFull"]}>
+          className='w-full'>
           <TbShieldOff className={styles["tabIcon"]} />
           {isRevoking ? t("alreadyPublic.revoking") : t("alreadyPublic.revoke")}
         </Button>
@@ -204,17 +204,17 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         variant='ghost'
         size='sm'
         onClick={onBack}
-        className={styles["backButton"]}>
+        className='mb-2 -ml-2'>
         <TbArrowLeft className={styles["backIcon"]} />
         {t("backToOptions")}
       </Button>
 
       <Alert
         variant='destructive'
-        className={styles["alertWarning"]}>
+        className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
-        <AlertTitle className={styles["alertWarningTitle"]}>{t("warning.title")}</AlertTitle>
-        <AlertDescription className={styles["alertWarningDescription"]}>
+        <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("warning.title")}</AlertTitle>
+        <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
           {t.rich("warning.description", {strong: RichTextStrong})}
         </AlertDescription>
       </Alert>

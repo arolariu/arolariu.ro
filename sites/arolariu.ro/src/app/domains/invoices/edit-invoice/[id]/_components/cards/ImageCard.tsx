@@ -99,19 +99,19 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
 
   return (
     <TooltipProvider>
-      <Card className={styles["card"]}>
-        <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>
+      <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
+        <CardHeader className='flex flex-row items-center justify-between'>
+          <CardTitle className='text-lg'>
             {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
           </CardTitle>
         </CardHeader>
-        <CardContent className={styles["cardContent"]}>
+        <CardContent className='flex justify-center'>
           <Dialog
             open={isZoomOpen}
             onOpenChange={setIsZoomOpen}>
             <Button
               variant='ghost'
-              className={styles["imageButton"]}
+              className='group/image relative h-auto w-full cursor-pointer overflow-hidden rounded-md border p-0'
               onClick={handleOpenZoom}
               aria-label={t("aria.expandImage")}>
               <Image
@@ -122,10 +122,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 className={isTransitioning ? styles["receiptImageTransitioning"] : styles["receiptImageNormal"]}
               />
               <div className={styles["zoomOverlayVisible"]}>
-                <TbZoomIn className={styles["zoomIcon"]} />
+                <TbZoomIn className='h-8 w-8' />
               </div>
             </Button>
-            <DialogContent className={styles["zoomDialogContent"]}>
+            <DialogContent className='max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1
@@ -145,16 +145,16 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
             </DialogContent>
           </Dialog>
         </CardContent>
-        <CardFooter className={styles["cardFooter"]}>
+        <CardFooter className='flex flex-col gap-2'>
           {/* Expand button */}
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   variant='outline'
-                  className={styles["fullWidthButton"]}
+                  className='w-full cursor-pointer'
                   onClick={handleOpenZoom}>
-                  <TbZoomIn className={styles["buttonIcon"]} />
+                  <TbZoomIn className='mr-2 h-4 w-4' />
                   {t("buttons.expand")}
                 </Button>
               }
@@ -173,9 +173,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                     render={
                       <Button
                         variant='secondary'
-                        className={styles["navButton"]}
+                        className='flex-1 cursor-pointer'
                         onClick={handlePreviousScan}>
-                        <TbChevronLeft className={styles["chevronIcon"]} />
+                        <TbChevronLeft className='mr-1 h-4 w-4' />
                         {t("buttons.previous")}
                       </Button>
                     }
@@ -191,10 +191,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                     render={
                       <Button
                         variant='secondary'
-                        className={styles["navButton"]}
+                        className='flex-1 cursor-pointer'
                         onClick={handleNextScan}>
                         {t("buttons.next")}
-                        <TbChevronRight className={styles["chevronIconRight"]} />
+                        <TbChevronRight className='ml-1 h-4 w-4' />
                       </Button>
                     }
                   />
@@ -213,9 +213,9 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 render={
                   <Button
                     variant='outline'
-                    className={styles["actionButtonFlex"]}
+                    className='flex-1 cursor-pointer'
                     onClick={openAddScan}>
-                    <TbPlus className={styles["chevronIcon"]} />
+                    <TbPlus className='mr-1 h-4 w-4' />
                     {t("buttons.addScan")}
                   </Button>
                 }
@@ -229,10 +229,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 render={
                   <Button
                     variant='outline'
-                    className={styles["removeButton"]}
+                    className='text-destructive hover:bg-destructive hover:text-destructive-foreground flex-1 cursor-pointer'
                     onClick={openRemoveScan}
                     disabled={totalScans === 0}>
-                    <TbTrash className={styles["chevronIcon"]} />
+                    <TbTrash className='mr-1 h-4 w-4' />
                     {t("buttons.remove")}
                   </Button>
                 }

@@ -26,8 +26,10 @@ export function getAzureCredential(): TokenCredential {
     try {
       const clientId = process.env["AZURE_CLIENT_ID"];
       cachedCredential = clientId ? new DefaultAzureCredential({managedIdentityClientId: clientId}) : new DefaultAzureCredential();
-    } catch (cause) {
-      throw new Error("Azure credential initialization failed. Ensure AZURE_CLIENT_ID is set or Azure CLI is authenticated.", {cause});
+    } catch (error) {
+      throw new Error("Azure credential initialization failed. Ensure AZURE_CLIENT_ID is set or Azure CLI is authenticated.", {
+        cause: error,
+      });
     }
   }
   return cachedCredential;

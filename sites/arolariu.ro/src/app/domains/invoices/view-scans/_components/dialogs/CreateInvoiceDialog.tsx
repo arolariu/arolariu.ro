@@ -214,7 +214,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}>
       <DialogHeader>
-        <DialogTitle className={styles["dialogTitle"]}>
+        <DialogTitle className='flex items-center gap-2'>
           <TbFileInvoice className={styles["dialogTitleIcon"]} />
           {selectedScans.length > 1 ? t("titlePlural") : t("title")}
         </DialogTitle>
@@ -256,10 +256,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <RadioGroupItem
                 value='single'
                 id='single'
-                className={styles["radioItem"]}
+                className='mt-0.5'
               />
               <div className={styles["modeOptionContent"]}>
-                <span className={styles["modeLabelText"]}>
+                <span className='flex cursor-pointer items-center gap-2 font-medium'>
                   <TbPhoto className={styles["modePurpleIcon"]} />
                   {t("singleMode.title")}
                 </span>
@@ -273,10 +273,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <RadioGroupItem
                 value='batch'
                 id='batch'
-                className={styles["radioItem"]}
+                className='mt-0.5'
               />
               <div className={styles["modeOptionContent"]}>
-                <span className={styles["modeLabelText"]}>
+                <span className='flex cursor-pointer items-center gap-2 font-medium'>
                   <TbStack2 className={styles["modeBlueIcon"]} />
                   {t("batchMode.title")}
                 </span>
@@ -305,8 +305,9 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
           {t("buttons.cancel")}
         </Button>
         <Button
+          // eslint-disable-next-line react/jsx-no-bind -- complex async handler; React Compiler auto-memoizes
           onClick={handleCreate}
-          className={styles["createButton"]}>
+          className='bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
           {mode === "batch" || selectedScans.length === 1
             ? t("buttons.createSingle")
             : t("buttons.createMultiple", {count: String(selectedScans.length)})}
@@ -341,7 +342,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       <div className={styles["progressSection"]}>
         <Progress
           value={progress}
-          className={styles["progressBar"]}
+          className='h-2'
         />
         <p className={styles["progressLabel"]}>{progress}%</p>
       </div>
@@ -399,7 +400,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         <DialogFooter className={styles["completeFooter"]}>
           <Button
             onClick={handleClose}
-            className={styles["completeButton"]}>
+            className='bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'>
             {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
             <TbArrowRight className={styles["arrowRightIcon"]} />
           </Button>
@@ -412,7 +413,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent className='sm:max-w-lg'>
         <AnimatePresence mode='wait'>
           {step === "select" ? renderSelectStep() : null}
           {step === "creating" ? renderCreatingStep() : null}

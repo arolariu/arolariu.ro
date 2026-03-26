@@ -1345,13 +1345,12 @@ export function logWithTrace(level: LogLevel, message: string, attributes?: Reco
   };
 
   const normalizedAttributes: Record<string, boolean | number | string> = {};
-  const mergedAttributes: Record<string, unknown> = {
+  for (const [key, value] of Object.entries({
     ...attributes,
     "app.log.context": renderContext,
     "app.log.trace_id": spanContext?.traceId,
     "app.log.span_id": spanContext?.spanId,
-  };
-  for (const [key, value] of Object.entries(mergedAttributes)) {
+  })) {
     if (value instanceof Error) {
       normalizedAttributes[key] = value.message;
     } else if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") {

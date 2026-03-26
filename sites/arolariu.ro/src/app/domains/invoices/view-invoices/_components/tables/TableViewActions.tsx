@@ -35,22 +35,22 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
     <TooltipProvider>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger
-          className={styles["menuTrigger"]}
+          className='hover:text-accent-primary cursor-pointer'
           render={
             <Button
               variant='ghost'
               size='icon'
-              className={styles["actionButton"]}>
+              className='bg-background/80 h-8 w-8 print:hidden'>
               <TbMenu3 className={styles["menuIcon"]} />
             </Button>
           } />
         <DropdownMenuContent
           align='end'
-          className={styles["menuContent"]}>
+          className='w-40'>
           <Tooltip>
             <TooltipTrigger render={
               <DropdownMenuItem
-                className={styles["menuItem"]}
+                className='cursor-pointer'
                 render={
                   <Link
                     href={`/domains/invoices/edit-invoice/${invoice.id}`}
@@ -66,7 +66,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
             <TooltipTrigger render={
               <DropdownMenuItem
                 onClick={openShareDialog}
-                className={styles["menuItem"]}>
+                className='cursor-pointer'>
                 <TbShare className={styles["menuItemIcon"]} />
                 {t("actions.share")}
               </DropdownMenuItem>
@@ -77,7 +77,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
           <Tooltip>
             <TooltipTrigger render={
               <DropdownMenuItem
-                className={styles["menuItemDestructive"]}
+                className='text-destructive cursor-pointer'
                 onClick={openDeleteDialog}>
                 <TbTrash className={styles["menuItemIcon"]} />
                 {t("actions.delete")}

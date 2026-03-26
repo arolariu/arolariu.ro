@@ -81,28 +81,28 @@ export function NutritionCard(): React.JSX.Element {
   const foodGroups: FoodGroup[] = [
     {
       name: t("foodGroups.fruits"),
-      icon: <TbApple className={styles["iconRed"]} />,
+      icon: <TbApple className='h-5 w-5 text-red-500' />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.FRUITS],
     },
     {
       name: t("foodGroups.vegetables"),
-      icon: <TbLeaf className={styles["iconGreen"]} />,
+      icon: <TbLeaf className='h-5 w-5 text-green-500' />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.VEGETABLES],
     },
     {
       name: t("foodGroups.protein"),
-      icon: <TbMeat className={styles["iconAmber"]} />,
+      icon: <TbMeat className='h-5 w-5 text-amber-700' />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.MEAT, ProductCategory.FISH, ProductCategory.DAIRY],
     },
     {
       name: t("foodGroups.grains"),
-      icon: <TbWheat className={styles["iconWheat"]} />,
+      icon: <TbWheat className='h-5 w-5 text-amber-500' />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.BAKED_GOODS],
@@ -155,16 +155,13 @@ export function NutritionCard(): React.JSX.Element {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>
-          <span className={styles["titleRow"]}>
-            <TbLeaf className={styles["titleIcon"]} />
-            {t("title")}
-          </span>
+      <CardHeader className='pb-3'>
+        <CardTitle className='flex items-center gap-2 text-lg'>
+          <TbLeaf className='h-5 w-5 text-green-600' />
+          {t("title")}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className={styles["contentSpaced"]}>
+      <CardContent className='space-y-6'>
         {/* Food Balance Score */}
         <div className={styles["scoreSection"]}>
           <div className={styles["scoreRow"]}>
@@ -173,7 +170,10 @@ export function NutritionCard(): React.JSX.Element {
               {balanceScore}/100 - {scoreLabel}
             </span>
           </div>
-          <Progress value={balanceScore} />
+          <Progress
+            value={balanceScore}
+            className='h-2'
+          />
         </div>
 
         {/* Basket Composition */}
@@ -181,7 +181,7 @@ export function NutritionCard(): React.JSX.Element {
           <h4 className={styles["compositionTitle"]}>{t("composition.title")}</h4>
           <div className={styles["compositionList"]}>
             <div className={styles["compositionRow"]}>
-              <TbLeaf className={`${styles["iconCompositionShrink"]} ${styles["iconGreen"]}`} />
+              <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
               <span className={styles["compositionLabel"]}>{t("composition.wholeFoods")}</span>
               <div className={styles["progressTrack"]}>
                 <div
@@ -192,7 +192,7 @@ export function NutritionCard(): React.JSX.Element {
               <span className={styles["compositionPct"]}>{wholeFoodPct}%</span>
             </div>
             <div className={styles["compositionRow"]}>
-              <TbWheat className={`${styles["iconCompositionShrink"]} ${styles["iconWheat"]}`} />
+              <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
               <span className={styles["compositionLabel"]}>{t("composition.processed")}</span>
               <div className={styles["progressTrack"]}>
                 <div
@@ -203,7 +203,7 @@ export function NutritionCard(): React.JSX.Element {
               <span className={styles["compositionPct"]}>{processedPct}%</span>
             </div>
             <div className={styles["compositionRow"]}>
-              <TbMilk className={`${styles["iconCompositionShrink"]} ${styles["iconBlue"]}`} />
+              <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
               <span className={styles["compositionLabel"]}>{t("composition.dairyOther")}</span>
               <div className={styles["progressTrack"]}>
                 <div
@@ -234,7 +234,7 @@ export function NutritionCard(): React.JSX.Element {
         {allergens.length > 0 && (
           <div className={styles["allergensSection"]}>
             <div className={styles["allergensHeader"]}>
-              <TbAlertTriangle className={styles["iconAllergenAmber"]} />
+              <TbAlertTriangle className='h-4 w-4 text-amber-500' />
               <h4 className={styles["allergensTitle"]}>{t("allergens.title")}</h4>
             </div>
             <div className={styles["allergensList"]}>
@@ -242,9 +242,11 @@ export function NutritionCard(): React.JSX.Element {
                 {allergens.map(([name, count]) => (
                   <Tooltip key={name}>
                     <TooltipTrigger render={
-                      <Badge variant='outline'>
-                        {name === "Lactose" && <TbMilk className={styles["iconAllergenSm"]} />}
-                        {name === "Gluten" && <TbWheat className={styles["iconAllergenSm"]} />}
+                      <Badge
+                        variant='outline'
+                        className='cursor-help'>
+                        {name === "Lactose" && <TbMilk className='mr-1 h-3 w-3' />}
+                        {name === "Gluten" && <TbWheat className='mr-1 h-3 w-3' />}
                         {name} ({count})
                       </Badge>
                     } />
@@ -260,9 +262,8 @@ export function NutritionCard(): React.JSX.Element {
 
         {/* Suggestion */}
         <div className={styles["suggestionBox"]}>
-          <TbBulb className={styles["iconBulb"]} />
+          <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
           <p className={styles["suggestionText"]}>{suggestion}</p>
-        </div>
         </div>
       </CardContent>
     </Card>

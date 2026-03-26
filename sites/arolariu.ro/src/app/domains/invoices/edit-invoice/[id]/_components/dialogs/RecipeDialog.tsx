@@ -78,7 +78,7 @@ const CreateDialog = () => {
     <Dialog
       open={isOpen}
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent className='sm:max-w-md md:max-w-lg'>
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
           <DialogDescription>{t("create.description")}</DialogDescription>
@@ -98,8 +98,8 @@ const CreateDialog = () => {
                           variant='outline'
                           size='sm'
                           onClick={() => {}}
-                          className={styles["generateButton"]}>
-                          <TbSparkles className={styles["sparklesIcon"]} />
+                          className='flex items-center gap-1'>
+                          <TbSparkles className='h-3 w-3' />
                           {t("actions.generateName")}
                         </Button>
                       }
@@ -140,7 +140,7 @@ const CreateDialog = () => {
                 type='button'
                 variant='outline'
                 size='sm'>
-                <TbPlus className={styles["addIcon"]} />
+                <TbPlus className='mr-1 h-4 w-4' />
                 {t("buttons.add")}
               </Button>
             </div>
@@ -162,7 +162,7 @@ const CreateDialog = () => {
                       variant='ghost'
                       size='icon'
                       disabled={recipe.ingredients.length <= 1}>
-                      <TbX className={styles["icon4"]} />
+                      <TbX className='h-4 w-4' />
                     </Button>
                   </div>
                 </div>
@@ -206,7 +206,7 @@ const CreateDialog = () => {
                         variant='outline'
                         size='sm'
                         onClick={() => {}}>
-                        <TbWand className={styles["addIcon"]} />
+                        <TbWand className='mr-1 h-4 w-4' />
                         {t("actions.enhanceInstructions")}
                       </Button>
                     }
@@ -232,7 +232,7 @@ const CreateDialog = () => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>{t("fields.prepTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbClock className={styles["mutedIcon"]} />
+                <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
                   name='prepTime'
@@ -247,7 +247,7 @@ const CreateDialog = () => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>{t("fields.cookTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbToolsKitchen className={styles["mutedIcon"]} />
+                <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
                   name='cookTime'
@@ -260,7 +260,7 @@ const CreateDialog = () => {
           </div>
         </form>
 
-        <DialogFooter className={styles["dialogFooter"]}>
+        <DialogFooter className='flex items-center justify-between sm:justify-between'>
           <div className={styles["footerActions"]}>
             <Button
               type='button'
@@ -271,7 +271,7 @@ const CreateDialog = () => {
             <Button
               type='button'
               onClick={handleCreate}>
-              <TbDisc className={styles["saveIcon"]} />
+              <TbDisc className='mr-2 h-4 w-4' />
               {t("buttons.save")}
             </Button>
           </div>
@@ -281,7 +281,7 @@ const CreateDialog = () => {
   );
 };
 
-const ReadDialog= ({recipe}: Readonly<{recipe: Recipe}>) => {
+const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
@@ -290,7 +290,7 @@ const ReadDialog= ({recipe}: Readonly<{recipe: Recipe}>) => {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className={styles["dialogContent"]}>
+      <DialogContent className='sm:max-w-md md:max-w-lg'>
         <DialogHeader>
           <DialogTitle>{recipe.name}</DialogTitle>
           <DialogDescription>{t("read.description")}</DialogDescription>
@@ -335,19 +335,19 @@ const ReadDialog= ({recipe}: Readonly<{recipe: Recipe}>) => {
 
             <div className={styles["timeGrid"]}>
               <Label htmlFor='preparationTime'>{t("fields.prepTime")}</Label>
-              <TbClock className={styles["mutedIcon"]} />
+              <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
               <span>{recipe?.preparationTime || t("read.notSpecified")}</span>
             </div>
           </div>
 
           <div className={styles["fieldGroup"]}>
             <Label htmlFor='cookingTime'>{t("fields.cookTime")}</Label>
-            <TbToolsKitchen3 className={styles["mutedIcon"]} />
+            <TbToolsKitchen3 className='text-muted-foreground mr-2 h-4 w-4' />
             <span>{recipe?.cookingTime || t("read.notSpecified")}</span>
           </div>
         </div>
 
-        <DialogFooter className={styles["dialogFooter"]}>
+        <DialogFooter className='flex items-center justify-between sm:justify-between'>
           <Button
             type='button'
             onClick={close}>
@@ -382,7 +382,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className={styles["dialogContentWide"]}>
+      <DialogContent className='sm:max-w-lg md:max-w-6xl'>
         <DialogHeader>
           <DialogTitle>{t("update.title")}</DialogTitle>
           <DialogDescription>{t("update.description")}</DialogDescription>
@@ -402,8 +402,8 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                           variant='outline'
                           size='sm'
                           onClick={generateName}
-                          className={styles["generateButton"]}>
-                          <TbSparkles className={styles["sparklesIcon"]} />
+                          className='flex items-center gap-1'>
+                          <TbSparkles className='h-3 w-3' />
                           {t("actions.generateName")}
                         </Button>
                       }
@@ -445,7 +445,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 type='button'
                 variant='outline'
                 size='sm'>
-                <TbPlus className={styles["addIcon"]} />
+                <TbPlus className='mr-1 h-4 w-4' />
                 {t("buttons.add")}
               </Button>
             </div>
@@ -467,7 +467,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                       variant='ghost'
                       size='icon'
                       disabled={recipeDetails.ingredients.length <= 1}>
-                      <TbX className={styles["icon4"]} />
+                      <TbX className='h-4 w-4' />
                     </Button>
                   </div>
                 </div>
@@ -511,7 +511,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                         variant='outline'
                         size='sm'
                         onClick={enhanceInstructions}>
-                        <TbWand className={styles["addIcon"]} />
+                        <TbWand className='mr-1 h-4 w-4' />
                         {t("actions.enhanceInstructions")}
                       </Button>
                     }
@@ -537,7 +537,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>{t("fields.prepTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbClock className={styles["mutedIcon"]} />
+                <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
                   name='prepTime'
@@ -552,7 +552,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>{t("fields.cookTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbToolsKitchen className={styles["mutedIcon"]} />
+                <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
                   name='cookTime'
@@ -565,7 +565,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </div>
         </form>
 
-        <DialogFooter className={styles["dialogFooter"]}>
+        <DialogFooter className='flex items-center justify-between sm:justify-between'>
           <div className={styles["footerActions"]}>
             <Button
               type='button'
@@ -576,7 +576,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <Button
               type='button'
               onClick={handleCreate}>
-              <TbDisc className={styles["saveIcon"]} />
+              <TbDisc className='mr-2 h-4 w-4' />
               {t("buttons.save")}
             </Button>
           </div>
@@ -586,7 +586,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   );
 };
 
-const DeleteDialog= ({recipe}: Readonly<{recipe: Recipe}>) => {
+const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
@@ -608,7 +608,7 @@ const DeleteDialog= ({recipe}: Readonly<{recipe: Recipe}>) => {
           <AlertDialogCancel>{t("buttons.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            className={styles["deleteAction"]}>
+            className='bg-destructive text-destructive-foreground'>
             {t("buttons.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -60,14 +60,14 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
   const {open: openMerchantReceiptsDialog} = useDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);
 
   return (
-    <Card className={styles["card"]}>
+    <Card className='group transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
-      <CardContent className={styles["cardContent"]}>
+      <CardContent className='space-y-4'>
         <div className={styles["merchantInfo"]}>
           <div className={styles["merchantIcon"]}>
-            <TbShoppingCart className={styles["primaryIcon"]} />
+            <TbShoppingCart className='text-primary h-5 w-5' />
           </div>
           <div>
             <p className={styles["merchantName"]}>{merchant.name}</p>
@@ -81,10 +81,10 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                 render={
                   <Button
                     variant='outline'
-                    className={styles["actionButton"]}
+                    className='group w-full cursor-pointer'
                     onClick={openMerchantInfoDialog}>
                     <span>{t("buttons.viewMerchantDetails")}</span>
-                    <TbArrowRight className={styles["arrowIcon"]} />
+                    <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                   </Button>
                 }
               />
@@ -100,11 +100,11 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
                 render={
                   <Button
                     variant='outline'
-                    className={styles["actionButton"]}
+                    className='group w-full cursor-pointer'
                     onClick={openMerchantReceiptsDialog}>
-                    <TbShoppingBag className={styles["buttonIcon"]} />
+                    <TbShoppingBag className='mr-2 h-4 w-4' />
                     <span>{t("buttons.viewAllReceipts")}</span>
-                    <TbArrowRight className={styles["arrowIcon"]} />
+                    <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                   </Button>
                 }
               />

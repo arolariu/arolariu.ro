@@ -32,16 +32,14 @@ import {
 import styles from "./ShoppingCalendarCard.module.scss";
 
 /** Props type for the Calendar's DayButton slot component */
-/* eslint-disable react/require-default-props -- Calendar library controls these props; defaults handled in CustomDayButton destructuring */
 type DayButtonProps = {
   readonly day: {date: Date};
-  readonly className?: string;
-  readonly disabled?: boolean;
-  readonly "aria-label"?: string;
-  readonly "aria-pressed"?: boolean | "false" | "true" | "mixed";
-  readonly tabIndex?: number;
+  readonly className: string | undefined;
+  readonly disabled: boolean | undefined;
+  readonly "aria-label": string | undefined;
+  readonly "aria-pressed": boolean | "false" | "true" | "mixed" | undefined;
+  readonly tabIndex: number | undefined;
 };
-/* eslint-enable react/require-default-props */
 
 /** Context for sharing calendar data with CustomDayButton */
 type CalendarDataContextType = {
@@ -106,7 +104,7 @@ function HistoricalComparisonSection({
 
   return (
     <div className={styles["historicalRow"]}>
-      <ArrowIcon className={`${styles["iconXs"]} ${colorClass}`} />
+      <ArrowIcon className={`h-3 w-3 ${colorClass}`} />
       <span className={colorClass}>{Math.abs(historicalData.percentageDiff).toFixed(0)}%</span>
       <span className={styles["moreText"]}>{t("tooltip.vsAverage", {years: String(historicalData.yearsWithData)})}</span>
     </div>
@@ -118,7 +116,9 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
   const {amount, count, locale, currency, data, historicalData, isCurrentInvoiceDate, t} = props;
 
   return (
-    <TooltipContent side='top'>
+    <TooltipContent
+      side='top'
+      className='max-w-xs space-y-2 text-xs'>
       <div>
         <p className={styles["tooltipLabel"]}>{formatCurrency(amount, {currencyCode: currency.code, locale})}</p>
         <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(count)})}</p>
@@ -135,7 +135,7 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
           t={t}
         />
       ) : null}
-      {isCurrentInvoiceDate ? <Badge>{t("tooltip.currentInvoice")}</Badge> : null}
+      {isCurrentInvoiceDate ? <Badge className='mt-1'>{t("tooltip.currentInvoice")}</Badge> : null}
     </TooltipContent>
   );
 }
@@ -165,6 +165,7 @@ function CustomDayButton({
   const count = data?.count ?? 0;
   const isCurrentInvoiceDate = isSameDay(date, transactionDate);
   const intensityClass = getSpendingIntensityClass(amount, maxDayAmount);
+  const ringClass = isCurrentInvoiceDate ? "ring-primary ring-2 ring-offset-1" : "";
 
   const button = (
     <Button
@@ -173,7 +174,7 @@ function CustomDayButton({
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
       tabIndex={tabIndex}
-      className={`${styles["dayButton"]} ${intensityClass} ${isCurrentInvoiceDate ? styles["dayButtonRing"] : ""} ${className}`}>
+      className={`h-9 w-9 p-0 font-normal aria-selected:opacity-100 ${intensityClass} ${ringClass} flex items-center justify-center rounded-md transition-all ${className}`}>
       <time dateTime={date.toISOString()}>{date.getDate()}</time>
     </Button>
   );
@@ -245,32 +246,31 @@ export function ShoppingCalendarCard(): React.JSX.Element {
   return (
     <CalendarDataContext value={calendarDataValue}>
       <TooltipProvider>
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <span className={styles["titleRow"]}>
-                <TbCalendar className={styles["titleIcon"]} />
-                {t("title")}
-                <Tooltip>
-                  <TooltipTrigger render={<TbInfoCircle className={styles["infoIcon"]} />} />
-                  <TooltipContent side='top'>
+        <Card className='transition-shadow duration-300 hover:shadow-md'>
+          <CardHeader className='pb-3'>
+            <CardTitle className='flex items-center gap-2 text-lg'>
+              <TbCalendar className='text-muted-foreground h-4 w-4' />
+              {t("title")}
+              <Tooltip>
+                <TooltipTrigger render={<TbInfoCircle className='text-muted-foreground h-4 w-4 cursor-help' />} />
+                <TooltipContent
+                  side='top'
+                  className='text-xs'>
                   {hasHydrated && invoices.length > 1
                     ? t("tooltip.basedOnCachedInvoices", {count: String(invoices.length)})
                     : t("tooltip.currentInvoiceOnly")}
                 </TooltipContent>
               </Tooltip>
-              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className={styles["contentCentered"]}>
+          <CardContent className='flex flex-col items-center space-y-4'>
             <Calendar
               mode='single'
               selected={transactionDate}
               month={month}
               disableNavigation
               hideNavigation
-              className={styles["calendar"]}
+              className='rounded-md border'
               components={{
                 DayButton: CustomDayButton,
               }}
@@ -294,14 +294,14 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             {/* Month Statistics */}
             <div className={styles["statsGrid"]}>
               <div className={styles["statBox"]}>
-                <TbShoppingCart className={styles["iconMutedShrink"]} />
+                <TbShoppingCart className='text-muted-foreground h-4 w-4 shrink-0' />
                 <div>
                   <p className={styles["statLabel"]}>{t("stats.monthTotal")}</p>
                   <p className={styles["statValue"]}>{formatCurrency(patterns.monthTotal, {currencyCode: currency.code, locale})}</p>
                 </div>
               </div>
               <div className={styles["statBox"]}>
-                <TbCalendar className={styles["iconMutedShrink"]} />
+                <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
                 <div>
                   <p className={styles["statLabel"]}>{t("stats.shoppingDays")}</p>
                   <p className={styles["statValue"]}>{patterns.shoppingDaysCount}</p>
@@ -312,7 +312,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             {/* Shopping Pattern Insight */}
             {patterns.avgDaysBetween > 0 ? (
               <div className={styles["insightBox"]}>
-                <TbTrendingUp className={styles["iconMutedShrink"]} />
+                <TbTrendingUp className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className={styles["insightText"]}>
                   {t("insights.shopEveryPrefix")}{" "}
                   <span className={styles["insightHighlight"]}>{t("insights.days", {count: patterns.avgDaysBetween.toFixed(0)})}</span>{" "}
@@ -333,7 +333,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             {/* Most Active Day Insight */}
             {invoices.length > 5 ? (
               <div className={styles["insightBox"]}>
-                <TbCalendar className={styles["iconMutedShrink"]} />
+                <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
                 <p className={styles["insightText"]}>
                   {t("insights.mostActiveOn")}{" "}
                   <span className={styles["insightHighlight"]}>
@@ -342,7 +342,6 @@ export function ShoppingCalendarCard(): React.JSX.Element {
                 </p>
               </div>
             ) : null}
-            </div>
           </CardContent>
         </Card>
       </TooltipProvider>

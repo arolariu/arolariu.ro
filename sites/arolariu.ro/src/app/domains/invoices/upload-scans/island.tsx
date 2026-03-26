@@ -125,7 +125,7 @@ function UploadStats(): React.JSX.Element | null {
 
         {allDone ? (
           <Button
-            className={styles["viewScansButton"]}
+            className='bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
             render={
               <Link href='/domains/invoices/view-scans'>
                 {t("buttons.viewScans")}
@@ -170,13 +170,13 @@ function UploadContent(): React.JSX.Element {
                 <Button
                   variant='ghost'
                   size='icon'
-                  className={styles["infoButton"]}>
+                  className='mt-1 h-auto w-auto p-0 text-gray-400 hover:bg-transparent hover:text-gray-600 dark:text-gray-500 dark:hover:bg-transparent dark:hover:text-gray-300'>
                   <TbInfoCircle className={styles["infoIcon"]} />
                 </Button>
               } />
               <TooltipContent
                 side='right'
-                className={styles["tooltipContent"]}>
+                className='max-w-xs'>
                 <p>{t("header.tooltip")}</p>
               </TooltipContent>
             </Tooltip>
@@ -189,7 +189,7 @@ function UploadContent(): React.JSX.Element {
               <TooltipTrigger render={
                 <Button
                   variant='outline'
-                  className={styles["outlineButton"]}
+                  className='flex items-center gap-2'
                   render={
                     <Link href='/domains/invoices/view-scans'>
                       <TbEye className={styles["actionIcon"]} />
@@ -207,7 +207,7 @@ function UploadContent(): React.JSX.Element {
               <TooltipTrigger render={
                 <Button
                   variant='outline'
-                  className={styles["outlineButton"]}
+                  className='flex items-center gap-2'
                   render={
                     <Link href='/domains/invoices/view-invoices'>
                       <TbFileInvoice className={styles["actionIcon"]} />
@@ -237,7 +237,7 @@ function UploadContent(): React.JSX.Element {
         <div className={styles["sidebar"]}>
           {/* Supported Formats */}
           <Card>
-            <CardContent className={styles["sidebarCardContent"]}>
+            <CardContent className='p-4'>
               <h3 className={styles["sidebarTitle"]}>{t("sidebar.formats.title")}</h3>
               <div className={styles["formatsList"]}>
                 <FileTypeCard
@@ -257,7 +257,7 @@ function UploadContent(): React.JSX.Element {
 
           {/* Tips */}
           <Card>
-            <CardContent className={styles["sidebarCardContent"]}>
+            <CardContent className='p-4'>
               <h3 className={styles["sidebarTitle"]}>{t("sidebar.tips.title")}</h3>
               <ul className={styles["tipsList"]}>
                 <TipItem>{t("sidebar.tips.tip1")}</TipItem>
@@ -270,8 +270,8 @@ function UploadContent(): React.JSX.Element {
           </Card>
 
           {/* Security Note */}
-          <Card className={styles["securityCard"]}>
-            <CardContent className={styles["sidebarCardContent"]}>
+          <Card className='border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'>
+            <CardContent className='p-4'>
               <div className={styles["securityContent"]}>
                 <TbShieldCheck className={styles["securityIcon"]} />
                 <div>
@@ -288,13 +288,13 @@ function UploadContent(): React.JSX.Element {
               initial={{opacity: 0, scale: 0.95}}
               animate={{opacity: 1, scale: 1}}
               transition={{delay: 0.3}}>
-              <Card className={styles["nextStepsCard"]}>
-                <CardContent className={styles["sidebarCardContent"]}>
+              <Card className='border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20'>
+                <CardContent className='p-4'>
                   <h3 className={styles["nextStepsTitle"]}>{t("sidebar.nextSteps.title")}</h3>
                   <p className={styles["nextStepsDescription"]}>{t("sidebar.nextSteps.description")}</p>
                   <Button
                     size='sm'
-                    className={styles["nextStepsButton"]}
+                    className='w-full bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
                     render={
                       <Link href='/domains/invoices/view-scans'>
                         {t("sidebar.nextSteps.button")}

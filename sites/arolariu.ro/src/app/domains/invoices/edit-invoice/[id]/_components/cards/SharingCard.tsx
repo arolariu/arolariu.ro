@@ -128,11 +128,11 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
   }, [invoice.id, invoice.sharedWith, router, t]);
 
   return (
-    <Card className={styles["card"]}>
+    <Card className='group transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
-      <CardContent className={styles["cardContent"]}>
+      <CardContent className='space-y-4'>
         <div className={styles["ownerRow"]}>
           <div className={styles["ownerAvatar"]}>
             {userInformation?.user?.imageUrl ? (
@@ -145,7 +145,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                 priority
               />
             ) : (
-              <TbUser className={styles["primaryIcon"]} />
+              <TbUser className='text-primary h-5 w-5' />
             )}
           </div>
           <div>
@@ -159,9 +159,9 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   render={
                     <Button
                       variant='outline'
-                      className={styles["manageButton"]}
+                      className='group ml-auto cursor-pointer'
                       onClick={handleManageSharing}>
-                      <TbLockCog className={styles["buttonIcon"]} />
+                      <TbLockCog className='mr-2 h-4 w-4' />
                       <span>{t("buttons.manageSharing")}</span>
                     </Button>
                   }
@@ -179,10 +179,10 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
         {Boolean(isInvoicePublic) && (
           <Alert
             variant='destructive'
-            className={styles["publicAlert"]}>
-            <TbGlobe className={styles["globeIcon"]} />
-            <AlertTitle className={styles["publicAlertTitle"]}>{t("publicInvoice.title")}</AlertTitle>
-            <AlertDescription className={styles["publicAlertDescription"]}>{t("publicInvoice.description")}</AlertDescription>
+            className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
+            <TbGlobe className='size-4 text-orange-600 dark:text-orange-400' />
+            <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("publicInvoice.title")}</AlertTitle>
+            <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>{t("publicInvoice.description")}</AlertDescription>
           </Alert>
         )}
 
@@ -199,7 +199,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   transition={{delay: index * 0.1}}
                   whileHover={{x: 5}}>
                   <div className={styles["sharedUserAvatar"]}>
-                    <TbUser className={styles["sharedUserIcon"]} />
+                    <TbUser className='h-4 w-4' />
                   </div>
                   <span className={styles["sharedUserName"]}>{t("userWithId", {id: userId})}</span>
                   <TooltipProvider>
@@ -208,9 +208,9 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                         render={
                           <Button
                             variant='ghost'
-                            className={styles["removeAccessButton"]}
+                            className='ml-auto cursor-pointer'
                             onClick={handleRemoveAccess}>
-                            <TbDeselect className={styles["icon4"]} />
+                            <TbDeselect className='h-4 w-4' />
                           </Button>
                         }
                       />
@@ -227,18 +227,18 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
           )}
         </div>
       </CardContent>
-      <CardFooter className={styles["cardFooter"]}>
+      <CardFooter className='flex flex-col gap-4'>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   variant='outline'
-                  className={styles["fullWidthButton"]}
+                  className='w-full cursor-pointer'
                   onClick={open}>
-                  <TbShare2 className={styles["buttonIcon"]} />
+                  <TbShare2 className='mr-2 h-4 w-4' />
                   <span>{t("buttons.shareInvoice")}</span>
-                  <TbArrowRight className={styles["arrowIcon"]} />
+                  <TbArrowRight className='ml-2 h-4 w-4 transition-transform' />
                 </Button>
               }
             />
@@ -253,11 +253,11 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                 render={
                   <Button
                     variant='destructive'
-                    className={styles["fullWidthButton"]}
+                    className='w-full cursor-pointer'
                     disabled={isMarkingPrivate}
                     onClick={handleMarkPrivate}>
                     <span>{isMarkingPrivate ? t("buttons.revokingAccess") : t("buttons.markAsPrivate")}</span>
-                    <TbLock className={styles["arrowIcon"]} />
+                    <TbLock className='ml-2 h-4 w-4 transition-transform' />
                   </Button>
                 }
               />

@@ -107,62 +107,62 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
   const {open: openShareDialog} = useDialog("EDIT_INVOICE__RECIPE", "share", recipe);
 
   return (
-    <Card className={styles["card"]}>
+    <Card className='overflow-hidden transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
         <CardTitle>
           <h3 className={styles["title"]}>{name}</h3>
           <Badge
             variant={getBadgeVariant()}
-            className={styles["complexityBadge"]}>
+            className='mt-1'>
             {complexityLabelMap[complexity]}
           </Badge>
         </CardTitle>
-        <CardAction className={styles["cardAction"]}>
+        <CardAction className='mb-2 flex items-start justify-between'>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
                   variant='ghost'
                   size='icon'>
-                  <TbSeparatorHorizontal className={styles["icon4"]} />
+                  <TbSeparatorHorizontal className='h-4 w-4' />
                 </Button>
               }
             />
             <DropdownMenuContent align='end'>
               <DropdownMenuItem
-                className={styles["menuItem"]}
+                className='cursor-pointer'
                 onClick={openViewDialog}>
-                <TbEdit className={styles["menuIcon"]} />
+                <TbEdit className='mr-2 h-4 w-4' />
                 {t("dropdown.view")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                className={styles["menuItem"]}
+                className='cursor-pointer'
                 onClick={openEditDialog}>
-                <TbEdit className={styles["menuIcon"]} />
+                <TbEdit className='mr-2 h-4 w-4' />
                 {t("dropdown.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                className={styles["menuItemDestructive"]}
+                className='cursor-pointer text-red-500'
                 onClick={openDeleteDialog}>
-                <TbTrash className={styles["menuIcon"]} />
+                <TbTrash className='mr-2 h-4 w-4' />
                 {t("dropdown.delete")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                className={styles["menuItemAccent"]}
+                className='text-accent-primary cursor-pointer'
                 onClick={openShareDialog}>
-                <TbShare className={styles["menuIcon"]} />
+                <TbShare className='mr-2 h-4 w-4' />
                 {t("dropdown.share")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className={styles["menuItemMuted"]}>
-                <TbHeart className={styles["menuIcon"]} />
+              <DropdownMenuItem className='text-muted-foreground cursor-pointer'>
+                <TbHeart className='mr-2 h-4 w-4' />
                 {t("dropdown.markAsFavorite")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </CardAction>
       </CardHeader>
-      <CardContent className={styles["cardContent"]}>
+      <CardContent className='h-full p-4'>
         <p className={styles["description"]}>{description}</p>
 
         <div className={styles["ingredientsSection"]}>
@@ -179,7 +179,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
                       <li className={styles["moreIngredients"]}>{t("ingredients.more", {count: String(ingredients.length - 3)})}</li>
                     }
                   />
-                  <TooltipContent className={styles["tooltipContent"]}>
+                  <TooltipContent className='max-w-xs'>
                     <p className={styles["tooltipTitle"]}>{t("ingredients.additionalLabel")}</p>
                     <ul className={styles["tooltipIngredientsList"]}>
                       {ingredients.slice(3).map((ingredient) => (
@@ -200,7 +200,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipTrigger
                 render={
                   <div className={styles["timeItem"]}>
-                    <TbClock className={styles["timeIcon"]} />
+                    <TbClock className='mr-1 h-3 w-3' />
                     {t("timing.prepLabel", {minutes: String(preparationTime)})}
                   </div>
                 }
@@ -213,7 +213,7 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               <TooltipTrigger
                 render={
                   <div className={styles["timeItem"]}>
-                    <TbToolsKitchen className={styles["timeIcon"]} />
+                    <TbToolsKitchen className='mr-1 h-3 w-3' />
                     {t("timing.cookLabel", {minutes: String(cookingTime)})}
                   </div>
                 }
@@ -226,12 +226,12 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
         </div>
       </CardContent>
 
-      <CardFooter className={styles["cardFooter"]}>
+      <CardFooter className='bg-muted/50 flex items-center justify-center justify-items-center gap-2 px-4 py-2'>
         <Button
           variant='ghost'
           size='sm'>
           {t("buttons.visitReference")}
-          <TbExternalLink className={styles["externalLinkIcon"]} />
+          <TbExternalLink className='ml-2 h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
         </Button>
         <Button
           variant='default'

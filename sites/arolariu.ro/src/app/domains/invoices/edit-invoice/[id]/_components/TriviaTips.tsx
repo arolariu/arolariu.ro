@@ -73,7 +73,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: t("tips.loyaltyProgram.description", {merchantName: merchant.name}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.05,
       difficulty: "easy",
-      icon: <TbPigMoney className={styles["tipIcon"]} />,
+      icon: <TbPigMoney className='h-5 w-5' />,
     },
     {
       id: 2,
@@ -81,7 +81,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: t("tips.bulkPurchase.description"),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.1,
       difficulty: "medium",
-      icon: <TbPercentage className={styles["tipIcon"]} />,
+      icon: <TbPercentage className='h-5 w-5' />,
     },
     {
       id: 3,
@@ -89,7 +89,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: t("tips.digitalCoupons.description", {merchantName: merchant.name}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.08,
       difficulty: "easy",
-      icon: <TbBulb className={styles["tipIcon"]} />,
+      icon: <TbBulb className='h-5 w-5' />,
     },
   ];
 
@@ -98,13 +98,13 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
 
   return (
     <Card>
-      <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>
-          <TbSparkles className={styles["sparklesIcon"]} />
+      <CardHeader className='pb-2'>
+        <CardTitle className='flex items-center text-lg'>
+          <TbSparkles className='text-primary mr-2 h-5 w-5' />
           <span>{t("title")}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className={styles["cardContent"]}>
+      <CardContent className='space-y-4'>
         <motion.div
           className={styles["savingsBanner"]}
           whileHover={{scale: 1.02}}
@@ -137,7 +137,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       <h3 className={styles["tipTitle"]}>{tip.title}</h3>
                       <Badge
                         variant={tip.difficulty === "easy" ? "default" : "secondary"}
-                        className={styles["difficultyBadge"]}>
+                        className='mt-1 text-xs'>
                         {tip.difficulty === "easy" ? t("difficulty.easy") : t("difficulty.medium")}
                       </Badge>
                     </div>
@@ -149,7 +149,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                               <span>
                                 {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
                               </span>
-                              <TbThumbUp className={styles["thumbIcon"]} />
+                              <TbThumbUp className='ml-1 h-3.5 w-3.5' />
                             </div>
                           }
                         />
@@ -168,14 +168,15 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
 
         <div className={styles["moreButton"]}>
           <Button
-            variant='outline'>
+            variant='outline'
+            className='group w-full'>
             <span>{t("buttons.viewMoreSavingsTips")}</span>
-            <TbArrowRight className={styles["arrowIcon"]} />
+            <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
           </Button>
         </div>
 
         <div className={styles["disclaimer"]}>
-          <TbAlertCircle className={styles["alertCircleIcon"]} />
+          <TbAlertCircle className='h-3.5 w-3.5' />
           <span>{t("disclaimer")}</span>
         </div>
       </CardContent>

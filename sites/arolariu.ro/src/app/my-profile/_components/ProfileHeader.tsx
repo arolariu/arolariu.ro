@@ -38,7 +38,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
       initial={{opacity: 0, y: 12}}
       animate={{opacity: 1, y: 0}}
       transition={{duration: 0.4}}>
-      <Card className={styles["cardRoot"]}>
+      <Card className='overflow-hidden'>
         <div className={styles["bannerGradient"]}>
           <div className={styles["bannerOrb"]} />
         </div>
@@ -46,12 +46,12 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
           <div className={styles["headerLayout"]}>
             <div className={styles["avatarGroup"]}>
               <div className={styles["avatarWrapper"]}>
-                <Avatar className={styles["profileAvatar"]}>
+                <Avatar className='border-background ring-primary/20 h-24 w-24 border-4 shadow-xl ring-2'>
                   <AvatarImage
                     src={user?.imageUrl}
                     alt={`${user?.firstName ?? "User"}'s avatar`}
                   />
-                  <AvatarFallback className={styles["avatarInitials"]}>{getInitials(user?.firstName, user?.lastName)}</AvatarFallback>
+                  <AvatarFallback className='text-2xl'>{getInitials(user?.firstName, user?.lastName)}</AvatarFallback>
                 </Avatar>
                 <div className={styles["onlineIndicator"]}>
                   <TbCheck className={styles["onlineIcon"]} />
@@ -65,8 +65,8 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                   </h1>
                   <Badge
                     variant='secondary'
-                    className={styles["premiumBadge"]}>
-                    <TbSparkles className={styles["iconXs"]} />
+                    className='gap-1'>
+                    <TbSparkles className='h-3 w-3' />
                     {t("header.premium")}
                   </Badge>
                 </div>
@@ -74,15 +74,15 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
 
                 <div className={styles["badges"]}>
                   <Badge variant='outline'>
-                    <TbUser className={styles["badgeIcon"]} />
+                    <TbUser className='mr-1 h-3 w-3' />
                     {t("header.memberSince", {date: user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"})}
                   </Badge>
                   <Badge variant='outline'>
-                    <TbShieldCheck className={styles["badgeIcon"]} />
+                    <TbShieldCheck className='mr-1 h-3 w-3' />
                     {t("header.userId")}: {userIdentifier.slice(0, 8)}...
                   </Badge>
                   <Badge variant='outline'>
-                    <TbCalendar className={styles["badgeIcon"]} />
+                    <TbCalendar className='mr-1 h-3 w-3' />
                     {accountAgeDays} {t("header.daysActive")}
                   </Badge>
                 </div>
@@ -96,8 +96,8 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                     <Button
                       variant='outline'
                       size='sm'
-                      className={styles["editButton"]}>
-                      <TbEdit className={styles["editIcon"]} />
+                      className='cursor-pointer gap-2'>
+                      <TbEdit className='h-4 w-4' />
                       {t("header.editProfile")}
                     </Button>
                   }
@@ -110,7 +110,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
                   <div className={styles["sheetBody"]}>
                     <p className={styles["sheetNote"]}>{t("header.editProfileClerkNote")}</p>
                     <Button
-                      className={styles["manageButton"]}
+                      className='w-full cursor-pointer'
                       render={
                         <a
                           href='https://accounts.arolariu.ro/user'
@@ -133,7 +133,7 @@ export function ProfileHeader({user, userIdentifier}: Props): React.JSX.Element 
             </div>
             <Progress
               value={profileCompletion}
-              className={styles["progressBar"]}
+              className='h-2'
             />
             {profileCompletion < 100 && <p className={styles["progressHint"]}>{t("header.completionHint")}</p>}
           </div>
