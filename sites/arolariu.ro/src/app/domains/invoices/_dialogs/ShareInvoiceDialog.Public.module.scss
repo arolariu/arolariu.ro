@@ -90,3 +90,62 @@
   @include icon-size(space(4));
   margin-right: space(1);
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.tabsRoot {
+  width: 100%;
+}
+
+.tabsList {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tabsTrigger {
+  cursor: pointer;
+}
+
+.linkTabContent {
+  margin-top: space(4);
+}
+
+.qrTabContent {
+  margin-top: space(4);
+}
+
+.inputMono {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: font-size('xs');
+}
+
+.buttonFull {
+  width: 100%;
+}
+
+.backButton {
+  margin-bottom: space(2);
+  margin-left: -(space(2));
+}
+
+.alertWarning {
+  border-color: color-alpha('warning', 0.5);
+  background-color: color-alpha('warning', 0.08);
+  color: color('warning-foreground');
+
+  @include dark {
+    background-color: color-alpha('warning', 0.1);
+  }
+}
+
+.alertWarningTitle {
+  color: color('warning');
+}
+
+.alertWarningDescription {
+  font-size: font-size('xs');
+  color: color-alpha('warning', 0.85);
+}

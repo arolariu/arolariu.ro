@@ -96,8 +96,8 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
   return (
     <>
       <Card
-        className={`overflow-hidden transition-all duration-200 hover:shadow-md ${isSelected ? "ring-2 ring-purple-500 dark:ring-purple-400" : ""}`}>
-        <CardContent className='p-0'>
+        className={`${styles["card"]} ${isSelected ? styles["cardSelected"] : ""}`}>
+        <CardContent className={styles["cardContentFlush"]}>
           {/* Preview */}
           <div className={styles["previewArea"]}>
             {scan.mimeType === "application/pdf" ? (
@@ -120,7 +120,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                 checked={isSelected}
                 nativeButton
                 onCheckedChange={onToggleSelect}
-                className='h-5 w-5 border-2 border-white bg-white/80 data-[state=checked]:bg-purple-500'
+                className={styles["checkbox"]}
               />
             </div>
 
@@ -131,13 +131,13 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
                   <Button
                     variant='ghost'
                     size='icon'
-                    className='h-7 w-7 rounded-full bg-white/80 text-gray-700 shadow-sm hover:bg-white dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-800'>
+                    className={styles["actionsButton"]}>
                     <TbDotsVertical className={styles["menuIcon"]} />
                   </Button>
                 } />
                 <DropdownMenuContent align='end'>
                   <DropdownMenuItem
-                    className='text-red-600 focus:bg-red-50 focus:text-red-700 dark:text-red-400 dark:focus:bg-red-900/20'
+                    className={styles["deleteMenuItem"]}
                     onClick={handleOpenDeleteDialog}>
                     <TbTrash className={styles["trashIcon"]} />
                     {t("delete")}
@@ -195,7 +195,7 @@ export default function ScanCard({scan, isSelected, onToggleSelect}: Readonly<Sc
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className='bg-red-600 text-white hover:bg-red-700'>
+              className={styles["deleteButton"]}>
               {isDeleting ? t("deleteDialog.deleting") : t("deleteDialog.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>

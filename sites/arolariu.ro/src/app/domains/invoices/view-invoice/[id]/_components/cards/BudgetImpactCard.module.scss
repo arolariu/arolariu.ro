@@ -110,3 +110,34 @@
   font-size: font-size('sm');
   font-weight: font-weight('medium');
 }
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('lg');
+}
+
+.titleIcon {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.contentSpaced {
+  @include spaced-children(space(4));
+}
+
+.trendIconUp {
+  @include icon-size(space(5));
+  color: color('success');
+}
+
+.trendIconNeutral {
+  @include icon-size(space(5));
+  color: color('warning');
+}
+
+.trendIconDown {
+  @include icon-size(space(5));
+  color: color('destructive');
+}

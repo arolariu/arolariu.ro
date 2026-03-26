@@ -166,3 +166,54 @@
   font-size: font-size('xs');
   color: color('muted-foreground');
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.cardRoot {
+  overflow: hidden;
+}
+
+.profileAvatar {
+  height: 6rem;
+  width: 6rem;
+  border-width: 4px;
+  border-color: color('background');
+  @include shadow('xl');
+  box-shadow: shadow('xl'), 0 0 0 2px color-alpha('primary', 0.2);
+}
+
+.avatarInitials {
+  font-size: font-size('2xl');
+}
+
+.premiumBadge {
+  gap: space(1);
+}
+
+.iconXs {
+  @include icon-size(0.75rem);
+}
+
+.badgeIcon {
+  @include icon-size(0.75rem);
+  margin-right: space(1);
+}
+
+.editButton {
+  cursor: pointer;
+  gap: space(2);
+}
+
+.editIcon {
+  @include icon-size(space(4));
+}
+
+.manageButton {
+  width: 100%;
+  cursor: pointer;
+}
+
+.progressBar {
+  height: 0.5rem;
+}

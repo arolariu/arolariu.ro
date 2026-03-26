@@ -167,7 +167,7 @@ export default function ItemsDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-2xl md:max-w-6xl'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
@@ -175,9 +175,9 @@ export default function ItemsDialog(): React.JSX.Element {
 
         <div className={styles["body"]}>
           <div className={styles["tableWrapper"]}>
-            <Table className='divide-border min-w-full divide-y'>
+            <Table className={styles["table"]}>
               <TableHeader>
-                <TableRow className='bg-muted/50'>
+                <TableRow className={styles["headerRow"]}>
                   <TableHead className={styles["tableHeader"]}>{t("table.item")}</TableHead>
                   <TableHead className={styles["tableHeaderCenter"]}>{t("table.quantity")}</TableHead>
                   <TableHead className={styles["tableHeaderCenter"]}>{t("table.unit")}</TableHead>
@@ -186,68 +186,68 @@ export default function ItemsDialog(): React.JSX.Element {
                   <TableHead className={styles["tableHeaderCenter"]}>{t("table.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className='divide-border bg-popover divide-y'>
+              <TableBody className={styles["tableBody"]}>
                 {paginatedItems.map((item, index) => (
                   <TableRow
                     key={item.rawName}
-                    className='hover:bg-muted/50'>
-                    <TableCell className='px-4 py-3 text-sm font-medium whitespace-nowrap'>
+                    className={styles["dataRow"]}>
+                    <TableCell className={styles["cellName"]}>
                       <Input
                         type='text'
                         name='rawName'
                         value={item.rawName}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
-                        className='w-48'
+                        className={styles["nameInput"]}
                       />
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-center text-sm whitespace-nowrap'>
+                    <TableCell className={styles["cellCenter"]}>
                       <Input
                         type='number'
                         name='quantity'
                         value={item.quantity}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
-                        className='w-16 text-center'
+                        className={styles["smallInput"]}
                       />
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-center text-sm whitespace-nowrap'>
+                    <TableCell className={styles["cellCenter"]}>
                       <Input
                         type='text'
                         name='quantityUnit'
                         value={item.quantityUnit}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
-                        className='w-16 text-center'
+                        className={styles["smallInput"]}
                       />
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-right text-sm whitespace-nowrap'>
+                    <TableCell className={styles["cellRight"]}>
                       <Input
                         type='number'
                         name='price'
                         value={item.price}
                         // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
-                        className='w-16 text-right'
+                        className={styles["smallInputRight"]}
                       />
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>
+                    <TableCell className={styles["cellRightBold"]}>
                       {item.price * item.quantity}
                     </TableCell>
-                    <TableCell className='px-4 py-3 text-center text-sm whitespace-nowrap'>
+                    <TableCell className={styles["cellCenter"]}>
                       <Button
                         variant='ghost'
                         size='icon'
                         aria-label={t("aria.deleteItem", {name: item.rawName || t("aria.unnamedItem")})}
                         onClick={handleDeleteItem(item)}>
-                        <TbTrash className='h-4 w-4 text-red-500' />
+                        <TbTrash className={styles["trashIcon"]} />
                       </Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
               <TableFooter>
-                <TableRow className='bg-muted/50'>
+                <TableRow className={styles["headerRow"]}>
                   <TableHead
                     className={styles["tableHeader"]}
                     colSpan={2}>
@@ -302,7 +302,7 @@ export default function ItemsDialog(): React.JSX.Element {
               variant='outline'
               aria-label={t("aria.addItem")}
               onClick={handleAddNewItem}>
-              <TbPlus className='mr-2 h-4 w-4' />
+              <TbPlus className={styles["buttonIcon"]} />
               {t("buttons.addItem")}
             </Button>
             <div
@@ -324,7 +324,7 @@ export default function ItemsDialog(): React.JSX.Element {
           <Button
             aria-label={t("aria.save")}
             onClick={handleSaveChanges}>
-            <TbDisc className='mr-2 h-4 w-4' />
+            <TbDisc className={styles["buttonIcon"]} />
             {t("buttons.saveChanges")}
           </Button>
         </DialogFooter>

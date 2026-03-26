@@ -109,3 +109,16 @@
   color: inherit;
 }
 
+// ===========================================
+// BUTTON OVERRIDES
+// ===========================================
+.heroPrimaryBtn {
+  @include abstracts.gradient-bg();
+  padding-inline: abstracts.space(8);
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+

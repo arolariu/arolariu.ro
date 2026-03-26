@@ -17,3 +17,15 @@
   background-color: color('destructive');
   color: white;
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+}
+
+.saveIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

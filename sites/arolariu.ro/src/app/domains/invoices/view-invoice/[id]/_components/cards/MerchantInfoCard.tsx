@@ -12,17 +12,18 @@ export function MerchantInfoCard(): React.JSX.Element {
   const {merchant} = useInvoiceContext();
   const t = useTranslations("Invoices.ViewInvoice.merchantInfoCard");
   return (
-    <Card className='transition-shadow duration-300 hover:shadow-md'>
+    <Card>
       <CardHeader>
-        <CardTitle className='text-lg'>{merchant.name}</CardTitle>
+        <CardTitle>{merchant.name}</CardTitle>
       </CardHeader>
-      <CardContent className='space-y-4'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         <div className={styles["infoRowStart"]}>
-          <TbMapPin className='text-muted-foreground mt-0.5 h-4 w-4 shrink-0' />
+          <TbMapPin className={styles["iconMutedTop"]} />
           <span className={styles["infoText"]}>{merchant.address.address}</span>
         </div>
         <div className={styles["infoRow"]}>
-          <TbPhone className='text-muted-foreground h-4 w-4' />
+          <TbPhone className={styles["iconMuted"]} />
           <span className={styles["infoText"]}>{merchant.address.phoneNumber}</span>
         </div>
         <div className={styles["infoRow"]}>
@@ -30,7 +31,7 @@ export function MerchantInfoCard(): React.JSX.Element {
         </div>
         {Boolean(merchant.address.website) && (
           <div className={styles["infoRow"]}>
-            <TbGlobe className='text-muted-foreground h-4 w-4' />
+            <TbGlobe className={styles["iconMuted"]} />
             <a
               href={merchant.address.website}
               target='_blank'
@@ -40,11 +41,11 @@ export function MerchantInfoCard(): React.JSX.Element {
             </a>
           </div>
         )}
+        </div>
       </CardContent>
       <CardFooter>
         <Button
-          variant='outline'
-          className='w-full bg-transparent'>
+          variant='outline'>
           {t("viewAllReceipts")}
         </Button>
       </CardFooter>

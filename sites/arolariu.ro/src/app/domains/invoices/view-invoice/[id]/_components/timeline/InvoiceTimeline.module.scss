@@ -29,3 +29,37 @@
 .eventsContainer {
   // No spacing between timeline items (they have internal padding)
 }
+
+.card {
+  transition: box-shadow 300ms;
+
+  &:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+}
+
+.cardHeader {
+  padding-bottom: space(4);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('lg');
+}
+
+.calendarIcon {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.badge {
+  font-size: font-size('xs');
+}
+
+.cardContent {
+  & > * + * {
+    margin-top: space(6);
+  }
+}

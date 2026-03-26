@@ -25,9 +25,7 @@ function CategoryButton({category, isSelected, onSelect, variant}: Readonly<Cate
       <Button
         variant='outline'
         onClick={handleClick}
-        className={`flex flex-col items-center justify-center gap-1 rounded-lg border p-3 transition-all ${category.color} ${
-          isSelected ? "border-primary bg-primary/10 ring-primary/20 ring-2" : ""
-        }`}>
+        className={`${styles["mainCategoryButton"]} ${category.color} ${isSelected ? styles["mainCategoryButtonSelected"] : ""}`}>
         {category.icon}
         <span className={styles["categoryLabel"]}>{category.name}</span>
       </Button>
@@ -38,9 +36,7 @@ function CategoryButton({category, isSelected, onSelect, variant}: Readonly<Cate
     <Button
       variant='outline'
       onClick={handleClick}
-      className={`hover:bg-muted flex items-center gap-2 rounded-lg border p-2 text-sm transition-all ${
-        isSelected ? "border-primary bg-primary/10" : ""
-      }`}>
+      className={`${styles["extendedCategoryButton"]} ${isSelected ? styles["extendedCategoryButtonSelected"] : ""}`}>
       {category.icon}
       <span>{category.name}</span>
     </Button>
@@ -61,13 +57,16 @@ export function CategorySuggestionCard(): React.JSX.Element {
 
   return (
     <Card>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbHelpCircle className='h-5 w-5 text-amber-500' />
-          {t("title")}
+      <CardHeader>
+        <CardTitle>
+          <span className={styles["titleRow"]}>
+            <TbHelpCircle className={styles["titleIcon"]} />
+            {t("title")}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-5'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {/* Explanation */}
         <p className={styles["description"]}>{t("description")}</p>
 
@@ -103,18 +102,16 @@ export function CategorySuggestionCard(): React.JSX.Element {
         {/* Gamification */}
         <div className={styles["gamificationBox"]}>
           <div className={styles["gamificationHeader"]}>
-            <TbGift className='h-4 w-4 text-amber-600' />
+            <TbGift className={styles["gamificationGiftIcon"]} />
             <span className={styles["gamificationLabel"]}>{t("gamification", {goal: String(goal)})}</span>
           </div>
           <div className={styles["gamificationProgress"]}>
-            <Progress
-              value={(categorizedCount / goal) * 100}
-              className='h-2 flex-1'
-            />
+            <Progress value={(categorizedCount / goal) * 100} />
             <span className={styles["gamificationCount"]}>
               {categorizedCount}/{goal}
             </span>
           </div>
+        </div>
         </div>
       </CardContent>
     </Card>

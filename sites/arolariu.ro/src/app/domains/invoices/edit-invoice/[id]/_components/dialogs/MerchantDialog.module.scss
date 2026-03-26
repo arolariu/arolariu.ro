@@ -44,3 +44,48 @@
 .detailLabel {
   font-weight: font-weight('medium');
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+
+  @include respond-to('md') {
+    max-width: 36rem;
+  }
+}
+
+.dialogHeader {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.buildingIcon {
+  color: color('primary');
+  width: space(6);
+  height: space(6);
+}
+
+.categoryBadge {
+  color: color('muted-foreground');
+}
+
+.labelCell {
+  padding-block: space(2);
+  padding-left: 0;
+}
+
+.mutedIcon {
+  color: color('muted-foreground');
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.valueCell {
+  padding-block: space(2);
+}
+
+.mapsButton {
+  width: 100%;
+}

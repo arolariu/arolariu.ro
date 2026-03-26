@@ -40,3 +40,14 @@
   width: 100%;
   gap: space(2);
 }
+
+.footerContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.zoomIcon {
+  @include icon-size(space(4));
+  margin-right: space(2);
+}

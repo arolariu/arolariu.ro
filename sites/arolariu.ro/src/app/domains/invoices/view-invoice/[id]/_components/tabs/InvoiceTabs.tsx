@@ -27,47 +27,47 @@ export function InvoiceTabs(): React.JSX.Element {
   const t = useTranslations("Invoices.ViewInvoice.invoiceTabs");
 
   return (
-    <Card className='transition-shadow duration-300 hover:shadow-md'>
+    <Card className={styles["card"]}>
       <Tabs
         defaultValue='recipes'
-        className='w-full'>
-        <CardHeader className='pb-0'>
-          <TabsList className='grid w-full grid-cols-2'>
+        className={styles["tabs"]}>
+        <CardHeader className={styles["cardHeader"]}>
+          <TabsList className={styles["tabsList"]}>
             <TabsTrigger
               value='recipes'
-              className='gap-2'>
-              <TbChefHat className='h-4 w-4' />
+              className={styles["tabsTrigger"]}>
+              <TbChefHat className={styles["tabIcon"]} />
               {t("tabs.possibleRecipes")}
             </TabsTrigger>
             <TabsTrigger
               value='info'
-              className='gap-2'>
-              <TbInfoCircle className='h-4 w-4' />
+              className={styles["tabsTrigger"]}>
+              <TbInfoCircle className={styles["tabIcon"]} />
               {t("tabs.additionalInfo")}
             </TabsTrigger>
           </TabsList>
         </CardHeader>
-        <CardContent className='pt-6'>
+        <CardContent className={styles["cardContent"]}>
           <TabsContent
             value='recipes'
-            className='mt-0'>
+            className={styles["tabsContent"]}>
             {invoice.possibleRecipes.length > 0 ? (
               <div className={styles["recipesGrid"]}>
                 {invoice.possibleRecipes.map((recipe) => (
                   <Card
                     key={recipe.name}
-                    className='transition-shadow duration-300 hover:shadow-md'>
-                    <CardHeader className='pb-2'>
+                    className={styles["recipeCard"]}>
+                    <CardHeader className={styles["recipeCardHeader"]}>
                       <div className={styles["recipeHeader"]}>
-                        <CardTitle className='text-base'>{recipe.name}</CardTitle>
+                        <CardTitle className={styles["recipeTitle"]}>{recipe.name}</CardTitle>
                         <Badge variant={getComplexityVariant(recipe.complexity)}>{formatEnum(RecipeComplexity, recipe.complexity)}</Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className='space-y-3'>
+                    <CardContent className={styles["recipeBody"]}>
                       <p className={styles["recipeDescription"]}>{recipe.description}</p>
                       <div className={styles["recipeDetails"]}>
                         <div className={styles["recipeDetailItem"]}>
-                          <TbClock className='h-4 w-4' />
+                          <TbClock className={styles["tabIcon"]} />
                           <span>{t("recipe.duration", {minutes: String(recipe.duration)})}</span>
                         </div>
                         <div className={styles["recipeDetailMuted"]}>
@@ -77,14 +77,14 @@ export function InvoiceTabs(): React.JSX.Element {
                       {Boolean(recipe.referenceForMoreDetails) && (
                         <Button
                           variant='link'
-                          className='h-auto p-0 text-sm'
+                          className={styles["recipeLink"]}
                           asChild>
                           <a
                             href={recipe.referenceForMoreDetails}
                             target='_blank'
                             rel='noopener noreferrer'>
                             {t("recipe.viewRecipe")}
-                            <TbExternalLink className='ml-1 h-3 w-3' />
+                            <TbExternalLink className={styles["externalLinkIcon"]} />
                           </a>
                         </Button>
                       )}
@@ -94,14 +94,14 @@ export function InvoiceTabs(): React.JSX.Element {
               </div>
             ) : (
               <div className={styles["emptyState"]}>
-                <TbChefHat className='text-muted-foreground/50 h-12 w-12' />
+                <TbChefHat className={styles["emptyIcon"]} />
                 <p className={styles["emptyStateText"]}>{t("empty.recipes")}</p>
               </div>
             )}
           </TabsContent>
           <TabsContent
             value='info'
-            className='mt-0'>
+            className={styles["tabsContent"]}>
             {Object.keys(invoice.additionalMetadata).length > 0 ? (
               <dl className={styles["metadataList"]}>
                 {Object.entries(invoice.additionalMetadata).map(([key, value]) => (
@@ -115,7 +115,7 @@ export function InvoiceTabs(): React.JSX.Element {
               </dl>
             ) : (
               <div className={styles["emptyState"]}>
-                <TbInfoCircle className='text-muted-foreground/50 h-12 w-12' />
+                <TbInfoCircle className={styles["emptyIcon"]} />
                 <p className={styles["emptyStateText"]}>{t("empty.additionalInfo")}</p>
               </div>
             )}

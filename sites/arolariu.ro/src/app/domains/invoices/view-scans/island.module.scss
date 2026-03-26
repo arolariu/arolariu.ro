@@ -288,3 +288,20 @@
 .bottomSpacer {
   height: abstracts.space(24);
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.sidebarCardContent {
+  padding: abstracts.space(4);
+}
+
+.selectionCard {
+  border-color: abstracts.color-alpha('primary', 0.35);
+  background-color: abstracts.color-alpha('primary', 0.1);
+
+  @include abstracts.dark {
+    border-color: abstracts.color-alpha('primary', 0.35);
+    background-color: abstracts.color-alpha('primary', 0.1);
+  }
+}

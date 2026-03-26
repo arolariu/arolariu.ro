@@ -57,6 +57,47 @@
 .tableContainer {
   border-radius: radius('md');
   border: 1px solid color('border');
+
+  th:first-child {
+    width: 40%;
+  }
+
+  th:not(:first-child),
+  td:not(:first-child) {
+    text-align: right;
+  }
+
+  tbody td:last-child {
+    font-weight: font-weight('medium');
+  }
+
+  tfoot td:last-child {
+    font-weight: font-weight('semibold');
+  }
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.heartIcon {
+  @include icon-size(space(4));
+  color: color('destructive');
+  fill: color('destructive');
+}
+
+.contentSpaced {
+  @include spaced-children(space(6));
+}
+
+.iconSm {
+  @include icon-size(space(4));
+}
+
+.navIcon {
+  @include icon-size(space(4));
 }
 
 .itemCell {

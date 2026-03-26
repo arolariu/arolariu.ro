@@ -39,3 +39,39 @@
   width: 100%;
   object-fit: cover;
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+}
+
+.dialogTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.alertIcon {
+  color: color('destructive');
+  width: space(5);
+  height: space(5);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinnerIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+  animation: spin 1s linear infinite;
+}
+
+.trashIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

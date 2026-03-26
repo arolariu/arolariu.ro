@@ -41,10 +41,11 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
   ];
 
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description")}</CardDescription>
+    <div className={styles["card"]}>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("title")}</CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className={styles["statsGrid"]}>
@@ -53,7 +54,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
               key={stat.label}
               className={styles["statItem"]}>
               <div className={styles["statLabel"]}>
-                <stat.icon className='h-3.5 w-3.5' />
+                <stat.icon className={styles["iconSm"]} />
                 <span className={styles["statLabelText"]}>{stat.label}</span>
               </div>
               <p className={styles["statValue"]}>{stat.value}</p>
@@ -65,7 +66,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
         <div className={styles["extremesSection"]}>
           <div className={styles["extremeRow"]}>
             <div className={styles["extremeLabel"]}>
-              <TbTrendingUp className='h-3.5 w-3.5 text-emerald-500' />
+              <TbTrendingUp className={styles["iconEmerald"]} />
               <span className={styles["extremeLabelText"]}>{t("extremes.highest")}</span>
             </div>
             <div className={styles["extremeRight"]}>
@@ -78,7 +79,7 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
 
           <div className={styles["extremeRow"]}>
             <div className={styles["extremeLabel"]}>
-              <TbTrendingDown className='h-3.5 w-3.5 text-blue-500' />
+              <TbTrendingDown className={styles["iconBlue"]} />
               <span className={styles["extremeLabelText"]}>{t("extremes.lowest")}</span>
             </div>
             <div className={styles["extremeRight"]}>
@@ -91,5 +92,6 @@ export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JS
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

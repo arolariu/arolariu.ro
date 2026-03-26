@@ -48,6 +48,12 @@
 .titleSkeleton {
   margin-inline: auto;
   margin-bottom: space(4);
+  height: 2.5rem;
+  width: 75%;
+
+  @include respond-to('sm') {
+    height: 3rem;
+  }
 }
 
 .descriptionBlock {
@@ -58,6 +64,20 @@
 
 .descriptionLine {
   margin-inline: auto;
+  height: 1rem;
+  width: 100%;
+}
+
+.descriptionLineMedium {
+  margin-inline: auto;
+  height: 1rem;
+  width: 83.333%;
+}
+
+.descriptionLineShort {
+  margin-inline: auto;
+  height: 1rem;
+  width: 80%;
 }
 
 .ctaRow {
@@ -123,4 +143,43 @@
   padding-left: space(4);
 
   @include spaced-children(space(2));
+}
+
+// ===========================================
+// SKELETON ELEMENT SIZES
+// ===========================================
+.ctaButton {
+  height: 2.75rem;
+  width: 10rem;
+  border-radius: radius('md');
+}
+
+.ctaButtonSmall {
+  height: 2.75rem;
+  width: 8rem;
+  border-radius: radius('md');
+}
+
+.stepCircle {
+  position: relative;
+  z-index: z('content');
+  height: space(10);
+  width: space(10);
+  flex-shrink: 0;
+  border-radius: radius('full');
+}
+
+.stepTitle {
+  height: 1rem;
+  width: 8rem;
+}
+
+.stepLine1 {
+  height: 0.75rem;
+  width: 100%;
+}
+
+.stepLine2 {
+  height: 0.75rem;
+  width: 83.333%;
 }

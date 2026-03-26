@@ -33,6 +33,29 @@
   height: space(4);
 }
 
+// ===========================================
+// DIALOG CONTENT
+// ===========================================
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 425px;
+  }
+}
+
+.formatLabel {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.delimiterInput {
+  width: 50%;
+}
+
+.exportButton {
+  gap: space(2);
+}
+
 .radioRow {
   display: flex;
   align-items: center;

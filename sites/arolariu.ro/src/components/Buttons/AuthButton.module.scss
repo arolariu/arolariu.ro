@@ -1,0 +1,26 @@
+// ===========================================
+// AUTH BUTTON - LOADING SKELETON
+// ===========================================
+@use '../../styles/abstracts' as *;
+
+.skeleton {
+  @include icon-size(space(8));
+  border-radius: radius('full');
+  background-color: color('muted');
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @include dark {
+    background-color: color-alpha('muted-foreground', 0.3);
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}

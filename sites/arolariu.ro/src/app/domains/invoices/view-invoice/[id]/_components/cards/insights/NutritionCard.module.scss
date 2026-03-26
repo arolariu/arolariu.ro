@@ -153,3 +153,66 @@
 .scoreRed {
   color: color('destructive');
 }
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('lg');
+}
+
+.titleIcon {
+  @include icon-size(space(5));
+  color: color('success');
+}
+
+.contentSpaced {
+  @include spaced-children(space(6));
+}
+
+.iconRed {
+  @include icon-size(space(5));
+  color: color('destructive');
+}
+
+.iconGreen {
+  @include icon-size(space(5));
+  color: color('success');
+}
+
+.iconAmber {
+  @include icon-size(space(5));
+  color: color('warning');
+}
+
+.iconWheat {
+  @include icon-size(space(5));
+  color: color('warning');
+}
+
+.iconCompositionShrink {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+}
+
+.iconAllergenSm {
+  @include icon-size(space(3));
+  margin-right: space(1);
+}
+
+.iconAllergenAmber {
+  @include icon-size(space(4));
+  color: color('warning');
+}
+
+.iconBulb {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+  margin-top: space(0.5);
+  color: color('warning');
+}
+
+.iconBlue {
+  @include icon-size(space(5));
+  color: color('info');
+}

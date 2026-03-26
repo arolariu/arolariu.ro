@@ -62,9 +62,9 @@ export function ReceiptScanCard(): React.JSX.Element {
 
   return (
     <TooltipProvider>
-      <Card className='transition-shadow duration-300 hover:shadow-md'>
+      <Card>
         <CardHeader>
-          <CardTitle className='text-lg'>
+          <CardTitle>
             {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
           </CardTitle>
         </CardHeader>
@@ -83,7 +83,7 @@ export function ReceiptScanCard(): React.JSX.Element {
                 />
               </div>
             } />
-            <DialogContent className='max-w-3xl'>
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1
@@ -103,14 +103,14 @@ export function ReceiptScanCard(): React.JSX.Element {
             </DialogContent>
           </Dialog>
         </CardContent>
-        <CardFooter className='flex flex-col gap-2'>
+        <CardFooter>
+          <div className={styles["footerContent"]}>
           <Tooltip>
             <TooltipTrigger render={
               <Button
                 variant='outline'
-                className='w-full bg-transparent'
                 onClick={handleOpenImage}>
-                <TbZoomIn className='mr-2 h-4 w-4' />
+                <TbZoomIn className={styles["zoomIcon"]} />
                 {t("buttons.expand")}
               </Button>
             } />
@@ -125,7 +125,6 @@ export function ReceiptScanCard(): React.JSX.Element {
                   <TooltipTrigger render={
                     <Button
                       variant='secondary'
-                      className='flex-1'
                       onClick={handlePreviousScan}>
                       {t("buttons.previousScan")}
                     </Button>
@@ -140,7 +139,6 @@ export function ReceiptScanCard(): React.JSX.Element {
                   <TooltipTrigger render={
                     <Button
                       variant='secondary'
-                      className='flex-1'
                       onClick={handleNextScan}>
                       {t("buttons.nextScan")}
                     </Button>
@@ -152,6 +150,7 @@ export function ReceiptScanCard(): React.JSX.Element {
               )}
             </div>
           )}
+          </div>
         </CardFooter>
       </Card>
     </TooltipProvider>

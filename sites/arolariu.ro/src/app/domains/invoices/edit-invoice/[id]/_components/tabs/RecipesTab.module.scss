@@ -36,3 +36,36 @@
   flex-direction: row;
   gap: space(4);
 }
+
+.card {
+  transition: box-shadow 300ms;
+  &:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: space(2);
+}
+
+.generateButton {
+  cursor: pointer;
+}
+
+.addButton {
+  cursor: pointer;
+}
+
+.createButton {
+  cursor: pointer;
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

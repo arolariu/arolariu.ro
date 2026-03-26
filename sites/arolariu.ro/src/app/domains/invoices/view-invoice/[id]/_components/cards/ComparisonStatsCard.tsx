@@ -12,9 +12,9 @@ type Props = {
 };
 
 function getTrendIcon(value: number): React.JSX.Element {
-  if (value > 5) return <TbTrendingUp className='h-4 w-4 text-amber-500' />;
-  if (value < -5) return <TbTrendingDown className='h-4 w-4 text-emerald-500' />;
-  return <TbMinus className='text-muted-foreground h-4 w-4' />;
+  if (value > 5) return <TbTrendingUp className={styles["trendIconAmber"]} />;
+  if (value < -5) return <TbTrendingDown className={styles["trendIconEmerald"]} />;
+  return <TbMinus className={styles["trendIconMuted"]} />;
 }
 
 function getTrendColor(value: number): string {
@@ -28,17 +28,19 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
   const percentageProgress = Math.min(((stats.currentAmount - stats.minAmount) / (stats.maxAmount - stats.minAmount)) * 100, 100);
 
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-3'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("subtitle", {count: String(stats.totalInvoices)})}</CardDescription>
+    <div className={styles["card"]}>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("title")}</CardTitle>
+        <CardDescription>{t("subtitle", {count: String(stats.totalInvoices)})}</CardDescription>
       </CardHeader>
-      <CardContent className='space-y-4'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {/* Current vs Average */}
         <div className={styles["section"]}>
           <div className={styles["row"]}>
             <div className={styles["rowWithIcon"]}>
-              <TbTarget className='text-muted-foreground h-4 w-4' />
+              <TbTarget className={styles["iconMuted"]} />
               <span className={styles["label"]}>{t("vsAverage")}</span>
             </div>
             <div className={styles["trendRow"]}>
@@ -61,17 +63,14 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
             <span>{t("minValue", {amount: stats.minAmount.toFixed(0)})}</span>
             <span>{t("maxValue", {amount: stats.maxAmount.toFixed(0)})}</span>
           </div>
-          <Progress
-            value={percentageProgress}
-            className='h-2'
-          />
+          <Progress value={percentageProgress} />
           <p className={styles["positionLabel"]}>{t("positionInRange")}</p>
         </div>
 
         {/* Item Count Comparison */}
         <div className={styles["borderTopRow"]}>
           <div className={styles["rowWithIcon"]}>
-            <TbShoppingBag className='text-muted-foreground h-4 w-4' />
+            <TbShoppingBag className={styles["iconMuted"]} />
             <span className={styles["label"]}>{t("itemCount")}</span>
           </div>
           <div className={styles["rightAlign"]}>
@@ -91,7 +90,7 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
         {/* Same Merchant Comparison */}
         <div className={styles["borderTopRow"]}>
           <div className={styles["rowWithIcon"]}>
-            <TbBuildingStore className='text-muted-foreground h-4 w-4' />
+            <TbBuildingStore className={styles["iconMuted"]} />
             <span className={styles["label"]}>{t("sameStore")}</span>
           </div>
           <div className={styles["rightAlign"]}>
@@ -105,7 +104,9 @@ export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.J
             <span className={styles["subLabel"]}>{t("sameStoreComparison", {average: stats.sameMerchantAvg.toFixed(0), currency})}</span>
           </div>
         </div>
+        </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

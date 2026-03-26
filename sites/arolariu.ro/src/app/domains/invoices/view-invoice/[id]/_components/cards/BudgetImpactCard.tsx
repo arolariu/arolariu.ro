@@ -24,43 +24,35 @@ export function BudgetImpactCard(): React.JSX.Element {
     daysRemaining,
     dailyAllowance,
     isOverBudget,
-    isNearLimit,
     monthName,
   } = computeBudgetImpact(paymentInformation);
 
-  // Determine progress bar color class based on budget status
-  const getProgressColorClass = (): string => {
-    if (isOverBudget) return "[&>div]:bg-destructive";
-    if (isNearLimit) return "[&>div]:bg-amber-500";
-    return "";
-  };
-
   // Determine daily allowance trend icon
   const getDailyAllowanceIcon = (): React.JSX.Element => {
-    if (dailyAllowance > 60) return <TbTrendingUp className='h-5 w-5 text-emerald-500' />;
-    if (dailyAllowance > 40) return <TbMinus className='h-5 w-5 text-amber-500' />;
-    return <TbTrendingDown className='text-destructive h-5 w-5' />;
+    if (dailyAllowance > 60) return <TbTrendingUp className={styles["trendIconUp"]} />;
+    if (dailyAllowance > 40) return <TbMinus className={styles["trendIconNeutral"]} />;
+    return <TbTrendingDown className={styles["trendIconDown"]} />;
   };
 
   return (
-    <Card className='transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbCreditCard className='text-muted-foreground h-4 w-4' />
-          {t("title", {month: monthName})}
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <span className={styles["titleRow"]}>
+            <TbCreditCard className={styles["titleIcon"]} />
+            {t("title", {month: monthName})}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-4'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {/* Budget progress */}
         <div className={styles["budgetSection"]}>
           <div className={styles["budgetRow"]}>
             <span className={styles["budgetLabel"]}>{t("monthlyBudget")}</span>
             <span className={styles["budgetValue"]}>{formatCurrency(monthlyBudget, {currencyCode: currency.code, locale})}</span>
           </div>
-          <Progress
-            value={Math.min(percentUsed, 100)}
-            className={`h-3 ${getProgressColorClass()}`}
-          />
+          <Progress value={Math.min(percentUsed, 100)} />
           <div className={styles["budgetMeta"]}>
             <span>{t("spent", {amount: formatCurrency(totalSpent, {currencyCode: currency.code, locale})})}</span>
             <span>{percentUsed.toFixed(0)}%</span>
@@ -102,6 +94,7 @@ export function BudgetImpactCard(): React.JSX.Element {
             {getDailyAllowanceIcon()}
           </div>
         )}
+        </div>
       </CardContent>
     </Card>
   );

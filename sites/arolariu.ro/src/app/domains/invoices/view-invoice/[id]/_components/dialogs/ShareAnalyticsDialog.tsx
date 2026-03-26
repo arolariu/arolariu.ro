@@ -114,7 +114,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description", {merchant: merchant.name})}</DialogDescription>
@@ -122,15 +122,15 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
 
         <Tabs
           defaultValue='image'
-          className='mt-4'>
-          <TabsList className='grid w-full grid-cols-2'>
+          className={styles["tabs"]}>
+          <TabsList className={styles["tabsList"]}>
             <TabsTrigger value='image'>{t("tabs.image")}</TabsTrigger>
             <TabsTrigger value='email'>{t("tabs.email")}</TabsTrigger>
           </TabsList>
 
           <TabsContent
             value='image'
-            className='py-4'>
+            className={styles["tabsContent"]}>
             <div className={styles["contentSection"]}>
               <p className={styles["description"]}>{t("image.description")}</p>
               <div className={styles["previewContainer"]}>
@@ -139,19 +139,19 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                 </div>
               </div>
             </div>
-            <DialogFooter className='mt-4'>
+            <DialogFooter className={styles["dialogFooter"]}>
               <div className={styles["footerButtons"]}>
                 <Button
                   onClick={handleDownloadImage}
-                  className='w-full'>
-                  <TbDownload className='mr-2 h-4 w-4' />
+                  className={styles["fullWidthButton"]}>
+                  <TbDownload className={styles["buttonIcon"]} />
                   {t("image.download")}
                 </Button>
                 <Button
                   variant='outline'
                   onClick={handleCopyImage}
-                  className='w-full'>
-                  <TbCopy className='mr-2 h-4 w-4' />
+                  className={styles["fullWidthButton"]}>
+                  <TbCopy className={styles["buttonIcon"]} />
                   {t("image.copyToClipboard")}
                 </Button>
               </div>
@@ -160,7 +160,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
 
           <TabsContent
             value='email'
-            className='py-4'>
+            className={styles["tabsContent"]}>
             <div className={styles["contentSection"]}>
               <p className={styles["description"]}>{t("email.description")}</p>
               <div className={styles["emailSection"]}>
@@ -175,11 +175,11 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                 />
               </div>
             </div>
-            <DialogFooter className='mt-4'>
+            <DialogFooter className={styles["dialogFooter"]}>
               <Button
                 onClick={handleSendEmail}
-                className='w-full'>
-                <TbMail className='mr-2 h-4 w-4' />
+                className={styles["fullWidthButton"]}>
+                <TbMail className={styles["buttonIcon"]} />
                 {t("email.send")}
               </Button>
             </DialogFooter>

@@ -72,3 +72,21 @@
   max-width: 100px;
   @include truncate;
 }
+
+.card {
+  height: 100%;
+}
+
+.iconSm {
+  @include icon-size(space(3.5));
+}
+
+.iconEmerald {
+  @include icon-size(space(3.5));
+  color: color('success');
+}
+
+.iconBlue {
+  @include icon-size(space(3.5));
+  color: color('info');
+}

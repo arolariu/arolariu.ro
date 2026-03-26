@@ -105,7 +105,7 @@ export default function EnhancedCTASection(): React.JSX.Element {
           <Button
             asChild
             size='lg'
-            className='group bg-white px-8 text-indigo-600 hover:bg-gray-100'>
+            className={`group ${styles["ctaPrimaryBtn"]}`}>
             <Link href='/domains/invoices/upload-scans'>
               <TbUpload className={styles["ctaUploadIcon"]} />
               {translations.uploadButton}
@@ -115,7 +115,7 @@ export default function EnhancedCTASection(): React.JSX.Element {
             asChild
             size='lg'
             variant='outline'
-            className='border-white/30 bg-white/10 px-8 text-white backdrop-blur-sm hover:bg-white/20'>
+            className={styles["ctaSecondaryBtn"]}>
             <Link href='/about/the-platform'>
               {translations.learnMore}
               <TbArrowRight className={styles["ctaArrowIcon"]} />

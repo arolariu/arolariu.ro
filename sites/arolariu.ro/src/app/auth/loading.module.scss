@@ -42,6 +42,17 @@
 .loadingTitle {
   margin-left: auto;
   margin-right: auto;
+  height: 3.5rem;
+  width: 20rem;
+  max-width: 100%;
+
+  @include respond-to('sm') {
+    height: 4rem;
+  }
+
+  @include respond-to('lg') {
+    height: 5rem;
+  }
 }
 
 .loadingSubtitle {
@@ -140,4 +151,159 @@
   display: flex;
   flex-direction: column;
   gap: space(2);
+}
+
+// ===========================================
+// SKELETON ELEMENT SIZES
+// ===========================================
+.skBadge {
+  height: space(8);
+  width: 8rem;
+  border-radius: radius('full');
+}
+
+.skTextFull {
+  margin-inline: auto;
+  height: 1.25rem;
+  width: 100%;
+}
+
+.skText4of5 {
+  margin-inline: auto;
+  height: 1.25rem;
+  width: 80%;
+}
+
+.skTrustPillSm {
+  height: 1.75rem;
+  width: 6rem;
+  border-radius: radius('full');
+}
+
+.skTrustPillMd {
+  height: 1.75rem;
+  width: 7rem;
+  border-radius: radius('full');
+}
+
+.skTrustPillXs {
+  height: 1.75rem;
+  width: 5rem;
+  border-radius: radius('full');
+}
+
+.skDivider {
+  height: 1px;
+  width: 100%;
+}
+
+.skIcon {
+  height: 3rem;
+  width: 3rem;
+  border-radius: radius('xl');
+}
+
+.skStepLabel {
+  height: 1.25rem;
+  width: 3.5rem;
+}
+
+.skIllustration {
+  height: 12rem;
+  width: 12rem;
+  border-radius: radius('2xl');
+
+  @include respond-to('sm') {
+    height: 14rem;
+    width: 14rem;
+  }
+}
+
+.skCardTitle48 {
+  margin-inline: auto;
+  height: 2.25rem;
+  width: 12rem;
+}
+
+.skCardTitle44 {
+  margin-inline: auto;
+  height: 2.25rem;
+  width: 11rem;
+}
+
+.skDescFull {
+  margin-inline: auto;
+  height: 1.25rem;
+  width: 100%;
+  max-width: 20rem;
+}
+
+.skDesc4of5 {
+  margin-inline: auto;
+  height: 1.25rem;
+  width: 80%;
+  max-width: 20rem;
+}
+
+.skDesc3of4 {
+  margin-inline: auto;
+  height: 1.25rem;
+  width: 75%;
+  max-width: 20rem;
+}
+
+.skDot {
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: radius('full');
+}
+
+.skBulletFull {
+  height: 1rem;
+  width: 100%;
+}
+
+.skBullet5of6 {
+  height: 1rem;
+  width: 83.333%;
+}
+
+.skBullet4of5 {
+  height: 1rem;
+  width: 80%;
+}
+
+.skBullet3of4 {
+  height: 1rem;
+  width: 75%;
+}
+
+.skCtaBtn {
+  height: 3rem;
+  width: 100%;
+  border-radius: radius('lg');
+}
+
+.skCtaText48 {
+  margin-inline: auto;
+  height: 1rem;
+  width: 12rem;
+}
+
+.skCtaText44 {
+  margin-inline: auto;
+  height: 1rem;
+  width: 11rem;
+}
+
+.skFooterFull {
+  margin-inline: auto;
+  height: 1rem;
+  width: 100%;
+}
+
+.skFooter3of4 {
+  margin-inline: auto;
+  height: 1rem;
+  width: 75%;
 }

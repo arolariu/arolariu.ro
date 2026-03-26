@@ -69,3 +69,22 @@
   @include abstracts.transition(transform);
 }
 
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.cardHeaderCompact {
+  padding-bottom: abstracts.space(2);
+}
+
+.cardTitleXl {
+  font-size: abstracts.font-size('xl');
+}
+
+.cardDescBase {
+  font-size: abstracts.font-size('base');
+}
+
+.cardContentCompact {
+  padding-top: abstracts.space(2);
+}
+

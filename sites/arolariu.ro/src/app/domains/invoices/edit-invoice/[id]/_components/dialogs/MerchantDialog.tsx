@@ -75,21 +75,21 @@ export default function MerchantDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md md:max-w-xl'>
-        <DialogHeader className='items-start justify-start justify-items-start'>
+      <DialogContent className={styles["dialogContent"]}>
+        <DialogHeader className={styles["dialogHeader"]}>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description", {merchantName: merchant.name})}</DialogDescription>
         </DialogHeader>
         <div className={styles["body"]}>
           <div className={styles["merchantProfile"]}>
             <div className={styles["merchantAvatar"]}>
-              <TbBuilding className='text-primary h-6 w-6' />
+              <TbBuilding className={styles["buildingIcon"]} />
             </div>
             <div>
               <h3 className={styles["merchantName"]}>{merchant.name}</h3>
               <Badge
                 variant='outline'
-                className='text-muted-foreground'>
+                className={styles["categoryBadge"]}>
                 {merchantCategoryAsString}
               </Badge>
             </div>
@@ -98,31 +98,31 @@ export default function MerchantDialog(): React.JSX.Element {
           <Table>
             <TableBody>
               <TableRow>
-                <TableCell className='py-2 pl-0'>
+                <TableCell className={styles["labelCell"]}>
                   <div className={styles["detailRow"]}>
-                    <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
+                    <TbMapPin className={styles["mutedIcon"]} />
                     <span className={styles["detailLabel"]}>{t("fields.address")}</span>
                   </div>
                 </TableCell>
-                <TableCell className='py-2'>{merchant.address.address}</TableCell>
+                <TableCell className={styles["valueCell"]}>{merchant.address.address}</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className='py-2 pl-0'>
+                <TableCell className={styles["labelCell"]}>
                   <div className={styles["detailRow"]}>
-                    <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
+                    <TbPhone className={styles["mutedIcon"]} />
                     <span className={styles["detailLabel"]}>{t("fields.phone")}</span>
                   </div>
                 </TableCell>
-                <TableCell className='py-2'>{merchant.address.phoneNumber}</TableCell>
+                <TableCell className={styles["valueCell"]}>{merchant.address.phoneNumber}</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className='py-2 pl-0'>
+                <TableCell className={styles["labelCell"]}>
                   <div className={styles["detailRow"]}>
-                    <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
+                    <TbBuildingStore className={styles["mutedIcon"]} />
                     <span className={styles["detailLabel"]}>{t("fields.parentCompany")}</span>
                   </div>
                 </TableCell>
-                <TableCell className='py-2'>{merchant.parentCompanyId}</TableCell>
+                <TableCell className={styles["valueCell"]}>{merchant.parentCompanyId}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -131,7 +131,7 @@ export default function MerchantDialog(): React.JSX.Element {
         <div className={styles["footer"]}>
           <Button
             type='button'
-            className='w-full'>
+            className={styles["mapsButton"]}>
             {t("buttons.openInMaps")}
           </Button>
         </div>

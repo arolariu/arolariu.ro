@@ -364,3 +364,52 @@
   @include icon-size(space(4));
   margin-left: space(2);
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.dialogTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.radioItem {
+  margin-top: 0.125rem;
+}
+
+.modeLabelText {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: space(2);
+  font-weight: font-weight('medium');
+}
+
+.createButton {
+  @include gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.progressBar {
+  height: 0.5rem;
+}
+
+.completeButton {
+  background-color: color('success');
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 32rem;
+  }
+}

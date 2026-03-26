@@ -35,23 +35,23 @@ export function InvoiceTimeline(): React.JSX.Element {
   const totalEvents = events.length;
 
   return (
-    <Card className='transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-4'>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
         <div className={styles["headerRow"]}>
-          <CardTitle className='flex items-center gap-2 text-lg'>
-            <TbCalendar className='text-muted-foreground h-4 w-4' />
+          <CardTitle className={styles["cardTitle"]}>
+            <TbCalendar className={styles["calendarIcon"]} />
             {t("title")}
           </CardTitle>
           <Badge
             variant='secondary'
-            className='text-xs'>
+            className={styles["badge"]}>
             {t("eventCount", {count: totalEvents})}
           </Badge>
         </div>
         <p className={styles["subtitle"]}>{t("subtitle")}</p>
       </CardHeader>
 
-      <CardContent className='space-y-6'>
+      <CardContent className={styles["cardContent"]}>
         {/* Timeline events grouped by date */}
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
           <div

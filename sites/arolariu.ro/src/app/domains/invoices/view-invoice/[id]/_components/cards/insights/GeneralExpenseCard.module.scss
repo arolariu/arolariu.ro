@@ -133,3 +133,41 @@
   display: flex;
   gap: space(2);
 }
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('lg');
+}
+
+.titleIcon {
+  @include icon-size(space(5));
+  color: color('info');
+}
+
+.contentSpaced {
+  @include spaced-children(space(5));
+}
+
+.iconSm {
+  @include icon-size(space(4));
+}
+
+.iconSmColored {
+  @include icon-size(space(3));
+}
+
+.iconIndigo {
+  @include icon-size(space(4));
+  color: color('info');
+}
+
+.iconGray {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.briefcaseIcon {
+  @include icon-size(space(3));
+}

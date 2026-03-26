@@ -60,6 +60,11 @@
   padding: space(1.5);
 }
 
+.tipIcon {
+  width: space(5);
+  height: space(5);
+}
+
 .tipContent {
   flex: 1;
 }
@@ -91,6 +96,14 @@
 
 .moreButton {
   padding-top: space(2);
+
+  & > button {
+    width: 100%;
+  }
+
+  & > button:hover .arrowIcon {
+    transform: translateX(space(1));
+  }
 }
 
 .disclaimer {
@@ -99,4 +112,50 @@
   align-items: center;
   gap: space(2);
   font-size: font-size('xs');
+}
+
+.cardHeader {
+  padding-bottom: space(2);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  font-size: font-size('lg');
+}
+
+.sparklesIcon {
+  color: color('primary');
+  margin-right: space(2);
+  width: space(5);
+  height: space(5);
+}
+
+.cardContent {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.difficultyBadge {
+  margin-top: space(1);
+  font-size: font-size('xs');
+}
+
+.thumbIcon {
+  margin-left: space(1);
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.arrowIcon {
+  margin-left: space(2);
+  width: space(4);
+  height: space(4);
+  transition: transform 150ms;
+}
+
+.alertCircleIcon {
+  width: 0.875rem;
+  height: 0.875rem;
 }

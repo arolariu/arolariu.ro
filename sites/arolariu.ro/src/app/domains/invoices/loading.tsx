@@ -48,19 +48,19 @@ export default function Loading(): React.JSX.Element {
         {/* Content Area */}
         <div className={styles["contentArea"]}>
           {/* Title Skeleton */}
-          <Skeleton className={`${styles["titleSkeleton"]} h-10 w-3/4 sm:h-12`} />
+          <Skeleton className={styles["titleSkeleton"]} />
 
           {/* Description Skeleton */}
           <article className={styles["descriptionBlock"]}>
-            <Skeleton className={`${styles["descriptionLine"]} h-4 w-full`} />
-            <Skeleton className={`${styles["descriptionLine"]} h-4 w-5/6`} />
-            <Skeleton className={`${styles["descriptionLine"]} h-4 w-4/5`} />
+            <Skeleton className={styles["descriptionLine"]} />
+            <Skeleton className={styles["descriptionLineMedium"]} />
+            <Skeleton className={styles["descriptionLineShort"]} />
           </article>
 
           {/* CTA Buttons Skeleton */}
           <div className={styles["ctaRow"]}>
-            <Skeleton className='h-11 w-40 rounded' />
-            <Skeleton className='h-11 w-32 rounded' />
+            <Skeleton className={styles["ctaButton"]} />
+            <Skeleton className={styles["ctaButtonSmall"]} />
           </div>
         </div>
       </section>
@@ -78,13 +78,13 @@ export default function Loading(): React.JSX.Element {
               <div className={styles["stepLine"]}>{stepNumber < 5 && <div className={styles["stepLineBar"]} />}</div>
 
               {/* Circle Icon */}
-              <Skeleton className='relative z-10 h-10 w-10 shrink-0 rounded-full' />
+              <Skeleton className={styles["stepCircle"]} />
 
               {/* Step Content */}
               <div className={styles["stepContent"]}>
-                <Skeleton className='h-4 w-32' />
-                <Skeleton className='h-3 w-full' />
-                <Skeleton className='h-3 w-5/6' />
+                <Skeleton className={styles["stepTitle"]} />
+                <Skeleton className={styles["stepLine1"]} />
+                <Skeleton className={styles["stepLine2"]} />
               </div>
             </div>
           ))}

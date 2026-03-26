@@ -22,3 +22,37 @@
   align-items: center;
   gap: space(2);
 }
+
+// ===========================================
+// DROPDOWN STYLES
+// ===========================================
+.menuTrigger {
+  cursor: pointer;
+
+  &:hover {
+    color: color('accent-foreground');
+  }
+}
+
+.actionButton {
+  height: space(8);
+  width: space(8);
+  background-color: color-alpha('background', 0.8);
+
+  @media print {
+    display: none;
+  }
+}
+
+.menuContent {
+  width: 10rem;
+}
+
+.menuItem {
+  cursor: pointer;
+}
+
+.menuItemDestructive {
+  cursor: pointer;
+  color: color('destructive');
+}

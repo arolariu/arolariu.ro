@@ -57,7 +57,7 @@ const AddDialog = () => {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("add.title")}</DialogTitle>
           <DialogDescription>{t("add.description")}</DialogDescription>
@@ -97,7 +97,7 @@ const AddDialog = () => {
           <Button
             type='button'
             onClick={handleSave}>
-            <TbDiscFilled className='mr-2 h-4 w-4' />
+            <TbDiscFilled className={styles["saveIcon"]} />
             {t("buttons.save")}
           </Button>
         </DialogFooter>
@@ -106,7 +106,7 @@ const AddDialog = () => {
   );
 };
 
-const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
+const UpdateDialog= ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const t = useTranslations("Invoices.EditInvoice.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
@@ -126,7 +126,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("edit.title")}</DialogTitle>
           <DialogDescription>{t("edit.description")}</DialogDescription>
@@ -163,7 +163,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
           <Button
             type='button'
             onClick={handleSave}>
-            <TbDiscFilled className='mr-2 h-4 w-4' />
+            <TbDiscFilled className={styles["saveIcon"]} />
             {t("buttons.save")}
           </Button>
         </DialogFooter>
@@ -172,7 +172,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
   );
 };
 
-const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
+const DeleteDialog= ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const t = useTranslations("Invoices.EditInvoice.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
 
@@ -187,7 +187,7 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("delete.title")}</DialogTitle>
           <DialogDescription>{t("delete.description")}</DialogDescription>

@@ -160,14 +160,14 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): Re
                   <TooltipTrigger render={
                     <Button
                       type='button'
-                      className='text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-help transition-colors'
+                      className={styles["infoButton"]}
                       aria-label={t("aria.moreInfo", {title: eventTitle})}>
-                      <TbInfoCircle className='h-3.5 w-3.5' />
+                      <TbInfoCircle className={styles["infoIcon"]} />
                     </Button>
                   } />
                   <TooltipContent
                     side='right'
-                    className='max-w-xs text-xs'
+                    className={styles["tooltipContent"]}
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
                     {Boolean(event.metadata?.confidence) && (

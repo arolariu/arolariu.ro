@@ -71,15 +71,15 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
 
       <div className={styles["selectionGrid"]}>
         <Card
-          className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
+          className={styles["selectionCard"]}
           onClick={onSelectPublic}>
           <CardHeader className={styles["cardHeaderRow"]}>
             <div className={`${styles["iconCircle"]} ${styles["iconCircleOrange"]}`}>
               <TbGlobe className={styles["globeIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className='text-base'>{t("selection.publicTitle")}</CardTitle>
-              <CardDescription className='text-sm'>
+              <CardTitle className={styles["cardTitleBase"]}>{t("selection.publicTitle")}</CardTitle>
+              <CardDescription className={styles["cardDescSm"]}>
                 {t.rich("selection.publicDescription", {strong: RichTextStrong})}
               </CardDescription>
             </div>
@@ -87,15 +87,15 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
         </Card>
 
         <Card
-          className='hover:border-primary hover:bg-accent/50 cursor-pointer transition-colors'
+          className={styles["selectionCard"]}
           onClick={onSelectPrivate}>
           <CardHeader className={styles["cardHeaderRow"]}>
             <div className={`${styles["iconCircle"]} ${styles["iconCircleGreen"]}`}>
               <TbLock className={styles["lockIcon"]} />
             </div>
             <div className={styles["cardContent"]}>
-              <CardTitle className='text-base'>{t("selection.privateTitle")}</CardTitle>
-              <CardDescription className='text-sm'>
+              <CardTitle className={styles["cardTitleBase"]}>{t("selection.privateTitle")}</CardTitle>
+              <CardDescription className={styles["cardDescSm"]}>
                 {t.rich("selection.privateDescription", {strong: RichTextStrong})}
               </CardDescription>
             </div>
@@ -105,10 +105,10 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
 
       <Alert
         variant='default'
-        className='mt-4'>
+        className={styles["alertMt"]}>
         <TbAlertTriangle className={styles["alertIcon"]} />
         <AlertTitle>{t("selection.privacyNoticeTitle")}</AlertTitle>
-        <AlertDescription className='text-xs'>{t("selection.privacyNoticeDescription")}</AlertDescription>
+        <AlertDescription className={styles["alertDescXs"]}>{t("selection.privacyNoticeDescription")}</AlertDescription>
       </Alert>
     </div>
   );
@@ -368,7 +368,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{getDialogDescription()}</DialogDescription>

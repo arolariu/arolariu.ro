@@ -105,7 +105,7 @@ function Sidebar(): React.JSX.Element | null {
     <div className={styles["sidebar"]}>
       {/* How to Use */}
       <Card>
-        <CardContent className='p-4'>
+        <CardContent className={styles["sidebarCardContent"]}>
           <h3 className={styles["sidebarTitle"]}>{t("sidebar.howTo.title")}</h3>
           <div className={styles["howToList"]}>
             <QuickTip
@@ -132,8 +132,8 @@ function Sidebar(): React.JSX.Element | null {
         <motion.div
           initial={{opacity: 0, scale: 0.95}}
           animate={{opacity: 1, scale: 1}}>
-          <Card className='border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20'>
-            <CardContent className='p-4'>
+          <Card className={styles["selectionCard"]}>
+            <CardContent className={styles["sidebarCardContent"]}>
               <div className={styles["selectionContent"]}>
                 <div className={styles["selectionIconCircle"]}>
                   <TbCheck className={styles["selectionIcon"]} />
@@ -155,7 +155,7 @@ function Sidebar(): React.JSX.Element | null {
 
       {/* Quick Upload Link */}
       <Card>
-        <CardContent className='p-4'>
+        <CardContent className={styles["sidebarCardContent"]}>
           <div className={styles["quickUploadContent"]}>
             <div className={styles["quickUploadIconBox"]}>
               <TbPhoto className={styles["quickUploadIcon"]} />

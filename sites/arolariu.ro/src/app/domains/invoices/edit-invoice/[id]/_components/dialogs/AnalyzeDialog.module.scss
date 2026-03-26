@@ -73,6 +73,8 @@
 }
 
 .optionCardSelected {
+  cursor: pointer;
+  transition: all 200ms;
   border-color: color('primary');
   background-color: color-alpha('primary', 0.05);
   box-shadow: 0 0 0 2px color-alpha('primary', 0.2);
@@ -83,6 +85,9 @@
 }
 
 .optionCardDefault {
+  cursor: pointer;
+  transition: all 200ms;
+
   &:hover {
     background-color: color-alpha('muted', 0.5);
     border-color: color-alpha('primary', 0.3);
@@ -223,4 +228,147 @@
 
 .summaryTitle {
   font-weight: font-weight('medium');
+}
+
+.dialogContent {
+  max-height: 90vh;
+  overflow-y: auto;
+
+  @include respond-to('sm') {
+    max-width: 42rem;
+  }
+
+  @include respond-to('md') {
+    max-width: 56rem;
+  }
+}
+
+.dialogTitle {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.scanIcon {
+  width: space(6);
+  height: space(6);
+  color: #a855f7;
+}
+
+.spinnerLargeIcon {
+  width: space(12);
+  height: space(12);
+  color: #a855f7;
+}
+
+.progressBar {
+  height: 0.5rem;
+}
+
+.optionCardHeader {
+  padding-bottom: space(2);
+}
+
+.recommendedBadge {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+
+  :global(.dark) & {
+    background-color: rgba(88, 28, 135, 0.5);
+    color: #c4b5fd;
+  }
+}
+
+.checkIcon {
+  width: space(5);
+  height: space(5);
+  color: #a855f7;
+}
+
+.optionTitle {
+  font-size: font-size('base');
+}
+
+.optionDescription {
+  font-size: font-size('xs');
+}
+
+.optionContent {
+  padding-top: 0;
+}
+
+.clockIcon {
+  width: space(3);
+  height: space(3);
+}
+
+.sectionLabelText {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+}
+
+.featureBadge {
+  gap: space(1);
+}
+
+.checkIconSmall {
+  width: space(3);
+  height: space(3);
+  color: #22c55e;
+}
+
+.sectionLabelLarge {
+  font-size: font-size('base');
+  font-weight: font-weight('medium');
+}
+
+.enhancementLabel {
+  cursor: pointer;
+  font-weight: font-weight('medium');
+}
+
+.summaryCard {
+  background-color: color-alpha('muted', 0.3);
+}
+
+.analyticsIcon {
+  width: space(8);
+  height: space(8);
+  color: #a855f7;
+}
+
+.dialogFooter {
+  gap: space(2);
+
+  @include respond-to('sm') {
+    gap: 0;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.buttonSpinner {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+  animation: spin 1s linear infinite;
+}
+
+.buttonScanIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.optionIcon {
+  width: space(6);
+  height: space(6);
+}
+
+.enhancementSmallIcon {
+  width: space(4);
+  height: space(4);
 }

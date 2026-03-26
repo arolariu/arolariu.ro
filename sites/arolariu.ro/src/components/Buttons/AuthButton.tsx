@@ -2,6 +2,7 @@
 
 import {SignedIn, SignedOut, SignInButton, useAuth, UserButton} from "@clerk/nextjs";
 import {memo} from "react";
+import styles from "./AuthButton.module.scss";
 
 /**
  * Renders the authentication control that adapts to user's sign-in state.
@@ -50,13 +51,13 @@ function AuthButton(): React.JSX.Element {
   const {isSignedIn, isLoaded} = useAuth();
 
   if (!isLoaded) {
-    return <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />;
+    return <div className={styles["skeleton"]} />;
   }
 
   if (isSignedIn) {
     return (
       <SignedIn>
-        <UserButton fallback={<div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />} />
+        <UserButton fallback={<div className={styles["skeleton"]} />} />
       </SignedIn>
     );
   }

@@ -61,3 +61,96 @@
   width: 100%;
   object-fit: contain;
 }
+
+.card {
+  overflow: hidden;
+  transition: box-shadow 300ms;
+  &:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: font-size('lg');
+}
+
+.cardContent {
+  display: flex;
+  justify-content: center;
+}
+
+.imageButton {
+  position: relative;
+  height: auto;
+  width: 100%;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+  padding: 0;
+}
+
+.zoomIcon {
+  width: space(8);
+  height: space(8);
+}
+
+.zoomDialogContent {
+  max-width: 48rem;
+}
+
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.fullWidthButton {
+  width: 100%;
+  cursor: pointer;
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.navButton {
+  flex: 1;
+  cursor: pointer;
+}
+
+.chevronIcon {
+  margin-right: space(1);
+  width: space(4);
+  height: space(4);
+}
+
+.chevronIconRight {
+  margin-left: space(1);
+  width: space(4);
+  height: space(4);
+}
+
+.actionButtonFlex {
+  flex: 1;
+  cursor: pointer;
+}
+
+.removeButton {
+  color: color('destructive');
+  flex: 1;
+  cursor: pointer;
+  &:hover {
+    background-color: color('destructive');
+    color: white;
+  }
+}

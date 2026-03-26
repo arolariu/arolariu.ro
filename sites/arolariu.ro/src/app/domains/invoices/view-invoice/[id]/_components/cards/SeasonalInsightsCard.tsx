@@ -72,7 +72,7 @@ function detectSpendingSpikes(
       if (isSignificantSpike) {
         insights.push({
           id: `spike-${category}`,
-          icon: <TbTrendingUp className='h-4 w-4' />,
+          icon: <TbTrendingUp className={styles["iconSm"]} />,
           title: t("insights.spike.title", {category: formatEnum(ProductCategory, category)}),
           description: t("insights.spike.description", {percent: percentChange.toFixed(0)}),
           type: "warning",
@@ -90,7 +90,7 @@ function getDecemberInsights(date: Date, t: ReturnType<typeof useTranslations>):
   const insights: Insight[] = [
     {
       id: "holiday-season",
-      icon: <TbSparkles className='h-4 w-4' />,
+      icon: <TbSparkles className={styles["iconSm"]} />,
       title: t("insights.holidaySeason.title"),
       description: t("insights.holidaySeason.description"),
       type: "info",
@@ -101,7 +101,7 @@ function getDecemberInsights(date: Date, t: ReturnType<typeof useTranslations>):
   if (isEarlyDecember) {
     insights.push({
       id: "stock-up-tip",
-      icon: <TbBulb className='h-4 w-4' />,
+      icon: <TbBulb className={styles["iconSm"]} />,
       title: t("insights.stockUpTip.title"),
       description: t("insights.stockUpTip.description"),
       type: "success",
@@ -116,7 +116,7 @@ function getDecemberInsights(date: Date, t: ReturnType<typeof useTranslations>):
 function getDefaultInsight(t: ReturnType<typeof useTranslations>): Insight {
   return {
     id: "normal-pattern",
-    icon: <TbShoppingBag className='h-4 w-4' />,
+    icon: <TbShoppingBag className={styles["iconSm"]} />,
     title: t("insights.normalPattern.title"),
     description: t("insights.normalPattern.description"),
     type: "success",
@@ -179,24 +179,24 @@ export function SeasonalInsightsCard(): React.JSX.Element {
   const percentOfAverage = (currentDecemberSpending / decemberAverage) * 100;
 
   return (
-    <Card className='transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbSparkles className='text-muted-foreground h-4 w-4' />
-          {t("title")}
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <span className={styles["titleRow"]}>
+            <TbSparkles className={styles["titleIcon"]} />
+            {t("title")}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-4'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {/* Month comparison */}
         <div className={styles["monthSection"]}>
           <div className={styles["monthRow"]}>
             <span className={styles["monthLabel"]}>{t("month.spendingSoFar", {month: monthName})}</span>
             <span className={styles["monthValue"]}>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
           </div>
-          <Progress
-            value={percentOfAverage}
-            className='h-2'
-          />
+          <Progress value={percentOfAverage} />
           <div className={styles["monthMeta"]}>
             <span>
               {t("month.vsAverage", {
@@ -221,6 +221,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
               </div>
             </div>
           ))}
+        </div>
         </div>
       </CardContent>
     </Card>

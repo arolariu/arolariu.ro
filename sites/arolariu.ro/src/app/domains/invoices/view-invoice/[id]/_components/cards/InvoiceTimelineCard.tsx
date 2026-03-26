@@ -19,14 +19,17 @@ export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Eleme
   const groupedEvents = groupEventsByDate(events, locale);
 
   return (
-    <Card className='transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbCalendar className='text-muted-foreground h-4 w-4' />
-          {t("title")}
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <span className={styles["titleRow"]}>
+            <TbCalendar className={styles["titleIcon"]} />
+            {t("title")}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-4'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
           <div
             key={dateKey}
@@ -50,6 +53,7 @@ export function InvoiceTimelineCard({invoice}: Readonly<Props>): React.JSX.Eleme
             </div>
           </div>
         ))}
+        </div>
       </CardContent>
     </Card>
   );
