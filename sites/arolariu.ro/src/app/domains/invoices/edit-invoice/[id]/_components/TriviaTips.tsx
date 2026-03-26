@@ -143,14 +143,16 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                     </div>
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className={styles["tipSavings"]}>
-                            <span>
-                              {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
-                            </span>
-                            <TbThumbUp className='ml-1 h-3.5 w-3.5' />
-                          </div>
-                        </TooltipTrigger>
+                        <TooltipTrigger
+                          render={
+                            <div className={styles["tipSavings"]}>
+                              <span>
+                                {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
+                              </span>
+                              <TbThumbUp className='ml-1 h-3.5 w-3.5' />
+                            </div>
+                          }
+                        />
                         <TooltipContent>
                           <p>{t("tooltips.estimatedSavings")}</p>
                         </TooltipContent>

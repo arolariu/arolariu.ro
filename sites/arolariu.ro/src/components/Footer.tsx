@@ -254,9 +254,11 @@ function FooterComponent(): React.JSX.Element {
         <div className='footer__build-info'>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <span className='footer__build-tooltip'>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <span className='footer__build-tooltip'>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
+                }
+              />
               <TooltipContent>
                 <code className='footer__build-tooltip'>{new Date(TIMESTAMP).toUTCString()}</code>
               </TooltipContent>

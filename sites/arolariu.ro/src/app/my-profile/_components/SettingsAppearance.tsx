@@ -117,6 +117,16 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
     [storeSetLocale, onSettingsChange],
   );
 
+  const handlePresetClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const preset = e.currentTarget.dataset["preset"] as ThemePresetName | "custom";
+      if (preset) handlePresetChange(preset);
+    },
+    [handlePresetChange],
+  );
+
+  const handleCustomPresetClick = useCallback(() => handlePresetChange("custom"), [handlePresetChange]);
+
   const handleToggle = useCallback(
     (key: "compactMode" | "animationsEnabled") => (checked: boolean) => {
       if (key === "compactMode") storeSetCompactMode(checked);
@@ -240,7 +250,8 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                     type='button'
                     className={styles["presetCard"]}
                     data-selected={themePreset === key}
-                    onClick={() => handlePresetChange(key as ThemePresetName)}>
+                    data-preset={key}
+                    onClick={handlePresetClick}>
                     <div className={styles["presetPreview"]}>
                       {preset.preview.map((color) => (
                         <span
@@ -258,7 +269,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   type='button'
                   className={styles["customPresetCard"]}
                   data-selected={themePreset === "custom"}
-                  onClick={() => handlePresetChange("custom")}>
+                  onClick={handleCustomPresetClick}>
                   <TbBrush className='h-5 w-5' />
                   <span className={styles["presetName"]}>{t("presets.custom")}</span>
                   <span className={styles["presetDescription"]}>{t("presets.customDescription")}</span>
@@ -289,36 +300,40 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   <div className={styles["colorRow"]}>
                     <Label>{t("colors.primary")}</Label>
                     <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant='outline'
-                          className='h-10 w-28 cursor-pointer gap-2 px-3'>
-                          <div
-                            className={styles["colorSwatch"]}
-                            style={{backgroundColor: settings.primaryColor}}
-                          />
-                          <span className={styles["colorLabel"]}>{settings.primaryColor}</span>
-                        </Button>
-                      </PopoverTrigger>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            variant='outline'
+                            className='h-10 w-28 cursor-pointer gap-2 px-3'>
+                            <div
+                              className={styles["colorSwatch"]}
+                              style={{backgroundColor: settings.primaryColor}}
+                            />
+                            <span className={styles["colorLabel"]}>{settings.primaryColor}</span>
+                          </Button>
+                        }
+                      />
                       <PopoverContent className='w-64'>
                         <div className={styles["paletteGrid"]}>
                           {COLOR_PALETTE.map((color) => (
                             <TooltipProvider key={color.value}>
                               <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={settings.primaryColor === color.value ? "default" : "outline"}
-                                    size='icon'
-                                    className='h-10 w-10 cursor-pointer rounded-full p-0'
-                                    data-color={color.value}
-                                    onClick={handleColorChange("primaryColor")}>
-                                    <div
-                                      className={styles["colorSwatchLarge"]}
-                                      style={{backgroundColor: color.value}}
-                                    />
-                                    {settings.primaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
-                                  </Button>
-                                </TooltipTrigger>
+                                <TooltipTrigger
+                                  render={
+                                    <Button
+                                      variant={settings.primaryColor === color.value ? "default" : "outline"}
+                                      size='icon'
+                                      className='h-10 w-10 cursor-pointer rounded-full p-0'
+                                      data-color={color.value}
+                                      onClick={handleColorChange("primaryColor")}>
+                                      <div
+                                        className={styles["colorSwatchLarge"]}
+                                        style={{backgroundColor: color.value}}
+                                      />
+                                      {settings.primaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
+                                    </Button>
+                                  }
+                                />
                                 <TooltipContent>{color.name}</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -332,36 +347,40 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   <div className={styles["colorRow"]}>
                     <Label>{t("colors.secondary")}</Label>
                     <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant='outline'
-                          className='h-10 w-28 cursor-pointer gap-2 px-3'>
-                          <div
-                            className={styles["colorSwatch"]}
-                            style={{backgroundColor: settings.secondaryColor}}
-                          />
-                          <span className={styles["colorLabel"]}>{settings.secondaryColor}</span>
-                        </Button>
-                      </PopoverTrigger>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            variant='outline'
+                            className='h-10 w-28 cursor-pointer gap-2 px-3'>
+                            <div
+                              className={styles["colorSwatch"]}
+                              style={{backgroundColor: settings.secondaryColor}}
+                            />
+                            <span className={styles["colorLabel"]}>{settings.secondaryColor}</span>
+                          </Button>
+                        }
+                      />
                       <PopoverContent className='w-64'>
                         <div className={styles["paletteGrid"]}>
                           {COLOR_PALETTE.map((color) => (
                             <TooltipProvider key={color.value}>
                               <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant={settings.secondaryColor === color.value ? "default" : "outline"}
-                                    size='icon'
-                                    className='h-10 w-10 cursor-pointer rounded-full p-0'
-                                    data-color={color.value}
-                                    onClick={handleColorChange("secondaryColor")}>
-                                    <div
-                                      className={styles["colorSwatchLarge"]}
-                                      style={{backgroundColor: color.value}}
-                                    />
-                                    {settings.secondaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
-                                  </Button>
-                                </TooltipTrigger>
+                                <TooltipTrigger
+                                  render={
+                                    <Button
+                                      variant={settings.secondaryColor === color.value ? "default" : "outline"}
+                                      size='icon'
+                                      className='h-10 w-10 cursor-pointer rounded-full p-0'
+                                      data-color={color.value}
+                                      onClick={handleColorChange("secondaryColor")}>
+                                      <div
+                                        className={styles["colorSwatchLarge"]}
+                                        style={{backgroundColor: color.value}}
+                                      />
+                                      {settings.secondaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
+                                    </Button>
+                                  }
+                                />
                                 <TooltipContent>{color.name}</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>

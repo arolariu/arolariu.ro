@@ -223,26 +223,26 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
 
           {isMobile ? (
             <Sheet>
-              <SheetTrigger asChild>
+              <SheetTrigger render={
                 <Button
                   variant='outline'
                   size='sm'
                   className='cursor-pointer gap-1'>
                   <TbFilter className={styles["filterIcon"]} />
                 </Button>
-              </SheetTrigger>
+              } />
               <SheetContent>{t("placeholderPanel")}</SheetContent>
             </Sheet>
           ) : (
             <Popover>
-              <PopoverTrigger asChild>
+              <PopoverTrigger render={
                 <Button
                   variant='outline'
                   size='sm'
                   className='cursor-pointer gap-1'>
                   <TbFilter className={styles["filterIcon"]} />
                 </Button>
-              </PopoverTrigger>
+              } />
               <PopoverContent>{t("placeholderPanel")}</PopoverContent>
             </Popover>
           )}
@@ -251,32 +251,32 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
-                  asChild
-                  className='cursor-pointer'>
-                  <Button
-                    variant={view === "table" ? "default" : "ghost"}
-                    size='sm'
-                    className='rounded-r-none'
-                    // eslint-disable-next-line react/jsx-no-bind -- small fn
-                    onClick={() => setView("table")}>
-                    <TbTable className={styles["filterIcon"]} />
-                  </Button>
-                </TooltipTrigger>
+                  className='cursor-pointer'
+                  render={
+                    <Button
+                      variant={view === "table" ? "default" : "ghost"}
+                      size='sm'
+                      className='rounded-r-none'
+                      // eslint-disable-next-line react/jsx-no-bind -- small fn
+                      onClick={() => setView("table")}>
+                      <TbTable className={styles["filterIcon"]} />
+                    </Button>
+                  } />
                 <TooltipContent>{t("viewModes.table")}</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
-                  asChild
-                  className='cursor-pointer'>
-                  <Button
-                    variant={view === "grid" ? "default" : "ghost"}
-                    size='sm'
-                    className='rounded-l-none'
-                    // eslint-disable-next-line react/jsx-no-bind -- small fn
-                    onClick={() => setView("grid")}>
-                    <TbCards className={styles["filterIcon"]} />
-                  </Button>
-                </TooltipTrigger>
+                  className='cursor-pointer'
+                  render={
+                    <Button
+                      variant={view === "grid" ? "default" : "ghost"}
+                      size='sm'
+                      className='rounded-l-none'
+                      // eslint-disable-next-line react/jsx-no-bind -- small fn
+                      onClick={() => setView("grid")}>
+                      <TbCards className={styles["filterIcon"]} />
+                    </Button>
+                  } />
                 <TooltipContent>{t("viewModes.grid")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>

@@ -85,7 +85,10 @@ export default function InvoiceCard(): React.JSX.Element {
   const currentIsImportant = pendingChanges.isImportant ?? isImportant;
   const currentCategory = pendingChanges.category ?? category;
   const currentDescription = pendingChanges.description ?? description;
-  const currentTransactionDate = pendingChanges.transactionDate ?? new Date(paymentInformation.transactionDate);
+  const currentTransactionDate = useMemo(
+    () => pendingChanges.transactionDate ?? new Date(paymentInformation.transactionDate),
+    [pendingChanges.transactionDate, paymentInformation.transactionDate],
+  );
 
   /** Converts a TypeScript numeric enum to select options */
   const enumToOptions = useCallback(<T extends Record<string, string | number>>(enumObj: T) => {
@@ -166,15 +169,17 @@ export default function InvoiceCard(): React.JSX.Element {
             <CardTitle>{t("title")}</CardTitle>
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant={currentIsImportant === true ? "default" : "outline"}
-                    className='cursor-pointer transition-transform hover:scale-105'
-                    onClick={handleImportantToggle}>
-                    <TbHeart className={cn("text-red-500 hover:text-red-700", currentIsImportant && "fill-red-500")} />
-                    {currentIsImportant ? t("importantBadge") : t("markImportant")}
-                  </Badge>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Badge
+                      variant={currentIsImportant === true ? "default" : "outline"}
+                      className='cursor-pointer transition-transform hover:scale-105'
+                      onClick={handleImportantToggle}>
+                      <TbHeart className={cn("text-red-500 hover:text-red-700", currentIsImportant && "fill-red-500")} />
+                      {currentIsImportant ? t("importantBadge") : t("markImportant")}
+                    </Badge>
+                  }
+                />
                 <TooltipContent>
                   <span>{currentIsImportant ? t("tooltips.unmarkFavorite") : t("tooltips.markFavorite")}</span>
                 </TooltipContent>
@@ -202,13 +207,15 @@ export default function InvoiceCard(): React.JSX.Element {
               <div className={styles["dateRow"]}>
                 <TbCalendar className='text-muted-foreground mr-2 h-4 w-4' />
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant='outline'
-                      className='w-64 justify-start text-left font-normal'>
-                      {formatDate(currentTransactionDate, {dateStyle: "full", timeStyle: "short", timeZone: "UTC", locale})}
-                    </Button>
-                  </PopoverTrigger>
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        variant='outline'
+                        className='w-64 justify-start text-left font-normal'>
+                        {formatDate(currentTransactionDate, {dateStyle: "full", timeStyle: "short", timeZone: "UTC", locale})}
+                      </Button>
+                    }
+                  />
                   <PopoverContent
                     className='w-auto p-4'
                     align='start'>

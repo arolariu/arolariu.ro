@@ -107,30 +107,34 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
           <TooltipProvider>
             <div className={styles["headerActions"]}>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    className='cursor-pointer'
-                    onClick={handleGenerateRecipe}
-                    size='sm'>
-                    <TbConfetti className='mr-2 h-4 w-4' />
-                    {t("buttons.generate")}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='ghost'
+                      className='cursor-pointer'
+                      onClick={handleGenerateRecipe}
+                      size='sm'>
+                      <TbConfetti className='mr-2 h-4 w-4' />
+                      {t("buttons.generate")}
+                    </Button>
+                  }
+                />
                 <TooltipContent side='bottom'>
                   <p>{t("tooltips.generateRecipeUsingAi")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className='cursor-pointer'
-                    onClick={openAddDialog}
-                    size='sm'>
-                    <TbPlus className='mr-2 h-4 w-4' />
-                    {t("buttons.addRecipe")}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      className='cursor-pointer'
+                      onClick={openAddDialog}
+                      size='sm'>
+                      <TbPlus className='mr-2 h-4 w-4' />
+                      {t("buttons.addRecipe")}
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <p>{t("tooltips.createRecipeWithIngredients")}</p>
                 </TooltipContent>

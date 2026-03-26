@@ -35,54 +35,54 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
     <TooltipProvider>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger
-          asChild
-          className='hover:text-accent-primary cursor-pointer'>
-          <Button
-            variant='ghost'
-            size='icon'
-            className='bg-background/80 h-8 w-8 print:hidden'>
-            <TbMenu3 className={styles["menuIcon"]} />
-          </Button>
-        </DropdownMenuTrigger>
+          className='hover:text-accent-primary cursor-pointer'
+          render={
+            <Button
+              variant='ghost'
+              size='icon'
+              className='bg-background/80 h-8 w-8 print:hidden'>
+              <TbMenu3 className={styles["menuIcon"]} />
+            </Button>
+          } />
         <DropdownMenuContent
           align='end'
           className='w-40'>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <DropdownMenuItem
-                asChild
-                className='cursor-pointer'>
-                <Link
-                  href={`/domains/invoices/edit-invoice/${invoice.id}`}
-                  className={styles["editLink"]}>
-                  <TbEdit className={styles["menuItemIcon"]} />
-                  {t("actions.edit")}
-                </Link>
-              </DropdownMenuItem>
-            </TooltipTrigger>
+                className='cursor-pointer'
+                render={
+                  <Link
+                    href={`/domains/invoices/edit-invoice/${invoice.id}`}
+                    className={styles["editLink"]}>
+                    <TbEdit className={styles["menuItemIcon"]} />
+                    {t("actions.edit")}
+                  </Link>
+                } />
+            } />
             <TooltipContent side='left'>{t("tooltips.edit")}</TooltipContent>
           </Tooltip>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <DropdownMenuItem
                 onClick={openShareDialog}
                 className='cursor-pointer'>
                 <TbShare className={styles["menuItemIcon"]} />
                 {t("actions.share")}
               </DropdownMenuItem>
-            </TooltipTrigger>
+            } />
             <TooltipContent side='left'>{t("tooltips.share")}</TooltipContent>
           </Tooltip>
           <DropdownMenuSeparator />
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <DropdownMenuItem
                 className='text-destructive cursor-pointer'
                 onClick={openDeleteDialog}>
                 <TbTrash className={styles["menuItemIcon"]} />
                 {t("actions.delete")}
               </DropdownMenuItem>
-            </TooltipTrigger>
+            } />
             <TooltipContent side='left'>{t("tooltips.delete")}</TooltipContent>
           </Tooltip>
         </DropdownMenuContent>

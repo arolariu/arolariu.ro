@@ -243,7 +243,7 @@ export default function UploadArea(): React.JSX.Element {
       <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='outline'
                 onClick={clearAll}
@@ -252,13 +252,13 @@ export default function UploadArea(): React.JSX.Element {
                 disabled={isUploading}>
                 {t("uploadArea.actions.clearAll")}
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("uploadArea.tooltips.clearAll")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 onClick={uploadAll}
                 className='cursor-pointer bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'
@@ -266,7 +266,7 @@ export default function UploadArea(): React.JSX.Element {
                 disabled={isUploading}>
                 {isUploading ? t("uploadArea.actions.uploading") : t("uploadArea.actions.uploadScans")}
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("uploadArea.tooltips.uploadScans")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>

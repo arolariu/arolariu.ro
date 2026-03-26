@@ -241,7 +241,7 @@ export function NutritionCard(): React.JSX.Element {
               <TooltipProvider>
                 {allergens.map(([name, count]) => (
                   <Tooltip key={name}>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger render={
                       <Badge
                         variant='outline'
                         className='cursor-help'>
@@ -249,7 +249,7 @@ export function NutritionCard(): React.JSX.Element {
                         {name === "Gluten" && <TbWheat className='mr-1 h-3 w-3' />}
                         {name} ({count})
                       </Badge>
-                    </TooltipTrigger>
+                    } />
                     <TooltipContent>
                       <p>{t("allergens.foundInItems", {count: String(count)})}</p>
                     </TooltipContent>

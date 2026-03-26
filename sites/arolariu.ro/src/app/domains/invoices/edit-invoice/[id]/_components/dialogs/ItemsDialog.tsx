@@ -196,7 +196,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         type='text'
                         name='rawName'
                         value={item.rawName}
-                        // eslint-disable-next-line -- inputs always change - ok usage.
+                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
                         className='w-48'
                       />
@@ -206,7 +206,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         type='number'
                         name='quantity'
                         value={item.quantity}
-                        // eslint-disable-next-line -- inputs always change - ok usage.
+                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
                         className='w-16 text-center'
                       />
@@ -216,7 +216,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         type='text'
                         name='quantityUnit'
                         value={item.quantityUnit}
-                        // eslint-disable-next-line -- inputs always change - ok usage.
+                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
                         className='w-16 text-center'
                       />
@@ -226,7 +226,7 @@ export default function ItemsDialog(): React.JSX.Element {
                         type='number'
                         name='price'
                         value={item.price}
-                        // eslint-disable-next-line -- inputs always change - ok usage.
+                        // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                         onChange={(e) => handleValueChange(e, index)}
                         className='w-16 text-right'
                       />
@@ -275,7 +275,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       variant='ghost'
                       size='sm'
                       aria-label={t("aria.previousPage", {page: String(currentPage - 1)})}
-                      // eslint-disable-next-line -- inputs always change - ok usage.
+                      // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}>
                       {t("buttons.previous")}
@@ -284,7 +284,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       variant='ghost'
                       size='sm'
                       aria-label={t("aria.nextPage", {page: String(currentPage + 1)})}
-                      // eslint-disable-next-line -- inputs always change - ok usage.
+                      // eslint-disable-next-line react-compiler/react-compiler -- inputs always change - ok usage.
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}>
                       {t("buttons.next")}

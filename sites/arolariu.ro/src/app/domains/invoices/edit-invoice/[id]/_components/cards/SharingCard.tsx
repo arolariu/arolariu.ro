@@ -155,15 +155,17 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
           <div className={styles["manageArea"]}>
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant='outline'
-                    className='group ml-auto cursor-pointer'
-                    onClick={handleManageSharing}>
-                    <TbLockCog className='mr-2 h-4 w-4' />
-                    <span>{t("buttons.manageSharing")}</span>
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='outline'
+                      className='group ml-auto cursor-pointer'
+                      onClick={handleManageSharing}>
+                      <TbLockCog className='mr-2 h-4 w-4' />
+                      <span>{t("buttons.manageSharing")}</span>
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <p>{t("tooltips.manageSharing")}</p>
                 </TooltipContent>
@@ -202,14 +204,16 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   <span className={styles["sharedUserName"]}>{t("userWithId", {id: userId})}</span>
                   <TooltipProvider>
                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant='ghost'
-                          className='ml-auto cursor-pointer'
-                          onClick={handleRemoveAccess}>
-                          <TbDeselect className='h-4 w-4' />
-                        </Button>
-                      </TooltipTrigger>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant='ghost'
+                            className='ml-auto cursor-pointer'
+                            onClick={handleRemoveAccess}>
+                            <TbDeselect className='h-4 w-4' />
+                          </Button>
+                        }
+                      />
                       <TooltipContent>
                         <p>{t("tooltips.removeAccess")}</p>
                       </TooltipContent>
@@ -226,16 +230,18 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
       <CardFooter className='flex flex-col gap-4'>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='outline'
-                className='w-full cursor-pointer'
-                onClick={open}>
-                <TbShare2 className='mr-2 h-4 w-4' />
-                <span>{t("buttons.shareInvoice")}</span>
-                <TbArrowRight className='ml-2 h-4 w-4 transition-transform' />
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  className='w-full cursor-pointer'
+                  onClick={open}>
+                  <TbShare2 className='mr-2 h-4 w-4' />
+                  <span>{t("buttons.shareInvoice")}</span>
+                  <TbArrowRight className='ml-2 h-4 w-4 transition-transform' />
+                </Button>
+              }
+            />
             <TooltipContent>
               <p>{t("tooltips.shareInvoice")}</p>
             </TooltipContent>
@@ -243,16 +249,18 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
           {Boolean(isInvoicePublic) && (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='destructive'
-                  className='w-full cursor-pointer'
-                  disabled={isMarkingPrivate}
-                  onClick={handleMarkPrivate}>
-                  <span>{isMarkingPrivate ? t("buttons.revokingAccess") : t("buttons.markAsPrivate")}</span>
-                  <TbLock className='ml-2 h-4 w-4 transition-transform' />
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='destructive'
+                    className='w-full cursor-pointer'
+                    disabled={isMarkingPrivate}
+                    onClick={handleMarkPrivate}>
+                    <span>{isMarkingPrivate ? t("buttons.revokingAccess") : t("buttons.markAsPrivate")}</span>
+                    <TbLock className='ml-2 h-4 w-4 transition-transform' />
+                  </Button>
+                }
+              />
               <TooltipContent side='bottom'>
                 <p>{t("tooltips.markAsPrivate")}</p>
               </TooltipContent>

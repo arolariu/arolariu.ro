@@ -98,16 +98,18 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         <h3 className={styles["itemsLabel"]}>{t("title")}</h3>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={open}
-                className='h-8 cursor-pointer'>
-                <TbEdit className='mr-1 h-3.5 w-3.5' />
-                {t("buttons.editItems")}
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={open}
+                  className='h-8 cursor-pointer'>
+                  <TbEdit className='mr-1 h-3.5 w-3.5' />
+                  {t("buttons.editItems")}
+                </Button>
+              }
+            />
             <TooltipContent>
               <p>{t("tooltips.editInvoiceItemsAndQuantities")}</p>
             </TooltipContent>
