@@ -106,7 +106,7 @@ const AddDialog = () => {
   );
 };
 
-const UpdateDialog= ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
+const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const t = useTranslations("Invoices.EditInvoice.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
@@ -172,7 +172,7 @@ const UpdateDialog= ({metadata}: Readonly<{metadata: Record<string, string>}>) =
   );
 };
 
-const DeleteDialog= ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
+const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const t = useTranslations("Invoices.EditInvoice.metadataDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
 

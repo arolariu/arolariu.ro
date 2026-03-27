@@ -34,11 +34,11 @@ import styles from "./ShoppingCalendarCard.module.scss";
 /** Props type for the Calendar's DayButton slot component */
 type DayButtonProps = {
   readonly day: {date: Date};
-  readonly className: string | undefined;
-  readonly disabled: boolean | undefined;
-  readonly "aria-label": string | undefined;
-  readonly "aria-pressed": boolean | "false" | "true" | "mixed" | undefined;
-  readonly tabIndex: number | undefined;
+  readonly className?: string;
+  readonly disabled?: boolean;
+  readonly "aria-label"?: string;
+  readonly "aria-pressed"?: boolean | "false" | "true" | "mixed";
+  readonly tabIndex?: number;
 };
 
 /** Context for sharing calendar data with CustomDayButton */

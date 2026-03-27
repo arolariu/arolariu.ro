@@ -28,6 +28,17 @@ export async function fetchAaaSUserFromAuthService(): Promise<{isAuthenticated: 
   }
 }
 
+interface JwtPayload {
+  readonly iss: string;
+  readonly aud: string;
+  readonly iat: number;
+  readonly nbf: number;
+  readonly exp: number;
+  readonly sub: string;
+  readonly userIdentifier: string;
+  readonly role: "user" | "guest";
+}
+
 /**
  * Builds a JWT payload with standard claims for the arolariu.ro BFF token.
  * @param sub - The subject claim (email, phone, or user ID).
@@ -35,7 +46,7 @@ export async function fetchAaaSUserFromAuthService(): Promise<{isAuthenticated: 
  * @param role - The user role ("user" or "guest").
  * @returns A JWT payload object with iss, aud, iat, nbf, exp, sub, userIdentifier, and role.
  */
-function buildJwtPayload(sub: string, userIdentifier: string, role: string) {
+function buildJwtPayload(sub: string, userIdentifier: string, role: "user" | "guest"): JwtPayload {
   // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.
   const currentTimestamp = Math.floor(Date.now() / 1000);
   return {
@@ -56,7 +67,7 @@ function buildJwtPayload(sub: string, userIdentifier: string, role: string) {
  * @param user - The Clerk user object, or null.
  * @returns The best available subject string.
  */
-function resolveUserSubject(user: import("@clerk/nextjs/server").User | null): string {
+function resolveUserSubject(user: User | null): string {
   return (
     user?.primaryEmailAddress?.emailAddress
     ?? user?.emailAddresses[0]?.emailAddress

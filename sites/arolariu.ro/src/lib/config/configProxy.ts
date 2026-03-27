@@ -148,7 +148,7 @@ const WEBSITE_TARGET = "website" as const;
  * Azure (production): 10 seconds — exp is reliably reachable.
  * Local dev: 2 seconds — exp may not be running; fail fast to env-var fallback.
  */
-const CONFIG_FETCH_TIMEOUT_MS = HAS_AZURE_CLIENT_ID ? 10_000 : 2000;
+const CONFIG_FETCH_TIMEOUT_MS = HAS_AZURE_CLIENT_ID ? 10_000 : 2_000;
 
 /**
  * Azure App Configuration label derived from `SITE_ENV`.
