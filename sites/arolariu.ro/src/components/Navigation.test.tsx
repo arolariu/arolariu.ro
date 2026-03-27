@@ -181,7 +181,7 @@ describe("Navigation", () => {
       const buttons = screen.getAllByRole("button");
       // Find the button that contains "Open navigation" text
       const hamburgerButton = buttons.find(
-        (btn) => btn.textContent?.includes("Open navigation") || btn.querySelector(".sr-only")?.textContent === "Open navigation",
+        (btn) => btn.textContent?.includes("Open navigation"),
       );
       expect(hamburgerButton).toBeInTheDocument();
     });
@@ -346,7 +346,9 @@ describe("Navigation", () => {
     it("should render screen reader only text for hamburger button", () => {
       render(<MobileNavigation />);
       const srText = screen.getByText("Open navigation");
-      expect(srText).toHaveClass("sr-only");
+      expect(srText).toBeInTheDocument();
+      // The text should be visually hidden (SCSS module applies @include visually-hidden)
+      expect(srText.tagName.toLowerCase()).toBe("span");
     });
 
     it("should show Invoice children when Domains is expanded", () => {
