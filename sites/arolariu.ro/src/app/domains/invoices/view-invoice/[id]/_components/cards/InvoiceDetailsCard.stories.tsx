@@ -19,70 +19,70 @@ type Story = StoryObj<typeof meta>;
 /** Full invoice details preview with items table. */
 export const Preview: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-6'>
-        <div className='flex items-center gap-2'>
-          <h3 className='text-lg font-semibold'>Invoice Details</h3>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1.5rem'}}>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+          <h3 style={{fontSize:'1.125rem', fontWeight:600}}>Invoice Details</h3>
           <span title='Important'>❤️</span>
         </div>
-        <p className='text-sm text-gray-500'>Kaufland • Weekly grocery shopping</p>
+        <p style={{fontSize:'0.875rem', color:'#6b7280'}}>Kaufland • Weekly grocery shopping</p>
       </div>
-      <div className='space-y-4 p-6'>
-        <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+      <div style={{display:'flex', flexDirection:'column', gap:'1rem', padding:'1.5rem'}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:'1rem'}}>
           <div>
-            <p className='flex items-center gap-1 text-xs text-gray-500'>📅 Date (UTC)</p>
-            <p className='text-sm'>January 15, 2025, 10:30 AM</p>
+            <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>📅 Date (UTC)</p>
+            <p style={{fontSize:'0.875rem'}}>January 15, 2025, 10:30 AM</p>
           </div>
           <div>
-            <p className='text-xs text-gray-500'>Category</p>
-            <span className='rounded-full border px-2 py-0.5 text-xs'>GROCERIES</span>
+            <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Category</p>
+            <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>GROCERIES</span>
           </div>
           <div>
-            <p className='flex items-center gap-1 text-xs text-gray-500'>💳 Payment</p>
-            <p className='text-sm'>CREDIT CARD</p>
+            <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>💳 Payment</p>
+            <p style={{fontSize:'0.875rem'}}>CREDIT CARD</p>
           </div>
           <div>
-            <p className='text-xs text-gray-500'>Total Amount</p>
-            <p className='text-lg font-bold text-green-600'>$125.50</p>
+            <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Total Amount</p>
+            <p style={{fontSize:'1.125rem', fontWeight:700, color:'#16a34a'}}>$125.50</p>
           </div>
         </div>
         <hr />
         <div>
-          <h4 className='mb-2 text-sm font-semibold'>Items (8)</h4>
-          <table className='w-full text-sm'>
+          <h4 style={{marginBottom:'0.5rem', fontSize:'0.875rem', fontWeight:600}}>Items (8)</h4>
+          <table style={{width:'100%', fontSize:'0.875rem'}}>
             <thead>
-              <tr className='border-b text-xs text-gray-500'>
-                <th className='pb-2 text-left'>Item</th>
-                <th className='pb-2 text-right'>Qty</th>
-                <th className='pb-2 text-right'>Unit</th>
-                <th className='pb-2 text-right'>Price</th>
-                <th className='pb-2 text-right'>Total</th>
+              <tr style={{borderBottom:'1px solid #e5e7eb', fontSize:'0.75rem', color:'#6b7280'}}>
+                <th style={{paddingBottom:'0.5rem', textAlign:'left'}}>Item</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Qty</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Unit</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Price</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Total</th>
               </tr>
             </thead>
             <tbody>
-              <tr className='border-b'>
-                <td className='py-2'>Organic Milk 2L</td>
-                <td className='py-2 text-right'>2</td>
-                <td className='py-2 text-right'>pcs</td>
-                <td className='py-2 text-right'>$3.99</td>
-                <td className='py-2 text-right font-medium'>$7.98</td>
+              <tr style={{borderBottom:'1px solid #e5e7eb'}}>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem'}}>Organic Milk 2L</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>2</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>pcs</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>$3.99</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right', fontWeight:500}}>$7.98</td>
               </tr>
-              <tr className='border-b'>
-                <td className='py-2'>Fresh Salmon</td>
-                <td className='py-2 text-right'>0.5</td>
-                <td className='py-2 text-right'>kg</td>
-                <td className='py-2 text-right'>$24.99</td>
-                <td className='py-2 text-right font-medium'>$12.50</td>
+              <tr style={{borderBottom:'1px solid #e5e7eb'}}>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem'}}>Fresh Salmon</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>0.5</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>kg</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>$24.99</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right', fontWeight:500}}>$12.50</td>
               </tr>
             </tbody>
             <tfoot>
-              <tr className='bg-gray-50 font-semibold dark:bg-gray-800'>
+              <tr style={{backgroundColor:'#f9fafb', fontWeight:600}}>
                 <td
-                  className='py-2 pl-2'
+                  style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', paddingLeft:'0.5rem'}}
                   colSpan={4}>
                   Grand Total
                 </td>
-                <td className='py-2 pr-2 text-right'>$125.50</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', paddingRight:'0.5rem', textAlign:'right'}}>$125.50</td>
               </tr>
             </tfoot>
           </table>
@@ -120,66 +120,66 @@ export const ManyItems: Story = {
       {name: "Sourdough Loaf", qty: "1", unit: "pcs", price: "$4.49", total: "$4.49"},
     ];
     return (
-      <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-        <div className='border-b p-6'>
-          <div className='flex items-center gap-2'>
-            <h3 className='text-lg font-semibold'>Invoice Details</h3>
+      <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+        <div style={{borderBottom:'1px solid #e5e7eb', padding:'1.5rem'}}>
+          <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+            <h3 style={{fontSize:'1.125rem', fontWeight:600}}>Invoice Details</h3>
           </div>
-          <p className='text-sm text-gray-500'>Mega Image • Large weekly haul</p>
+          <p style={{fontSize:'0.875rem', color:'#6b7280'}}>Mega Image • Large weekly haul</p>
         </div>
-        <div className='space-y-4 p-6'>
-          <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+        <div style={{display:'flex', flexDirection:'column', gap:'1rem', padding:'1.5rem'}}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:'1rem'}}>
             <div>
-              <p className='flex items-center gap-1 text-xs text-gray-500'>📅 Date (UTC)</p>
-              <p className='text-sm'>February 1, 2025, 2:15 PM</p>
+              <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>📅 Date (UTC)</p>
+              <p style={{fontSize:'0.875rem'}}>February 1, 2025, 2:15 PM</p>
             </div>
             <div>
-              <p className='text-xs text-gray-500'>Category</p>
-              <span className='rounded-full border px-2 py-0.5 text-xs'>GROCERIES</span>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Category</p>
+              <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>GROCERIES</span>
             </div>
             <div>
-              <p className='flex items-center gap-1 text-xs text-gray-500'>💳 Payment</p>
-              <p className='text-sm'>DEBIT CARD</p>
+              <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>💳 Payment</p>
+              <p style={{fontSize:'0.875rem'}}>DEBIT CARD</p>
             </div>
             <div>
-              <p className='text-xs text-gray-500'>Total Amount</p>
-              <p className='text-lg font-bold text-green-600'>$147.43</p>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Total Amount</p>
+              <p style={{fontSize:'1.125rem', fontWeight:700, color:'#16a34a'}}>$147.43</p>
             </div>
           </div>
           <hr />
           <div>
-            <h4 className='mb-2 text-sm font-semibold'>Items ({items.length})</h4>
-            <table className='w-full text-sm'>
+            <h4 style={{marginBottom:'0.5rem', fontSize:'0.875rem', fontWeight:600}}>Items ({items.length})</h4>
+            <table style={{width:'100%', fontSize:'0.875rem'}}>
               <thead>
-                <tr className='border-b text-xs text-gray-500'>
-                  <th className='pb-2 text-left'>Item</th>
-                  <th className='pb-2 text-right'>Qty</th>
-                  <th className='pb-2 text-right'>Unit</th>
-                  <th className='pb-2 text-right'>Price</th>
-                  <th className='pb-2 text-right'>Total</th>
+                <tr style={{borderBottom:'1px solid #e5e7eb', fontSize:'0.75rem', color:'#6b7280'}}>
+                  <th style={{paddingBottom:'0.5rem', textAlign:'left'}}>Item</th>
+                  <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Qty</th>
+                  <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Unit</th>
+                  <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Price</th>
+                  <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Total</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
                   <tr
                     key={item.name}
-                    className='border-b'>
-                    <td className='py-2'>{item.name}</td>
-                    <td className='py-2 text-right'>{item.qty}</td>
-                    <td className='py-2 text-right'>{item.unit}</td>
-                    <td className='py-2 text-right'>{item.price}</td>
-                    <td className='py-2 text-right font-medium'>{item.total}</td>
+                    style={{borderBottom:'1px solid #e5e7eb'}}>
+                    <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem'}}>{item.name}</td>
+                    <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>{item.qty}</td>
+                    <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>{item.unit}</td>
+                    <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>{item.price}</td>
+                    <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right', fontWeight:500}}>{item.total}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className='bg-gray-50 font-semibold dark:bg-gray-800'>
+                <tr style={{backgroundColor:'#f9fafb', fontWeight:600}}>
                   <td
-                    className='py-2 pl-2'
+                    style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', paddingLeft:'0.5rem'}}
                     colSpan={4}>
                     Grand Total
                   </td>
-                  <td className='py-2 pr-2 text-right'>$147.43</td>
+                  <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', paddingRight:'0.5rem', textAlign:'right'}}>$147.43</td>
                 </tr>
               </tfoot>
             </table>
@@ -193,38 +193,38 @@ export const ManyItems: Story = {
 /** Invoice with no items — empty state. */
 export const EmptyItems: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-6'>
-        <div className='flex items-center gap-2'>
-          <h3 className='text-lg font-semibold'>Invoice Details</h3>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1.5rem'}}>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+          <h3 style={{fontSize:'1.125rem', fontWeight:600}}>Invoice Details</h3>
         </div>
-        <p className='text-sm text-gray-500'>Unknown Merchant • No items detected</p>
+        <p style={{fontSize:'0.875rem', color:'#6b7280'}}>Unknown Merchant • No items detected</p>
       </div>
-      <div className='space-y-4 p-6'>
-        <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+      <div style={{display:'flex', flexDirection:'column', gap:'1rem', padding:'1.5rem'}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:'1rem'}}>
           <div>
-            <p className='flex items-center gap-1 text-xs text-gray-500'>📅 Date (UTC)</p>
-            <p className='text-sm'>January 20, 2025, 3:00 PM</p>
+            <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>📅 Date (UTC)</p>
+            <p style={{fontSize:'0.875rem'}}>January 20, 2025, 3:00 PM</p>
           </div>
           <div>
-            <p className='text-xs text-gray-500'>Category</p>
-            <span className='rounded-full border px-2 py-0.5 text-xs'>UNCATEGORIZED</span>
+            <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Category</p>
+            <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>UNCATEGORIZED</span>
           </div>
           <div>
-            <p className='flex items-center gap-1 text-xs text-gray-500'>💳 Payment</p>
-            <p className='text-sm'>CASH</p>
+            <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>💳 Payment</p>
+            <p style={{fontSize:'0.875rem'}}>CASH</p>
           </div>
           <div>
-            <p className='text-xs text-gray-500'>Total Amount</p>
-            <p className='text-lg font-bold text-green-600'>$0.00</p>
+            <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Total Amount</p>
+            <p style={{fontSize:'1.125rem', fontWeight:700, color:'#16a34a'}}>$0.00</p>
           </div>
         </div>
         <hr />
         <div>
-          <h4 className='mb-2 text-sm font-semibold'>Items (0)</h4>
-          <div className='flex flex-col items-center justify-center py-8 text-center text-gray-400'>
-            <p className='text-sm'>No items detected on this invoice.</p>
-            <p className='mt-1 text-xs'>Try re-scanning or manually adding items.</p>
+          <h4 style={{marginBottom:'0.5rem', fontSize:'0.875rem', fontWeight:600}}>Items (0)</h4>
+          <div style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', paddingTop:'2rem', paddingBottom:'2rem', textAlign:'center', color:'#9ca3af'}}>
+            <p style={{fontSize:'0.875rem'}}>No items detected on this invoice.</p>
+            <p style={{marginTop:'0.25rem', fontSize:'0.75rem'}}>Try re-scanning or manually adding items.</p>
           </div>
         </div>
       </div>
@@ -235,62 +235,62 @@ export const EmptyItems: Story = {
 /** Invoice with exactly one item — minimal line item display. */
 export const SingleItem: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-6'>
-        <div className='flex items-center gap-2'>
-          <h3 className='text-lg font-semibold'>Invoice Details</h3>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1.5rem'}}>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+          <h3 style={{fontSize:'1.125rem', fontWeight:600}}>Invoice Details</h3>
         </div>
-        <p className='text-sm text-gray-500'>Corner Shop • Quick purchase</p>
+        <p style={{fontSize:'0.875rem', color:'#6b7280'}}>Corner Shop • Quick purchase</p>
       </div>
-      <div className='space-y-4 p-6'>
-        <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+      <div style={{display:'flex', flexDirection:'column', gap:'1rem', padding:'1.5rem'}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:'1rem'}}>
           <div>
-            <p className='flex items-center gap-1 text-xs text-gray-500'>📅 Date (UTC)</p>
-            <p className='text-sm'>March 5, 2025, 9:15 AM</p>
+            <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>📅 Date (UTC)</p>
+            <p style={{fontSize:'0.875rem'}}>March 5, 2025, 9:15 AM</p>
           </div>
           <div>
-            <p className='text-xs text-gray-500'>Category</p>
-            <span className='rounded-full border px-2 py-0.5 text-xs'>BEVERAGES</span>
+            <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Category</p>
+            <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>BEVERAGES</span>
           </div>
           <div>
-            <p className='flex items-center gap-1 text-xs text-gray-500'>💳 Payment</p>
-            <p className='text-sm'>CASH</p>
+            <p style={{display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', color:'#6b7280'}}>💳 Payment</p>
+            <p style={{fontSize:'0.875rem'}}>CASH</p>
           </div>
           <div>
-            <p className='text-xs text-gray-500'>Total Amount</p>
-            <p className='text-lg font-bold text-green-600'>$2.50</p>
+            <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Total Amount</p>
+            <p style={{fontSize:'1.125rem', fontWeight:700, color:'#16a34a'}}>$2.50</p>
           </div>
         </div>
         <hr />
         <div>
-          <h4 className='mb-2 text-sm font-semibold'>Items (1)</h4>
-          <table className='w-full text-sm'>
+          <h4 style={{marginBottom:'0.5rem', fontSize:'0.875rem', fontWeight:600}}>Items (1)</h4>
+          <table style={{width:'100%', fontSize:'0.875rem'}}>
             <thead>
-              <tr className='border-b text-xs text-gray-500'>
-                <th className='pb-2 text-left'>Item</th>
-                <th className='pb-2 text-right'>Qty</th>
-                <th className='pb-2 text-right'>Unit</th>
-                <th className='pb-2 text-right'>Price</th>
-                <th className='pb-2 text-right'>Total</th>
+              <tr style={{borderBottom:'1px solid #e5e7eb', fontSize:'0.75rem', color:'#6b7280'}}>
+                <th style={{paddingBottom:'0.5rem', textAlign:'left'}}>Item</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Qty</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Unit</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Price</th>
+                <th style={{paddingBottom:'0.5rem', textAlign:'right'}}>Total</th>
               </tr>
             </thead>
             <tbody>
-              <tr className='border-b'>
-                <td className='py-2'>Espresso Coffee</td>
-                <td className='py-2 text-right'>1</td>
-                <td className='py-2 text-right'>pcs</td>
-                <td className='py-2 text-right'>$2.50</td>
-                <td className='py-2 text-right font-medium'>$2.50</td>
+              <tr style={{borderBottom:'1px solid #e5e7eb'}}>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem'}}>Espresso Coffee</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>1</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>pcs</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right'}}>$2.50</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', textAlign:'right', fontWeight:500}}>$2.50</td>
               </tr>
             </tbody>
             <tfoot>
-              <tr className='bg-gray-50 font-semibold dark:bg-gray-800'>
+              <tr style={{backgroundColor:'#f9fafb', fontWeight:600}}>
                 <td
-                  className='py-2 pl-2'
+                  style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', paddingLeft:'0.5rem'}}
                   colSpan={4}>
                   Grand Total
                 </td>
-                <td className='py-2 pr-2 text-right'>$2.50</td>
+                <td style={{paddingTop:'0.5rem', paddingBottom:'0.5rem', paddingRight:'0.5rem', textAlign:'right'}}>$2.50</td>
               </tr>
             </tfoot>
           </table>

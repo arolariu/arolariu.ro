@@ -85,15 +85,15 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
   }));
 
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description")}</CardDescription>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
       </CardHeader>
-      <CardContent className='pb-4'>
+      <CardContent className={styles["cardContent"]}>
         <ChartContainer
           config={chartConfig}
-          className='h-[180px] w-full'>
+          className={styles["chartContainerSm"]}>
           <ResponsiveContainer
             width='100%'
             height='100%'>
@@ -107,7 +107,7 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
                 innerRadius={40}
                 outerRadius={70}
                 paddingAngle={2}
-                className='stroke-background stroke-2'
+                className={styles["pieStroke"]}
               />
               <Tooltip
                 content={

@@ -16,3 +16,33 @@
   color: color('muted-foreground');
   font-size: font-size('sm');
 }
+
+.card {
+  height: 100%;
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.cardHeader {
+  padding-bottom: space(2);
+}
+
+.cardTitle {
+  font-size: font-size('base');
+}
+
+.cardDescription {
+  font-size: font-size('xs');
+}
+
+.cardContent {
+  padding-bottom: space(4);
+}
+
+.chartContainer {
+  height: 200px;
+  width: 100%;
+}

@@ -19,35 +19,35 @@ type Story = StoryObj<typeof meta>;
 /** Full merchant info with website. */
 export const WithWebsite: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='text-lg font-semibold'>Kaufland</h3>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1rem'}}>
+        <h3 style={{fontSize:'1.125rem', fontWeight:600}}>Kaufland</h3>
       </div>
-      <div className='space-y-3 p-4'>
-        <div className='flex items-start gap-2 text-sm'>
-          <span className='mt-0.5 text-gray-400'>📍</span>
+      <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', padding:'1rem'}}>
+        <div style={{display:'flex', alignItems:'flex-start', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{marginTop:'0.125rem', color:'#9ca3af'}}>📍</span>
           <span>Calea Victoriei 123, Sector 1, Bucharest</span>
         </div>
-        <div className='flex items-center gap-2 text-sm'>
-          <span className='text-gray-400'>📞</span>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{color:'#9ca3af'}}>📞</span>
           <span>+40 21 123 4567</span>
         </div>
         <div>
-          <span className='rounded-full border px-2 py-0.5 text-xs'>SUPERMARKET</span>
+          <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>SUPERMARKET</span>
         </div>
-        <div className='flex items-center gap-2 text-sm'>
-          <span className='text-gray-400'>🌐</span>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{color:'#9ca3af'}}>🌐</span>
           <a
             href='#'
-            className='text-blue-600 hover:underline dark:text-blue-400'>
+            style={{color:'#2563eb'}}>
             kaufland.ro
           </a>
         </div>
       </div>
-      <div className='border-t p-4'>
+      <div style={{borderTop:'1px solid #e5e7eb', padding:'1rem'}}>
         <button
           type='button'
-          className='w-full rounded-md border px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{width:'100%', borderRadius:'0.375rem', border:'1px solid #e5e7eb', paddingLeft:'1rem', paddingRight:'1rem', paddingTop:'0.5rem', paddingBottom:'0.5rem', fontSize:'0.875rem'}}>
           View All Receipts
         </button>
       </div>
@@ -58,27 +58,27 @@ export const WithWebsite: Story = {
 /** Merchant without website. */
 export const WithoutWebsite: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='text-lg font-semibold'>Local Bakery</h3>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1rem'}}>
+        <h3 style={{fontSize:'1.125rem', fontWeight:600}}>Local Bakery</h3>
       </div>
-      <div className='space-y-3 p-4'>
-        <div className='flex items-start gap-2 text-sm'>
-          <span className='mt-0.5 text-gray-400'>📍</span>
+      <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', padding:'1rem'}}>
+        <div style={{display:'flex', alignItems:'flex-start', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{marginTop:'0.125rem', color:'#9ca3af'}}>📍</span>
           <span>Str. Lipscani 42, Bucharest</span>
         </div>
-        <div className='flex items-center gap-2 text-sm'>
-          <span className='text-gray-400'>📞</span>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{color:'#9ca3af'}}>📞</span>
           <span>+40 21 987 6543</span>
         </div>
         <div>
-          <span className='rounded-full border px-2 py-0.5 text-xs'>BAKERY</span>
+          <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>BAKERY</span>
         </div>
       </div>
-      <div className='border-t p-4'>
+      <div style={{borderTop:'1px solid #e5e7eb', padding:'1rem'}}>
         <button
           type='button'
-          className='w-full rounded-md border px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{width:'100%', borderRadius:'0.375rem', border:'1px solid #e5e7eb', paddingLeft:'1rem', paddingRight:'1rem', paddingTop:'0.5rem', paddingBottom:'0.5rem', fontSize:'0.875rem'}}>
           View All Receipts
         </button>
       </div>
@@ -89,42 +89,42 @@ export const WithoutWebsite: Story = {
 /** Merchant with a logo image. */
 export const WithLogo: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <div className='flex items-center gap-3'>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1rem'}}>
+        <div style={{display:'flex', alignItems:'center', gap:'0.75rem'}}>
           <img
             src='https://picsum.photos/64/64'
             alt='Merchant logo'
-            className='h-10 w-10 rounded-full object-cover'
+            style={{height:'2.5rem', width:'2.5rem', borderRadius:'9999px', objectFit:'cover'}}
           />
-          <h3 className='text-lg font-semibold'>Kaufland</h3>
+          <h3 style={{fontSize:'1.125rem', fontWeight:600}}>Kaufland</h3>
         </div>
       </div>
-      <div className='space-y-3 p-4'>
-        <div className='flex items-start gap-2 text-sm'>
-          <span className='mt-0.5 text-gray-400'>📍</span>
+      <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', padding:'1rem'}}>
+        <div style={{display:'flex', alignItems:'flex-start', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{marginTop:'0.125rem', color:'#9ca3af'}}>📍</span>
           <span>Calea Victoriei 123, Sector 1, Bucharest</span>
         </div>
-        <div className='flex items-center gap-2 text-sm'>
-          <span className='text-gray-400'>📞</span>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{color:'#9ca3af'}}>📞</span>
           <span>+40 21 123 4567</span>
         </div>
         <div>
-          <span className='rounded-full border px-2 py-0.5 text-xs'>SUPERMARKET</span>
+          <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>SUPERMARKET</span>
         </div>
-        <div className='flex items-center gap-2 text-sm'>
-          <span className='text-gray-400'>🌐</span>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{color:'#9ca3af'}}>🌐</span>
           <a
             href='#'
-            className='text-blue-600 hover:underline dark:text-blue-400'>
+            style={{color:'#2563eb'}}>
             kaufland.ro
           </a>
         </div>
       </div>
-      <div className='border-t p-4'>
+      <div style={{borderTop:'1px solid #e5e7eb', padding:'1rem'}}>
         <button
           type='button'
-          className='w-full rounded-md border px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{width:'100%', borderRadius:'0.375rem', border:'1px solid #e5e7eb', paddingLeft:'1rem', paddingRight:'1rem', paddingTop:'0.5rem', paddingBottom:'0.5rem', fontSize:'0.875rem'}}>
           View All Receipts
         </button>
       </div>
@@ -135,29 +135,29 @@ export const WithLogo: Story = {
 /** Merchant with a very long name to test text overflow and wrapping. */
 export const LongMerchantName: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='text-lg font-semibold'>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1rem'}}>
+        <h3 style={{fontSize:'1.125rem', fontWeight:600}}>
           Mega Image Supermarket International Premium Gold Deluxe Extra — Downtown Central Branch Nr. 42
         </h3>
       </div>
-      <div className='space-y-3 p-4'>
-        <div className='flex items-start gap-2 text-sm'>
-          <span className='mt-0.5 text-gray-400'>📍</span>
+      <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', padding:'1rem'}}>
+        <div style={{display:'flex', alignItems:'flex-start', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{marginTop:'0.125rem', color:'#9ca3af'}}>📍</span>
           <span>Bulevardul Decebal Nr. 123, Bloc A4, Scara 2, Etaj 1, Apartament 42, Sector 3, Bucharest, 030167, Romania</span>
         </div>
-        <div className='flex items-center gap-2 text-sm'>
-          <span className='text-gray-400'>📞</span>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.875rem'}}>
+          <span style={{color:'#9ca3af'}}>📞</span>
           <span>+40 21 123 4567</span>
         </div>
         <div>
-          <span className='rounded-full border px-2 py-0.5 text-xs'>SUPERMARKET</span>
+          <span style={{borderRadius:'9999px', border:'1px solid #e5e7eb', paddingLeft:'0.5rem', paddingRight:'0.5rem', paddingTop:'0.125rem', paddingBottom:'0.125rem', fontSize:'0.75rem'}}>SUPERMARKET</span>
         </div>
       </div>
-      <div className='border-t p-4'>
+      <div style={{borderTop:'1px solid #e5e7eb', padding:'1rem'}}>
         <button
           type='button'
-          className='w-full rounded-md border px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{width:'100%', borderRadius:'0.375rem', border:'1px solid #e5e7eb', paddingLeft:'1rem', paddingRight:'1rem', paddingTop:'0.5rem', paddingBottom:'0.5rem', fontSize:'0.875rem'}}>
           View All Receipts
         </button>
       </div>

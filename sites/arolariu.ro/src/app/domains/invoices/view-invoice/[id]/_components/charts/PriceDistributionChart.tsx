@@ -47,15 +47,15 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
   const dataWithCurrency = data.map((d, index) => ({...d, currency, fill: `hsl(var(--chart-${(index % 5) + 1}))`}));
 
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description", {currency})}</CardDescription>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t("description", {currency})}</CardDescription>
       </CardHeader>
-      <CardContent className='pb-4'>
+      <CardContent className={styles["cardContent"]}>
         <ChartContainer
           config={chartConfig}
-          className='h-[200px] w-full'>
+          className={styles["chartContainer"]}>
           <ResponsiveContainer
             width='100%'
             height='100%'>

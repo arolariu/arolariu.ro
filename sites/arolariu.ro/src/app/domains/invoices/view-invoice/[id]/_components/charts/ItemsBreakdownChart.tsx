@@ -57,15 +57,15 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
   const tickFormatter = useCallback((value: number) => `${value}`, []);
 
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description")}</CardDescription>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
       </CardHeader>
-      <CardContent className='pb-4'>
+      <CardContent className={styles["cardContent"]}>
         <ChartContainer
           config={chartConfig}
-          className='h-[200px] w-full'>
+          className={styles["chartContainer"]}>
           <ResponsiveContainer
             width='100%'
             height='100%'>
