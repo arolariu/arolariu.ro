@@ -65,8 +65,8 @@ COPY tsconfig.json vitest.config.ts ./
 COPY packages/components/package.json ./packages/components/
 COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
 
-# Install all dependencies with clean install for reproducibility
-RUN npm ci --prefer-offline --no-audit && \
+# Install all dependencies
+RUN npm install --prefer-offline --no-audit && \
     npm cache clean --force
 
 # ========================================
