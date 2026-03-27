@@ -135,7 +135,7 @@ function EulaDemo(): React.JSX.Element {
               <AccordionItem value='essential'>
                 <AccordionTrigger style={{textDecoration: 'none'}}>
                   <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'}}>
-                    <TbLockstyle={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
+                    <TbLock style={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
                     <span>Essential Cookies</span>
                     <Badge style={{marginLeft: '0.5rem'}}>Required</Badge>
                   </div>
@@ -162,7 +162,7 @@ function EulaDemo(): React.JSX.Element {
               <AccordionItem value='analytics'>
                 <AccordionTrigger style={{textDecoration: 'none'}}>
                   <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'}}>
-                    <TbInfoCircleFilledstyle={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
+                    <TbInfoCircleFilled style={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
                     <span>Analytics Cookies</span>
                     <Badge
                       style={{marginLeft: '0.5rem'}}
