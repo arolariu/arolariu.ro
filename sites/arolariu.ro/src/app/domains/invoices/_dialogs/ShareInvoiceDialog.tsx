@@ -28,11 +28,6 @@ import styles from "./ShareInvoiceDialog.module.scss";
 import {PrivateMode} from "./ShareInvoiceDialog.Private";
 import {AlreadyPublicMode, PublicMode} from "./ShareInvoiceDialog.Public";
 
-/** Rich text renderer for bold/strong text in translations */
-function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
-  return <strong>{chunks}</strong>;
-}
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -80,7 +75,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className='text-base'>{t("selection.publicTitle")}</CardTitle>
               <CardDescription className='text-sm'>
-                {t.rich("selection.publicDescription", {strong: RichTextStrong})}
+                {t.rich("selection.publicDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
               </CardDescription>
             </div>
           </CardHeader>
@@ -96,7 +91,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
             <div className={styles["cardContent"]}>
               <CardTitle className='text-base'>{t("selection.privateTitle")}</CardTitle>
               <CardDescription className='text-sm'>
-                {t.rich("selection.privateDescription", {strong: RichTextStrong})}
+                {t.rich("selection.privateDescription", {strong: (chunks) => <strong>{chunks}</strong>})}
               </CardDescription>
             </div>
           </CardHeader>

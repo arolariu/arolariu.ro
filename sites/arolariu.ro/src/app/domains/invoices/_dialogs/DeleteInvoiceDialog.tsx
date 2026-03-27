@@ -28,11 +28,6 @@ import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart,
 import {useDialog} from "../_contexts/DialogContext";
 import styles from "./DeleteInvoiceDialog.module.scss";
 
-/** Rich text renderer for confirmation highlight */
-function ConfirmHighlight(chunks: React.ReactNode): React.JSX.Element {
-  return <span className={styles["confirmHighlight"]}>{chunks}</span>;
-}
-
 /**
  * Dialog for confirming and executing invoice deletion.
  *
@@ -119,25 +114,18 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
     } finally {
       setIsDeleting(false);
     }
-  }, [invoice.id, isConfirmValid, handleClose, router, removeInvoice, t]);
+  }, [invoice.id, isConfirmValid, handleClose, router, removeInvoice]);
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;
   const scanCount = invoice.scans?.length ?? 0;
   const sharedCount = invoice.sharedWith?.length ?? 0;
 
-  const handleOpenChange = useCallback(
-    (shouldOpen: boolean) => {
-      if (shouldOpen) open();
-      else handleClose();
-    },
-    [open, handleClose],
-  );
-
   return (
     <Dialog
       open={isOpen}
-      onOpenChange={handleOpenChange}>
+      // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
+      onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 text-red-600 dark:text-red-400'>
@@ -228,7 +216,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                   <Label htmlFor='confirm-name'>
                     {t.rich("confirmation.typeToConfirm", {
                       name: invoiceName,
-                      highlight: ConfirmHighlight,
+                      highlight: (chunks) => <span className={styles["confirmHighlight"]}>{chunks}</span>,
                     })}
                   </Label>
                   <Input

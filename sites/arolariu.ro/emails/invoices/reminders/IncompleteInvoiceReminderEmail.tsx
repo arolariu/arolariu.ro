@@ -129,7 +129,7 @@ const IncompleteInvoiceReminderEmail = (props: Readonly<Props>) => {
   const {username, invoiceName, analysisDate, missingFields, editInvoiceUrl, reanalyzeUrl} = props;
 
   const name = username?.trim() ? username : "there";
-  const descriptions = missingFields.map((field) => describeField(field));
+  const descriptions = missingFields.map(describeField);
 
   return (
     <EmailLayout
