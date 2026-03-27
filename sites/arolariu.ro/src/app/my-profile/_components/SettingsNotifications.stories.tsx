@@ -20,109 +20,109 @@ type Story = StoryObj<typeof meta>;
 /** Default notification settings panel. */
 export const Default: Story = {
   render: () => (
-    <section className='space-y-6'>
+    <section style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
       <div>
-        <h2 className='text-xl font-bold'>Notifications</h2>
-        <p className='text-sm text-gray-500'>Manage your email and alert preferences.</p>
+        <h2 style={{fontSize: '1.25rem', fontWeight: '700'}}>Notifications</h2>
+        <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Manage your email and alert preferences.</p>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+      <div style={{display: 'grid', gridTemplateColumns: '1fr', gap: '1rem'}}>
         {/* Email Master Toggle */}
-        <div className='rounded-xl border p-5 md:col-span-2'>
-          <div className='flex items-center gap-2'>
-            <TbMail className='h-4 w-4' />
-            <h3 className='font-semibold'>Email Notifications</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem', gridColumn: 'span 2'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbMail style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Email Notifications</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Control all email communications.</p>
-          <div className='mt-3 flex items-center justify-between'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Control all email communications.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
             <div>
-              <p className='text-sm font-medium'>Enable Email</p>
-              <p className='text-xs text-gray-400'>Receive notifications by email</p>
+              <p style={{fontSize: '0.875rem', fontWeight: '500'}}>Enable Email</p>
+              <p style={{fontSize: '0.75rem', color: '#9ca3af'}}>Receive notifications by email</p>
             </div>
-            <div className='h-5 w-9 rounded-full bg-blue-600' />
+            <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: '#2563eb'}} />
           </div>
         </div>
 
         {/* Reports */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbReport className='h-4 w-4' />
-            <h3 className='font-semibold'>Reports</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbReport style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Reports</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Scheduled report delivery.</p>
-          <div className='mt-3 space-y-3'>
-            <div className='rounded-md border px-3 py-2 text-sm'>Weekly</div>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Scheduled report delivery.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+            <div style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem'}}>Weekly</div>
             {[
               {label: "Weekly Digest", enabled: true},
               {label: "Monthly Report", enabled: true},
             ].map((t) => (
               <div
                 key={t.label}
-                className='flex items-center justify-between'>
-                <p className='text-sm'>{t.label}</p>
-                <div className='h-5 w-9 rounded-full bg-blue-600' />
+                style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <p style={{fontSize: '0.875rem'}}>{t.label}</p>
+                <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: '#2563eb'}} />
               </div>
             ))}
           </div>
         </div>
 
         {/* Financial Alerts */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbWallet className='h-4 w-4' />
-            <h3 className='font-semibold'>Financial Alerts</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbWallet style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Financial Alerts</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Spending and budget notifications.</p>
-          <div className='mt-3 space-y-3'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Spending and budget notifications.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
             {[
               {label: "Spending Alerts", enabled: true},
               {label: "Budget Alerts", enabled: false},
             ].map((t) => (
               <div
                 key={t.label}
-                className='flex items-center justify-between'>
-                <p className='text-sm'>{t.label}</p>
-                <div className={`h-5 w-9 rounded-full ${t.enabled ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`} />
+                style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <p style={{fontSize: '0.875rem'}}>{t.label}</p>
+                <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: t.enabled ? '#2563eb' : '#e5e7eb'}} />
               </div>
             ))}
           </div>
         </div>
 
         {/* Product Updates */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbSparkles className='h-4 w-4' />
-            <h3 className='font-semibold'>Product Updates</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbSparkles style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Product Updates</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Feature and marketing notifications.</p>
-          <div className='mt-3 space-y-3'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Feature and marketing notifications.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
             {[
               {label: "New Features", enabled: true},
               {label: "Marketing Emails", enabled: false},
             ].map((t) => (
               <div
                 key={t.label}
-                className='flex items-center justify-between'>
-                <p className='text-sm'>{t.label}</p>
-                <div className={`h-5 w-9 rounded-full ${t.enabled ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`} />
+                style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <p style={{fontSize: '0.875rem'}}>{t.label}</p>
+                <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: t.enabled ? '#2563eb' : '#e5e7eb'}} />
               </div>
             ))}
           </div>
         </div>
 
         {/* Security Notifications */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbShield className='h-4 w-4' />
-            <h3 className='font-semibold'>Security</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbShield style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Security</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Security-related alerts.</p>
-          <div className='mt-3 flex items-center justify-between'>
-            <p className='text-sm'>Security Alerts</p>
-            <div className='h-5 w-9 rounded-full bg-blue-600' />
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Security-related alerts.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+            <p style={{fontSize: '0.875rem'}}>Security Alerts</p>
+            <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: '#2563eb'}} />
           </div>
-          <div className='mt-2 flex items-center gap-1 text-xs text-gray-400'>
-            <TbBell className='h-3 w-3' />
+          <div style={{marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#9ca3af'}}>
+            <TbBell style={{height: '0.75rem', width: '0.75rem'}} />
             Security alerts are always enabled for your protection.
           </div>
         </div>

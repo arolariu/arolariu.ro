@@ -20,93 +20,93 @@ type Story = StoryObj<typeof meta>;
 /** Default security settings panel. */
 export const Default: Story = {
   render: () => (
-    <section className='space-y-6'>
+    <section style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
       <div>
-        <h2 className='text-xl font-bold'>Security</h2>
-        <p className='text-sm text-gray-500'>Manage your account security and access.</p>
+        <h2 style={{fontSize: '1.25rem', fontWeight: '700'}}>Security</h2>
+        <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Manage your account security and access.</p>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+      <div style={{display: 'grid', gridTemplateColumns: '1fr', gap: '1rem'}}>
         {/* 2FA */}
-        <div className='rounded-xl border p-5 md:col-span-2'>
-          <div className='flex items-center gap-2'>
-            <TbKey className='h-4 w-4' />
-            <h3 className='font-semibold'>Two-Factor Authentication</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem', gridColumn: 'span 2'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbKey style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Two-Factor Authentication</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Add an extra layer of security.</p>
-          <div className='mt-3 flex items-center justify-between'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Add an extra layer of security.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
             <div>
-              <p className='text-sm font-medium'>Enable 2FA</p>
-              <p className='text-xs text-gray-400'>Require verification code on login</p>
+              <p style={{fontSize: '0.875rem', fontWeight: '500'}}>Enable 2FA</p>
+              <p style={{fontSize: '0.75rem', color: '#9ca3af'}}>Require verification code on login</p>
             </div>
-            <div className='h-5 w-9 rounded-full bg-blue-600' />
+            <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: '#2563eb'}} />
           </div>
-          <div className='mt-2 flex items-center gap-1 rounded-md bg-green-50 p-2 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400'>
-            <TbShieldCheck className='h-3 w-3' />
+          <div style={{marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem', borderRadius: '0.375rem', backgroundColor: '#f0fdf4', padding: '0.5rem', fontSize: '0.75rem', color: '#15803d'}}>
+            <TbShieldCheck style={{height: '0.75rem', width: '0.75rem'}} />
             Two-factor authentication is active.
           </div>
         </div>
 
         {/* Session Settings */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbClock className='h-4 w-4' />
-            <h3 className='font-semibold'>Session Settings</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbClock style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Session Settings</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Configure session behavior.</p>
-          <div className='mt-3 space-y-3'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Configure session behavior.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
             <div>
-              <p className='text-sm font-medium'>Session Timeout</p>
-              <div className='mt-1 rounded-md border px-3 py-2 text-sm'>30 minutes</div>
+              <p style={{fontSize: '0.875rem', fontWeight: '500'}}>Session Timeout</p>
+              <div style={{marginTop: '0.25rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem'}}>30 minutes</div>
             </div>
-            <hr className='dark:border-gray-700' />
-            <div className='flex items-center justify-between'>
+            <hr style={{borderColor: '#e5e7eb'}} />
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
               <div>
-                <p className='text-sm font-medium'>Login Notifications</p>
-                <p className='text-xs text-gray-400'>Get notified of new logins</p>
+                <p style={{fontSize: '0.875rem', fontWeight: '500'}}>Login Notifications</p>
+                <p style={{fontSize: '0.75rem', color: '#9ca3af'}}>Get notified of new logins</p>
               </div>
-              <div className='h-5 w-9 rounded-full bg-blue-600' />
+              <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: '#2563eb'}} />
             </div>
           </div>
         </div>
 
         {/* Password */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbLock className='h-4 w-4' />
-            <h3 className='font-semibold'>Password &amp; Access</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbLock style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Password &amp; Access</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Manage your password.</p>
-          <div className='mt-3'>
-            <button className='w-full rounded-md border px-3 py-2 text-sm'>Change Password</button>
-            <p className='mt-2 text-xs text-gray-400'>Managed via Clerk authentication.</p>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Manage your password.</p>
+          <div style={{marginTop: '0.75rem'}}>
+            <button style={{width: '100%', borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem', backgroundColor: 'transparent', cursor: 'pointer'}}>Change Password</button>
+            <p style={{marginTop: '0.5rem', fontSize: '0.75rem', color: '#9ca3af'}}>Managed via Clerk authentication.</p>
           </div>
         </div>
 
         {/* Trusted Devices */}
-        <div className='rounded-xl border p-5 md:col-span-2'>
-          <div className='flex items-center gap-2'>
-            <TbDevices className='h-4 w-4' />
-            <h3 className='font-semibold'>Trusted Devices</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem', gridColumn: 'span 2'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbDevices style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Trusted Devices</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Manage devices with saved sessions.</p>
-          <div className='mt-3 space-y-2'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Manage devices with saved sessions.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
             {[
               {name: "Chrome on Windows", lastUsed: "2025-01-15", isCurrent: true},
               {name: "Firefox on macOS", lastUsed: "2025-01-10", isCurrent: false},
             ].map((d) => (
               <div
                 key={d.name}
-                className='flex items-center justify-between rounded-md border p-3'>
+                style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.75rem'}}>
                 <div>
-                  <p className='text-sm font-medium'>{d.name}</p>
-                  <p className='text-xs text-gray-400'>Last used: {d.lastUsed}</p>
+                  <p style={{fontSize: '0.875rem', fontWeight: '500'}}>{d.name}</p>
+                  <p style={{fontSize: '0.75rem', color: '#9ca3af'}}>Last used: {d.lastUsed}</p>
                 </div>
                 {d.isCurrent ? (
-                  <span className='rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800'>Current</span>
+                  <span style={{borderRadius: '9999px', backgroundColor: '#f3f4f6', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.125rem', paddingBottom: '0.125rem', fontSize: '0.75rem'}}>Current</span>
                 ) : (
-                  <button className='rounded-md p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20'>
-                    <TbTrash className='h-4 w-4 text-gray-400' />
+                  <button style={{borderRadius: '0.375rem', padding: '0.375rem', backgroundColor: 'transparent', border: 'none', cursor: 'pointer'}}>
+                    <TbTrash style={{height: '1rem', width: '1rem', color: '#9ca3af'}} />
                   </button>
                 )}
               </div>

@@ -20,33 +20,32 @@ type Story = StoryObj<typeof meta>;
 /** Preview of the home inventory insights card. */
 export const Preview: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='flex items-center gap-2 text-lg font-semibold'>🏠 Home Inventory</h3>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1rem'}}>
+        <h3 style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'1.125rem', fontWeight:600}}>🏠 Home Inventory</h3>
       </div>
-      <div className='space-y-4 p-4'>
+      <div style={{display:'flex', flexDirection:'column', gap:'1rem', padding:'1rem'}}>
         {/* Supply Stock Levels */}
         <div>
-          <p className='mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase'>Supply Stock Levels</p>
-          <div className='space-y-3'>
+          <p style={{marginBottom:'0.5rem', fontSize:'0.75rem', fontWeight:600, letterSpacing:'0.05em', color:'#6b7280', textTransform:'uppercase'}}>Supply Stock Levels</p>
+          <div style={{display:'flex', flexDirection:'column', gap:'0.75rem'}}>
             {[
-              {name: "Laundry Detergent", icon: "💧", days: 45, max: 60, color: "bg-green-500"},
-              {name: "Dish Soap", icon: "✨", days: 18, max: 30, color: "bg-yellow-500"},
-              {name: "Paper Products", icon: "🧻", days: 30, max: 45, color: "bg-green-500"},
-              {name: "Floor Cleaner", icon: "🧴", days: 60, max: 90, color: "bg-green-500"},
+              {name: "Laundry Detergent", icon: "💧", days: 45, max: 60, color: "#22c55e"},
+              {name: "Dish Soap", icon: "✨", days: 18, max: 30, color: "#eab308"},
+              {name: "Paper Products", icon: "🧻", days: 30, max: 45, color: "#22c55e"},
+              {name: "Floor Cleaner", icon: "🧴", days: 60, max: 90, color: "#22c55e"},
             ].map((supply) => (
               <div key={supply.name}>
-                <div className='flex justify-between text-xs'>
-                  <div className='flex items-center gap-1'>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem'}}>
+                  <div style={{display:'flex', alignItems:'center', gap:'0.25rem'}}>
                     <span>{supply.icon}</span>
                     <span>{supply.name}</span>
                   </div>
-                  <span className='text-gray-500'>{supply.days} days remaining</span>
+                  <span style={{color:'#6b7280'}}>{supply.days} days remaining</span>
                 </div>
-                <div className='mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-200 dark:bg-gray-700'>
+                <div style={{marginTop:'0.25rem', height:'0.375rem', width:'100%', overflow:'hidden', borderRadius:'0.25rem', backgroundColor:'#e5e7eb'}}>
                   <div
-                    className={`h-full rounded ${supply.color}`}
-                    style={{width: `${String(Math.round((supply.days / supply.max) * 100))}%`}}
+                    style={{height:'100%', borderRadius:'0.25rem', backgroundColor: supply.color, width: `${String(Math.round((supply.days / supply.max) * 100))}%`}}
                   />
                 </div>
               </div>
@@ -55,35 +54,35 @@ export const Preview: Story = {
         </div>
 
         {/* Eco Score */}
-        <div className='rounded-md bg-green-50 p-3 dark:bg-green-900/20'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-1'>
+        <div style={{borderRadius:'0.375rem', backgroundColor:'#f0fdf4', padding:'0.75rem'}}>
+          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'0.25rem'}}>
               <span>🌱</span>
-              <span className='text-sm font-medium'>Eco-Friendliness</span>
+              <span style={{fontSize:'0.875rem', fontWeight:500}}>Eco-Friendliness</span>
             </div>
-            <div className='flex gap-0.5'>
+            <div style={{display:'flex', gap:'0.125rem'}}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
                   key={star}
-                  className={`text-sm ${star <= 3 ? "text-green-500" : "text-gray-300"}`}>
+                  style={{fontSize:'0.875rem', color: star <= 3 ? '#22c55e' : '#d1d5db'}}>
                   ⭐
                 </span>
               ))}
             </div>
           </div>
-          <ul className='mt-2 space-y-1 text-xs text-gray-600 dark:text-gray-400'>
+          <ul style={{marginTop:'0.5rem', display:'flex', flexDirection:'column', gap:'0.25rem', fontSize:'0.75rem', color:'#4b5563'}}>
             <li>• 2 products with eco-labels</li>
             <li>• 1 recyclable packaging</li>
-            <li className='text-green-600 dark:text-green-400'>• Tip: Try concentrated versions to reduce plastic</li>
+            <li style={{color:'#16a34a'}}>• Tip: Try concentrated versions to reduce plastic</li>
           </ul>
         </div>
 
         {/* Bulk Savings */}
-        <div className='flex gap-2 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20'>
+        <div style={{display:'flex', gap:'0.5rem', borderRadius:'0.375rem', backgroundColor:'#eff6ff', padding:'0.75rem'}}>
           <span>📦</span>
           <div>
-            <p className='text-sm font-medium'>Bulk Buying Opportunity</p>
-            <p className='text-xs text-gray-600 dark:text-gray-400'>Save ~120 RON/year by buying in bulk</p>
+            <p style={{fontSize:'0.875rem', fontWeight:500}}>Bulk Buying Opportunity</p>
+            <p style={{fontSize:'0.75rem', color:'#4b5563'}}>Save ~120 RON/year by buying in bulk</p>
           </div>
         </div>
       </div>
