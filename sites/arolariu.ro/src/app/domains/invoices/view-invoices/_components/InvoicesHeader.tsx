@@ -40,7 +40,7 @@ export default function InvoicesHeader(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
-                className='cursor-pointer gap-1'
+                className={styles["actionButton"]}
                 onClick={openImportDialog}>
                 <TbUpload className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>{t("actions.import")}</span>
@@ -56,7 +56,7 @@ export default function InvoicesHeader(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
-                className='cursor-pointer gap-1'
+                className={styles["actionButton"]}
                 onClick={openExportDialog}>
                 <TbDownload className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>{t("actions.export")}</span>
@@ -72,7 +72,7 @@ export default function InvoicesHeader(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
-                className='cursor-pointer gap-1'
+                className={styles["actionButton"]}
                 onClick={handlePrintAction}>
                 <TbPrinter className={styles["actionIcon"]} />
                 <span className={styles["buttonLabel"]}>{t("actions.print")}</span>
@@ -88,7 +88,7 @@ export default function InvoicesHeader(): React.JSX.Element {
               <Link href='/domains/invoices/create-invoice'>
                 <Button
                   size='sm'
-                  className='cursor-pointer gap-1'>
+                  className={styles["actionButton"]}>
                   <TbPlus className={styles["actionIcon"]} />
                   <span>{t("actions.newInvoice")}</span>
                 </Button>

@@ -61,3 +61,10 @@
     display: inline;
   }
 }
+
+.actionButton {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: space(1);
+}

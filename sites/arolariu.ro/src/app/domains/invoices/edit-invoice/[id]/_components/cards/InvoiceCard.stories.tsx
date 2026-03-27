@@ -19,63 +19,63 @@ type Story = StoryObj<typeof meta>;
 /** Static preview of the editable invoice card. */
 export const Preview: Story = {
   render: () => (
-    <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='space-y-1 border-b p-6'>
-        <div className='flex items-center justify-between'>
-          <h3 className='text-lg font-semibold'>Invoice Details</h3>
-          <span className='cursor-pointer rounded-full border px-3 py-1 text-xs'>♡ Mark Important</span>
+    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{display: "flex", flexDirection: "column", gap: "0.25rem", borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
+        <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
+          <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Invoice Details</h3>
+          <span style={{cursor: "pointer", borderRadius: "9999px", border: "1px solid #e5e7eb", padding: "0.25rem 0.75rem", fontSize: "0.75rem"}}>♡ Mark Important</span>
         </div>
-        <p className='text-sm text-gray-500'>From: Mock Merchant • Weekly grocery shopping</p>
+        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>From: Mock Merchant • Weekly grocery shopping</p>
       </div>
-      <div className='space-y-4 p-6'>
-        <div className='grid grid-cols-2 gap-4'>
+      <div style={{display: "flex", flexDirection: "column", gap: "1rem", padding: "1.5rem"}}>
+        <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem"}}>
           <div>
-            <h4 className='text-xs font-medium text-gray-500'>Date (UTC)</h4>
-            <p className='text-sm'>📅 January 15, 2025, 10:30 AM</p>
+            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Date (UTC)</h4>
+            <p style={{fontSize: "0.875rem"}}>📅 January 15, 2025, 10:30 AM</p>
           </div>
           <div>
-            <h4 className='text-xs font-medium text-gray-500'>Category</h4>
-            <p className='text-sm'>🏷 GROCERIES</p>
+            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Category</h4>
+            <p style={{fontSize: "0.875rem"}}>🏷 GROCERIES</p>
           </div>
           <div>
-            <h4 className='text-xs font-medium text-gray-500'>Payment Method</h4>
-            <p className='text-sm'>💳 CREDIT CARD</p>
+            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Payment Method</h4>
+            <p style={{fontSize: "0.875rem"}}>💳 CREDIT CARD</p>
           </div>
           <div>
-            <h4 className='text-xs font-medium text-gray-500'>Total Amount</h4>
-            <p className='text-lg font-bold text-green-600'>$125.50</p>
+            <h4 style={{fontSize: "0.75rem", fontWeight: 500, color: "#6b7280"}}>Total Amount</h4>
+            <p style={{fontSize: "1.125rem", fontWeight: 700, color: "#16a34a"}}>$125.50</p>
           </div>
         </div>
         <hr />
         <div>
-          <h4 className='mb-2 text-sm font-semibold'>Items (3)</h4>
-          <table className='w-full text-sm'>
+          <h4 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Items (3)</h4>
+          <table style={{width: "100%", fontSize: "0.875rem"}}>
             <thead>
-              <tr className='border-b text-left text-xs text-gray-500'>
-                <th className='pb-2'>Item</th>
-                <th className='pb-2 text-right'>Qty</th>
-                <th className='pb-2 text-right'>Price</th>
-                <th className='pb-2 text-right'>Total</th>
+              <tr style={{borderBottom: "1px solid #e5e7eb", textAlign: "left", fontSize: "0.75rem", color: "#6b7280"}}>
+                <th style={{paddingBottom: "0.5rem"}}>Item</th>
+                <th style={{paddingBottom: "0.5rem", textAlign: "right"}}>Qty</th>
+                <th style={{paddingBottom: "0.5rem", textAlign: "right"}}>Price</th>
+                <th style={{paddingBottom: "0.5rem", textAlign: "right"}}>Total</th>
               </tr>
             </thead>
             <tbody>
-              <tr className='border-b'>
-                <td className='py-2'>Organic Milk</td>
-                <td className='py-2 text-right'>2</td>
-                <td className='py-2 text-right'>$3.99</td>
-                <td className='py-2 text-right font-medium'>$7.98</td>
+              <tr style={{borderBottom: "1px solid #e5e7eb"}}>
+                <td style={{padding: "0.5rem 0"}}>Organic Milk</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right"}}>2</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right"}}>$3.99</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right", fontWeight: 500}}>$7.98</td>
               </tr>
-              <tr className='border-b'>
-                <td className='py-2'>Whole Wheat Bread</td>
-                <td className='py-2 text-right'>1</td>
-                <td className='py-2 text-right'>$4.50</td>
-                <td className='py-2 text-right font-medium'>$4.50</td>
+              <tr style={{borderBottom: "1px solid #e5e7eb"}}>
+                <td style={{padding: "0.5rem 0"}}>Whole Wheat Bread</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right"}}>1</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right"}}>$4.50</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right", fontWeight: 500}}>$4.50</td>
               </tr>
-              <tr className='border-b'>
-                <td className='py-2'>Fresh Salmon</td>
-                <td className='py-2 text-right'>0.5 kg</td>
-                <td className='py-2 text-right'>$12.00</td>
-                <td className='py-2 text-right font-medium'>$6.00</td>
+              <tr style={{borderBottom: "1px solid #e5e7eb"}}>
+                <td style={{padding: "0.5rem 0"}}>Fresh Salmon</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right"}}>0.5 kg</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right"}}>$12.00</td>
+                <td style={{padding: "0.5rem 0", textAlign: "right", fontWeight: 500}}>$6.00</td>
               </tr>
             </tbody>
           </table>

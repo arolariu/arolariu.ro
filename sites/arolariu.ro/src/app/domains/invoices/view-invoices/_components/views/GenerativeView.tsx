@@ -73,7 +73,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
         <Button
           variant='outline'
           size='sm'
-          className='cursor-help gap-1'>
+          className={styles["helpButton"]}>
           <TbHelpCircle className={styles["actionIcon"]} />
           <span>{t("help")}</span>
         </Button>
@@ -81,25 +81,25 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
 
       <Tabs
         defaultValue='chat'
-        className='w-full'>
+        className={styles["fullWidth"]}>
         <TabsList>
           <TabsTrigger
             value='chat'
-            className='flex cursor-pointer items-center gap-2'>
+            className={styles["tabTrigger"]}>
             <TbMessage className={styles["actionIcon"]} />
             <span>{t("tabs.chat")}</span>
           </TabsTrigger>
           <TabsTrigger
             value='settings'
-            className='flex cursor-pointer items-center gap-2'>
+            className={styles["tabTrigger"]}>
             <TbSettings className={styles["actionIcon"]} />
             <span>{t("tabs.settings")}</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent
           value='chat'
-          className='mt-4'>
-          <Card className='w-full'>
+          className={styles["tabContent"]}>
+          <Card className={styles["fullWidth"]}>
             <CardHeader>
               <CardTitle>{t("title")}</CardTitle>
               <CardDescription>{t("chatDescription")}</CardDescription>
@@ -117,8 +117,8 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
         </TabsContent>
         <TabsContent
           value='settings'
-          className='mt-4'>
-          <Card className='w-full'>
+          className={styles["tabContent"]}>
+          <Card className={styles["fullWidth"]}>
             <CardHeader>
               <CardTitle>{t("settings.title")}</CardTitle>
               <CardDescription>{t("settings.description")}</CardDescription>
@@ -149,7 +149,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     />
                     <Label
                       htmlFor='access-invoices'
-                      className='text-sm font-normal'>
+                      className={styles["checkboxLabel"]}>
                       {t("settings.allowInvoiceData")}
                     </Label>
                   </div>
@@ -160,7 +160,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     />
                     <Label
                       htmlFor='access-merchants'
-                      className='text-sm font-normal'>
+                      className={styles["checkboxLabel"]}>
                       {t("settings.allowMerchantData")}
                     </Label>
                   </div>
@@ -175,13 +175,13 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                     />
                     <Label
                       htmlFor='notify-insights'
-                      className='text-sm font-normal'>
+                      className={styles["checkboxLabel"]}>
                       {t("settings.notifyInsights")}
                     </Label>
                   </div>
                 </div>
 
-                <Button className='w-full'>{t("settings.save")}</Button>
+                <Button className={styles["saveButton"]}>{t("settings.save")}</Button>
               </div>
             </CardContent>
           </Card>

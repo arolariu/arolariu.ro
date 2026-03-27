@@ -35,3 +35,37 @@
 .tabsContent {
   margin-top: space(6);
 }
+
+.skeletonHeader {
+  height: space(24);
+  width: 100%;
+}
+
+.skeletonTab {
+  height: space(10);
+  width: space(24);
+}
+
+.skeletonCard {
+  height: space(48);
+  width: 100%;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.tabsList {
+  display: grid;
+  width: 100%;
+  max-width: 28rem;
+  grid-template-columns: repeat(3, 1fr);
+
+  @media print {
+    display: none;
+  }
+}
+
+.tabTrigger {
+  cursor: pointer;
+}

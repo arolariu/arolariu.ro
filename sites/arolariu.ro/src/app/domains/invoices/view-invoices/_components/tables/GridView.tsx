@@ -71,10 +71,10 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
               onCheckedChange={() => handleSelectInvoice(invoice.id)}
               aria-label={tTableView("aria.selectInvoice", {name: invoice.name})}
-              className='bg-background/80 backdrop-blur-sm'
+              className={styles["frostedCheckbox"]}
             />
           </div>
-          <Card className='overflow-hidden'>
+          <Card className={styles["card"]}>
             <div className={styles["imageContainer"]}>
               <Image
                 src={invoice.scans[0]?.location || "/placeholder.svg"}
@@ -87,12 +87,12 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
-                      className='cursor-pointer'
+                      className={styles["tooltipTrigger"]}
                       render={
                         <Button
                           variant='ghost'
                           size='icon'
-                          className='bg-background/80 h-8 w-8 backdrop-blur-sm'>
+                          className={styles["imageButton"]}>
                           <TbEye className={styles["viewIcon"]} />
                         </Button>
                       } />
@@ -102,11 +102,11 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                 <TableViewActions invoice={invoice} />
               </div>
             </div>
-            <CardHeader className='pt-4 pb-2'>
-              <CardTitle className='text-lg'>{invoice.name}</CardTitle>
+            <CardHeader className={styles["cardHeader"]}>
+              <CardTitle className={styles["cardTitle"]}>{invoice.name}</CardTitle>
               <CardDescription>{invoice.description}</CardDescription>
             </CardHeader>
-            <CardContent className='pb-2'>
+            <CardContent className={styles["cardContent"]}>
               <div className={styles["contentRow"]}>
                 <div className={styles["dateRow"]}>
                   <TbCalendar className={styles["calendarIcon"]} />
@@ -120,7 +120,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className='flex justify-between pt-2'>
+            <CardFooter className={styles["cardFooter"]}>
               <div className={styles["itemCount"]}>{t("itemCount", {count: invoice.items?.length ?? 0})}</div>
             </CardFooter>
           </Card>

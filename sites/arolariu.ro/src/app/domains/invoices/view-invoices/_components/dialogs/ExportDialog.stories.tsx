@@ -21,33 +21,33 @@ type Story = StoryObj<typeof meta>;
 /** Default export dialog with CSV selected. */
 export const Default: Story = {
   render: () => (
-    <div className='rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
-      <div className='border-b p-6'>
-        <h2 className='text-lg font-semibold'>Export Invoices</h2>
-        <p className='mt-1 text-sm text-gray-500'>Export 5 invoices in your preferred format.</p>
+    <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'}}>
+      <div style={{borderBottom: '1px solid #e5e7eb', padding: '1.5rem'}}>
+        <h2 style={{fontSize: '1.125rem', fontWeight: 600}}>Export Invoices</h2>
+        <p style={{marginTop: '0.25rem', fontSize: '0.875rem', color: '#6b7280'}}>Export 5 invoices in your preferred format.</p>
       </div>
 
-      <div className='space-y-5 p-6'>
+      <div style={{display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.5rem'}}>
         {/* Format selection */}
         <div>
-          <h3 className='mb-2 text-sm font-semibold'>Export Format</h3>
-          <div className='space-y-2'>
+          <h3 style={{marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600}}>Export Format</h3>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
             {[
-              {value: "csv", icon: <TbFileSpreadsheet className='h-4 w-4 text-green-600' />, label: "CSV", selected: true},
-              {value: "json", icon: <TbJson className='h-4 w-4 text-blue-600' />, label: "JSON", selected: false},
-              {value: "pdf", icon: <TbFileText className='h-4 w-4 text-red-600' />, label: "PDF", selected: false},
+              {value: "csv", icon: <TbFileSpreadsheet style={{height: '1rem', width: '1rem', color: '#16a34a'}} />, label: "CSV", selected: true},
+              {value: "json", icon: <TbJson style={{height: '1rem', width: '1rem', color: '#2563eb'}} />, label: "JSON", selected: false},
+              {value: "pdf", icon: <TbFileText style={{height: '1rem', width: '1rem', color: '#dc2626'}} />, label: "PDF", selected: false},
             ].map((format) => (
               <label
                 key={format.value}
-                className='flex items-center gap-3 text-sm'>
+                style={{display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem'}}>
                 <input
                   type='radio'
                   name='format'
                   checked={format.selected}
                   readOnly
-                  className='h-4 w-4'
+                  style={{height: '1rem', width: '1rem'}}
                 />
-                <span className='flex items-center gap-2'>
+                <span style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                   {format.icon}
                   {format.label}
                 </span>
@@ -58,8 +58,8 @@ export const Default: Story = {
 
         {/* Options */}
         <div>
-          <h3 className='mb-2 text-sm font-semibold'>Include in Export</h3>
-          <div className='space-y-2'>
+          <h3 style={{marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600}}>Include in Export</h3>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
             {[
               {label: "Include Metadata", checked: false},
               {label: "Include Products", checked: true},
@@ -68,12 +68,12 @@ export const Default: Story = {
             ].map((opt) => (
               <label
                 key={opt.label}
-                className='flex items-center gap-2 text-sm'>
+                style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'}}>
                 <input
                   type='checkbox'
                   checked={opt.checked}
                   readOnly
-                  className='h-4 w-4 rounded border'
+                  style={{height: '1rem', width: '1rem', borderRadius: '0.25rem', border: '1px solid #e5e7eb'}}
                 />
                 {opt.label}
               </label>
@@ -82,10 +82,10 @@ export const Default: Story = {
         </div>
       </div>
 
-      <div className='flex justify-end gap-2 border-t p-4'>
-        <button className='rounded-md border px-4 py-2 text-sm'>Cancel</button>
-        <button className='flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900'>
-          <TbDownload className='h-4 w-4' />
+      <div style={{display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', borderTop: '1px solid #e5e7eb', padding: '1rem'}}>
+        <button style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.5rem 1rem', fontSize: '0.875rem'}}>Cancel</button>
+        <button style={{display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', backgroundColor: '#111827', padding: '0.5rem 1rem', fontSize: '0.875rem', color: '#ffffff'}}>
+          <TbDownload style={{height: '1rem', width: '1rem'}} />
           Export
         </button>
       </div>

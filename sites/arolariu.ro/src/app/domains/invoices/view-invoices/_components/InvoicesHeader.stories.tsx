@@ -20,30 +20,30 @@ type Story = StoryObj<typeof meta>;
 /** Default invoices header with all action buttons. */
 export const Preview: Story = {
   render: () => (
-    <div className='flex flex-col gap-4 border-b bg-white px-6 py-4 md:flex-row md:items-center md:justify-between dark:bg-gray-900'>
+    <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', borderBottom: '1px solid #e5e7eb', backgroundColor: '#ffffff', padding: '1rem 1.5rem'}}>
       <div>
-        <h1 className='text-2xl font-bold tracking-tight'>My Invoices</h1>
-        <p className='text-sm text-gray-500 dark:text-gray-400'>View and manage all your invoices</p>
+        <h1 style={{fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.025em'}}>My Invoices</h1>
+        <p style={{fontSize: '0.875rem', color: '#6b7280'}}>View and manage all your invoices</p>
       </div>
-      <div className='flex gap-2'>
+      <div style={{display: 'flex', gap: '0.5rem'}}>
         <button
           type='button'
-          className='flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{display: 'flex', alignItems: 'center', gap: '0.25rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.375rem 0.75rem', fontSize: '0.875rem'}}>
           📤 Import
         </button>
         <button
           type='button'
-          className='flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{display: 'flex', alignItems: 'center', gap: '0.25rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.375rem 0.75rem', fontSize: '0.875rem'}}>
           📥 Export
         </button>
         <button
           type='button'
-          className='flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{display: 'flex', alignItems: 'center', gap: '0.25rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.375rem 0.75rem', fontSize: '0.875rem'}}>
           🖨 Print
         </button>
         <button
           type='button'
-          className='flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700'>
+          style={{display: 'flex', alignItems: 'center', gap: '0.25rem', borderRadius: '0.375rem', backgroundColor: '#2563eb', padding: '0.375rem 0.75rem', fontSize: '0.875rem', color: '#ffffff'}}>
           ➕ New Invoice
         </button>
       </div>

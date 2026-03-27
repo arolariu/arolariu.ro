@@ -11,7 +11,7 @@ const meta = {
   title: "Invoices/ViewInvoices/Views/TableViewActions",
   decorators: [
     (Story) => (
-      <div className='flex min-h-[200px] items-start justify-center pt-8'>
+      <div style={{display: 'flex', minHeight: '200px', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '2rem'}}>
         <Story />
       </div>
     ),
@@ -27,22 +27,22 @@ type Story = StoryObj<typeof meta>;
 /** Preview of the actions dropdown menu (expanded). */
 export const Preview: Story = {
   render: () => (
-    <div className='w-40 rounded-lg border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900'>
-      <div className='p-1'>
+    <div style={{width: '10rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}>
+      <div style={{padding: '0.25rem'}}>
         <button
           type='button'
-          className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
+          style={{display: 'flex', width: '100%', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem'}}>
           ✏️ Edit
         </button>
         <button
           type='button'
-          className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
+          style={{display: 'flex', width: '100%', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem'}}>
           🔗 Share
         </button>
-        <hr className='my-1 border-gray-200 dark:border-gray-700' />
+        <hr style={{margin: '0.25rem 0', borderColor: '#e5e7eb'}} />
         <button
           type='button'
-          className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'>
+          style={{display: 'flex', width: '100%', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#ef4444'}}>
           🗑 Delete
         </button>
       </div>
@@ -55,8 +55,8 @@ export const Collapsed: Story = {
   render: () => (
     <button
       type='button'
-      className='rounded-md border bg-white p-2 shadow-sm dark:border-gray-700 dark:bg-gray-900'>
-      <span className='text-gray-500'>☰</span>
+      style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', padding: '0.5rem', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <span style={{color: '#6b7280'}}>☰</span>
     </button>
   ),
 };

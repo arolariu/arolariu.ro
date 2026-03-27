@@ -87,3 +87,34 @@
   width: space(4);
   height: space(4);
 }
+
+.helpButton {
+  cursor: help;
+  display: flex;
+  align-items: center;
+  gap: space(1);
+}
+
+.tabTrigger {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: space(2);
+}
+
+.tabContent {
+  margin-top: space(4);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.checkboxLabel {
+  font-size: font-size('sm');
+  font-weight: font-weight('normal');
+}
+
+.saveButton {
+  width: 100%;
+}

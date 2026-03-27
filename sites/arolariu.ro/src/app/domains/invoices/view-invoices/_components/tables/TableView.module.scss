@@ -95,3 +95,46 @@
   height: 1.25rem;
   width: 1.25rem;
 }
+
+.frostedCheckbox {
+  background-color: color-alpha('background', 0.8);
+  @include backdrop-blur(blur-size('md'));
+}
+
+.sortButton {
+  display: flex;
+  height: auto;
+  cursor: pointer;
+  align-items: center;
+  gap: space(1);
+  padding: 0;
+  font-weight: font-weight('medium');
+}
+
+.actionsHeader {
+  text-align: end;
+}
+
+.viewTrigger {
+  cursor: pointer;
+
+  &:hover {
+    color: color('accent-foreground');
+  }
+}
+
+.pageSizeTrigger {
+  height: space(8);
+  width: space(20);
+  cursor: pointer;
+}
+
+.paginationButtonsCell {
+  justify-content: flex-end;
+}
+
+.paginationButton {
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
+}
