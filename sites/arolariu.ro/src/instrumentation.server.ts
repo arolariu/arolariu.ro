@@ -1350,8 +1350,8 @@ export function logWithTrace(level: LogLevel, message: string, attributes?: Reco
     "app.log.context": renderContext,
     "app.log.trace_id": spanContext?.traceId,
     "app.log.span_id": spanContext?.spanId,
-  })) {
-    if (typeof value === "object" && value instanceof Error) {
+  }) as Array<[string, unknown]>) {
+    if (value instanceof Error) {
       normalizedAttributes[key] = value.message;
     } else if (typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
       normalizedAttributes[key] = value;
