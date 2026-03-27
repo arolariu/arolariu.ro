@@ -31,10 +31,10 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <section className='flex min-h-[400px] flex-col items-center justify-center gap-4 p-8'>
-      <article className='text-center'>
-        <h1 className='text-2xl font-bold'>{namespace.title}</h1>
-        <p className='mt-2 text-gray-500 dark:text-gray-400'>{namespace.description}</p>
+    <section style={{display: 'flex', minHeight: '400px', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', padding: '2rem'}}>
+      <article style={{textAlign: 'center'}}>
+        <h1 style={{fontSize: '1.5rem', fontWeight: '700'}}>{namespace.title}</h1>
+        <p style={{marginTop: '0.5rem', color: '#6b7280'}}>{namespace.description}</p>
       </article>
     </section>
   ),

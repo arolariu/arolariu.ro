@@ -19,40 +19,39 @@ type Story = StoryObj<typeof meta>;
 /** December holiday season insights. */
 export const HolidaySeason: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='flex items-center gap-2 text-lg font-semibold'>✨ Seasonal Insights</h3>
+    <div style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#fff', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom: '1px solid #e5e7eb', padding: '1rem'}}>
+        <h3 style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 600}}>✨ Seasonal Insights</h3>
       </div>
-      <div className='space-y-4 p-4'>
+      <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem'}}>
         <div>
-          <div className='flex justify-between text-sm'>
-            <span className='text-gray-500'>Spending so far in December</span>
-            <span className='font-medium'>$1,245.00</span>
+          <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem'}}>
+            <span style={{color: '#6b7280'}}>Spending so far in December</span>
+            <span style={{fontWeight: 500}}>$1,245.00</span>
           </div>
-          <div className='mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700'>
+          <div style={{marginTop: '0.5rem', height: '0.5rem', width: '100%', overflow: 'hidden', borderRadius: '9999px', backgroundColor: '#e5e7eb'}}>
             <div
-              className='h-full rounded-full bg-blue-600'
-              style={{width: "69%"}}
+              style={{height: '100%', borderRadius: '9999px', backgroundColor: '#2563eb', width: '69%'}}
             />
           </div>
-          <div className='mt-1 flex justify-between text-xs text-gray-500'>
+          <div style={{marginTop: '0.25rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#6b7280'}}>
             <span>vs. December average: $1,800.00</span>
             <span>69%</span>
           </div>
         </div>
-        <div className='space-y-2'>
-          <div className='flex items-start gap-3 rounded-md bg-blue-50 p-3 dark:bg-blue-900/20'>
-            <span className='mt-0.5 text-blue-600'>✨</span>
+        <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+          <div style={{display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderRadius: '0.375rem', backgroundColor: '#eff6ff', padding: '0.75rem'}}>
+            <span style={{marginTop: '0.125rem', color: '#2563eb'}}>✨</span>
             <div>
-              <p className='text-sm font-medium'>Holiday Season</p>
-              <p className='text-xs text-gray-600 dark:text-gray-400'>Spending tends to increase during the holiday season.</p>
+              <p style={{fontSize: '0.875rem', fontWeight: 500}}>Holiday Season</p>
+              <p style={{fontSize: '0.75rem', color: '#4b5563'}}>Spending tends to increase during the holiday season.</p>
             </div>
           </div>
-          <div className='flex items-start gap-3 rounded-md bg-green-50 p-3 dark:bg-green-900/20'>
-            <span className='mt-0.5 text-green-600'>💡</span>
+          <div style={{display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderRadius: '0.375rem', backgroundColor: '#f0fdf4', padding: '0.75rem'}}>
+            <span style={{marginTop: '0.125rem', color: '#16a34a'}}>💡</span>
             <div>
-              <p className='text-sm font-medium'>Stock Up Tip</p>
-              <p className='text-xs text-gray-600 dark:text-gray-400'>Consider buying non-perishables early for better deals.</p>
+              <p style={{fontSize: '0.875rem', fontWeight: 500}}>Stock Up Tip</p>
+              <p style={{fontSize: '0.75rem', color: '#4b5563'}}>Consider buying non-perishables early for better deals.</p>
             </div>
           </div>
         </div>
@@ -64,16 +63,16 @@ export const HolidaySeason: Story = {
 /** Normal spending pattern. */
 export const NormalPattern: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='flex items-center gap-2 text-lg font-semibold'>✨ Seasonal Insights</h3>
+    <div style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#fff', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom: '1px solid #e5e7eb', padding: '1rem'}}>
+        <h3 style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 600}}>✨ Seasonal Insights</h3>
       </div>
-      <div className='space-y-4 p-4'>
-        <div className='flex items-start gap-3 rounded-md bg-green-50 p-3 dark:bg-green-900/20'>
-          <span className='mt-0.5 text-green-600'>🛍</span>
+      <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem'}}>
+        <div style={{display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderRadius: '0.375rem', backgroundColor: '#f0fdf4', padding: '0.75rem'}}>
+          <span style={{marginTop: '0.125rem', color: '#16a34a'}}>🛍</span>
           <div>
-            <p className='text-sm font-medium'>Normal Spending</p>
-            <p className='text-xs text-gray-600 dark:text-gray-400'>Your spending patterns look consistent with your historical average.</p>
+            <p style={{fontSize: '0.875rem', fontWeight: 500}}>Normal Spending</p>
+            <p style={{fontSize: '0.75rem', color: '#4b5563'}}>Your spending patterns look consistent with your historical average.</p>
           </div>
         </div>
       </div>

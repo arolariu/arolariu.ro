@@ -17,7 +17,7 @@ const meta = {
   },
   decorators: [
     (Story: React.ComponentType) => (
-      <div className='mx-auto w-full max-w-4xl px-4 py-20'>
+      <div style={{marginLeft: 'auto', marginRight: 'auto', width: '100%', maxWidth: '56rem', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '5rem', paddingBottom: '5rem'}}>
         <Story />
       </div>
     ),

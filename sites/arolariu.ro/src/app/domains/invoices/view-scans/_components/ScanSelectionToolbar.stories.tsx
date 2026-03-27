@@ -19,19 +19,19 @@ type Story = StoryObj<typeof meta>;
 /** Single scan selected. */
 export const SingleSelected: Story = {
   render: () => (
-    <div className='border-b bg-white px-4 py-3 shadow-sm dark:bg-gray-900'>
-      <div className='mx-auto flex max-w-7xl items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <span className='text-sm font-medium'>1 selected</span>
+    <div style={{borderBottom: "1px solid #e5e7eb", backgroundColor: "white", paddingInline: "1rem", paddingBlock: "0.75rem", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{marginInline: "auto", display: "flex", maxWidth: "80rem", alignItems: "center", justifyContent: "space-between"}}>
+        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
+          <span style={{fontSize: "0.875rem", fontWeight: 500}}>1 selected</span>
           <button
             type='button'
-            className='text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400'>
+            style={{fontSize: "0.875rem", color: "#6b7280"}}>
             ✕ Clear
           </button>
         </div>
         <button
           type='button'
-          className='rounded-md bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-2 text-sm text-white hover:from-green-700 hover:to-emerald-700'>
+          style={{borderRadius: "0.375rem", backgroundImage: "linear-gradient(to right, #16a34a, #059669)", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "white"}}>
           📄 Create Invoice
         </button>
       </div>
@@ -42,19 +42,19 @@ export const SingleSelected: Story = {
 /** Multiple scans selected. */
 export const MultipleSelected: Story = {
   render: () => (
-    <div className='border-b bg-white px-4 py-3 shadow-sm dark:bg-gray-900'>
-      <div className='mx-auto flex max-w-7xl items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <span className='text-sm font-medium'>5 selected</span>
+    <div style={{borderBottom: "1px solid #e5e7eb", backgroundColor: "white", paddingInline: "1rem", paddingBlock: "0.75rem", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{marginInline: "auto", display: "flex", maxWidth: "80rem", alignItems: "center", justifyContent: "space-between"}}>
+        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
+          <span style={{fontSize: "0.875rem", fontWeight: 500}}>5 selected</span>
           <button
             type='button'
-            className='text-sm text-gray-500 hover:text-gray-700'>
+            style={{fontSize: "0.875rem", color: "#6b7280"}}>
             ✕ Clear
           </button>
         </div>
         <button
           type='button'
-          className='rounded-md bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-2 text-sm text-white hover:from-green-700 hover:to-emerald-700'>
+          style={{borderRadius: "0.375rem", backgroundImage: "linear-gradient(to right, #16a34a, #059669)", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "white"}}>
           📄 Create Invoices
         </button>
       </div>

@@ -48,17 +48,17 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
         variant='ghost'
         size='sm'
         onClick={onBack}
-        className='mb-2 -ml-2'>
+        className={styles["backButtonMl"]}>
         <TbArrowLeft className={styles["backIcon"]} />
         {t("backToOptions")}
       </Button>
 
       <Alert
         variant='default'
-        className='border-green-500/50 bg-green-50 text-green-900 dark:bg-green-950/30 dark:text-green-200'>
+        className={styles["alertGreen"]}>
         <TbLock className={styles["lockIcon"]} />
-        <AlertTitle className='text-green-800 dark:text-green-300'>{t("title")}</AlertTitle>
-        <AlertDescription className='text-xs text-green-700 dark:text-green-400'>{t("description")}</AlertDescription>
+        <AlertTitle className={styles["alertGreenTitle"]}>{t("title")}</AlertTitle>
+        <AlertDescription className={styles["alertGreenDesc"]}>{t("description")}</AlertDescription>
       </Alert>
 
       <form
@@ -81,7 +81,7 @@ export function PrivateMode({onBack, email, onEmailChange, onSendEmail}: Private
           type='submit'
           // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
           disabled={!email || !/\S+@\S+\.\S+/u.test(email)}
-          className='w-full'>
+          className={styles["buttonFull"]}>
           <TbMail className={styles["mailIcon"]} />
           {t("sendInvitation")}
         </Button>

@@ -61,17 +61,17 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
   return (
     <Tabs
       defaultValue='link'
-      className='w-full'>
-      <TabsList className='grid w-full grid-cols-2'>
+      className={styles["tabsFullWidth"]}>
+      <TabsList className={styles["tabsListGrid"]}>
         <TabsTrigger
           value='link'
-          className='cursor-pointer'>
+          className={styles["tabsTriggerCursor"]}>
           <TbCopy className={styles["tabIcon"]} />
           {t("tabs.directLink")}
         </TabsTrigger>
         <TabsTrigger
           value='qr'
-          className='cursor-pointer'>
+          className={styles["tabsTriggerCursor"]}>
           <TbQrcode className={styles["tabIcon"]} />
           {t("tabs.qrCode")}
         </TabsTrigger>
@@ -79,12 +79,12 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
 
       <TabsContent
         value='link'
-        className={`mt-4 ${styles["body"]}`}>
+        className={`${styles["tabContentMt"]} ${styles["body"]}`}>
         <div className={styles["linkRow"]}>
           <Input
             value={shareUrl}
             readOnly
-            className='flex-1 font-mono text-xs'
+            className={styles["inputMonoXs"]}
           />
           <Button
             size='icon'
@@ -98,7 +98,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
 
       <TabsContent
         value='qr'
-        className='mt-4'>
+        className={styles["tabContentMt"]}>
         <div className={styles["qrContainer"]}>
           <div className={styles["qrWrapper"]}>
             <QRCode
@@ -114,7 +114,7 @@ export function ShareLinkAndQRTabs({shareUrl, copied, onCopyLink, onCopyQRCode}:
           <Button
             variant='outline'
             onClick={onCopyQRCode}
-            className='w-full'>
+            className={styles["buttonFull"]}>
             <TbCopy className={styles["tabIcon"]} />
             {t("copyQrImage")}
           </Button>
@@ -149,10 +149,10 @@ export function AlreadyPublicMode({
     <div className={styles["body"]}>
       <Alert
         variant='destructive'
-        className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
+        className={styles["alertOrange"]}>
         <TbGlobe className={styles["globeAlertIcon"]} />
-        <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("alreadyPublic.title")}</AlertTitle>
-        <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
+        <AlertTitle className={styles["alertOrangeTitle"]}>{t("alreadyPublic.title")}</AlertTitle>
+        <AlertDescription className={styles["alertOrangeDesc"]}>
           {t.rich("alreadyPublic.description", {strong: (chunks) => <strong>{chunks}</strong>})}
         </AlertDescription>
       </Alert>
@@ -169,7 +169,7 @@ export function AlreadyPublicMode({
           variant='destructive'
           onClick={onRevokeAccess}
           disabled={isRevoking}
-          className='w-full'>
+          className={styles["buttonFull"]}>
           <TbShieldOff className={styles["tabIcon"]} />
           {isRevoking ? t("alreadyPublic.revoking") : t("alreadyPublic.revoke")}
         </Button>
@@ -199,17 +199,17 @@ export function PublicMode({onBack, shareUrl, copied, onCopyLink, onCopyQRCode}:
         variant='ghost'
         size='sm'
         onClick={onBack}
-        className='mb-2 -ml-2'>
+        className={styles["backButtonMl"]}>
         <TbArrowLeft className={styles["backIcon"]} />
         {t("backToOptions")}
       </Button>
 
       <Alert
         variant='destructive'
-        className='border-orange-500/50 bg-orange-50 text-orange-900 dark:bg-orange-950/30 dark:text-orange-200'>
+        className={styles["alertOrange"]}>
         <TbAlertTriangle className={styles["globeAlertIcon"]} />
-        <AlertTitle className='text-orange-800 dark:text-orange-300'>{t("warning.title")}</AlertTitle>
-        <AlertDescription className='text-xs text-orange-700 dark:text-orange-400'>
+        <AlertTitle className={styles["alertOrangeTitle"]}>{t("warning.title")}</AlertTitle>
+        <AlertDescription className={styles["alertOrangeDesc"]}>
           {t.rich("warning.description", {strong: (chunks) => <strong>{chunks}</strong>})}
         </AlertDescription>
       </Alert>

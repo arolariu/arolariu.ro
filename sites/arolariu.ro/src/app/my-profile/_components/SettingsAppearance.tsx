@@ -155,9 +155,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.05}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbBrush className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbBrush className={styles["iconSm"]} />
                 {t("theme.title")}
               </CardTitle>
               <CardDescription>{t("theme.description")}</CardDescription>
@@ -199,9 +199,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.1}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbTypography className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbTypography className={styles["iconSm"]} />
                 {t("font.title")}
               </CardTitle>
               <CardDescription>{t("font.description")}</CardDescription>
@@ -235,9 +235,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.15}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbPalette className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbPalette className={styles["iconSm"]} />
                 {t("presets.title")}
               </CardTitle>
               <CardDescription>{t("presets.description")}</CardDescription>
@@ -287,14 +287,14 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
             animate={{opacity: 1, y: 0}}
             transition={{duration: 0.3}}>
             <Card>
-              <CardHeader className='pb-4'>
-                <CardTitle className='flex items-center gap-2 text-base'>
-                  <TbPalette className='h-4 w-4' />
+              <CardHeader className={styles["cardHeaderPb"]}>
+                <CardTitle className={styles["cardTitleBase"]}>
+                  <TbPalette className={styles["iconSm"]} />
                   {t("colors.title")}
                 </CardTitle>
                 <CardDescription>{t("colors.description")}</CardDescription>
               </CardHeader>
-              <CardContent className='space-y-4'>
+              <CardContent className={styles["cardContentSpaced"]}>
                 <div className={styles["colorGrid"]}>
                   {/* Primary Color */}
                   <div className={styles["colorRow"]}>
@@ -420,9 +420,9 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.2}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbGlobe className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbGlobe className={styles["iconSm"]} />
                 {t("locale.title")}
               </CardTitle>
               <CardDescription>{t("locale.description")}</CardDescription>
@@ -431,7 +431,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
               <Select
                 value={settings.locale}
                 onValueChange={handleLocaleChange}>
-                <SelectTrigger className='cursor-pointer'>
+                <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -450,14 +450,14 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.25}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbSettings className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbSettings className={styles["iconSm"]} />
                 {t("advanced.title")}
               </CardTitle>
               <CardDescription>{t("advanced.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
                   <Label>{t("advanced.compactMode")}</Label>

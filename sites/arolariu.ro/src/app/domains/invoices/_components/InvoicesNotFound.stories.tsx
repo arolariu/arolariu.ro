@@ -32,12 +32,12 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   render: () => (
-    <div className='flex min-h-[400px] flex-col items-center justify-center gap-6 p-8 text-center'>
-      <h1 className='text-2xl font-bold'>{namespace.title}</h1>
-      <article className='max-w-md text-gray-500 dark:text-gray-400'>{namespace.description}</article>
+    <div style={{display: 'flex', minHeight: '400px', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem', textAlign: 'center'}}>
+      <h1 style={{fontSize: '1.5rem', fontWeight: '700'}}>{namespace.title}</h1>
+      <article style={{maxWidth: '28rem', color: '#6b7280'}}>{namespace.description}</article>
       <Link
         href='/domains/invoices/create-invoice'
-        className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-6 py-3 text-sm font-medium transition-colors'>
+        style={{backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)', borderRadius: '0.5rem', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '0.75rem', paddingBottom: '0.75rem', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', display: 'inline-block', transition: 'background-color 0.2s'}}>
         {namespace.cta}
       </Link>
     </div>

@@ -217,3 +217,55 @@
 .progressBar {
   height: 0.5rem;
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.cardOverflow {
+  overflow: hidden;
+}
+
+.avatarLarge {
+  height: 6rem;
+  width: 6rem;
+  border-width: 4px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.avatarFallbackLarge {
+  font-size: 1.5rem;
+}
+
+.badgeIconGap {
+  gap: 0.25rem;
+}
+
+.iconXsSize {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.iconMrSmall {
+  height: 0.75rem;
+  width: 0.75rem;
+  margin-right: 0.25rem;
+}
+
+.iconSmSize {
+  height: 1rem;
+  width: 1rem;
+}
+
+.buttonCursorGap {
+  cursor: pointer;
+  gap: 0.5rem;
+}
+
+.buttonFullCursor {
+  width: 100%;
+  cursor: pointer;
+}
+
+.progressHeight {
+  height: 0.5rem;
+}

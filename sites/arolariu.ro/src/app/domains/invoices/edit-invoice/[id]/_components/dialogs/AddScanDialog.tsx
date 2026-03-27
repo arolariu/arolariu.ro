@@ -201,7 +201,7 @@ export default function AddScanDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
@@ -242,8 +242,8 @@ export default function AddScanDialog(): React.JSX.Element {
                 size='icon'
                 onClick={removeFile}
                 disabled={isUploading}
-                className='h-8 w-8 shrink-0'>
-                <TbX className='h-4 w-4' />
+                className={styles["removeFileButton"]}>
+                <TbX className={styles["icon4"]} />
               </Button>
             </div>
           ) : null}
@@ -285,12 +285,12 @@ export default function AddScanDialog(): React.JSX.Element {
             disabled={!file || isUploading}>
             {isUploading ? (
               <>
-                <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
+                <TbLoader2 className={styles["spinnerIcon"]} />
                 {t("buttons.uploading")}
               </>
             ) : (
               <>
-                <TbUpload className='mr-2 h-4 w-4' />
+                <TbUpload className={styles["uploadButtonIcon"]} />
                 {t("buttons.upload")}
               </>
             )}

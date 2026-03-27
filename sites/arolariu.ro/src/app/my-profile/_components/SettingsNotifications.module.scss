@@ -32,3 +32,11 @@
     height: 1rem;
   }
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.cardHeaderPb { @include settings.settings-card-header-flex; }
+.cardTitleBase { @include settings.settings-card-title-base; }
+.cardContentSpaced { @include settings.settings-card-content-spaced; }
+.iconSm { @include settings.settings-icon-sm; }

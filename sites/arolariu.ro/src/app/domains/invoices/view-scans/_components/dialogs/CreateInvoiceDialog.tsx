@@ -214,7 +214,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}>
       <DialogHeader>
-        <DialogTitle className='flex items-center gap-2'>
+        <DialogTitle className={styles["dialogTitle"]}>
           <TbFileInvoice className={styles["dialogTitleIcon"]} />
           {selectedScans.length > 1 ? t("titlePlural") : t("title")}
         </DialogTitle>
@@ -256,10 +256,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <RadioGroupItem
                 value='single'
                 id='single'
-                className='mt-0.5'
+                className={styles["radioItem"]}
               />
               <div className={styles["modeOptionContent"]}>
-                <span className='flex cursor-pointer items-center gap-2 font-medium'>
+                <span className={styles["modeLabelText"]}>
                   <TbPhoto className={styles["modePurpleIcon"]} />
                   {t("singleMode.title")}
                 </span>
@@ -273,10 +273,10 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               <RadioGroupItem
                 value='batch'
                 id='batch'
-                className='mt-0.5'
+                className={styles["radioItem"]}
               />
               <div className={styles["modeOptionContent"]}>
-                <span className='flex cursor-pointer items-center gap-2 font-medium'>
+                <span className={styles["modeLabelText"]}>
                   <TbStack2 className={styles["modeBlueIcon"]} />
                   {t("batchMode.title")}
                 </span>
@@ -341,7 +341,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       <div className={styles["progressSection"]}>
         <Progress
           value={progress}
-          className='h-2'
+          className={styles["progressBar"]}
         />
         <p className={styles["progressLabel"]}>{progress}%</p>
       </div>
@@ -399,7 +399,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
         <DialogFooter className={styles["completeFooter"]}>
           <Button
             onClick={handleClose}
-            className='bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'>
+            className={styles["completeButton"]}>
             {isPlural ? t("complete.viewButtonPlural") : t("complete.viewButton")}
             <TbArrowRight className={styles["arrowRightIcon"]} />
           </Button>
@@ -412,7 +412,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:max-w-lg'>
+      <DialogContent className={styles["dialogContent"]}>
         <AnimatePresence mode='wait'>
           {step === "select" ? renderSelectStep() : null}
           {step === "creating" ? renderCreatingStep() : null}

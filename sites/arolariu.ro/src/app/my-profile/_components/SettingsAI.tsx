@@ -92,18 +92,18 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.05}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbRobot className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbRobot className={styles["iconSm"]} />
                 {t("model.title")}
               </CardTitle>
               <CardDescription>{t("model.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <Select
                 value={settings.model}
                 onValueChange={handleModelChange}>
-                <SelectTrigger className='cursor-pointer'>
+                <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -115,7 +115,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                         <span>{model.name}</span>
                         <Badge
                           variant={model.tier === "premium" ? "default" : "secondary"}
-                          className='text-xs'>
+                          className={styles["badgeXs"]}>
                           {model.tier}
                         </Badge>
                       </div>
@@ -139,9 +139,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.1}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbSparkles className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbSparkles className={styles["iconSm"]} />
                 {t("behavior.title")}
               </CardTitle>
               <CardDescription>{t("behavior.description")}</CardDescription>
@@ -150,7 +150,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
               <Select
                 value={settings.behaviorPreset}
                 onValueChange={handleBehaviorChange}>
-                <SelectTrigger className='cursor-pointer'>
+                <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -174,14 +174,14 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.15}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbTemperature className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbTemperature className={styles["iconSm"]} />
                 {t("temperature.title")}
               </CardTitle>
               <CardDescription>{t("temperature.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["rangeLabels"]}>
                 <span>{t("temperature.precise")}</span>
                 <span>{settings.temperature.toFixed(1)}</span>
@@ -193,7 +193,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                 min={0}
                 max={1}
                 step={0.1}
-                className='cursor-pointer'
+                className={styles["sliderCursor"]}
               />
             </CardContent>
           </Card>
@@ -205,14 +205,14 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.2}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbSettings className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbSettings className={styles["iconSm"]} />
                 {t("maxTokens.title")}
               </CardTitle>
               <CardDescription>{t("maxTokens.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["rangeLabels"]}>
                 <span>512</span>
                 <span>{settings.maxTokens}</span>
@@ -224,7 +224,7 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
                 min={512}
                 max={4096}
                 step={256}
-                className='cursor-pointer'
+                className={styles["sliderCursor"]}
               />
             </CardContent>
           </Card>
@@ -236,14 +236,14 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.25}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbBrain className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbBrain className={styles["iconSm"]} />
                 {t("features.title")}
               </CardTitle>
               <CardDescription>{t("features.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
                   <Label>{t("features.autoSuggest")}</Label>
@@ -286,9 +286,9 @@ export function SettingsAI({settings, onSettingsChange}: Props): React.JSX.Eleme
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.3}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbMicrophone className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbMicrophone className={styles["iconSm"]} />
                 {t("voice.title")}
               </CardTitle>
               <CardDescription>{t("voice.description")}</CardDescription>

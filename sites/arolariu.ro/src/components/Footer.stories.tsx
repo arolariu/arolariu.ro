@@ -41,7 +41,7 @@ export const PrintMedia: Story = {
         attribute='class'
         defaultTheme='light'
         enableSystem={false}>
-        <div className='print:bg-white print:text-black'>
+        <div>
           <Story />
         </div>
       </ThemeProvider>

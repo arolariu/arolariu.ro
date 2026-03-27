@@ -33,26 +33,26 @@ type Story = StoryObj<typeof meta>;
 export const Skeleton: Story = {
   decorators: [
     (Story) => (
-      <div className='min-h-[80px] bg-gray-50 dark:bg-gray-950'>
+      <div style={{minHeight: '80px', backgroundColor: '#f9fafb'}}>
         <Story />
       </div>
     ),
   ],
   render: () => (
-    <header className='border-b bg-white px-4 py-3 dark:bg-gray-900'>
-      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <div className='h-10 w-10 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
-          <div className='h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+    <header style={{borderBottom: '1px solid #e5e7eb', backgroundColor: '#ffffff', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
+      <nav style={{marginLeft: 'auto', marginRight: 'auto', display: 'flex', maxWidth: '80rem', alignItems: 'center', justifyContent: 'space-between'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+          <div style={{height: '2.5rem', width: '2.5rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '1.25rem', width: '7rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
         </div>
-        <div className='hidden gap-6 md:flex'>
-          <div className='h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
-          <div className='h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
-          <div className='h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+        <div style={{display: 'none', gap: '1.5rem'}}>
+          <div style={{height: '1rem', width: '5rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '1rem', width: '4rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '1rem', width: '6rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
         </div>
-        <div className='flex items-center gap-3'>
-          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
-          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+          <div style={{height: '2rem', width: '2rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '2rem', width: '2rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />
         </div>
       </nav>
     </header>
@@ -74,20 +74,20 @@ export const SkeletonDark: Story = {
     ),
   ],
   render: () => (
-    <header className='border-b bg-gray-900 px-4 py-3'>
-      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <div className='h-10 w-10 animate-pulse rounded-full bg-gray-700' />
-          <div className='h-5 w-28 animate-pulse rounded bg-gray-700' />
+    <header style={{borderBottom: '1px solid #374151', backgroundColor: '#111827', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
+      <nav style={{marginLeft: 'auto', marginRight: 'auto', display: 'flex', maxWidth: '80rem', alignItems: 'center', justifyContent: 'space-between'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+          <div style={{height: '2.5rem', width: '2.5rem', borderRadius: '9999px', backgroundColor: '#374151'}} />
+          <div style={{height: '1.25rem', width: '7rem', borderRadius: '0.25rem', backgroundColor: '#374151'}} />
         </div>
-        <div className='hidden gap-6 md:flex'>
-          <div className='h-4 w-20 animate-pulse rounded bg-gray-700' />
-          <div className='h-4 w-16 animate-pulse rounded bg-gray-700' />
-          <div className='h-4 w-24 animate-pulse rounded bg-gray-700' />
+        <div style={{display: 'none', gap: '1.5rem'}}>
+          <div style={{height: '1rem', width: '5rem', borderRadius: '0.25rem', backgroundColor: '#374151'}} />
+          <div style={{height: '1rem', width: '4rem', borderRadius: '0.25rem', backgroundColor: '#374151'}} />
+          <div style={{height: '1rem', width: '6rem', borderRadius: '0.25rem', backgroundColor: '#374151'}} />
         </div>
-        <div className='flex items-center gap-3'>
-          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-700' />
-          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-700' />
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+          <div style={{height: '2rem', width: '2rem', borderRadius: '9999px', backgroundColor: '#374151'}} />
+          <div style={{height: '2rem', width: '2rem', borderRadius: '9999px', backgroundColor: '#374151'}} />
         </div>
       </nav>
     </header>
@@ -96,20 +96,20 @@ export const SkeletonDark: Story = {
 /** Header skeleton simulating a scrolled state with shadow and compact height. */
 export const WithScrolled: Story = {
   render: () => (
-    <header className='border-b bg-white/95 px-4 py-2 shadow-md backdrop-blur-sm dark:bg-gray-900/95'>
-      <nav className='mx-auto flex max-w-7xl items-center justify-between'>
-        <div className='flex items-center gap-2'>
-          <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
-          <div className='h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+    <header style={{borderBottom: '1px solid #e5e7eb', backgroundColor: 'rgba(255, 255, 255, 0.95)', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', backdropFilter: 'blur(8px)'}}>
+      <nav style={{marginLeft: 'auto', marginRight: 'auto', display: 'flex', maxWidth: '80rem', alignItems: 'center', justifyContent: 'space-between'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+          <div style={{height: '2rem', width: '2rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '1rem', width: '6rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
         </div>
-        <div className='hidden gap-4 md:flex'>
-          <div className='h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
-          <div className='h-3 w-14 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
-          <div className='h-3 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+        <div style={{display: 'none', gap: '1rem'}}>
+          <div style={{height: '0.75rem', width: '4rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '0.75rem', width: '3.5rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '0.75rem', width: '5rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
         </div>
-        <div className='flex items-center gap-2'>
-          <div className='h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
-          <div className='h-7 w-7 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+          <div style={{height: '1.75rem', width: '1.75rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />
+          <div style={{height: '1.75rem', width: '1.75rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />
         </div>
       </nav>
     </header>

@@ -185,3 +185,47 @@
     transform: rotate(360deg);
   }
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.dialogContentMaxW {
+  @include respond-to('sm') {
+    max-width: 32rem;
+  }
+}
+
+.dialogTitleRed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #dc2626;
+}
+
+.alertRed {
+  border-color: #fecaca;
+  background-color: #fef2f2;
+}
+
+.inputGreen {
+  border-color: #22c55e;
+  
+  &:focus-visible {
+    ring-color: #22c55e;
+  }
+}
+
+.labelCursorSm {
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.dialogFooterGap {
+  gap: 0.5rem;
+
+  @include respond-to('sm') {
+    gap: 0;
+  }
+}

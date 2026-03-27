@@ -19,7 +19,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className='rounded bg-gray-100 p-4 dark:bg-gray-800'>
+      <div style={{borderRadius: '0.25rem', backgroundColor: '#f3f4f6', padding: '1rem'}}>
         <Story />
       </div>
     ),
@@ -34,15 +34,15 @@ type Story = StoryObj<typeof meta>;
  * `AuthButton` output before Clerk finishes initialising.
  */
 export const Loading: Story = {
-  render: () => <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />,
+  render: () => <div style={{height: '2rem', width: '2rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />,
 };
 
 /** Multiple skeleton buttons side-by-side (e.g. inside a nav bar). */
 export const LoadingInNavBar: Story = {
   render: () => (
-    <nav className='flex items-center gap-4 rounded-lg border border-gray-200 px-6 py-3 dark:border-gray-700'>
-      <span className='text-sm font-medium text-gray-500 dark:text-gray-400'>Navigation</span>
-      <div className='ml-auto h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />
+    <nav style={{display: 'flex', alignItems: 'center', gap: '1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
+      <span style={{fontSize: '0.875rem', fontWeight: '500', color: '#6b7280'}}>Navigation</span>
+      <div style={{marginLeft: 'auto', height: '2rem', width: '2rem', borderRadius: '9999px', backgroundColor: '#e5e7eb'}} />
     </nav>
   ),
 };

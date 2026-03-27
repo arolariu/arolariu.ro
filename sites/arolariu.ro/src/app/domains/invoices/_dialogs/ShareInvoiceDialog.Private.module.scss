@@ -36,3 +36,30 @@
   @include icon-size(space(4));
   margin-right: space(2);
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.backButtonMl {
+  margin-bottom: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.alertGreen {
+  border-color: rgba(34, 197, 94, 0.5);
+  background-color: #f0fdf4;
+  color: #14532d;
+}
+
+.alertGreenTitle {
+  color: #166534;
+}
+
+.alertGreenDesc {
+  font-size: 0.75rem;
+  color: #15803d;
+}
+
+.buttonFull {
+  width: 100%;
+}

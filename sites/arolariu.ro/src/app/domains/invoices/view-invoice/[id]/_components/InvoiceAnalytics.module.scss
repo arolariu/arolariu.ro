@@ -56,3 +56,39 @@
     grid-column: span 2;
   }
 }
+
+.tabsFullWidth {
+  width: 100%;
+}
+
+.sectionIcon {
+  @include icon-size(space(5));
+  color: color('muted-foreground');
+}
+
+.tabsList {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, 1fr);
+
+  @include respond-to('sm') {
+    width: auto;
+  }
+}
+
+.tabsTrigger {
+  font-size: font-size('xs');
+
+  @include respond-to('sm') {
+    font-size: font-size('sm');
+  }
+}
+
+.tabIcon {
+  @include icon-size(space(3.5));
+  margin-right: space(1.5);
+}
+
+.tabContent {
+  margin-top: 0;
+}

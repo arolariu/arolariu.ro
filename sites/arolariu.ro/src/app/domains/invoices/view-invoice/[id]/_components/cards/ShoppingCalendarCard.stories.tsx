@@ -20,40 +20,40 @@ type Story = StoryObj<typeof meta>;
 /** Preview of the shopping calendar with heat map legend and stats. */
 export const Preview: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='flex items-center gap-2 text-lg font-semibold'>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1rem'}}>
+        <h3 style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'1.125rem', fontWeight:600}}>
           📅 Shopping Calendar
           <span
-            className='text-gray-400'
+            style={{color:'#9ca3af'}}
             title='Based on cached invoices'>
             ℹ️
           </span>
         </h3>
       </div>
-      <div className='flex flex-col items-center space-y-4 p-4'>
+      <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'1rem', padding:'1rem'}}>
         {/* Calendar placeholder */}
-        <div className='grid w-full grid-cols-7 gap-1 rounded-md border p-3 dark:border-gray-700'>
+        <div style={{display:'grid', width:'100%', gridTemplateColumns:'repeat(7, minmax(0, 1fr))', gap:'0.25rem', borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.75rem'}}>
           {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
             <div
               key={`header-${String(i)}`}
-              className='py-1 text-center text-xs font-medium text-gray-500'>
+              style={{paddingTop:'0.25rem', paddingBottom:'0.25rem', textAlign:'center', fontSize:'0.75rem', fontWeight:500, color:'#6b7280'}}>
               {day}
             </div>
           ))}
           {Array.from({length: 31}, (_, i) => {
             const intensity = [0, 0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 1, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 2];
-            const bgClasses = [
-              "bg-transparent",
-              "bg-green-100 dark:bg-green-900/30",
-              "bg-green-200 dark:bg-green-800/40",
-              "bg-green-400 dark:bg-green-600/50",
-              "bg-green-600 text-white dark:bg-green-500",
+            const bgStyles = [
+              {backgroundColor: 'transparent'},
+              {backgroundColor: '#dcfce7'},
+              {backgroundColor: '#bbf7d0'},
+              {backgroundColor: '#4ade80'},
+              {backgroundColor: '#16a34a', color: '#fff'},
             ];
             return (
               <div
                 key={`day-${String(i)}`}
-                className={`flex h-8 w-8 items-center justify-center rounded text-xs ${bgClasses[intensity[i]!]}`}>
+                style={{display:'flex', height:'2rem', width:'2rem', alignItems:'center', justifyContent:'center', borderRadius:'0.25rem', fontSize:'0.75rem', ...bgStyles[intensity[i]!]}}>
                 {i + 1}
               </div>
             );
@@ -61,40 +61,40 @@ export const Preview: Story = {
         </div>
 
         {/* Legend */}
-        <div className='flex items-center gap-2 text-xs text-gray-500'>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.75rem', color:'#6b7280'}}>
           <span>Less</span>
-          <div className='flex gap-0.5'>
-            <div className='h-3 w-3 rounded bg-gray-200 dark:bg-gray-700' />
-            <div className='h-3 w-3 rounded bg-green-200 dark:bg-green-800' />
-            <div className='h-3 w-3 rounded bg-green-400 dark:bg-green-600' />
-            <div className='h-3 w-3 rounded bg-green-600 dark:bg-green-500' />
+          <div style={{display:'flex', gap:'0.125rem'}}>
+            <div style={{height:'0.75rem', width:'0.75rem', borderRadius:'0.25rem', backgroundColor:'#e5e7eb'}} />
+            <div style={{height:'0.75rem', width:'0.75rem', borderRadius:'0.25rem', backgroundColor:'#bbf7d0'}} />
+            <div style={{height:'0.75rem', width:'0.75rem', borderRadius:'0.25rem', backgroundColor:'#4ade80'}} />
+            <div style={{height:'0.75rem', width:'0.75rem', borderRadius:'0.25rem', backgroundColor:'#16a34a'}} />
           </div>
           <span>More</span>
         </div>
 
-        <hr className='w-full' />
+        <hr style={{width:'100%'}} />
 
         {/* Stats */}
-        <div className='grid w-full grid-cols-2 gap-3'>
-          <div className='flex items-center gap-2 rounded-md border p-3 dark:border-gray-700'>
-            <span className='text-gray-400'>🛒</span>
+        <div style={{display:'grid', width:'100%', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:'0.75rem'}}>
+          <div style={{display:'flex', alignItems:'center', gap:'0.5rem', borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.75rem'}}>
+            <span style={{color:'#9ca3af'}}>🛒</span>
             <div>
-              <p className='text-xs text-gray-500'>Month Total</p>
-              <p className='text-sm font-semibold'>$485.30</p>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Month Total</p>
+              <p style={{fontSize:'0.875rem', fontWeight:600}}>$485.30</p>
             </div>
           </div>
-          <div className='flex items-center gap-2 rounded-md border p-3 dark:border-gray-700'>
-            <span className='text-gray-400'>📅</span>
+          <div style={{display:'flex', alignItems:'center', gap:'0.5rem', borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.75rem'}}>
+            <span style={{color:'#9ca3af'}}>📅</span>
             <div>
-              <p className='text-xs text-gray-500'>Shopping Days</p>
-              <p className='text-sm font-semibold'>8</p>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Shopping Days</p>
+              <p style={{fontSize:'0.875rem', fontWeight:600}}>8</p>
             </div>
           </div>
         </div>
 
         {/* Insight */}
-        <div className='flex w-full items-center gap-2 rounded-md border p-3 text-sm dark:border-gray-700'>
-          <span className='text-gray-400'>📈</span>
+        <div style={{display:'flex', width:'100%', alignItems:'center', gap:'0.5rem', borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.75rem', fontSize:'0.875rem'}}>
+          <span style={{color:'#9ca3af'}}>📈</span>
           <p>
             You shop every <strong>4 days</strong> on average, spending <strong>$60.66</strong> per trip.
           </p>

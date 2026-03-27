@@ -29,58 +29,58 @@ const sampleReceipts = [
 /** Default receipts dialog with sample merchant receipts. */
 export const Default: Story = {
   render: () => (
-    <div className='rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
+    <div style={{borderRadius:"0.75rem", border:"1px solid #e5e7eb", backgroundColor:"#fff", boxShadow:"0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)"}}>
       {/* Header */}
-      <div className='border-b p-6'>
-        <h2 className='text-lg font-semibold'>Receipts from Lidl</h2>
-        <p className='mt-1 text-sm text-gray-500'>View all receipts associated with this merchant.</p>
+      <div style={{borderBottom:"1px solid #e5e7eb", padding:"1.5rem"}}>
+        <h2 style={{fontSize:"1.125rem", fontWeight:600}}>Receipts from Lidl</h2>
+        <p style={{marginTop:"0.25rem", fontSize:"0.875rem", color:"#6b7280"}}>View all receipts associated with this merchant.</p>
       </div>
 
-      <div className='space-y-4 p-6'>
+      <div style={{padding:"1.5rem", display:"flex", flexDirection:"column", gap:"1rem"}}>
         {/* Filter Row */}
-        <div className='flex flex-col gap-3 sm:flex-row'>
-          <div className='relative flex-1'>
-            <TbSearch className='absolute top-2.5 left-2.5 h-4 w-4 text-gray-400' />
+        <div style={{display:"flex", flexDirection:"column", gap:"0.75rem"}}>
+          <div style={{position:"relative", flex:1}}>
+            <TbSearch style={{position:"absolute", top:"0.625rem", left:"0.625rem", height:"1rem", width:"1rem", color:"#9ca3af"}} />
             <input
-              className='w-full rounded-md border bg-transparent py-2 pr-3 pl-8 text-sm outline-none'
+              style={{width:"100%", borderRadius:"0.375rem", border:"1px solid #e5e7eb", backgroundColor:"transparent", paddingBlock:"0.5rem", paddingRight:"0.75rem", paddingLeft:"2rem", fontSize:"0.875rem", outline:"none"}}
               placeholder='Search receipts...'
               readOnly
             />
           </div>
-          <div className='flex gap-2'>
-            <button className='flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm'>
-              <TbCalendar className='h-4 w-4' />
+          <div style={{display:"flex", gap:"0.5rem"}}>
+            <button style={{display:"flex", alignItems:"center", gap:"0.375rem", borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"0.75rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}>
+              <TbCalendar style={{height:"1rem", width:"1rem"}} />
               All Time
             </button>
-            <button className='flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm'>
-              <TbArrowsUpDown className='h-4 w-4' />
+            <button style={{display:"flex", alignItems:"center", gap:"0.375rem", borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"0.75rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}>
+              <TbArrowsUpDown style={{height:"1rem", width:"1rem"}} />
               Newest
             </button>
           </div>
         </div>
 
         {/* Table */}
-        <div className='overflow-x-auto rounded-lg border'>
-          <table className='min-w-full divide-y dark:divide-gray-700'>
+        <div style={{overflowX:"auto", borderRadius:"0.5rem", border:"1px solid #e5e7eb"}}>
+          <table style={{minWidth:"100%"}}>
             <thead>
-              <tr className='bg-gray-50 dark:bg-gray-800/50'>
-                <th className='px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>Receipt</th>
-                <th className='px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase'>Date</th>
-                <th className='px-4 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase'>Items</th>
-                <th className='px-4 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase'>Actions</th>
+              <tr style={{backgroundColor:"#f9fafb"}}>
+                <th style={{paddingInline:"1rem", paddingBlock:"0.75rem", textAlign:"left", fontSize:"0.75rem", fontWeight:500, letterSpacing:"0.05em", color:"#6b7280", textTransform:"uppercase"}}>Receipt</th>
+                <th style={{paddingInline:"1rem", paddingBlock:"0.75rem", textAlign:"left", fontSize:"0.75rem", fontWeight:500, letterSpacing:"0.05em", color:"#6b7280", textTransform:"uppercase"}}>Date</th>
+                <th style={{paddingInline:"1rem", paddingBlock:"0.75rem", textAlign:"right", fontSize:"0.75rem", fontWeight:500, letterSpacing:"0.05em", color:"#6b7280", textTransform:"uppercase"}}>Items</th>
+                <th style={{paddingInline:"1rem", paddingBlock:"0.75rem", textAlign:"right", fontSize:"0.75rem", fontWeight:500, letterSpacing:"0.05em", color:"#6b7280", textTransform:"uppercase"}}>Actions</th>
               </tr>
             </thead>
-            <tbody className='divide-y bg-white dark:divide-gray-700 dark:bg-gray-900'>
+            <tbody style={{backgroundColor:"#fff"}}>
               {sampleReceipts.map((receipt) => (
                 <tr
                   key={receipt.id}
-                  className='hover:bg-gray-50 dark:hover:bg-gray-800/50'>
-                  <td className='px-4 py-3 text-sm font-medium'>{receipt.name}</td>
-                  <td className='px-4 py-3 text-sm'>{receipt.date}</td>
-                  <td className='px-4 py-3 text-right text-sm'>{receipt.items}</td>
-                  <td className='px-4 py-3 text-right'>
-                    <button className='flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
-                      <TbDownload className='h-4 w-4' />
+                  >
+                  <td style={{paddingInline:"1rem", paddingBlock:"0.75rem", fontSize:"0.875rem", fontWeight:500}}>{receipt.name}</td>
+                  <td style={{paddingInline:"1rem", paddingBlock:"0.75rem", fontSize:"0.875rem"}}>{receipt.date}</td>
+                  <td style={{paddingInline:"1rem", paddingBlock:"0.75rem", textAlign:"right", fontSize:"0.875rem"}}>{receipt.items}</td>
+                  <td style={{paddingInline:"1rem", paddingBlock:"0.75rem", textAlign:"right"}}>
+                    <button style={{display:"flex", alignItems:"center", gap:"0.25rem", borderRadius:"0.375rem", paddingInline:"0.5rem", paddingBlock:"0.25rem", fontSize:"0.875rem"}}>
+                      <TbDownload style={{height:"1rem", width:"1rem"}} />
                       View
                     </button>
                   </td>
@@ -88,9 +88,9 @@ export const Default: Story = {
               ))}
             </tbody>
             <tfoot>
-              <tr className='bg-gray-50 dark:bg-gray-800/50'>
+              <tr style={{backgroundColor:"#f9fafb"}}>
                 <td
-                  className='px-4 py-2 text-xs text-gray-500'
+                  style={{paddingInline:"1rem", paddingBlock:"0.5rem", fontSize:"0.75rem", color:"#6b7280"}}
                   colSpan={4}>
                   3 receipts found (showing 3) — Page 1 of 1
                 </td>

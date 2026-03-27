@@ -104,10 +104,10 @@ export default function RemoveScanDialog(): React.JSX.Element {
     <Dialog
       open={isOpen}
       onOpenChange={handleOpenChange}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
-            <TbAlertTriangle className='text-destructive h-5 w-5' />
+          <DialogTitle className={styles["dialogTitle"]}>
+            <TbAlertTriangle className={styles["alertIcon"]} />
             {t("title")}
           </DialogTitle>
           <DialogDescription>
@@ -152,12 +152,12 @@ export default function RemoveScanDialog(): React.JSX.Element {
             disabled={isDeleting || isLastScan}>
             {isDeleting ? (
               <>
-                <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
+                <TbLoader2 className={styles["spinnerIcon"]} />
                 {t("buttons.removing")}
               </>
             ) : (
               <>
-                <TbTrash className='mr-2 h-4 w-4' />
+                <TbTrash className={styles["trashIcon"]} />
                 {t("buttons.remove")}
               </>
             )}

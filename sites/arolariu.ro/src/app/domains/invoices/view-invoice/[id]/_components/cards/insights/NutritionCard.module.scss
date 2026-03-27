@@ -216,3 +216,33 @@
   @include icon-size(space(5));
   color: color('info');
 }
+
+.cardHeader {
+  padding-bottom: space(3);
+}
+
+.progressBarHeight {
+  height: space(2);
+}
+
+.badgeCursorHelp {
+  cursor: help;
+}
+
+.iconCompositionGreen {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+  color: color('success');
+}
+
+.iconCompositionAmber {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+  color: color('warning');
+}
+
+.iconCompositionBlue {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+  color: color('info');
+}

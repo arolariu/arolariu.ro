@@ -34,8 +34,8 @@ function PaginationDemo(): React.JSX.Element {
   });
 
   return (
-    <div className='w-[500px] space-y-4 rounded-lg border border-gray-200 p-6 dark:border-gray-700'>
-      <h2 className='text-lg font-bold'>Pagination Demo</h2>
+    <div style={{width: '500px', display: 'flex', flexDirection: 'column', gap: '1rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1.5rem'}}>
+      <h2 style={{fontSize: '1.125rem', fontWeight: '700'}}>Pagination Demo</h2>
 
       {/* Search */}
       <input
@@ -43,52 +43,52 @@ function PaginationDemo(): React.JSX.Element {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder='Search items...'
-        className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800'
+        style={{width: '100%', borderRadius: '0.375rem', border: '1px solid #d1d5db', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem'}}
       />
 
       {/* Items list */}
-      <ul className='space-y-1'>
+      <ul style={{display: 'flex', flexDirection: 'column', gap: '0.25rem'}}>
         {paginatedItems.map((item) => (
           <li
             key={item.id}
-            className='flex justify-between rounded-md bg-gray-50 px-3 py-2 text-sm dark:bg-gray-800'>
-            <span className='font-medium'>{item.name}</span>
-            <span className='text-gray-500 dark:text-gray-400'>{item.category}</span>
+            style={{display: 'flex', justifyContent: 'space-between', borderRadius: '0.375rem', backgroundColor: '#f9fafb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem'}}>
+            <span style={{fontWeight: '500'}}>{item.name}</span>
+            <span style={{color: '#6b7280'}}>{item.category}</span>
           </li>
         ))}
       </ul>
 
       {/* Controls */}
-      <div className='flex items-center justify-between text-sm'>
-        <span className='text-gray-500 dark:text-gray-400'>
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.875rem'}}>
+        <span style={{color: '#6b7280'}}>
           Page {currentPage} of {totalPages}
         </span>
-        <div className='flex gap-2'>
+        <div style={{display: 'flex', gap: '0.5rem'}}>
           <button
             type='button'
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 1}
-            className='rounded-md border px-3 py-1 disabled:opacity-50 dark:border-gray-600'>
+            style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.25rem', paddingBottom: '0.25rem', backgroundColor: 'transparent', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', opacity: currentPage === 1 ? 0.5 : 1}}>
             ← Prev
           </button>
           <button
             type='button'
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className='rounded-md border px-3 py-1 disabled:opacity-50 dark:border-gray-600'>
+            style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.25rem', paddingBottom: '0.25rem', backgroundColor: 'transparent', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', opacity: currentPage === totalPages ? 0.5 : 1}}>
             Next →
           </button>
         </div>
       </div>
 
       {/* Page size */}
-      <div className='flex items-center gap-3 text-sm'>
+      <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.875rem'}}>
         <label htmlFor='page-size'>Items per page:</label>
         <select
           id='page-size'
           value={pageSize}
           onChange={(e) => setPageSize(Number(e.target.value))}
-          className='rounded-md border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'>
+          style={{borderRadius: '0.375rem', border: '1px solid #d1d5db', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.25rem', paddingBottom: '0.25rem'}}>
           <option value={3}>3</option>
           <option value={5}>5</option>
           <option value={10}>10</option>
@@ -96,7 +96,7 @@ function PaginationDemo(): React.JSX.Element {
         <button
           type='button'
           onClick={resetPagination}
-          className='ml-auto text-blue-600 hover:underline dark:text-blue-400'>
+          style={{marginLeft: 'auto', color: '#2563eb', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'none'}}>
           Reset
         </button>
       </div>

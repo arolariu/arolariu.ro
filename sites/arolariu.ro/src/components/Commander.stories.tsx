@@ -31,45 +31,45 @@ type Story = StoryObj<typeof meta>;
 /** Static representation of the command palette UI. */
 export const Preview: Story = {
   render: () => (
-    <div className='w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'>
-      <div className='border-b border-gray-200 px-4 py-3 dark:border-gray-700'>
+    <div style={{width: '100%', maxWidth: '32rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'}}>
+      <div style={{borderBottom: '1px solid #e5e7eb', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
         <input
           type='text'
           placeholder='Type a command or search...'
-          className='w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100'
+          style={{width: '100%', backgroundColor: 'transparent', fontSize: '0.875rem', color: '#111827', outline: 'none', border: 'none'}}
           readOnly
         />
       </div>
-      <div className='overflow-auto p-2'>
-        <p className='px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400'>Navigation</p>
-        <div className='flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
+      <div style={{overflowY: 'auto', padding: '0.5rem'}}>
+        <p style={{paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.25rem', paddingBottom: '0.25rem', fontSize: '0.75rem', fontWeight: '600', color: '#6b7280'}}>Navigation</p>
+        <div style={{display: 'flex', cursor: 'pointer', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           <span>🏠</span>
           <span>Homepage</span>
-          <span className='ml-auto text-xs text-gray-400'>H</span>
+          <span style={{marginLeft: 'auto', fontSize: '0.75rem', color: '#9ca3af'}}>H</span>
         </div>
-        <div className='my-1 h-px bg-gray-200 dark:bg-gray-700' />
-        <p className='px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400'>Theme</p>
-        <div className='flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
+        <div style={{marginTop: '0.25rem', marginBottom: '0.25rem', height: '1px', backgroundColor: '#e5e7eb'}} />
+        <p style={{paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.25rem', paddingBottom: '0.25rem', fontSize: '0.75rem', fontWeight: '600', color: '#6b7280'}}>Theme</p>
+        <div style={{display: 'flex', cursor: 'pointer', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           <span>☀️</span>
           <span>Light</span>
-          <span className='ml-auto text-xs text-gray-400'>L</span>
+          <span style={{marginLeft: 'auto', fontSize: '0.75rem', color: '#9ca3af'}}>L</span>
         </div>
-        <div className='flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
+        <div style={{display: 'flex', cursor: 'pointer', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           <span>🌙</span>
           <span>Dark</span>
-          <span className='ml-auto text-xs text-gray-400'>D</span>
+          <span style={{marginLeft: 'auto', fontSize: '0.75rem', color: '#9ca3af'}}>D</span>
         </div>
-        <div className='my-1 h-px bg-gray-200 dark:bg-gray-700' />
-        <p className='px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400'>Language</p>
-        <div className='flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
+        <div style={{marginTop: '0.25rem', marginBottom: '0.25rem', height: '1px', backgroundColor: '#e5e7eb'}} />
+        <p style={{paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.25rem', paddingBottom: '0.25rem', fontSize: '0.75rem', fontWeight: '600', color: '#6b7280'}}>Language</p>
+        <div style={{display: 'flex', cursor: 'pointer', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           <span>🌐</span>
           <span>English</span>
-          <span className='ml-auto text-xs text-gray-400'>EN</span>
+          <span style={{marginLeft: 'auto', fontSize: '0.75rem', color: '#9ca3af'}}>EN</span>
         </div>
-        <div className='flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800'>
+        <div style={{display: 'flex', cursor: 'pointer', alignItems: 'center', gap: '0.5rem', borderRadius: '0.375rem', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           <span>🌐</span>
           <span>Romanian</span>
-          <span className='ml-auto text-xs text-gray-400'>RO</span>
+          <span style={{marginLeft: 'auto', fontSize: '0.75rem', color: '#9ca3af'}}>RO</span>
         </div>
       </div>
     </div>
@@ -79,16 +79,16 @@ export const Preview: Story = {
 /** Empty state when no results match the query. */
 export const EmptyState: Story = {
   render: () => (
-    <div className='w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'>
-      <div className='border-b border-gray-200 px-4 py-3 dark:border-gray-700'>
+    <div style={{width: '100%', maxWidth: '32rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'}}>
+      <div style={{borderBottom: '1px solid #e5e7eb', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
         <input
           type='text'
           defaultValue='nonexistent command'
-          className='w-full bg-transparent text-sm text-gray-900 outline-none dark:text-gray-100'
+          style={{width: '100%', backgroundColor: 'transparent', fontSize: '0.875rem', color: '#111827', outline: 'none', border: 'none'}}
           readOnly
         />
       </div>
-      <div className='py-6 text-center text-sm text-gray-500 dark:text-gray-400'>No results found.</div>
+      <div style={{paddingTop: '1.5rem', paddingBottom: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280'}}>No results found.</div>
     </div>
   ),
 };

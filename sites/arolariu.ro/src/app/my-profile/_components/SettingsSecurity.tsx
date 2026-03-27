@@ -77,9 +77,9 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.05}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbKey className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbKey className={styles["iconSm"]} />
                 {t("twoFactor.title")}
               </CardTitle>
               <CardDescription>{t("twoFactor.description")}</CardDescription>
@@ -113,14 +113,14 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.1}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbClock className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbClock className={styles["iconSm"]} />
                 {t("session.title")}
               </CardTitle>
               <CardDescription>{t("session.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div>
                 <Label>{t("session.timeout")}</Label>
                 <Select
@@ -159,17 +159,17 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.15}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbLock className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbLock className={styles["iconSm"]} />
                 {t("password.title")}
               </CardTitle>
               <CardDescription>{t("password.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <Button
                 variant='outline'
-                className='w-full cursor-pointer'
+                className={styles["buttonFullCursor"]}
                 asChild>
                 <a
                   href='https://accounts.arolariu.ro/user/security'
@@ -190,9 +190,9 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.2}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbDevices className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbDevices className={styles["iconSm"]} />
                 {t("devices.title")}
               </CardTitle>
               <CardDescription>{t("devices.description")}</CardDescription>
@@ -217,11 +217,11 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                           <Button
                             variant='ghost'
                             size='icon'
-                            className='cursor-pointer'
+                            className={styles["selectCursor"]}
                             onClick={handleRemoveDevice(device.id)}
                             aria-label={`Remove device ${device.name}`}>
                             <TbTrash
-                              className='h-4 w-4'
+                              className={styles["iconSm"]}
                               aria-hidden='true'
                             />
                           </Button>

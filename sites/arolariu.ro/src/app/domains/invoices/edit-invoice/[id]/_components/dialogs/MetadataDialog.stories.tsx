@@ -33,26 +33,26 @@ const sampleMetadata = [
 /** Static preview of the add-metadata dialog form. */
 export const AddMetadata: Story = {
   render: () => (
-    <div className='w-full max-w-md rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
-      <div className='border-b p-6'>
-        <h2 className='text-lg font-semibold'>Add Metadata</h2>
-        <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>Add a new key-value metadata entry to this invoice.</p>
+    <div style={{width:"100%", maxWidth:"28rem", borderRadius:"0.75rem", border:"1px solid #e5e7eb", backgroundColor:"#fff", boxShadow:"0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)"}}>
+      <div style={{borderBottom:"1px solid #e5e7eb", padding:"1.5rem"}}>
+        <h2 style={{fontSize:"1.125rem", fontWeight:600}}>Add Metadata</h2>
+        <p style={{marginTop:"0.25rem", fontSize:"0.875rem", color:"#6b7280"}}>Add a new key-value metadata entry to this invoice.</p>
       </div>
 
-      <div className='space-y-4 p-6'>
-        <div className='space-y-2'>
-          <label className='text-sm font-medium'>Key</label>
+      <div style={{padding:"1.5rem", display:"flex", flexDirection:"column", gap:"1rem"}}>
+        <div style={{display:"flex", flexDirection:"column", gap:"0.5rem"}}>
+          <label style={{fontSize:"0.875rem", fontWeight:500}}>Key</label>
           <input
-            className='w-full rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800'
+            style={{width:"100%", borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"0.75rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}
             placeholder='e.g. loyaltyPoints, discountCode'
             defaultValue=''
             readOnly
           />
         </div>
-        <div className='space-y-2'>
-          <label className='text-sm font-medium'>Value</label>
+        <div style={{display:"flex", flexDirection:"column", gap:"0.5rem"}}>
+          <label style={{fontSize:"0.875rem", fontWeight:500}}>Value</label>
           <input
-            className='w-full rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800'
+            style={{width:"100%", borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"0.75rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}
             placeholder='Enter metadata value...'
             defaultValue=''
             readOnly
@@ -60,10 +60,10 @@ export const AddMetadata: Story = {
         </div>
       </div>
 
-      <div className='flex justify-end gap-2 border-t p-4'>
-        <button className='rounded-md border px-4 py-2 text-sm'>Cancel</button>
-        <button className='flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900'>
-          <TbDiscFilled className='h-4 w-4' />
+      <div style={{display:"flex", justifyContent:"flex-end", gap:"0.5rem", borderTop:"1px solid #e5e7eb", padding:"1rem"}}>
+        <button style={{borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"1rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}>Cancel</button>
+        <button style={{display:"flex", alignItems:"center", gap:"0.5rem", borderRadius:"0.375rem", backgroundColor:"#111827", paddingInline:"1rem", paddingBlock:"0.5rem", fontSize:"0.875rem", color:"#fff"}}>
+          <TbDiscFilled style={{height:"1rem", width:"1rem"}} />
           Save
         </button>
       </div>
@@ -74,35 +74,35 @@ export const AddMetadata: Story = {
 /** Static preview of the edit-metadata dialog with pre-filled values. */
 export const EditMetadata: Story = {
   render: () => (
-    <div className='w-full max-w-md rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
-      <div className='border-b p-6'>
-        <h2 className='text-lg font-semibold'>Edit Metadata</h2>
-        <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>Modify the value for this metadata entry.</p>
+    <div style={{width:"100%", maxWidth:"28rem", borderRadius:"0.75rem", border:"1px solid #e5e7eb", backgroundColor:"#fff", boxShadow:"0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)"}}>
+      <div style={{borderBottom:"1px solid #e5e7eb", padding:"1.5rem"}}>
+        <h2 style={{fontSize:"1.125rem", fontWeight:600}}>Edit Metadata</h2>
+        <p style={{marginTop:"0.25rem", fontSize:"0.875rem", color:"#6b7280"}}>Modify the value for this metadata entry.</p>
       </div>
 
-      <div className='space-y-4 p-6'>
-        <div className='space-y-2'>
-          <label className='text-sm font-medium'>Key</label>
+      <div style={{padding:"1.5rem", display:"flex", flexDirection:"column", gap:"1rem"}}>
+        <div style={{display:"flex", flexDirection:"column", gap:"0.5rem"}}>
+          <label style={{fontSize:"0.875rem", fontWeight:500}}>Key</label>
           <input
-            className='w-full rounded-md border bg-gray-50 px-3 py-2 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800'
+            style={{width:"100%", borderRadius:"0.375rem", border:"1px solid #e5e7eb", backgroundColor:"#f9fafb", paddingInline:"0.75rem", paddingBlock:"0.5rem", fontSize:"0.875rem", color:"#6b7280"}}
             value='paymentMethod'
             disabled
           />
         </div>
-        <div className='space-y-2'>
-          <label className='text-sm font-medium'>Value</label>
+        <div style={{display:"flex", flexDirection:"column", gap:"0.5rem"}}>
+          <label style={{fontSize:"0.875rem", fontWeight:500}}>Value</label>
           <input
-            className='w-full rounded-md border px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800'
+            style={{width:"100%", borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"0.75rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}
             defaultValue='Credit Card'
             readOnly
           />
         </div>
       </div>
 
-      <div className='flex justify-end gap-2 border-t p-4'>
-        <button className='rounded-md border px-4 py-2 text-sm'>Cancel</button>
-        <button className='flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm text-white dark:bg-gray-100 dark:text-gray-900'>
-          <TbDiscFilled className='h-4 w-4' />
+      <div style={{display:"flex", justifyContent:"flex-end", gap:"0.5rem", borderTop:"1px solid #e5e7eb", padding:"1rem"}}>
+        <button style={{borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"1rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}>Cancel</button>
+        <button style={{display:"flex", alignItems:"center", gap:"0.5rem", borderRadius:"0.375rem", backgroundColor:"#111827", paddingInline:"1rem", paddingBlock:"0.5rem", fontSize:"0.875rem", color:"#fff"}}>
+          <TbDiscFilled style={{height:"1rem", width:"1rem"}} />
           Save
         </button>
       </div>
@@ -113,25 +113,25 @@ export const EditMetadata: Story = {
 /** Static preview showing all valid metadata keys with their current values. */
 export const MetadataOverview: Story = {
   render: () => (
-    <div className='w-full max-w-lg rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
-      <div className='border-b p-6'>
-        <h2 className='text-lg font-semibold'>Invoice Metadata</h2>
-        <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>All metadata entries attached to this invoice.</p>
+    <div style={{width:"100%", maxWidth:"32rem", borderRadius:"0.75rem", border:"1px solid #e5e7eb", backgroundColor:"#fff", boxShadow:"0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)"}}>
+      <div style={{borderBottom:"1px solid #e5e7eb", padding:"1.5rem"}}>
+        <h2 style={{fontSize:"1.125rem", fontWeight:600}}>Invoice Metadata</h2>
+        <p style={{marginTop:"0.25rem", fontSize:"0.875rem", color:"#6b7280"}}>All metadata entries attached to this invoice.</p>
       </div>
 
-      <div className='divide-y dark:divide-gray-700'>
+      <div >
         {sampleMetadata.map((entry) => (
           <div
             key={entry.key}
-            className='flex items-center justify-between px-6 py-3'>
+            style={{display:"flex", alignItems:"center", justifyContent:"space-between", paddingBlock:"0.75rem"}}>
             <div>
-              <p className='text-sm font-medium'>{entry.label}</p>
-              <p className='text-xs text-gray-500 dark:text-gray-400'>{entry.key}</p>
+              <p style={{fontSize:"0.875rem", fontWeight:500}}>{entry.label}</p>
+              <p style={{fontSize:"0.75rem", color:"#6b7280"}}>{entry.key}</p>
             </div>
-            <div className='flex items-center gap-2'>
-              <span className='text-sm'>{entry.value}</span>
+            <div style={{display:"flex", alignItems:"center", gap:"0.5rem"}}>
+              <span style={{fontSize:"0.875rem"}}>{entry.value}</span>
               {entry.readonly && (
-                <span className='rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400'>
+                <span style={{borderRadius:"0.25rem", backgroundColor:"#f3f4f6", paddingInline:"0.375rem", paddingBlock:"0.125rem", fontSize:"0.75rem", color:"#6b7280"}}>
                   read-only
                 </span>
               )}

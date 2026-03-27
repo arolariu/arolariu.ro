@@ -178,3 +178,32 @@
   border-radius: radius('md');
   border: 1px solid color('border');
 }
+
+.card {
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.cardHeader {
+  padding-bottom: space(3);
+}
+
+.tooltipXs {
+  font-size: font-size('xs');
+}
+
+.dayTooltip {
+  max-width: 20rem;
+  font-size: font-size('xs');
+
+  & > * + * {
+    margin-top: space(2);
+  }
+}
+
+.badgeMt {
+  margin-top: space(1);
+}

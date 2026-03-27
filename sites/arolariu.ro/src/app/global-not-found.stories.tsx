@@ -15,7 +15,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className='min-h-screen bg-gray-50 p-4 dark:bg-gray-950'>
+      <div style={{minHeight: '100vh', backgroundColor: '#f9fafb', padding: '1rem'}}>
         <Story />
       </div>
     ),
@@ -28,40 +28,40 @@ type Story = StoryObj<typeof meta>;
 /** Default 404 page with hero, QR code, and action buttons. */
 export const Default: Story = {
   render: () => (
-    <div className='mx-auto max-w-2xl space-y-12 py-16'>
+    <div style={{marginLeft: 'auto', marginRight: 'auto', maxWidth: '42rem', display: 'flex', flexDirection: 'column', gap: '3rem', paddingTop: '4rem', paddingBottom: '4rem'}}>
       {/* Hero Section */}
-      <section className='text-center'>
-        <h1 className='text-7xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100'>404</h1>
-        <p className='mt-4 text-xl text-gray-600 dark:text-gray-400'>Page not found</p>
-        <p className='mt-2 text-sm text-gray-500'>The page you&apos;re looking for doesn&apos;t exist or has been moved.</p>
+      <section style={{textAlign: 'center'}}>
+        <h1 style={{fontSize: '4.5rem', fontWeight: '800', letterSpacing: '-0.025em', color: '#111827'}}>404</h1>
+        <p style={{marginTop: '1rem', fontSize: '1.25rem', color: '#4b5563'}}>Page not found</p>
+        <p style={{marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280'}}>The page you&apos;re looking for doesn&apos;t exist or has been moved.</p>
       </section>
 
       {/* QR Section */}
-      <section className='text-center'>
-        <h2 className='text-sm font-medium text-gray-600 dark:text-gray-400'>Additional Information</h2>
-        <div className='mx-auto mt-4 flex h-40 w-40 items-center justify-center rounded-xl border bg-white shadow-sm dark:bg-gray-900'>
-          <div className='text-center'>
-            <div className='mx-auto grid h-24 w-24 grid-cols-3 gap-0.5'>
+      <section style={{textAlign: 'center'}}>
+        <h2 style={{fontSize: '0.875rem', fontWeight: '500', color: '#4b5563'}}>Additional Information</h2>
+        <div style={{marginLeft: 'auto', marginRight: 'auto', marginTop: '1rem', display: 'flex', height: '10rem', width: '10rem', alignItems: 'center', justifyContent: 'center', borderRadius: '0.75rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'}}>
+          <div style={{textAlign: 'center'}}>
+            <div style={{marginLeft: 'auto', marginRight: 'auto', display: 'grid', height: '6rem', width: '6rem', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.125rem'}}>
               {Array.from({length: 9}).map((_, i) => (
                 <div
                   key={i}
-                  className={`rounded-sm ${i % 2 === 0 ? "bg-gray-800 dark:bg-gray-200" : "bg-white dark:bg-gray-800"}`}
+                  style={{borderRadius: '0.125rem', backgroundColor: i % 2 === 0 ? '#1f2937' : '#ffffff'}}
                 />
               ))}
             </div>
-            <p className='mt-2 text-xs text-gray-400'>Diagnostics QR</p>
+            <p style={{marginTop: '0.5rem', fontSize: '0.75rem', color: '#9ca3af'}}>Diagnostics QR</p>
           </div>
         </div>
       </section>
 
       {/* Actions Section */}
-      <section className='text-center'>
-        <p className='text-sm text-gray-500'>Think this is an error?</p>
-        <div className='mt-4 flex justify-center gap-3'>
-          <button className='rounded-md border px-6 py-2.5 text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800'>
+      <section style={{textAlign: 'center'}}>
+        <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Think this is an error?</p>
+        <div style={{marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '0.75rem'}}>
+          <button style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '0.625rem', paddingBottom: '0.625rem', fontSize: '0.875rem', fontWeight: '500', backgroundColor: 'transparent', cursor: 'pointer'}}>
             Submit Error Report
           </button>
-          <button className='rounded-md bg-gray-900 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'>
+          <button style={{borderRadius: '0.375rem', backgroundColor: '#111827', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '0.625rem', paddingBottom: '0.625rem', fontSize: '0.875rem', fontWeight: '500', color: '#ffffff', border: 'none', cursor: 'pointer'}}>
             Return to Homepage
           </button>
         </div>

@@ -149,3 +149,54 @@
   font-size: font-size('xs');
   color: color-alpha('warning', 0.85);
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.tabsFullWidth {
+  width: 100%;
+}
+
+.tabsListGrid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tabsTriggerCursor {
+  cursor: pointer;
+}
+
+.tabContentMt {
+  margin-top: 1rem;
+}
+
+.inputMonoXs {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.buttonFull {
+  width: 100%;
+}
+
+.alertOrange {
+  border-color: rgba(249, 115, 22, 0.5);
+  background-color: #fff7ed;
+  color: #7c2d12;
+}
+
+.alertOrangeTitle {
+  color: #9a3412;
+}
+
+.alertOrangeDesc {
+  font-size: 0.75rem;
+  color: #c2410c;
+}
+
+.backButtonMl {
+  margin-bottom: 0.5rem;
+  margin-left: -0.5rem;
+}

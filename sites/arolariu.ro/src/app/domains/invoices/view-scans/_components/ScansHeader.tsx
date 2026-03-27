@@ -50,13 +50,13 @@ export default function ScansHeader(): React.JSX.Element {
               <Button
                 variant='ghost'
                 size='icon'
-                className='mt-1 h-6 w-6 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'>
+                className={styles["infoButton"]}>
                 <TbInfoCircle className={styles["infoIcon"]} />
               </Button>
             } />
             <TooltipContent
               side='right'
-              className='max-w-xs'>
+              className={styles["tooltipContent"]}>
               <p>{t("tooltip")}</p>
             </TooltipContent>
           </Tooltip>
@@ -68,7 +68,7 @@ export default function ScansHeader(): React.JSX.Element {
           <Tooltip>
             <TooltipTrigger render={
               <Button
-                className='from-gradient-from to-gradient-to flex items-center gap-2 bg-linear-to-r text-white hover:opacity-90'
+                className={styles["uploadButton"]}
                 render={
                   <Link href='/domains/invoices/upload-scans'>
                     <TbUpload className={styles["actionIcon"]} />
@@ -86,7 +86,7 @@ export default function ScansHeader(): React.JSX.Element {
             <TooltipTrigger render={
               <Button
                 variant='outline'
-                className='flex items-center gap-2'
+                className={styles["outlineButton"]}
                 render={
                   <Link href='/domains/invoices/view-invoices'>
                     <TbFileInvoice className={styles["actionIcon"]} />
@@ -106,7 +106,7 @@ export default function ScansHeader(): React.JSX.Element {
                 variant='outline'
                 onClick={syncScans}
                 disabled={isSyncing}
-                className='flex items-center gap-2'>
+                className={styles["outlineButton"]}>
                 <TbRefresh className={`${styles["syncIcon"]} ${isSyncing ? styles["syncIconSpinning"] : ""}`} />
                 <span className={styles["hiddenMobile"]}>{isSyncing ? t("syncing") : t("sync")}</span>
               </Button>
