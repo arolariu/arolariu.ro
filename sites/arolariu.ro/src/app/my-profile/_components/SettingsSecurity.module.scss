@@ -91,3 +91,13 @@
 .buttonFullCursor { @include settings.settings-button-full-cursor; }
 .labelCursor { @include settings.settings-label-cursor; }
 .iconSm { @include settings.settings-icon-sm; }
+
+// ===========================================
+// SECURITY-SPECIFIC UTILITIES
+// ===========================================
+.selectCursorMt {
+  margin-top: space(2);
+  cursor: pointer;
+}
+
+.selectCursor { @include settings.settings-select-cursor; }

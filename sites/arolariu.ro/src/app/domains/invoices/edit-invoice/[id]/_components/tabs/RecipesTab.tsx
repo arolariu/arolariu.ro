@@ -98,8 +98,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}
       transition={{duration: 0.2}}>
-      <Card className='group transition-shadow duration-300 hover:shadow-md'>
-        <CardHeader className='flex flex-row items-center justify-between pb-2'>
+      <Card className={styles["card"]}>
+        <CardHeader className={styles["cardHeader"]}>
           <div>
             <CardTitle>{t("header.title")}</CardTitle>
             <CardDescription>{t("header.description")}</CardDescription>
@@ -111,10 +111,10 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                   render={
                     <Button
                       variant='ghost'
-                      className='cursor-pointer'
+                      className={styles["generateButton"]}
                       onClick={handleGenerateRecipe}
                       size='sm'>
-                      <TbConfetti className='mr-2 h-4 w-4' />
+                      <TbConfetti className={styles["buttonIcon"]} />
                       {t("buttons.generate")}
                     </Button>
                   }
@@ -127,10 +127,10 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                 <TooltipTrigger
                   render={
                     <Button
-                      className='cursor-pointer'
+                      className={styles["addButton"]}
                       onClick={openAddDialog}
                       size='sm'>
-                      <TbPlus className='mr-2 h-4 w-4' />
+                      <TbPlus className={styles["buttonIcon"]} />
                       {t("buttons.addRecipe")}
                     </Button>
                   }
@@ -158,8 +158,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
               <Button
                 onClick={handleCreateFirstRecipe}
                 variant='outline'
-                className='cursor-pointer'>
-                <TbPlus className='mr-2 h-4 w-4' />
+                className={styles["createButton"]}>
+                <TbPlus className={styles["buttonIcon"]} />
                 {t("buttons.createFirstRecipe")}
               </Button>
             </div>

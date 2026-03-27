@@ -167,25 +167,25 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                 <Button
                   variant={theme === "light" ? "default" : "outline"}
                   size='sm'
-                  className='flex-1 cursor-pointer'
+                  className={styles["flex1Cursor"]}
                   onClick={handleThemeLightClick}>
-                  <TbSun className='mr-1.5 h-4 w-4' />
+                  <TbSun className={styles["buttonIconSm"]} />
                   {t("theme.light")}
                 </Button>
                 <Button
                   variant={theme === "dark" ? "default" : "outline"}
                   size='sm'
-                  className='flex-1 cursor-pointer'
+                  className={styles["flex1Cursor"]}
                   onClick={handleThemeDarkClick}>
-                  <TbMoon className='mr-1.5 h-4 w-4' />
+                  <TbMoon className={styles["buttonIconSm"]} />
                   {t("theme.dark")}
                 </Button>
                 <Button
                   variant={theme === "system" ? "default" : "outline"}
                   size='sm'
-                  className='flex-1 cursor-pointer'
+                  className={styles["flex1Cursor"]}
                   onClick={handleThemeSystemClick}>
-                  <TbSettings className='mr-1.5 h-4 w-4' />
+                  <TbSettings className={styles["buttonIconSm"]} />
                   {t("theme.system")}
                 </Button>
               </div>
@@ -206,19 +206,19 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
               </CardTitle>
               <CardDescription>{t("font.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-3'>
+            <CardContent className={styles["cardContentSpaced3"]}>
               <div className={styles["fontButtons"]}>
                 <Button
                   variant={fontType === "normal" ? "default" : "outline"}
                   size='sm'
-                  className='flex-1 cursor-pointer'
+                  className={styles["flex1Cursor"]}
                   onClick={handleFontNormalClick}>
                   {t("font.normal")}
                 </Button>
                 <Button
                   variant={fontType === "dyslexic" ? "default" : "outline"}
                   size='sm'
-                  className='flex-1 cursor-pointer'
+                  className={styles["flex1Cursor"]}
                   onClick={handleFontDyslexicClick}>
                   {t("font.dyslexic")}
                 </Button>
@@ -270,7 +270,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                   className={styles["customPresetCard"]}
                   data-selected={themePreset === "custom"}
                   onClick={handleCustomPresetClick}>
-                  <TbBrush className='h-5 w-5' />
+                  <TbBrush className={styles["iconMd"]} />
                   <span className={styles["presetName"]}>{t("presets.custom")}</span>
                   <span className={styles["presetDescription"]}>{t("presets.customDescription")}</span>
                 </button>
@@ -304,7 +304,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                         render={
                           <Button
                             variant='outline'
-                            className='h-10 w-28 cursor-pointer gap-2 px-3'>
+                            className={styles["colorPickerButton"]}>
                             <div
                               className={styles["colorSwatch"]}
                               style={{backgroundColor: settings.primaryColor}}
@@ -313,7 +313,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                           </Button>
                         }
                       />
-                      <PopoverContent className='w-64'>
+                      <PopoverContent className={styles["colorPalette"]}>
                         <div className={styles["paletteGrid"]}>
                           {COLOR_PALETTE.map((color) => (
                             <TooltipProvider key={color.value}>
@@ -323,14 +323,14 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                                     <Button
                                       variant={settings.primaryColor === color.value ? "default" : "outline"}
                                       size='icon'
-                                      className='h-10 w-10 cursor-pointer rounded-full p-0'
+                                      className={styles["colorButton"]}
                                       data-color={color.value}
                                       onClick={handleColorChange("primaryColor")}>
                                       <div
                                         className={styles["colorSwatchLarge"]}
                                         style={{backgroundColor: color.value}}
                                       />
-                                      {settings.primaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
+                                      {settings.primaryColor === color.value && <TbCheck className={styles["colorCheckIcon"]} />}
                                     </Button>
                                   }
                                 />
@@ -351,7 +351,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                         render={
                           <Button
                             variant='outline'
-                            className='h-10 w-28 cursor-pointer gap-2 px-3'>
+                            className={styles["colorPickerButton"]}>
                             <div
                               className={styles["colorSwatch"]}
                               style={{backgroundColor: settings.secondaryColor}}
@@ -360,7 +360,7 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                           </Button>
                         }
                       />
-                      <PopoverContent className='w-64'>
+                      <PopoverContent className={styles["colorPalette"]}>
                         <div className={styles["paletteGrid"]}>
                           {COLOR_PALETTE.map((color) => (
                             <TooltipProvider key={color.value}>
@@ -370,14 +370,14 @@ export function SettingsAppearance({settings, onSettingsChange}: Props): React.J
                                     <Button
                                       variant={settings.secondaryColor === color.value ? "default" : "outline"}
                                       size='icon'
-                                      className='h-10 w-10 cursor-pointer rounded-full p-0'
+                                      className={styles["colorButton"]}
                                       data-color={color.value}
                                       onClick={handleColorChange("secondaryColor")}>
                                       <div
                                         className={styles["colorSwatchLarge"]}
                                         style={{backgroundColor: color.value}}
                                       />
-                                      {settings.secondaryColor === color.value && <TbCheck className='absolute h-4 w-4 text-white' />}
+                                      {settings.secondaryColor === color.value && <TbCheck className={styles["colorCheckIcon"]} />}
                                     </Button>
                                   }
                                 />

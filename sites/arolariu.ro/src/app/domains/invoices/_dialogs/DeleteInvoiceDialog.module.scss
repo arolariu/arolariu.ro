@@ -208,10 +208,11 @@
 }
 
 .inputGreen {
-  border-color: #22c55e;
+  border-color: color('success');
   
   &:focus-visible {
-    ring-color: #22c55e;
+    outline: 2px solid color('success');
+    outline-offset: 2px;
   }
 }
 

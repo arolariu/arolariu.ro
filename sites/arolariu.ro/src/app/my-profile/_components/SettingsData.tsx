@@ -134,7 +134,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   value={settings.backupFrequency}
                   onValueChange={handleBackupFrequencyChange}
                   disabled={!settings.autoBackup}>
-                  <SelectTrigger className='mt-2 cursor-pointer'>
+                  <SelectTrigger className={styles["selectCursorMt"]}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -193,11 +193,11 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
               </CardTitle>
               <CardDescription>{t("export.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-3'>
+            <CardContent className={styles["cardContentSpaced3"]}>
               <Button
                 variant='outline'
                 className={styles["buttonFullCursor"]}>
-                <TbDownload className='mr-2 h-4 w-4' />
+                <TbDownload className={styles["buttonIcon"]} />
                 {t("export.downloadAll")}
               </Button>
               <p className={styles["exportHint"]}>{t("export.hint")}</p>
@@ -211,9 +211,9 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
           initial={{opacity: 0, y: 10}}
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.25}}>
-          <Card className='border-destructive/50'>
+          <Card className={styles["dangerCardBorder"]}>
             <CardHeader className={styles["cardHeaderPb"]}>
-              <CardTitle className='text-destructive flex items-center gap-2 text-base'>
+              <CardTitle className={styles["dangerTitle"]}>
                 <TbAlertTriangle className={styles["iconSm"]} />
                 {t("danger.title")}
               </CardTitle>
@@ -228,7 +228,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                 <Button
                   variant='destructive'
                   className={styles["selectCursor"]}>
-                  <TbTrash className='mr-2 h-4 w-4' />
+                  <TbTrash className={styles["buttonIcon"]} />
                   {t("danger.deleteButton")}
                 </Button>
               </div>

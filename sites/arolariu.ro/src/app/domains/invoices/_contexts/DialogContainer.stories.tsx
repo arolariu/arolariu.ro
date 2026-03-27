@@ -33,19 +33,19 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const dialogTypes = [
-  {icon: <TbAnalyze className='h-5 w-5' />, type: "EDIT_INVOICE__ANALYSIS", label: "Analyze Invoice", color: "text-purple-500"},
-  {icon: <TbShoppingCart className='h-5 w-5' />, type: "EDIT_INVOICE__ITEMS", label: "Edit Items", color: "text-blue-500"},
-  {icon: <TbMessage className='h-5 w-5' />, type: "EDIT_INVOICE__FEEDBACK", label: "Feedback", color: "text-green-500"},
-  {icon: <TbReceipt className='h-5 w-5' />, type: "EDIT_INVOICE__MERCHANT", label: "Merchant Details", color: "text-orange-500"},
-  {icon: <TbReceipt className='h-5 w-5' />, type: "EDIT_INVOICE__MERCHANT_INVOICES", label: "Merchant Receipts", color: "text-amber-500"},
-  {icon: <TbFileInvoice className='h-5 w-5' />, type: "EDIT_INVOICE__METADATA", label: "Metadata", color: "text-cyan-500"},
-  {icon: <TbPhoto className='h-5 w-5' />, type: "EDIT_INVOICE__IMAGE", label: "Image View", color: "text-indigo-500"},
-  {icon: <TbPhoto className='h-5 w-5' />, type: "EDIT_INVOICE__SCAN", label: "Add/Remove Scan", color: "text-teal-500"},
-  {icon: <TbToolsKitchen3 className='h-5 w-5' />, type: "EDIT_INVOICE__RECIPE", label: "Recipe", color: "text-rose-500"},
-  {icon: <TbShare className='h-5 w-5' />, type: "VIEW_INVOICE__SHARE_ANALYTICS", label: "Share Analytics", color: "text-violet-500"},
-  {icon: <TbFileInvoice className='h-5 w-5' />, type: "VIEW_SCANS__CREATE_INVOICE", label: "Create Invoice", color: "text-fuchsia-500"},
-  {icon: <TbTrash className='h-5 w-5' />, type: "SHARED__INVOICE_DELETE", label: "Delete Invoice", color: "text-red-500"},
-  {icon: <TbShare className='h-5 w-5' />, type: "SHARED__INVOICE_SHARE", label: "Share Invoice", color: "text-emerald-500"},
+  {icon: <TbAnalyze style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__ANALYSIS", label: "Analyze Invoice", color: "#a855f7"},
+  {icon: <TbShoppingCart style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__ITEMS", label: "Edit Items", color: "#3b82f6"},
+  {icon: <TbMessage style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__FEEDBACK", label: "Feedback", color: "#22c55e"},
+  {icon: <TbReceipt style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__MERCHANT", label: "Merchant Details", color: "#f97316"},
+  {icon: <TbReceipt style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__MERCHANT_INVOICES", label: "Merchant Receipts", color: "#f59e0b"},
+  {icon: <TbFileInvoice style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__METADATA", label: "Metadata", color: "#06b6d4"},
+  {icon: <TbPhoto style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__IMAGE", label: "Image View", color: "#6366f1"},
+  {icon: <TbPhoto style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__SCAN", label: "Add/Remove Scan", color: "#14b8a6"},
+  {icon: <TbToolsKitchen3 style={{height: '1.25rem', width: '1.25rem'}} />, type: "EDIT_INVOICE__RECIPE", label: "Recipe", color: "#f43f5e"},
+  {icon: <TbShare style={{height: '1.25rem', width: '1.25rem'}} />, type: "VIEW_INVOICE__SHARE_ANALYTICS", label: "Share Analytics", color: "#8b5cf6"},
+  {icon: <TbFileInvoice style={{height: '1.25rem', width: '1.25rem'}} />, type: "VIEW_SCANS__CREATE_INVOICE", label: "Create Invoice", color: "#d946ef"},
+  {icon: <TbTrash style={{height: '1.25rem', width: '1.25rem'}} />, type: "SHARED__INVOICE_DELETE", label: "Delete Invoice", color: "#ef4444"},
+  {icon: <TbShare style={{height: '1.25rem', width: '1.25rem'}} />, type: "SHARED__INVOICE_SHARE", label: "Share Invoice", color: "#10b981"},
 ];
 
 /** Overview of all dialog types managed by the container. */
@@ -68,7 +68,7 @@ export const Default: Story = {
             <div
               key={d.type}
               style={{display: 'flex', alignItems: 'center', gap: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '0.75rem'}}>
-              <div className={d.color}>{d.icon}</div>
+              <div style={{color: d.color}}>{d.icon}</div>
               <div style={{flex: '1'}}>
                 <p style={{fontSize: '0.875rem', fontWeight: '500'}}>{d.label}</p>
                 <code style={{fontSize: '0.75rem', color: '#9ca3af'}}>{d.type}</code>

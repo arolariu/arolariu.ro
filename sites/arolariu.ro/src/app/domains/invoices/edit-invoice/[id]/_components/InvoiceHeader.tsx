@@ -87,7 +87,7 @@ export default function InvoiceHeader(): React.JSX.Element {
             type='text'
             value={invoiceName}
             onChange={handleNameChange}
-            className='w-full border-0 text-3xl font-bold tracking-tight focus-visible:border-0 focus-visible:ring-0'
+            className={styles["nameInput"]}
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function InvoiceHeader(): React.JSX.Element {
                       size='sm'
                       onClick={handleSave}
                       disabled={isSaving}>
-                      <TbDeviceFloppy className='mr-2 h-4 w-4' />
+                      <TbDeviceFloppy className={styles["buttonIcon"]} />
                       {isSaving ? t("buttons.saving") : t("buttons.save")}
                     </Button>
                   }
@@ -121,7 +121,7 @@ export default function InvoiceHeader(): React.JSX.Element {
                       size='sm'
                       onClick={handleDiscard}
                       disabled={isSaving}>
-                      <TbX className='mr-2 h-4 w-4' />
+                      <TbX className={styles["buttonIcon"]} />
                       {t("buttons.discard")}
                     </Button>
                   }
@@ -139,7 +139,7 @@ export default function InvoiceHeader(): React.JSX.Element {
                   variant='outline'
                   size='sm'
                   onClick={handleInvoicePrint}>
-                  <TbPrinter className='mr-2 h-4 w-4' />
+                  <TbPrinter className={styles["buttonIcon"]} />
                   {t("buttons.print")}
                 </Button>
               }
@@ -156,7 +156,7 @@ export default function InvoiceHeader(): React.JSX.Element {
                     onClick={openAnalysisDialog}
                     variant='outline'
                     size='sm'>
-                    <TbScanEye className='mr-2 h-4 w-4' />
+                    <TbScanEye className={styles["buttonIcon"]} />
                     {t("buttons.analyzeWithAi")}
                   </Button>
                 }
@@ -173,7 +173,7 @@ export default function InvoiceHeader(): React.JSX.Element {
                   onClick={openDeleteDialog}
                   variant='destructive'
                   size='sm'>
-                  <TbTrash className='mr-2 h-4 w-4' />
+                  <TbTrash className={styles["buttonIcon"]} />
                   {t("buttons.delete")}
                 </Button>
               }

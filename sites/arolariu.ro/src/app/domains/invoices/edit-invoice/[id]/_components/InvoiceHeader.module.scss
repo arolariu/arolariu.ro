@@ -26,3 +26,22 @@
   align-items: center;
   gap: space(2);
 }
+
+.nameInput {
+  width: 100%;
+  border: 0;
+  font-size: font-size('3xl');
+  font-weight: font-weight('bold');
+  letter-spacing: tracking('tight');
+
+  &:focus-visible {
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

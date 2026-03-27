@@ -20,24 +20,24 @@ type Story = StoryObj<typeof meta>;
 /** Preview with no pending changes. */
 export const NoChanges: Story = {
   render: () => (
-    <div className='flex flex-col gap-3 border-b bg-white px-6 py-4 md:flex-row md:items-center md:justify-between dark:bg-gray-900'>
+    <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem', borderBottom: '1px solid #e5e7eb', backgroundColor: '#ffffff', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '1rem', paddingBottom: '1rem'}}>
       <div>
         <input
           type='text'
           defaultValue='Weekly Grocery Shopping'
-          className='w-full border-0 bg-transparent text-3xl font-bold tracking-tight focus:outline-none'
+          style={{width: '100%', border: 'none', backgroundColor: 'transparent', fontSize: '1.875rem', fontWeight: '700', letterSpacing: '-0.025em'}}
           readOnly
         />
       </div>
-      <div className='flex gap-2'>
+      <div style={{display: 'flex', gap: '0.5rem'}}>
         <button
           type='button'
-          className='rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           🖨 Print
         </button>
         <button
           type='button'
-          className='rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700'>
+          style={{borderRadius: '0.375rem', backgroundColor: '#dc2626', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem', color: '#ffffff'}}>
           🗑 Delete
         </button>
       </div>
@@ -48,34 +48,34 @@ export const NoChanges: Story = {
 /** Preview with pending changes (save/discard buttons visible). */
 export const WithPendingChanges: Story = {
   render: () => (
-    <div className='flex flex-col gap-3 border-b bg-white px-6 py-4 md:flex-row md:items-center md:justify-between dark:bg-gray-900'>
+    <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem', borderBottom: '1px solid #e5e7eb', backgroundColor: '#ffffff', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '1rem', paddingBottom: '1rem'}}>
       <div>
         <input
           type='text'
           defaultValue='Weekly Grocery Shopping (edited)'
-          className='w-full border-0 bg-transparent text-3xl font-bold tracking-tight focus:outline-none'
+          style={{width: '100%', border: 'none', backgroundColor: 'transparent', fontSize: '1.875rem', fontWeight: '700', letterSpacing: '-0.025em'}}
           readOnly
         />
       </div>
-      <div className='flex gap-2'>
+      <div style={{display: 'flex', gap: '0.5rem'}}>
         <button
           type='button'
-          className='rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700'>
+          style={{borderRadius: '0.375rem', backgroundColor: '#2563eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem', color: '#ffffff'}}>
           💾 Save
         </button>
         <button
           type='button'
-          className='rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           ✕ Discard
         </button>
         <button
           type='button'
-          className='rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           🖨 Print
         </button>
         <button
           type='button'
-          className='rounded-md bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700'>
+          style={{borderRadius: '0.375rem', backgroundColor: '#dc2626', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem', color: '#ffffff'}}>
           🗑 Delete
         </button>
       </div>

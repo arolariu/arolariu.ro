@@ -31,12 +31,3 @@
 .iconSm { @include settings.settings-icon-sm; }
 .buttonFullCursor { @include settings.settings-button-full-cursor; }
 .labelCursor { @include settings.settings-label-cursor; }
-
-// ===========================================
-// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
-// ===========================================
-.cardHeaderPb { @include settings.settings-card-header-flex; }
-.cardTitleBase { @include settings.settings-card-title-base; }
-.cardContentSpaced { @include settings.settings-card-content-spaced; }
-.selectCursor { @include settings.settings-select-cursor; }
-.iconSm { @include settings.settings-icon-sm; }

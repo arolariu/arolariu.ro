@@ -74,8 +74,8 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}
       transition={{duration: 0.2}}>
-      <Card className='group transition-shadow duration-300 hover:shadow-md'>
-        <CardHeader className='flex flex-row items-center justify-between pb-2'>
+      <Card className={styles["card"]}>
+        <CardHeader className={styles["cardHeader"]}>
           <div>
             <CardTitle>{t("header.title")}</CardTitle>
             <CardDescription>{t("header.description")}</CardDescription>
@@ -85,10 +85,10 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
               <TooltipTrigger
                 render={
                   <Button
-                    className='cursor-pointer'
+                    className={styles["addButton"]}
                     onClick={openAddDialog}
                     size='sm'>
-                    <TbPlus className='mr-2 h-4 w-4' />
+                    <TbPlus className={styles["buttonIcon"]} />
                     {t("buttons.addField")}
                   </Button>
                 }
@@ -113,7 +113,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                   <span className={styles["fieldLabel"]}>
                     <Badge
                       variant='outline'
-                      className='ml-2 text-xs'>
+                      className={styles["readonlyBadge"]}>
                       {t("badges.readonly")}
                     </Badge>
                   </span>
@@ -126,8 +126,8 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                           <Button
                             variant='ghost'
                             size='icon'
-                            className='h-8 w-8 cursor-pointer'>
-                            <TbPencil className='h-4 w-4' />
+                            className={styles["editIconButton"]}>
+                            <TbPencil className={styles["icon4"]} />
                           </Button>
                         }
                       />
@@ -135,14 +135,14 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
                         <DropdownMenuItem
                           onClick={openEditDialog}
                           disabled>
-                          <TbEdit className='mr-2 h-4 w-4' />
+                          <TbEdit className={styles["menuIcon"]} />
                           {t("dropdown.edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={openDeleteDialog}
-                          className='text-destructive focus:text-destructive'
+                          className={styles["deleteMenuItem"]}
                           disabled>
-                          <TbTrash className='mr-2 h-4 w-4' />
+                          <TbTrash className={styles["menuIcon"]} />
                           {t("dropdown.delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -157,7 +157,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
               <Button
                 onClick={openAddDialog}
                 variant='outline'>
-                <TbPlus className='mr-2 h-4 w-4' />
+                <TbPlus className={styles["buttonIcon"]} />
                 {t("buttons.addFirstMetadataField")}
               </Button>
             </div>

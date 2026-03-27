@@ -130,26 +130,10 @@
 
 .cardHoverCursor {
   cursor: pointer;
-  transition: color 0.15s, background-color 0.15s;
+  @include transition((color, background-color));
   
   &:hover {
     border-color: color('primary');
     background-color: color-alpha('accent', 0.5);
   }
-}
-
-.cardTitleBase {
-  font-size: 1rem;
-}
-
-.cardDescSm {
-  font-size: 0.875rem;
-}
-
-.alertMt {
-  margin-top: 1rem;
-}
-
-.alertDescXs {
-  font-size: 0.75rem;
 }

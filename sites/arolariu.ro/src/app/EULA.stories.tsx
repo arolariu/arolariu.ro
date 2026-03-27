@@ -45,7 +45,7 @@ function EulaDemo(): React.JSX.Element {
 
   return (
     <div style={{marginLeft: 'auto', marginRight: 'auto', width: '100%', maxWidth: '56rem', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '5rem', paddingBottom: '5rem'}}>
-      <Card className='border-2 shadow-lg'>
+      <Card style={{border: '2px solid', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'}}>
         <CardHeader style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'center'}}>
           <div style={{display: 'flex', justifyContent: 'center'}}>
             <TbShield style={{height: '3rem', width: '3rem', color: '#9333ea'}} />
@@ -133,9 +133,9 @@ function EulaDemo(): React.JSX.Element {
               defaultValue='essential'
               style={{width: '100%'}}>
               <AccordionItem value='essential'>
-                <AccordionTrigger className='hover:no-underline'>
+                <AccordionTrigger style={{textDecoration: 'none'}}>
                   <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'}}>
-                    <TbLock style={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
+                    <TbLockstyle={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
                     <span>Essential Cookies</span>
                     <Badge style={{marginLeft: '0.5rem'}}>Required</Badge>
                   </div>
@@ -160,9 +160,9 @@ function EulaDemo(): React.JSX.Element {
               </AccordionItem>
 
               <AccordionItem value='analytics'>
-                <AccordionTrigger className='hover:no-underline'>
+                <AccordionTrigger style={{textDecoration: 'none'}}>
                   <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem'}}>
-                    <TbInfoCircleFilled style={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
+                    <TbInfoCircleFilledstyle={{height: '1rem', width: '1rem', flexShrink: 0, color: '#9333ea'}} />
                     <span>Analytics Cookies</span>
                     <Badge
                       style={{marginLeft: '0.5rem'}}

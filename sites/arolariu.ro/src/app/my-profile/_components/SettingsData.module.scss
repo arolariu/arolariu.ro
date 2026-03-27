@@ -60,3 +60,35 @@
 .selectCursor { @include settings.settings-select-cursor; }
 .buttonFullCursor { @include settings.settings-button-full-cursor; }
 .iconSm { @include settings.settings-icon-sm; }
+
+// ===========================================
+// DATA-SPECIFIC UTILITIES
+// ===========================================
+.selectCursorMt {
+  margin-top: space(2);
+  cursor: pointer;
+}
+
+.cardContentSpaced3 {
+  > * + * {
+    margin-top: space(3);
+  }
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.dangerCardBorder {
+  border-color: color-alpha('destructive', 0.5);
+}
+
+.dangerTitle {
+  color: color('destructive');
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('base');
+}

@@ -22,9 +22,6 @@
     "type": "git",
     "url": "https://github.com/arolariu/arolariu.ro"
   },
-  "overrides": {
-    "zod-validation-error": "^4.0.2"
-  },
   "scripts": {
     "__runner__based__commands__start__": "⚠️ The below section contains commands based on NX runner.",
     "build": "nx run-many --target=build --all",

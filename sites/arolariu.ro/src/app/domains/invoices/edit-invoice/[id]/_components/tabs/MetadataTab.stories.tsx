@@ -19,19 +19,19 @@ type Story = StoryObj<typeof meta>;
 /** Preview of metadata tab with sample key-value pairs. */
 export const WithMetadata: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white dark:bg-gray-900'>
-      <div className='flex items-center justify-between border-b p-4'>
+    <div style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff'}}>
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', padding: '1rem'}}>
         <div>
-          <h3 className='text-lg font-semibold'>Custom Metadata</h3>
-          <p className='text-sm text-gray-500'>Additional key-value pairs for this invoice</p>
+          <h3 style={{fontSize: '1.125rem', fontWeight: '600'}}>Custom Metadata</h3>
+          <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Additional key-value pairs for this invoice</p>
         </div>
         <button
           type='button'
-          className='rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           ➕ Add
         </button>
       </div>
-      <div className='divide-y'>
+      <div>
         {[
           {key: "store_id", value: "KFL-2024-BUC"},
           {key: "receipt_number", value: "INV-2024-001234"},
@@ -39,20 +39,20 @@ export const WithMetadata: Story = {
         ].map((item) => (
           <div
             key={item.key}
-            className='flex items-center justify-between px-4 py-3'>
+            style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
             <div>
-              <span className='rounded-md bg-gray-100 px-2 py-0.5 font-mono text-xs dark:bg-gray-800'>{item.key}</span>
-              <span className='ml-3 text-sm'>{item.value}</span>
+              <span style={{borderRadius: '0.375rem', backgroundColor: '#f3f4f6', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.125rem', paddingBottom: '0.125rem', fontFamily: 'monospace', fontSize: '0.75rem'}}>{item.key}</span>
+              <span style={{marginLeft: '0.75rem', fontSize: '0.875rem'}}>{item.value}</span>
             </div>
-            <div className='flex gap-1'>
+            <div style={{display: 'flex', gap: '0.25rem'}}>
               <button
                 type='button'
-                className='rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'>
+                style={{borderRadius: '0.25rem', padding: '0.25rem', color: '#9ca3af'}}>
                 ✏️
               </button>
               <button
                 type='button'
-                className='rounded p-1 text-gray-400 hover:text-red-500'>
+                style={{borderRadius: '0.25rem', padding: '0.25rem', color: '#9ca3af'}}>
                 🗑
               </button>
             </div>
@@ -66,19 +66,19 @@ export const WithMetadata: Story = {
 /** Empty metadata tab. */
 export const Empty: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white dark:bg-gray-900'>
-      <div className='flex items-center justify-between border-b p-4'>
+    <div style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff'}}>
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', padding: '1rem'}}>
         <div>
-          <h3 className='text-lg font-semibold'>Custom Metadata</h3>
-          <p className='text-sm text-gray-500'>No custom metadata has been added yet</p>
+          <h3 style={{fontSize: '1.125rem', fontWeight: '600'}}>Custom Metadata</h3>
+          <p style={{fontSize: '0.875rem', color: '#6b7280'}}>No custom metadata has been added yet</p>
         </div>
         <button
           type='button'
-          className='rounded-md border px-3 py-1.5 text-sm dark:border-gray-600'>
+          style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
           ➕ Add
         </button>
       </div>
-      <div className='p-8 text-center text-sm text-gray-500'>No metadata entries.</div>
+      <div style={{padding: '2rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280'}}>No metadata entries.</div>
     </div>
   ),
 };

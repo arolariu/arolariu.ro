@@ -126,7 +126,7 @@ export function SettingsSecurity({settings, onSettingsChange}: Props): React.JSX
                 <Select
                   value={settings.sessionTimeout.toString()}
                   onValueChange={handleSessionTimeoutChange}>
-                  <SelectTrigger className='mt-2 cursor-pointer'>
+                  <SelectTrigger className={styles["selectCursorMt"]}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
