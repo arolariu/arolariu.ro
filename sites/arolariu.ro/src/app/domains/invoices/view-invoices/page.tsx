@@ -2,11 +2,13 @@ import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import {RichText} from "@/presentation/Text";
+import {Skeleton} from "@arolariu/components";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {Suspense} from "react";
 import RenderViewInvoicesScreen from "./island";
-import styles from "./page.module.scss";
+import styles from "./island.module.scss";
+import pageStyles from "./page.module.scss";
 
 /**
  * Generates SEO metadata for the invoice viewing page with localized content.
@@ -136,10 +138,10 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
   const username = user?.fullName ?? tCommon("guestName");
 
   return (
-    <div className={styles["pageMain"]}>
-      <section className={styles["headerSection"]}>
-        <h1 className={styles["title"]}>{t("title", {name: username})}</h1>
-        <article className={styles["subtitleArticle"]}>
+    <div className={pageStyles["pageMain"]}>
+      <section className={pageStyles["headerSection"]}>
+        <h1 className={pageStyles["title"]}>{t("title", {name: username})}</h1>
+        <article className={pageStyles["subtitleArticle"]}>
           <RichText
             sectionKey='Invoices.ViewInvoices'
             textKey='subtitle'
@@ -147,7 +149,22 @@ export default async function ViewInvoicesPage(_props: Readonly<PageProps<"/doma
         </article>
       </section>
       <section>
-        <Suspense fallback={<div>Loading filters...</div>}>
+        <Suspense
+          fallback={
+            <section className={styles["loadingSection"]}>
+              <Skeleton className={styles["skeletonHeader"]} />
+              <div className={styles["loadingTabsRow"]}>
+                <Skeleton className={styles["skeletonTab"]} />
+                <Skeleton className={styles["skeletonTab"]} />
+                <Skeleton className={styles["skeletonTab"]} />
+              </div>
+              <div className={styles["loadingGrid"]}>
+                <Skeleton className={styles["skeletonCard"]} />
+                <Skeleton className={styles["skeletonCard"]} />
+                <Skeleton className={styles["skeletonCard"]} />
+              </div>
+            </section>
+          }>
           <RenderViewInvoicesScreen />
         </Suspense>
       </section>
