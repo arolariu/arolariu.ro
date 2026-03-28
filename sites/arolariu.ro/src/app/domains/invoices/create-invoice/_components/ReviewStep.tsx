@@ -19,7 +19,7 @@ import {TbCalendar, TbCategory, TbCreditCard, TbFileDescription, TbFileInvoice, 
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./ReviewStep.module.scss";
 
-const dateFormatter = new Intl.DateTimeFormat("en-US", {dateStyle: "long"});
+const dateFormatter = new Intl.DateTimeFormat(undefined, {dateStyle: "long"});
 
 /**
  * Category label map.

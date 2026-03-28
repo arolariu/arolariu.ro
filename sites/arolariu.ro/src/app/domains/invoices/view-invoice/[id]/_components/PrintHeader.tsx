@@ -1,3 +1,5 @@
+"use client";
+
 import {formatCurrency} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {useFormatter, useLocale, useTranslations} from "next-intl";

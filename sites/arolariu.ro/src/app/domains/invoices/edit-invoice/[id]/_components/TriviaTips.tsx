@@ -203,10 +203,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     }
 
     // No category or default category → Set category
-    if (
-      invoice.category === InvoiceCategory.NOT_DEFINED
-      && !dismissedTips.includes("noCategory")
-    ) {
+    if (invoice.category === InvoiceCategory.NOT_DEFINED && !dismissedTips.includes("noCategory")) {
       tips.push({
         id: "noCategory",
         messageKey: "contextTips.noCategory",

@@ -43,7 +43,7 @@ function ScanCard({
   };
 
   const formatDate = (date: Date): string => {
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -63,6 +63,7 @@ function ScanCard({
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
+            onClick={(e) => e.stopPropagation()}
             className={styles["checkbox"]}
           />
         </div>

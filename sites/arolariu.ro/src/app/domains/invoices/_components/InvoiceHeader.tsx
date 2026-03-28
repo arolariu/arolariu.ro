@@ -23,7 +23,7 @@ import NotificationBell from "./NotificationBell";
  * **Features**:
  * - Fixed at top of viewport
  * - Notification bell positioned on the right
- * - Hidden on invoice homepage (full-screen experience)
+ * - Suitable for use across invoice-related routes
  * - Visible on all other invoice routes
  * - Z-index layering for proper stacking context
  *

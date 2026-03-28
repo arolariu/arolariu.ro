@@ -5,7 +5,7 @@
 
 "use client";
 
-import {useCallback, useState} from "react";
+import {useCallback, useRef, useState} from "react";
 
 /**
  * Return type for the useOptimisticUpdate hook.
@@ -52,6 +52,7 @@ export function useOptimisticUpdate<T>(initialData: T): OptimisticState<T> {
   const [data, setData] = useState<T>(initialData);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const committedRef = useRef<T>(initialData);
 
   /**
    * Update data optimistically, then reconcile with server.
@@ -61,22 +62,23 @@ export function useOptimisticUpdate<T>(initialData: T): OptimisticState<T> {
    */
   const update = useCallback(
     async (optimisticData: T, serverAction: () => Promise<T>) => {
-      const previousData = data;
+      const previousData = committedRef.current; // Use ref, not stale closure
       setData(optimisticData); // Optimistic update
       setIsPending(true);
       setError(null);
 
       try {
         const result = await serverAction();
+        committedRef.current = result; // Update committed state
         setData(result); // Server truth
       } catch (err) {
-        setData(previousData); // Rollback on error
+        setData(previousData); // Rollback to last committed
         setError(err instanceof Error ? err.message : "Update failed");
       } finally {
         setIsPending(false);
       }
     },
-    [data],
+    [], // No dependencies needed since we use ref
   );
 
   /**

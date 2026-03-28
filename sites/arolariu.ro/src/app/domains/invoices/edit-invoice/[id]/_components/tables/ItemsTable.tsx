@@ -201,13 +201,16 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
   );
 
   // Handle cell click to start editing
-  const handleCellClick = useCallback((rowIndex: number, field: "genericName" | "price" | "quantity" | "quantityUnit") => {
-    const item = sortedItems[rowIndex];
-    if (!item) return;
+  const handleCellClick = useCallback(
+    (rowIndex: number, field: "genericName" | "price" | "quantity" | "quantityUnit") => {
+      const item = sortedItems[rowIndex];
+      if (!item) return;
 
-    setEditingCell({rowIndex, field});
-    setEditValues({[`${rowIndex}-${field}`]: String(item[field])});
-  }, [sortedItems]);
+      setEditingCell({rowIndex, field});
+      setEditValues({[`${rowIndex}-${field}`]: String(item[field])});
+    },
+    [sortedItems],
+  );
 
   // Handle edit value change
   const handleEditChange = useCallback((rowIndex: number, field: string, value: string) => {

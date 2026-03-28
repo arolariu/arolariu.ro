@@ -24,12 +24,20 @@
 "use client";
 
 import {useInvoicesStore} from "@/stores";
-import {CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator} from "@arolariu/components";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  toast,
+} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {TbCamera, TbChartBar, TbFileInvoice, TbPlus, TbReceipt} from "react-icons/tb";
-import {toast} from "@arolariu/components";
 import {useShallow} from "zustand/react/shallow";
 import styles from "./InvoiceCommandPalette.module.scss";
 

@@ -36,7 +36,7 @@ import {TbCalendar} from "react-icons/tb";
 import {useCreateInvoiceContext} from "../_context/CreateInvoiceContext";
 import styles from "./InvoiceDetailsForm.module.scss";
 
-const dateFormatter = new Intl.DateTimeFormat("en-US", {dateStyle: "long"});
+const dateFormatter = new Intl.DateTimeFormat(undefined, {dateStyle: "long"});
 
 /**
  * Invoice details form component.

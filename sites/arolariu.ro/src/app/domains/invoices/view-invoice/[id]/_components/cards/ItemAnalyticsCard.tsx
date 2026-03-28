@@ -42,7 +42,6 @@
 
 "use client";
 
-
 import {ProductCategory} from "@/types/invoices";
 import {
   Badge,
@@ -455,8 +454,7 @@ export function ItemAnalyticsCard(): React.JSX.Element {
                 ) : null}
                 {summary.cheapest ? (
                   <li className={styles["summaryItem"]}>
-                    • {t("summary.cheapest")}: <strong>{summary.cheapest.genericName}</strong> (
-                    {summary.cheapest.totalPrice.toFixed(2)})
+                    • {t("summary.cheapest")}: <strong>{summary.cheapest.genericName}</strong> ({summary.cheapest.totalPrice.toFixed(2)})
                   </li>
                 ) : null}
                 <li className={styles["summaryItem"]}>
