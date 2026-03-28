@@ -9,12 +9,23 @@
 .skeletonGrid {
   @include grid(1, space(4));
 
+  // 2-column layout on small screens
+  @include respond-below('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: space(3);
+  }
+
   @include respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @include respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  // More spacious on xl
+  @include respond-to('xl') {
+    gap: space(6);
   }
 }
 
@@ -41,52 +52,13 @@
 // ===========================================
 // EMPTY STATE
 // ===========================================
-.emptyWrapper {
-  padding-block: space(8);
-}
-
-.emptyCenter {
-  margin-bottom: space(8);
-  text-align: center;
-}
-
-.emptyIconCircle {
-  @include flex-center;
-  margin-inline: auto;
-  margin-bottom: space(4);
-  height: space(16);
-  width: space(16);
-  border-radius: radius('full');
-  @include gradient-bg();
-}
-
 .emptyIcon {
-  height: space(8);
-  width: space(8);
-  color: white;
-}
-
-.emptyTitle {
-  margin-bottom: space(2);
-  font-size: font-size('2xl');
-  font-weight: font-weight('bold');
-  color: color('foreground');
-
-  @include dark {
-    color: white;
-  }
-}
-
-.emptyDescription {
-  color: color('muted-foreground');
-
-  @include dark {
-    color: color('border');
-  }
+  @include icon-size(space(12));
+  color: color('primary');
 }
 
 // ===========================================
-// EMPTY STATE STEP
+// EMPTY STATE STEP (LEGACY - kept for backwards compatibility if needed)
 // ===========================================
 .emptyStepsList {
   margin-bottom: space(8);
@@ -185,12 +157,23 @@
 .scansGrid {
   @include grid(1, space(4));
 
+  // 2-column layout on small screens (not 3)
+  @include respond-below('sm') {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: space(3);
+  }
+
   @include respond-to('sm') {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @include respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  // More spacious on xl
+  @include respond-to('xl') {
+    gap: space(6);
   }
 }
 

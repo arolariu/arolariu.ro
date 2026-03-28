@@ -36,16 +36,18 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
           </span>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  variant='ghost'
-                  size='sm'
-                  onClick={clearSelection}
-                  className={styles["clearButton"]}>
-                  <TbX className={styles["clearIcon"]} />
-                  <span className={styles["hiddenMobile"]}>{t("clearSelection")}</span>
-                </Button>
-              } />
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={clearSelection}
+                    className={styles["clearButton"]}>
+                    <TbX className={styles["clearIcon"]} />
+                    <span className={styles["hiddenMobile"]}>{t("clearSelection")}</span>
+                  </Button>
+                }
+              />
               <TooltipContent>{t("clearSelection")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -54,15 +56,17 @@ export default function ScanSelectionToolbar({onCreateInvoice}: Readonly<ScanSel
         <div className={styles["toolbarRight"]}>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  onClick={onCreateInvoice}
-                  className={styles["createButton"]}>
-                  <TbFileInvoice className={styles["createIcon"]} />
-                  <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</span>
-                  <span className={styles["visibleMobile"]}>{t("createInvoice").split(" ")[0]}</span>
-                </Button>
-              } />
+              <TooltipTrigger
+                render={
+                  <Button
+                    onClick={onCreateInvoice}
+                    className={styles["createButton"]}>
+                    <TbFileInvoice className={styles["createIcon"]} />
+                    <span className={styles["hiddenMobile"]}>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</span>
+                    <span className={styles["visibleMobile"]}>{t("createInvoice").split(" ")[0]}</span>
+                  </Button>
+                }
+              />
               <TooltipContent>{selectedScans.length > 1 ? t("createInvoices") : t("createInvoice")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>

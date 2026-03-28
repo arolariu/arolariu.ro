@@ -198,9 +198,7 @@ export default function UploadArea(): React.JSX.Element {
             </p>
             <p className={styles["dropzoneFormats"]}>{t("uploadArea.empty.formats")}</p>
             <p className={styles["dropzoneNote"]}>{t("uploadArea.empty.note")}</p>
-            <span className={styles["chooseFilesButton"]}>
-              {t("uploadArea.empty.chooseFiles")}
-            </span>
+            <span className={styles["chooseFilesButton"]}>{t("uploadArea.empty.chooseFiles")}</span>
           </motion.div>
         </button>
       </>
@@ -243,30 +241,34 @@ export default function UploadArea(): React.JSX.Element {
       <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger render={
-              <Button
-                variant='outline'
-                onClick={clearAll}
-                className={styles["clearButton"]}
-                type='button'
-                disabled={isUploading}>
-                {t("uploadArea.actions.clearAll")}
-              </Button>
-            } />
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  onClick={clearAll}
+                  className={styles["clearButton"]}
+                  type='button'
+                  disabled={isUploading}>
+                  {t("uploadArea.actions.clearAll")}
+                </Button>
+              }
+            />
             <TooltipContent>{t("uploadArea.tooltips.clearAll")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger render={
-              <Button
-                onClick={uploadAll}
-                className={styles["uploadButton"]}
-                type='button'
-                disabled={isUploading}>
-                {isUploading ? t("uploadArea.actions.uploading") : t("uploadArea.actions.uploadScans")}
-              </Button>
-            } />
+            <TooltipTrigger
+              render={
+                <Button
+                  onClick={uploadAll}
+                  className={styles["uploadButton"]}
+                  type='button'
+                  disabled={isUploading}>
+                  {isUploading ? t("uploadArea.actions.uploading") : t("uploadArea.actions.uploadScans")}
+                </Button>
+              }
+            />
             <TooltipContent>{t("uploadArea.tooltips.uploadScans")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>

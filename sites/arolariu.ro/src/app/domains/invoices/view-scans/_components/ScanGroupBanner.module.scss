@@ -1,0 +1,153 @@
+// ===========================================
+// SCAN GROUP BANNER COMPONENT STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+// ===========================================
+// BANNER CONTAINER
+// ===========================================
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(4);
+  border-radius: radius('lg');
+  border: 1px solid color-alpha('primary', 0.3);
+  background: linear-gradient(
+    135deg,
+    color-alpha('primary', 0.05) 0%,
+    color-alpha('secondary', 0.05) 100%
+  );
+  padding: space(4);
+  margin-bottom: space(4);
+  @include transition(all);
+
+  @include dark {
+    background: linear-gradient(
+      135deg,
+      color-alpha('primary', 0.15) 0%,
+      color-alpha('secondary', 0.15) 100%
+    );
+    border-color: color-alpha('primary', 0.5);
+  }
+
+  &:hover {
+    border-color: color-alpha('primary', 0.5);
+    background: linear-gradient(
+      135deg,
+      color-alpha('primary', 0.08) 0%,
+      color-alpha('secondary', 0.08) 100%
+    );
+
+    @include dark {
+      background: linear-gradient(
+        135deg,
+        color-alpha('primary', 0.2) 0%,
+        color-alpha('secondary', 0.2) 100%
+      );
+    }
+  }
+
+  @include respond-to('sm') {
+    flex-direction: row;
+  }
+}
+
+// ===========================================
+// CONTENT SECTION
+// ===========================================
+.content {
+  display: flex;
+  align-items: center;
+  gap: space(3);
+  flex: 1;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: radius('full');
+  background-color: color-alpha('primary', 0.15);
+  padding: space(2);
+  @include transition(background-color);
+
+  @include dark {
+    background-color: color-alpha('primary', 0.3);
+  }
+}
+
+.icon {
+  width: space(5);
+  height: space(5);
+  color: color('primary');
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: space(1);
+}
+
+.title {
+  color: color('foreground');
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  line-height: 1.4;
+
+  @include respond-to('sm') {
+    font-size: font-size('base');
+  }
+}
+
+// ===========================================
+// ACTIONS SECTION
+// ===========================================
+.actions {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.combineButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  color: color('primary');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
+
+  &:hover {
+    background-color: color-alpha('primary', 0.1);
+  }
+
+  @include dark {
+    &:hover {
+      background-color: color-alpha('primary', 0.2);
+    }
+  }
+}
+
+.arrowIcon {
+  width: space(4);
+  height: space(4);
+  @include transition(transform);
+
+  .combineButton:hover & {
+    transform: translateX(space(1));
+  }
+}
+
+.dismissButton {
+  color: color('muted-foreground');
+
+  &:hover {
+    color: color('foreground');
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.dismissIcon {
+  width: space(4);
+  height: space(4);
+}

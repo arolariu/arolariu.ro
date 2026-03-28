@@ -92,6 +92,52 @@ function ScanStats(): React.JSX.Element | null {
 }
 
 /**
+ * Create from all button component.
+ * Shows when all scans are ready and none are selected.
+ */
+function CreateFromAllButton(): React.JSX.Element | null {
+  const t = useTranslations("Invoices.ViewScans");
+  const {scans, selectedScans} = useScans();
+  const {openDialog} = useDialogs();
+
+  const readyScans = scans.filter((s) => s.status === "ready");
+  const allScansReady = scans.length > 0 && scans.length === readyScans.length;
+  const noSelection = selectedScans.length === 0;
+
+  const handleCreateFromAll = useCallback(() => {
+    openDialog("VIEW_SCANS__CREATE_INVOICE", "add", {selectedScans: readyScans});
+  }, [openDialog, readyScans]);
+
+  if (!allScansReady || !noSelection) return null;
+
+  return (
+    <motion.div
+      initial={{opacity: 0, y: -10}}
+      animate={{opacity: 1, y: 0}}
+      className={styles["createFromAllContainer"]}>
+      <Card className={styles["createFromAllCard"]}>
+        <CardContent className={styles["createFromAllContent"]}>
+          <div className={styles["createFromAllText"]}>
+            <TbFileInvoice className={styles["createFromAllIcon"]} />
+            <div>
+              <p className={styles["createFromAllTitle"]}>{t("createFromAll.title")}</p>
+              <p className={styles["createFromAllDescription"]}>{t("createFromAll.description", {count: scans.length})}</p>
+            </div>
+          </div>
+          <Button
+            onClick={handleCreateFromAll}
+            size='lg'
+            className={styles["createFromAllButton"]}>
+            <TbStack2 className={styles["buttonIcon"]} />
+            {t("createFromAll.button")}
+          </Button>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+/**
  * Sidebar with tips and guidance.
  */
 function Sidebar(): React.JSX.Element | null {
@@ -205,6 +251,9 @@ function ViewScansContent(): React.JSX.Element {
 
       {/* Stats */}
       <ScanStats />
+
+      {/* Create from all button */}
+      <CreateFromAllButton />
 
       {/* Main Content */}
       <div className={`${styles["contentGrid"]} ${scans.length > 0 ? styles["contentGridWithSidebar"] : ""}`}>

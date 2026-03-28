@@ -1,0 +1,186 @@
+// ===========================================
+// SCAN SELECTOR STYLES
+// ===========================================
+@use '../../../../../styles/abstracts' as *;
+
+.container {
+  @include flex-column;
+  gap: space(6);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: space(4);
+
+  @include respond-below('md') {
+    flex-direction: column;
+  }
+}
+
+.headerInfo {
+  @include flex-column;
+  gap: space(1);
+}
+
+.title {
+  font-size: font-size('2xl');
+  font-weight: font-weight('semibold');
+  color: color('foreground');
+  margin: 0;
+}
+
+.subtitle {
+  font-size: font-size('sm');
+  color: color('muted-foreground');
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: space(2);
+  align-items: center;
+}
+
+.selectedBadge {
+  font-weight: font-weight('medium');
+}
+
+// Scans grid
+.scansGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: space(4);
+
+  @include respond-to('md') {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+// Scan card
+.scanCardWrapper {
+  position: relative;
+}
+
+.scanCard {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+
+  &:hover {
+    border-color: color('border');
+
+    .selectionOverlay {
+      opacity: 1;
+    }
+  }
+}
+
+.scanCardSelected {
+  border-color: color('primary');
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+.selectionOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 40%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1;
+  pointer-events: none;
+
+  .scanCardSelected & {
+    opacity: 1;
+  }
+}
+
+.checkbox {
+  position: absolute;
+  top: space(2);
+  left: space(2);
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.scanPreview {
+  aspect-ratio: 3 / 4;
+  background-color: color('muted');
+  overflow: hidden;
+  @include flex-center;
+}
+
+.scanImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanInfo {
+  padding: space(3);
+  @include flex-column;
+  gap: space(1);
+}
+
+.scanName {
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  color: color('foreground');
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scanMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: font-size('xs');
+  color: color('muted-foreground');
+}
+
+.scanDate,
+.scanSize {
+  font-size: inherit;
+}
+
+.selectedBadge {
+  position: absolute;
+  top: space(2);
+  right: space(2);
+  z-index: 2;
+  background-color: color('primary');
+  color: color('primary-foreground');
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  @include flex-center;
+  font-size: font-size('lg');
+}
+
+// Empty state
+.emptyState {
+  @include flex-column;
+  align-items: center;
+  justify-content: center;
+  padding: space(12);
+  text-align: center;
+  color: color('muted-foreground');
+}
+
+.emptyIcon {
+  font-size: 64px;
+  opacity: 0.3;
+  margin-bottom: space(4);
+}
+
+.emptyText {
+  font-size: font-size('base');
+  margin: 0;
+}

@@ -25,7 +25,15 @@ export const Default: Story = {
         <div
           key={name}
           style={{position: "relative", cursor: "pointer", borderRadius: "0.75rem", border: "1px solid #e5e7eb"}}>
-          <div style={{position: "relative", aspectRatio: "3/4", overflow: "hidden", borderTopLeftRadius: "0.75rem", borderTopRightRadius: "0.75rem", backgroundColor: "#f3f4f6"}}>
+          <div
+            style={{
+              position: "relative",
+              aspectRatio: "3/4",
+              overflow: "hidden",
+              borderTopLeftRadius: "0.75rem",
+              borderTopRightRadius: "0.75rem",
+              backgroundColor: "#f3f4f6",
+            }}>
             <div style={{display: "flex", height: "100%", alignItems: "center", justifyContent: "center"}}>
               <TbPhoto style={{height: "3rem", width: "3rem", color: "#d1d5db"}} />
             </div>
@@ -60,17 +68,48 @@ export const Loading: Story = {
 export const EmptyState: Story = {
   render: () => (
     <div style={{display: "flex", alignItems: "center", justifyContent: "center", paddingBlock: "3rem"}}>
-      <div style={{marginInline: "auto", maxWidth: "42rem", borderRadius: "0.75rem", border: "1px solid #e5e7eb", padding: "2rem", textAlign: "center"}}>
-        <div style={{marginInline: "auto", marginBottom: "1rem", display: "flex", height: "4rem", width: "4rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "#f3f4f6"}}>
+      <div
+        style={{
+          marginInline: "auto",
+          maxWidth: "42rem",
+          borderRadius: "0.75rem",
+          border: "1px solid #e5e7eb",
+          padding: "2rem",
+          textAlign: "center",
+        }}>
+        <div
+          style={{
+            marginInline: "auto",
+            marginBottom: "1rem",
+            display: "flex",
+            height: "4rem",
+            width: "4rem",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "9999px",
+            backgroundColor: "#f3f4f6",
+          }}>
           <TbPhoto style={{height: "2rem", width: "2rem", color: "#9ca3af"}} />
         </div>
         <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>No scans yet</h3>
-        <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>Upload receipt photos to get started with invoice processing.</p>
+        <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>
+          Upload receipt photos to get started with invoice processing.
+        </p>
 
         <div style={{marginTop: "1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem"}}>
           {[
-            {step: 1, icon: <TbUpload style={{height: "1rem", width: "1rem", color: "#3b82f6"}} />, title: "Upload Scans", desc: "Take a photo or upload an image"},
-            {step: 2, icon: <TbPhoto style={{height: "1rem", width: "1rem", color: "#a855f7"}} />, title: "Review", desc: "Check extracted data"},
+            {
+              step: 1,
+              icon: <TbUpload style={{height: "1rem", width: "1rem", color: "#3b82f6"}} />,
+              title: "Upload Scans",
+              desc: "Take a photo or upload an image",
+            },
+            {
+              step: 2,
+              icon: <TbPhoto style={{height: "1rem", width: "1rem", color: "#a855f7"}} />,
+              title: "Review",
+              desc: "Check extracted data",
+            },
             {
               step: 3,
               icon: <TbFileInvoice style={{height: "1rem", width: "1rem", color: "#22c55e"}} />,
@@ -81,7 +120,19 @@ export const EmptyState: Story = {
             <div
               key={s.step}
               style={{display: "flex", alignItems: "center", gap: "0.75rem", textAlign: "left"}}>
-              <span style={{display: "flex", height: "1.5rem", width: "1.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px", backgroundColor: "#dbeafe", fontSize: "0.75rem", fontWeight: 500, color: "#2563eb"}}>
+              <span
+                style={{
+                  display: "flex",
+                  height: "1.5rem",
+                  width: "1.5rem",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "9999px",
+                  backgroundColor: "#dbeafe",
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                  color: "#2563eb",
+                }}>
                 {s.step}
               </span>
               <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
@@ -96,11 +147,32 @@ export const EmptyState: Story = {
         </div>
 
         <div style={{marginTop: "1.5rem", display: "flex", justifyContent: "center", gap: "0.75rem"}}>
-          <button style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", backgroundColor: "#2563eb", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "#ffffff"}}>
+          <button
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              borderRadius: "0.375rem",
+              backgroundColor: "#2563eb",
+              paddingInline: "1rem",
+              paddingBlock: "0.5rem",
+              fontSize: "0.875rem",
+              color: "#ffffff",
+            }}>
             <TbUpload style={{height: "1rem", width: "1rem"}} />
             Upload Scans
           </button>
-          <button style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid #e5e7eb", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem"}}>
+          <button
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              borderRadius: "0.375rem",
+              border: "1px solid #e5e7eb",
+              paddingInline: "1rem",
+              paddingBlock: "0.5rem",
+              fontSize: "0.875rem",
+            }}>
             Learn More
             <TbArrowRight style={{height: "1rem", width: "1rem"}} />
           </button>

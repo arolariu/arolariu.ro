@@ -10,6 +10,12 @@
   border-radius: abstracts.radius('lg');
   padding: abstracts.space(3);
   background-color: abstracts.color('muted');
+
+  // Compact info cards on mobile
+  @include abstracts.respond-below('md') {
+    gap: abstracts.space(2);
+    padding: abstracts.space(2);
+  }
 }
 
 .fileTypeIconBox {
@@ -20,6 +26,12 @@
   border-radius: abstracts.radius('lg');
   background-color: abstracts.color('background');
   @include abstracts.shadow('sm');
+
+  // Smaller on mobile
+  @include abstracts.respond-below('md') {
+    height: abstracts.space(8);
+    width: abstracts.space(8);
+  }
 }
 
 .fileTypeLabel {
@@ -44,6 +56,11 @@
   display: flex;
   align-items: flex-start;
   gap: abstracts.space(2);
+
+  // Compact on mobile
+  @include abstracts.respond-below('md') {
+    gap: abstracts.space(1.5);
+  }
 }
 
 .tipIcon {
@@ -133,6 +150,11 @@
 .contentSection {
   margin-inline: auto;
   max-width: 80rem; // max-w-7xl
+
+  // Bottom padding for mobile nav
+  @include abstracts.respond-below('md') {
+    padding-bottom: abstracts.space(20);
+  }
 }
 
 .breadcrumb {
@@ -224,13 +246,29 @@
   display: grid;
   gap: abstracts.space(8);
 
+  // Stack upload area and sidebar vertically on mobile
+  @include abstracts.respond-below('md') {
+    grid-template-columns: 1fr;
+    gap: abstracts.space(6);
+  }
+
   @include abstracts.respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  // More spacious layout on xl
+  @include abstracts.respond-to('xl') {
+    gap: abstracts.space(10);
   }
 }
 
 .mainArea {
   @include abstracts.respond-to('lg') {
+    grid-column: span 2;
+  }
+
+  // Even wider on xl screens
+  @include abstracts.respond-to('xl') {
     grid-column: span 2;
   }
 }
@@ -240,6 +278,11 @@
 // ===========================================
 .sidebar {
   @include abstracts.spaced-children(abstracts.space(6));
+
+  // Compact spacing on mobile
+  @include abstracts.respond-below('md') {
+    @include abstracts.spaced-children(abstracts.space(4));
+  }
 }
 
 .sidebarTitle {
@@ -384,6 +427,11 @@
 
 .sidebarCardContent {
   padding: abstracts.space(4);
+
+  // Compact padding on mobile
+  @include abstracts.respond-below('md') {
+    padding: abstracts.space(3);
+  }
 }
 
 .securityCard {

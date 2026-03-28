@@ -145,15 +145,17 @@ function UploadCard({
           {(status === "idle" || status === "failed") && (
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger render={
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className={styles["removeButton"]}
-                    onClick={handleRemove}>
-                    <TbTrash className={styles["removeIcon"]} />
-                  </Button>
-                } />
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className={styles["removeButton"]}
+                      onClick={handleRemove}>
+                      <TbTrash className={styles["removeIcon"]} />
+                    </Button>
+                  }
+                />
                 <TooltipContent side='right'>{t("preview.removeTooltip")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>

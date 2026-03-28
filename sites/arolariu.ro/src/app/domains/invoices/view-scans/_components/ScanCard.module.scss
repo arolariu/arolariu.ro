@@ -10,10 +10,44 @@
   position: relative;
   aspect-ratio: 4 / 3;
   background-color: color('muted');
+  cursor: pointer;
+  @include transition(all);
+
+  &:hover .previewOverlay {
+    opacity: 1;
+  }
+
+  &[role='button'] {
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid color('primary');
+      outline-offset: 2px;
+    }
+  }
 
   @include dark {
     background-color: color('foreground');
   }
+}
+
+.previewOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-alpha('background', 0.6);
+  opacity: 0;
+  @include transition(opacity);
+  pointer-events: none;
+}
+
+.previewIcon {
+  height: space(8);
+  width: space(8);
+  color: white;
+  @include shadow('lg');
 }
 
 .pdfPlaceholder {
@@ -38,6 +72,12 @@
   position: absolute;
   top: space(2);
   left: space(2);
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    top: space(3);
+    left: space(3);
+  }
 }
 
 // ===========================================
@@ -47,6 +87,12 @@
   position: absolute;
   top: space(2);
   right: space(2);
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    top: space(3);
+    right: space(3);
+  }
 }
 
 // ===========================================
@@ -80,9 +126,22 @@
 // ===========================================
 .fileInfo {
   padding: space(3);
+
+  // Compact card layout on phones
+  @include respond-below('sm') {
+    padding: space(2);
+  }
+}
+
+.fileNameContainer {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  cursor: text;
 }
 
 .fileName {
+  flex: 1;
   @include truncate;
   font-size: font-size('sm');
   font-weight: font-weight('medium');
@@ -93,6 +152,23 @@
   }
 }
 
+.editButton {
+  height: space(6);
+  width: space(6);
+  padding: 0;
+  opacity: 0;
+  @include transition(opacity);
+
+  .fileNameContainer:hover & {
+    opacity: 1;
+  }
+}
+
+.editIcon {
+  height: space(3.5);
+  width: space(3.5);
+}
+
 .fileMeta {
   margin-top: space(1);
   display: flex;
@@ -100,6 +176,80 @@
   justify-content: space-between;
   font-size: font-size('xs');
   color: color('muted-foreground');
+}
+
+// ===========================================
+// RENAME INPUT
+// ===========================================
+.renameContainer {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.renameInput {
+  flex: 1;
+  height: space(8);
+  font-size: font-size('sm');
+}
+
+.renameActions {
+  display: flex;
+  gap: space(1);
+}
+
+.renameSaveButton,
+.renameCancelButton {
+  height: space(7);
+  width: space(7);
+  padding: 0;
+}
+
+.renameSaveButton {
+  color: color('primary');
+
+  &:hover {
+    background-color: color-alpha('primary', 0.1);
+  }
+}
+
+.renameCancelButton {
+  color: color('muted-foreground');
+
+  &:hover {
+    background-color: color('muted');
+  }
+}
+
+.renameIcon {
+  height: space(4);
+  width: space(4);
+}
+
+// ===========================================
+// PREVIEW DIALOG
+// ===========================================
+.previewDialog {
+  max-width: 90vw;
+  max-height: 90vh;
+  padding: space(6);
+}
+
+.previewImageContainer {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  border-radius: radius('lg');
+  overflow: hidden;
+  background-color: color('muted');
+
+  @include dark {
+    background-color: color('foreground');
+  }
+}
+
+.previewImage {
+  object-fit: contain;
 }
 
 // ===========================================
@@ -156,6 +306,12 @@
   &[data-state='checked'] {
     background-color: color('primary');
   }
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    height: space(6);
+    width: space(6);
+  }
 }
 
 .actionsButton {
@@ -177,6 +333,12 @@
     &:hover {
       background-color: color('foreground');
     }
+  }
+
+  // Larger touch target on mobile (min 44px)
+  @include respond-below('md') {
+    height: 2.75rem;
+    width: 2.75rem;
   }
 }
 

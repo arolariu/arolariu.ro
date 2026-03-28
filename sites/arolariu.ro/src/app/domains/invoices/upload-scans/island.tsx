@@ -9,6 +9,8 @@ import {Button, Card, CardContent, Tooltip, TooltipContent, TooltipProvider, Too
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
+import {useEffect, useState} from "react";
 import {
   TbArrowLeft,
   TbArrowRight,
@@ -20,6 +22,7 @@ import {
   TbPhoto,
   TbShieldCheck,
 } from "react-icons/tb";
+import PostUploadPrompt from "./_components/PostUploadPrompt";
 import UploadArea from "./_components/UploadArea";
 import UploadPreview from "./_components/UploadPreview";
 import {ScanUploadProvider, useScanUpload} from "./_context/ScanUploadContext";
@@ -131,7 +134,8 @@ function UploadStats(): React.JSX.Element | null {
                 {t("buttons.viewScans")}
                 <TbArrowRight className={styles["arrowIcon"]} />
               </Link>
-            } />
+            }
+          />
         ) : null}
       </div>
     </motion.div>
@@ -143,7 +147,67 @@ function UploadStats(): React.JSX.Element | null {
  */
 function UploadContent(): React.JSX.Element {
   const t = useTranslations("Invoices.UploadScans");
+  const router = useRouter();
   const {pendingUploads, sessionStats} = useScanUpload();
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [completedScans, setCompletedScans] = useState<Array<{id: string; preview: string; name: string}>>([]);
+
+  /**
+   * Effect to detect when all uploads complete and show the prompt.
+   *
+   * @remarks
+   * Triggers when:
+   * - All pending uploads are either completed or failed
+   * - At least one upload completed successfully
+   * - Prompt hasn't been shown yet for this batch
+   */
+  useEffect(() => {
+    const allDone = pendingUploads.length === 0 && sessionStats.totalCompleted > 0;
+    const hasCompleted = pendingUploads.some((u) => u.status === "completed");
+
+    if (allDone && !showPrompt) {
+      // Show prompt after a short delay for better UX
+      const timer = setTimeout(() => {
+        setShowPrompt(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+
+    // Collect completed scans for thumbnail preview
+    if (hasCompleted) {
+      const completed = pendingUploads
+        .filter((u) => u.status === "completed")
+        .map((u) => ({
+          id: u.id,
+          preview: u.preview,
+          name: u.name,
+        }));
+      setCompletedScans(completed);
+    }
+  }, [pendingUploads, sessionStats.totalCompleted, showPrompt]);
+
+  /**
+   * Navigate to create invoice page.
+   */
+  const handleCreateInvoice = (): void => {
+    setShowPrompt(false);
+    router.push("/domains/invoices/create-invoice");
+  };
+
+  /**
+   * Navigate to view scans page.
+   */
+  const handleViewScans = (): void => {
+    setShowPrompt(false);
+    router.push("/domains/invoices/view-scans");
+  };
+
+  /**
+   * Dismiss the prompt and stay on page.
+   */
+  const handleDismiss = (): void => {
+    setShowPrompt(false);
+  };
 
   return (
     <section className={styles["contentSection"]}>
@@ -166,14 +230,16 @@ function UploadContent(): React.JSX.Element {
           </div>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className={styles["infoButton"]}>
-                  <TbInfoCircle className={styles["infoIcon"]} />
-                </Button>
-              } />
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className={styles["infoButton"]}>
+                    <TbInfoCircle className={styles["infoIcon"]} />
+                  </Button>
+                }
+              />
               <TooltipContent
                 side='right'
                 className={styles["tooltipContent"]}>
@@ -186,36 +252,42 @@ function UploadContent(): React.JSX.Element {
         <div className={styles["headerActions"]}>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  variant='outline'
-                  className={styles["outlineButton"]}
-                  render={
-                    <Link href='/domains/invoices/view-scans'>
-                      <TbEye className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
-                      <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
-                    </Link>
-                  } />
-              } />
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className={styles["outlineButton"]}
+                    render={
+                      <Link href='/domains/invoices/view-scans'>
+                        <TbEye className={styles["actionIcon"]} />
+                        <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
+                        <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
+                      </Link>
+                    }
+                  />
+                }
+              />
               <TooltipContent>{t("buttons.viewScans")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger render={
-                <Button
-                  variant='outline'
-                  className={styles["outlineButton"]}
-                  render={
-                    <Link href='/domains/invoices/view-invoices'>
-                      <TbFileInvoice className={styles["actionIcon"]} />
-                      <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
-                      <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
-                    </Link>
-                  } />
-              } />
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className={styles["outlineButton"]}
+                    render={
+                      <Link href='/domains/invoices/view-invoices'>
+                        <TbFileInvoice className={styles["actionIcon"]} />
+                        <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
+                        <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
+                      </Link>
+                    }
+                  />
+                }
+              />
               <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -300,13 +372,23 @@ function UploadContent(): React.JSX.Element {
                         {t("sidebar.nextSteps.button")}
                         <TbArrowRight className={styles["arrowIcon"]} />
                       </Link>
-                    } />
+                    }
+                  />
                 </CardContent>
               </Card>
             </motion.div>
           )}
         </div>
       </div>
+
+      {/* Post-upload prompt */}
+      <PostUploadPrompt
+        completedScans={completedScans}
+        onCreateInvoice={handleCreateInvoice}
+        onViewScans={handleViewScans}
+        onDismiss={handleDismiss}
+        isVisible={showPrompt}
+      />
     </section>
   );
 }
