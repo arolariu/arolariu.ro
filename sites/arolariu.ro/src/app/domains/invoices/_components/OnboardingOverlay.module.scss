@@ -198,6 +198,48 @@
 }
 
 // ===========================================
+// CHECKBOX (Don't show this again)
+// ===========================================
+
+.checkboxContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: space(2) 0;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: color('muted-foreground');
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: color('foreground');
+  }
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: color('primary');
+  border-radius: radius('sm');
+
+  &:focus-visible {
+    outline: 2px solid color('ring');
+    outline-offset: 2px;
+  }
+}
+
+.checkboxText {
+  user-select: none;
+}
+
+// ===========================================
 // NAVIGATION BUTTONS
 // ===========================================
 

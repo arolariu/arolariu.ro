@@ -3438,7 +3438,8 @@
         "stepOf": "Step {current} of {total}",
         "next": "Next",
         "skip": "Skip",
-        "back": "Back"
+        "back": "Back",
+        "dontShowAgain": "Don't show this again"
       },
       "notifications": {
         "timeAgo": {

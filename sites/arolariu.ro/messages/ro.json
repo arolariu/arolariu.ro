@@ -3438,7 +3438,8 @@
         "stepOf": "Pasul {current} din {total}",
         "next": "Următorul",
         "skip": "Sari peste",
-        "back": "Înapoi"
+        "back": "Înapoi",
+        "dontShowAgain": "Nu mai afișa din nou"
       },
       "notifications": {
         "timeAgo": {

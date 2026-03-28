@@ -22,6 +22,7 @@ import {
   TbPhoto,
   TbShieldCheck,
 } from "react-icons/tb";
+import OnboardingOverlay from "../_components/OnboardingOverlay";
 import PostUploadPrompt from "./_components/PostUploadPrompt";
 import UploadArea from "./_components/UploadArea";
 import UploadPreview from "./_components/UploadPreview";
@@ -394,6 +395,9 @@ function UploadContent(): React.JSX.Element {
         onDismiss={handleDismiss}
         isVisible={showPrompt}
       />
+
+      {/* Onboarding overlay */}
+      <OnboardingOverlay />
     </section>
   );
 }

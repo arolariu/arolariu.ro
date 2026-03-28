@@ -31,22 +31,27 @@ type Step = {
  * - Back/Next navigation
  * - Skip button to dismiss permanently
  * - X button to close
+ * - "Don't show this again" checkbox for permanent dismissal
  * - AnimatePresence for step transitions (slide left/right)
- * - Stored in localStorage via `useLocalStorage`: key `"invoice-onboarding-complete"`
- * - Only shows once, on the invoice homepage (not every page)
+ * - Stored in localStorage via `useLocalStorage`:
+ *   - `"invoice-onboarding-complete"` - tracks completion
+ *   - `"invoice-onboarding-dismissed"` - tracks permanent dismissal
+ * - Only shows once, on the upload-scans page (not every page)
  *
  * Tutorial Steps:
  * 1. Upload Your Receipts — explanation of scan upload feature
  * 2. AI Extracts the Details — explanation of AI analysis
  * 3. Track Your Spending — explanation of statistics/analytics
  *
- * @returns The OnboardingOverlay component (only visible when `onboarding-complete` is false)
+ * @returns The OnboardingOverlay component (only visible when not completed or dismissed)
  */
 export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.Element | null {
   const t = useTranslations("Invoices.Shared.onboarding");
   const [onboardingComplete, setOnboardingComplete] = useLocalStorage<boolean>("invoice-onboarding-complete", false);
+  const [onboardingDismissed, setOnboardingDismissed] = useLocalStorage<boolean>("invoice-onboarding-dismissed", false);
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const steps: Step[] = [
     {
@@ -67,8 +72,11 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
   ];
 
   const handleClose = useCallback(() => {
+    if (dontShowAgain) {
+      setOnboardingDismissed(true);
+    }
     setOnboardingComplete(true);
-  }, [setOnboardingComplete]);
+  }, [dontShowAgain, setOnboardingComplete, setOnboardingDismissed]);
 
   const handleNext = useCallback(() => {
     if (currentStep < steps.length - 1) {
@@ -86,8 +94,8 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
     }
   }, [currentStep]);
 
-  // Don't render if onboarding is complete
-  if (onboardingComplete) {
+  // Don't render if onboarding is complete or permanently dismissed
+  if (onboardingComplete || onboardingDismissed) {
     return null;
   }
 
@@ -177,6 +185,19 @@ export default function OnboardingOverlay(_props: Readonly<Props>): React.JSX.El
                 aria-current={index === currentStep}
               />
             ))}
+          </div>
+
+          {/* Don't show this again checkbox */}
+          <div className={styles["checkboxContainer"]}>
+            <label className={styles["checkboxLabel"]}>
+              <input
+                type='checkbox'
+                className={styles["checkbox"]}
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+              />
+              <span className={styles["checkboxText"]}>{t("dontShowAgain")}</span>
+            </label>
           </div>
 
           <div className={styles["navigation"]}>
