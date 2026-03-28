@@ -18,7 +18,7 @@ const meta = {
         attribute='class'
         defaultTheme='light'
         enableSystem={false}>
-        <div style={{display: 'flex', minHeight: '100px', alignItems: 'center', justifyContent: 'center'}}>
+        <div style={{display: "flex", minHeight: "100px", alignItems: "center", justifyContent: "center"}}>
           <Story />
         </div>
       </ThemeProvider>
@@ -42,10 +42,20 @@ export const InToolbar: Story = {
         attribute='class'
         defaultTheme='light'
         enableSystem={false}>
-        <header style={{display: 'flex', height: '4rem', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', backgroundColor: '#ffffff', paddingLeft: '1.5rem', paddingRight: '1.5rem'}}>
-          <span style={{fontSize: '1.125rem', fontWeight: '600'}}>arolariu.ro</span>
-          <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-            <span style={{fontSize: '0.875rem', color: '#6b7280'}}>Settings</span>
+        <header
+          style={{
+            display: "flex",
+            height: "4rem",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid #e5e7eb",
+            backgroundColor: "#ffffff",
+            paddingLeft: "1.5rem",
+            paddingRight: "1.5rem",
+          }}>
+          <span style={{fontSize: "1.125rem", fontWeight: "600"}}>arolariu.ro</span>
+          <div style={{display: "flex", alignItems: "center", gap: "1rem"}}>
+            <span style={{fontSize: "0.875rem", color: "#6b7280"}}>Settings</span>
             <Story />
           </div>
         </header>

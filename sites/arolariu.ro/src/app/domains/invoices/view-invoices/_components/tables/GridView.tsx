@@ -19,7 +19,8 @@ import {motion} from "motion/react";
 import {useLocale, useTranslations} from "next-intl";
 import Image from "next/image";
 import {useCallback} from "react";
-import {TbCalendar, TbEye} from "react-icons/tb";
+import {TbCalendar, TbEye, TbReceipt} from "react-icons/tb";
+import EmptyState from "../../../_components/EmptyState";
 import styles from "./GridView.module.scss";
 import TableViewActions from "./TableViewActions";
 
@@ -48,9 +49,15 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
 
   if (invoices.length === 0) {
     return (
-      <div className={styles["emptyState"]}>
-        <div className={styles["emptyMessage"]}>{tTableView("empty")}</div>
-      </div>
+      <EmptyState
+        icon={<TbReceipt className={styles["emptyIcon"]} />}
+        title={tTableView("empty.title")}
+        description={tTableView("empty.description")}
+        primaryAction={{
+          label: tTableView("empty.uploadCta"),
+          href: "/domains/invoices/upload-scans",
+        }}
+      />
     );
   }
 
@@ -95,7 +102,8 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                           className={styles["imageButton"]}>
                           <TbEye className={styles["viewIcon"]} />
                         </Button>
-                      } />
+                      }
+                    />
                     <TooltipContent>{t("tooltips.viewDetails")}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

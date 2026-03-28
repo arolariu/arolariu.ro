@@ -10,6 +10,7 @@ import EnhancedCTASection from "./_components/homepage/EnhancedCTASection";
 import FeaturesSection from "./_components/homepage/FeaturesSection";
 import HeroSection from "./_components/homepage/HeroSection";
 import WorkflowSection from "./_components/homepage/WorkflowSection";
+import OnboardingOverlay from "./_components/OnboardingOverlay";
 import styles from "./island.module.scss";
 
 type Props = {
@@ -31,6 +32,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
       <BentoSection />
       <EnhancedCTASection />
       <div className={styles["footerSpacing"]} />
+      <OnboardingOverlay />
     </div>
   );
 }

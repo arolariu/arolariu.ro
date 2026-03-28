@@ -180,9 +180,7 @@ describe("Navigation", () => {
       render(<MobileNavigation />);
       const buttons = screen.getAllByRole("button");
       // Find the button that contains "Open navigation" text
-      const hamburgerButton = buttons.find(
-        (btn) => btn.textContent?.includes("Open navigation"),
-      );
+      const hamburgerButton = buttons.find((btn) => btn.textContent?.includes("Open navigation"));
       expect(hamburgerButton).toBeInTheDocument();
     });
 

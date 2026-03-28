@@ -2,6 +2,11 @@
 
 .page {
   min-height: 100vh;
+
+  // Add bottom padding on mobile to prevent content being hidden behind nav
+  @include abstracts.respond-below('md') {
+    padding-bottom: calc(abstracts.space(16) + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .footerSpacing {
