@@ -41,3 +41,98 @@
   color: color('muted-foreground');
   font-size: font-size('sm');
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 42rem;
+  }
+
+  @include respond-to('md') {
+    max-width: 72rem;
+  }
+}
+
+.table {
+  min-width: 100%;
+
+  & > * + * {
+    border-top: 1px solid color('border');
+  }
+}
+
+.headerRow {
+  background-color: color-alpha('muted', 0.5);
+}
+
+.tableBody {
+  background-color: color('popover');
+
+  & > * + * {
+    border-top: 1px solid color('border');
+  }
+}
+
+.dataRow {
+  &:hover {
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.cellName {
+  padding-inline: space(4);
+  padding-block: space(3);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
+}
+
+.nameInput {
+  width: 12rem;
+}
+
+.cellCenter {
+  padding-inline: space(4);
+  padding-block: space(3);
+  text-align: center;
+  font-size: font-size('sm');
+  white-space: nowrap;
+}
+
+.smallInput {
+  width: 4rem;
+  text-align: center;
+}
+
+.cellRight {
+  padding-inline: space(4);
+  padding-block: space(3);
+  text-align: right;
+  font-size: font-size('sm');
+  white-space: nowrap;
+}
+
+.smallInputRight {
+  width: 4rem;
+  text-align: right;
+}
+
+.cellRightBold {
+  padding-inline: space(4);
+  padding-block: space(3);
+  text-align: right;
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
+}
+
+.trashIcon {
+  width: space(4);
+  height: space(4);
+  color: color('destructive');
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

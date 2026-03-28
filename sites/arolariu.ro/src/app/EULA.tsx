@@ -166,14 +166,16 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   <CardContent className={styles["policyCardContent"]}>{t("termsOfService.subtitle")}</CardContent>
                   <CardFooter>
                     <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant='outline'
-                          title={t("termsOfService.cta")}
-                          className={styles["policyButton"]}>
-                          {t("termsOfService.cta")}
-                        </Button>
-                      </DialogTrigger>
+                      <DialogTrigger
+                        render={
+                          <Button
+                            variant='outline'
+                            title={t("termsOfService.cta")}
+                            className={styles["policyButton"]}>
+                            {t("termsOfService.cta")}
+                          </Button>
+                        }
+                      />
                       <DialogContent className={styles["dialogContent"]}>
                         <DialogHeader>
                           <DialogTitle className={styles["dialogTitle"]}>{t("termsOfService.cta")}</DialogTitle>
@@ -198,14 +200,16 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   <CardContent className={styles["policyCardContent"]}>{t("privacyPolicy.subtitle")}</CardContent>
                   <CardFooter>
                     <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant='outline'
-                          title={t("privacyPolicy.cta")}
-                          className={styles["policyButton"]}>
-                          {t("privacyPolicy.cta")}
-                        </Button>
-                      </DialogTrigger>
+                      <DialogTrigger
+                        render={
+                          <Button
+                            variant='outline'
+                            title={t("privacyPolicy.cta")}
+                            className={styles["policyButton"]}>
+                            {t("privacyPolicy.cta")}
+                          </Button>
+                        }
+                      />
                       <DialogContent className={styles["dialogContent"]}>
                         <DialogHeader>
                           <DialogTitle className={styles["dialogTitle"]}>{t("privacyPolicy.cta")}</DialogTitle>

@@ -99,3 +99,66 @@
     }
   }
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+
+// CardHeader with flex row, items center, space between, pb-4
+@mixin settings-card-header-flex {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+}
+
+// CardTitle with flex, items center, gap-2, text-base
+@mixin settings-card-title-base {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+// CardContent with space-y-4
+@mixin settings-card-content-spaced {
+  > * + * {
+    margin-top: 1rem;
+  }
+}
+
+// SelectTrigger with cursor-pointer
+@mixin settings-select-cursor {
+  cursor: pointer;
+}
+
+// Slider with cursor-pointer
+@mixin settings-slider-cursor {
+  cursor: pointer;
+}
+
+// Badge with text-xs
+@mixin settings-badge-xs {
+  font-size: 0.75rem;
+}
+
+// Button with w-full cursor-pointer
+@mixin settings-button-full-cursor {
+  width: 100%;
+  cursor: pointer;
+}
+
+// Label with cursor-pointer text-sm leading-none font-medium
+@mixin settings-label-cursor {
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1;
+  font-weight: 500;
+}
+
+// Icon sizing: h-4 w-4
+@mixin settings-icon-sm {
+  height: 1rem;
+  width: 1rem;
+}

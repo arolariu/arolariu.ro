@@ -114,3 +114,38 @@
   display: grid;
   gap: space(2);
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+}
+
+.removeFileButton {
+  width: space(8);
+  height: space(8);
+  flex-shrink: 0;
+}
+
+.icon4 {
+  width: space(4);
+  height: space(4);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinnerIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+  animation: spin 1s linear infinite;
+}
+
+.uploadButtonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

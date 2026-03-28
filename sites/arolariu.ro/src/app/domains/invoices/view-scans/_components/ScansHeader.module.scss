@@ -90,3 +90,47 @@
     transform: rotate(360deg);
   }
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.infoButton {
+  margin-top: space(0.5);
+  height: space(6);
+  width: space(6);
+  color: color('muted-foreground');
+
+  &:hover {
+    color: color('foreground');
+  }
+
+  @include dark {
+    color: color('muted-foreground');
+
+    &:hover {
+      color: color('foreground');
+    }
+  }
+}
+
+.tooltipContent {
+  max-width: 20rem;
+}
+
+.uploadButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  @include gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.outlineButton {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}

@@ -98,16 +98,18 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         <h3 className={styles["itemsLabel"]}>{t("title")}</h3>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={open}
-                className='h-8 cursor-pointer'>
-                <TbEdit className='mr-1 h-3.5 w-3.5' />
-                {t("buttons.editItems")}
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={open}
+                  className={styles["editButton"]}>
+                  <TbEdit className={styles["editIcon"]} />
+                  {t("buttons.editItems")}
+                </Button>
+              }
+            />
             <TooltipContent>
               <p>{t("tooltips.editInvoiceItemsAndQuantities")}</p>
             </TooltipContent>
@@ -115,16 +117,16 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         </TooltipProvider>
       </div>
       <div className={styles["tableWrapper"]}>
-        <Table className='divide-border min-w-full divide-y'>
+        <Table className={styles["table"]}>
           <TableHeader>
-            <TableRow className='bg-muted/50'>
+            <TableRow className={styles["mutedRow"]}>
               <TableHead className={styles["tableHeader"]}>{t("tableHeaders.item")}</TableHead>
               <TableHead className={styles["tableHeaderRight"]}>{t("tableHeaders.quantity")}</TableHead>
               <TableHead className={styles["tableHeaderRight"]}>{t("tableHeaders.price")}</TableHead>
               <TableHead className={styles["tableHeaderRight"]}>{t("tableHeaders.total")}</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className='divide-border bg-popover divide-y'>
+          <TableBody className={styles["tableBody"]}>
             {paginatedItems.map((item, index) => (
               <motion.tr
                 key={item.rawName}
@@ -159,7 +161,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             ))}
           </TableBody>
           <TableFooter>
-            <TableRow className='bg-muted/50'>
+            <TableRow className={styles["mutedRow"]}>
               <TableHead
                 colSpan={3}
                 className={styles["footerLabel"]}>
@@ -179,7 +181,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             <div className={styles["paginationControls"]}>
               <Button
                 variant='outline'
-                className='cursor-pointer'
+                className={styles["cursorPointer"]}
                 size='sm'
                 onClick={handlePreviousPage}>
                 {t("pagination.previous")}
@@ -189,7 +191,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
               </span>
               <Button
                 variant='outline'
-                className='cursor-pointer'
+                className={styles["cursorPointer"]}
                 size='sm'
                 onClick={handleNextPage}>
                 {t("pagination.next")}

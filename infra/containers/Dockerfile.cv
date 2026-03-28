@@ -62,8 +62,8 @@ COPY tsconfig.json ./
 # Copy CV site package manifest
 COPY sites/cv.arolariu.ro/package.json ./sites/cv.arolariu.ro/
 
-# Install all dependencies with clean install for reproducibility
-RUN npm ci --prefer-offline --no-audit && \
+# Install all dependencies
+RUN npm install --prefer-offline --no-audit && \
     npm cache clean --force
 
 # ========================================

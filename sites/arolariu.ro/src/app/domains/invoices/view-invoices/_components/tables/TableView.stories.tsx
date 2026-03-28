@@ -37,38 +37,38 @@ export const Preview: Story = {
   render: () => {
     const rows = generateMockRows(8);
     return (
-      <div className='p-6'>
-        <table className='w-full border-collapse'>
+      <div style={{padding: '1.5rem'}}>
+        <table style={{width: '100%', borderCollapse: 'collapse'}}>
           <thead>
-            <tr className='border-b text-left text-sm font-medium text-gray-500 dark:border-gray-700'>
-              <th className='px-3 py-3'>
+            <tr style={{borderBottom: '1px solid #e5e7eb', textAlign: 'left', fontSize: '0.875rem', fontWeight: 500, color: '#6b7280'}}>
+              <th style={{padding: '0.75rem'}}>
                 <input type='checkbox' />
               </th>
-              <th className='px-3 py-3'>Invoice</th>
-              <th className='px-3 py-3'>Category</th>
-              <th className='px-3 py-3'>Date ↕</th>
-              <th className='px-3 py-3'>Amount ↕</th>
-              <th className='px-3 py-3 text-end'>Actions</th>
+              <th style={{padding: '0.75rem'}}>Invoice</th>
+              <th style={{padding: '0.75rem'}}>Category</th>
+              <th style={{padding: '0.75rem'}}>Date ↕</th>
+              <th style={{padding: '0.75rem'}}>Amount ↕</th>
+              <th style={{padding: '0.75rem', textAlign: 'end'}}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr
                 key={row.id}
-                className='border-b text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800'>
-                <td className='px-3 py-3'>
+                style={{borderBottom: '1px solid #e5e7eb', fontSize: '0.875rem'}}>
+                <td style={{padding: '0.75rem'}}>
                   <input type='checkbox' />
                 </td>
-                <td className='px-3 py-3 font-medium'>{row.name}</td>
-                <td className='px-3 py-3'>
-                  <span className='rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-800'>{row.category}</span>
+                <td style={{padding: '0.75rem', fontWeight: 500}}>{row.name}</td>
+                <td style={{padding: '0.75rem'}}>
+                  <span style={{borderRadius: '9999px', backgroundColor: '#f3f4f6', padding: '0.125rem 0.5rem', fontSize: '0.75rem'}}>{row.category}</span>
                 </td>
-                <td className='px-3 py-3 text-gray-500'>{row.date}</td>
-                <td className='px-3 py-3 font-medium'>{row.amount.toFixed(2)} RON</td>
-                <td className='px-3 py-3 text-end'>
+                <td style={{padding: '0.75rem', color: '#6b7280'}}>{row.date}</td>
+                <td style={{padding: '0.75rem', fontWeight: 500}}>{row.amount.toFixed(2)} RON</td>
+                <td style={{padding: '0.75rem', textAlign: 'end'}}>
                   <button
                     type='button'
-                    className='text-gray-400 hover:text-gray-600'>
+                    style={{color: '#9ca3af'}}>
                     👁 ⋮
                   </button>
                 </td>
@@ -76,23 +76,23 @@ export const Preview: Story = {
             ))}
           </tbody>
           <tfoot>
-            <tr className='border-t dark:border-gray-700'>
+            <tr style={{borderTop: '1px solid #e5e7eb'}}>
               <td
                 colSpan={4}
-                className='px-3 py-3 text-sm text-gray-500'>
+                style={{padding: '0.75rem', fontSize: '0.875rem', color: '#6b7280'}}>
                 Rows per page: 10 | Page 1 of 1
               </td>
               <td
                 colSpan={2}
-                className='px-3 py-3 text-end'>
+                style={{padding: '0.75rem', textAlign: 'end'}}>
                 <button
                   type='button'
-                  className='rounded border px-3 py-1 text-xs dark:border-gray-700'>
+                  style={{borderRadius: '0.25rem', border: '1px solid #e5e7eb', padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
                   Previous
                 </button>
                 <button
                   type='button'
-                  className='ml-2 rounded border px-3 py-1 text-xs dark:border-gray-700'>
+                  style={{marginLeft: '0.5rem', borderRadius: '0.25rem', border: '1px solid #e5e7eb', padding: '0.25rem 0.75rem', fontSize: '0.75rem'}}>
                   Next
                 </button>
               </td>
@@ -107,9 +107,9 @@ export const Preview: Story = {
 /** Empty state — no invoices. */
 export const EmptyState: Story = {
   render: () => (
-    <div className='flex items-center justify-center p-12'>
-      <div className='text-center text-gray-500'>
-        <p className='text-lg'>No invoices found</p>
+    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem'}}>
+      <div style={{textAlign: 'center', color: '#6b7280'}}>
+        <p style={{fontSize: '1.125rem'}}>No invoices found</p>
       </div>
     </div>
   ),

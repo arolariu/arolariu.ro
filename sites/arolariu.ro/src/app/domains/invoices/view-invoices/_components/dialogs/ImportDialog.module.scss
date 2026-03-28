@@ -151,6 +151,25 @@
   }
 }
 
+// ===========================================
+// DIALOG & TABS
+// ===========================================
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 525px;
+  }
+}
+
+.tabs {
+  width: 100%;
+}
+
+.tabsList {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .statusError {
   display: flex;
   align-items: center;

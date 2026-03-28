@@ -108,30 +108,30 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
               {/* Tabs for Recipes and Metadata */}
               <motion.div variants={itemVariants}>
                 <Tabs defaultValue='recipes'>
-                  <TabsList className='grid w-full grid-cols-2'>
+                  <TabsList className={styles["tabsListGrid"]}>
                     <TabsTrigger
                       value='recipes'
-                      className='cursor-pointer'>
-                      <TbToolsKitchen className='mr-2 h-4 w-4' />
+                      className={styles["cursorPointer"]}>
+                      <TbToolsKitchen className={styles["tabIconSm"]} />
                       Possible Recipes
                     </TabsTrigger>
                     <TabsTrigger
                       value='metadata'
-                      className='cursor-pointer'>
-                      <TbShoppingCart className='mr-2 h-4 w-4' />
+                      className={styles["cursorPointer"]}>
+                      <TbShoppingCart className={styles["tabIconSm"]} />
                       Additional Info
                     </TabsTrigger>
                   </TabsList>
 
                   <TabsContent
                     value='recipes'
-                    className='mt-4'>
+                    className={styles["tabContent"]}>
                     <RecipesTab recipes={invoice.possibleRecipes} />
                   </TabsContent>
 
                   <TabsContent
                     value='metadata'
-                    className='mt-4'>
+                    className={styles["tabContent"]}>
                     <MetadataTab metadata={invoice.additionalMetadata} />
                   </TabsContent>
                 </Tabs>

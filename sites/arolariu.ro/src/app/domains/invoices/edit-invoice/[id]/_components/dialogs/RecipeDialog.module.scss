@@ -64,3 +64,71 @@
 .tooltipText {
   max-width: 20rem; /* max-w-xs */
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+  @include respond-to('md') {
+    max-width: 32rem;
+  }
+}
+
+.dialogContentWide {
+  @include respond-to('sm') {
+    max-width: 32rem;
+  }
+  @include respond-to('md') {
+    max-width: 72rem;
+  }
+}
+
+.dialogFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  @include respond-to('sm') {
+    justify-content: space-between;
+  }
+}
+
+.generateButton {
+  display: flex;
+  align-items: center;
+  gap: space(1);
+}
+
+.mutedIcon {
+  color: color('muted-foreground');
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.icon4 {
+  width: space(4);
+  height: space(4);
+}
+
+.addIcon {
+  margin-right: space(1);
+  width: space(4);
+  height: space(4);
+}
+
+.saveIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.sparklesIcon {
+  width: space(3);
+  height: space(3);
+}
+
+.deleteAction {
+  background-color: color('destructive');
+  color: color('destructive-foreground');
+}

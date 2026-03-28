@@ -74,3 +74,97 @@
   margin-top: space(5);
   font-size: font-size('sm');
 }
+
+.card {
+  overflow: hidden;
+  transition: box-shadow 300ms;
+  &:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+}
+
+.cardHeader {
+  padding-bottom: space(3);
+}
+
+.importantBadge {
+  cursor: pointer;
+  transition: transform 150ms;
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.heartIcon {
+  color: color('destructive');
+  &:hover {
+    color: color('destructive');
+  }
+}
+
+.heartIconFilled {
+  color: color('destructive');
+  fill: color('destructive');
+  &:hover {
+    color: color('destructive');
+  }
+}
+
+.descriptionTextarea {
+  min-height: 5rem;
+  resize: none;
+}
+
+.cardContent {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.mutedIcon {
+  color: color('muted-foreground');
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.dateButton {
+  width: 16rem;
+  justify-content: flex-start;
+  text-align: left;
+  font-weight: font-weight('normal');
+}
+
+.popoverContent {
+  width: auto;
+  padding: space(4);
+}
+
+.calendar {
+  width: 16rem;
+  border-radius: radius('md');
+  border: 1px solid color('border');
+  --cell-size: 2.5rem;
+}
+
+.timeInput {
+  height: 2.25rem;
+  width: 4rem;
+  text-align: center;
+}
+
+.categoryTrigger {
+  width: 10rem;
+}
+
+.paymentTrigger {
+  width: 11.25rem;
+}
+
+.separatorSmall {
+  margin-block: space(2);
+}
+
+.separatorMedium {
+  margin-block: space(3);
+}

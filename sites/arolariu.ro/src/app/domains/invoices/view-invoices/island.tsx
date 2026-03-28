@@ -23,16 +23,16 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
   if (isLoading) {
     return (
       <section className={styles["loadingSection"]}>
-        <Skeleton className='h-24 w-full' />
+        <Skeleton className={styles["skeletonHeader"]} />
         <div className={styles["loadingTabsRow"]}>
-          <Skeleton className='h-10 w-24' />
-          <Skeleton className='h-10 w-24' />
-          <Skeleton className='h-10 w-24' />
+          <Skeleton className={styles["skeletonTab"]} />
+          <Skeleton className={styles["skeletonTab"]} />
+          <Skeleton className={styles["skeletonTab"]} />
         </div>
         <div className={styles["loadingGrid"]}>
-          <Skeleton className='h-48 w-full' />
-          <Skeleton className='h-48 w-full' />
-          <Skeleton className='h-48 w-full' />
+          <Skeleton className={styles["skeletonCard"]} />
+          <Skeleton className={styles["skeletonCard"]} />
+          <Skeleton className={styles["skeletonCard"]} />
         </div>
       </section>
     );
@@ -45,21 +45,21 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
         <motion.article>
           <Tabs
             defaultValue='invoices'
-            className='w-full'>
-            <TabsList className='grid w-full max-w-md grid-cols-3 print:hidden'>
+            className={styles["fullWidth"]}>
+            <TabsList className={styles["tabsList"]}>
               <TabsTrigger
                 value='invoices'
-                className='cursor-pointer'>
+                className={styles["tabTrigger"]}>
                 {t("tabs.invoices")}
               </TabsTrigger>
               <TabsTrigger
                 value='statistics'
-                className='cursor-pointer'>
+                className={styles["tabTrigger"]}>
                 {t("tabs.statistics")}
               </TabsTrigger>
               <TabsTrigger
                 value='liveAnalysis'
-                className='cursor-pointer'>
+                className={styles["tabTrigger"]}>
                 {t("tabs.liveAnalysis")}
               </TabsTrigger>
             </TabsList>

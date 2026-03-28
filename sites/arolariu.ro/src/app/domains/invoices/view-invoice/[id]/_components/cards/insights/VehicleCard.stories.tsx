@@ -21,19 +21,19 @@ type Story = StoryObj<typeof meta>;
 /** Preview of the vehicle insights card. */
 export const Preview: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='flex items-center gap-2 text-lg font-semibold'>🚗 Vehicle &amp; Fuel</h3>
+    <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom:'1px solid #e5e7eb', padding:'1rem'}}>
+        <h3 style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'1.125rem', fontWeight:600}}>🚗 Vehicle &amp; Fuel</h3>
       </div>
-      <div className='space-y-4 p-4'>
+      <div style={{display:'flex', flexDirection:'column', gap:'1rem', padding:'1rem'}}>
         {/* Expense Type */}
-        <div className='flex items-center gap-2 rounded-md bg-amber-50 px-3 py-1.5 dark:bg-amber-900/20'>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem', borderRadius:'0.375rem', backgroundColor:'#fffbeb', paddingLeft:'0.75rem', paddingRight:'0.75rem', paddingTop:'0.375rem', paddingBottom:'0.375rem'}}>
           <span>⛽</span>
-          <span className='text-sm font-medium text-amber-700 dark:text-amber-300'>Fuel Purchase</span>
+          <span style={{fontSize:'0.875rem', fontWeight:500, color:'#b45309'}}>Fuel Purchase</span>
         </div>
 
         {/* Fuel Details Grid */}
-        <div className='grid grid-cols-2 gap-3'>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:'0.75rem'}}>
           {[
             {icon: "⛽", label: "Liters", value: "~45L"},
             {icon: "💰", label: "Price / Liter", value: "6.70 RON"},
@@ -42,63 +42,63 @@ export const Preview: Story = {
           ].map((detail) => (
             <div
               key={detail.label}
-              className='flex items-center gap-2 rounded-md border p-2 dark:border-gray-700'>
+              style={{display:'flex', alignItems:'center', gap:'0.5rem', borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.5rem'}}>
               <span>{detail.icon}</span>
               <div>
-                <p className='text-xs text-gray-500'>{detail.label}</p>
-                <p className={`text-sm font-medium ${detail.muted ? "text-gray-400" : ""}`}>{detail.value}</p>
+                <p style={{fontSize:'0.75rem', color:'#6b7280'}}>{detail.label}</p>
+                <p style={{fontSize:'0.875rem', fontWeight:500, ...(detail.muted ? {color:'#9ca3af'} : {})}}>{detail.value}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Stats Cards */}
-        <div className='grid grid-cols-3 gap-2'>
-          <div className='rounded-md border p-2 text-center dark:border-gray-700'>
-            <span className='text-xs text-gray-500'>This Month</span>
-            <p className='text-sm font-bold'>560 RON</p>
-            <span className='text-xs text-gray-400'>3 fill-ups</span>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap:'0.5rem'}}>
+          <div style={{borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.5rem', textAlign:'center'}}>
+            <span style={{fontSize:'0.75rem', color:'#6b7280'}}>This Month</span>
+            <p style={{fontSize:'0.875rem', fontWeight:700}}>560 RON</p>
+            <span style={{fontSize:'0.75rem', color:'#9ca3af'}}>3 fill-ups</span>
           </div>
-          <div className='rounded-md border p-2 text-center dark:border-gray-700'>
-            <span className='text-xs text-gray-500'>Cost / km</span>
-            <p className='text-sm font-bold'>0.52 RON</p>
-            <span className='text-xs text-gray-400'>Estimated</span>
+          <div style={{borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.5rem', textAlign:'center'}}>
+            <span style={{fontSize:'0.75rem', color:'#6b7280'}}>Cost / km</span>
+            <p style={{fontSize:'0.875rem', fontWeight:700}}>0.52 RON</p>
+            <span style={{fontSize:'0.75rem', color:'#9ca3af'}}>Estimated</span>
           </div>
-          <div className='rounded-md border p-2 text-center dark:border-gray-700'>
-            <span className='text-xs text-gray-500'>Fuel Price</span>
-            <p className='text-sm font-bold text-red-500'>+8%</p>
-            <span className='text-xs text-gray-400'>This month</span>
+          <div style={{borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.5rem', textAlign:'center'}}>
+            <span style={{fontSize:'0.75rem', color:'#6b7280'}}>Fuel Price</span>
+            <p style={{fontSize:'0.875rem', fontWeight:700, color:'#ef4444'}}>+8%</p>
+            <span style={{fontSize:'0.75rem', color:'#9ca3af'}}>This month</span>
           </div>
         </div>
 
         {/* Maintenance Reminders */}
         <div>
-          <p className='mb-1 flex items-center gap-1 text-xs font-semibold text-gray-500'>🛢️ Maintenance</p>
-          <ul className='space-y-1 text-xs text-gray-600 dark:text-gray-400'>
+          <p style={{marginBottom:'0.25rem', display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.75rem', fontWeight:600, color:'#6b7280'}}>🛢️ Maintenance</p>
+          <ul style={{display:'flex', flexDirection:'column', gap:'0.25rem', fontSize:'0.75rem', color:'#4b5563'}}>
             <li>• Oil change due in 2,000 km</li>
             <li>• Tire rotation recommended</li>
           </ul>
         </div>
 
         {/* Tip */}
-        <div className='flex gap-2 rounded-md bg-green-50 p-3 dark:bg-green-900/20'>
+        <div style={{display:'flex', gap:'0.5rem', borderRadius:'0.375rem', backgroundColor:'#f0fdf4', padding:'0.75rem'}}>
           <span>💡</span>
           <div>
-            <p className='text-sm font-medium'>Cheapest Nearby</p>
-            <p className='text-xs text-gray-600 dark:text-gray-400'>MOL Drumul Taberei - 6.55 RON/L</p>
+            <p style={{fontSize:'0.875rem', fontWeight:500}}>Cheapest Nearby</p>
+            <p style={{fontSize:'0.75rem', color:'#4b5563'}}>MOL Drumul Taberei - 6.55 RON/L</p>
           </div>
         </div>
 
         {/* CTA */}
-        <div className='flex gap-2'>
+        <div style={{display:'flex', gap:'0.5rem'}}>
           <button
             type='button'
-            className='flex-1 rounded border px-3 py-1.5 text-sm dark:border-gray-700'>
+            style={{flex:1, borderRadius:'0.25rem', border:'1px solid #e5e7eb', paddingLeft:'0.75rem', paddingRight:'0.75rem', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem'}}>
             Add Vehicle
           </button>
           <button
             type='button'
-            className='flex-1 rounded border px-3 py-1.5 text-sm dark:border-gray-700'>
+            style={{flex:1, borderRadius:'0.25rem', border:'1px solid #e5e7eb', paddingLeft:'0.75rem', paddingRight:'0.75rem', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem'}}>
             Full Report
           </button>
         </div>

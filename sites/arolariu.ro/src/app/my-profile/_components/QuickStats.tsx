@@ -47,8 +47,8 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
             animate={{opacity: 1, scale: 1}}
             transition={{duration: 0.3, delay: index * 0.05}}>
             <Card className={styles["statCard"]}>
-              <CardHeader className='flex flex-row items-center justify-between pb-2'>
-                <CardTitle className='text-sm font-medium'>{t(`${card.key}.title`)}</CardTitle>
+              <CardHeader className={styles["cardHeaderFlex"]}>
+                <CardTitle className={styles["cardTitleSmall"]}>{t(`${card.key}.title`)}</CardTitle>
                 <card.icon className={styles["cardIcon"]} />
               </CardHeader>
               <CardContent>
@@ -65,8 +65,8 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
         <CardHeader>
           <div className={styles["storageHeader"]}>
             <div className={styles["storageInfo"]}>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbCloud className='h-4 w-4' />
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbCloud className={styles["iconSm"]} />
                 {t("storage.title")}
               </CardTitle>
               <CardDescription>{t("storage.description")}</CardDescription>
@@ -79,7 +79,7 @@ export function QuickStats({statistics}: Props): React.JSX.Element {
         <CardContent>
           <Progress
             value={storagePercentage}
-            className='h-2'
+            className={styles["progressHeight"]}
           />
           <p className={styles["storageHint"]}>
             {storagePercentage.toFixed(1)}% {t("storage.used")}

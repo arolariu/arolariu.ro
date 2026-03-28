@@ -32,47 +32,45 @@ type Story = StoryObj<typeof meta>;
 /** Default dialog content with analysis options. */
 export const Default: Story = {
   render: () => (
-    <div className='rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
+    <div style={{borderRadius:"0.75rem", border:"1px solid #e5e7eb", backgroundColor:"#fff", boxShadow:"0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)"}}>
       {/* Header */}
-      <div className='border-b p-6'>
-        <h2 className='flex items-center gap-2 text-lg font-semibold'>
-          <TbScanEye className='h-6 w-6 text-purple-500' />
+      <div style={{borderBottom:"1px solid #e5e7eb", padding:"1.5rem"}}>
+        <h2 style={{display:"flex", alignItems:"center", gap:"0.5rem", fontSize:"1.125rem", fontWeight:600}}>
+          <TbScanEye style={{height:"1.5rem", width:"1.5rem", color:"#a855f7"}} />
           Analyze Invoice
         </h2>
-        <p className='mt-1 text-sm text-gray-500'>
-          Choose analysis type for invoice <code className='rounded bg-gray-100 px-1 text-xs dark:bg-gray-800'>a1b2c3d4</code>...
+        <p style={{marginTop:"0.25rem", fontSize:"0.875rem", color:"#6b7280"}}>
+          Choose analysis type for invoice <code style={{borderRadius:"0.25rem", backgroundColor:"#f3f4f6", paddingInline:"0.25rem", fontSize:"0.75rem"}}>a1b2c3d4</code>...
         </p>
       </div>
 
       {/* Options Grid */}
-      <div className='space-y-4 p-6'>
-        <p className='text-sm font-medium'>Analysis Type</p>
-        <div className='grid grid-cols-2 gap-3'>
+      <div style={{padding:"1.5rem", display:"flex", flexDirection:"column", gap:"1rem"}}>
+        <p style={{fontSize:"0.875rem", fontWeight:500}}>Analysis Type</p>
+        <div style={{display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:"0.75rem"}}>
           {[
-            {icon: <TbBrain className='h-6 w-6' />, title: "Complete Analysis", time: "~30 sec", recommended: true, selected: true},
-            {icon: <TbReceipt className='h-6 w-6' />, title: "Invoice Only", time: "~10 sec", recommended: false, selected: false},
-            {icon: <TbShoppingCart className='h-6 w-6' />, title: "Items Only", time: "~15 sec", recommended: false, selected: false},
-            {icon: <TbBuildingStore className='h-6 w-6' />, title: "Merchant Only", time: "~8 sec", recommended: false, selected: false},
+            {icon: <TbBrain style={{height:"1.5rem", width:"1.5rem"}} />, title: "Complete Analysis", time: "~30 sec", recommended: true, selected: true},
+            {icon: <TbReceipt style={{height:"1.5rem", width:"1.5rem"}} />, title: "Invoice Only", time: "~10 sec", recommended: false, selected: false},
+            {icon: <TbShoppingCart style={{height:"1.5rem", width:"1.5rem"}} />, title: "Items Only", time: "~15 sec", recommended: false, selected: false},
+            {icon: <TbBuildingStore style={{height:"1.5rem", width:"1.5rem"}} />, title: "Merchant Only", time: "~8 sec", recommended: false, selected: false},
           ].map((opt) => (
             <div
               key={opt.title}
-              className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
-                opt.selected ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20" : "border-gray-200 dark:border-gray-700"
-              }`}>
-              <div className='flex items-start justify-between'>
-                <div className={opt.selected ? "text-purple-600" : "text-gray-400"}>{opt.icon}</div>
-                <div className='flex items-center gap-1'>
+              style={{cursor:"pointer", borderRadius:"0.5rem", border:"2px solid", padding:"1rem", transition:"all 150ms", ...(opt.selected ? {borderColor:"#a855f7"} : {borderColor:"#e5e7eb"})}}>
+              <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between"}}>
+                <div style={{...(opt.selected ? {color:"#9333ea"} : {color:"#9ca3af"})}}>{opt.icon}</div>
+                <div style={{display:"flex", alignItems:"center", gap:"0.25rem"}}>
                   {opt.recommended && (
-                    <span className='rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'>
+                    <span style={{borderRadius:"9999px", backgroundColor:"#f3e8ff", paddingInline:"0.5rem", paddingBlock:"0.125rem", fontSize:"0.75rem", color:"#7e22ce"}}>
                       Recommended
                     </span>
                   )}
-                  {opt.selected && <TbCheck className='h-5 w-5 text-purple-500' />}
+                  {opt.selected && <TbCheck style={{height:"1.25rem", width:"1.25rem", color:"#a855f7"}} />}
                 </div>
               </div>
-              <h4 className='mt-2 font-semibold'>{opt.title}</h4>
-              <div className='mt-1 flex items-center gap-1 text-xs text-gray-500'>
-                <TbClock className='h-3 w-3' />
+              <h4 style={{marginTop:"0.5rem", fontWeight:600}}>{opt.title}</h4>
+              <div style={{marginTop:"0.25rem", display:"flex", alignItems:"center", gap:"0.25rem", fontSize:"0.75rem", color:"#6b7280"}}>
+                <TbClock style={{height:"0.75rem", width:"0.75rem"}} />
                 <span>{opt.time}</span>
               </div>
             </div>
@@ -81,43 +79,43 @@ export const Default: Story = {
 
         {/* Features */}
         <div>
-          <p className='mb-2 text-sm font-medium'>Included Features</p>
-          <div className='flex flex-wrap gap-2'>
+          <p style={{marginBottom:"0.5rem", fontSize:"0.875rem", fontWeight:500}}>Included Features</p>
+          <div style={{display:"flex", flexWrap:"wrap", gap:"0.5rem"}}>
             {["OCR Extraction", "Item Categorization", "Merchant ID", "Price Analysis", "Receipt Validation"].map((f) => (
               <span
                 key={f}
-                className='flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs'>
-                <TbCheck className='h-3 w-3 text-green-500' />
+                style={{display:"flex", alignItems:"center", gap:"0.25rem", borderRadius:"9999px", border:"1px solid #e5e7eb", paddingInline:"0.625rem", paddingBlock:"0.25rem", fontSize:"0.75rem"}}>
+                <TbCheck style={{height:"0.75rem", width:"0.75rem", color:"#22c55e"}} />
                 {f}
               </span>
             ))}
           </div>
         </div>
 
-        <hr className='dark:border-gray-700' />
+        <hr  />
 
         {/* Enhancements */}
         <div>
-          <p className='mb-2 text-sm font-medium'>Enhancements (Optional)</p>
-          <div className='space-y-2'>
+          <p style={{marginBottom:"0.5rem", fontSize:"0.875rem", fontWeight:500}}>Enhancements (Optional)</p>
+          <div style={{display:"flex", flexDirection:"column", gap:"0.5rem"}}>
             {[
-              {icon: <TbChartBar className='h-4 w-4' />, label: "Price Comparison", desc: "Compare prices across merchants"},
-              {icon: <TbSparkles className='h-4 w-4' />, label: "Savings Tips", desc: "Get personalized saving recommendations"},
-              {icon: <TbBolt className='h-4 w-4' />, label: "Quick Extract", desc: "Prioritize speed over detail"},
+              {icon: <TbChartBar style={{height:"1rem", width:"1rem"}} />, label: "Price Comparison", desc: "Compare prices across merchants"},
+              {icon: <TbSparkles style={{height:"1rem", width:"1rem"}} />, label: "Savings Tips", desc: "Get personalized saving recommendations"},
+              {icon: <TbBolt style={{height:"1rem", width:"1rem"}} />, label: "Quick Extract", desc: "Prioritize speed over detail"},
             ].map((e) => (
               <div
                 key={e.label}
-                className='flex items-center gap-3'>
+                style={{display:"flex", alignItems:"center", gap:"0.75rem"}}>
                 <input
                   type='checkbox'
-                  className='h-4 w-4 rounded border'
+                  style={{height:"1rem", width:"1rem", borderRadius:"0.25rem", border:"1px solid #e5e7eb"}}
                   readOnly
                 />
-                <div className='flex items-center gap-2'>
+                <div style={{display:"flex", alignItems:"center", gap:"0.5rem"}}>
                   {e.icon}
                   <div>
-                    <p className='text-sm font-medium'>{e.label}</p>
-                    <p className='text-xs text-gray-500'>{e.desc}</p>
+                    <p style={{fontSize:"0.875rem", fontWeight:500}}>{e.label}</p>
+                    <p style={{fontSize:"0.75rem", color:"#6b7280"}}>{e.desc}</p>
                   </div>
                 </div>
               </div>
@@ -127,10 +125,10 @@ export const Default: Story = {
       </div>
 
       {/* Footer */}
-      <div className='flex justify-end gap-2 border-t p-4'>
-        <button className='rounded-md border px-4 py-2 text-sm'>Cancel</button>
-        <button className='flex items-center gap-2 rounded-md bg-purple-600 px-4 py-2 text-sm text-white hover:bg-purple-700'>
-          <TbScanEye className='h-4 w-4' />
+      <div style={{display:"flex", justifyContent:"flex-end", gap:"0.5rem", borderTop:"1px solid #e5e7eb", padding:"1rem"}}>
+        <button style={{borderRadius:"0.375rem", border:"1px solid #e5e7eb", paddingInline:"1rem", paddingBlock:"0.5rem", fontSize:"0.875rem"}}>Cancel</button>
+        <button style={{display:"flex", alignItems:"center", gap:"0.5rem", borderRadius:"0.375rem", backgroundColor:"#9333ea", paddingInline:"1rem", paddingBlock:"0.5rem", fontSize:"0.875rem", color:"#fff"}}>
+          <TbScanEye style={{height:"1rem", width:"1rem"}} />
           Start Analysis
         </button>
       </div>

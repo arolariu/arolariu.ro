@@ -56,3 +56,84 @@
   list-style-type: disc;
   padding-left: space(5);
 }
+
+.card {
+  overflow: hidden;
+  transition: box-shadow 300ms;
+  &:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+}
+
+.complexityBadge {
+  margin-top: space(1);
+}
+
+.cardAction {
+  margin-bottom: space(2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.icon4 {
+  width: space(4);
+  height: space(4);
+}
+
+.menuItem {
+  cursor: pointer;
+}
+
+.menuIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.menuItemDestructive {
+  cursor: pointer;
+  color: color('destructive');
+}
+
+.menuItemAccent {
+  cursor: pointer;
+  color: color('primary');
+}
+
+.menuItemMuted {
+  cursor: pointer;
+  color: color('muted-foreground');
+}
+
+.cardContent {
+  height: 100%;
+  padding: space(4);
+}
+
+.tooltipContent {
+  max-width: 20rem;
+}
+
+.timeIcon {
+  margin-right: space(1);
+  width: space(3);
+  height: space(3);
+}
+
+.cardFooter {
+  background-color: color-alpha('muted', 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: space(2);
+  padding-inline: space(4);
+  padding-block: space(2);
+}
+
+.externalLinkIcon {
+  margin-left: space(2);
+  width: space(3);
+  height: space(3);
+  transition: transform 150ms;
+}

@@ -402,7 +402,7 @@ function setupThemePresetSync(): void {
     const root = document.documentElement;
 
     // Set data attribute — SCSS handles named preset variables
-    root.setAttribute("data-theme-preset", state.themePreset);
+    root.dataset["themePreset"] = state.themePreset;
 
     if (state.themePreset === "custom" && state.customThemeColors) {
       applyCustomThemeColors(root, state.customThemeColors);

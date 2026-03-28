@@ -87,3 +87,37 @@
   border-radius: radius('md');
   border: 1px solid color('border');
 }
+
+.searchInput {
+  padding-left: space(8);
+}
+
+.selectTrigger {
+  width: 150px;
+  cursor: pointer;
+}
+
+.selectItem {
+  cursor: pointer;
+}
+
+.filterButton {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: space(1);
+}
+
+.viewButtonLeft {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.viewButtonRight {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.tooltipTrigger {
+  cursor: pointer;
+}

@@ -27,9 +27,7 @@ export function InvoiceHeader(): React.JSX.Element {
             <h1 className={styles["title"]}>{invoice.name}</h1>
             {Boolean(invoice.isImportant) && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <TbHeart className='h-5 w-5 fill-red-500 text-red-500' />
-                </TooltipTrigger>
+                <TooltipTrigger render={<TbHeart className={styles["heartIcon"]} />} />
                 <TooltipContent>
                   <p>{t("tooltips.importantInvoice")}</p>
                 </TooltipContent>
@@ -42,29 +40,29 @@ export function InvoiceHeader(): React.JSX.Element {
           {Boolean(isOwner) && (
             <>
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger render={
                   <Link
                     href={`/domains/invoices/edit-invoice/${invoice.id}`}
                     className={styles["editLink"]}>
                     <Button>
-                      <TbPencil className='mr-2 h-4 w-4' />
+                      <TbPencil className={styles["buttonIcon"]} />
                       {t("buttons.edit")}
                     </Button>
                   </Link>
-                </TooltipTrigger>
+                } />
                 <TooltipContent>
                   <p>{t("tooltips.edit")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger render={
                   <Button
                     variant='destructive'
                     onClick={openDeleteDialog}>
-                    <TbTrash className='mr-2 h-4 w-4' />
+                    <TbTrash className={styles["buttonIcon"]} />
                     {t("buttons.delete")}
                   </Button>
-                </TooltipTrigger>
+                } />
                 <TooltipContent>
                   <p>{t("tooltips.delete")}</p>
                 </TooltipContent>
@@ -72,12 +70,12 @@ export function InvoiceHeader(): React.JSX.Element {
             </>
           )}
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button variant='outline'>
-                <TbPrinter className='mr-2 h-4 w-4' />
+                <TbPrinter className={styles["buttonIcon"]} />
                 {t("buttons.print")}
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>
               <p>{t("tooltips.print")}</p>
             </TooltipContent>

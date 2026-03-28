@@ -19,33 +19,33 @@ type Story = StoryObj<typeof meta>;
 /** Default header with scans and sync info. */
 export const Default: Story = {
   render: () => (
-    <div className='flex flex-col gap-4 bg-white px-6 py-4 md:flex-row md:items-center md:justify-between dark:bg-gray-900'>
-      <div className='flex items-center gap-2'>
+    <div style={{display: "flex", flexDirection: "column", gap: "1rem", backgroundColor: "white", paddingInline: "1.5rem", paddingBlock: "1rem"}}>
+      <div style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
         <div>
-          <h1 className='text-2xl font-bold tracking-tight'>Your Scans (12)</h1>
-          <p className='text-sm text-gray-500'>Last synced: 5m ago</p>
+          <h1 style={{fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.025em"}}>Your Scans (12)</h1>
+          <p style={{fontSize: "0.875rem", color: "#6b7280"}}>Last synced: 5m ago</p>
         </div>
         <button
           type='button'
-          className='mt-1 text-gray-400 hover:text-gray-600'
+          style={{marginTop: "0.25rem", color: "#9ca3af"}}
           title='Scans are stored locally and synced with the server'>
           ℹ️
         </button>
       </div>
-      <div className='flex gap-2'>
+      <div style={{display: "flex", gap: "0.5rem"}}>
         <button
           type='button'
-          className='flex items-center gap-2 rounded-md bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm text-white'>
+          style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", backgroundImage: "linear-gradient(to right, #2563eb, #06b6d4)", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "white"}}>
           📤 Upload More
         </button>
         <button
           type='button'
-          className='flex items-center gap-2 rounded-md border px-4 py-2 text-sm dark:border-gray-600'>
+          style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid #e5e7eb", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem"}}>
           📄 My Invoices
         </button>
         <button
           type='button'
-          className='flex items-center gap-2 rounded-md border px-4 py-2 text-sm dark:border-gray-600'>
+          style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid #e5e7eb", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem"}}>
           🔄 Sync
         </button>
       </div>
@@ -56,22 +56,22 @@ export const Default: Story = {
 /** Syncing state. */
 export const Syncing: Story = {
   render: () => (
-    <div className='flex flex-col gap-4 bg-white px-6 py-4 md:flex-row md:items-center md:justify-between dark:bg-gray-900'>
+    <div style={{display: "flex", flexDirection: "column", gap: "1rem", backgroundColor: "white", paddingInline: "1.5rem", paddingBlock: "1rem"}}>
       <div>
-        <h1 className='text-2xl font-bold tracking-tight'>Your Scans (12)</h1>
-        <p className='text-sm text-gray-500'>Syncing...</p>
+        <h1 style={{fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.025em"}}>Your Scans (12)</h1>
+        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>Syncing...</p>
       </div>
-      <div className='flex gap-2'>
+      <div style={{display: "flex", gap: "0.5rem"}}>
         <button
           type='button'
-          className='rounded-md bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2 text-sm text-white'>
+          style={{borderRadius: "0.375rem", backgroundImage: "linear-gradient(to right, #2563eb, #06b6d4)", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "white"}}>
           📤 Upload
         </button>
         <button
           type='button'
           disabled
-          className='flex items-center gap-2 rounded-md border px-4 py-2 text-sm opacity-50 dark:border-gray-600'>
-          <span className='animate-spin'>🔄</span> Syncing...
+          style={{display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid #e5e7eb", paddingInline: "1rem", paddingBlock: "0.5rem", fontSize: "0.875rem", opacity: 0.5}}>
+          <span>🔄</span> Syncing...
         </button>
       </div>
     </div>

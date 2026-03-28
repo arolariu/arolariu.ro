@@ -67,3 +67,35 @@
   font-size: font-size('xs');
   color: color('muted-foreground');
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.cardHeaderFlex {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+}
+
+.cardTitleSmall {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.cardTitleBase {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.iconSm {
+  height: 1rem;
+  width: 1rem;
+}
+
+.progressHeight {
+  height: 0.5rem;
+}

@@ -20,106 +20,105 @@ type Story = StoryObj<typeof meta>;
 export const MixedStates: Story = {
   render: () => (
     <div>
-      <div className='mb-4'>
-        <h2 className='text-lg font-semibold'>Pending Uploads (4)</h2>
+      <div style={{marginBottom: "1rem"}}>
+        <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Pending Uploads (4)</h2>
       </div>
-      <div className='grid gap-4 sm:grid-cols-2 md:grid-cols-4'>
+      <div style={{display: "grid", gap: "1rem", gridTemplateColumns: "repeat(4, 1fr)"}}>
         {/* Pending */}
-        <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
-          <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
+          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
             <img
               src='https://picsum.photos/seed/upload1/400/300'
               alt='Pending upload'
-              className='h-full w-full object-cover'
+              style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
-            <div className='absolute top-2 right-2'>
-              <span className='rounded-full bg-gray-500/80 px-2 py-0.5 text-xs text-white'>Pending</span>
+            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
+              <span style={{borderRadius: "9999px", backgroundColor: "rgba(107,114,128,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Pending</span>
             </div>
             <button
               type='button'
-              className='absolute top-2 left-2 rounded-full bg-black/50 p-1 text-white'>
+              style={{position: "absolute", top: "0.5rem", left: "0.5rem", borderRadius: "9999px", backgroundColor: "rgba(0,0,0,0.5)", padding: "0.25rem", color: "white"}}>
               🗑
             </button>
           </div>
-          <div className='p-2'>
-            <p className='truncate text-sm font-medium'>receipt-01.jpg</p>
-            <p className='text-xs text-gray-500'>1.2 MB</p>
+          <div style={{padding: "0.5rem"}}>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>receipt-01.jpg</p>
+            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>1.2 MB</p>
           </div>
         </div>
 
         {/* Uploading */}
-        <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
-          <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
+          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
             <img
               src='https://picsum.photos/seed/upload2/400/300'
               alt='Uploading scan'
-              className='h-full w-full object-cover'
+              style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
-            <div className='absolute inset-0 flex items-center justify-center bg-blue-500/30'>
-              <span className='animate-spin text-2xl'>⏳</span>
+            <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(59,130,246,0.3)"}}>
+              <span style={{fontSize: "1.5rem"}}>⏳</span>
             </div>
-            <div className='absolute top-2 right-2'>
-              <span className='rounded-full bg-blue-500/80 px-2 py-0.5 text-xs text-white'>Uploading</span>
+            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
+              <span style={{borderRadius: "9999px", backgroundColor: "rgba(59,130,246,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Uploading</span>
             </div>
           </div>
-          <div className='p-2'>
-            <p className='truncate text-sm font-medium'>receipt-02.png</p>
-            <p className='text-xs text-gray-500'>2.5 MB</p>
-            <div className='mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-200 dark:bg-gray-700'>
+          <div style={{padding: "0.5rem"}}>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>receipt-02.png</p>
+            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>2.5 MB</p>
+            <div style={{marginTop: "0.25rem", height: "0.375rem", width: "100%", overflow: "hidden", borderRadius: "0.25rem", backgroundColor: "#e5e7eb"}}>
               <div
-                className='h-full bg-blue-500'
-                style={{width: "65%"}}
+                style={{height: "100%", backgroundColor: "#3b82f6", width: "65%"}}
               />
             </div>
-            <p className='text-xs text-gray-500'>65%</p>
+            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>65%</p>
           </div>
         </div>
 
         {/* Completed */}
-        <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
-          <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
+          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
             <img
               src='https://picsum.photos/seed/upload3/400/300'
               alt='Completed upload'
-              className='h-full w-full object-cover'
+              style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
-            <div className='absolute inset-0 flex items-center justify-center bg-green-500/30'>
-              <span className='text-2xl'>✅</span>
+            <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(34,197,94,0.3)"}}>
+              <span style={{fontSize: "1.5rem"}}>✅</span>
             </div>
-            <div className='absolute top-2 right-2'>
-              <span className='rounded-full bg-green-500/80 px-2 py-0.5 text-xs text-white'>Completed</span>
+            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
+              <span style={{borderRadius: "9999px", backgroundColor: "rgba(34,197,94,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Completed</span>
             </div>
           </div>
-          <div className='p-2'>
-            <p className='truncate text-sm font-medium'>receipt-03.jpg</p>
-            <p className='text-xs text-gray-500'>800 KB</p>
+          <div style={{padding: "0.5rem"}}>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>receipt-03.jpg</p>
+            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>800 KB</p>
           </div>
         </div>
 
         {/* Failed */}
-        <div className='overflow-hidden rounded-lg border bg-white dark:bg-gray-900'>
-          <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+        <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white"}}>
+          <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
             <img
               src='https://picsum.photos/seed/upload4/400/300'
               alt='Failed upload'
-              className='h-full w-full object-cover'
+              style={{height: "100%", width: "100%", objectFit: "cover"}}
             />
-            <div className='absolute inset-0 flex items-center justify-center bg-red-500/30'>
-              <span className='text-2xl'>❌</span>
+            <div style={{position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(239,68,68,0.3)"}}>
+              <span style={{fontSize: "1.5rem"}}>❌</span>
             </div>
-            <div className='absolute top-2 right-2'>
-              <span className='rounded-full bg-red-500/80 px-2 py-0.5 text-xs text-white'>Failed</span>
+            <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
+              <span style={{borderRadius: "9999px", backgroundColor: "rgba(239,68,68,0.8)", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "white"}}>Failed</span>
             </div>
             <button
               type='button'
-              className='absolute top-2 left-2 rounded-full bg-black/50 p-1 text-white'>
+              style={{position: "absolute", top: "0.5rem", left: "0.5rem", borderRadius: "9999px", backgroundColor: "rgba(0,0,0,0.5)", padding: "0.25rem", color: "white"}}>
               🗑
             </button>
           </div>
-          <div className='p-2'>
-            <p className='truncate text-sm font-medium'>invoice.pdf</p>
-            <p className='text-xs text-gray-500'>5.1 MB</p>
-            <p className='text-xs text-red-500'>Upload failed. Please try again.</p>
+          <div style={{padding: "0.5rem"}}>
+            <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>invoice.pdf</p>
+            <p style={{fontSize: "0.75rem", color: "#6b7280"}}>5.1 MB</p>
+            <p style={{fontSize: "0.75rem", color: "#ef4444"}}>Upload failed. Please try again.</p>
           </div>
         </div>
       </div>

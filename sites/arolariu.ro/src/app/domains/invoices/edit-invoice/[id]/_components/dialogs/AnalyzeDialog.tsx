@@ -101,7 +101,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
       id: InvoiceAnalysisOptions.CompleteAnalysis,
       title: t("options.completeAnalysis.title"),
       description: t("options.completeAnalysis.description"),
-      icon: <TbBrain className='h-6 w-6' />,
+      icon: <TbBrain className={styles["optionIcon"]} />,
       estimatedTime: t("options.completeAnalysis.estimatedTime"),
       features: [
         t("options.completeAnalysis.features.ocrExtraction"),
@@ -116,7 +116,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
       id: InvoiceAnalysisOptions.InvoiceOnly,
       title: t("options.invoiceOnly.title"),
       description: t("options.invoiceOnly.description"),
-      icon: <TbReceipt className='h-6 w-6' />,
+      icon: <TbReceipt className={styles["optionIcon"]} />,
       estimatedTime: t("options.invoiceOnly.estimatedTime"),
       features: [
         t("options.invoiceOnly.features.totalExtraction"),
@@ -128,7 +128,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
       id: InvoiceAnalysisOptions.InvoiceItemsOnly,
       title: t("options.itemsOnly.title"),
       description: t("options.itemsOnly.description"),
-      icon: <TbShoppingCart className='h-6 w-6' />,
+      icon: <TbShoppingCart className={styles["optionIcon"]} />,
       estimatedTime: t("options.itemsOnly.estimatedTime"),
       features: [
         t("options.itemsOnly.features.itemExtraction"),
@@ -141,7 +141,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
       id: InvoiceAnalysisOptions.InvoiceMerchantOnly,
       title: t("options.merchantOnly.title"),
       description: t("options.merchantOnly.description"),
-      icon: <TbBuildingStore className='h-6 w-6' />,
+      icon: <TbBuildingStore className={styles["optionIcon"]} />,
       estimatedTime: t("options.merchantOnly.estimatedTime"),
       features: [
         t("options.merchantOnly.features.merchantIdentification"),
@@ -157,19 +157,19 @@ export default function AnalyzeDialog(): React.JSX.Element {
       id: "priceComparison",
       label: t("enhancements.priceComparison.label"),
       description: t("enhancements.priceComparison.description"),
-      icon: <TbChartBar className='h-4 w-4' />,
+      icon: <TbChartBar className={styles["enhancementSmallIcon"]} />,
     },
     {
       id: "savingsTips",
       label: t("enhancements.savingsTips.label"),
       description: t("enhancements.savingsTips.description"),
-      icon: <TbSparkles className='h-4 w-4' />,
+      icon: <TbSparkles className={styles["enhancementSmallIcon"]} />,
     },
     {
       id: "quickExtract",
       label: t("enhancements.quickExtract.label"),
       description: t("enhancements.quickExtract.description"),
-      icon: <TbBolt className='h-4 w-4' />,
+      icon: <TbBolt className={styles["enhancementSmallIcon"]} />,
     },
   ];
 
@@ -274,10 +274,10 @@ export default function AnalyzeDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-2xl md:max-w-4xl'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
-            <TbScanEye className='h-6 w-6 text-purple-500' />
+          <DialogTitle className={styles["dialogTitle"]}>
+            <TbScanEye className={styles["scanIcon"]} />
             {t("header.title")}
           </DialogTitle>
           <DialogDescription>
@@ -298,7 +298,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   animate={{rotate: 360}}
                   transition={{duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
                   className={styles["spinnerIcon"]}>
-                  <TbLoader2 className='h-12 w-12 text-purple-500' />
+                  <TbLoader2 className={styles["spinnerLargeIcon"]} />
                 </motion.div>
                 <h3 className={styles["analyzingTitle"]}>{t("analyzing.title")}</h3>
                 <p className={styles["analyzingStep"]}>{currentStep}</p>
@@ -306,7 +306,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
               <div className={styles["progressWrapper"]}>
                 <Progress
                   value={progress}
-                  className='h-2'
+                  className={styles["progressBar"]}
                 />
                 <p className={styles["progressText"]}>{t("analyzing.progressComplete", {progress: String(Math.round(progress))})}</p>
               </div>
@@ -320,17 +320,15 @@ export default function AnalyzeDialog(): React.JSX.Element {
               className={styles["optionsSection"]}>
               {/* Analysis Type Selection */}
               <div className={styles["sectionLabel"]}>
-                <Label className='text-base font-medium'>{t("sections.analysisType")}</Label>
+                <Label className={styles["sectionLabelLarge"]}>{t("sections.analysisType")}</Label>
                 <div className={styles["optionsGrid"]}>
                   {analysisOptions.map((option) => (
                     <Card
                       key={option.id}
                       data-option-id={option.id}
                       onClick={handleOptionSelect}
-                      className={`cursor-pointer transition-all duration-200 ${
-                        selectedOption === option.id ? styles["optionCardSelected"] : styles["optionCardDefault"]
-                      }`}>
-                      <CardHeader className='pb-2'>
+                      className={selectedOption === option.id ? styles["optionCardSelected"] : styles["optionCardDefault"]}>
+                      <CardHeader className={styles["optionCardHeader"]}>
                         <div className={styles["optionHeader"]}>
                           <div className={selectedOption === option.id ? styles["optionIconSelected"] : styles["optionIconDefault"]}>
                             {option.icon}
@@ -339,19 +337,19 @@ export default function AnalyzeDialog(): React.JSX.Element {
                             {option.recommended ? (
                               <Badge
                                 variant='secondary'
-                                className='bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'>
+                                className={styles["recommendedBadge"]}>
                                 {t("badges.recommended")}
                               </Badge>
                             ) : null}
-                            {selectedOption === option.id && <TbCheck className='h-5 w-5 text-purple-500' />}
+                            {selectedOption === option.id && <TbCheck className={styles["checkIcon"]} />}
                           </div>
                         </div>
-                        <CardTitle className='text-base'>{option.title}</CardTitle>
-                        <CardDescription className='text-xs'>{option.description}</CardDescription>
+                        <CardTitle className={styles["optionTitle"]}>{option.title}</CardTitle>
+                        <CardDescription className={styles["optionDescription"]}>{option.description}</CardDescription>
                       </CardHeader>
-                      <CardContent className='pt-0'>
+                      <CardContent className={styles["optionContent"]}>
                         <div className={styles["optionTime"]}>
-                          <TbClock className='h-3 w-3' />
+                          <TbClock className={styles["clockIcon"]} />
                           <span>{option.estimatedTime}</span>
                         </div>
                       </CardContent>
@@ -366,14 +364,14 @@ export default function AnalyzeDialog(): React.JSX.Element {
                   initial={{opacity: 0, height: 0}}
                   animate={{opacity: 1, height: "auto"}}
                   className={styles["featuresSection"]}>
-                  <Label className='text-sm font-medium'>{t("sections.includedFeatures")}</Label>
+                  <Label className={styles["sectionLabelText"]}>{t("sections.includedFeatures")}</Label>
                   <div className={styles["featuresList"]}>
                     {selectedConfig.features.map((feature) => (
                       <Badge
                         key={feature}
                         variant='outline'
-                        className='gap-1'>
-                        <TbCheck className='h-3 w-3 text-green-500' />
+                        className={styles["featureBadge"]}>
+                        <TbCheck className={styles["checkIconSmall"]} />
                         {feature}
                       </Badge>
                     ))}
@@ -385,7 +383,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
 
               {/* Analysis Enhancements */}
               <div className={styles["enhancementsSection"]}>
-                <Label className='text-base font-medium'>{t("sections.enhancementsOptional")}</Label>
+                <Label className={styles["sectionLabelLarge"]}>{t("sections.enhancementsOptional")}</Label>
                 <div className={styles["enhancementsSection"]}>
                   {analysisEnhancements.map((enhancement) => (
                     <div
@@ -402,7 +400,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
                         <div className={styles["enhancementText"]}>
                           <Label
                             htmlFor={enhancement.id}
-                            className='cursor-pointer font-medium'>
+                            className={styles["enhancementLabel"]}>
                             {enhancement.label}
                           </Label>
                           <p className={styles["enhancementDesc"]}>{enhancement.description}</p>
@@ -414,10 +412,10 @@ export default function AnalyzeDialog(): React.JSX.Element {
               </div>
 
               {/* Analysis Summary */}
-              <Card className='bg-muted/30'>
+              <Card className={styles["summaryCard"]}>
                 <CardContent className={styles["summaryContent"]}>
                   <div className={styles["summaryLeft"]}>
-                    <TbFileAnalytics className='h-8 w-8 text-purple-500' />
+                    <TbFileAnalytics className={styles["analyticsIcon"]} />
                     <div>
                       <p className={styles["summaryTitle"]}>{selectedConfig?.title}</p>
                       <p className={styles["summarySubtext"]}>
@@ -437,7 +435,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
           )}
         </AnimatePresence>
 
-        <DialogFooter className='gap-2 sm:gap-0'>
+        <DialogFooter className={styles["dialogFooter"]}>
           <Button
             type='button'
             variant='outline'
@@ -452,12 +450,12 @@ export default function AnalyzeDialog(): React.JSX.Element {
             className={styles["analyzeButton"]}>
             {isAnalyzing ? (
               <>
-                <TbLoader2 className='mr-2 h-4 w-4 animate-spin' />
+                <TbLoader2 className={styles["buttonSpinner"]} />
                 {t("buttons.analyzing")}
               </>
             ) : (
               <>
-                <TbScanEye className='mr-2 h-4 w-4' />
+                <TbScanEye className={styles["buttonScanIcon"]} />
                 {t("buttons.startAnalysis")}
               </>
             )}

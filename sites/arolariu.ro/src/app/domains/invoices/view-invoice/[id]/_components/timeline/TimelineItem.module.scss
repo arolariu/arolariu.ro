@@ -91,3 +91,25 @@
   color: color('muted-foreground');
   margin-top: space(1);
 }
+
+.infoButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  cursor: help;
+  color: color('muted-foreground');
+  @include transition(color);
+
+  &:hover {
+    color: color('foreground');
+  }
+}
+
+.infoIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.tooltipContent {
+  max-width: 20rem;
+  font-size: font-size('xs');
+}

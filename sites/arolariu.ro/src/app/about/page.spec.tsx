@@ -101,10 +101,11 @@ test.describe("About Section @about", () => {
     test(tagged("should navigate between about subpages", TEST_TYPE_TAGS.E2E), async ({safeNavigate, page}) => {
       await safeNavigate("/about/");
 
-      // Try to find and click on author link if present
-      const authorLink = page.getByRole("link", {name: /author/i}).first();
+      // Find the navigation link to the author page (exclude anchor-only links)
+      const authorLink = page.locator('a[href="/about/the-author"]').first();
       if (await authorLink.isVisible({timeout: 3000})) {
-        await authorLink.click({noWaitAfter: true});
+        await authorLink.click();
+        await page.waitForURL(/the-author/, {timeout: 15000});
         await expect(page).toHaveURL(/the-author/);
       }
     });

@@ -130,3 +130,62 @@
 .statValueRed {
   color: color('destructive');
 }
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('lg');
+}
+
+.titleIcon {
+  @include icon-size(space(5));
+  color: color('info');
+}
+
+.contentSpaced {
+  @include spaced-children(space(5));
+}
+
+.iconAmber {
+  @include icon-size(space(4));
+  color: color('warning');
+}
+
+.iconGreen {
+  @include icon-size(space(4));
+  color: color('success');
+}
+
+.iconRed {
+  @include icon-size(space(4));
+  color: color('destructive');
+}
+
+.iconBlue {
+  @include icon-size(space(4));
+  color: color('info');
+}
+
+.iconGray {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.chartWrapper {
+  height: 120px;
+  width: 100%;
+}
+
+.habitIconWrapper {
+  @include icon-size(space(4));
+  margin-inline: auto;
+  margin-bottom: space(1);
+}
+
+.tipIcon {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+  margin-top: space(0.5);
+  color: color('success');
+}

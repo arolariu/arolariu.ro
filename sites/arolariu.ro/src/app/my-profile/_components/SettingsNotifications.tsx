@@ -80,9 +80,9 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.05}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbMail className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbMail className={styles["iconSm"]} />
                 {t("email.title")}
               </CardTitle>
               <CardDescription>{t("email.description")}</CardDescription>
@@ -108,19 +108,19 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.1}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbReport className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbReport className={styles["iconSm"]} />
                 {t("reports.title")}
               </CardTitle>
               <CardDescription>{t("reports.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <Select
                 value={settings.reportFrequency}
                 onValueChange={handleFrequencyChange}
                 disabled={!settings.emailEnabled}>
-                <SelectTrigger className='cursor-pointer'>
+                <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,14 +167,14 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.15}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbWallet className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbWallet className={styles["iconSm"]} />
                 {t("financial.title")}
               </CardTitle>
               <CardDescription>{t("financial.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
                   <Label>{t("financial.spendingAlerts")}</Label>
@@ -208,14 +208,14 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.2}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbSparkles className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbSparkles className={styles["iconSm"]} />
                 {t("updates.title")}
               </CardTitle>
               <CardDescription>{t("updates.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
                   <Label>{t("updates.newFeatures")}</Label>
@@ -249,9 +249,9 @@ export function SettingsNotifications({settings, onSettingsChange}: Props): Reac
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.25}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbShield className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbShield className={styles["iconSm"]} />
                 {t("security.title")}
               </CardTitle>
               <CardDescription>{t("security.description")}</CardDescription>

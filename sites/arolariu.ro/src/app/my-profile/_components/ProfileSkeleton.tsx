@@ -11,20 +11,20 @@ export function ProfileSkeleton(): React.JSX.Element {
         <div className={styles["banner"]} />
         <CardContent className={styles["headerBody"]}>
           <div className={styles["headerRow"]}>
-            <Skeleton className='h-24 w-24 rounded-full' />
+            <Skeleton style={{height: '6rem', width: '6rem', borderRadius: '9999px'}} />
             <div className={styles["textGroup"]}>
-              <Skeleton className='h-6 w-48' />
-              <Skeleton className='h-4 w-32' />
+              <Skeleton style={{height: '1.5rem', width: '12rem'}} />
+              <Skeleton style={{height: '1rem', width: '8rem'}} />
               <div className={styles["badgeRow"]}>
-                <Skeleton className='h-5 w-24' />
-                <Skeleton className='h-5 w-24' />
-                <Skeleton className='h-5 w-24' />
+                <Skeleton style={{height: '1.25rem', width: '6rem'}} />
+                <Skeleton style={{height: '1.25rem', width: '6rem'}} />
+                <Skeleton style={{height: '1.25rem', width: '6rem'}} />
               </div>
             </div>
           </div>
           <div className={styles["progressGroup"]}>
-            <Skeleton className='h-4 w-full' />
-            <Skeleton className='h-2 w-full' />
+            <Skeleton style={{height: '1rem', width: '100%'}} />
+            <Skeleton style={{height: '0.5rem', width: '100%'}} />
           </div>
         </CardContent>
       </Card>
@@ -46,14 +46,14 @@ export function ProfileSkeleton(): React.JSX.Element {
               <Card key={`skeleton-card-${index.toString()}`}>
                 <CardHeader>
                   <div className={styles["cardHeaderRow"]}>
-                    <Skeleton className='h-4 w-4' />
-                    <Skeleton className='h-4 w-32' />
+                    <Skeleton style={{height: '1rem', width: '1rem'}} />
+                    <Skeleton style={{height: '1rem', width: '8rem'}} />
                   </div>
-                  <Skeleton className='h-3 w-48' />
+                  <Skeleton style={{height: '0.75rem', width: '12rem'}} />
                 </CardHeader>
-                <CardContent className='space-y-4'>
-                  <Skeleton className='h-10 w-full' />
-                  <Skeleton className='h-10 w-full' />
+                <CardContent className={styles["cardContentSpaceY"]}>
+                  <Skeleton style={{height: '2.5rem', width: '100%'}} />
+                  <Skeleton style={{height: '2.5rem', width: '100%'}} />
                 </CardContent>
               </Card>
             ))}

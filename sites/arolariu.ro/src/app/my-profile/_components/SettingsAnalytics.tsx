@@ -80,9 +80,9 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.05}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbChartBar className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbChartBar className={styles["iconSm"]} />
                 {t("enabled.title")}
               </CardTitle>
               <CardDescription>{t("enabled.description")}</CardDescription>
@@ -108,9 +108,9 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.1}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbClock className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbClock className={styles["iconSm"]} />
                 {t("granularity.title")}
               </CardTitle>
               <CardDescription>{t("granularity.description")}</CardDescription>
@@ -120,7 +120,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
                 value={settings.granularity}
                 onValueChange={handleGranularityChange}
                 disabled={!settings.enabled}>
-                <SelectTrigger className='cursor-pointer'>
+                <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -143,9 +143,9 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.15}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbDownload className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbDownload className={styles["iconSm"]} />
                 {t("export.title")}
               </CardTitle>
               <CardDescription>{t("export.description")}</CardDescription>
@@ -154,7 +154,7 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
               <Select
                 value={settings.exportFormat}
                 onValueChange={handleExportFormatChange}>
-                <SelectTrigger className='cursor-pointer'>
+                <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -173,14 +173,14 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.2}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbChartPie className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbChartPie className={styles["iconSm"]} />
                 {t("tracking.title")}
               </CardTitle>
               <CardDescription>{t("tracking.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
                   <Label>{t("tracking.spending")}</Label>
@@ -226,14 +226,14 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.25}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbTrendingUp className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbTrendingUp className={styles["iconSm"]} />
                 {t("advanced.title")}
               </CardTitle>
               <CardDescription>{t("advanced.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
                   <Label>{t("advanced.benchmarking")}</Label>
@@ -268,9 +268,9 @@ export function SettingsAnalytics({settings, onSettingsChange}: Props): React.JS
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.3}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbDatabase className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbDatabase className={styles["iconSm"]} />
                 {t("dataUsage.title")}
               </CardTitle>
             </CardHeader>

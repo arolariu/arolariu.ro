@@ -30,3 +30,43 @@
     margin-top: space(2);
   }
 }
+
+.card {
+  transition: box-shadow 300ms;
+  &:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+}
+
+.cardContent {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.primaryIcon {
+  color: color('primary');
+  width: space(5);
+  height: space(5);
+}
+
+.actionButton {
+  width: 100%;
+  cursor: pointer;
+}
+
+.arrowIcon {
+  margin-left: space(2);
+  width: space(4);
+  height: space(4);
+  transition: transform 150ms;
+  .actionButton:hover & {
+    transform: translateX(space(1));
+  }
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}

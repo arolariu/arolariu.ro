@@ -19,34 +19,34 @@ type Story = StoryObj<typeof meta>;
 /** Static preview of the image card with a placeholder receipt image. */
 export const Preview: Story = {
   render: () => (
-    <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='flex items-center justify-between border-b p-4'>
-        <h3 className='text-lg font-semibold'>Receipt Scan</h3>
+    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
+        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Receipt Scan</h3>
       </div>
-      <div className='flex justify-center p-4'>
-        <div className='relative h-[300px] w-[200px] overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
+      <div style={{display: "flex", justifyContent: "center", padding: "1rem"}}>
+        <div style={{position: "relative", height: "300px", width: "200px", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6"}}>
           <img
             src='https://picsum.photos/seed/imagecard/400/600'
             alt='Receipt scan'
-            className='h-full w-full object-cover'
+            style={{height: "100%", width: "100%", objectFit: "cover"}}
           />
         </div>
       </div>
-      <div className='flex flex-col gap-2 border-t p-4'>
+      <div style={{display: "flex", flexDirection: "column", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
         <button
           type='button'
-          className='w-full rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:border-gray-600'>
+          style={{width: "100%", borderRadius: "0.375rem", border: "1px solid #d1d5db", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
           🔍 Expand
         </button>
-        <div className='flex gap-2'>
+        <div style={{display: "flex", gap: "0.5rem"}}>
           <button
             type='button'
-            className='flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600'>
+            style={{flex: 1, borderRadius: "0.375rem", border: "1px solid #d1d5db", padding: "0.5rem 0.75rem", fontSize: "0.875rem"}}>
             ➕ Add Scan
           </button>
           <button
             type='button'
-            className='flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-red-500 dark:border-gray-600'>
+            style={{flex: 1, borderRadius: "0.375rem", border: "1px solid #d1d5db", padding: "0.5rem 0.75rem", fontSize: "0.875rem", color: "#ef4444"}}>
             🗑 Remove
           </button>
         </div>
@@ -58,34 +58,34 @@ export const Preview: Story = {
 /** Multiple scans with navigation indicators. */
 export const MultipleScans: Story = {
   render: () => (
-    <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='flex items-center justify-between border-b p-4'>
-        <h3 className='text-lg font-semibold'>Receipt Scan (2/3)</h3>
+    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
+        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Receipt Scan (2/3)</h3>
       </div>
-      <div className='flex justify-center p-4'>
-        <div className='relative h-[300px] w-[200px] overflow-hidden rounded-md border bg-gray-100 dark:bg-gray-800'>
+      <div style={{display: "flex", justifyContent: "center", padding: "1rem"}}>
+        <div style={{position: "relative", height: "300px", width: "200px", overflow: "hidden", borderRadius: "0.375rem", border: "1px solid #e5e7eb", backgroundColor: "#f3f4f6"}}>
           <img
             src='https://picsum.photos/seed/imagecard2/400/600'
             alt='Receipt scan 2 of 3'
-            className='h-full w-full object-cover'
+            style={{height: "100%", width: "100%", objectFit: "cover"}}
           />
         </div>
       </div>
-      <div className='flex flex-col gap-2 border-t p-4'>
+      <div style={{display: "flex", flexDirection: "column", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
         <button
           type='button'
-          className='w-full rounded-md border border-gray-300 px-4 py-2 text-sm dark:border-gray-600'>
+          style={{width: "100%", borderRadius: "0.375rem", border: "1px solid #d1d5db", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
           🔍 Expand
         </button>
-        <div className='flex gap-2'>
+        <div style={{display: "flex", gap: "0.5rem"}}>
           <button
             type='button'
-            className='flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600'>
+            style={{flex: 1, borderRadius: "0.375rem", border: "1px solid #d1d5db", padding: "0.5rem 0.75rem", fontSize: "0.875rem"}}>
             ← Previous
           </button>
           <button
             type='button'
-            className='flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600'>
+            style={{flex: 1, borderRadius: "0.375rem", border: "1px solid #d1d5db", padding: "0.5rem 0.75rem", fontSize: "0.875rem"}}>
             Next →
           </button>
         </div>

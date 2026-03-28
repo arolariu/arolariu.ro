@@ -31,10 +31,10 @@ type Story = StoryObj<typeof meta>;
 /** Desktop navigation skeleton showing nav items. */
 export const DesktopSkeleton: Story = {
   render: () => (
-    <nav className='flex items-center gap-6 rounded-lg border border-gray-200 px-6 py-3 dark:border-gray-700'>
-      <div className='h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
-      <div className='h-4 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
-      <div className='h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700' />
+    <nav style={{display: 'flex', alignItems: 'center', gap: '1.5rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
+      <div style={{height: '1rem', width: '5rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
+      <div style={{height: '1rem', width: '4rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
+      <div style={{height: '1rem', width: '6rem', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}} />
     </nav>
   ),
 };
@@ -42,13 +42,13 @@ export const DesktopSkeleton: Story = {
 /** Mobile navigation trigger skeleton (hamburger button). */
 export const MobileTriggerSkeleton: Story = {
   render: () => (
-    <div className='flex items-center justify-center rounded-lg border border-gray-200 p-4 dark:border-gray-700'>
+    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1rem'}}>
       <button
         type='button'
-        className='rounded-md border border-gray-300 p-2 dark:border-gray-600'
+        style={{borderRadius: '0.375rem', border: '1px solid #d1d5db', padding: '0.5rem', backgroundColor: 'transparent', cursor: 'pointer'}}
         aria-label='Open navigation'>
         <svg
-          className='h-6 w-6 text-gray-600 dark:text-gray-300'
+          style={{height: '1.5rem', width: '1.5rem', color: '#4b5563'}}
           fill='none'
           viewBox='0 0 24 24'
           stroke='currentColor'>
@@ -67,20 +67,20 @@ export const MobileTriggerSkeleton: Story = {
 /** Full desktop navigation layout preview. */
 export const DesktopPreview: Story = {
   render: () => (
-    <nav className='flex items-center gap-8 rounded-lg border border-gray-200 bg-white px-8 py-4 dark:border-gray-700 dark:bg-gray-900'>
+    <nav style={{display: 'flex', alignItems: 'center', gap: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', paddingLeft: '2rem', paddingRight: '2rem', paddingTop: '1rem', paddingBottom: '1rem'}}>
       <a
         href='#'
-        className='text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-200'>
+        style={{fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
         Domains
       </a>
       <a
         href='#'
-        className='text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-200'>
+        style={{fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
         About
       </a>
       <a
         href='#'
-        className='text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-200'>
+        style={{fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
         My Profile
       </a>
     </nav>
@@ -93,15 +93,15 @@ export const MobileOpen: Story = {
     viewport: {defaultViewport: "mobile1"},
   },
   render: () => (
-    <div className='relative rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'>
-      <div className='flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700'>
-        <span className='text-sm font-semibold text-gray-900 dark:text-gray-100'>Navigation</span>
+    <div style={{position: 'relative', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff'}}>
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.75rem', paddingBottom: '0.75rem'}}>
+        <span style={{fontSize: '0.875rem', fontWeight: '600', color: '#111827'}}>Navigation</span>
         <button
           type='button'
-          className='rounded-md p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+          style={{borderRadius: '0.375rem', padding: '0.25rem', color: '#6b7280', backgroundColor: 'transparent', border: 'none', cursor: 'pointer'}}
           aria-label='Close navigation'>
           <svg
-            className='h-5 w-5'
+            style={{height: '1.25rem', width: '1.25rem'}}
             fill='none'
             viewBox='0 0 24 24'
             stroke='currentColor'>
@@ -114,20 +114,20 @@ export const MobileOpen: Story = {
           </svg>
         </button>
       </div>
-      <nav className='flex flex-col gap-1 p-2'>
+      <nav style={{display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.5rem'}}>
         <a
           href='#'
-          className='rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'>
+          style={{borderRadius: '0.375rem', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
           Domains
         </a>
         <a
           href='#'
-          className='rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'>
+          style={{borderRadius: '0.375rem', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
           About
         </a>
         <a
           href='#'
-          className='rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800'>
+          style={{borderRadius: '0.375rem', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
           My Profile
         </a>
       </nav>
@@ -138,21 +138,21 @@ export const MobileOpen: Story = {
 /** Desktop navigation with an active route highlighted. */
 export const WithActiveRoute: Story = {
   render: () => (
-    <nav className='flex items-center gap-8 rounded-lg border border-gray-200 bg-white px-8 py-4 dark:border-gray-700 dark:bg-gray-900'>
+    <nav style={{display: 'flex', alignItems: 'center', gap: '2rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff', paddingLeft: '2rem', paddingRight: '2rem', paddingTop: '1rem', paddingBottom: '1rem'}}>
       <a
         href='#'
-        className='text-sm font-medium text-blue-600 underline underline-offset-4 dark:text-blue-400'
+        style={{fontSize: '0.875rem', fontWeight: '500', color: '#2563eb', textDecoration: 'underline', textUnderlineOffset: '4px'}}
         aria-current='page'>
         Domains
       </a>
       <a
         href='#'
-        className='text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-200'>
+        style={{fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
         About
       </a>
       <a
         href='#'
-        className='text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-200'>
+        style={{fontSize: '0.875rem', fontWeight: '500', color: '#374151', textDecoration: 'none'}}>
         My Profile
       </a>
     </nav>

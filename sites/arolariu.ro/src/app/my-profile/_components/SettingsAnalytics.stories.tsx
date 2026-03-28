@@ -20,57 +20,57 @@ type Story = StoryObj<typeof meta>;
 /** Default analytics settings panel with all sections. */
 export const Default: Story = {
   render: () => (
-    <section className='space-y-6'>
+    <section style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
       <div>
-        <h2 className='text-xl font-bold'>Analytics</h2>
-        <p className='text-sm text-gray-500'>Manage your analytics and tracking preferences.</p>
+        <h2 style={{fontSize: '1.25rem', fontWeight: '700'}}>Analytics</h2>
+        <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Manage your analytics and tracking preferences.</p>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+      <div style={{display: 'grid', gridTemplateColumns: '1fr', gap: '1rem'}}>
         {/* Master Toggle */}
-        <div className='rounded-xl border p-5 md:col-span-2'>
-          <div className='flex items-center gap-2'>
-            <TbChartBar className='h-4 w-4' />
-            <h3 className='font-semibold'>Analytics Tracking</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem', gridColumn: 'span 2'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbChartBar style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Analytics Tracking</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Enable or disable all analytics features.</p>
-          <div className='mt-3 flex items-center justify-between'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Enable or disable all analytics features.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
             <div>
-              <p className='text-sm font-medium'>Enable Analytics</p>
-              <p className='text-xs text-gray-400'>Track spending patterns and trends</p>
+              <p style={{fontSize: '0.875rem', fontWeight: '500'}}>Enable Analytics</p>
+              <p style={{fontSize: '0.75rem', color: '#9ca3af'}}>Track spending patterns and trends</p>
             </div>
-            <div className='h-5 w-9 rounded-full bg-blue-600' />
+            <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: '#2563eb'}} />
           </div>
         </div>
 
         {/* Granularity */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbClock className='h-4 w-4' />
-            <h3 className='font-semibold'>Granularity</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbClock style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Granularity</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Choose data aggregation period.</p>
-          <div className='mt-3 rounded-md border px-3 py-2 text-sm'>Daily</div>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Choose data aggregation period.</p>
+          <div style={{marginTop: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem'}}>Daily</div>
         </div>
 
         {/* Export Format */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbDownload className='h-4 w-4' />
-            <h3 className='font-semibold'>Export Format</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbDownload style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Export Format</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Default format for data exports.</p>
-          <div className='mt-3 rounded-md border px-3 py-2 text-sm'>JSON</div>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Default format for data exports.</p>
+          <div style={{marginTop: '0.75rem', borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem'}}>JSON</div>
         </div>
 
         {/* Tracking Options */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbChartPie className='h-4 w-4' />
-            <h3 className='font-semibold'>Tracking</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbChartPie style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Tracking</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Choose what to track.</p>
-          <div className='mt-3 space-y-3'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Choose what to track.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
             {[
               {label: "Spending", enabled: true},
               {label: "Categories", enabled: true},
@@ -78,44 +78,44 @@ export const Default: Story = {
             ].map((t) => (
               <div
                 key={t.label}
-                className='flex items-center justify-between'>
-                <p className='text-sm'>{t.label}</p>
-                <div className={`h-5 w-9 rounded-full ${t.enabled ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`} />
+                style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <p style={{fontSize: '0.875rem'}}>{t.label}</p>
+                <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: t.enabled ? '#2563eb' : '#e5e7eb'}} />
               </div>
             ))}
           </div>
         </div>
 
         {/* Advanced */}
-        <div className='rounded-xl border p-5'>
-          <div className='flex items-center gap-2'>
-            <TbTrendingUp className='h-4 w-4' />
-            <h3 className='font-semibold'>Advanced Analytics</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbTrendingUp style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Advanced Analytics</h3>
           </div>
-          <p className='mt-1 text-xs text-gray-500'>Enable advanced features.</p>
-          <div className='mt-3 space-y-3'>
+          <p style={{marginTop: '0.25rem', fontSize: '0.75rem', color: '#6b7280'}}>Enable advanced features.</p>
+          <div style={{marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
             {[
               {label: "Benchmarking", enabled: false},
               {label: "Predictive Analysis", enabled: false},
             ].map((t) => (
               <div
                 key={t.label}
-                className='flex items-center justify-between'>
-                <p className='text-sm'>{t.label}</p>
-                <div className={`h-5 w-9 rounded-full ${t.enabled ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"}`} />
+                style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <p style={{fontSize: '0.875rem'}}>{t.label}</p>
+                <div style={{height: '1.25rem', width: '2.25rem', borderRadius: '9999px', backgroundColor: t.enabled ? '#2563eb' : '#e5e7eb'}} />
               </div>
             ))}
           </div>
         </div>
 
         {/* Data Usage */}
-        <div className='rounded-xl border p-5 md:col-span-2'>
-          <div className='flex items-center gap-2'>
-            <TbDatabase className='h-4 w-4' />
-            <h3 className='font-semibold'>Data Usage</h3>
+        <div style={{borderRadius: '0.75rem', border: '1px solid #e5e7eb', padding: '1.25rem', gridColumn: 'span 2'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <TbDatabase style={{height: '1rem', width: '1rem'}} />
+            <h3 style={{fontWeight: '600'}}>Data Usage</h3>
           </div>
-          <div className='mt-3 rounded-md bg-blue-50 p-3 text-sm dark:bg-blue-900/20'>
-            <p className='text-gray-600 dark:text-gray-400'>
+          <div style={{marginTop: '0.75rem', borderRadius: '0.375rem', backgroundColor: '#eff6ff', padding: '0.75rem', fontSize: '0.875rem'}}>
+            <p style={{color: '#4b5563'}}>
               Analytics data is processed locally and never shared with third parties without your consent.
             </p>
           </div>

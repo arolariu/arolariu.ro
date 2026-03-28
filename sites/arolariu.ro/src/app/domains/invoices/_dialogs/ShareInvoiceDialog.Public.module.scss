@@ -90,3 +90,113 @@
   @include icon-size(space(4));
   margin-right: space(1);
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.tabsRoot {
+  width: 100%;
+}
+
+.tabsList {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tabsTrigger {
+  cursor: pointer;
+}
+
+.linkTabContent {
+  margin-top: space(4);
+}
+
+.qrTabContent {
+  margin-top: space(4);
+}
+
+.inputMono {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: font-size('xs');
+}
+
+.buttonFull {
+  width: 100%;
+}
+
+.backButton {
+  margin-bottom: space(2);
+  margin-left: -(space(2));
+}
+
+.alertWarning {
+  border-color: color-alpha('warning', 0.5);
+  background-color: color-alpha('warning', 0.08);
+  color: color('warning-foreground');
+
+  @include dark {
+    background-color: color-alpha('warning', 0.1);
+  }
+}
+
+.alertWarningTitle {
+  color: color('warning');
+}
+
+.alertWarningDescription {
+  font-size: font-size('xs');
+  color: color-alpha('warning', 0.85);
+}
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.tabsFullWidth {
+  width: 100%;
+}
+
+.tabsListGrid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tabsTriggerCursor {
+  cursor: pointer;
+}
+
+.tabContentMt {
+  margin-top: 1rem;
+}
+
+.inputMonoXs {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.buttonFull {
+  width: 100%;
+}
+
+.alertOrange {
+  border-color: rgba(249, 115, 22, 0.5);
+  background-color: #fff7ed;
+  color: #7c2d12;
+}
+
+.alertOrangeTitle {
+  color: #9a3412;
+}
+
+.alertOrangeDesc {
+  font-size: 0.75rem;
+  color: #c2410c;
+}
+
+.backButtonMl {
+  margin-bottom: 0.5rem;
+  margin-left: -0.5rem;
+}

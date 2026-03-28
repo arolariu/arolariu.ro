@@ -29,17 +29,17 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.3, delay: index === messages.length - 1 ? 0.2 : 0}}
           className={`${styles["messageItem"]} ${message.role === "user" ? styles["messageUser"] : styles["messageAssistant"]}`}>
-          <Avatar className='h-8 w-8'>
+          <Avatar className={styles["avatar"]}>
             {message.role === "assistant" ? (
               <>
-                <AvatarFallback className='bg-primary/10'>
+                <AvatarFallback className={styles["avatarFallbackAssistant"]}>
                   <TbRobot className={styles["robotIcon"]} />
                 </AvatarFallback>
                 <AvatarImage src='/placeholder.svg?height=32&width=32' />
               </>
             ) : (
               <>
-                <AvatarFallback className='bg-secondary/10'>
+                <AvatarFallback className={styles["avatarFallbackUser"]}>
                   <TbUser className={styles["userIcon"]} />
                 </AvatarFallback>
                 <AvatarImage src='/placeholder.svg?height=32&width=32' />

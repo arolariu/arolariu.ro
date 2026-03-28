@@ -8,6 +8,7 @@ import type {Invoice} from "@/types/invoices";
 import {Locale} from "next-intl";
 import {TbCalendar, TbChefHat, TbDownload, TbFile, TbScan, TbShare2, TbSparkles, TbStar, TbTag} from "react-icons/tb";
 import {type TimelineEvent, type TimelineEventMetadata, TimelineEventType} from "../_types/timeline";
+import styles from "./timeline.module.scss";
 
 /**
  * Maps event types to their corresponding icons.
@@ -15,27 +16,25 @@ import {type TimelineEvent, type TimelineEventMetadata, TimelineEventType} from 
  * @returns {React.ReactElement} Icon component
  */
 export function getEventIcon(event: TimelineEvent): React.ReactElement {
-  const iconClass = "h-2.5 w-2.5";
-
   switch (event.type) {
     case TimelineEventType.CREATED:
-      return <TbScan className={iconClass} />;
+      return <TbScan className={styles["eventIcon"]} />;
     case TimelineEventType.AI_ANALYSIS:
-      return <TbSparkles className={iconClass} />;
+      return <TbSparkles className={styles["eventIcon"]} />;
     case TimelineEventType.RECIPES_GENERATED:
-      return <TbChefHat className={iconClass} />;
+      return <TbChefHat className={styles["eventIcon"]} />;
     case TimelineEventType.SHARED:
-      return <TbShare2 className={iconClass} />;
+      return <TbShare2 className={styles["eventIcon"]} />;
     case TimelineEventType.MARKED_IMPORTANT:
-      return <TbStar className={iconClass} />;
+      return <TbStar className={styles["eventIcon"]} />;
     case TimelineEventType.CATEGORIZED:
-      return <TbTag className={iconClass} />;
+      return <TbTag className={styles["eventIcon"]} />;
     case TimelineEventType.EDITED:
-      return <TbFile className={iconClass} />;
+      return <TbFile className={styles["eventIcon"]} />;
     case TimelineEventType.EXPORTED:
-      return <TbDownload className={iconClass} />;
+      return <TbDownload className={styles["eventIcon"]} />;
     default:
-      return <TbCalendar className={iconClass} />;
+      return <TbCalendar className={styles["eventIcon"]} />;
   }
 }
 

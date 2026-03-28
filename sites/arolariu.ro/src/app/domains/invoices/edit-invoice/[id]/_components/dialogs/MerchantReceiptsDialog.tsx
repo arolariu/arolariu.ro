@@ -1,7 +1,7 @@
 "use client";
 
 // TODO: refactor.
-/* eslint-disable */
+/* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
 import {usePaginationWithSearch} from "@/hooks";
 import {formatDate} from "@/lib/utils.generic";
@@ -118,7 +118,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-4xl lg:max-w-7xl'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title", {merchant: merchant.name})}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
@@ -127,10 +127,10 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
         <div className={styles["body"]}>
           <div className={styles["filterRow"]}>
             <div className={styles["searchWrapper"]}>
-              <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
+              <TbSearch className={styles["searchIcon"]} />
               <Input
                 placeholder={t("searchPlaceholder")}
-                className='pl-8'
+                className={styles["searchInput"]}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -139,7 +139,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
               <div className={styles["selectWrapper"]}>
                 <Select onValueChange={handleDateFilterChange}>
                   <SelectTrigger>
-                    <TbCalendar className='mr-2 h-4 w-4' />
+                    <TbCalendar className={styles["filterIcon"]} />
                     <SelectValue placeholder={t("filters.date")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -153,7 +153,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
               <div className={styles["selectWrapper"]}>
                 <Select onValueChange={handleSortChange}>
                   <SelectTrigger>
-                    <TbArrowsUpDown className='mr-2 h-4 w-4' />
+                    <TbArrowsUpDown className={styles["filterIcon"]} />
                     <SelectValue placeholder={t("filters.sort")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -169,28 +169,28 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
             <div className={styles["tableScroll"]}>
               <Table>
                 <TableHeader>
-                  <TableRow className='bg-muted/50'>
+                  <TableRow className={styles["headerRow"]}>
                     <TableHead className={styles["tableHeader"]}>{t("table.receipt")}</TableHead>
                     <TableHead className={styles["tableHeader"]}>{t("table.date")}</TableHead>
                     <TableHead className={styles["tableHeaderRight"]}>{t("table.itemsCount")}</TableHead>
                     <TableHead className={styles["tableHeaderRight"]}>{t("table.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className='divide-border bg-popover divide-y'>
+                <TableBody className={styles["tableBody"]}>
                   {paginatedItems.map((item) => {
                     const invoiceDate = formatDate(item.paymentInformation?.transactionDate || item.createdAt, {locale});
                     return (
                       <TableRow
                         key={item.id}
-                        className='hover:bg-muted/50'>
-                        <TableCell className='px-4 py-3 text-sm font-medium whitespace-nowrap'>{item.name}</TableCell>
-                        <TableCell className='px-4 py-3 text-sm whitespace-nowrap'>{invoiceDate}</TableCell>
-                        <TableCell className='px-4 py-3 text-right text-sm whitespace-nowrap'>{item.items.length}</TableCell>
-                        <TableCell className='px-4 py-3 text-right text-sm whitespace-nowrap'>
+                        className={styles["dataRow"]}>
+                        <TableCell className={styles["cellBold"]}>{item.name}</TableCell>
+                        <TableCell className={styles["cell"]}>{invoiceDate}</TableCell>
+                        <TableCell className={styles["cellRight"]}>{item.items.length}</TableCell>
+                        <TableCell className={styles["cellRight"]}>
                           <Button
                             variant='ghost'
                             size='sm'>
-                            <TbDownload className='mr-1 h-4 w-4' />
+                            <TbDownload className={styles["downloadIcon"]} />
                             {t("table.view")}
                           </Button>
                         </TableCell>

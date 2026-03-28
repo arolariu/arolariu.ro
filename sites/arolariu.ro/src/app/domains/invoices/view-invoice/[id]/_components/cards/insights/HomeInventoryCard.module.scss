@@ -124,3 +124,62 @@
 .bulkDescription {
   @include text-muted('sm');
 }
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: font-size('lg');
+}
+
+.titleIcon {
+  @include icon-size(space(5));
+  color: color('success');
+}
+
+.contentSpaced {
+  @include spaced-children(space(5));
+}
+
+.iconBlue {
+  @include icon-size(space(4));
+  color: color('info');
+}
+
+.iconCyan {
+  @include icon-size(space(4));
+  color: color('info');
+}
+
+.iconGray {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.iconGreen {
+  @include icon-size(space(4));
+  color: color('success');
+}
+
+.starActive {
+  @include icon-size(space(4));
+  color: color('success');
+  fill: color('success');
+}
+
+.starInactive {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.leafIcon {
+  @include icon-size(space(4));
+  color: color('success');
+}
+
+.packageIcon {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+  margin-top: space(0.5);
+  color: color('info');
+}

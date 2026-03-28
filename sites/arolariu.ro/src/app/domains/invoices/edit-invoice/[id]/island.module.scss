@@ -30,3 +30,23 @@
     margin-top: space(6);
   }
 }
+
+.tabsListGrid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.cursorPointer {
+  cursor: pointer;
+}
+
+.tabIconSm {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.tabContent {
+  margin-top: space(4);
+}

@@ -198,7 +198,7 @@ export default function UploadArea(): React.JSX.Element {
             </p>
             <p className={styles["dropzoneFormats"]}>{t("uploadArea.empty.formats")}</p>
             <p className={styles["dropzoneNote"]}>{t("uploadArea.empty.note")}</p>
-            <span className='inline-flex cursor-pointer rounded-md bg-linear-to-r from-blue-600 to-cyan-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-cyan-700 hover:shadow-xl'>
+            <span className={styles["chooseFilesButton"]}>
               {t("uploadArea.empty.chooseFiles")}
             </span>
           </motion.div>
@@ -243,30 +243,30 @@ export default function UploadArea(): React.JSX.Element {
       <div className={styles["actions"]}>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='outline'
                 onClick={clearAll}
-                className='cursor-pointer'
+                className={styles["clearButton"]}
                 type='button'
                 disabled={isUploading}>
                 {t("uploadArea.actions.clearAll")}
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("uploadArea.tooltips.clearAll")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 onClick={uploadAll}
-                className='cursor-pointer bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'
+                className={styles["uploadButton"]}
                 type='button'
                 disabled={isUploading}>
                 {isUploading ? t("uploadArea.actions.uploading") : t("uploadArea.actions.uploadScans")}
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("uploadArea.tooltips.uploadScans")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>

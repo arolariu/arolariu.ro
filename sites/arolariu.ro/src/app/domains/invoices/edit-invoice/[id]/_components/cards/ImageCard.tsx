@@ -99,19 +99,19 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
 
   return (
     <TooltipProvider>
-      <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
-        <CardHeader className='flex flex-row items-center justify-between'>
-          <CardTitle className='text-lg'>
+      <Card className={styles["card"]}>
+        <CardHeader className={styles["cardHeader"]}>
+          <CardTitle className={styles["cardTitle"]}>
             {totalScans > 1 ? t("titleWithIndex", {current: String(currentScanIndex + 1), total: String(totalScans)}) : t("title")}
           </CardTitle>
         </CardHeader>
-        <CardContent className='flex justify-center'>
+        <CardContent className={styles["cardContent"]}>
           <Dialog
             open={isZoomOpen}
             onOpenChange={setIsZoomOpen}>
             <Button
               variant='ghost'
-              className='group/image relative h-auto w-full cursor-pointer overflow-hidden rounded-md border p-0'
+              className={styles["imageButton"]}
               onClick={handleOpenZoom}
               aria-label={t("aria.expandImage")}>
               <Image
@@ -122,10 +122,10 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
                 className={isTransitioning ? styles["receiptImageTransitioning"] : styles["receiptImageNormal"]}
               />
               <div className={styles["zoomOverlayVisible"]}>
-                <TbZoomIn className='h-8 w-8' />
+                <TbZoomIn className={styles["zoomIcon"]} />
               </div>
             </Button>
-            <DialogContent className='max-w-3xl'>
+            <DialogContent className={styles["zoomDialogContent"]}>
               <DialogHeader>
                 <DialogTitle>
                   {totalScans > 1
@@ -145,18 +145,20 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
             </DialogContent>
           </Dialog>
         </CardContent>
-        <CardFooter className='flex flex-col gap-2'>
+        <CardFooter className={styles["cardFooter"]}>
           {/* Expand button */}
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='outline'
-                className='w-full cursor-pointer'
-                onClick={handleOpenZoom}>
-                <TbZoomIn className='mr-2 h-4 w-4' />
-                {t("buttons.expand")}
-              </Button>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant='outline'
+                  className={styles["fullWidthButton"]}
+                  onClick={handleOpenZoom}>
+                  <TbZoomIn className={styles["buttonIcon"]} />
+                  {t("buttons.expand")}
+                </Button>
+              }
+            />
             <TooltipContent>
               <p>{t("tooltips.expand")}</p>
             </TooltipContent>
@@ -167,15 +169,17 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
             <div className={styles["navButtons"]}>
               {currentScanIndex > 0 && (
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant='secondary'
-                      className='flex-1 cursor-pointer'
-                      onClick={handlePreviousScan}>
-                      <TbChevronLeft className='mr-1 h-4 w-4' />
-                      {t("buttons.previous")}
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant='secondary'
+                        className={styles["navButton"]}
+                        onClick={handlePreviousScan}>
+                        <TbChevronLeft className={styles["chevronIcon"]} />
+                        {t("buttons.previous")}
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.previous")}</p>
                   </TooltipContent>
@@ -183,15 +187,17 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
               )}
               {currentScanIndex < totalScans - 1 && (
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant='secondary'
-                      className='flex-1 cursor-pointer'
-                      onClick={handleNextScan}>
-                      {t("buttons.next")}
-                      <TbChevronRight className='ml-1 h-4 w-4' />
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant='secondary'
+                        className={styles["navButton"]}
+                        onClick={handleNextScan}>
+                        {t("buttons.next")}
+                        <TbChevronRight className={styles["chevronIconRight"]} />
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.next")}</p>
                   </TooltipContent>
@@ -203,30 +209,34 @@ export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element
           {/* Add/Remove buttons */}
           <div className={styles["actionButtons"]}>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='outline'
-                  className='flex-1 cursor-pointer'
-                  onClick={openAddScan}>
-                  <TbPlus className='mr-1 h-4 w-4' />
-                  {t("buttons.addScan")}
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className={styles["navButton"]}
+                    onClick={openAddScan}>
+                    <TbPlus className={styles["chevronIcon"]} />
+                    {t("buttons.addScan")}
+                  </Button>
+                }
+              />
               <TooltipContent>
                 <p>{t("tooltips.addScan")}</p>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='outline'
-                  className='text-destructive hover:bg-destructive hover:text-destructive-foreground flex-1 cursor-pointer'
-                  onClick={openRemoveScan}
-                  disabled={totalScans === 0}>
-                  <TbTrash className='mr-1 h-4 w-4' />
-                  {t("buttons.remove")}
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant='outline'
+                    className={styles["removeButton"]}
+                    onClick={openRemoveScan}
+                    disabled={totalScans === 0}>
+                    <TbTrash className={styles["chevronIcon"]} />
+                    {t("buttons.remove")}
+                  </Button>
+                }
+              />
               <TooltipContent>
                 <p>{t("tooltips.remove")}</p>
               </TooltipContent>

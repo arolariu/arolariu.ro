@@ -48,3 +48,17 @@
   justify-content: space-between;
   gap: space(4);
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 32rem;
+  }
+}
+
+.starButton {
+  padding: space(1);
+}
+
+.featureBadge {
+  cursor: pointer;
+}

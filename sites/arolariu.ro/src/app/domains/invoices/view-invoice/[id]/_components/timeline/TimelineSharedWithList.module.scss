@@ -67,3 +67,65 @@
   @include truncate;
 }
 
+
+.iconMuted {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.badgeSmall {
+  height: space(5);
+  padding-left: space(1.5);
+  padding-right: space(1.5);
+  font-size: font-size('xs');
+}
+
+.alertWarning {
+  border-color: color-alpha('warning', 0.5);
+  background-color: color-alpha('warning', 0.1);
+}
+
+.iconWarning {
+  @include icon-size(space(4));
+  color: color('warning');
+}
+
+.alertTitleWarning {
+  color: color('warning');
+}
+
+.alertDescMuted {
+  color: color('muted-foreground');
+  font-size: font-size('xs');
+}
+
+.avatarSm {
+  width: space(7);
+  height: space(7);
+}
+
+.avatarFallback {
+  background-color: color-alpha('primary', 0.1);
+  color: color('primary');
+  font-size: font-size('xs');
+}
+
+.iconButton {
+  width: space(7);
+  height: space(7);
+  flex-shrink: 0;
+}
+
+.iconXs {
+  @include icon-size(space(3.5));
+}
+
+.tooltipXs {
+  font-size: font-size('xs');
+}
+
+.manageButton {
+  width: 100%;
+  gap: space(2);
+  background-color: transparent;
+}

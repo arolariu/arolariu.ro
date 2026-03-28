@@ -19,30 +19,30 @@ type Story = StoryObj<typeof meta>;
 /** Image scan card with file details. */
 export const ImageScan: Story = {
   render: () => (
-    <div className='overflow-hidden rounded-lg border bg-white shadow-sm hover:shadow-md dark:bg-gray-900'>
-      <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
         <img
           src='https://picsum.photos/seed/scancard/400/300'
           alt='receipt.jpg scan'
-          className='h-full w-full object-cover'
+          style={{height: "100%", width: "100%", objectFit: "cover"}}
         />
-        <div className='absolute top-2 right-2'>
+        <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
           <input
             type='checkbox'
-            className='h-5 w-5'
+            style={{height: "1.25rem", width: "1.25rem"}}
           />
         </div>
-        <div className='absolute top-2 left-2'>
+        <div style={{position: "absolute", top: "0.5rem", left: "0.5rem"}}>
           <button
             type='button'
-            className='rounded-full bg-white/80 p-1 text-xs shadow-sm dark:bg-gray-800/80'>
+            style={{borderRadius: "9999px", backgroundColor: "rgba(255,255,255,0.8)", padding: "0.25rem", fontSize: "0.75rem", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
             ⋮
           </button>
         </div>
       </div>
-      <div className='p-3'>
-        <p className='truncate text-sm font-medium'>grocery-receipt-2025-01.jpg</p>
-        <div className='flex justify-between text-xs text-gray-500'>
+      <div style={{padding: "0.75rem"}}>
+        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>grocery-receipt-2025-01.jpg</p>
+        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
           <span>1.2 MB</span>
           <span>Jan 15, 2025</span>
         </div>
@@ -54,19 +54,19 @@ export const ImageScan: Story = {
 /** PDF scan card. */
 export const PdfScan: Story = {
   render: () => (
-    <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='relative flex aspect-[4/3] items-center justify-center bg-red-50 dark:bg-red-900/20'>
-        <span className='text-4xl text-red-400'>📄</span>
-        <div className='absolute top-2 right-2'>
+    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{position: "relative", display: "flex", aspectRatio: "4/3", alignItems: "center", justifyContent: "center", backgroundColor: "#fef2f2"}}>
+        <span style={{fontSize: "2.25rem", color: "#f87171"}}>📄</span>
+        <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
           <input
             type='checkbox'
-            className='h-5 w-5'
+            style={{height: "1.25rem", width: "1.25rem"}}
           />
         </div>
       </div>
-      <div className='p-3'>
-        <p className='truncate text-sm font-medium'>invoice-scan.pdf</p>
-        <div className='flex justify-between text-xs text-gray-500'>
+      <div style={{padding: "0.75rem"}}>
+        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>invoice-scan.pdf</p>
+        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
           <span>3.4 MB</span>
           <span>Jan 10, 2025</span>
         </div>
@@ -78,25 +78,25 @@ export const PdfScan: Story = {
 /** Selected scan card with ring highlight. */
 export const Selected: Story = {
   render: () => (
-    <div className='overflow-hidden rounded-lg border bg-white shadow-sm ring-2 ring-purple-500 dark:bg-gray-900'>
-      <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)", outline: "2px solid #a855f7", outlineOffset: "2px"}}>
+      <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
         <img
           src='https://picsum.photos/seed/scancard2/400/300'
           alt='selected.jpg scan'
-          className='h-full w-full object-cover'
+          style={{height: "100%", width: "100%", objectFit: "cover"}}
         />
-        <div className='absolute top-2 right-2'>
+        <div style={{position: "absolute", top: "0.5rem", right: "0.5rem"}}>
           <input
             type='checkbox'
             checked
             readOnly
-            className='h-5 w-5 accent-purple-500'
+            style={{height: "1.25rem", width: "1.25rem", accentColor: "#a855f7"}}
           />
         </div>
       </div>
-      <div className='p-3'>
-        <p className='truncate text-sm font-medium'>selected-scan.jpg</p>
-        <div className='flex justify-between text-xs text-gray-500'>
+      <div style={{padding: "0.75rem"}}>
+        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>selected-scan.jpg</p>
+        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
           <span>800 KB</span>
           <span>Jan 12, 2025</span>
         </div>
@@ -108,20 +108,20 @@ export const Selected: Story = {
 /** Scan linked to an invoice. */
 export const LinkedToInvoice: Story = {
   render: () => (
-    <div className='overflow-hidden rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='relative aspect-[4/3] bg-gray-100 dark:bg-gray-800'>
+    <div style={{overflow: "hidden", borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.05)"}}>
+      <div style={{position: "relative", aspectRatio: "4/3", backgroundColor: "#f3f4f6"}}>
         <img
           src='https://picsum.photos/seed/scancard3/400/300'
           alt='linked.jpg scan'
-          className='h-full w-full object-cover'
+          style={{height: "100%", width: "100%", objectFit: "cover"}}
         />
-        <div className='absolute bottom-2 left-2'>
-          <span className='rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200'>🔗 Linked</span>
+        <div style={{position: "absolute", bottom: "0.5rem", left: "0.5rem"}}>
+          <span style={{borderRadius: "9999px", backgroundColor: "#dbeafe", paddingInline: "0.5rem", paddingBlock: "0.125rem", fontSize: "0.75rem", color: "#1e40af"}}>🔗 Linked</span>
         </div>
       </div>
-      <div className='p-3'>
-        <p className='truncate text-sm font-medium'>linked-receipt.jpg</p>
-        <div className='flex justify-between text-xs text-gray-500'>
+      <div style={{padding: "0.75rem"}}>
+        <p style={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500}}>linked-receipt.jpg</p>
+        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#6b7280"}}>
           <span>950 KB</span>
           <span>Jan 8, 2025</span>
         </div>

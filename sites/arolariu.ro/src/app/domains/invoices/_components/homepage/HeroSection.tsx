@@ -39,7 +39,7 @@ export default function HeroSection({isAuthenticated}: Readonly<Props>): React.J
                 <Button
                   asChild
                   size='lg'
-                  className='from-gradient-from to-gradient-to bg-linear-to-r px-8 text-white hover:opacity-90'>
+                  className={styles["heroPrimaryBtn"]}>
                   <Link href='/domains/invoices/upload-scans'>
                     <TbUpload className={styles["heroButtonIcon"]} />
                     {t("hero.getStarted")}

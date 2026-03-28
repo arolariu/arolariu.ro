@@ -2,7 +2,7 @@
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {MerchantBreakdown} from "../../_utils/analytics";
 import styles from "./MerchantBreakdownChart.module.scss";
 
@@ -70,21 +70,26 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
     },
   };
 
+  const coloredData = data.map((entry, index) => ({
+    ...entry,
+    fill: entry.name === currentMerchant ? "hsl(var(--primary))" : `hsl(var(--chart-${(index % 5) + 1}))`,
+  }));
+
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description")}</CardDescription>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
       </CardHeader>
-      <CardContent className='pb-4'>
+      <CardContent className={styles["cardContent"]}>
         <ChartContainer
           config={chartConfig}
-          className='h-[200px] w-full'>
+          className={styles["chartContainer"]}>
           <ResponsiveContainer
             width='100%'
             height='100%'>
             <BarChart
-              data={data}
+              data={coloredData}
               margin={{top: 8, right: 8, bottom: 8, left: -16}}>
               <XAxis
                 dataKey='name'
@@ -117,14 +122,8 @@ export function MerchantBreakdownChart({data, currency, currentMerchant}: Props)
               <Bar
                 dataKey='total'
                 radius={[4, 4, 0, 0]}
-                maxBarSize={48}>
-                {data.map((entry) => (
-                  <Cell
-                    key={`cell-${entry.name}`}
-                    fill={entry.name === currentMerchant ? "hsl(var(--primary))" : `hsl(var(--chart-${(data.indexOf(entry) % 5) + 1}))`}
-                  />
-                ))}
-              </Bar>
+                maxBarSize={48}
+              />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

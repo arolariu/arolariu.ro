@@ -3,7 +3,7 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import {useCallback} from "react";
-import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {QuantityData} from "../../_utils/analytics";
 import styles from "./ItemsBreakdownChart.module.scss";
 
@@ -49,23 +49,28 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
     },
   };
 
+  const coloredData = data.map((item, index) => ({
+    ...item,
+    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+  }));
+
   const tickFormatter = useCallback((value: number) => `${value}`, []);
 
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description")}</CardDescription>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
       </CardHeader>
-      <CardContent className='pb-4'>
+      <CardContent className={styles["cardContent"]}>
         <ChartContainer
           config={chartConfig}
-          className='h-[200px] w-full'>
+          className={styles["chartContainer"]}>
           <ResponsiveContainer
             width='100%'
             height='100%'>
             <BarChart
-              data={data}
+              data={coloredData}
               layout='vertical'
               margin={{top: 4, right: 8, bottom: 4, left: 4}}>
               <XAxis
@@ -96,14 +101,8 @@ export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element 
               <Bar
                 dataKey='price'
                 radius={[0, 4, 4, 0]}
-                maxBarSize={24}>
-                {data.map((item) => (
-                  <Cell
-                    key={`cell-${item.name}`}
-                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
-                  />
-                ))}
-              </Bar>
+                maxBarSize={24}
+              />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

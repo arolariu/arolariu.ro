@@ -80,3 +80,81 @@
   font-size: font-size('sm');
   text-align: right;
 }
+
+.card {
+  transition: box-shadow 300ms;
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.tabs {
+  width: 100%;
+}
+
+.cardHeader {
+  padding-bottom: 0;
+}
+
+.tabsList {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tabsTrigger {
+  gap: space(2);
+}
+
+.tabIcon {
+  @include icon-size(space(4));
+}
+
+.cardContent {
+  padding-top: space(6);
+}
+
+.tabsContent {
+  margin-top: 0;
+}
+
+.recipeCard {
+  transition: box-shadow 300ms;
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.recipeCardHeader {
+  padding-bottom: space(2);
+}
+
+.recipeTitle {
+  font-size: font-size('base');
+}
+
+.recipeBody {
+  & > * + * {
+    margin-top: space(3);
+  }
+}
+
+.recipeLink {
+  height: auto;
+  padding: 0;
+  font-size: font-size('sm');
+}
+
+.externalLinkIcon {
+  height: space(3);
+  width: space(3);
+  margin-left: space(0.5);
+}
+
+.emptyIcon {
+  height: space(12);
+  width: space(12);
+  color: color-alpha('muted-foreground', 0.5);
+}

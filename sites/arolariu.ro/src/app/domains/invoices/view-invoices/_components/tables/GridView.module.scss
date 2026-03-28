@@ -109,3 +109,42 @@
   color: color('muted-foreground');
   font-size: font-size('sm');
 }
+
+.frostedCheckbox {
+  background-color: color-alpha('background', 0.8);
+  @include backdrop-blur(blur-size('md'));
+}
+
+.card {
+  overflow: hidden;
+}
+
+.imageButton {
+  background-color: color-alpha('background', 0.8);
+  height: space(8);
+  width: space(8);
+  @include backdrop-blur(blur-size('md'));
+}
+
+.tooltipTrigger {
+  cursor: pointer;
+}
+
+.cardHeader {
+  padding-top: space(4);
+  padding-bottom: space(2);
+}
+
+.cardTitle {
+  font-size: font-size('lg');
+}
+
+.cardContent {
+  padding-bottom: space(2);
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  padding-top: space(2);
+}

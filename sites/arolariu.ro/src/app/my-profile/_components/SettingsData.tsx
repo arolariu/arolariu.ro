@@ -74,9 +74,9 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.05}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbDatabase className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbDatabase className={styles["iconSm"]} />
                 {t("retention.title")}
               </CardTitle>
               <CardDescription>{t("retention.description")}</CardDescription>
@@ -85,7 +85,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
               <Select
                 value={settings.retention}
                 onValueChange={handleRetentionChange}>
-                <SelectTrigger className='cursor-pointer'>
+                <SelectTrigger className={styles["selectCursor"]}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -109,14 +109,14 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.1}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbCloud className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbCloud className={styles["iconSm"]} />
                 {t("backup.title")}
               </CardTitle>
               <CardDescription>{t("backup.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["toggleRow"]}>
                 <div className={styles["toggleLabel"]}>
                   <Label>{t("backup.autoBackup")}</Label>
@@ -134,7 +134,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                   value={settings.backupFrequency}
                   onValueChange={handleBackupFrequencyChange}
                   disabled={!settings.autoBackup}>
-                  <SelectTrigger className='mt-2 cursor-pointer'>
+                  <SelectTrigger className={styles["selectCursorMt"]}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -158,9 +158,9 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.15}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbShieldCheck className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbShieldCheck className={styles["iconSm"]} />
                 {t("privacy.title")}
               </CardTitle>
               <CardDescription>{t("privacy.description")}</CardDescription>
@@ -186,18 +186,18 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.2}}>
           <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle className='flex items-center gap-2 text-base'>
-                <TbDownload className='h-4 w-4' />
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["cardTitleBase"]}>
+                <TbDownload className={styles["iconSm"]} />
                 {t("export.title")}
               </CardTitle>
               <CardDescription>{t("export.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-3'>
+            <CardContent className={styles["cardContentSpaced3"]}>
               <Button
                 variant='outline'
-                className='w-full cursor-pointer'>
-                <TbDownload className='mr-2 h-4 w-4' />
+                className={styles["buttonFullCursor"]}>
+                <TbDownload className={styles["buttonIcon"]} />
                 {t("export.downloadAll")}
               </Button>
               <p className={styles["exportHint"]}>{t("export.hint")}</p>
@@ -211,15 +211,15 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
           initial={{opacity: 0, y: 10}}
           animate={isInView ? {opacity: 1, y: 0} : {opacity: 0, y: 10}}
           transition={{duration: 0.3, delay: 0.25}}>
-          <Card className='border-destructive/50'>
-            <CardHeader className='pb-4'>
-              <CardTitle className='text-destructive flex items-center gap-2 text-base'>
-                <TbAlertTriangle className='h-4 w-4' />
+          <Card className={styles["dangerCardBorder"]}>
+            <CardHeader className={styles["cardHeaderPb"]}>
+              <CardTitle className={styles["dangerTitle"]}>
+                <TbAlertTriangle className={styles["iconSm"]} />
                 {t("danger.title")}
               </CardTitle>
               <CardDescription>{t("danger.description")}</CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className={styles["cardContentSpaced"]}>
               <div className={styles["dangerRow"]}>
                 <div className={styles["dangerRowText"]}>
                   <p>{t("danger.deleteData")}</p>
@@ -227,8 +227,8 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                 </div>
                 <Button
                   variant='destructive'
-                  className='cursor-pointer'>
-                  <TbTrash className='mr-2 h-4 w-4' />
+                  className={styles["selectCursor"]}>
+                  <TbTrash className={styles["buttonIcon"]} />
                   {t("danger.deleteButton")}
                 </Button>
               </div>
@@ -239,7 +239,7 @@ export function SettingsData({settings, onSettingsChange}: Props): React.JSX.Ele
                 </div>
                 <Button
                   variant='outline'
-                  className='cursor-pointer'
+                  className={styles["selectCursor"]}
                   asChild>
                   <a
                     href='https://accounts.arolariu.ro/user'

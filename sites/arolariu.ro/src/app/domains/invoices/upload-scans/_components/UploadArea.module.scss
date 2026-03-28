@@ -177,3 +177,37 @@
   justify-content: flex-end;
   gap: abstracts.space(4);
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.chooseFilesButton {
+  display: inline-flex;
+  cursor: pointer;
+  border-radius: abstracts.radius('md');
+  @include abstracts.gradient-bg();
+  padding: abstracts.space(3) abstracts.space(8);
+  font-size: abstracts.font-size('lg');
+  color: white;
+  @include abstracts.shadow('lg');
+  @include abstracts.transition(all, 'moderate');
+
+  &:hover {
+    @include abstracts.shadow('xl');
+    opacity: 0.9;
+  }
+}
+
+.clearButton {
+  cursor: pointer;
+}
+
+.uploadButton {
+  cursor: pointer;
+  @include abstracts.gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}

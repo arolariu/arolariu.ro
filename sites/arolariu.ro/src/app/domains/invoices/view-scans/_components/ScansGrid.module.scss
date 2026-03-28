@@ -152,9 +152,6 @@
 }
 
 // ===========================================
-// SCANS GRID
-// ===========================================
-// ===========================================
 // ICON STYLES
 // ===========================================
 .iconAccent {
@@ -194,5 +191,26 @@
 
   @include respond-to('lg') {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.emptyCard {
+  margin-inline: auto;
+  max-width: 42rem;
+}
+
+.emptyCardContent {
+  padding: space(8);
+}
+
+.uploadButton {
+  @include gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
   }
 }

@@ -69,13 +69,15 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): Rea
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          variant='outline'
-          size='sm'>
-          {t("card.viewDependencies")}
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button
+            variant='outline'
+            size='sm'>
+            {t("card.viewDependencies")}
+          </Button>
+        }
+      />
       <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("dialog.dependencies", {name: pkg.name})}</DialogTitle>

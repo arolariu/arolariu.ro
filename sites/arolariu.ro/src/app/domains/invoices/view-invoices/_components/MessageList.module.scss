@@ -86,3 +86,19 @@
   height: space(4);
   color: color('secondary-foreground');
 }
+
+// ===========================================
+// AVATAR STYLES
+// ===========================================
+.avatar {
+  height: space(8);
+  width: space(8);
+}
+
+.avatarFallbackAssistant {
+  background-color: color-alpha('primary', 0.1);
+}
+
+.avatarFallbackUser {
+  background-color: color-alpha('secondary', 0.1);
+}

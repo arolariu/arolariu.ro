@@ -2,7 +2,7 @@
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import type {PriceRange} from "../../_utils/analytics";
 import styles from "./PriceDistributionChart.module.scss";
 
@@ -44,18 +44,18 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
     },
   };
 
-  const dataWithCurrency = data.map((d) => ({...d, currency}));
+  const dataWithCurrency = data.map((d, index) => ({...d, currency, fill: `hsl(var(--chart-${(index % 5) + 1}))`}));
 
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description", {currency})}</CardDescription>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t("description", {currency})}</CardDescription>
       </CardHeader>
-      <CardContent className='pb-4'>
+      <CardContent className={styles["cardContent"]}>
         <ChartContainer
           config={chartConfig}
-          className='h-[200px] w-full'>
+          className={styles["chartContainer"]}>
           <ResponsiveContainer
             width='100%'
             height='100%'>
@@ -87,14 +87,8 @@ export function PriceDistributionChart({data, currency}: Readonly<Props>): React
               <Bar
                 dataKey='count'
                 radius={[4, 4, 0, 0]}
-                maxBarSize={48}>
-                {data.map((item) => (
-                  <Cell
-                    key={`cell-${item.range}`}
-                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
-                  />
-                ))}
-              </Bar>
+                maxBarSize={48}
+              />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

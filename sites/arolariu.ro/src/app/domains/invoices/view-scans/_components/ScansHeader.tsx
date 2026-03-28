@@ -46,17 +46,17 @@ export default function ScansHeader(): React.JSX.Element {
         </div>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='ghost'
                 size='icon'
-                className='mt-1 h-6 w-6 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'>
+                className={styles["infoButton"]}>
                 <TbInfoCircle className={styles["infoIcon"]} />
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent
               side='right'
-              className='max-w-xs'>
+              className={styles["tooltipContent"]}>
               <p>{t("tooltip")}</p>
             </TooltipContent>
           </Tooltip>
@@ -66,51 +66,51 @@ export default function ScansHeader(): React.JSX.Element {
       <div className={styles["headerActions"]}>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
-                asChild
-                className='from-gradient-from to-gradient-to flex items-center gap-2 bg-linear-to-r text-white hover:opacity-90'>
-                <Link href='/domains/invoices/upload-scans'>
-                  <TbUpload className={styles["actionIcon"]} />
-                  <span className={styles["hiddenMobile"]}>{t("uploadMore")}</span>
-                  <span className={styles["visibleMobile"]}>{t("upload")}</span>
-                </Link>
-              </Button>
-            </TooltipTrigger>
+                className={styles["uploadButton"]}
+                render={
+                  <Link href='/domains/invoices/upload-scans'>
+                    <TbUpload className={styles["actionIcon"]} />
+                    <span className={styles["hiddenMobile"]}>{t("uploadMore")}</span>
+                    <span className={styles["visibleMobile"]}>{t("upload")}</span>
+                  </Link>
+                } />
+            } />
             <TooltipContent>{t("uploadTooltip")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
-                asChild
                 variant='outline'
-                className='flex items-center gap-2'>
-                <Link href='/domains/invoices/view-invoices'>
-                  <TbFileInvoice className={styles["actionIcon"]} />
-                  <span className={styles["hiddenMobile"]}>{t("myInvoices")}</span>
-                  <span className={styles["visibleMobile"]}>{t("invoices")}</span>
-                </Link>
-              </Button>
-            </TooltipTrigger>
+                className={styles["outlineButton"]}
+                render={
+                  <Link href='/domains/invoices/view-invoices'>
+                    <TbFileInvoice className={styles["actionIcon"]} />
+                    <span className={styles["hiddenMobile"]}>{t("myInvoices")}</span>
+                    <span className={styles["visibleMobile"]}>{t("invoices")}</span>
+                  </Link>
+                } />
+            } />
             <TooltipContent>{t("myInvoicesTooltip")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
               <Button
                 variant='outline'
                 onClick={syncScans}
                 disabled={isSyncing}
-                className='flex items-center gap-2'>
+                className={styles["outlineButton"]}>
                 <TbRefresh className={`${styles["syncIcon"]} ${isSyncing ? styles["syncIconSpinning"] : ""}`} />
                 <span className={styles["hiddenMobile"]}>{isSyncing ? t("syncing") : t("sync")}</span>
               </Button>
-            </TooltipTrigger>
+            } />
             <TooltipContent>{t("syncTooltip")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>

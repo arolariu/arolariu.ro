@@ -25,3 +25,19 @@
     text-decoration: underline;
   }
 }
+
+.contentSpaced {
+  @include spaced-children(space(4));
+}
+
+.iconMuted {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.iconMutedTop {
+  @include icon-size(space(4));
+  flex-shrink: 0;
+  margin-top: space(0.5);
+  color: color('muted-foreground');
+}

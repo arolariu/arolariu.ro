@@ -1,0 +1,39 @@
+@use '../../../../../../../styles/abstracts' as *;
+
+.alert {
+  margin-bottom: space(6);
+  border-color: color('info');
+  background-color: color-alpha('info', 0.1);
+  color: color('info');
+
+  @include dark {
+    border-color: color-alpha('info', 0.35);
+    background-color: color-alpha('info', 0.08);
+    color: color-alpha('info', 0.85);
+  }
+}
+
+.infoIcon {
+  @include icon-size(space(4));
+  color: color('info');
+
+  @include dark {
+    color: color-alpha('info', 0.75);
+  }
+}
+
+.alertTitle {
+  color: color('info');
+
+  @include dark {
+    color: color-alpha('info', 0.75);
+  }
+}
+
+.alertDescription {
+  color: color('info');
+
+  @include dark {
+    color: color-alpha('info', 0.75);
+  }
+}

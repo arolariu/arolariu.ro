@@ -72,3 +72,104 @@
 .ownerImage {
   border-radius: radius('full');
 }
+
+.sharedUserIcon {
+  width: space(4);
+  height: space(4);
+}
+
+.card {
+  transition: box-shadow 300ms;
+  &:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+}
+
+.cardContent {
+  & > * + * {
+    margin-top: space(4);
+  }
+}
+
+.primaryIcon {
+  color: color('primary');
+  width: space(5);
+  height: space(5);
+}
+
+.manageButton {
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.publicAlert {
+  border-color: rgba(249, 115, 22, 0.5);
+  background-color: rgb(255, 247, 237);
+  color: rgb(124, 45, 18);
+
+  :global(.dark) & {
+    background-color: rgba(124, 45, 18, 0.3);
+    color: rgb(253, 186, 116);
+  }
+}
+
+.globeIcon {
+  width: space(4);
+  height: space(4);
+  color: rgb(234, 88, 12);
+
+  :global(.dark) & {
+    color: rgb(251, 146, 60);
+  }
+}
+
+.publicAlertTitle {
+  color: rgb(154, 52, 18);
+
+  :global(.dark) & {
+    color: rgb(253, 186, 116);
+  }
+}
+
+.publicAlertDescription {
+  font-size: font-size('xs');
+  color: rgb(194, 65, 12);
+
+  :global(.dark) & {
+    color: rgb(251, 146, 60);
+  }
+}
+
+.removeAccessButton {
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.icon4 {
+  width: space(4);
+  height: space(4);
+}
+
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: space(4);
+}
+
+.fullWidthButton {
+  width: 100%;
+  cursor: pointer;
+}
+
+.arrowIcon {
+  margin-left: space(2);
+  width: space(4);
+  height: space(4);
+  transition: transform 150ms;
+}

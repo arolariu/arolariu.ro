@@ -123,6 +123,14 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
     }));
   }, []);
 
+  const handleNavClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const section = e.currentTarget.dataset["section"] as SettingsSection | undefined;
+      if (section) handleSectionChange(section);
+    },
+    [handleSectionChange],
+  );
+
   if (!user) {
     return <ProfileSkeleton />;
   }
@@ -214,7 +222,8 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
               key={id}
               type='button'
               className={activeSection === id ? styles["sidebarItemActive"] : styles["sidebarItem"]}
-              onClick={() => handleSectionChange(id as SettingsSection)}
+              data-section={id}
+              onClick={handleNavClick}
               aria-current={activeSection === id ? "page" : undefined}>
               <Icon aria-hidden='true' />
               <span>{t(key)}</span>
@@ -250,7 +259,8 @@ export default function RenderMyProfileScreen({user}: Props): React.JSX.Element 
             key={id}
             type='button'
             className={activeSection === id ? styles["bottomNavItemActive"] : styles["bottomNavItem"]}
-            onClick={() => handleSectionChange(id as SettingsSection)}
+            data-section={id}
+            onClick={handleNavClick}
             aria-current={activeSection === id ? "page" : undefined}>
             <Icon aria-hidden='true' />
             <span>{t(key)}</span>

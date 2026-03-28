@@ -75,3 +75,31 @@
     display: none;
   }
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.clearButton {
+  color: color('muted-foreground');
+
+  &:hover {
+    color: color('foreground');
+  }
+
+  @include dark {
+    color: color('muted-foreground');
+
+    &:hover {
+      color: color('foreground');
+    }
+  }
+}
+
+.createButton {
+  background-color: color('success');
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}

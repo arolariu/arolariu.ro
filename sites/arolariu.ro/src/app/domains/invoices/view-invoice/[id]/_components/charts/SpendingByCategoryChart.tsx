@@ -2,7 +2,7 @@
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle, ChartContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
+import {Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import type {CategorySpending} from "../../_utils/analytics";
 import styles from "./SpendingByCategoryChart.module.scss";
 
@@ -79,37 +79,36 @@ export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Elem
     total += item.amount;
   }
 
+  const coloredData = data.map((item, index) => ({
+    ...item,
+    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
+  }));
+
   return (
-    <Card className='h-full transition-shadow duration-300 hover:shadow-md'>
-      <CardHeader className='pb-2'>
-        <CardTitle className='text-base'>{t("title")}</CardTitle>
-        <CardDescription className='text-xs'>{t("description")}</CardDescription>
+    <Card className={styles["card"]}>
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>{t("title")}</CardTitle>
+        <CardDescription className={styles["cardDescription"]}>{t("description")}</CardDescription>
       </CardHeader>
-      <CardContent className='pb-4'>
+      <CardContent className={styles["cardContent"]}>
         <ChartContainer
           config={chartConfig}
-          className='h-[180px] w-full'>
+          className={styles["chartContainerSm"]}>
           <ResponsiveContainer
             width='100%'
             height='100%'>
             <PieChart>
               <Pie
-                data={data}
+                data={coloredData}
                 dataKey='amount'
                 nameKey='category'
                 cx='50%'
                 cy='50%'
                 innerRadius={40}
                 outerRadius={70}
-                paddingAngle={2}>
-                {data.map((item) => (
-                  <Cell
-                    key={`cell-${item.category}`}
-                    fill={`hsl(var(--chart-${(data.indexOf(item) % 5) + 1}))`}
-                    className='stroke-background stroke-2'
-                  />
-                ))}
-              </Pie>
+                paddingAngle={2}
+                className={styles["pieStroke"]}
+              />
               <Tooltip
                 content={
                   <CustomTooltip

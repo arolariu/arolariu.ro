@@ -55,20 +55,23 @@ export function GeneralExpenseCard(): React.JSX.Element {
 
   return (
     <Card>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbChartBar className='h-5 w-5 text-indigo-600' />
-          {t("title")}
+      <CardHeader>
+        <CardTitle>
+          <span className={styles["titleRow"]}>
+            <TbChartBar className={styles["titleIcon"]} />
+            {t("title")}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-5'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {/* Auto-detected Category */}
         <div>
           <h4 className={styles["sectionTitle"]}>{t("sections.autoDetectedCategory")}</h4>
           <div className={styles["detectedBox"]}>
             <div className={styles["detectedRow"]}>
               <div className={styles["detectedLabel"]}>
-                <TbTag className='h-4 w-4 text-indigo-500' />
+                <TbTag className={styles["iconIndigo"]} />
                 <span className={styles["detectedName"]}>{detectedCategory}</span>
               </div>
               <Badge variant='secondary'>{t("confidence", {value: String(confidence)})}</Badge>
@@ -77,17 +80,15 @@ export function GeneralExpenseCard(): React.JSX.Element {
               <Button
                 variant='outline'
                 size='sm'
-                aria-label={t("aria.confirmCategory")}
-                className='gap-1 bg-transparent'>
-                <TbCheck className='h-3 w-3' />
+                aria-label={t("aria.confirmCategory")}>
+                <TbCheck className={styles["iconSmColored"]} />
                 {t("buttons.correct")}
               </Button>
               <Button
                 variant='ghost'
                 size='sm'
-                aria-label={t("aria.changeCategory")}
-                className='gap-1'>
-                <TbRefresh className='h-3 w-3' />
+                aria-label={t("aria.changeCategory")}>
+                <TbRefresh className={styles["iconSmColored"]} />
                 {t("buttons.change")}
               </Button>
             </div>
@@ -112,10 +113,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                       {formatCurrency(budget.limit, {currencyCode: currency.code, locale})}
                     </span>
                   </div>
-                  <Progress
-                    value={pct}
-                    className='h-2'
-                  />
+                  <Progress value={pct} />
                 </div>
               );
             })}
@@ -137,7 +135,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
         {/* Tax & Business Options */}
         <div>
           <h4 className={styles["sectionTitleWithIcon"]}>
-            <TbFileText className='h-4 w-4' />
+            <TbFileText className={styles["iconSm"]} />
             {t("sections.taxBusiness")}
           </h4>
           <div className={styles["checkboxSection"]}>
@@ -147,9 +145,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 checked={businessExpense}
                 onCheckedChange={handleBusinessExpenseChange}
               />
-              <Label
-                htmlFor='business'
-                className='cursor-pointer text-sm font-normal'>
+              <Label htmlFor='business'>
                 {t("options.businessExpense")}
               </Label>
             </div>
@@ -159,9 +155,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 checked={trackWarranty}
                 onCheckedChange={handleTrackWarrantyChange}
               />
-              <Label
-                htmlFor='warranty'
-                className='cursor-pointer text-sm font-normal'>
+              <Label htmlFor='warranty'>
                 {t("options.trackWarranty")}
               </Label>
             </div>
@@ -171,16 +165,14 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 checked={insuranceInventory}
                 onCheckedChange={handleInsuranceInventoryChange}
               />
-              <Label
-                htmlFor='insurance'
-                className='cursor-pointer text-sm font-normal'>
+              <Label htmlFor='insurance'>
                 {t("options.insuranceInventory")}
               </Label>
             </div>
           </div>
           {businessExpense ? (
             <p className={styles["vatText"]}>
-              <TbBriefcase className='h-3 w-3' />
+              <TbBriefcase className={styles["briefcaseIcon"]} />
               {t("vatReclaimable")}: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
             </p>
           ) : null}
@@ -189,7 +181,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
         {/* Similar Past Purchases */}
         <div>
           <div className={styles["pastHeader"]}>
-            <TbHistory className='h-4 w-4 text-gray-500' />
+            <TbHistory className={styles["iconGray"]} />
             <h4 className={styles["pastTitle"]}>{t("sections.similarPurchases")}</h4>
           </div>
           <ul className={styles["pastList"]}>
@@ -209,19 +201,18 @@ export function GeneralExpenseCard(): React.JSX.Element {
           <Button
             variant='outline'
             size='sm'
-            aria-label={t("aria.organize")}
-            className='flex-1 gap-1 bg-transparent'>
-            <TbFolderOpen className='h-3 w-3' />
+            aria-label={t("aria.organize")}>
+            <TbFolderOpen className={styles["iconSmColored"]} />
             {t("buttons.organize")}
           </Button>
           <Button
             variant='outline'
             size='sm'
-            aria-label={t("aria.export")}
-            className='flex-1 gap-1 bg-transparent'>
-            <TbDownload className='h-3 w-3' />
+            aria-label={t("aria.export")}>
+            <TbDownload className={styles["iconSmColored"]} />
             {t("buttons.export")}
           </Button>
+        </div>
         </div>
       </CardContent>
     </Card>

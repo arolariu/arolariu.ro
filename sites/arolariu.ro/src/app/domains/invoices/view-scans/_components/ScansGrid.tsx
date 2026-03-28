@@ -93,8 +93,8 @@ export default function ScansGrid(): React.JSX.Element {
         initial={{opacity: 0, y: 20}}
         animate={{opacity: 1, y: 0}}
         className={styles["emptyWrapper"]}>
-        <Card className='mx-auto max-w-2xl'>
-          <CardContent className='p-8'>
+        <Card className={styles["emptyCard"]}>
+          <CardContent className={styles["emptyCardContent"]}>
             <div className={styles["emptyCenter"]}>
               <div className={styles["emptyIconCircle"]}>
                 <TbPhoto className={styles["emptyIcon"]} />
@@ -128,7 +128,7 @@ export default function ScansGrid(): React.JSX.Element {
               <Button
                 asChild
                 size='lg'
-                className='bg-linear-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700'>
+                className={styles["uploadButton"]}>
                 <Link href='/domains/invoices/upload-scans'>
                   <TbUpload className={styles["iconUploadLg"]} />
                   {t("emptyState.uploadButton")}

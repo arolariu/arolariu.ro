@@ -43,7 +43,7 @@ export function HomeInventoryCard(): React.JSX.Element {
     let icon = (
       <TbSpray
         key='spray-can'
-        className='h-4 w-4 text-blue-500'
+        className={styles["iconBlue"]}
       />
     );
 
@@ -52,7 +52,7 @@ export function HomeInventoryCard(): React.JSX.Element {
       icon = (
         <TbDroplets
           key='droplets'
-          className='h-4 w-4 text-blue-500'
+          className={styles["iconBlue"]}
         />
       );
       supplies.push({id: `laundry-${item.productCode}`, name: t("supplyNames.laundryDetergent"), icon, daysRemaining, maxDays: 60});
@@ -61,7 +61,7 @@ export function HomeInventoryCard(): React.JSX.Element {
       icon = (
         <TbSparkles
           key='sparkles'
-          className='h-4 w-4 text-cyan-500'
+          className={styles["iconCyan"]}
         />
       );
       supplies.push({id: `dish-${item.productCode}`, name: t("supplyNames.dishSoap"), icon, daysRemaining, maxDays: 30});
@@ -70,7 +70,7 @@ export function HomeInventoryCard(): React.JSX.Element {
       icon = (
         <TbToiletPaper
           key='toilet'
-          className='h-4 w-4 text-gray-500'
+          className={styles["iconGray"]}
         />
       );
       supplies.push({id: `paper-${item.productCode}`, name: t("supplyNames.paperProducts"), icon, daysRemaining, maxDays: 45});
@@ -79,7 +79,7 @@ export function HomeInventoryCard(): React.JSX.Element {
       icon = (
         <TbSpray
           key='floor-cleaner-spray-can'
-          className='h-4 w-4 text-green-500'
+          className={styles["iconGreen"]}
         />
       );
       supplies.push({id: `floor-${item.productCode}`, name: t("supplyNames.floorCleaner"), icon, daysRemaining, maxDays: 90});
@@ -97,7 +97,7 @@ export function HomeInventoryCard(): React.JSX.Element {
         icon: (
           <TbDroplets
             key='default-droplets'
-            className='h-4 w-4 text-blue-500'
+            className={styles["iconBlue"]}
           />
         ),
         daysRemaining: 45,
@@ -109,7 +109,7 @@ export function HomeInventoryCard(): React.JSX.Element {
         icon: (
           <TbSparkles
             key='default-sparkles'
-            className='h-4 w-4 text-cyan-500'
+            className={styles["iconCyan"]}
           />
         ),
         daysRemaining: 18,
@@ -128,13 +128,16 @@ export function HomeInventoryCard(): React.JSX.Element {
 
   return (
     <Card>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbHome className='h-5 w-5 text-emerald-600' />
-          {t("title")}
+      <CardHeader>
+        <CardTitle>
+          <span className={styles["titleRow"]}>
+            <TbHome className={styles["titleIcon"]} />
+            {t("title")}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-5'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {/* Supply Stock Levels */}
         <div>
           <h4 className={styles["sectionTitle"]}>{t("stockLevels.title")}</h4>
@@ -169,14 +172,14 @@ export function HomeInventoryCard(): React.JSX.Element {
         <div className={styles["ecoSection"]}>
           <div className={styles["ecoHeader"]}>
             <div className={styles["ecoLabel"]}>
-              <TbLeaf className='h-4 w-4 text-green-500' />
+              <TbLeaf className={styles["leafIcon"]} />
               <span className={styles["ecoLabelText"]}>{t("eco.title")}</span>
             </div>
             <div className={styles["ecoStars"]}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <TbStar
                   key={star}
-                  className={`h-4 w-4 ${star <= ecoScore ? "fill-green-500 text-green-500" : "text-muted-foreground"}`}
+                  className={star <= ecoScore ? styles["starActive"] : styles["starInactive"]}
                 />
               ))}
             </div>
@@ -199,7 +202,7 @@ export function HomeInventoryCard(): React.JSX.Element {
 
         {/* Bulk Buying Savings */}
         <div className={styles["bulkBox"]}>
-          <TbPackage className='mt-0.5 h-4 w-4 shrink-0 text-blue-500' />
+          <TbPackage className={styles["packageIcon"]} />
           <div>
             <p className={styles["bulkTitle"]}>{t("bulk.title")}</p>
             <p className={styles["bulkDescription"]}>
@@ -208,6 +211,7 @@ export function HomeInventoryCard(): React.JSX.Element {
               })}
             </p>
           </div>
+        </div>
         </div>
       </CardContent>
     </Card>

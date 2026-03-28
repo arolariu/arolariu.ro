@@ -337,3 +337,81 @@
   @include abstracts.icon-size(abstracts.space(5));
   color: abstracts.color('destructive');
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.viewScansButton {
+  @include abstracts.gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.infoButton {
+  margin-top: abstracts.space(0.5);
+  height: auto;
+  width: auto;
+  padding: 0;
+  color: abstracts.color('muted-foreground');
+
+  &:hover {
+    background-color: transparent;
+    color: abstracts.color('foreground');
+  }
+
+  @include abstracts.dark {
+    color: abstracts.color('muted-foreground');
+
+    &:hover {
+      background-color: transparent;
+      color: abstracts.color('foreground');
+    }
+  }
+}
+
+.tooltipContent {
+  max-width: 20rem;
+}
+
+.outlineButton {
+  display: flex;
+  align-items: center;
+  gap: abstracts.space(2);
+}
+
+.sidebarCardContent {
+  padding: abstracts.space(4);
+}
+
+.securityCard {
+  border-color: abstracts.color-alpha('success', 0.35);
+  background-color: abstracts.color-alpha('success', 0.1);
+
+  @include abstracts.dark {
+    border-color: abstracts.color-alpha('success', 0.35);
+    background-color: abstracts.color-alpha('success', 0.1);
+  }
+}
+
+.nextStepsCard {
+  border-color: abstracts.color-alpha('primary', 0.35);
+  background-color: abstracts.color-alpha('primary', 0.1);
+
+  @include abstracts.dark {
+    border-color: abstracts.color-alpha('primary', 0.35);
+    background-color: abstracts.color-alpha('primary', 0.1);
+  }
+}
+
+.nextStepsButton {
+  width: 100%;
+  @include abstracts.gradient-bg();
+  color: white;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}

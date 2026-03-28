@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {useLocale, useTranslations} from "next-intl";
-import {createContext, useContext, useMemo} from "react";
+import {createContext, use, useMemo} from "react";
 import {TbArrowDown, TbArrowUp, TbCalendar, TbInfoCircle, TbShoppingCart, TbTrendingUp} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
@@ -55,7 +55,7 @@ type CalendarDataContextType = {
 const CalendarDataContext = createContext<CalendarDataContextType | null>(null);
 
 function useCalendarData(): CalendarDataContextType {
-  const context = useContext(CalendarDataContext);
+  const context = use(CalendarDataContext);
   if (!context) {
     throw new Error("useCalendarData must be used within CalendarDataContext.Provider");
   }
@@ -104,7 +104,7 @@ function HistoricalComparisonSection({
 
   return (
     <div className={styles["historicalRow"]}>
-      <ArrowIcon className={`h-3 w-3 ${colorClass}`} />
+      <ArrowIcon className={`${styles["iconXs"]} ${colorClass}`} />
       <span className={colorClass}>{Math.abs(historicalData.percentageDiff).toFixed(0)}%</span>
       <span className={styles["moreText"]}>{t("tooltip.vsAverage", {years: String(historicalData.yearsWithData)})}</span>
     </div>
@@ -118,7 +118,7 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
   return (
     <TooltipContent
       side='top'
-      className='max-w-xs space-y-2 text-xs'>
+      className={styles["dayTooltip"]}>
       <div>
         <p className={styles["tooltipLabel"]}>{formatCurrency(amount, {currencyCode: currency.code, locale})}</p>
         <p className={styles["tooltipCount"]}>{t("tooltip.invoiceCount", {count: String(count)})}</p>
@@ -135,7 +135,7 @@ function DayTooltipContent(props: DayTooltipContentProps): React.JSX.Element {
           t={t}
         />
       ) : null}
-      {isCurrentInvoiceDate ? <Badge className='mt-1'>{t("tooltip.currentInvoice")}</Badge> : null}
+      {isCurrentInvoiceDate ? <Badge className={styles["badgeMt"]}>{t("tooltip.currentInvoice")}</Badge> : null}
     </TooltipContent>
   );
 }
@@ -146,8 +146,14 @@ function isSameDay(date1: Date, date2: Date): boolean {
 }
 
 /** Custom day button component that renders spending data from context */
-function CustomDayButton(props: DayButtonProps): React.JSX.Element {
-  const {day, className, ...rest} = props;
+function CustomDayButton({
+  day,
+  className = "",
+  disabled = false,
+  "aria-label": ariaLabel,
+  "aria-pressed": ariaPressed,
+  tabIndex = 0,
+}: DayButtonProps): React.JSX.Element {
   const {locale, currency, month, transactionDate, spendingByDay, historicalByDay, maxDayAmount} = useCalendarData();
   const t = useTranslations("Invoices.ViewInvoice.shoppingCalendarCard");
   const {date} = day;
@@ -159,16 +165,16 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
   const count = data?.count ?? 0;
   const isCurrentInvoiceDate = isSameDay(date, transactionDate);
   const intensityClass = getSpendingIntensityClass(amount, maxDayAmount);
-  const ringClass = isCurrentInvoiceDate ? "ring-primary ring-2 ring-offset-1" : "";
+  const ringClass = isCurrentInvoiceDate ? styles["dayButtonRing"] : "";
 
   const button = (
     <Button
       variant='ghost'
-      disabled={rest.disabled}
-      aria-label={rest["aria-label"]}
-      aria-pressed={rest["aria-pressed"]}
-      tabIndex={rest.tabIndex}
-      className={`h-9 w-9 p-0 font-normal aria-selected:opacity-100 ${intensityClass} ${ringClass} flex items-center justify-center rounded-md transition-all ${className}`}>
+      disabled={disabled}
+      aria-label={ariaLabel}
+      aria-pressed={ariaPressed}
+      tabIndex={tabIndex}
+      className={`${styles["dayButton"]} ${intensityClass} ${ringClass} ${className}`}>
       <time dateTime={date.toISOString()}>{date.getDate()}</time>
     </Button>
   );
@@ -177,7 +183,7 @@ function CustomDayButton(props: DayButtonProps): React.JSX.Element {
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger render={button} />
       <DayTooltipContent
         amount={amount}
         count={count}
@@ -238,20 +244,18 @@ export function ShoppingCalendarCard(): React.JSX.Element {
   );
 
   return (
-    <CalendarDataContext.Provider value={calendarDataValue}>
+    <CalendarDataContext value={calendarDataValue}>
       <TooltipProvider>
-        <Card className='transition-shadow duration-300 hover:shadow-md'>
-          <CardHeader className='pb-3'>
-            <CardTitle className='flex items-center gap-2 text-lg'>
-              <TbCalendar className='text-muted-foreground h-4 w-4' />
+        <Card className={styles["card"]}>
+          <CardHeader className={styles["cardHeader"]}>
+            <CardTitle className={styles["titleRow"]}>
+              <TbCalendar className={styles["titleIcon"]} />
               {t("title")}
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <TbInfoCircle className='text-muted-foreground h-4 w-4 cursor-help' />
-                </TooltipTrigger>
+                <TooltipTrigger render={<TbInfoCircle className={styles["infoIcon"]} />} />
                 <TooltipContent
                   side='top'
-                  className='text-xs'>
+                  className={styles["tooltipXs"]}>
                   {hasHydrated && invoices.length > 1
                     ? t("tooltip.basedOnCachedInvoices", {count: String(invoices.length)})
                     : t("tooltip.currentInvoiceOnly")}
@@ -259,14 +263,14 @@ export function ShoppingCalendarCard(): React.JSX.Element {
               </Tooltip>
             </CardTitle>
           </CardHeader>
-          <CardContent className='flex flex-col items-center space-y-4'>
+          <CardContent className={styles["contentCentered"]}>
             <Calendar
               mode='single'
               selected={transactionDate}
               month={month}
               disableNavigation
               hideNavigation
-              className='rounded-md border'
+              className={styles["calendar"]}
               components={{
                 DayButton: CustomDayButton,
               }}
@@ -290,14 +294,14 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             {/* Month Statistics */}
             <div className={styles["statsGrid"]}>
               <div className={styles["statBox"]}>
-                <TbShoppingCart className='text-muted-foreground h-4 w-4 shrink-0' />
+                <TbShoppingCart className={styles["iconMutedShrink"]} />
                 <div>
                   <p className={styles["statLabel"]}>{t("stats.monthTotal")}</p>
                   <p className={styles["statValue"]}>{formatCurrency(patterns.monthTotal, {currencyCode: currency.code, locale})}</p>
                 </div>
               </div>
               <div className={styles["statBox"]}>
-                <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
+                <TbCalendar className={styles["iconMutedShrink"]} />
                 <div>
                   <p className={styles["statLabel"]}>{t("stats.shoppingDays")}</p>
                   <p className={styles["statValue"]}>{patterns.shoppingDaysCount}</p>
@@ -308,7 +312,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             {/* Shopping Pattern Insight */}
             {patterns.avgDaysBetween > 0 ? (
               <div className={styles["insightBox"]}>
-                <TbTrendingUp className='text-muted-foreground h-4 w-4 shrink-0' />
+                <TbTrendingUp className={styles["iconMutedShrink"]} />
                 <p className={styles["insightText"]}>
                   {t("insights.shopEveryPrefix")}{" "}
                   <span className={styles["insightHighlight"]}>{t("insights.days", {count: patterns.avgDaysBetween.toFixed(0)})}</span>{" "}
@@ -329,7 +333,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
             {/* Most Active Day Insight */}
             {invoices.length > 5 ? (
               <div className={styles["insightBox"]}>
-                <TbCalendar className='text-muted-foreground h-4 w-4 shrink-0' />
+                <TbCalendar className={styles["iconMutedShrink"]} />
                 <p className={styles["insightText"]}>
                   {t("insights.mostActiveOn")}{" "}
                   <span className={styles["insightHighlight"]}>
@@ -341,6 +345,6 @@ export function ShoppingCalendarCard(): React.JSX.Element {
           </CardContent>
         </Card>
       </TooltipProvider>
-    </CalendarDataContext.Provider>
+    </CalendarDataContext>
   );
 }

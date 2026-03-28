@@ -53,3 +53,79 @@
   composes: tableHeader;
   text-align: right;
 }
+
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 56rem;
+  }
+
+  @include respond-to('lg') {
+    max-width: 80rem;
+  }
+}
+
+.searchIcon {
+  color: color('muted-foreground');
+  position: absolute;
+  top: 0.625rem;
+  left: 0.625rem;
+  width: space(4);
+  height: space(4);
+}
+
+.searchInput {
+  padding-left: space(8);
+}
+
+.filterIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.headerRow {
+  background-color: color-alpha('muted', 0.5);
+}
+
+.tableBody {
+  background-color: color('popover');
+
+  & > * + * {
+    border-top: 1px solid color('border');
+  }
+}
+
+.dataRow {
+  &:hover {
+    background-color: color-alpha('muted', 0.5);
+  }
+}
+
+.cellBold {
+  padding-inline: space(4);
+  padding-block: space(3);
+  font-size: font-size('sm');
+  font-weight: font-weight('medium');
+  white-space: nowrap;
+}
+
+.cell {
+  padding-inline: space(4);
+  padding-block: space(3);
+  font-size: font-size('sm');
+  white-space: nowrap;
+}
+
+.cellRight {
+  padding-inline: space(4);
+  padding-block: space(3);
+  text-align: right;
+  font-size: font-size('sm');
+  white-space: nowrap;
+}
+
+.downloadIcon {
+  margin-right: space(1);
+  width: space(4);
+  height: space(4);
+}

@@ -3,6 +3,7 @@
 import type {NavigationItem} from "@/types";
 
 import {Button} from "@arolariu/components";
+import styles from "./Navigation.module.scss";
 import {useAuth} from "@clerk/nextjs";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
@@ -246,7 +247,7 @@ function MobileNavigationComponent(): React.JSX.Element {
         aria-expanded={mobileOpen}
         aria-controls='mobile-navigation'
         className='mobile-nav__toggle'>
-        <span className='sr-only'>{t("openNavigation")}</span>
+        <span className={styles["srOnly"]}>{t("openNavigation")}</span>
         <TbMenu className='mobile-nav__toggle-icon' />
       </Button>
 

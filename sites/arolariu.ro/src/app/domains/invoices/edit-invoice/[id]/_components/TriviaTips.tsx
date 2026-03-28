@@ -73,7 +73,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: t("tips.loyaltyProgram.description", {merchantName: merchant.name}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.05,
       difficulty: "easy",
-      icon: <TbPigMoney className='h-5 w-5' />,
+      icon: <TbPigMoney className={styles["tipIcon"]} />,
     },
     {
       id: 2,
@@ -81,7 +81,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: t("tips.bulkPurchase.description"),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.1,
       difficulty: "medium",
-      icon: <TbPercentage className='h-5 w-5' />,
+      icon: <TbPercentage className={styles["tipIcon"]} />,
     },
     {
       id: 3,
@@ -89,7 +89,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: t("tips.digitalCoupons.description", {merchantName: merchant.name}),
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.08,
       difficulty: "easy",
-      icon: <TbBulb className='h-5 w-5' />,
+      icon: <TbBulb className={styles["tipIcon"]} />,
     },
   ];
 
@@ -98,13 +98,13 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
 
   return (
     <Card>
-      <CardHeader className='pb-2'>
-        <CardTitle className='flex items-center text-lg'>
-          <TbSparkles className='text-primary mr-2 h-5 w-5' />
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["cardTitle"]}>
+          <TbSparkles className={styles["sparklesIcon"]} />
           <span>{t("title")}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-4'>
+      <CardContent className={styles["cardContent"]}>
         <motion.div
           className={styles["savingsBanner"]}
           whileHover={{scale: 1.02}}
@@ -137,20 +137,22 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       <h3 className={styles["tipTitle"]}>{tip.title}</h3>
                       <Badge
                         variant={tip.difficulty === "easy" ? "default" : "secondary"}
-                        className='mt-1 text-xs'>
+                        className={styles["difficultyBadge"]}>
                         {tip.difficulty === "easy" ? t("difficulty.easy") : t("difficulty.medium")}
                       </Badge>
                     </div>
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className={styles["tipSavings"]}>
-                            <span>
-                              {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
-                            </span>
-                            <TbThumbUp className='ml-1 h-3.5 w-3.5' />
-                          </div>
-                        </TooltipTrigger>
+                        <TooltipTrigger
+                          render={
+                            <div className={styles["tipSavings"]}>
+                              <span>
+                                {formatCurrency(tip.potentialSavings, {currencyCode: invoice.paymentInformation.currency.code, locale: "en"})}
+                              </span>
+                              <TbThumbUp className={styles["thumbIcon"]} />
+                            </div>
+                          }
+                        />
                         <TooltipContent>
                           <p>{t("tooltips.estimatedSavings")}</p>
                         </TooltipContent>
@@ -167,14 +169,14 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
         <div className={styles["moreButton"]}>
           <Button
             variant='outline'
-            className='group w-full'>
+            className={styles["moreButton"]}>
             <span>{t("buttons.viewMoreSavingsTips")}</span>
-            <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+            <TbArrowRight className={styles["arrowIcon"]} />
           </Button>
         </div>
 
         <div className={styles["disclaimer"]}>
-          <TbAlertCircle className='h-3.5 w-3.5' />
+          <TbAlertCircle className={styles["alertCircleIcon"]} />
           <span>{t("disclaimer")}</span>
         </div>
       </CardContent>

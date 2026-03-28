@@ -81,28 +81,28 @@ export function NutritionCard(): React.JSX.Element {
   const foodGroups: FoodGroup[] = [
     {
       name: t("foodGroups.fruits"),
-      icon: <TbApple className='h-5 w-5 text-red-500' />,
+      icon: <TbApple className={styles["iconRed"]} />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.FRUITS],
     },
     {
       name: t("foodGroups.vegetables"),
-      icon: <TbLeaf className='h-5 w-5 text-green-500' />,
+      icon: <TbLeaf className={styles["iconGreen"]} />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.VEGETABLES],
     },
     {
       name: t("foodGroups.protein"),
-      icon: <TbMeat className='h-5 w-5 text-amber-700' />,
+      icon: <TbMeat className={styles["iconAmber"]} />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.MEAT, ProductCategory.FISH, ProductCategory.DAIRY],
     },
     {
       name: t("foodGroups.grains"),
-      icon: <TbWheat className='h-5 w-5 text-amber-500' />,
+      icon: <TbWheat className={styles["iconWheat"]} />,
       items: 0,
       amount: 0,
       categories: [ProductCategory.BAKED_GOODS],
@@ -155,13 +155,13 @@ export function NutritionCard(): React.JSX.Element {
 
   return (
     <Card>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbLeaf className='h-5 w-5 text-green-600' />
+      <CardHeader className={styles["cardHeader"]}>
+        <CardTitle className={styles["titleRow"]}>
+          <TbLeaf className={styles["titleIcon"]} />
           {t("title")}
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-6'>
+      <CardContent className={styles["contentSpaced"]}>
         {/* Food Balance Score */}
         <div className={styles["scoreSection"]}>
           <div className={styles["scoreRow"]}>
@@ -172,7 +172,7 @@ export function NutritionCard(): React.JSX.Element {
           </div>
           <Progress
             value={balanceScore}
-            className='h-2'
+            className={styles["progressBarHeight"]}
           />
         </div>
 
@@ -181,7 +181,7 @@ export function NutritionCard(): React.JSX.Element {
           <h4 className={styles["compositionTitle"]}>{t("composition.title")}</h4>
           <div className={styles["compositionList"]}>
             <div className={styles["compositionRow"]}>
-              <TbLeaf className='h-4 w-4 shrink-0 text-green-500' />
+              <TbLeaf className={styles["iconCompositionGreen"]} />
               <span className={styles["compositionLabel"]}>{t("composition.wholeFoods")}</span>
               <div className={styles["progressTrack"]}>
                 <div
@@ -192,7 +192,7 @@ export function NutritionCard(): React.JSX.Element {
               <span className={styles["compositionPct"]}>{wholeFoodPct}%</span>
             </div>
             <div className={styles["compositionRow"]}>
-              <TbWheat className='h-4 w-4 shrink-0 text-amber-500' />
+              <TbWheat className={styles["iconCompositionAmber"]} />
               <span className={styles["compositionLabel"]}>{t("composition.processed")}</span>
               <div className={styles["progressTrack"]}>
                 <div
@@ -203,7 +203,7 @@ export function NutritionCard(): React.JSX.Element {
               <span className={styles["compositionPct"]}>{processedPct}%</span>
             </div>
             <div className={styles["compositionRow"]}>
-              <TbMilk className='h-4 w-4 shrink-0 text-blue-500' />
+              <TbMilk className={styles["iconCompositionBlue"]} />
               <span className={styles["compositionLabel"]}>{t("composition.dairyOther")}</span>
               <div className={styles["progressTrack"]}>
                 <div
@@ -234,22 +234,22 @@ export function NutritionCard(): React.JSX.Element {
         {allergens.length > 0 && (
           <div className={styles["allergensSection"]}>
             <div className={styles["allergensHeader"]}>
-              <TbAlertTriangle className='h-4 w-4 text-amber-500' />
+              <TbAlertTriangle className={styles["iconAllergenAmber"]} />
               <h4 className={styles["allergensTitle"]}>{t("allergens.title")}</h4>
             </div>
             <div className={styles["allergensList"]}>
               <TooltipProvider>
                 {allergens.map(([name, count]) => (
                   <Tooltip key={name}>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger render={
                       <Badge
                         variant='outline'
-                        className='cursor-help'>
-                        {name === "Lactose" && <TbMilk className='mr-1 h-3 w-3' />}
-                        {name === "Gluten" && <TbWheat className='mr-1 h-3 w-3' />}
+                        className={styles["badgeCursorHelp"]}>
+                        {name === "Lactose" && <TbMilk className={styles["iconAllergenSm"]} />}
+                        {name === "Gluten" && <TbWheat className={styles["iconAllergenSm"]} />}
                         {name} ({count})
                       </Badge>
-                    </TooltipTrigger>
+                    } />
                     <TooltipContent>
                       <p>{t("allergens.foundInItems", {count: String(count)})}</p>
                     </TooltipContent>
@@ -262,7 +262,7 @@ export function NutritionCard(): React.JSX.Element {
 
         {/* Suggestion */}
         <div className={styles["suggestionBox"]}>
-          <TbBulb className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
+          <TbBulb className={styles["iconBulb"]} />
           <p className={styles["suggestionText"]}>{suggestion}</p>
         </div>
       </CardContent>

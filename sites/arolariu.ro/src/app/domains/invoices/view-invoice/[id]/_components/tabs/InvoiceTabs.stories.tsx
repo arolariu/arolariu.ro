@@ -23,51 +23,57 @@ type Story = StoryObj<typeof meta>;
 /** Default with recipe cards visible. */
 export const WithRecipes: Story = {
   render: () => (
-    <div className='rounded-xl border transition-shadow duration-300 hover:shadow-md'>
-      <div className='p-6 pb-0'>
-        <div className='grid w-full grid-cols-2 rounded-lg bg-gray-100 p-1 dark:bg-gray-800'>
-          <button className='flex items-center justify-center gap-2 rounded-md bg-white py-1.5 text-sm font-medium shadow-sm dark:bg-gray-700'>
-            <TbChefHat className='h-4 w-4' />
+    <div style={{borderRadius:'0.75rem', border:'1px solid #e5e7eb'}}>
+      <div style={{padding:'1.5rem', paddingBottom:'0'}}>
+        <div style={{display:'grid', width:'100%', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', borderRadius:'0.5rem', backgroundColor:'#f3f4f6', padding:'0.25rem'}}>
+          <button style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', borderRadius:'0.375rem', backgroundColor:'#fff', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem', fontWeight:500, boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+            <TbChefHat style={{height:'1rem', width:'1rem'}} />
             Possible Recipes
           </button>
-          <button className='flex items-center justify-center gap-2 py-1.5 text-sm text-gray-500'>
-            <TbInfoCircle className='h-4 w-4' />
+          <button style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem', color:'#6b7280'}}>
+            <TbInfoCircle style={{height:'1rem', width:'1rem'}} />
             Additional Info
           </button>
         </div>
       </div>
 
-      <div className='space-y-3 p-6'>
+      <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', padding:'1.5rem'}}>
         {[
           {name: "Pasta Carbonara", complexity: "Normal", duration: 35, prep: 15, cook: 20},
           {name: "Caesar Salad", complexity: "Easy", duration: 15, prep: 15, cook: 0},
         ].map((recipe) => (
           <div
             key={recipe.name}
-            className='rounded-lg border p-4 transition-shadow hover:shadow-md'>
-            <div className='flex items-center justify-between'>
-              <h4 className='font-semibold'>{recipe.name}</h4>
+            style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', padding:'1rem'}}>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+              <h4 style={{fontWeight:600}}>{recipe.name}</h4>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs ${
-                  recipe.complexity === "Easy"
-                    ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
-                }`}>
+                style={{
+                  borderRadius:'9999px',
+                  paddingLeft:'0.5rem',
+                  paddingRight:'0.5rem',
+                  paddingTop:'0.125rem',
+                  paddingBottom:'0.125rem',
+                  fontSize:'0.75rem',
+                  ...(recipe.complexity === "Easy"
+                    ? {backgroundColor:'#f3f4f6', color:'#374151'}
+                    : {backgroundColor:'#dbeafe', color:'#1d4ed8'}),
+                }}>
                 {recipe.complexity}
               </span>
             </div>
-            <p className='mt-1 text-sm text-gray-500'>A classic recipe using ingredients from your purchase.</p>
-            <div className='mt-2 flex items-center gap-2 text-xs text-gray-500'>
-              <TbClock className='h-4 w-4' />
+            <p style={{marginTop:'0.25rem', fontSize:'0.875rem', color:'#6b7280'}}>A classic recipe using ingredients from your purchase.</p>
+            <div style={{marginTop:'0.5rem', display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.75rem', color:'#6b7280'}}>
+              <TbClock style={{height:'1rem', width:'1rem'}} />
               <span>{recipe.duration} min</span>
-              <span className='text-gray-300'>•</span>
+              <span style={{color:'#d1d5db'}}>•</span>
               <span>
                 Prep: {recipe.prep}m, Cook: {recipe.cook}m
               </span>
             </div>
-            <button className='mt-2 flex items-center gap-1 text-sm text-blue-600 hover:underline'>
+            <button style={{marginTop:'0.5rem', display:'flex', alignItems:'center', gap:'0.25rem', fontSize:'0.875rem', color:'#2563eb'}}>
               View Recipe
-              <TbExternalLink className='h-3 w-3' />
+              <TbExternalLink style={{height:'0.75rem', width:'0.75rem'}} />
             </button>
           </div>
         ))}
@@ -79,22 +85,22 @@ export const WithRecipes: Story = {
 /** Empty recipes state. */
 export const EmptyRecipes: Story = {
   render: () => (
-    <div className='rounded-xl border'>
-      <div className='p-6 pb-0'>
-        <div className='grid w-full grid-cols-2 rounded-lg bg-gray-100 p-1 dark:bg-gray-800'>
-          <button className='flex items-center justify-center gap-2 rounded-md bg-white py-1.5 text-sm font-medium shadow-sm dark:bg-gray-700'>
-            <TbChefHat className='h-4 w-4' />
+    <div style={{borderRadius:'0.75rem', border:'1px solid #e5e7eb'}}>
+      <div style={{padding:'1.5rem', paddingBottom:'0'}}>
+        <div style={{display:'grid', width:'100%', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', borderRadius:'0.5rem', backgroundColor:'#f3f4f6', padding:'0.25rem'}}>
+          <button style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', borderRadius:'0.375rem', backgroundColor:'#fff', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem', fontWeight:500, boxShadow:'0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+            <TbChefHat style={{height:'1rem', width:'1rem'}} />
             Possible Recipes
           </button>
-          <button className='flex items-center justify-center gap-2 py-1.5 text-sm text-gray-500'>
-            <TbInfoCircle className='h-4 w-4' />
+          <button style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem', color:'#6b7280'}}>
+            <TbInfoCircle style={{height:'1rem', width:'1rem'}} />
             Additional Info
           </button>
         </div>
       </div>
-      <div className='flex flex-col items-center justify-center p-12'>
-        <TbChefHat className='text-muted-foreground/50 h-12 w-12' />
-        <p className='mt-2 text-sm text-gray-500'>No recipes available for this invoice.</p>
+      <div style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'3rem'}}>
+        <TbChefHat style={{color:'rgba(107,114,128,0.5)', height:'3rem', width:'3rem'}} />
+        <p style={{marginTop:'0.5rem', fontSize:'0.875rem', color:'#6b7280'}}>No recipes available for this invoice.</p>
       </div>
     </div>
   ),

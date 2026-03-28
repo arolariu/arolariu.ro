@@ -125,13 +125,13 @@ function UploadStats(): React.JSX.Element | null {
 
         {allDone ? (
           <Button
-            asChild
-            className='bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
-            <Link href='/domains/invoices/view-scans'>
-              {t("buttons.viewScans")}
-              <TbArrowRight className={styles["arrowIcon"]} />
-            </Link>
-          </Button>
+            className={styles["viewScansButton"]}
+            render={
+              <Link href='/domains/invoices/view-scans'>
+                {t("buttons.viewScans")}
+                <TbArrowRight className={styles["arrowIcon"]} />
+              </Link>
+            } />
         ) : null}
       </div>
     </motion.div>
@@ -166,17 +166,17 @@ function UploadContent(): React.JSX.Element {
           </div>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger render={
                 <Button
                   variant='ghost'
                   size='icon'
-                  className='mt-1 h-auto w-auto p-0 text-gray-400 hover:bg-transparent hover:text-gray-600 dark:text-gray-500 dark:hover:bg-transparent dark:hover:text-gray-300'>
+                  className={styles["infoButton"]}>
                   <TbInfoCircle className={styles["infoIcon"]} />
                 </Button>
-              </TooltipTrigger>
+              } />
               <TooltipContent
                 side='right'
-                className='max-w-xs'>
+                className={styles["tooltipContent"]}>
                 <p>{t("header.tooltip")}</p>
               </TooltipContent>
             </Tooltip>
@@ -186,36 +186,36 @@ function UploadContent(): React.JSX.Element {
         <div className={styles["headerActions"]}>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger render={
                 <Button
-                  asChild
                   variant='outline'
-                  className='flex items-center gap-2'>
-                  <Link href='/domains/invoices/view-scans'>
-                    <TbEye className={styles["actionIcon"]} />
-                    <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
-                    <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
-                  </Link>
-                </Button>
-              </TooltipTrigger>
+                  className={styles["outlineButton"]}
+                  render={
+                    <Link href='/domains/invoices/view-scans'>
+                      <TbEye className={styles["actionIcon"]} />
+                      <span className={styles["hiddenMobile"]}>{t("buttons.viewScans")}</span>
+                      <span className={styles["visibleMobile"]}>{t("buttons.viewScans").split(" ")[0]}</span>
+                    </Link>
+                  } />
+              } />
               <TooltipContent>{t("buttons.viewScans")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger render={
                 <Button
-                  asChild
                   variant='outline'
-                  className='flex items-center gap-2'>
-                  <Link href='/domains/invoices/view-invoices'>
-                    <TbFileInvoice className={styles["actionIcon"]} />
-                    <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
-                    <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
-                  </Link>
-                </Button>
-              </TooltipTrigger>
+                  className={styles["outlineButton"]}
+                  render={
+                    <Link href='/domains/invoices/view-invoices'>
+                      <TbFileInvoice className={styles["actionIcon"]} />
+                      <span className={styles["hiddenMobile"]}>{t("buttons.myInvoices")}</span>
+                      <span className={styles["visibleMobile"]}>{t("buttons.myInvoices").split(" ")[0]}</span>
+                    </Link>
+                  } />
+              } />
               <TooltipContent>{t("buttons.myInvoices")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -237,7 +237,7 @@ function UploadContent(): React.JSX.Element {
         <div className={styles["sidebar"]}>
           {/* Supported Formats */}
           <Card>
-            <CardContent className='p-4'>
+            <CardContent className={styles["sidebarCardContent"]}>
               <h3 className={styles["sidebarTitle"]}>{t("sidebar.formats.title")}</h3>
               <div className={styles["formatsList"]}>
                 <FileTypeCard
@@ -257,7 +257,7 @@ function UploadContent(): React.JSX.Element {
 
           {/* Tips */}
           <Card>
-            <CardContent className='p-4'>
+            <CardContent className={styles["sidebarCardContent"]}>
               <h3 className={styles["sidebarTitle"]}>{t("sidebar.tips.title")}</h3>
               <ul className={styles["tipsList"]}>
                 <TipItem>{t("sidebar.tips.tip1")}</TipItem>
@@ -270,8 +270,8 @@ function UploadContent(): React.JSX.Element {
           </Card>
 
           {/* Security Note */}
-          <Card className='border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'>
-            <CardContent className='p-4'>
+          <Card className={styles["securityCard"]}>
+            <CardContent className={styles["sidebarCardContent"]}>
               <div className={styles["securityContent"]}>
                 <TbShieldCheck className={styles["securityIcon"]} />
                 <div>
@@ -288,19 +288,19 @@ function UploadContent(): React.JSX.Element {
               initial={{opacity: 0, scale: 0.95}}
               animate={{opacity: 1, scale: 1}}
               transition={{delay: 0.3}}>
-              <Card className='border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20'>
-                <CardContent className='p-4'>
+              <Card className={styles["nextStepsCard"]}>
+                <CardContent className={styles["sidebarCardContent"]}>
                   <h3 className={styles["nextStepsTitle"]}>{t("sidebar.nextSteps.title")}</h3>
                   <p className={styles["nextStepsDescription"]}>{t("sidebar.nextSteps.description")}</p>
                   <Button
-                    asChild
                     size='sm'
-                    className='w-full bg-linear-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'>
-                    <Link href='/domains/invoices/view-scans'>
-                      {t("sidebar.nextSteps.button")}
-                      <TbArrowRight className={styles["arrowIcon"]} />
-                    </Link>
-                  </Button>
+                    className={styles["nextStepsButton"]}
+                    render={
+                      <Link href='/domains/invoices/view-scans'>
+                        {t("sidebar.nextSteps.button")}
+                        <TbArrowRight className={styles["arrowIcon"]} />
+                      </Link>
+                    } />
                 </CardContent>
               </Card>
             </motion.div>

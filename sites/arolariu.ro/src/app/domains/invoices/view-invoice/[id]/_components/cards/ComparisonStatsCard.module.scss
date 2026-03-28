@@ -69,3 +69,31 @@
 .trendMuted {
   color: color('muted-foreground');
 }
+
+.card {
+  height: 100%;
+}
+
+.contentSpaced {
+  @include spaced-children(space(4));
+}
+
+.trendIconAmber {
+  @include icon-size(space(4));
+  color: color('warning');
+}
+
+.trendIconEmerald {
+  @include icon-size(space(4));
+  color: color('success');
+}
+
+.trendIconMuted {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}
+
+.iconMuted {
+  @include icon-size(space(4));
+  color: color('muted-foreground');
+}

@@ -154,3 +154,69 @@
   -webkit-background-clip: text;
   color: transparent;
 }
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.cardHeaderPb { @include settings.settings-card-header-flex; }
+.cardTitleBase { @include settings.settings-card-title-base; }
+.cardContentSpaced { @include settings.settings-card-content-spaced; }
+.selectCursor { @include settings.settings-select-cursor; }
+.sliderCursor { @include settings.settings-slider-cursor; }
+.buttonFullCursor { @include settings.settings-button-full-cursor; }
+.iconSm { @include settings.settings-icon-sm; }
+
+// ===========================================
+// THEME & FONT BUTTON UTILITIES
+// ===========================================
+.flex1Cursor {
+  flex: 1;
+  cursor: pointer;
+}
+
+.buttonIconSm {
+  margin-right: space(1.5);
+  width: space(4);
+  height: space(4);
+}
+
+.cardContentSpaced3 {
+  > * + * {
+    margin-top: space(3);
+  }
+}
+
+.iconMd {
+  width: space(5);
+  height: space(5);
+}
+
+// ===========================================
+// COLOR PICKER UTILITIES
+// ===========================================
+.colorPickerButton {
+  height: 2.5rem;
+  width: 7rem;
+  cursor: pointer;
+  gap: space(2);
+  padding-inline: space(3);
+}
+
+.colorPalette {
+  width: 16rem;
+}
+
+.colorButton {
+  height: 2.5rem;
+  width: 2.5rem;
+  cursor: pointer;
+  border-radius: radius('full');
+  padding: 0;
+}
+
+.colorCheckIcon {
+  position: absolute;
+  width: space(4);
+  height: space(4);
+  color: white;
+}

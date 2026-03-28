@@ -177,7 +177,7 @@ export default function FeedbackDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-lg'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description", {merchant: merchant.name})}</DialogDescription>
@@ -192,7 +192,7 @@ export default function FeedbackDialog(): React.JSX.Element {
                 <Button
                   key={star}
                   type='button'
-                  className='p-1'
+                  className={styles["starButton"]}
                   data-star={star}
                   onMouseEnter={handleStarEnter}
                   onMouseLeave={handleStarLeave}
@@ -211,7 +211,7 @@ export default function FeedbackDialog(): React.JSX.Element {
                 <Badge
                   key={feature}
                   variant={selectedFeatures.includes(feature) ? "default" : "outline"}
-                  className='cursor-pointer'
+                  className={styles["featureBadge"]}
                   data-feature={feature}
                   onClick={handleToggleFeature}>
                   {feature}

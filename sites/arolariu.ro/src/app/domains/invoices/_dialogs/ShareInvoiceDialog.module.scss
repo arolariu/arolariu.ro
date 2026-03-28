@@ -79,3 +79,61 @@
 .alertIcon {
   @include icon-size(space(4));
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.dialogContent {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+}
+
+.selectionCard {
+  cursor: pointer;
+  @include transition((border-color, background-color));
+
+  &:hover {
+    border-color: color('primary');
+    background-color: color-alpha('accent', 0.5);
+  }
+}
+
+.cardTitleBase {
+  font-size: font-size('base');
+}
+
+.cardDescSm {
+  font-size: font-size('sm');
+}
+
+.alertMt {
+  margin-top: space(4);
+}
+
+.alertDescXs {
+  font-size: font-size('xs');
+}
+
+.buttonFull {
+  width: 100%;
+}
+
+// ===========================================
+// LIBRARY COMPONENT CLASSES (TAILWIND MIGRATION)
+// ===========================================
+.dialogContentMd {
+  @include respond-to('sm') {
+    max-width: 28rem;
+  }
+}
+
+.cardHoverCursor {
+  cursor: pointer;
+  @include transition((color, background-color));
+  
+  &:hover {
+    border-color: color('primary');
+    background-color: color-alpha('accent', 0.5);
+  }
+}

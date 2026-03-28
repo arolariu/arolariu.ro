@@ -126,3 +126,83 @@
   font-weight: font-weight('medium');
   color: color('warning');
 }
+
+// ===========================================
+// COMPONENT OVERRIDES
+// ===========================================
+.card {
+  overflow: hidden;
+  @include transition(all);
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.cardSelected {
+  box-shadow: 0 0 0 2px color('primary');
+}
+
+.cardContentFlush {
+  padding: 0;
+}
+
+.checkbox {
+  height: space(5);
+  width: space(5);
+  border: 2px solid white;
+  background-color: rgba(255, 255, 255, 0.8);
+
+  &[data-state='checked'] {
+    background-color: color('primary');
+  }
+}
+
+.actionsButton {
+  height: 1.75rem;
+  width: 1.75rem;
+  border-radius: radius('full');
+  background-color: rgba(255, 255, 255, 0.8);
+  color: color('muted-foreground');
+  @include shadow('sm');
+
+  &:hover {
+    background-color: white;
+  }
+
+  @include dark {
+    background-color: color-alpha('foreground', 0.8);
+    color: color('muted-foreground');
+
+    &:hover {
+      background-color: color('foreground');
+    }
+  }
+}
+
+.deleteMenuItem {
+  color: color('destructive');
+
+  &:focus {
+    background-color: color-alpha('destructive', 0.1);
+    color: color('destructive');
+  }
+
+  @include dark {
+    color: color-alpha('destructive', 0.75);
+
+    &:focus {
+      background-color: color-alpha('destructive', 0.1);
+    }
+  }
+}
+
+.deleteButton {
+  background-color: color('destructive');
+  color: white;
+
+  &:hover {
+    background-color: color('destructive');
+    opacity: 0.9;
+  }
+}

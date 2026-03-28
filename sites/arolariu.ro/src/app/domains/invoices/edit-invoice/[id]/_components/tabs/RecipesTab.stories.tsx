@@ -19,26 +19,26 @@ type Story = StoryObj<typeof meta>;
 /** Preview with recipe cards. */
 export const WithRecipes: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white dark:bg-gray-900'>
-      <div className='flex items-center justify-between border-b p-4'>
+    <div style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff'}}>
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', padding: '1rem'}}>
         <div>
-          <h3 className='text-lg font-semibold'>AI-Generated Recipes</h3>
-          <p className='text-sm text-gray-500'>Recipes created from your invoice items</p>
+          <h3 style={{fontSize: '1.125rem', fontWeight: '600'}}>AI-Generated Recipes</h3>
+          <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Recipes created from your invoice items</p>
         </div>
-        <div className='flex gap-2'>
+        <div style={{display: 'flex', gap: '0.5rem'}}>
           <button
             type='button'
-            className='rounded-md border px-3 py-1.5 text-sm dark:border-gray-600'>
+            style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
             🎉 Generate More
           </button>
           <button
             type='button'
-            className='rounded-md border px-3 py-1.5 text-sm dark:border-gray-600'>
+            style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', paddingLeft: '0.75rem', paddingRight: '0.75rem', paddingTop: '0.375rem', paddingBottom: '0.375rem', fontSize: '0.875rem'}}>
             ➕ Add Recipe
           </button>
         </div>
       </div>
-      <div className='grid gap-4 p-4 md:grid-cols-2'>
+      <div style={{display: 'grid', gap: '1rem', padding: '1rem', gridTemplateColumns: 'repeat(2, 1fr)'}}>
         {[
           {name: "Creamy Pasta", complexity: "Easy", time: "30 min"},
           {name: "Grilled Chicken Salad", complexity: "Easy", time: "25 min"},
@@ -46,13 +46,13 @@ export const WithRecipes: Story = {
         ].map((recipe) => (
           <div
             key={recipe.name}
-            className='rounded-lg border p-4 hover:shadow-sm dark:border-gray-700'>
-            <h4 className='font-medium'>{recipe.name}</h4>
-            <div className='mt-1 flex gap-2'>
-              <span className='rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200'>
+            style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', padding: '1rem'}}>
+            <h4 style={{fontWeight: '500'}}>{recipe.name}</h4>
+            <div style={{marginTop: '0.25rem', display: 'flex', gap: '0.5rem'}}>
+              <span style={{borderRadius: '9999px', backgroundColor: '#dbeafe', paddingLeft: '0.5rem', paddingRight: '0.5rem', paddingTop: '0.125rem', paddingBottom: '0.125rem', fontSize: '0.75rem', color: '#1e40af'}}>
                 {recipe.complexity}
               </span>
-              <span className='text-xs text-gray-500'>⏱ {recipe.time}</span>
+              <span style={{fontSize: '0.75rem', color: '#6b7280'}}>⏱ {recipe.time}</span>
             </div>
           </div>
         ))}
@@ -64,16 +64,16 @@ export const WithRecipes: Story = {
 /** Empty recipes tab. */
 export const NoRecipes: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='text-lg font-semibold'>AI-Generated Recipes</h3>
-        <p className='text-sm text-gray-500'>No recipes generated yet</p>
+    <div style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#ffffff'}}>
+      <div style={{borderBottom: '1px solid #e5e7eb', padding: '1rem'}}>
+        <h3 style={{fontSize: '1.125rem', fontWeight: '600'}}>AI-Generated Recipes</h3>
+        <p style={{fontSize: '0.875rem', color: '#6b7280'}}>No recipes generated yet</p>
       </div>
-      <div className='flex flex-col items-center gap-3 p-8 text-center'>
-        <p className='text-sm text-gray-500'>No recipes have been generated for this invoice yet.</p>
+      <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', padding: '2rem', textAlign: 'center'}}>
+        <p style={{fontSize: '0.875rem', color: '#6b7280'}}>No recipes have been generated for this invoice yet.</p>
         <button
           type='button'
-          className='rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700'>
+          style={{borderRadius: '0.375rem', backgroundColor: '#2563eb', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '0.5rem', paddingBottom: '0.5rem', fontSize: '0.875rem', color: '#ffffff'}}>
           🎉 Generate Recipes
         </button>
       </div>

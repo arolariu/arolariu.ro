@@ -59,33 +59,36 @@ export function DiningCard(): React.JSX.Element {
 
   return (
     <Card>
-      <CardHeader className='pb-3'>
-        <CardTitle className='flex items-center gap-2 text-lg'>
-          <TbToolsKitchen className='h-5 w-5 text-orange-500' />
-          {t("title")}
+      <CardHeader>
+        <CardTitle>
+          <span className={styles["titleRow"]}>
+            <TbToolsKitchen className={styles["titleIcon"]} />
+            {t("title")}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className='space-y-5'>
+      <CardContent>
+        <div className={styles["contentSpaced"]}>
         {/* Estimated Nutrition */}
         <div>
           <h4 className={styles["sectionTitle"]}>{t("estimatedNutrition.title")}</h4>
           <div className={styles["nutritionGrid"]}>
             <div className={styles["nutritionItem"]}>
-              <TbFlame className='h-4 w-4 text-orange-500' />
+              <TbFlame className={styles["iconOrange"]} />
               <div>
                 <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.calories")}</p>
                 <p className={styles["nutritionValue"]}>{t("estimatedNutrition.caloriesValue", {value: String(estimatedCalories)})}</p>
               </div>
             </div>
             <div className={styles["nutritionItem"]}>
-              <TbMeat className='h-4 w-4 text-red-500' />
+              <TbMeat className={styles["iconRed"]} />
               <div>
                 <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.protein")}</p>
                 <p className={styles["nutritionValue"]}>{t("estimatedNutrition.proteinValue", {value: String(estimatedProtein)})}</p>
               </div>
             </div>
             <div className={styles["nutritionItem"]}>
-              <TbAlertTriangle className={`h-4 w-4 ${sodiumLevel === t("sodium.high") ? "text-red-500" : "text-yellow-500"}`} />
+              <TbAlertTriangle className={sodiumLevel === t("sodium.high") ? styles["iconRed"] : styles["iconAmber"]} />
               <div>
                 <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.sodium")}</p>
                 <p className={styles["nutritionValue"]}>
@@ -95,7 +98,7 @@ export function DiningCard(): React.JSX.Element {
               </div>
             </div>
             <div className={styles["nutritionItem"]}>
-              <TbCookie className='h-4 w-4 text-amber-500' />
+              <TbCookie className={styles["iconAmber"]} />
               <div>
                 <p className={styles["nutritionLabel"]}>{t("estimatedNutrition.carbs")}</p>
                 <p className={styles["nutritionValue"]}>{t("estimatedNutrition.carbsValue", {value: String(estimatedCarbs)})}</p>
@@ -109,13 +112,13 @@ export function DiningCard(): React.JSX.Element {
           <h4 className={styles["sectionTitle"]}>{t("habits.title")}</h4>
           <div className={styles["habitsGrid"]}>
             <div className={styles["habitCard"]}>
-              <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
+              <TbCalendar className={`${styles["habitIconWrapper"]} ${styles["iconBlue"]}`} />
               <p className={styles["habitLabel"]}>{t("habits.frequency")}</p>
               <p className={styles["habitValue"]}>{t("habits.frequencyValue", {count: String(fastFoodFrequency)})}</p>
               <p className={styles["habitSub"]}>{t("habits.frequencyDiff")}</p>
             </div>
             <div className={styles["habitCard"]}>
-              <TbUserDollar className='mx-auto mb-1 h-4 w-4 text-green-500' />
+              <TbUserDollar className={`${styles["habitIconWrapper"]} ${styles["iconGreen"]}`} />
               <p className={styles["habitLabel"]}>{t("habits.avgSpend")}</p>
               <p className={styles["habitValue"]}>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
               <p className={`${styles["habitSub"]} ${spendDiff > 0 ? styles["spendDiffRed"] : styles["spendDiffGreen"]}`}>
@@ -124,7 +127,7 @@ export function DiningCard(): React.JSX.Element {
               </p>
             </div>
             <div className={styles["habitCard"]}>
-              <TbMapPin className='mx-auto mb-1 h-4 w-4 text-red-500' />
+              <TbMapPin className={`${styles["habitIconWrapper"]} ${styles["iconRed"]}`} />
               <p className={styles["habitLabel"]}>{t("habits.favorite")}</p>
               <p className={styles["habitValue"]}>{favoritePlace}</p>
               <p className={styles["habitSub"]}>{t("habits.visits", {count: String(visits)})}</p>
@@ -135,7 +138,7 @@ export function DiningCard(): React.JSX.Element {
         {/* Healthier Swaps */}
         <div>
           <div className={styles["swapsHeader"]}>
-            <TbBulb className='h-4 w-4 text-amber-500' />
+            <TbBulb className={styles["iconAmber"]} />
             <h4 className={styles["swapsTitle"]}>{t("swaps.title")}</h4>
           </div>
           <ul className={styles["swapsList"]}>
@@ -159,7 +162,7 @@ export function DiningCard(): React.JSX.Element {
 
         {/* Challenge */}
         <div className={styles["challengeBox"]}>
-          <TbTarget className='mt-0.5 h-5 w-5 shrink-0 text-purple-500' />
+          <TbTarget className={styles["challengeIcon"]} />
           <div>
             <p className={styles["challengeTitle"]}>{t("challenge.title")}</p>
             <p className={styles["challengeDescription"]}>
@@ -170,6 +173,7 @@ export function DiningCard(): React.JSX.Element {
               {t("challenge.descriptionSuffix")}
             </p>
           </div>
+        </div>
         </div>
       </CardContent>
     </Card>

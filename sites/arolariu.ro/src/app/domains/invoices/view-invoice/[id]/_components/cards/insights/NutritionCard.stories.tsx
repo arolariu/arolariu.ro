@@ -20,12 +20,12 @@ type Story = StoryObj<typeof meta>;
 /** Preview of the nutrition insights card. */
 export const Preview: Story = {
   render: () => (
-    <div className='rounded-lg border bg-white shadow-sm dark:bg-gray-900'>
-      <div className='border-b p-4'>
-        <h3 className='flex items-center gap-2 text-lg font-semibold'>🥗 Nutrition Insights</h3>
+    <div style={{borderRadius: '0.5rem', border: '1px solid #e5e7eb', backgroundColor: '#fff', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'}}>
+      <div style={{borderBottom: '1px solid #e5e7eb', padding: '1rem'}}>
+        <h3 style={{display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem', fontWeight: 600}}>🥗 Nutrition Insights</h3>
       </div>
-      <div className='space-y-4 p-4'>
-        <div className='grid grid-cols-2 gap-3'>
+      <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem'}}>
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem'}}>
           {[
             {name: "Dairy", icon: "🥛", items: 3, pct: 25},
             {name: "Fruits", icon: "🍎", items: 4, pct: 30},
@@ -34,24 +34,23 @@ export const Preview: Story = {
           ].map((group) => (
             <div
               key={group.name}
-              className='rounded-md border p-3 dark:border-gray-700'>
-              <div className='flex items-center gap-2'>
+              style={{borderRadius: '0.375rem', border: '1px solid #e5e7eb', padding: '0.75rem'}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                 <span>{group.icon}</span>
-                <span className='text-sm font-medium'>{group.name}</span>
+                <span style={{fontSize: '0.875rem', fontWeight: 500}}>{group.name}</span>
               </div>
-              <p className='text-xs text-gray-500'>{group.items} items</p>
-              <div className='mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-200 dark:bg-gray-700'>
+              <p style={{fontSize: '0.75rem', color: '#6b7280'}}>{group.items} items</p>
+              <div style={{marginTop: '0.25rem', height: '0.375rem', width: '100%', overflow: 'hidden', borderRadius: '0.25rem', backgroundColor: '#e5e7eb'}}>
                 <div
-                  className='h-full rounded bg-green-500'
-                  style={{width: `${String(group.pct)}%`}}
+                  style={{height: '100%', borderRadius: '0.25rem', backgroundColor: '#22c55e', width: `${String(group.pct)}%`}}
                 />
               </div>
             </div>
           ))}
         </div>
-        <div className='rounded-md bg-green-50 p-3 text-center dark:bg-green-900/20'>
-          <p className='text-sm font-medium text-green-700 dark:text-green-300'>Balance Score: Good</p>
-          <p className='text-xs text-gray-500'>Your grocery selection is well-balanced</p>
+        <div style={{borderRadius: '0.375rem', backgroundColor: '#f0fdf4', padding: '0.75rem', textAlign: 'center'}}>
+          <p style={{fontSize: '0.875rem', fontWeight: 500, color: '#15803d'}}>Balance Score: Good</p>
+          <p style={{fontSize: '0.75rem', color: '#6b7280'}}>Your grocery selection is well-balanced</p>
         </div>
       </div>
     </div>

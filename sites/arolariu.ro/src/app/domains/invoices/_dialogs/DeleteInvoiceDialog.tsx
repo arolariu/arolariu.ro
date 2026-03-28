@@ -126,9 +126,9 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- simple dialog open/close handler
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : handleClose())}>
-      <DialogContent className='sm:max-w-lg'>
+      <DialogContent className={styles["dialogContentMaxW"]}>
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2 text-red-600 dark:text-red-400'>
+          <DialogTitle className={styles["dialogTitleRed"]}>
             <TbTrash className={styles["titleIcon"]} />
             {t("title")}
           </DialogTitle>
@@ -176,7 +176,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
               {/* Deletion Impact Warning */}
               <Alert
                 variant='destructive'
-                className='border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50'>
+                className={styles["alertRed"]}>
                 <TbAlertTriangle className={styles["impactIcon"]} />
                 <AlertTitle>{t("impact.title")}</AlertTitle>
                 <AlertDescription>
@@ -224,7 +224,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                     value={confirmText}
                     onChange={handleConfirmTextChange}
                     placeholder={invoiceName}
-                    className={confirmText === invoiceName ? "border-green-500 focus-visible:ring-green-500" : ""}
+                    className={confirmText === invoiceName ? styles["inputGreen"] : ""}
                     autoComplete='off'
                   />
                 </div>
@@ -239,7 +239,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
                   <div className={styles["checkboxContent"]}>
                     <Label
                       htmlFor='understand-deletion'
-                      className='cursor-pointer text-sm leading-none font-medium'>
+                      className={styles["labelCursorSm"]}>
                       {t("confirmation.understoodLabel")}
                     </Label>
                     <p className={styles["checkboxDescription"]}>{t("confirmation.understoodDescription")}</p>
@@ -250,7 +250,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
           )}
         </AnimatePresence>
 
-        <DialogFooter className='gap-2 sm:gap-0'>
+        <DialogFooter className={styles["dialogFooterGap"]}>
           <Button
             type='button'
             variant='outline'

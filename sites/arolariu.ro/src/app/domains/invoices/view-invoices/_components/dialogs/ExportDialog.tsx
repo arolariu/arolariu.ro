@@ -67,7 +67,7 @@ export default function ExportDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-[425px]'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description", {count: String(invoicesToExport.length)})}</DialogDescription>
@@ -87,7 +87,7 @@ export default function ExportDialog(): React.JSX.Element {
                 />
                 <Label
                   htmlFor='csv'
-                  className='flex items-center gap-2'>
+                  className={styles["formatLabel"]}>
                   <TbFileSpreadsheet className={styles["formatIcon"]} />
                   {t("format.labels.csv")}
                 </Label>
@@ -99,7 +99,7 @@ export default function ExportDialog(): React.JSX.Element {
                 />
                 <Label
                   htmlFor='json'
-                  className='flex items-center gap-2'>
+                  className={styles["formatLabel"]}>
                   <TbJson className={styles["formatIcon"]} />
                   {t("format.labels.json")}
                 </Label>
@@ -111,7 +111,7 @@ export default function ExportDialog(): React.JSX.Element {
                 />
                 <Label
                   htmlFor='pdf'
-                  className='flex items-center gap-2'>
+                  className={styles["formatLabel"]}>
                   <TbFileText className={styles["formatIcon"]} />
                   {t("format.labels.pdf")}
                 </Label>
@@ -166,7 +166,7 @@ export default function ExportDialog(): React.JSX.Element {
                 </div>
                 <Label htmlFor='csv-delimiter'>{t("options.csv.delimiterLabel")}</Label>
                 <Input
-                  className='w-1/2'
+                  className={styles["delimiterInput"]}
                   id='csv-delimiter'
                   placeholder={t("options.csv.delimiterPlaceholder")}
                   value={exportOptions.csvOptions?.delimiter ?? ","}
@@ -202,7 +202,7 @@ export default function ExportDialog(): React.JSX.Element {
           </Button>
           <Button
             onClick={handleExport}
-            className='gap-2'>
+            className={styles["exportButton"]}>
             <TbDownload className={styles["formatIcon"]} />
             {t("buttons.export")}
           </Button>

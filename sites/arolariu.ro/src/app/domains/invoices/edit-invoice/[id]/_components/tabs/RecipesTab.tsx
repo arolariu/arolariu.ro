@@ -98,8 +98,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
       animate={{opacity: 1, y: 0}}
       exit={{opacity: 0, y: -10}}
       transition={{duration: 0.2}}>
-      <Card className='group transition-shadow duration-300 hover:shadow-md'>
-        <CardHeader className='flex flex-row items-center justify-between pb-2'>
+      <Card className={styles["card"]}>
+        <CardHeader className={styles["cardHeader"]}>
           <div>
             <CardTitle>{t("header.title")}</CardTitle>
             <CardDescription>{t("header.description")}</CardDescription>
@@ -107,30 +107,34 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
           <TooltipProvider>
             <div className={styles["headerActions"]}>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    className='cursor-pointer'
-                    onClick={handleGenerateRecipe}
-                    size='sm'>
-                    <TbConfetti className='mr-2 h-4 w-4' />
-                    {t("buttons.generate")}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant='ghost'
+                      className={styles["generateButton"]}
+                      onClick={handleGenerateRecipe}
+                      size='sm'>
+                      <TbConfetti className={styles["buttonIcon"]} />
+                      {t("buttons.generate")}
+                    </Button>
+                  }
+                />
                 <TooltipContent side='bottom'>
                   <p>{t("tooltips.generateRecipeUsingAi")}</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className='cursor-pointer'
-                    onClick={openAddDialog}
-                    size='sm'>
-                    <TbPlus className='mr-2 h-4 w-4' />
-                    {t("buttons.addRecipe")}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      className={styles["addButton"]}
+                      onClick={openAddDialog}
+                      size='sm'>
+                      <TbPlus className={styles["buttonIcon"]} />
+                      {t("buttons.addRecipe")}
+                    </Button>
+                  }
+                />
                 <TooltipContent>
                   <p>{t("tooltips.createRecipeWithIngredients")}</p>
                 </TooltipContent>
@@ -154,8 +158,8 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
               <Button
                 onClick={handleCreateFirstRecipe}
                 variant='outline'
-                className='cursor-pointer'>
-                <TbPlus className='mr-2 h-4 w-4' />
+                className={styles["createButton"]}>
+                <TbPlus className={styles["buttonIcon"]} />
                 {t("buttons.createFirstRecipe")}
               </Button>
             </div>

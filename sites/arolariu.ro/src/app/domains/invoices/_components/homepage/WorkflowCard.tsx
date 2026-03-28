@@ -32,15 +32,15 @@ export default function WorkflowCard({step, title, description, icon: Icon, href
       <Card className={styles["workflowCard"]}>
         <div className={styles["stepBadge"]}>{step}</div>
 
-        <CardHeader className='pb-2'>
+        <CardHeader className={styles["cardHeaderCompact"]}>
           <div className={styles["stepIconBox"]}>
             <Icon className={styles["workflowIcon"]} />
           </div>
-          <CardTitle className='text-xl'>{title}</CardTitle>
-          <CardDescription className='text-base'>{description}</CardDescription>
+          <CardTitle className={styles["cardTitleXl"]}>{title}</CardTitle>
+          <CardDescription className={styles["cardDescBase"]}>{description}</CardDescription>
         </CardHeader>
 
-        <CardContent className='pt-2'>
+        <CardContent className={styles["cardContentCompact"]}>
           <Button
             asChild
             className={styles["stepButton"]}>

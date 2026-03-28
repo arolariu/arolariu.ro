@@ -90,3 +90,31 @@
   font-size: font-size('sm');
   font-weight: font-weight('medium');
 }
+
+.editButton {
+  height: space(8);
+  cursor: pointer;
+}
+
+.editIcon {
+  margin-right: space(1);
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.table {
+  min-width: 100%;
+  border-collapse: separate;
+}
+
+.mutedRow {
+  background-color: color-alpha('muted', 0.5);
+}
+
+.tableBody {
+  background-color: color('popover');
+}
+
+.cursorPointer {
+  cursor: pointer;
+}

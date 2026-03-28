@@ -46,6 +46,61 @@
   }
 }
 
+.card {
+  transition: box-shadow 300ms;
+  &:hover {
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  }
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: space(2);
+}
+
+.addButton {
+  cursor: pointer;
+}
+
+.buttonIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.readonlyBadge {
+  margin-left: space(2);
+  font-size: font-size('xs');
+}
+
+.editIconButton {
+  width: space(8);
+  height: space(8);
+  cursor: pointer;
+}
+
+.icon4 {
+  width: space(4);
+  height: space(4);
+}
+
+.menuIcon {
+  margin-right: space(2);
+  width: space(4);
+  height: space(4);
+}
+
+.deleteMenuItem {
+  color: color('destructive');
+
+  &:focus {
+    color: color('destructive');
+  }
+}
+
 .emptyState {
   padding-block: space(8);
   text-align: center;

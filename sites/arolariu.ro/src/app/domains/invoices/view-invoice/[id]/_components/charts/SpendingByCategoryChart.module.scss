@@ -61,3 +61,38 @@
   color: color('muted-foreground');
   font-size: font-size('xs');
 }
+
+.card {
+  height: 100%;
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.cardHeader {
+  padding-bottom: space(2);
+}
+
+.cardTitle {
+  font-size: font-size('base');
+}
+
+.cardDescription {
+  font-size: font-size('xs');
+}
+
+.cardContent {
+  padding-bottom: space(4);
+}
+
+.chartContainerSm {
+  height: 180px;
+  width: 100%;
+}
+
+.pieStroke {
+  stroke: color('background');
+  stroke-width: 2;
+}

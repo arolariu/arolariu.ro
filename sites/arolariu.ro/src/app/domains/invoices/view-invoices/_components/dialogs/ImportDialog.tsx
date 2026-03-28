@@ -117,7 +117,7 @@ export default function ImportDialog(): React.JSX.Element {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-[525px]'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description")}</DialogDescription>
@@ -126,8 +126,8 @@ export default function ImportDialog(): React.JSX.Element {
         <Tabs
           value={activeTab}
           onValueChange={handleTabChange}
-          className='w-full'>
-          <TabsList className='grid w-full grid-cols-3'>
+          className={styles["tabs"]}>
+          <TabsList className={styles["tabsList"]}>
             <TabsTrigger value='csv'>{t("tabs.csv")}</TabsTrigger>
             <TabsTrigger value='pdf'>{t("tabs.pdf")}</TabsTrigger>
             <TabsTrigger value='xlsx'>{t("tabs.xlsx")}</TabsTrigger>

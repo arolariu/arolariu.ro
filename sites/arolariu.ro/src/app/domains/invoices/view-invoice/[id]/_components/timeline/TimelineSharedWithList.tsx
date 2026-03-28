@@ -67,12 +67,12 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
   return (
     <div className={styles["container"]}>
       <div className={styles["header"]}>
-        <TbUsers className='text-muted-foreground h-4 w-4' />
+        <TbUsers className={styles["iconMuted"]} />
         <p className={styles["headerLabel"]}>{t("header.title")}</p>
         {Boolean(sharedUsers.length > 0 || isPublic) && (
           <Badge
             variant='secondary'
-            className='h-5 px-1.5 text-xs'>
+            className={styles["badgeSmall"]}>
             {isPublic ? t("header.publicBadge") : sharedUsers.length}
           </Badge>
         )}
@@ -82,10 +82,10 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
       {Boolean(isPublic) && (
         <Alert
           variant='default'
-          className='border-orange-500/50 bg-orange-500/10'>
-          <TbGlobe className='h-4 w-4 text-orange-500' />
-          <AlertTitle className='text-orange-600 dark:text-orange-400'>{t("publicAccess.title")}</AlertTitle>
-          <AlertDescription className='text-muted-foreground text-xs'>{t("publicAccess.description")}</AlertDescription>
+          className={styles["alertWarning"]}>
+          <TbGlobe className={styles["iconWarning"]} />
+          <AlertTitle className={styles["alertTitleWarning"]}>{t("publicAccess.title")}</AlertTitle>
+          <AlertDescription className={styles["alertDescMuted"]}>{t("publicAccess.description")}</AlertDescription>
         </Alert>
       )}
 
@@ -97,8 +97,8 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
               key={user}
               className={styles["userRow"]}>
               <div className={styles["userInfo"]}>
-                <Avatar className='h-7 w-7'>
-                  <AvatarFallback className='bg-primary/10 text-primary text-xs'>{getInitials(user)}</AvatarFallback>
+                <Avatar className={styles["avatarSm"]}>
+                  <AvatarFallback className={styles["avatarFallback"]}>{getInitials(user)}</AvatarFallback>
                 </Avatar>
                 <div className={styles["userDetails"]}>
                   <p className={styles["userName"]}>{getDisplayName(user)}</p>
@@ -107,18 +107,18 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
               </div>
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger render={
                     <Button
                       variant='ghost'
                       size='icon'
-                      className='h-7 w-7 shrink-0'
+                      className={styles["iconButton"]}
                       aria-label={t("aria.sendEmail", {user})}>
-                      <TbMail className='h-3.5 w-3.5' />
+                      <TbMail className={styles["iconXs"]} />
                     </Button>
-                  </TooltipTrigger>
+                  } />
                   <TooltipContent
                     side='left'
-                    className='text-xs'>
+                    className={styles["tooltipXs"]}>
                     {t("actions.sendEmail")}
                   </TooltipContent>
                 </Tooltip>
@@ -132,8 +132,8 @@ export function TimelineSharedWithList(): React.JSX.Element | null {
         variant='outline'
         size='sm'
         onClick={openShareDialog}
-        className='w-full gap-2 bg-transparent'>
-        <TbExternalLink className='h-3.5 w-3.5' />
+        className={styles["manageButton"]}>
+        <TbExternalLink className={styles["iconXs"]} />
         {t("actions.manageSharing")}
       </Button>
     </div>

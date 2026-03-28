@@ -44,3 +44,14 @@
 .editLink {
   display: flex;
 }
+
+.heartIcon {
+  @include icon-size(space(5));
+  fill: color('destructive');
+  color: color('destructive');
+}
+
+.buttonIcon {
+  @include icon-size(space(4));
+  margin-right: space(2);
+}

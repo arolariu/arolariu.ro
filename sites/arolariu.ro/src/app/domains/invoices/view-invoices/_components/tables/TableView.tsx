@@ -96,7 +96,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
         <TableRow>
           <TableHead className={styles["printHidden"]}>
             <Checkbox
-              className='bg-background/80 backdrop-blur-sm'
+              className={styles["frostedCheckbox"]}
               checked={isAllSelected || (isIndeterminate && "indeterminate")}
               onCheckedChange={handleSelectAllInvoices}
               aria-label={t("aria.selectAllInvoices")}
@@ -107,7 +107,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           <TableHead>
             <Button
               variant='ghost'
-              className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
+              className={styles["sortButton"]}>
               {t("columns.date")}
               <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
@@ -115,12 +115,12 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
           <TableHead>
             <Button
               variant='ghost'
-              className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
+              className={styles["sortButton"]}>
               {t("columns.amount")}
               <TbArrowsUpDown className={styles["sortIcon"]} />
             </Button>
           </TableHead>
-          <TableHead className='text-end'>{t("columns.actions")}</TableHead>
+          <TableHead className={styles["actionsHeader"]}>{t("columns.actions")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -146,9 +146,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
               <TableCell>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>
-                    </TooltipTrigger>
+                    <TooltipTrigger render={<span className={styles["cursorHelp"]}>{formatDate(invoice.createdAt, {locale})} </span>} />
                     <TooltipContent>
                       <p>{new Date(invoice.createdAt).toUTCString()}</p>
                     </TooltipContent>
@@ -166,14 +164,14 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger
-                        asChild
-                        className='hover:text-accent-primary cursor-pointer'>
-                        <Link
-                          href={`/domains/invoices/view-invoice/${invoice.id}`}
-                          className={styles["viewLink"]}>
-                          <TbEye className={styles["viewIcon"]} />
-                        </Link>
-                      </TooltipTrigger>
+                        className={styles["viewTrigger"]}
+                        render={
+                          <Link
+                            href={`/domains/invoices/view-invoice/${invoice.id}`}
+                            className={styles["viewLink"]}>
+                            <TbEye className={styles["viewIcon"]} />
+                          </Link>
+                        } />
                       <TooltipContent>{t("viewInvoice")}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -194,7 +192,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                   onValueChange={(value) => handlePageSizeChange(Number(value))}>
                   <SelectTrigger
-                    className='h-8 w-20 cursor-pointer'
+                    className={styles["pageSizeTrigger"]}
                     aria-label={t("aria.rowsPerPage")}>
                     <SelectValue />
                   </SelectTrigger>
@@ -213,10 +211,10 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             </TableCell>
             <TableCell
               colSpan={1}
-              className='justify-end'>
+              className={styles["paginationButtonsCell"]}>
               <Button
                 variant='outline'
-                className='h-full w-full cursor-pointer'
+                className={styles["paginationButton"]}
                 size='sm'
                 onClick={handlePrevPage}
                 disabled={invoices.length === 0}>
@@ -226,7 +224,7 @@ export const TableView = (props: Readonly<Props>): React.JSX.Element => {
             <TableCell>
               <Button
                 variant='outline'
-                className='h-full w-full cursor-pointer'
+                className={styles["paginationButton"]}
                 size='sm'
                 onClick={handleNextPage}
                 disabled={invoices.length === 0}>

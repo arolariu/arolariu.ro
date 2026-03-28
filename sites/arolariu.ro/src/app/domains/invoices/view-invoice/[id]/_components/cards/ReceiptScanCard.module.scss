@@ -40,3 +40,45 @@
   width: 100%;
   gap: space(2);
 }
+
+.footerContent {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.zoomIcon {
+  @include icon-size(space(4));
+  margin-right: space(2);
+}
+
+.card {
+  @include transition(box-shadow);
+
+  &:hover {
+    @include shadow('md');
+  }
+}
+
+.cardTitle {
+  font-size: font-size('lg');
+}
+
+.dialogContent {
+  max-width: 48rem;
+}
+
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.expandButton {
+  width: 100%;
+  background-color: transparent;
+}
+
+.navButton {
+  flex: 1;
+}

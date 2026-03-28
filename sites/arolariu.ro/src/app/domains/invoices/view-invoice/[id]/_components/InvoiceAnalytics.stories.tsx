@@ -23,69 +23,68 @@ type Story = StoryObj<typeof meta>;
 /** Default analytics dashboard with current invoice tab. */
 export const Default: Story = {
   render: () => (
-    <div className='rounded-xl border bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900'>
+    <div style={{borderRadius:'0.75rem', border:'1px solid #e5e7eb', backgroundColor:'#fff', boxShadow:'0 20px 25px -5px rgba(0,0,0,0.1)'}}>
       {/* Tab Header */}
-      <div className='flex items-center justify-between border-b p-6'>
-        <div className='flex items-center gap-2'>
-          <TbChartBar className='h-5 w-5 text-gray-400' />
-          <h2 className='text-lg font-semibold'>Invoice Analytics</h2>
+      <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid #e5e7eb', padding:'1.5rem'}}>
+        <div style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+          <TbChartBar style={{height:'1.25rem', width:'1.25rem', color:'#9ca3af'}} />
+          <h2 style={{fontSize:'1.125rem', fontWeight:600}}>Invoice Analytics</h2>
         </div>
-        <div className='flex rounded-lg border'>
-          <button className='flex items-center gap-1.5 rounded-l-lg bg-gray-100 px-3 py-1.5 text-sm font-medium dark:bg-gray-800'>
-            <TbChartBar className='h-3.5 w-3.5' />
+        <div style={{display:'flex', borderRadius:'0.5rem', border:'1px solid #e5e7eb'}}>
+          <button style={{display:'flex', alignItems:'center', gap:'0.375rem', borderTopLeftRadius:'0.5rem', borderBottomLeftRadius:'0.5rem', backgroundColor:'#f3f4f6', paddingLeft:'0.75rem', paddingRight:'0.75rem', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem', fontWeight:500}}>
+            <TbChartBar style={{height:'0.875rem', width:'0.875rem'}} />
             Current
           </button>
-          <button className='flex items-center gap-1.5 rounded-r-lg px-3 py-1.5 text-sm text-gray-500'>
-            <TbTrendingUp className='h-3.5 w-3.5' />
+          <button style={{display:'flex', alignItems:'center', gap:'0.375rem', borderTopRightRadius:'0.5rem', borderBottomRightRadius:'0.5rem', paddingLeft:'0.75rem', paddingRight:'0.75rem', paddingTop:'0.375rem', paddingBottom:'0.375rem', fontSize:'0.875rem', color:'#6b7280'}}>
+            <TbTrendingUp style={{height:'0.875rem', width:'0.875rem'}} />
             Compare
           </button>
         </div>
       </div>
 
       {/* Analytics Grid */}
-      <div className='grid gap-4 p-6 md:grid-cols-2'>
+      <div style={{display:'grid', gap:'1rem', padding:'1.5rem', gridTemplateColumns:'repeat(2, minmax(0, 1fr))'}}>
         {/* Summary Stats */}
-        <div className='rounded-lg border p-4'>
-          <h3 className='mb-3 text-sm font-medium text-gray-500'>Summary</h3>
-          <div className='grid grid-cols-2 gap-4'>
+        <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', padding:'1rem'}}>
+          <h3 style={{marginBottom:'0.75rem', fontSize:'0.875rem', fontWeight:500, color:'#6b7280'}}>Summary</h3>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:'1rem'}}>
             <div>
-              <p className='text-2xl font-bold'>€42.75</p>
-              <p className='text-xs text-gray-500'>Total Amount</p>
+              <p style={{fontSize:'1.5rem', fontWeight:'bold'}}>€42.75</p>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Total Amount</p>
             </div>
             <div>
-              <p className='text-2xl font-bold'>12</p>
-              <p className='text-xs text-gray-500'>Items Purchased</p>
+              <p style={{fontSize:'1.5rem', fontWeight:'bold'}}>12</p>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Items Purchased</p>
             </div>
             <div>
-              <p className='text-2xl font-bold'>€3.56</p>
-              <p className='text-xs text-gray-500'>Average Price</p>
+              <p style={{fontSize:'1.5rem', fontWeight:'bold'}}>€3.56</p>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Average Price</p>
             </div>
             <div>
-              <p className='text-2xl font-bold'>4</p>
-              <p className='text-xs text-gray-500'>Categories</p>
+              <p style={{fontSize:'1.5rem', fontWeight:'bold'}}>4</p>
+              <p style={{fontSize:'0.75rem', color:'#6b7280'}}>Categories</p>
             </div>
           </div>
         </div>
 
         {/* Spending by Category */}
-        <div className='rounded-lg border p-4'>
-          <h3 className='mb-3 text-sm font-medium text-gray-500'>Spending by Category</h3>
-          <div className='space-y-2'>
+        <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', padding:'1rem'}}>
+          <h3 style={{marginBottom:'0.75rem', fontSize:'0.875rem', fontWeight:500, color:'#6b7280'}}>Spending by Category</h3>
+          <div style={{display:'flex', flexDirection:'column', gap:'0.5rem'}}>
             {[
-              {name: "Dairy", pct: 35, color: "bg-blue-500"},
-              {name: "Bakery", pct: 25, color: "bg-green-500"},
-              {name: "Produce", pct: 22, color: "bg-orange-500"},
-              {name: "Other", pct: 18, color: "bg-gray-400"},
+              {name: "Dairy", pct: 35, color: "#3b82f6"},
+              {name: "Bakery", pct: 25, color: "#22c55e"},
+              {name: "Produce", pct: 22, color: "#f97316"},
+              {name: "Other", pct: 18, color: "#9ca3af"},
             ].map((cat) => (
               <div key={cat.name}>
-                <div className='flex justify-between text-xs'>
+                <div style={{display:'flex', justifyContent:'space-between', fontSize:'0.75rem'}}>
                   <span>{cat.name}</span>
-                  <span className='text-gray-500'>{cat.pct}%</span>
+                  <span style={{color:'#6b7280'}}>{cat.pct}%</span>
                 </div>
-                <div className='mt-1 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800'>
+                <div style={{marginTop:'0.25rem', height:'0.5rem', overflow:'hidden', borderRadius:'9999px', backgroundColor:'#f3f4f6'}}>
                   <div
-                    className={`h-full rounded-full ${cat.color}`}
-                    style={{width: `${String(cat.pct)}%`}}
+                    style={{height:'100%', borderRadius:'9999px', backgroundColor: cat.color, width: `${String(cat.pct)}%`}}
                   />
                 </div>
               </div>
@@ -94,18 +93,17 @@ export const Default: Story = {
         </div>
 
         {/* Price Distribution */}
-        <div className='rounded-lg border p-4'>
-          <h3 className='mb-3 text-sm font-medium text-gray-500'>Price Distribution</h3>
-          <div className='flex h-32 items-end justify-around'>
+        <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', padding:'1rem'}}>
+          <h3 style={{marginBottom:'0.75rem', fontSize:'0.875rem', fontWeight:500, color:'#6b7280'}}>Price Distribution</h3>
+          <div style={{display:'flex', height:'8rem', alignItems:'flex-end', justifyContent:'space-around'}}>
             {[30, 55, 80, 45, 65, 40, 25].map((h, i) => (
               <div
                 key={i}
-                className='w-6 rounded-t bg-purple-400 dark:bg-purple-600'
-                style={{height: `${String(h)}%`}}
+                style={{width:'1.5rem', borderTopLeftRadius:'0.25rem', borderTopRightRadius:'0.25rem', backgroundColor:'#c084fc', height: `${String(h)}%`}}
               />
             ))}
           </div>
-          <div className='mt-2 flex justify-between text-xs text-gray-400'>
+          <div style={{marginTop:'0.5rem', display:'flex', justifyContent:'space-between', fontSize:'0.75rem', color:'#9ca3af'}}>
             <span>€0</span>
             <span>€5</span>
             <span>€10</span>
@@ -115,13 +113,13 @@ export const Default: Story = {
         </div>
 
         {/* Items Breakdown (full width) */}
-        <div className='rounded-lg border p-4 md:col-span-2'>
-          <h3 className='mb-3 text-sm font-medium text-gray-500'>Items Breakdown</h3>
-          <div className='grid grid-cols-4 gap-2'>
+        <div style={{borderRadius:'0.5rem', border:'1px solid #e5e7eb', padding:'1rem', gridColumn:'span 2'}}>
+          <h3 style={{marginBottom:'0.75rem', fontSize:'0.875rem', fontWeight:500, color:'#6b7280'}}>Items Breakdown</h3>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(4, minmax(0, 1fr))', gap:'0.5rem'}}>
             {["Whole Milk", "Bread", "Eggs", "Bananas", "Cheese", "Butter", "Yogurt", "Apples"].map((item) => (
               <div
                 key={item}
-                className='rounded-md border p-2 text-center text-xs'>
+                style={{borderRadius:'0.375rem', border:'1px solid #e5e7eb', padding:'0.5rem', textAlign:'center', fontSize:'0.75rem'}}>
                 {item}
               </div>
             ))}

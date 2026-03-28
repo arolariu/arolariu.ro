@@ -53,6 +53,12 @@ const gradientClassMap = {
   amber: "gradientAmber",
 } as const;
 
+function getCardClassName(isHovered: boolean, isFirst: boolean): string {
+  if (isHovered) return styles["cardActive"];
+  if (isFirst) return styles["cardHero"];
+  return styles["card"];
+}
+
 const featureConfigs: FeatureConfig[] = [
   {id: "invoices", icon: TbFileInvoice, colorKey: "blue", link: "/domains/invoices"},
   {id: "merchants", icon: TbReceipt, colorKey: "purple", link: "/domains/invoices/view-merchants"},
@@ -120,7 +126,7 @@ export default function Features(): React.JSX.Element {
               onHoverEnd={() => setHoveredFeature(null)}
               // eslint-disable-next-line react/jsx-no-bind -- simple page
               onClick={() => setSelectedFeature(feature)}>
-              <Card className={hoveredFeature === feature.id ? styles["cardActive"] : index === 0 ? styles["cardHero"] : styles["card"]}>
+              <Card className={getCardClassName(hoveredFeature === feature.id, index === 0)}>
                 {/* Gradient background on hover */}
                 <motion.div
                   className={`${styles["cardGradient"]} ${styles[gradientClassMap[feature.colorKey]]}`}

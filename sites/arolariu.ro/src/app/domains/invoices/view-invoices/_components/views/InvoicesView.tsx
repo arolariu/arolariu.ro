@@ -133,7 +133,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
           <TbSearch className={styles["searchIcon"]} />
           <Input
             placeholder={t("searchPlaceholder")}
-            className='pl-8'
+            className={styles["searchInput"]}
             value={searchQuery}
             onChange={handleSearch}
           />
@@ -142,7 +142,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
           <Select
             value={filters.category}
             onValueChange={handleFilters}>
-            <SelectTrigger className='w-[150px] cursor-pointer'>
+            <SelectTrigger className={styles["selectTrigger"]}>
               <div className={styles["filterTriggerContent"]}>
                 <TbCategory className={styles["filterIcon"]} />
                 <span>{t("filters.category")}</span>
@@ -150,37 +150,37 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             </SelectTrigger>
             <SelectContent>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='all'>
                 {t("categories.all")}
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='groceries'>
                 {t("categories.groceries")}
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='dining'>
                 {t("categories.dining")}
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='utilities'>
                 {t("categories.utilities")}
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='entertainment'>
                 {t("categories.entertainment")}
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='travel'>
                 {t("categories.travel")}
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='other'>
                 {t("categories.other")}
               </SelectItem>
@@ -190,7 +190,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
           <Select
             value={filters.time}
             onValueChange={handleFilters}>
-            <SelectTrigger className='w-[150px] cursor-pointer'>
+            <SelectTrigger className={styles["selectTrigger"]}>
               <div className={styles["filterTriggerContent"]}>
                 <TbClock className={styles["filterIcon"]} />
                 <span>{t("filters.timeOfDay")}</span>
@@ -198,12 +198,12 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             </SelectTrigger>
             <SelectContent>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='all'>
                 {t("times.all")}
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='day'>
                 <div className={styles["filterTriggerContent"]}>
                   <TbSun className={styles["sunIcon"]} />
@@ -211,7 +211,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                 </div>
               </SelectItem>
               <SelectItem
-                className='cursor-pointer'
+                className={styles["selectItem"]}
                 value='night'>
                 <div className={styles["filterTriggerContent"]}>
                   <TbMoon className={styles["moonIcon"]} />
@@ -223,26 +223,26 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
 
           {isMobile ? (
             <Sheet>
-              <SheetTrigger asChild>
+              <SheetTrigger render={
                 <Button
                   variant='outline'
                   size='sm'
-                  className='cursor-pointer gap-1'>
+                  className={styles["filterButton"]}>
                   <TbFilter className={styles["filterIcon"]} />
                 </Button>
-              </SheetTrigger>
+              } />
               <SheetContent>{t("placeholderPanel")}</SheetContent>
             </Sheet>
           ) : (
             <Popover>
-              <PopoverTrigger asChild>
+              <PopoverTrigger render={
                 <Button
                   variant='outline'
                   size='sm'
-                  className='cursor-pointer gap-1'>
+                  className={styles["filterButton"]}>
                   <TbFilter className={styles["filterIcon"]} />
                 </Button>
-              </PopoverTrigger>
+              } />
               <PopoverContent>{t("placeholderPanel")}</PopoverContent>
             </Popover>
           )}
@@ -251,32 +251,32 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
-                  asChild
-                  className='cursor-pointer'>
-                  <Button
-                    variant={view === "table" ? "default" : "ghost"}
-                    size='sm'
-                    className='rounded-r-none'
-                    // eslint-disable-next-line react/jsx-no-bind -- small fn
-                    onClick={() => setView("table")}>
-                    <TbTable className={styles["filterIcon"]} />
-                  </Button>
-                </TooltipTrigger>
+                  className={styles["tooltipTrigger"]}
+                  render={
+                    <Button
+                      variant={view === "table" ? "default" : "ghost"}
+                      size='sm'
+                      className={styles["viewButtonLeft"]}
+                      // eslint-disable-next-line react/jsx-no-bind -- small fn
+                      onClick={() => setView("table")}>
+                      <TbTable className={styles["filterIcon"]} />
+                    </Button>
+                  } />
                 <TooltipContent>{t("viewModes.table")}</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
-                  asChild
-                  className='cursor-pointer'>
-                  <Button
-                    variant={view === "grid" ? "default" : "ghost"}
-                    size='sm'
-                    className='rounded-l-none'
-                    // eslint-disable-next-line react/jsx-no-bind -- small fn
-                    onClick={() => setView("grid")}>
-                    <TbCards className={styles["filterIcon"]} />
-                  </Button>
-                </TooltipTrigger>
+                  className={styles["tooltipTrigger"]}
+                  render={
+                    <Button
+                      variant={view === "grid" ? "default" : "ghost"}
+                      size='sm'
+                      className={styles["viewButtonRight"]}
+                      // eslint-disable-next-line react/jsx-no-bind -- small fn
+                      onClick={() => setView("grid")}>
+                      <TbCards className={styles["filterIcon"]} />
+                    </Button>
+                  } />
                 <TooltipContent>{t("viewModes.grid")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>

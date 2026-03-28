@@ -19,8 +19,10 @@ const AZURITE_CONN_PREFIX =
   "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=";
 
 /** Docker-internal Azurite hostname that must be rewritten for browser access. */
+/* eslint-disable sonarjs/no-clear-text-protocols -- Azurite local emulator uses HTTP */
 const AZURITE_DOCKER_ORIGIN = "http://azurite:10000";
 const AZURITE_HOST_ORIGIN = "http://localhost:10000";
+/* eslint-enable sonarjs/no-clear-text-protocols */
 
 /**
  * Rewrites Docker-internal Azurite blob URLs to host-accessible URLs.
@@ -43,6 +45,9 @@ export function rewriteAzuriteUrl(url: string): string {
  */
 export async function createBlobClient(storageEndpoint: string): Promise<BlobServiceClient> {
   if (storageEndpoint.startsWith("http://")) {
+    if (process.env["AZURE_CLIENT_ID"]) {
+      throw new Error("HTTP storage endpoints are not allowed in production. Use HTTPS.");
+    }
     const connStr = `${AZURITE_CONN_PREFIX}${storageEndpoint};`;
     return BlobServiceClient.fromConnectionString(connStr);
   }

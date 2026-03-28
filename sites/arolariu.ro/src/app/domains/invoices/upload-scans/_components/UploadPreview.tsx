@@ -67,8 +67,8 @@ function UploadCard({
   }, [onRemove, id]);
 
   return (
-    <Card className='relative overflow-hidden'>
-      <CardContent className='p-0'>
+    <Card className={styles["card"]}>
+      <CardContent className={styles["cardContentFlush"]}>
         {/* Preview */}
         <div className={styles["previewArea"]}>
           {mimeType === "application/pdf" ? (
@@ -107,35 +107,35 @@ function UploadCard({
             {status === "idle" && (
               <Badge
                 variant='secondary'
-                className='bg-gray-500/80 text-white'>
+                className={styles["badgePending"]}>
                 {t("preview.status.pending")}
               </Badge>
             )}
             {status === "uploading" && (
               <Badge
                 variant='secondary'
-                className='bg-blue-500/80 text-white'>
+                className={styles["badgeUploading"]}>
                 {t("preview.status.uploading")}
               </Badge>
             )}
             {status === "retrying" && (
               <Badge
                 variant='secondary'
-                className='bg-amber-500/80 text-white'>
+                className={styles["badgeRetrying"]}>
                 {t("preview.status.retrying")}
               </Badge>
             )}
             {status === "completed" && (
               <Badge
                 variant='secondary'
-                className='bg-green-500/80 text-white'>
+                className={styles["badgeCompleted"]}>
                 {t("preview.status.completed")}
               </Badge>
             )}
             {status === "failed" && (
               <Badge
                 variant='secondary'
-                className='bg-red-500/80 text-white'>
+                className={styles["badgeFailed"]}>
                 {t("preview.status.failed")}
               </Badge>
             )}
@@ -145,15 +145,15 @@ function UploadCard({
           {(status === "idle" || status === "failed") && (
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger render={
                   <Button
                     variant='ghost'
                     size='icon'
-                    className='absolute top-2 left-2 h-8 w-8 bg-black/50 text-white hover:bg-black/70'
+                    className={styles["removeButton"]}
                     onClick={handleRemove}>
                     <TbTrash className={styles["removeIcon"]} />
                   </Button>
-                </TooltipTrigger>
+                } />
                 <TooltipContent side='right'>{t("preview.removeTooltip")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -170,9 +170,9 @@ function UploadCard({
           <p className={styles["fileSize"]}>{formatFileSize(size)}</p>
           {(status === "uploading" || status === "retrying") && (
             <>
-              <div className='mt-1 h-1.5 w-full overflow-hidden rounded bg-gray-200 dark:bg-gray-700'>
+              <div className={styles["progressTrack"]}>
                 <div
-                  className='h-full bg-blue-500 transition-all duration-200'
+                  className={styles["progressFill"]}
                   style={{width: `${Math.max(0, Math.min(progress, 100))}%`}}
                 />
               </div>

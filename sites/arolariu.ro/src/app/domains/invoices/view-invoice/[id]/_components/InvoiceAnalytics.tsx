@@ -47,24 +47,24 @@ export function InvoiceAnalytics(): React.JSX.Element {
     <div className={styles["container"]}>
       <Tabs
         defaultValue='current'
-        className='w-full'>
+        className={styles["tabsFullWidth"]}>
         <div className={styles["tabHeader"]}>
           <div className={styles["sectionTitle"]}>
-            <TbChartBar className='text-muted-foreground h-5 w-5' />
+            <TbChartBar className={styles["sectionIcon"]} />
             <h2 className={styles["sectionTitleText"]}>{t("title")}</h2>
           </div>
-          <TabsList className='grid w-full grid-cols-2 sm:w-auto'>
+          <TabsList className={styles["tabsList"]}>
             <TabsTrigger
               value='current'
-              className='text-xs sm:text-sm'>
-              <TbChartBar className='mr-1.5 h-3.5 w-3.5' />
+              className={styles["tabsTrigger"]}>
+              <TbChartBar className={styles["tabIcon"]} />
               {t("tabs.current")}
             </TabsTrigger>
             {Boolean(isOwner) && (
               <TabsTrigger
                 value='compare'
-                className='text-xs sm:text-sm'>
-                <TbTrendingUp className='mr-1.5 h-3.5 w-3.5' />
+                className={styles["tabsTrigger"]}>
+                <TbTrendingUp className={styles["tabIcon"]} />
                 {t("tabs.compare")}
               </TabsTrigger>
             )}
@@ -74,7 +74,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
         {/* Current Invoice Analytics */}
         <TabsContent
           value='current'
-          className='mt-0'>
+          className={styles["tabContent"]}>
           <div className={styles["analyticsGrid"]}>
             {/* Summary Stats */}
             <div className={styles["gridItem"]}>
@@ -114,7 +114,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
         {Boolean(isOwner) && (
           <TabsContent
             value='compare'
-            className='mt-0'>
+            className={styles["tabContent"]}>
             <div className={styles["analyticsGrid"]}>
               {/* Comparison Stats */}
               <div className={styles["gridItem"]}>

@@ -1,7 +1,7 @@
 "use client";
 
 // TODO: refactor.
-/* eslint-disable */
+/* eslint-disable no-console -- TODO: replace console.log with proper logging */
 
 import {RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
@@ -40,6 +40,11 @@ import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, Tb
 import {useDialog} from "../../../../_contexts/DialogContext";
 import styles from "./RecipeDialog.module.scss";
 
+/** Rich text renderer for bold/strong text in translations */
+function RichTextStrong(chunks: React.ReactNode): React.JSX.Element {
+  return <strong>{chunks}</strong>;
+}
+
 const CreateDialog = () => {
   const t = useTranslations("Invoices.EditInvoice.recipeDialog");
   const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
@@ -73,7 +78,7 @@ const CreateDialog = () => {
     <Dialog
       open={isOpen}
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md md:max-w-lg'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
           <DialogDescription>{t("create.description")}</DialogDescription>
@@ -86,17 +91,19 @@ const CreateDialog = () => {
               <div>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={() => {}}
-                        className='flex items-center gap-1'>
-                        <TbSparkles className='h-3 w-3' />
-                        {t("actions.generateName")}
-                      </Button>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='sm'
+                          onClick={() => {}}
+                          className={styles["generateButton"]}>
+                          <TbSparkles className={styles["sparklesIcon"]} />
+                          {t("actions.generateName")}
+                        </Button>
+                      }
+                    />
                     <TooltipContent>
                       <p className={styles["tooltipText"]}>{t("tooltips.generateName")}</p>
                     </TooltipContent>
@@ -133,7 +140,7 @@ const CreateDialog = () => {
                 type='button'
                 variant='outline'
                 size='sm'>
-                <TbPlus className='mr-1 h-4 w-4' />
+                <TbPlus className={styles["addIcon"]} />
                 {t("buttons.add")}
               </Button>
             </div>
@@ -155,7 +162,7 @@ const CreateDialog = () => {
                       variant='ghost'
                       size='icon'
                       disabled={recipe.ingredients.length <= 1}>
-                      <TbX className='h-4 w-4' />
+                      <TbX className={styles["icon4"]} />
                     </Button>
                   </div>
                 </div>
@@ -192,16 +199,18 @@ const CreateDialog = () => {
               <Label htmlFor='instructions'>{t("fields.instructions")}</Label>
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      onClick={() => {}}>
-                      <TbWand className='mr-1 h-4 w-4' />
-                      {t("actions.enhanceInstructions")}
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={() => {}}>
+                        <TbWand className={styles["addIcon"]} />
+                        {t("actions.enhanceInstructions")}
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.enhanceInstructions")}</p>
                   </TooltipContent>
@@ -223,7 +232,7 @@ const CreateDialog = () => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>{t("fields.prepTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
+                <TbClock className={styles["mutedIcon"]} />
                 <Input
                   id='prepTime'
                   name='prepTime'
@@ -238,7 +247,7 @@ const CreateDialog = () => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>{t("fields.cookTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
+                <TbToolsKitchen className={styles["mutedIcon"]} />
                 <Input
                   id='cookTime'
                   name='cookTime'
@@ -251,7 +260,7 @@ const CreateDialog = () => {
           </div>
         </form>
 
-        <DialogFooter className='flex items-center justify-between sm:justify-between'>
+        <DialogFooter className={styles["dialogFooter"]}>
           <div className={styles["footerActions"]}>
             <Button
               type='button'
@@ -262,7 +271,7 @@ const CreateDialog = () => {
             <Button
               type='button'
               onClick={handleCreate}>
-              <TbDisc className='mr-2 h-4 w-4' />
+              <TbDisc className={styles["saveIcon"]} />
               {t("buttons.save")}
             </Button>
           </div>
@@ -281,7 +290,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md md:max-w-lg'>
+      <DialogContent className={styles["dialogContent"]}>
         <DialogHeader>
           <DialogTitle>{recipe.name}</DialogTitle>
           <DialogDescription>{t("read.description")}</DialogDescription>
@@ -326,19 +335,19 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
             <div className={styles["timeGrid"]}>
               <Label htmlFor='preparationTime'>{t("fields.prepTime")}</Label>
-              <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
+              <TbClock className={styles["mutedIcon"]} />
               <span>{recipe?.preparationTime || t("read.notSpecified")}</span>
             </div>
           </div>
 
           <div className={styles["fieldGroup"]}>
             <Label htmlFor='cookingTime'>{t("fields.cookTime")}</Label>
-            <TbToolsKitchen3 className='text-muted-foreground mr-2 h-4 w-4' />
+            <TbToolsKitchen3 className={styles["mutedIcon"]} />
             <span>{recipe?.cookingTime || t("read.notSpecified")}</span>
           </div>
         </div>
 
-        <DialogFooter className='flex items-center justify-between sm:justify-between'>
+        <DialogFooter className={styles["dialogFooter"]}>
           <Button
             type='button'
             onClick={close}>
@@ -373,7 +382,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
       open={isOpen}
       // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-lg md:max-w-6xl'>
+      <DialogContent className={styles["dialogContentWide"]}>
         <DialogHeader>
           <DialogTitle>{t("update.title")}</DialogTitle>
           <DialogDescription>{t("update.description")}</DialogDescription>
@@ -386,17 +395,19 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               <div>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={generateName}
-                        className='flex items-center gap-1'>
-                        <TbSparkles className='h-3 w-3' />
-                        {t("actions.generateName")}
-                      </Button>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='sm'
+                          onClick={generateName}
+                          className={styles["generateButton"]}>
+                          <TbSparkles className={styles["sparklesIcon"]} />
+                          {t("actions.generateName")}
+                        </Button>
+                      }
+                    />
                     <TooltipContent>
                       <p className={styles["tooltipText"]}>{t("tooltips.generateName")}</p>
                     </TooltipContent>
@@ -434,7 +445,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                 type='button'
                 variant='outline'
                 size='sm'>
-                <TbPlus className='mr-1 h-4 w-4' />
+                <TbPlus className={styles["addIcon"]} />
                 {t("buttons.add")}
               </Button>
             </div>
@@ -456,7 +467,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
                       variant='ghost'
                       size='icon'
                       disabled={recipeDetails.ingredients.length <= 1}>
-                      <TbX className='h-4 w-4' />
+                      <TbX className={styles["icon4"]} />
                     </Button>
                   </div>
                 </div>
@@ -493,16 +504,18 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
               <Label htmlFor='instructions'>{t("fields.instructions")}</Label>
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      onClick={enhanceInstructions}>
-                      <TbWand className='mr-1 h-4 w-4' />
-                      {t("actions.enhanceInstructions")}
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={enhanceInstructions}>
+                        <TbWand className={styles["addIcon"]} />
+                        {t("actions.enhanceInstructions")}
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     <p>{t("tooltips.enhanceInstructions")}</p>
                   </TooltipContent>
@@ -524,7 +537,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='prepTime'>{t("fields.prepTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
+                <TbClock className={styles["mutedIcon"]} />
                 <Input
                   id='prepTime'
                   name='prepTime'
@@ -539,7 +552,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='cookTime'>{t("fields.cookTime")}</Label>
               <div className={styles["timeRow"]}>
-                <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
+                <TbToolsKitchen className={styles["mutedIcon"]} />
                 <Input
                   id='cookTime'
                   name='cookTime'
@@ -552,7 +565,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
           </div>
         </form>
 
-        <DialogFooter className='flex items-center justify-between sm:justify-between'>
+        <DialogFooter className={styles["dialogFooter"]}>
           <div className={styles["footerActions"]}>
             <Button
               type='button'
@@ -563,7 +576,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <Button
               type='button'
               onClick={handleCreate}>
-              <TbDisc className='mr-2 h-4 w-4' />
+              <TbDisc className={styles["saveIcon"]} />
               {t("buttons.save")}
             </Button>
           </div>
@@ -588,14 +601,14 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
         <AlertDialogHeader>
           <AlertDialogTitle>{t("delete.title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t.rich("delete.description", {name: recipe.name, strong: (chunks) => <strong>{chunks}</strong>})}
+            {t.rich("delete.description", {name: recipe.name, strong: RichTextStrong})}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t("buttons.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            className='bg-destructive text-destructive-foreground'>
+            className={styles["deleteAction"]}>
             {t("buttons.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
