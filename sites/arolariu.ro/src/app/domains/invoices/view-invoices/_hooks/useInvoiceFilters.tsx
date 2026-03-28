@@ -238,7 +238,9 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       }
 
       // Replace URL without adding to history or scrolling
-      router.replace(`${pathname}?${params.toString()}`, {scroll: false});
+      // Only add '?' if there are parameters, otherwise keep pathname clean
+      const paramString = params.toString();
+      router.replace(paramString ? `${pathname}?${paramString}` : pathname, {scroll: false});
     },
     [searchParams, filters, router, pathname],
   );

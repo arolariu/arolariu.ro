@@ -1,13 +1,13 @@
 /**
  * @fileoverview Unit tests for MobileBottomNav component.
- * @module app/domains/invoices/_components/__tests__/MobileBottomNav.test
+ * @module app/domains/invoices/_components/MobileBottomNav.test
  */
 
 import {render, screen} from "@testing-library/react";
 import {NextIntlClientProvider} from "next-intl";
 import {usePathname} from "next/navigation";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import MobileBottomNav from "../MobileBottomNav";
+import MobileBottomNav from "./MobileBottomNav";
 
 // Mock next/navigation
 vi.mock("next/navigation", () => ({

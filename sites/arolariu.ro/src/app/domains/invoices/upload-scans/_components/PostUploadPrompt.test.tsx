@@ -1,13 +1,13 @@
 /**
  * @fileoverview Unit tests for PostUploadPrompt component.
- * @module app/domains/invoices/upload-scans/_components/__tests__/PostUploadPrompt.test
+ * @module app/domains/invoices/upload-scans/_components/PostUploadPrompt.test
  */
 
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {NextIntlClientProvider} from "next-intl";
 import {describe, expect, it, vi} from "vitest";
-import PostUploadPrompt from "../PostUploadPrompt";
+import PostUploadPrompt from "./PostUploadPrompt";
 
 const mockMessages = {
   Invoices: {
