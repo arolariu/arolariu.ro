@@ -117,6 +117,7 @@ COPY sites/arolariu.ro/ ./sites/arolariu.ro/
 
 # Build the website with optimizations
 WORKDIR /app/sites/arolariu.ro
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 RUN npm run build && \
     # Remove source maps in production for smaller image
     find .next -name "*.map" -type f -delete 2>/dev/null || true
