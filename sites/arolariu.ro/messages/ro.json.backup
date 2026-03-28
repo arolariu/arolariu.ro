@@ -1388,6 +1388,130 @@
         },
         "removeTooltip": "Elimină acest fișier",
         "retryAttempt": "Reîncercarea {attempt}"
+      },
+      "postUpload": {
+        "viewScans": "Nu, le voi combina mai târziu",
+        "dismiss": "Închide",
+        "title": "Încărcare reușită!",
+        "createInvoice": "Da, creează factură",
+        "subtitle": "Aceste scanări reprezintă o singură achiziție?"
+      }
+    },
+    "CreateInvoice": {
+      "metadata": {
+        "title": "Sistem de gestionare a facturilor - Creare Factură",
+        "description": "Creează o factură nouă din scanările încărcate."
+      },
+      "navigation": {
+        "back": "Înapoi",
+        "next": "Înainte"
+      },
+      "emptyState": {
+        "title": "Nicio Scanare Disponibilă",
+        "description": "Încarcă mai întâi scanări ale bonurilor pentru a crea o factură.",
+        "uploadButton": "Încarcă Scanări",
+        "viewScansButton": "Vezi Toate Scanările"
+      },
+      "header": {
+        "backToInvoices": "Înapoi la Facturi",
+        "title": "Creare Factură",
+        "subtitle": "Urmează pașii de mai jos pentru a crea o factură nouă din scanările tale"
+      },
+      "steps": {
+        "selectScans": "Selectează Scanări",
+        "details": "Detalii Factură",
+        "review": "Revizuire & Creare"
+      },
+      "scanSelector": {
+        "title": "Selectează Scanări",
+        "subtitle": "Alege scanările care aparțin acestei facturi",
+        "selectedCount": "{count} selectate",
+        "clearAll": "Șterge Tot",
+        "selectAll": "Selectează Tot",
+        "noScans": "Nicio scanare disponibilă"
+      },
+      "detailsForm": {
+        "title": "Detalii Factură",
+        "subtitle": "Completează detaliile pentru factura ta nouă",
+        "fields": {
+          "name": {
+            "label": "Nume Factură",
+            "placeholder": "de ex., Cumpărături Săptămânale",
+            "hint": "Dă facturii tale un nume descriptiv"
+          },
+          "category": {
+            "label": "Categorie",
+            "placeholder": "Selectează o categorie",
+            "options": {
+              "notDefined": "Necategorizat",
+              "grocery": "Alimente",
+              "fastFood": "Restaurante",
+              "homeCleaning": "Casă & Curățenie",
+              "carAuto": "Auto & Vehicul",
+              "other": "Altele"
+            }
+          },
+          "paymentType": {
+            "label": "Metodă de Plată",
+            "placeholder": "Selectează metoda de plată",
+            "options": {
+              "unknown": "Necunoscut",
+              "cash": "Numerar",
+              "card": "Card",
+              "transfer": "Transfer Bancar",
+              "mobilePayment": "Plată Mobilă",
+              "voucher": "Voucher",
+              "other": "Altele"
+            }
+          },
+          "transactionDate": {
+            "label": "Data Tranzacției"
+          },
+          "description": {
+            "label": "Descriere",
+            "placeholder": "Adaugă note despre această factură (opțional)",
+            "hint": "Detalii suplimentare opționale"
+          }
+        }
+      },
+      "reviewStep": {
+        "title": "Revizuire & Creare",
+        "subtitle": "Revizuiește detaliile facturii înainte de creare",
+        "categories": {
+          "grocery": "Alimente",
+          "fastFood": "Restaurante",
+          "homeCleaning": "Casă & Curățenie",
+          "carAuto": "Auto & Vehicul",
+          "other": "Altele",
+          "notDefined": "Necategorizat"
+        },
+        "paymentTypes": {
+          "cash": "Numerar",
+          "card": "Card",
+          "transfer": "Transfer Bancar",
+          "mobilePayment": "Plată Mobilă",
+          "voucher": "Voucher",
+          "other": "Altele",
+          "unknown": "Necunoscut"
+        },
+        "sections": {
+          "scans": {
+            "title": "Scanări"
+          },
+          "details": {
+            "title": "Detalii Factură",
+            "name": "Nume",
+            "category": "Categorie",
+            "paymentType": "Metodă de Plată",
+            "transactionDate": "Data Tranzacției",
+            "description": "Descriere"
+          }
+        },
+        "actions": {
+          "creating": "Se creează factura...",
+          "create": "Creează Factură",
+          "hint": "Revizuiește toate detaliile înainte de creare"
+        }
       }
     },
     "ViewScans": {
@@ -1474,11 +1598,7 @@
           "deleting": "Se șterge...",
           "success": "Scanarea a fost ștearsă cu succes",
           "error": "Nu s-a putut șterge scanarea"
-        },
-        "rename": "Redenumește scanarea",
-        "renamePlaceholder": "Introduceți un nume nou",
-        "preview": "Previzualizare scanare",
-        "previewTitle": "Previzualizare Scanare"
+        }
       },
       "createInvoiceDialog": {
         "title": "Creați Factură",
@@ -1532,16 +1652,6 @@
           "createFailed": "Nu s-au putut crea facturile: {message}",
           "unknown": "Eroare necunoscută"
         }
-      },
-      "createFromAll": {
-        "button": "Creează din Toate Scanările",
-        "title": "Toate scanările sunt gata!",
-        "description": "Creează facturi din toate cele {count} scanări deodată"
-      },
-      "groupBanner": {
-        "dismiss": "Închide",
-        "title": "{count} scanări încărcate împreună — combinați?",
-        "combine": "Creează Factură →"
       }
     },
     "ViewInvoices": {
@@ -1581,7 +1691,28 @@
         "searchPlaceholder": "Caută facturi...",
         "filters": {
           "category": "Categorie",
-          "timeOfDay": "Momentul zilei"
+          "timeOfDay": "Momentul zilei",
+          "button": "Filtre",
+          "title": "Filtrează Facturile",
+          "clear": "Șterge toate",
+          "activeCount": "{count, plural, one {# filtru activ} few {# filtre active} other {# filtre active}}",
+          "dateRange": "Interval de Date",
+          "dateFrom": "De la data",
+          "dateTo": "Până la data",
+          "amountRange": "Interval de Sumă",
+          "amountMin": "Sumă minimă",
+          "amountMax": "Sumă maximă",
+          "categories": "Categorii",
+          "paymentTypes": "Metode de Plată",
+          "sortBy": "Sortează După",
+          "sortOptions": {
+            "amountLowToHigh": "Sumă (Mic la Mare)",
+            "nameAZ": "Nume (A-Z)",
+            "dateNewest": "Dată (Cele Mai Noi)",
+            "amountHighToLow": "Sumă (Mare la Mic)",
+            "dateOldest": "Dată (Cele Mai Vechi)",
+            "nameZA": "Nume (Z-A)"
+          }
         },
         "categories": {
           "all": "Toate categoriile",
@@ -1604,48 +1735,98 @@
         }
       },
       "statisticsView": {
-        "title": "Statistici facturi",
-        "subtitle": "Gestionează bonurile și urmărește obiceiurile tale de cheltuieli",
+        "title": "Statistici Cheltuieli",
+        "subtitle": "Urmărește-ți obiceiurile de cheltuieli cu analize și vizualizări detaliate",
+        "kpi": {
+          "totalSpending": "Cheltuieli Totale",
+          "invoiceCount": "Număr Facturi",
+          "topMerchant": "Comerciant Principal",
+          "averageItems": "Articole Medii",
+          "vsLastMonth": "{delta}% față de luna trecută",
+          "avgPerInvoice": "medie {amount} per factură",
+          "visits": "{count} vizite",
+          "acrossInvoices": "din {count} facturi",
+          "noneYet": "Niciun date încă"
+        },
         "charts": {
           "spendingOverTime": {
             "title": "Cheltuieli în Timp",
-            "labels": {
-              "amount": "Sumă"
+            "description": "Trendul cheltuielilor tale lunare",
+            "tooltip": {
+              "amount": "Sumă",
+              "invoices": "{count} facturi",
+              "invoiceCount": ""
             },
+            "labels": {
+              "amount": ""
+            }
+          },
+          "categoryBreakdown": {
+            "title": "Cheltuieli pe Categorii",
+            "description": "Cum sunt distribuite cheltuielile tale pe categorii",
+            "totalLabel": "Cheltuieli Totale",
             "tooltip": {
               "invoiceCount": "{count} facturi"
-            },
-            "description": "Urmăriți tendințele cheltuielilor"
+            }
           },
-          "calendarHeatmap": {
-            "days": {
-              "fri": "Vin",
-              "sun": "Dum",
-              "thu": "Joi",
-              "wed": "Mie",
-              "tue": "Mar",
-              "sat": "Sâm",
-              "mon": "Lun"
+          "merchantLeaderboard": {
+            "title": "Top Comercianți",
+            "description": "Unde cheltuiești cel mai mult",
+            "labels": {
+              "totalSpent": "Total Cheltuit"
             },
-            "title": "Calendar Cheltuieli",
             "tooltip": {
-              "noSpending": "Fără cheltuieli",
-              "invoices": "{count} facturi",
-              "amount": "Cheltuit"
+              "totalSpend": "Total: {amount} {currency}",
+              "invoiceCount": "{count} facturi",
+              "avgSpend": "Medie: {amount} {currency}"
+            }
+          },
+          "priceDistribution": {
+            "title": "Distribuția Prețurilor",
+            "description": "Cum sunt distribuite prețurile articolelor în achizițiile tale",
+            "labels": {
+              "itemCount": "Număr Articole"
             },
-            "aria": {
-              "calendarGrid": "Calendar cheltuieli zilnice"
+            "tooltip": {
+              "itemCount": "{count} articole",
+              "total": "Total: {amount} {currency}"
+            }
+          },
+          "timeOfDay": {
+            "title": "Tipare de Cumpărături",
+            "description": "Când ai tendința de a face cumpărături în timpul zilei",
+            "labels": {
+              "invoiceCount": "Număr Facturi"
             },
-            "legend": {
-              "more": "Mai mult",
-              "less": "Mai puțin"
+            "segments": {
+              "morning": "Dimineață",
+              "afternoon": "După-amiază",
+              "evening": "Seară",
+              "night": "Noapte"
             },
-            "description": "Intensitatea cheltuielilor zilnice în timp",
-            "navigation": {
-              "next": "Luna următoare",
-              "previous": "Luna anterioară"
+            "tooltip": {
+              "invoiceCount": "{count} facturi",
+              "avgSpend": "Medie: {amount} {currency}"
             }
           }
+        },
+        "comparison": {
+          "title": "Lună peste Lună",
+          "description": "Cum se compară luna aceasta cu luna trecută",
+          "spendingDelta": "Modificare Cheltuieli",
+          "invoiceCount": "Număr Facturi",
+          "newMerchants": "Comercianți Noi",
+          "discovered": "descoperiți",
+          "none": "niciunul",
+          "increase": "creștere",
+          "decrease": "scădere",
+          "noChange": "fără modificare",
+          "noPreviousData": "Niciun date din luna anterioară"
+        },
+        "empty": {
+          "title": "Nicio Statistică Încă",
+          "subtitle": "Încarcă bonuri și creează facturi pentru a vedea analizele de cheltuieli",
+          "cta": "Încarcă Primul Bon"
         }
       },
       "generativeView": {
@@ -1678,11 +1859,7 @@
         }
       },
       "tableView": {
-        "empty": {
-          "title": "Nu există facturi încă",
-          "description": "Începeți prin a încărca chitanțele pentru a crea prima factură",
-          "uploadCta": "Încărcați prima chitanță"
-        },
+        "empty": "Nu au fost găsite facturi",
         "columns": {
           "invoice": "Factură",
           "category": "Categorie",
@@ -1778,31 +1955,31 @@
         }
       },
       "bulkActions": {
+        "export": "Exportă",
+        "categories": {
+          "other": "Altele",
+          "homeCleaning": "Curățenie Casă",
+          "grocery": "Alimente",
+          "fastFood": "Fast Food",
+          "carAuto": "Mașină & Auto",
+          "notDefined": "Nedefinit"
+        },
+        "deletePartialSuccess": "{success} factură/facturi șterse, {failed} eșuate",
+        "deleteError": "Eroare la ștergerea facturilor. Vă rugăm încercați din nou.",
+        "categoryChanged": "{count, plural, one {Categoria facturii actualizată cu succes} other {# categorii de facturi actualizate cu succes}}",
+        "categoryChangeError": "Eroare la actualizarea categoriilor facturilor. Vă rugăm încercați din nou.",
+        "deleteSuccess": "{count, plural, one {Factură ștearsă cu succes} other {# facturi șterse cu succes}}",
         "selected": "{count, plural, one {# factură selectată} other {# facturi selectate}}",
         "clearSelection": "Curăță selecția",
-        "export": "Exportă",
-        "delete": "Șterge",
-        "changeCategory": "Schimbă Categoria",
         "deleteConfirm": {
           "title": "Șterge Facturile",
           "description": "{count, plural, one {Ești sigur că dorești să ștergi această factură? Această acțiune nu poate fi anulată.} other {Ești sigur că dorești să ștergi aceste # facturi? Această acțiune nu poate fi anulată.}}",
-          "confirm": "Șterge",
-          "cancel": "Anulează"
+          "cancel": "Anulează",
+          "confirm": "Șterge"
         },
-        "deleteSuccess": "{count, plural, one {Factură ștearsă cu succes} other {# facturi șterse cu succes}}",
-        "deleteError": "Eroare la ștergerea facturilor. Vă rugăm încercați din nou.",
-        "deletePartialSuccess": "{success} factură/facturi șterse, {failed} eșuate",
-        "categoryChanged": "{count, plural, one {Categoria facturii actualizată cu succes} other {# categorii de facturi actualizate cu succes}}",
-        "categoryChangeError": "Eroare la actualizarea categoriilor facturilor. Vă rugăm încercați din nou.",
+        "changeCategory": "Schimbă Categoria",
         "categoryPartialSuccess": "{success} factură/facturi actualizate, {failed} eșuate",
-        "categories": {
-          "notDefined": "Nedefinit",
-          "grocery": "Alimente",
-          "fastFood": "Fast Food",
-          "homeCleaning": "Curățenie Casă",
-          "carAuto": "Mașină & Auto",
-          "other": "Altele"
-        }
+        "delete": "Șterge"
       }
     },
     "ViewInvoice": {
@@ -1961,16 +2138,16 @@
         }
       },
       "merchantInfoCard": {
-        "viewAllReceipts": "Vezi toate bonurile",
-        "viewAllInvoices": "Vezi toate facturile",
         "viewOnMap": "Vezi pe hartă",
-        "spendingHistory": "Istoric cheltuieli",
-        "categoryDistribution": "Distribuție categorii",
+        "viewAllInvoices": "Vezi toate facturile",
         "stats": {
-          "visits": "vizite",
           "avgSpend": "Cheltuială medie",
-          "daysAgo": "zile în urmă"
-        }
+          "daysAgo": "zile în urmă",
+          "visits": "vizite"
+        },
+        "viewAllReceipts": "Vezi toate bonurile",
+        "spendingHistory": "Istoric cheltuieli",
+        "categoryDistribution": "Distribuție categorii"
       },
       "receiptScanCard": {
         "title": "Scanare bon",
@@ -2356,6 +2533,55 @@
           "tireRotation": "Se recomandă rotația anvelopelor"
         }
       },
+      "itemAnalytics": {
+        "title": "Produse",
+        "columns": {
+          "quantity": "Cantitate",
+          "total": "Total",
+          "category": "Categorie",
+          "name": "Nume",
+          "price": "Preț"
+        },
+        "summary": {
+          "categories": "categorii",
+          "mostExpensive": "Cel mai scump",
+          "cheapest": "Cel mai ieftin",
+          "title": "Sumar",
+          "allergens": "alergeni detectați"
+        },
+        "totalLabel": "TOTAL",
+        "empty": {
+          "subtitle": "Această factură nu conține încă produse.",
+          "title": "Nu s-au găsit produse"
+        },
+        "searchPlaceholder": "Caută produse..."
+      },
+      "healthScore": {
+        "title": "Complitudine Factură",
+        "subtitle": "Vezi cât de completă este factura ta",
+        "points": "puncte",
+        "showDetails": "Arată Detalii",
+        "hideDetails": "Ascunde Detalii",
+        "status": {
+          "complete": "Complet",
+          "needsWork": "Necesită Atenție",
+          "incomplete": "Incomplet"
+        },
+        "factors": {
+          "name": "Nume factură furnizat",
+          "merchant": "Informații comerciant adăugate",
+          "items": "Articole extrase",
+          "payment": "Informații plată",
+          "date": "Data tranzacției setată",
+          "category": "Categorie atribuită",
+          "description": "Descriere adăugată",
+          "recipes": "Rețete generate"
+        },
+        "cta": {
+          "analyze": "Rulează Analiză AI",
+          "edit": "Editează Factura"
+        }
+      },
       "print": {
         "generatedOn": "Tipărit pe {date}",
         "page": "Pagina",
@@ -2364,33 +2590,6 @@
           "merchant": "Comerciant",
           "total": "Suma Totală",
           "items": "Articole"
-        }
-      },
-      "relatedInvoices": {
-        "sameMerchant": "Același Comerciant",
-        "noRelated": "Nu s-au găsit facturi conexe",
-        "title": "Facturi Conexe",
-        "viewInvoice": "Vizualizare",
-        "sameCategory": "Aceeași Categorie",
-        "subtitle": "Facturi similare bazate pe comerciant, categorie sau sumă",
-        "similarAmount": "Sumă Similară"
-      },
-      "shareCollaborate": {
-        "title": "Partajare & Colaborare",
-        "private": "Privat",
-        "shared": "Partajat",
-        "public": "Public",
-        "sharedWith": "Partajat cu",
-        "copyLink": "Copiază Link",
-        "shareEmail": "Partajează prin Email",
-        "manageSharing": "Gestionează Partajarea",
-        "copied": "Link copiat în clipboard!",
-        "activity": {
-          "title": "Activitate",
-          "created": "Creat {time}",
-          "modified": "Ultima modificare {time}",
-          "daysAgo": "{count, plural, one {acum # zi} other {acum # zile}}",
-          "today": "astăzi"
         }
       }
     },
@@ -2411,8 +2610,6 @@
       },
       "triviaTips": {
         "title": "Sfaturi de economisire",
-        "completeness": "Factura este completă în proporție de {percentage}%",
-        "completeLabel": "Factura este complet completă!",
         "difficulty": {
           "easy": "Ușor",
           "medium": "Mediu"
@@ -2420,18 +2617,6 @@
         "banner": {
           "potentialSavingsLabel": "Economii potențiale",
           "hint": "Aplică aceste sfaturi pentru a economisi la următoarea vizită la {merchantName}"
-        },
-        "contextTips": {
-          "noItems": "Rulează analiza AI pentru a extrage articolele din bon",
-          "noDescription": "Adaugă o descriere pentru a-ți aminti această achiziție",
-          "noCategory": "Setează o categorie pentru a urmări modelele de cheltuieli",
-          "defaultCategory": "Schimbă categoria din 'Necategorizat' pentru o urmărire mai bună",
-          "noRecipes": "AI poate sugera rețete bazate pe articolele tale alimentare"
-        },
-        "contextActions": {
-          "analyze": "Rulează Analiza",
-          "addDescription": "Adaugă Descriere",
-          "setCategory": "Setează Categoria"
         },
         "tips": {
           "loyaltyProgram": {
@@ -3017,20 +3202,10 @@
       "itemsTable": {
         "title": "Articole",
         "buttons": {
-          "editItems": "Editează articolele",
-          "addItem": "Adaugă articol"
+          "editItems": "Editează articolele"
         },
         "tooltips": {
           "editInvoiceItemsAndQuantities": "Editează articolele și cantitățile facturii"
-        },
-        "columns": {
-          "selectAll": "Selectează toate articolele",
-          "selectRow": "Selectează {name}",
-          "name": "Nume",
-          "quantity": "Cantitate",
-          "price": "Preț",
-          "unit": "Unitate",
-          "total": "Total"
         },
         "tableHeaders": {
           "item": "Articol",
@@ -3046,52 +3221,6 @@
           "previous": "Anterior",
           "next": "Următor",
           "pageOf": "Pagina {currentPage} din {totalPages}"
-        },
-        "search": {
-          "placeholder": "Caută articole..."
-        },
-        "bulkToolbar": {
-          "selectedCount": "{count, plural, one {# articol selectat} few {# articole selectate} other {# de articole selectate}}",
-          "deleteSelected": "Șterge selecționate"
-        },
-        "editing": {
-          "saved": "Articol actualizat cu succes",
-          "cancel": "Editare anulată"
-        },
-        "deleteConfirm": {
-          "title": "Șterge articole",
-          "description": "{count, plural, one {Sigur doriți să ștergeți acest articol?} few {Sigur doriți să ștergeți aceste # articole?} other {Sigur doriți să ștergeți aceste # de articole?}}",
-          "confirm": "Șterge",
-          "cancel": "Anulează",
-          "success": "{count, plural, one {# articol șters} few {# articole șterse} other {# de articole șterse}}"
-        },
-        "newItem": {
-          "defaultName": "Articol nou",
-          "added": "Articol nou adăugat"
-        }
-      },
-      "changeHistory": {
-        "created": "Factură creată",
-        "pending": "În așteptare",
-        "title": "Istoric Modificări",
-        "modified": "Ultima modificare",
-        "time": {
-          "hoursAgo": "acum {hours} ore",
-          "justNow": "Acum",
-          "daysAgo": "acum {days} zile",
-          "minutesAgo": "acum {minutes} minute",
-          "secondsAgo": "acum {seconds} secunde"
-        },
-        "unsavedChanges": "Modificări nesalvate",
-        "changes": {
-          "unmarkedImportant": "Demarcat ca important",
-          "importanceChanged": "Importanță modificată",
-          "paymentTypeChanged": "Tip plată modificat",
-          "categoryUpdated": "Categorie actualizată",
-          "transactionDateChanged": "Data tranzacției modificată",
-          "markedImportant": "Marcat ca important",
-          "nameChanged": "Nume modificat",
-          "descriptionChanged": "Descriere modificată"
         }
       }
     },
@@ -3252,95 +3381,22 @@
           "deleteError": "Eroare ștergere factură:"
         }
       },
-      "shortcuts": {
-        "title": "Scurtături de la Tastatură",
-        "description": "Acces rapid la acțiuni comune folosind tastatura",
-        "openSearch": "Deschide căutarea",
-        "newInvoice": "Factură nouă",
-        "uploadScan": "Încarcă scanare",
-        "showHelp": "Arată acest ajutor",
-        "closeDialog": "Închide dialogul",
-        "close": "Închide"
-      },
-      "commandPalette": {
-        "placeholder": "Caută facturi, comercianți, articole...",
-        "noResults": "Nu s-au găsit rezultate",
-        "groups": {
-          "quickActions": "Acțiuni Rapide",
-          "recentInvoices": "Facturi Recente",
-          "searchResults": "Rezultate Căutare"
-        },
-        "actions": {
-          "uploadScans": "Încarcă Scanări",
-          "createInvoice": "Crează Factură",
-          "viewStatistics": "Vezi Statistici",
-          "viewAll": "Vezi Toate Facturile"
-        }
-      },
-      "onboarding": {
-        "getStarted": "Începe",
-        "next": "Următorul",
-        "back": "Înapoi",
-        "skip": "Sari peste",
-        "steps": {
-          "upload": {
-            "title": "Încarcă Chitanțele Tale",
-            "description": "Fă o fotografie sau încarcă un PDF al chitanței tale. Sistemul nostru acceptă multiple formate și poate procesa loturi de chitanțe deodată."
-          },
-          "analyze": {
-            "title": "AI Extrage Detaliile",
-            "description": "Sistemul nostru bazat pe AI extrage automat numele comercianților, datele, sumele și articolele din chitanțele tale cu acuratețe ridicată."
-          },
-          "track": {
-            "title": "Urmărește Cheltuielile Tale",
-            "description": "Vizualizează analize detaliate și perspective asupra tiparelor tale de cheltuieli. Înțelege unde se duc banii tăi cu diagrame și rapoarte interactive."
-          }
-        },
-        "stepOf": "Pasul {current} din {total}"
-      },
-      "notifications": {
-        "title": "Notificări",
-        "markAllRead": "Marchează toate ca citite",
-        "noNotifications": "Nu există notificări încă",
-        "timeAgo": {
-          "days": "{count, plural, one {acum # zi} other {acum # zile}}",
-          "now": "Chiar acum",
-          "minutes": "{count, plural, one {acum # minut} other {acum # minute}}",
-          "hours": "{count, plural, one {acum # oră} other {acum # ore}}"
-        },
-        "types": {
-          "monthlyReport": "Raportul lunar este gata",
-          "invoiceCreated": "Factură creată",
-          "analysisComplete": "Analiza AI finalizată"
-        }
-      },
-      "preferences": {
-        "title": "Preferințe Facturi",
-        "defaultView": "Vizualizare Implicită",
-        "sortBy": "Sortează După",
-        "pageSize": "Elemente pe Pagină",
-        "currency": "Monedă",
-        "showStats": "Afișează statistici pe pagina principală",
-        "save": "Salvează Preferințele",
-        "saved": "Preferințele au fost salvate cu succes",
-        "views": {
-          "table": "Vizualizare Tabel",
-          "grid": "Vizualizare Grilă"
-        },
-        "sortOptions": {
-          "dateDesc": "Dată (Cele mai Recente)",
-          "dateAsc": "Dată (Cele mai Vechi)",
-          "amountDesc": "Sumă (Mare la Mic)",
-          "amountAsc": "Sumă (Mic la Mare)",
-          "nameAsc": "Nume (A la Z)"
-        }
-      },
       "mobileNav": {
-        "home": "Acasă",
         "ariaLabel": "Navigare mobilă",
-        "scan": "Scanare",
+        "home": "Acasă",
+        "scan": "Scanează",
         "invoices": "Facturi",
         "profile": "Profil"
+      },
+      "shortcuts": {
+        "closeDialog": "Închide dialogul",
+        "showHelp": "Arată acest ajutor",
+        "close": "Închide",
+        "newInvoice": "Factură nouă",
+        "openSearch": "Deschide căutarea",
+        "title": "Scurtături de la Tastatură",
+        "description": "Acces rapid la acțiuni comune folosind tastatura",
+        "uploadScan": "Încarcă scanare"
       }
     }
   },

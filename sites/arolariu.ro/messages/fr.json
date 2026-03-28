@@ -570,21 +570,21 @@
         "platform": {
           "title": "La plateforme",
           "subtitle": "Découvrez l'architecture, le stack technologique et les fonctionnalités qui alimentent arolariu.ro.",
-          "features": [
-            "Frontend Next.js 16",
-            "Backend .NET 10",
-            "Infrastructure Azure Cloud"
-          ],
+          "features": {
+            "0": "Frontend Next.js 16",
+            "1": "Backend .NET 10",
+            "2": "Infrastructure Azure Cloud"
+          },
           "cta": "Explorer la plateforme"
         },
         "author": {
           "title": "L'auteur",
           "subtitle": "Rencontrez Alexandru-Razvan Olariu, l'ingénieur logiciel derrière cette plateforme.",
-          "features": [
-            "Ingénieur Microsoft",
-            "Architecte de solutions",
-            "Passionné de technologie"
-          ],
+          "features": {
+            "0": "Ingénieur Microsoft",
+            "1": "Architecte de solutions",
+            "2": "Passionné de technologie"
+          },
           "cta": "Rencontrer Alexandru"
         }
       },
@@ -1474,7 +1474,11 @@
           "deleting": "Suppression...",
           "success": "Scan supprimé avec succès",
           "error": "Échec de la suppression du scan"
-        }
+        },
+        "rename": "Rename scan",
+        "renamePlaceholder": "Enter new name",
+        "preview": "Preview scan",
+        "previewTitle": "Scan Preview"
       },
       "createInvoiceDialog": {
         "title": "Créer une Facture",
@@ -1528,6 +1532,16 @@
           "createFailed": "Échec de la création des factures : {message}",
           "unknown": "Erreur inconnue"
         }
+      },
+      "createFromAll": {
+        "button": "Create from All Scans",
+        "title": "All scans are ready!",
+        "description": "Create invoices from all {count} scans at once"
+      },
+      "groupBanner": {
+        "combine": "Create Invoice →",
+        "title": "{count} scans uploaded together — combine?",
+        "dismiss": "Dismiss"
       }
     },
     "ViewInvoices": {
@@ -1591,7 +1605,48 @@
       },
       "statisticsView": {
         "title": "Statistiques des factures",
-        "subtitle": "Gérez vos reçus et suivez vos habitudes de dépenses"
+        "subtitle": "Gérez vos reçus et suivez vos habitudes de dépenses",
+        "charts": {
+          "calendarHeatmap": {
+            "days": {
+              "wed": "Wed",
+              "thu": "Thu",
+              "fri": "Fri",
+              "sun": "Sun",
+              "mon": "Mon",
+              "sat": "Sat",
+              "tue": "Tue"
+            },
+            "tooltip": {
+              "noSpending": "No spending",
+              "amount": "Spent",
+              "invoices": "{count} invoices"
+            },
+            "legend": {
+              "less": "Less",
+              "more": "More"
+            },
+            "title": "Spending Calendar",
+            "description": "Daily spending intensity over time",
+            "navigation": {
+              "previous": "Previous month",
+              "next": "Next month"
+            },
+            "aria": {
+              "calendarGrid": "Daily spending calendar"
+            }
+          },
+          "spendingOverTime": {
+            "labels": {
+              "amount": ""
+            },
+            "tooltip": {
+              "invoiceCount": ""
+            },
+            "title": "",
+            "description": ""
+          }
+        }
       },
       "generativeView": {
         "welcomeMessage": "Bonjour ! Je suis votre assistant d’analyse de factures. Comment puis-je vous aider aujourd’hui ? Essayez des commandes comme /find pour rechercher des factures.",
@@ -1623,7 +1678,11 @@
         }
       },
       "tableView": {
-        "empty": "Aucune facture trouvée",
+        "empty": {
+          "title": "Aucune facture trouvée",
+          "description": "Commencez par télécharger vos reçus pour créer votre première facture",
+          "uploadCta": "Télécharger votre premier reçu"
+        },
         "columns": {
           "invoice": "Facture",
           "category": "Catégorie",
@@ -1716,6 +1775,33 @@
           "cancel": "Annuler",
           "import": "Importer",
           "importWithCount": "Importer ({count})"
+        }
+      },
+      "bulkActions": {
+        "selected": "{count, plural, one {# invoice selected} other {# invoices selected}}",
+        "clearSelection": "Clear selection",
+        "export": "Export",
+        "delete": "Delete",
+        "changeCategory": "Change Category",
+        "deleteConfirm": {
+          "title": "Delete Invoices",
+          "description": "{count, plural, one {Are you sure you want to delete this invoice? This action cannot be undone.} other {Are you sure you want to delete these # invoices? This action cannot be undone.}}",
+          "confirm": "Delete",
+          "cancel": "Cancel"
+        },
+        "deleteSuccess": "{count, plural, one {Invoice deleted successfully} other {# invoices deleted successfully}}",
+        "deleteError": "Failed to delete invoices. Please try again.",
+        "deletePartialSuccess": "{success} invoice(s) deleted, {failed} failed",
+        "categoryChanged": "{count, plural, one {Invoice category updated successfully} other {# invoice categories updated successfully}}",
+        "categoryChangeError": "Failed to update invoice categories. Please try again.",
+        "categoryPartialSuccess": "{success} invoice(s) updated, {failed} failed",
+        "categories": {
+          "notDefined": "Not Defined",
+          "grocery": "Groceries",
+          "fastFood": "Fast Food",
+          "homeCleaning": "Home Cleaning",
+          "carAuto": "Car & Auto",
+          "other": "Other"
         }
       }
     },
@@ -1875,7 +1961,16 @@
         }
       },
       "merchantInfoCard": {
-        "viewAllReceipts": "Voir tous les reçus"
+        "viewAllReceipts": "Voir tous les reçus",
+        "viewAllInvoices": "View All Invoices",
+        "viewOnMap": "View on Map",
+        "spendingHistory": "Spending History",
+        "categoryDistribution": "Category Distribution",
+        "stats": {
+          "visits": "visits",
+          "avgSpend": "Avg Spend",
+          "daysAgo": "days ago"
+        }
       },
       "receiptScanCard": {
         "title": "Scan du reçu",
@@ -1893,7 +1988,20 @@
           "nextScan": "Voir le scan suivant du reçu"
         },
         "titleWithIndex": "Scan du reçu ({current}/{total})",
-        "dialogTitleWithIndex": "Image du reçu ({current}/{total})"
+        "dialogTitleWithIndex": "Image du reçu ({current}/{total})",
+        "controls": {
+          "zoomIn": "Zoom In",
+          "zoomOut": "Zoom Out",
+          "reset": "Reset Zoom",
+          "rotate": "Rotate",
+          "download": "Download",
+          "fullScreen": "Full Screen"
+        },
+        "navigation": {
+          "previous": "Previous",
+          "next": "Next",
+          "of": "of"
+        }
       },
       "seasonalInsightsCard": {
         "title": "Insight saisonnier",
@@ -2247,6 +2355,43 @@
           "oilChange": "Vidange à prévoir dans ~1 200 km",
           "tireRotation": "Rotation des pneus recommandée"
         }
+      },
+      "print": {
+        "generatedOn": "Printed on {date}",
+        "page": "Page",
+        "labels": {
+          "date": "Date",
+          "merchant": "Merchant",
+          "total": "Total Amount",
+          "items": "Items"
+        }
+      },
+      "relatedInvoices": {
+        "noRelated": "No related invoices found",
+        "subtitle": "Similar invoices based on merchant, category, or amount",
+        "sameCategory": "Same Category",
+        "viewInvoice": "View",
+        "similarAmount": "Similar Amount",
+        "sameMerchant": "Same Merchant",
+        "title": "Related Invoices"
+      },
+      "shareCollaborate": {
+        "title": "Sharing & Collaboration",
+        "private": "Private",
+        "shared": "Shared",
+        "public": "Public",
+        "sharedWith": "Shared with",
+        "copyLink": "Copy Link",
+        "shareEmail": "Share via Email",
+        "manageSharing": "Manage Sharing",
+        "copied": "Link copied to clipboard!",
+        "activity": {
+          "title": "Activity",
+          "created": "Created {time}",
+          "modified": "Last modified {time}",
+          "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+          "today": "today"
+        }
       }
     },
     "EditInvoice": {
@@ -2266,6 +2411,8 @@
       },
       "triviaTips": {
         "title": "Astuces économies",
+        "completeness": "Invoice is {percentage}% complete",
+        "completeLabel": "Invoice is fully complete!",
         "difficulty": {
           "easy": "Facile",
           "medium": "Moyen"
@@ -2273,6 +2420,18 @@
         "banner": {
           "potentialSavingsLabel": "Économies potentielles",
           "hint": "Appliquez ces astuces pour économiser lors de votre prochaine visite chez {merchantName}"
+        },
+        "contextTips": {
+          "noItems": "Run AI analysis to extract items from your receipt",
+          "noDescription": "Add a description to help you remember this purchase",
+          "noCategory": "Set a category to track spending patterns",
+          "defaultCategory": "Change the category from 'Uncategorized' to track better",
+          "noRecipes": "AI can suggest recipes based on your grocery items"
+        },
+        "contextActions": {
+          "analyze": "Run Analysis",
+          "addDescription": "Add Description",
+          "setCategory": "Set Category"
         },
         "tips": {
           "loyaltyProgram": {
@@ -2858,10 +3017,20 @@
       "itemsTable": {
         "title": "Articles",
         "buttons": {
-          "editItems": "Modifier les articles"
+          "editItems": "Modifier les articles",
+          "addItem": "Add Item"
         },
         "tooltips": {
           "editInvoiceItemsAndQuantities": "Modifier les articles et les quantités de la facture"
+        },
+        "columns": {
+          "selectAll": "Select all items",
+          "selectRow": "Select {name}",
+          "name": "Name",
+          "quantity": "Quantity",
+          "price": "Price",
+          "unit": "Unit",
+          "total": "Total"
         },
         "tableHeaders": {
           "item": "Article",
@@ -2877,6 +3046,52 @@
           "previous": "Précédent",
           "next": "Suivant",
           "pageOf": "Page {currentPage} sur {totalPages}"
+        },
+        "search": {
+          "placeholder": "Search items..."
+        },
+        "bulkToolbar": {
+          "selectedCount": "{count, plural, one {# item selected} other {# items selected}}",
+          "deleteSelected": "Delete Selected"
+        },
+        "editing": {
+          "saved": "Item updated successfully",
+          "cancel": "Edit canceled"
+        },
+        "deleteConfirm": {
+          "title": "Delete Items",
+          "description": "{count, plural, one {Are you sure you want to delete this item?} other {Are you sure you want to delete # items?}}",
+          "confirm": "Delete",
+          "cancel": "Cancel",
+          "success": "{count, plural, one {# item deleted} other {# items deleted}}"
+        },
+        "newItem": {
+          "defaultName": "New Item",
+          "added": "New item added"
+        }
+      },
+      "changeHistory": {
+        "unsavedChanges": "Unsaved changes",
+        "pending": "Pending",
+        "created": "Invoice created",
+        "title": "Change History",
+        "time": {
+          "justNow": "Just now",
+          "secondsAgo": "{seconds} seconds ago",
+          "hoursAgo": "{hours} hours ago",
+          "daysAgo": "{days} days ago",
+          "minutesAgo": "{minutes} minutes ago"
+        },
+        "modified": "Last modified",
+        "changes": {
+          "paymentTypeChanged": "Payment type changed",
+          "unmarkedImportant": "Unmarked as important",
+          "categoryUpdated": "Category updated",
+          "transactionDateChanged": "Transaction date changed",
+          "nameChanged": "Name changed",
+          "descriptionChanged": "Description changed",
+          "markedImportant": "Marked as important",
+          "importanceChanged": "Importance changed"
         }
       }
     },
@@ -3036,6 +3251,96 @@
         "console": {
           "deleteError": "Erreur suppression de facture:"
         }
+      },
+      "shortcuts": {
+        "title": "Keyboard Shortcuts",
+        "description": "Quick access to common actions using your keyboard",
+        "openSearch": "Open search",
+        "newInvoice": "New invoice",
+        "uploadScan": "Upload scan",
+        "showHelp": "Show this help",
+        "closeDialog": "Close dialog",
+        "close": "Close"
+      },
+      "commandPalette": {
+        "placeholder": "Search invoices, merchants, items...",
+        "noResults": "No results found",
+        "groups": {
+          "quickActions": "Quick Actions",
+          "recentInvoices": "Recent Invoices",
+          "searchResults": "Search Results"
+        },
+        "actions": {
+          "uploadScans": "Upload Scans",
+          "createInvoice": "Create Invoice",
+          "viewStatistics": "View Statistics",
+          "viewAll": "View All Invoices"
+        }
+      },
+      "onboarding": {
+        "steps": {
+          "upload": {
+            "description": "Take a photo or upload a PDF of your receipt. Our system supports multiple formats and can process batches of receipts at once.",
+            "title": "Upload Your Receipts"
+          },
+          "analyze": {
+            "description": "Our AI-powered system automatically extracts merchant names, dates, amounts, and line items from your receipts with high accuracy.",
+            "title": "AI Extracts the Details"
+          },
+          "track": {
+            "description": "View detailed analytics and insights into your spending patterns. Understand where your money goes with interactive charts and reports.",
+            "title": "Track Your Spending"
+          }
+        },
+        "getStarted": "Get Started",
+        "stepOf": "Step {current} of {total}",
+        "next": "Next",
+        "skip": "Skip",
+        "back": "Back"
+      },
+      "notifications": {
+        "timeAgo": {
+          "hours": "{count, plural, one {# hour ago} other {# hours ago}}",
+          "minutes": "{count, plural, one {# minute ago} other {# minutes ago}}",
+          "days": "{count, plural, one {# day ago} other {# days ago}}",
+          "now": "Just now"
+        },
+        "types": {
+          "invoiceCreated": "Invoice created",
+          "analysisComplete": "AI analysis complete",
+          "monthlyReport": "Monthly report ready"
+        },
+        "title": "Notifications",
+        "noNotifications": "No notifications yet",
+        "markAllRead": "Mark all as read"
+      },
+      "preferences": {
+        "title": "Invoice Preferences",
+        "defaultView": "Default View",
+        "sortBy": "Sort By",
+        "pageSize": "Items per Page",
+        "currency": "Currency",
+        "showStats": "Show statistics on home",
+        "save": "Save Preferences",
+        "saved": "Preferences saved successfully",
+        "views": {
+          "table": "Table View",
+          "grid": "Grid View"
+        },
+        "sortOptions": {
+          "dateDesc": "Date (Newest First)",
+          "dateAsc": "Date (Oldest First)",
+          "amountDesc": "Amount (High to Low)",
+          "amountAsc": "Amount (Low to High)",
+          "nameAsc": "Name (A to Z)"
+        }
+      },
+      "mobileNav": {
+        "profile": "Profile",
+        "ariaLabel": "Mobile navigation",
+        "home": "Home",
+        "scan": "Scan",
+        "invoices": "Invoices"
       }
     }
   },

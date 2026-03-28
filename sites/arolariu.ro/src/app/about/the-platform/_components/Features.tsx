@@ -54,9 +54,9 @@ const gradientClassMap = {
 } as const;
 
 function getCardClassName(isHovered: boolean, isFirst: boolean): string {
-  if (isHovered) return styles["cardActive"];
-  if (isFirst) return styles["cardHero"];
-  return styles["card"];
+  if (isHovered) return styles["cardActive"] ?? "";
+  if (isFirst) return styles["cardHero"] ?? "";
+  return styles["card"] ?? "";
 }
 
 const featureConfigs: FeatureConfig[] = [
