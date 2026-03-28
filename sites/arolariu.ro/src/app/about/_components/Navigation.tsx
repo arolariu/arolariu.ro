@@ -76,13 +76,13 @@ export default function Navigation(): React.JSX.Element {
                 <CardContent className={styles["cardContent"]}>
                   <div className={styles["cardContentInner"]}>
                     <div className={styles["cardTextCenter"]}>
-                      <h3 className={styles["cardTitle"]}>{t(`${item.key}.title`)}</h3>
-                      <p className={styles["cardSubtitle"]}>{t(`${item.key}.subtitle`)}</p>
+                      <h3 className={styles["cardTitle"]}>{t(`${item.key}.title` as "platform.title")}</h3>
+                      <p className={styles["cardSubtitle"]}>{t(`${item.key}.subtitle` as "platform.subtitle")}</p>
                     </div>
 
                     {/* Feature list */}
                     <ul className={styles["featureList"]}>
-                      {[0, 1, 2].map((featureIndex) => (
+                      {([0, 1, 2] as const).map((featureIndex) => (
                         <li
                           key={featureIndex}
                           className={styles["featureItem"]}>
@@ -91,7 +91,7 @@ export default function Navigation(): React.JSX.Element {
                             className={styles["featureBadge"]}>
                             <TbCheck className={styles["featureIcon"]} />
                           </Badge>
-                          <span>{t(`${item.key}.features.${featureIndex}`)}</span>
+                          <span>{t(`${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`)}</span>
                         </li>
                       ))}
                     </ul>
